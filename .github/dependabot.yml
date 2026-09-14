@@ -41,6 +41,18 @@ updates:
       # stamping (see plans/security-audit... / the adm-zip override rationale).
       - dependency-name: "onnxruntime-node"
         update-types: ["version-update:semver-major"]
+      # jsdom 27 pulls in cssstyle 5, whose colour parser is CommonJS code that
+      # requires the ESM-only @csstools/css-calc 3, and jsdom 27.4 onward also
+      # require the ESM-only @exodus/bytes. That loads on a developer's Node and dies
+      # on Vercel: the nodejs24.x function runtime starts Node with
+      # --no-experimental-require-module (measured 2026-09-14), so the render route
+      # on lolly.tools answered 500 with ERR_REQUIRE_ESM after the jsdom 30 bump.
+      # 26.1.0 is the last release whose whole chain has a CommonJS build, pinned
+      # exactly. tests/vercel-runtime-require.test.ts is the guard. Lift this once
+      # the functions bundle jsdom, or Vercel enables require(esm) - re-measure with
+      # the diagnostic described in that test's header.
+      - dependency-name: "jsdom"
+        versions: [">=27.0.0"]
 
   # ── The two Tauri shells: their own npm manifests ─────────────────────────
   # Neither shell is a pnpm workspace member (their Rust/CLI toolchain has no

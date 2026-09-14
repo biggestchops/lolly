@@ -2608,7 +2608,7 @@ way to do this is to:
 
 ## CLI
 
-### jsdom 30.0.1
+### jsdom 26.1.0
 
 - SPDX-License-Identifier: `MIT`
 - Copyright: Copyright (c) 2010 Elijah Insua
