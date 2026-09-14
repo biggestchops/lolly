@@ -83,6 +83,9 @@ const ALLOWED_PACKAGES = new Set([
   // engine/src/emoji-treatment.ts - the treatment, palette and protection types.
   // Type-only, and they are not re-exported from the SDK barrel above.
   '@lolly-tools/core/emoji-v1',
+  // Portable record types; no DOM, storage, network or host implementation.
+  '@lolly-tools/core/learning-v1',
+  '@lolly-tools/core/rights-v1',
   // engine/package.json dep (declared 2026-08-05, allowlist missed at the time).
   // Pure JS zip/gzip codec, no DOM/fs/network - same platform-agnostic bar as
   // handlebars/ajv above. Used directly by epub.ts (zipSync), font-convert.ts

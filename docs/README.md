@@ -45,6 +45,7 @@ security posture).
 | Doc | Audience | What it covers |
 |---|---|---|
 | [creators.md](creators.md) | end user | Pathway hub. A router: one lane per activity - make, animate, record, collaborate, post - each listing the pages that carry it. |
+| [training-creators.md](training-creators.md) | course creator | Build lessons from project content, arrange blocks, preview as learner and publish a versioned website or LMS package. |
 | [using.md](using.md) | end user | Driving the app: opening a tool, working the canvas, exporting, saving, sharing, moving to another device. |
 | [templates.md](templates.md) | end user | Saved starting points for a tool: saving one from a tool or from Projects, the per-tool "Start with" setting, and managing yours beside the ones a tool ships with. |
 | [brand-studio.md](brand-studio.md) | end user | The Brand Studio at `#/start`: logos, colours, type, tokens and files, plus how a brand pack moves between devices. |
@@ -70,6 +71,7 @@ security posture).
 | Doc | Audience | What it covers |
 |---|---|---|
 | [builders.md](builders.md) | tool author | Pathway hub. A router: three lanes - designers, developers, infrastructure - each listing the pages that carry it. |
+| [learning-integration.md](learning-integration.md) | integrator | Portable course packages, learner progress, LMS adapters and deployment checks. |
 | [overview.md](overview.md) | contributor | **The architecture document.** The three-layer separation (engine, shells, tool/brand packs), the capability-bridge boundary, the repository layout, the ten architectural commitments, and where the engine ends and the host begins. Opens with the product rationale, so use its navigation note to jump straight to the architecture. |
 | [design-tokens.md](design-tokens.md) | tool author | The DTCG token model as the single source of truth for brand primitives, and what round-trips with Penpot and Tokens Studio. |
 | [glossary.md](glossary.md) | end user | The words Lolly uses with exact meanings (engine, shell, bridge, tool, brand pack, profile, view, catalog, session, utility, collab) and what each is not. Read before the architecture page or CLAUDE.md. |
