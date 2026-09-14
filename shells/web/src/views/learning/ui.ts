@@ -9,7 +9,7 @@ import {
   courseDate,
   targetLabel,
 } from '../../lib/learning-ui.ts';
-import { blockMarkup } from './shared.ts';
+import { blockExcerpt, blockMarkup } from './shared.ts';
 
 interface ViewState {
   disclosures: Map<string, boolean>;
@@ -98,6 +98,13 @@ function refreshChecks(ctx: LearningCtx): void {
   if (undo) undo.disabled = ctx.busy || !ctx.undo.length;
   const preview = ctx.root.querySelector<HTMLButtonElement>('[data-action=preview]');
   if (preview) preview.disabled = ctx.busy || ctx.checking || !ctx.module.lessons.length;
+  const selected = ctx.module.lessons.find((lesson) => lesson.id === ctx.selected);
+  for (const block of selected?.blocks || []) {
+    const excerpt = ctx.root.querySelector(
+      `[data-block="${CSS.escape(block.id)}"] .learning-block-heading > span`
+    );
+    if (excerpt) excerpt.textContent = blockExcerpt(block);
+  }
   for (const [i, lesson] of ctx.module.lessons.entries()) {
     const tab = ctx.root.querySelector<HTMLButtonElement>(
       `[data-action=lesson][data-id="${CSS.escape(lesson.id)}"]`

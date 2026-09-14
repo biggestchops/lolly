@@ -338,8 +338,19 @@ html[data-a11y-contrast="high"][data-theme="brand"] {
   --page:hsl(var(--background));
   --text:hsl(var(--foreground));
   --muted:hsl(var(--muted-foreground));
-  --border:hsl(var(--border));
-  --pale:hsl(var(--muted));
+  /* These two read their APP twin, not the app token of the same name. Both names
+     exist on each side with different meanings: the app's --border and --muted are
+     raw HSL triplets (an edge and a muted surface), the docs' are finished colours
+     (an edge and muted TEXT). Because this block and the app tokens both land on
+     :root, the name the docs define is the only one left in scope, so
+     the border read itself and the pale surface wrapped a colour in hsl() again. A cycle and a nonsense value compute the same way: the whole
+     declaration is dropped, which painted every table heading, footer, code block
+     and the "On this page" panel with no background and no border at all. --input
+     and --secondary carry the same values as --border and --muted in every shipped
+     theme; the two accessibility themes tune them a shade apart on purpose, and
+     there the docs take the stronger edge and the lighter surface. */
+  --border:hsl(var(--input));
+  --pale:hsl(var(--secondary));
   --green:hsl(var(--primary));
   --dark:hsl(var(--foreground));
   --light:hsl(var(--primary)/0.4);

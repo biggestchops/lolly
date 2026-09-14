@@ -19,6 +19,12 @@ export function sourceLabel(block: LearningBlock): string {
       ? `${source.toolId} creation`
       : 'Imported file';
 }
+export function blockExcerpt(block: LearningBlock): string {
+  if (block.kind === 'text')
+    return block.text?.trim().slice(0, 100) || 'Write an explanation or instruction';
+  if (block.kind === 'resource' && block.description) return block.description;
+  return sourceLabel(block);
+}
 export function blockMarkup(
   block: LearningBlock,
   index: number,
@@ -28,10 +34,7 @@ export function blockMarkup(
 ): string {
   const id = esc(block.id),
     type = contentLabels[block.kind] || block.kind;
-  const excerpt =
-    block.kind === 'text'
-      ? block.text?.trim().slice(0, 100) || 'Write an explanation or instruction'
-      : sourceLabel(block);
+  const excerpt = blockExcerpt(block);
   const fields =
     block.kind === 'text'
       ? field(

@@ -21,6 +21,12 @@ try {
   await page.getByLabel('Section (optional)', { exact: true }).fill('Getting started');
   await page.getByRole('button', { name: 'Add text', exact: true }).click();
   await page.getByLabel('Lesson text', { exact: true }).fill('First explanation');
+  await page.getByRole('heading', { name: 'Course editor', exact: true }).click();
+  assert.match(
+    await page.locator('[data-block] > details > summary').innerText(),
+    /First explanation/,
+    'the content summary follows edits without rebuilding the editor'
+  );
   await page.getByRole('button', { name: 'Add text', exact: true }).click();
   const blocks = page.locator('[data-block]');
   assert.equal(await blocks.count(), 2, 'blurring an edit must not swallow Add text');

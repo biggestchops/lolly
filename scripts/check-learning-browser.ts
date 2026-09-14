@@ -115,6 +115,12 @@ try {
       .fill('Open a terminal and run uname. Read the system name before continuing.');
     await page.getByRole('heading', { name: 'Course editor', exact: true }).click();
     const svg = await page.evaluate(async () => {
+      document
+        .querySelectorAll<HTMLDetailsElement>('.learning-author details')
+        .forEach((details) => {
+          details.open = details === document.querySelector('.learning-content-list details');
+        });
+      window.scrollTo(0, 0);
       const path = '/src/bridge/export-svg-walker.ts';
       const { renderSvgFromHtml } = await import(/* @vite-ignore */ path);
       return (

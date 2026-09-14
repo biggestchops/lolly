@@ -11,8 +11,8 @@ This first version supports ordered lessons, text, images, slides, video, audio 
 1. Open **Projects**, then the folder containing your course material.
 2. Choose **Export course**. Review the folder's content and nested folders. Imported files, saved tool creations and batch rows appear together. Existing learning modules contribute their lessons; **Open existing module** lets you export one without copying it.
 3. Use the checkboxes to choose content and **Move up** or **Move down** to set its teaching order. Unavailable content remains listed. Replace it, unselect it, or choose **Exclude unavailable items**. For a long selection, use **Find content** to locate an item; clear the search before reordering. **Select all** and **Clear selection** apply to the whole list. Choose a course title and **Create course from selection**.
-4. Open **Module details** to add a description, learning objectives and content language. Use a language tag such as `en`, `en-GB` or `de`. The learner controls are currently in English.
-5. The course opens in the editor. Review the assembled outline, add explanations, adjust required lessons, or use **Add lesson** for another step. Folder names become section labels. Every imported item is required initially; review that choice.
+4. The course opens in the editor. Review the assembled outline, add explanations, adjust required lessons, or use **Add lesson** for another step. Folder names become section labels. Every imported item is required initially; review that choice.
+5. Open **Module details** to add a description, learning objectives and content language. Use a language tag such as `en`, `en-GB` or `de`. The learner controls are currently in English.
 
 You can also select a mixture of project items and choose **Export course**, or choose **Export course** in a supported tool's export controls. The tool saves its current inputs before handing them over. **Create learning module** starts an empty outline from Projects. A course started without a folder appears with your unfiled work. Reopen its **Learning module** tile to continue editing.
 

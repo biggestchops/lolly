@@ -29,6 +29,9 @@
   font-size: 1em;
   line-height: 1.4;
 }
+.learning-ui strong {
+  font-weight: 700;
+}
 .learning-ui label {
   display: grid;
   gap: 7px;
@@ -284,9 +287,13 @@
   background: hsl(var(--muted));
   overflow-wrap: anywhere;
 }
-.learning-ui .learning-notice[data-tone="error"],
+.learning-ui .learning-notice[data-tone="error"] {
+  border-left: 4px solid hsl(var(--destructive));
+}
 .learning-entry-error {
-  color: hsl(var(--destructive));
+  border-left: 3px solid hsl(var(--destructive));
+  padding-left: 10px;
+  font-weight: 500;
 }
 .learning-entry-error {
   grid-column: 1 / -1;
@@ -464,9 +471,6 @@
   min-height: 0;
   max-height: inherit;
   overflow: hidden;
-}
-
-.learning-dialog-content {
   flex: 1 1 auto;
 }
 .learning-ui .float-cluster > :is(.background-delivery, .job-toast, .undo-toasts) {
@@ -485,4 +489,7 @@
 }
 .learning-ui .background-delivery {
   overflow-wrap: anywhere;
+}
+.learning-ui .job-row-status--done {
+  color: hsl(var(--primary));
 }
