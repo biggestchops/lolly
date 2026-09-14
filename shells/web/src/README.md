@@ -9,10 +9,10 @@ Roughly 542,000 lines of TypeScript, tests included, and 48,000 lines of CSS.
 
 | Directory | Source | Tests | CSS |
 |---|---|---|---|
-| `views/` | 288 files, 150,048 lines | 149 files, 55,268 lines | 4 files, 735 lines |
-| `lib/` | 498 files, 113,951 lines | 298 files, 59,175 lines | 11 files, 1,732 lines |
+| `views/` | 289 files, 150,128 lines | 149 files, 55,268 lines | 4 files, 735 lines |
+| `lib/` | 498 files, 113,956 lines | 299 files, 59,189 lines | 11 files, 1,732 lines |
 | `bridge/` | 130 files, 45,825 lines | 87 files, 20,319 lines | none |
-| `components/` | 65 files, 21,578 lines | 30 files, 10,382 lines | 9 files, 685 lines |
+| `components/` | 66 files, 21,601 lines | 31 files, 10,431 lines | 9 files, 685 lines |
 | `collab/` | 20 files, 13,525 lines | 22 files, 14,131 lines | none |
 | `pro/` | 22 files, 8,401 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
 | `org/` | 19 files, 6,063 lines | 15 files, 4,053 lines | none |
@@ -69,10 +69,10 @@ Do not be ambushed by these. The largest source files, by line count:
 | 3,077 | `views/gallery.ts` | none |
 | 3,029 | `bridge/export-svg-walker.ts` | **none** |
 | 2,674 | `views/deck-editor.ts` | yes |
-| 2,504 | `views/design-import.ts` | **none** |
+| 2,462 | `views/design-import.ts` | **none** |
 | 2,363 | `views/free-canvas-math.ts` | yes |
 | 2,272 | `views/timeline-math.ts` | yes |
-| 2,126 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
+| 2,124 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
 | 2,103 | `lib/clip-thumbs.ts` | yes |
 | 2,092 | `components/color-field.ts` | yes |
 | 2,075 | `main.ts` | yes |

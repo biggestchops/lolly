@@ -9,6 +9,7 @@
 // Mirrors the colour-field popover lifecycle (Escape closes + refocuses the
 // trigger, outside-click disarms) so it matches the app's escape-to-close idiom.
 import { escape } from '../utils.ts';
+import { linkInputLabels } from './input-labels.ts';
 
 const INFO_ICON =
   '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" ' +
@@ -110,6 +111,7 @@ export function wireHelpTips(scope: HelpScope): void {
 // Point each control at its help text for assistive tech. Runs every render (the
 // controls are recreated on each rebuild); cheap - only a handful of pops exist.
 export function linkHelpDescriptions(scope: HTMLElement): void {
+  linkInputLabels(scope);
   scope.querySelectorAll<HTMLElement>('.help-tip-pop[id]').forEach((pop) => {
     const row = pop.closest(HOST_SEL);
     const ctrl = row?.querySelector('input, select, textarea, [data-field-id], [data-input-id]');

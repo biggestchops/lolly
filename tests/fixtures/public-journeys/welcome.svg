@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#ffffff"/>
+  <rect x="40" y="40" width="880" height="460" rx="24" fill="#0067B1"/>
+  <circle cx="800" cy="130" r="46" fill="#FFC72C"/>
+  <text x="88" y="235" font-family="Arial" font-size="64" font-weight="700" fill="#ffffff">Welcome to Northstar</text>
+  <text x="88" y="310" font-family="Arial" font-size="28" fill="#ffffff">Make something useful together.</text>
+</svg>

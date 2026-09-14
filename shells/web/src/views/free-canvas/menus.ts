@@ -367,6 +367,8 @@ export function openImportPanel(fc: FcCtx, anchor: HTMLElement): void {
             ? t('Imported 1 object.')
             : t('Imported {n} objects.', { n: boxes.length });
         status.textContent = imported;
+        const { showImportedFontNotice } = await import('../design-import-text.ts');
+        await showImportedFontNotice(res.fontSubstitutions, fc.canvasEl);
         if (componentCount > 0 && tplBox.checked) {
           // Never let the extra pass fail an import that already succeeded.
           try {

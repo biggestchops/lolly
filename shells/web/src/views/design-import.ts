@@ -52,6 +52,7 @@ import {
   type TextBlock,
 } from '@lolly/engine';
 import { rasterSize } from './svg-unpack.ts';
+import { prepareSvgText, readTextContent, anchorToAlign, styleProp, attrNum } from './design-import-text.ts';
 import type { UnpackHandle } from './unpack-open.ts';
 import type { PdfPageSvg, EmbeddedFont, EmbeddedImage, EmbeddedImageScan, ExtractedVector } from './pdf-import.ts';
 import { strFromU8 } from 'fflate';
@@ -74,6 +75,7 @@ interface Inherited { fill: string | null; opacity: number; }
 // The result shape every parse branch returns (feeds Design).
 interface DesignImportResult {
   boxes: unknown[]; width: number; height: number; background: string;
+  fontSubstitutions?: string[];
   /** The map the boxes were finalized with, font vocabulary and all (Penpot
    *  binfile only). Additive: a caller that wants a SECOND pass over the same
    *  file (the components-as-templates pass) hands this back so the deck's
@@ -86,6 +88,7 @@ interface SvgToNodesOpts {
   warn: (msg: string) => void;
   penpot?: boolean;
   zipFiles?: Record<string, Uint8Array> | null;
+  map?: DesignMapOptions;
 }
 // Per-element context threaded through elementToNode / flattenToImage.
 interface ElementCtx {
@@ -207,8 +210,8 @@ export async function parseDesignFile(
   const svgEl = sanitizeSvg(svgText);
   if (!svgEl) throw new Error('This file isn’t a readable SVG. Export your design as SVG and try again.');
 
-  const { nodes, width, height } = await svgToNodes(svgEl, { host, warn });
-  return { boxes: finalizeBoxes(nodes, map), width, height, background: '#ffffff' };
+  const { nodes, width, height, fontSubstitutions } = await svgToNodes(svgEl, { host, warn, map });
+  return { boxes: finalizeBoxes(nodes, map), width, height, background: '#ffffff', fontSubstitutions };
 }
 
 // ---------------------------------------------------------------------------
@@ -309,7 +312,7 @@ export async function parseDesignArtboards(
   const svgText = new TextDecoder('utf-8').decode(buf);
   const svgEl = sanitizeSvg(svgText);
   if (!svgEl) throw new Error('This file isn’t a readable SVG. Export your design as SVG and try again.');
-  const { nodes, width, height } = await svgToNodes(svgEl, { host, warn });
+  const { nodes, width, height } = await svgToNodes(svgEl, { host, warn, map });
   return { frames: [{ name: baseName((file as File).name, 'design'), width, height, boxes: finalizeBoxes(nodes, map) }], background: '#ffffff' };
 }
 
@@ -438,8 +441,8 @@ function sanitizeSvg(svgText: string): SVGSVGElement | null {
  */
 async function svgToNodes(
   svgEl: SVGSVGElement,
-  { host, warn, penpot = false, zipFiles = null }: SvgToNodesOpts,
-): Promise<{ nodes: any[]; width: number; height: number }> {
+  { host, warn, penpot = false, zipFiles = null, map }: SvgToNodesOpts,
+): Promise<{ nodes: any[]; width: number; height: number; fontSubstitutions: string[] }> {
   // Determine the canvas size from the viewBox (preferred - it's the true user space
   // that getCTM maps into) or fall back to width/height attributes.
   const vb = svgEl.viewBox && svgEl.viewBox.baseVal;
@@ -509,7 +512,8 @@ async function svgToNodes(
 
   if (truncated) warn(`This design has a lot of elements - only the first ${MAX_ELEMENTS} were imported.`);
 
-  return { nodes, width: Math.round(canvasW), height: Math.round(canvasH) };
+  const fontSubstitutions = await prepareSvgText(nodes, map);
+  return { nodes, width: Math.round(canvasW), height: Math.round(canvasH), fontSubstitutions };
 }
 
 /**
@@ -749,7 +753,7 @@ async function parsePenpotZip(files: Record<string, Uint8Array>, { host, warn, i
       catch { warn(`Skipped a Penpot page that wasn’t text (${path}).`); continue; }
       const svgEl = sanitizeSvg(svgText);
       if (!svgEl) { warn(`Skipped an unreadable Penpot page (${path}).`); continue; }
-      const { nodes, width: w, height: h } = await svgToNodes(svgEl, { host, warn, penpot: true, zipFiles: files });
+      const { nodes, width: w, height: h } = await svgToNodes(svgEl, { host, warn, penpot: true, zipFiles: files, map });
       allNodes.push(...nodes);
       width = Math.max(width, w); height = Math.max(height, h);
     }
@@ -1458,26 +1462,6 @@ function worldBBox(bbox: { x: number; y: number; width: number; height: number }
   return { x: minX, y: minY, w: Math.max(...xs) - minX, h: Math.max(...ys) - minY };
 }
 
-// Concatenate <text>/<tspan> content, one line per <tspan> (or the whole text if none).
-function readTextContent(el: Element) {
-  const tspans = el.querySelectorAll('tspan');
-  let text: string;
-  if (tspans.length) {
-    text = Array.from(tspans).map((t) => t.textContent || '').join('\n');
-  } else {
-    text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-  }
-  return {
-    text,
-    fg: styleProp(el, 'fill') || el.getAttribute('fill') || '',
-    fontSize: attrNum(el, 'font-size') || parseFloat(styleProp(el, 'font-size')) || 0,
-    fontWeight: el.getAttribute('font-weight') || styleProp(el, 'font-weight') || '',
-    fontFamily: el.getAttribute('font-family') || styleProp(el, 'font-family') || '',
-    textAlign: anchorToAlign(styleProp(el, 'text-anchor') || el.getAttribute('text-anchor')),
-    lineHeight: 0,
-  };
-}
-
 // Serialize the root <defs> of the mounted svg so flattened snippets can resolve
 // gradients / clipPaths / patterns referenced by url(#…).
 function rootDefsHtml(mount: SVGSVGElement): string {
@@ -1488,14 +1472,6 @@ function rootDefsHtml(mount: SVGSVGElement): string {
   } catch {
     return '';
   }
-}
-
-// SVG text-anchor → box textAlign.
-function anchorToAlign(a: unknown): string {
-  const s = String(a || '').toLowerCase();
-  if (s === 'middle') return 'center';
-  if (s === 'end') return 'right';
-  return 'left';
 }
 
 // Read a Penpot `penpot:<name>` attribute robustly across namespace handling.
@@ -1513,24 +1489,6 @@ function penpotAttr(el: Element, name: string): string | null {
     }
   }
   return null;
-}
-
-// Read a CSS property off the element's inline style="" (cheap; no computed styles).
-function styleProp(el: Element, prop: string): string {
-  try {
-    const st = (el as unknown as ElementCSSInlineStyle).style;
-    const v = st && st.getPropertyValue(prop);
-    return v ? v.trim() : '';
-  } catch {
-    return '';
-  }
-}
-
-function attrNum(el: Element, name: string): number | null {
-  const v = el.getAttribute(name);
-  if (v == null || v === '') return null;
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : null;
 }
 
 // A fill that's paintable as a solid colour, else '' (none/currentColor/url(#…)).
@@ -1897,7 +1855,7 @@ async function parsePenpotZipScenes(files: Record<string, Uint8Array>, { host, w
       // them, and image-free pages store directly (cheaper, perfect fidelity).
       const hasZipImage = /<image[\s>]/i.test(svgText) && !/href\s*=\s*"data:/i.test(svgText);
       if (hasZipImage) {
-        const { nodes, width, height } = await svgToNodes(svgEl, { host, warn, penpot: true, zipFiles: files });
+        const { nodes, width, height } = await svgToNodes(svgEl, { host, warn, penpot: true, zipFiles: files, map });
         const boxes = finalizeBoxes(nodes, map);
         if (!boxes.length) continue;
         const asset = await bakeSceneAsset(host, warn, name, boxes, width, height);
@@ -1935,7 +1893,7 @@ async function collectPenpotZipFrames(files: Record<string, Uint8Array>, { host,
     const svgEl = sanitizeSvg(svgText);
     if (!svgEl) { warn(`Skipped an unreadable Penpot page (${path}).`); continue; }
     const name = baseName(path.split('/').pop(), `Page ${frames.length + 1}`);
-    const { nodes, width, height } = await svgToNodes(svgEl, { host, warn, penpot: true, zipFiles: files });
+    const { nodes, width, height } = await svgToNodes(svgEl, { host, warn, penpot: true, zipFiles: files, map });
     const boxes = finalizeBoxes(nodes, map);
     if (boxes.length) frames.push({ name, width, height, boxes });
   }

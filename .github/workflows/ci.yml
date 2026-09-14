@@ -157,6 +157,22 @@ jobs:
         if: matrix.shard == 'browser'
         run: pnpm run install:browser --with-deps
 
+      - name: Start public shell for journey regressions
+        if: matrix.shard == 'browser'
+        run: |
+          mkdir -p artifacts
+          LOLLY_PROFILE=lolly-start pnpm --dir shells/web dev --host 127.0.0.1 --port 4187 --strictPort > artifacts/public-journey-shell.log 2>&1 &
+          for attempt in $(seq 1 40); do
+            if curl --silent --fail http://127.0.0.1:4187/ > /dev/null; then
+              echo 'LOLLY_IMPORT_TEST_URL=http://127.0.0.1:4187' >> "$GITHUB_ENV"
+              echo 'LOLLY_EXPORT_TEST_URL=http://127.0.0.1:4187' >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/public-journey-shell.log
+          exit 1
+
       - name: Install Rust toolchain (Tauri shard)
         if: matrix.shard == 'tauri'
         uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable branch, pinned 2026-08-04
