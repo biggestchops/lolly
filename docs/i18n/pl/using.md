@@ -8,7 +8,7 @@ Praktyczny przewodnik po *korzystaniu* z aplikacji - otwieraniu narzędzia, prac
 
 Ekran startowy to **galeria** - wszystkie narzędzia pogrupowane według kategorii. Kliknij kartę, aby otworzyć narzędzie; jeśli już wcześniej nad nim pracowałeś, przycisk **Continue** wznawia twoją ostatnią sesję. Użyj pola wyszukiwania, aby filtrować po nazwie - albo skorzystaj z [wyszukiwarki](/info/search.html) na pasku u dołu sześciu ekranów list (galeria, Utilities, Projects, Catalogue, Dashboard i Profile), która sięga do twoich zapisanych prac, katalogu i ustawień, nie tylko do narzędzi. Wewnątrz narzędzia pasek ustępuje miejsca własnym elementom narzędzia.
 
-![Galeria narzędzi - każde narzędzie jako karta, pogrupowane według kategorii](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Galeria narzędzi - każde narzędzie jako karta, pogrupowane według kategorii](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Każde narzędzie to widok dzielony: **kontrolki** po jednej stronie, żywy **podgląd** (kanwa) po drugiej. Zmień dowolną kontrolkę, a podgląd zaktualizuje się natychmiast.
 

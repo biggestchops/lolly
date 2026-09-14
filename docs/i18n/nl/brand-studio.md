@@ -29,7 +29,7 @@ Vastgepind aan de **onderkant van de rail** staan de acties die bij het hele des
 - **Tokens (.json)** - het platte design-tokensdocument los, voor een repo, een buildstap of een andere tokenstool.
 - **Versions** - publiceer, activeer en herstel benoemde kopieën van het designsysteem. Verborgen tot er iets van jezelf is om te publiceren (of een `?area=versions`-link er expliciet om vraagt).
 
-![De studio room-rail - Overview, Colours, Type, Logos, Tokens en Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![De studio room-rail - Overview, Colours, Type, Logos, Tokens en Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

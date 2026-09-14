@@ -29,7 +29,7 @@ K **patě lišty** jsou připnuté akce, které patří celému designovému sys
 - **Tokens (.json)** - samotný dokument s design tokeny, pro repozitář, build krok nebo jiný nástroj na tokeny.
 - **Versions** - publikuj, aktivuj a obnovuj pojmenované kopie designového systému. Skrytá, dokud není co publikovat vlastního (nebo o ni jménem nepožádá odkaz `?area=versions`).
 
-![Lišta místností studia - Overview, Colours, Type, Logos, Tokens a Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Lišta místností studia - Overview, Colours, Type, Logos, Tokens a Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

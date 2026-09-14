@@ -604,7 +604,10 @@ const orchRemoved: Array<[number, number]> = [];
         for (const d of decls) {
           if (!d.initializer) { if (!ts.isIdentifier(d.name)) fail(`destructuring without initializer at line ${lineOf(d.getStart(sf))}`); continue; }
           const init = applyEdits(src.slice(d.initializer.getStart(sf), d.initializer.end), d.initializer.getStart(sf), edits.filter((e) => e.start >= d.initializer!.getStart(sf) && e.end <= d.initializer!.end));
-          if (ts.isIdentifier(d.name)) pieces.push(`${ctx}.${d.name.text} = ${init};`);
+          if (ts.isIdentifier(d.name)) {
+            const value = d.type && /^(null|undefined)$/.test(init) ? `${init} as ${CTX}['${d.name.text}']` : init;
+            pieces.push(`${ctx}.${d.name.text} = ${value};`);
+          }
           else pieces.push(ts.isObjectBindingPattern(d.name) ? `(${patternAsAssignment(d.name)} = ${init});` : `${patternAsAssignment(d.name)} = ${init};`);
         }
         // drop the inner edits we just consumed, replace the whole statement
@@ -892,7 +895,9 @@ const blockNeeds = new Map<string, { shared: Set<string>; imports: Set<ts.Symbol
 for (const [b, stmts] of blockStmts) {
   const first = stmts[0]!; const last = stmts[stmts.length - 1]!;
   const from = first.getFullStart(); const to = last.end;
-  const inRange = orchEdits.filter((e) => e.start >= from && e.end <= to);
+  // A zero-width insertion at fullStart publishes the PREVIOUS statement.
+  // Keep it with that declaration, outside the extracted block.
+  const inRange = orchEdits.filter((e) => e.start >= from && e.end <= to && !(e.start === from && e.end === from));
   const varByName = new Map([...vars.values()].map((v) => [v.name, v]));
   for (const [scope, names] of blockScopeAliases.get(b) ?? []) {
     const fnLike = scope as ts.FunctionLikeDeclaration; const bd = fnLike.body ?? fail(`${b.name}: alias scope has no body`);
@@ -967,7 +972,7 @@ for (const m of plan.modules) {
   for (const [b, stmts] of blockStmts) {
     const first = stmts[0]!; const last = stmts[stmts.length - 1]!;
     const from = first.getFullStart(); const to = last.end;
-    for (let i = edits.length - 1; i >= 0; i--) { const e = edits[i]; if (e && e.start >= from && e.end <= to) edits.splice(i, 1); }
+    for (let i = edits.length - 1; i >= 0; i--) { const e = edits[i]; if (e && e.start >= from && e.end <= to && !(e.start === from && e.end === from)) edits.splice(i, 1); }
     edits.push({ start: from, end: to, text: `\n\n  ${blockIsAsync(b) ? 'await ' : ''}${ctx}.${b.module}.${b.name}();` });
   }
   // context creation at the top of the body. Pushed AFTER the block removals: a block whose first
@@ -1009,6 +1014,10 @@ for (const m of plan.modules) {
   if (types.length) reexports.push(`export type { ${types.join(', ')} } from '${relOutFromView}/${PFX}shared.ts';`);
   const modImports = plan.modules.map((m) => `import { ${m.name}Ops } from '${relOutFromView}/${PFX}${fileOf(m.name)}.ts';`);
   const newBlock = [...importLines(remainingImports, remainingNeedsShared, false), `import type { ${CTX} } from '${relOutFromView}/${PFX}context.ts';`, ...modImports, ...reexports].join('\n');
+  if (!importStmts.length) {
+    const at = sf.statements[0]?.getStart(sf) ?? 0;
+    edits.push({ start: at, end: at, text: `${newBlock}\n` });
+  }
   importStmts.forEach((st, i) => { edits.push({ start: st.getStart(sf), end: st.end, text: i === 0 ? newBlock : '' }); });
   const out = applyEdits(src, 0, edits).replace(/\n{4,}/g, '\n\n\n');
   mkdirSync(path.dirname(orchestratorOut), { recursive: true });

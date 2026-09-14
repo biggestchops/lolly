@@ -8,7 +8,7 @@ Panduan praktikal untuk benar-benar *menggunakan* aplikasi ini - membuka alat, b
 
 Skrin utama ialah **galeri** - setiap alat, dikumpulkan mengikut kategori. Klik sesuatu kad untuk membuka alat itu; jika anda pernah menggunakannya sebelum ini, butang **Continue** menyambung semula sesi terkini anda. Gunakan kotak carian untuk menapis mengikut nama - atau [Cari](/info/search.html) dari bar di bahagian bawah enam skrin senarai (galeri, Utilities, Projects, Katalog, Dashboard dan Profile), yang turut mencapai kerja tersimpan anda, katalog dan tetapan anda selain daripada alat. Di dalam sesuatu alat, bar itu berundur untuk memberi ruang kepada antara muka alat itu sendiri.
 
-![Galeri alat - setiap alat sebagai satu kad, dikumpulkan mengikut kategori](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Galeri alat - setiap alat sebagai satu kad, dikumpulkan mengikut kategori](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Setiap alat ialah paparan terbahagi: **kawalan** di satu sisi, **pratonton** langsung (kanvas) di sisi yang lain. Ubah mana-mana kawalan dan pratonton dikemas kini serta-merta.
 

@@ -47,7 +47,7 @@ let browserPromise: Promise<import('playwright-core').Browser> | null = null;
  * Launch (or reuse) the scoped Chromium. An explicit channel/binary wins; otherwise
  * Chromium is loaded from the resolved browsers dir.
  */
-export async function getBrowser(): Promise<import('playwright-core').Browser> {
+export async function getBrowser({ graphics = 'software' }: { graphics?: 'software' | 'auto' } = {}): Promise<import('playwright-core').Browser> {
   if (!browserPromise) {
     browserPromise = (async () => {
       const channel = process.env.LOLLY_BROWSER_CHANNEL;   // e.g. 'chrome'
@@ -77,7 +77,9 @@ export async function getBrowser(): Promise<import('playwright-core').Browser> {
           // positioning still differ per-OS, so raster BYTES are not cross-OS
           // identical. Mirrored in services/mcp/src/render.ts and the byte-golden
           // test harnesses (export-format-golden / export-text-emission).
-          args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
+          // Docs captures render a whole gallery, including 3D examples. They
+          // can use the available GPU; software remains the default for exports.
+          args: ['--no-sandbox', ...(graphics === 'software' ? ['--use-angle=swiftshader'] : []), '--enable-unsafe-swiftshader',
                  '--force-color-profile=srgb', '--font-render-hinting=none'],
         });
       } catch (err) {

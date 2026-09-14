@@ -8,7 +8,7 @@ Praktický průvodce tím, jak aplikaci opravdu *používat* - otevřít nástro
 
 Domovská obrazovka je **galerie** - všechny nástroje, seskupené podle kategorie. Klikni na kartu a nástroj se otevře; pokud jsi na něm už dřív pracoval/a, tlačítko **Pokračovat** obnoví tvou poslední relaci. Vyhledávací pole filtruje podle názvu - nebo použij [Hledat](/info/search.html) na liště u paty šesti přehledových obrazovek (galerie, Utility, Projekty, Katalog, Přehled a Profil), která kromě nástrojů sáhne i do tvé uložené práce, do katalogu a do nastavení. Uvnitř nástroje lišta ustoupí ovládacím prvkům samotného nástroje.
 
-![Galerie nástrojů - každý nástroj jako karta, seskupené podle kategorie](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Galerie nástrojů - každý nástroj jako karta, seskupené podle kategorie](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Každý nástroj je rozdělené zobrazení: na jedné straně **ovládací prvky**, na druhé živý **náhled** (plátno). Změň libovolný ovládací prvek a náhled se okamžitě aktualizuje.
 

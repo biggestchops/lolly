@@ -29,7 +29,7 @@
 - **Tokens (.json)** - 순수한 디자인 토큰 문서만 따로, 저장소나 빌드 단계, 다른 토큰 도구용으로 씁니다.
 - **Versions** - 디자인 시스템의 이름 붙인 사본을 게시, 활성화, 복원합니다. 게시할 자신의 것이 생기기 전까지는(또는 `?area=versions` 링크가 직접 요청하기 전까지는) 숨겨져 있습니다.
 
-![스튜디오 룸 레일 - Overview, Colours, Type, Logos, Tokens, Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![스튜디오 룸 레일 - Overview, Colours, Type, Logos, Tokens, Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

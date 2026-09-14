@@ -29,7 +29,7 @@ Fästa vid **radens nederkant** finns åtgärderna som hör till hela designsyst
 - **Tokens (.json)** - det rena design-tokens-dokumentet för sig, för ett repo, ett byggsteg eller ett annat tokens-verktyg.
 - **Versioner** - publicera, aktivera och återställ namngivna kopior av designsystemet. Dold tills det finns något eget att publicera (eller en `?area=versions`-länk begär det vid namn).
 
-![Studions rumsrad - Översikt, Färger, Typsnitt, Loggor, Tokens och Filer](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Studions rumsrad - Översikt, Färger, Typsnitt, Loggor, Tokens och Filer](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Översikt
 

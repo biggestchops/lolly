@@ -8,7 +8,7 @@ Un guide pratique pour *utiliser* concrètement l'application - ouvrir un outil,
 
 L'écran d'accueil est la **galerie** - tous les outils, regroupés par catégorie. Clique sur une carte pour ouvrir l'outil ; si tu y as déjà travaillé, un bouton **Continuer** reprend ta session la plus récente. Utilise la zone de recherche pour filtrer par nom - ou lance une [Recherche](/info/search.html) depuis la barre au pied des six écrans de liste (la galerie, les Utilitaires, Projets, le Catalogue, le Tableau de bord et Profil), qui atteint ton travail enregistré, le catalogue et tes réglages en plus des outils. Dans un outil, la barre s'efface au profit de l'habillage propre à l'outil.
 
-![La galerie d'outils - chaque outil sous forme de carte, regroupés par catégorie](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![La galerie d'outils - chaque outil sous forme de carte, regroupés par catégorie](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Chaque outil se présente en vue divisée : les **contrôles** d'un côté, un **aperçu** en direct (le canevas) de l'autre. Modifie n'importe quel contrôle et l'aperçu se met à jour instantanément.
 

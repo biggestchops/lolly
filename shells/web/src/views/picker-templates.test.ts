@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 import { JSDOM } from 'jsdom';
-import { matchesPickerTemplate, templatesPaneHtml } from './picker-templates.ts';
+import { matchesPickerTemplate, templatesPaneHtml, mountTemplatesTab } from './picker-templates.ts';
 import { templateCard, type PickerTemplate } from './picker-cards.ts';
 
 // picker.ts imports its own stylesheet (the lazy-view pattern), which Node cannot load.
@@ -57,6 +57,71 @@ const TOOLS = [
   { id: 'qr-code', name: 'QR Code', exportable: true, formats: ['svg', 'png'] },
   { id: 'chart', name: 'Chart', exportable: true, formats: ['svg', 'png'] },
 ];
+
+test('a failed template list offers retry and keeps available partial results', async () => {
+  const pane = document.createElement('div');
+  document.body.append(pane);
+  let tries = 0;
+  let partial = true;
+  const tab = mountTemplatesTab({
+    list: async () => { if (++tries === 1) throw new Error('offline'); return TEMPLATES; },
+    error: () => partial ? 'Saved templates unavailable' : null,
+    onOpen() {}, onQuickAdd: async () => true,
+  }, { pane, flash() {}, close() {}, onLoaded: () => tab.render('') });
+  await settle();
+  assert.match(pane.textContent!, /could not be loaded/);
+  assert.doesNotMatch(pane.textContent!, /No templates yet/);
+  tab.handle(pane.querySelector<HTMLElement>('[data-template-retry]')!);
+  await settle();
+  assert.equal(pane.querySelectorAll('[data-template-ref]').length, 3);
+  assert.ok(pane.querySelector('[data-template-retry]'));
+  partial = false;
+  tab.handle(pane.querySelector<HTMLElement>('[data-template-retry]')!);
+  await settle();
+  assert.equal(pane.querySelector('[data-template-retry]'), null);
+  tab.destroy(); pane.remove();
+});
+
+test('quick add is single-flight, reports a rejection, and stays silent on cancel', async () => {
+  const pane = document.createElement('div');
+  document.body.append(pane);
+  const flashes: unknown[] = [];
+  let calls = 0;
+  let fail!: (reason: Error) => void;
+  const tab = mountTemplatesTab({
+    list: async () => TEMPLATES,
+    onOpen() {},
+    onQuickAdd: async () => { calls++; return calls === 1 ? new Promise((_, reject) => { fail = reject; }) : { ok: false, silent: true }; },
+  }, { pane, flash: (_, result) => { flashes.push(result); }, close() {}, onLoaded: () => tab.render('') });
+  await settle();
+  const quick = pane.querySelector<HTMLElement>('[data-quickadd-template]')!;
+  tab.handle(quick); tab.handle(quick);
+  assert.equal(calls, 1);
+  fail(new Error('Quota exceeded'));
+  await settle();
+  assert.deepEqual(flashes, [{ ok: false }]);
+  tab.handle(quick);
+  await settle();
+  assert.equal(calls, 2);
+  assert.equal(flashes.length, 1);
+  tab.destroy(); pane.remove();
+});
+
+test('closing the tab cancels previews and ignores a late template list', async () => {
+  const pane = document.createElement('div');
+  let loaded = 0;
+  let stopped = 0;
+  let finish!: (list: PickerTemplate[]) => void;
+  const tab = mountTemplatesTab({
+    list: () => new Promise(resolve => { finish = resolve; }),
+    hydrate: () => () => { stopped++; },
+    onOpen() {}, onQuickAdd: async () => true,
+  }, { pane, flash() {}, close() {}, onLoaded: () => { loaded++; } });
+  tab.render(''); tab.destroy(); finish(TEMPLATES);
+  await settle();
+  assert.equal(stopped, 1);
+  assert.equal(loaded, 0);
+});
 
 function makeHost() {
   return {

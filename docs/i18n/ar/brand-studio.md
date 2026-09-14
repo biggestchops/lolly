@@ -29,7 +29,7 @@
 - **الرموز (.json)** - مستند رموز التصميم الصِرف بمفرده، لمستودع أو خطوة بناء أو أداة رموز أخرى.
 - **الإصدارات** - انشر وفعّل واستعد نسخا مسماة من نظام العلامة التجارية. يظل مخفيا حتى يكون هناك شيء خاص بك لنشره (أو يطلبه رابط `?area=versions` بالاسم).
 
-![شريط غرف الاستوديو - نظرة عامة، الألوان، الخطوط، الشعارات، الرموز والملفات](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![شريط غرف الاستوديو - نظرة عامة، الألوان، الخطوط، الشعارات، الرموز والملفات](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## نظرة عامة
 

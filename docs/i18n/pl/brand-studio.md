@@ -29,7 +29,7 @@ Przypięte do **dolnej krawędzi paska** są akcje należące do całego systemu
 - **Tokens (.json)** - sam dokument tokenów projektowych, do repozytorium, kroku budowania lub innego narzędzia do tokenów.
 - **Versions** - publikuj, aktywuj i przywracaj nazwane kopie systemu projektowego. Ukryte, dopóki nie ma nic własnego do opublikowania (albo link `?area=versions` nie poprosi o to po nazwie).
 
-![Pasek pokoi studia - Overview, Colours, Type, Logos, Tokens i Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Pasek pokoi studia - Overview, Colours, Type, Logos, Tokens i Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

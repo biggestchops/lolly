@@ -8,7 +8,7 @@ Ein praktischer Leitfaden zum tatsächlichen *Verwenden* der App - ein Tool öff
 
 Der Startbildschirm ist die **Galerie** - jedes Tool, nach Kategorie gruppiert. Klicken Sie auf eine Karte, um das Tool zu öffnen; wenn Sie schon einmal daran gearbeitet haben, setzt die Schaltfläche **Weiter** Ihre jüngste Sitzung fort. Filtern Sie mit dem Suchfeld nach Namen - oder nutzen Sie die [Suche](/info/search.html) in der Leiste am Fuß der sechs Übersichtsansichten (Galerie, Utilities, Projekte, Katalog, Dashboard und Profil), die neben den Tools auch Ihre gespeicherte Arbeit, den Katalog und Ihre Einstellungen erreicht. Innerhalb eines Tools tritt die Leiste zur Seite und macht der Oberfläche des Tools Platz.
 
-![Die Tool-Galerie - jedes Tool als Karte, nach Kategorie gruppiert](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Die Tool-Galerie - jedes Tool als Karte, nach Kategorie gruppiert](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Jedes Tool ist eine geteilte Ansicht: **Steuerelemente** auf der einen Seite, eine Live-**Vorschau** (die Zeichenfläche) auf der anderen. Ändern Sie ein Steuerelement, und die Vorschau aktualisiert sich sofort.
 

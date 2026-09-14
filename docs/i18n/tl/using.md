@@ -8,7 +8,7 @@ Isang praktikal na gabay sa aktuwal na *paggamit* ng app - pagbukas ng tool, pag
 
 Ang home screen ay ang **gallery** - lahat ng tool, nakagrupo ayon sa kategorya. I-click ang isang card para buksan ang tool; kung nagtrabaho ka na rito dati, ibabalik ng **Continue** na button ang pinakahuli mong session. Gamitin ang search box para mag-filter ayon sa pangalan - o mag-[Search](/info/search.html) mula sa bar sa ibaba ng anim na listing screen (ang gallery, Utilities, Projects, ang Catalogue, ang Dashboard at Profile), na umaabot sa naka-save mong gawa, sa catalogue at sa mga setting mo bukod pa sa mga tool. Sa loob ng isang tool, umuurong ang bar para sa sariling chrome ng tool.
 
-![Ang tool gallery - bawat tool bilang isang card, nakagrupo ayon sa kategorya](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Ang tool gallery - bawat tool bilang isang card, nakagrupo ayon sa kategorya](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Bawat tool ay isang split view: **controls** sa isang gilid, at buhay na **preview** (ang canvas) sa kabila. Baguhin ang alinmang control at agad na nag-a-update ang preview.
 

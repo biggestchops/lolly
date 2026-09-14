@@ -211,11 +211,7 @@ test('a strip that will never rotate drops its nav and dots entirely', (t) => {
 test('the view builds its nav and dots from the count, and clears pending where the look arrives', () => {
   assert.match(VIEW, /const dots = carouselDotsMarkup\(slideCount\);/);
   assert.match(VIEW, /const nav = carouselNavMarkup\(slideCount\);/);
-  // Both halves of the image contract: a decode clears the dot, an error clears it too.
-  assert.match(VIEW, /img\.addEventListener\('load', \(\) => markLookReady\(gcar, slide\), \{ once: true \}\);/);
-  assert.match(VIEW, /img\.addEventListener\('error', \(\) => markLookFailed\(gcar, slide\), \{ once: true \}\);/);
-  // The render's own failure path (a throw before any image src) must clear it as well.
-  assert.match(VIEW, /catch \(e\) \{[\s\S]{0,200}markLookFailed\(gcar, slide\);/);
+  assert.match(VIEW, /await loadGalleryLook\(gcar, slide,/);
   // A strip with no renders coming loses its nav rather than sitting pending forever.
   assert.match(VIEW, /if \(perfUiOn\(\)\) \{ gcar\.classList\.add\('has-art'\); stripCarouselNav\(gcar\); return; \}/);
   // The other way a look could sit pending for good: a tile with no box (filtered out
@@ -256,18 +252,41 @@ test('the pending and failed dot states are styled, and only the pulse is motion
   assert.match(CSS, /\.gcar-nav\[data-nav-inert\]:hover \{ background: rgba\(0, 0, 0, \.42\); \}/);
 });
 
-test('the inert arrow is a DATA attribute, because the arrows are aria-hidden', () => {
-  // These arrows carry aria-hidden and tabindex="-1" by design: the card's own link is
-  // what assistive tech is offered, and the strip is decorative beside it. An
-  // aria-disabled on a node no accessibility tree contains would be an ARIA name worn
-  // by a CSS hook - so the inert state says what it is instead.
-  assert.equal(CAR_INERT_ATTR, 'data-nav-inert');
-  assert.match(carouselNavMarkup(2), /tabindex="-1" aria-hidden="true" data-nav-inert /);
-  assert.equal(/aria-disabled/.test(carouselNavMarkup(2)), false, 'no ARIA state on an aria-hidden control');
-  assert.equal(
-    /\.gcar-nav\[aria-disabled/.test(CSS), false,
-    'and the sheet paints the data attribute, so the two cannot drift',
-  );
+test('the example controls are named and expose their availability to assistive technology', (t) => {
+  const s = strip(t, 3);
+  for (const button of s.nav()) {
+    assert.equal(button.hasAttribute('aria-hidden'), false);
+    assert.ok(button.getAttribute('aria-label'));
+    assert.equal(button.tabIndex, 0);
+    assert.equal(button.getAttribute('aria-disabled'), 'true');
+  }
+  markLookReady(s.gcar, s.slides()[0]!);
+  markLookReady(s.gcar, s.slides()[2]!);
+  assert.equal(s.nav()[0]!.getAttribute('aria-disabled'), 'false');
+  assert.equal(s.dots()[1]!.getAttribute('aria-disabled'), 'true');
+  s.click('.gcar-next');
+  assert.equal(s.at(), 2);
+  assert.equal(s.dots()[2]!.getAttribute('aria-current'), 'true');
+});
+
+test('a completed swipe to a pending or failed pane returns to a ready example', (t) => {
+  const s = strip(t, 3);
+  markLookReady(s.gcar, s.slides()[0]!);
+  markLookFailed(s.gcar, s.slides()[2]!);
+  s.track.scrollLeft = 2 * SLIDE_W;
+  s.track.dispatchEvent(new s.win.Event('scrollend'));
+  assert.equal(s.at(), 0);
+});
+
+test('manual example navigation respects the app reduce-motion preference', (t) => {
+  const s = strip(t, 2);
+  markLookReady(s.gcar, s.slides()[0]!);
+  markLookReady(s.gcar, s.slides()[1]!);
+  const calls: ScrollToOptions[] = [];
+  s.track.scrollTo = ((options: ScrollToOptions) => calls.push(options)) as typeof s.track.scrollTo;
+  s.win.document.documentElement.dataset.a11yMotion = 'reduce';
+  s.click('.gcar-next');
+  assert.equal(calls[0]?.behavior, 'instant');
 });
 
 test('the strip and the capture pin share ONE name for pending, and it is look-specific', () => {

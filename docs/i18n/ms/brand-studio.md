@@ -29,7 +29,7 @@ Disematkan di **kaki rel** adalah tindakan yang tergolong kepada keseluruhan sis
 - **Tokens (.json)** - dokumen token reka bentuk yang biasa dengan sendirinya, untuk repo, satu langkah binaan atau alat token yang lain.
 - **Versions** - terbitkan, aktifkan dan pulihkan salinan bernama sistem reka bentuk. Tersembunyi sehingga ada sesuatu milik anda sendiri untuk diterbitkan (atau satu pautan `?area=versions` memintanya mengikut nama).
 
-![Rel bilik studio - Overview, Colours, Type, Logos, Tokens dan Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Rel bilik studio - Overview, Colours, Type, Logos, Tokens dan Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

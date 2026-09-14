@@ -1245,7 +1245,18 @@ html[data-a11y-previews="hidden"] .gtile .tile-check { top: auto; bottom: 6px; }
   .gcar-deck-page { animation: none; }
 }
 
-/* Prev / next - fine-pointer only; touch just swipes the strip. Revealed on hover. */
+/* Example controls stay visible during loading and on touch screens. */
+.gcar-slide.is-failed::after {
+  content: attr(data-preview-label);
+  position: absolute;
+  inset: auto 12px 36px;
+  text-align: center;
+  font-size: var(--fs-2xs);
+  color: hsl(var(--foreground));
+  background: hsl(var(--background) / .9);
+  border-radius: var(--radius);
+  padding: 4px;
+}
 .gcar-nav {
   position: absolute;
   top: 50%;
@@ -1263,7 +1274,7 @@ html[data-a11y-previews="hidden"] .gtile .tile-check { top: auto; bottom: 6px; }
   color: #fff;
   background: rgba(0, 0, 0, .42);
   cursor: pointer;
-  opacity: 0;
+  opacity: .65;
   transition: opacity var(--dur-1), background var(--dur-1);
 }
 .gcar-nav svg { width: calc(15px * var(--a11y-fs)); height: calc(15px * var(--a11y-fs)); }
@@ -1274,13 +1285,13 @@ html[data-a11y-previews="hidden"] .gtile .tile-check { top: auto; bottom: 6px; }
 /* Fewer than two looks have landed, so there is nowhere to step: the arrow is still
    THERE (the affordance a cold tile needs) but dimmed, unlit on hover and inert - the
    click handler refuses to move too (views/gallery-carousel.ts). It becomes a live
-   control the moment a second look decodes. `data-nav-inert` rather than
-   `aria-disabled`, because these arrows are aria-hidden: the state is a paint, and a
-   screen reader is never offered the control in the first place. */
+   control the moment a second look decodes. The matching aria-disabled state
+   reports the same availability to assistive technology. */
 .gcar:hover .gcar-nav[data-nav-inert], .gcar:focus-within .gcar-nav[data-nav-inert] { opacity: .42; }
 .gcar-nav[data-nav-inert] { cursor: default; }
+.gcar-nav[data-nav-inert] { opacity: .42; }
 .gcar-nav[data-nav-inert]:hover { background: rgba(0, 0, 0, .42); }
-@media (hover: none) { .gcar-nav { display: none; } }
+@media (hover: none) { .gcar-nav { width: 44px; height: 44px; } }
 
 /* Dot position indicator - bottom-centre, above the art. */
 .gcar-dots {

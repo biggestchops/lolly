@@ -8,7 +8,7 @@ En praktisk guide till att faktiskt *använda* appen - att öppna ett verktyg, a
 
 Startskärmen är **galleriet** - alla verktyg, grupperade efter kategori. Klicka på ett kort för att öppna verktyget; om du har arbetat med det tidigare återupptar en **Fortsätt**-knapp din senaste session. Använd sökrutan för att filtrera efter namn - eller [Sök](/info/search.html) från fältet längst ner i de sex listvyerna (galleriet, Utilities, Projekt, Katalogen, Översikten och Profil), som når ditt sparade arbete, katalogen och dina inställningar lika väl som verktygen. Inne i ett verktyg drar sig fältet undan för verktygets egen ram.
 
-![Verktygsgalleriet - varje verktyg som ett kort, grupperat efter kategori](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Verktygsgalleriet - varje verktyg som ett kort, grupperat efter kategori](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Varje verktyg är en delad vy: **kontroller** på ena sidan, en live **förhandsvisning** (arbetsytan) på den andra. Ändra en kontroll så uppdateras förhandsvisningen omedelbart.
 

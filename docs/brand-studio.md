@@ -27,9 +27,10 @@ Pinned to the **foot of the rail** are the actions that belong to the whole desi
 - **Tray** - the candidates a scan turned up but hasn't committed. It stays hidden until a scan actually keeps something, and carries a count when it does; nothing in it changes your brand until you press Add on that row.
 - **Export** - writes the whole design system as one `LollyBrand-….lolly`.
 - **Tokens (.json)** - the plain design-tokens document on its own, for a repo, a build step or another tokens tool.
+- **Restore brand settings** - return to a checkpoint saved before an import or a replacement of brand settings.
 - **Versions** - publish, activate and restore named copies of the design system. Hidden until there's something of your own to publish (or a `?area=versions` link asks for it by name).
 
-![The studio room rail - Overview, Colours, Type, Logos, Tokens and Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![The studio room rail - Overview, Colours, Type, Logos, Tokens and Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 
@@ -269,6 +270,12 @@ A source install takes a **checkpoint first**, so "revert to before the import" 
 **Export** at the foot of the rail writes a single **`LollyBrand-….lolly`** - your tokens, fonts, logos and theme preference, with an integrity manifest it verifies on the way back in. Web releases before 1.0.7 named the same payload `.zip`; that legacy spelling is still accepted. Beside it, **Tokens (.json)** writes the plain design-tokens document on its own: no fonts, no logos, just the tokens, which is what a repo, a CI step or another tokens tool actually reads.
 
 Bringing one back is **Add from… → Design tokens or a design file** (above), or a drag-and-drop onto the studio. This is how a colleague hands you a brand, or how you carry one to a second install - no account, no cloud. To bring in a brand from the command line instead, see [`ingest:brand`](/info/configuration.html#brand-packs).
+
+## Restore earlier settings
+
+Choose **Restore brand settings** at the foot of the rail, select a dated checkpoint, then press **Restore**. It restores colours, type settings and other brand tokens for the active brand. Font and image files stay as they are.
+
+Lolly saves your current settings as **Before restore** before applying the checkpoint. Choose that checkpoint to reverse the restore, including after closing and reopening the browser. The latest 20 checkpoints are kept on this device. If storage cannot be read or the current settings cannot be saved, the dialog reports the problem so you can retry.
 
 ## Versions
 

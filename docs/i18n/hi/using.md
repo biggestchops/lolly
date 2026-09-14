@@ -8,7 +8,7 @@
 
 होम स्क्रीन ही **गैलरी** है - हर टूल, श्रेणी के अनुसार समूहित। किसी कार्ड पर क्लिक करें और टूल खुल जाता है; अगर आपने उस पर पहले काम किया है, तो **Continue** बटन आपका सबसे हालिया सेशन फिर से शुरू कर देता है। नाम से फ़िल्टर करने के लिए सर्च बॉक्स का उपयोग करें - या छह लिस्टिंग स्क्रीन (गैलरी, Utilities, Projects, कैटलॉग, डैशबोर्ड और Profile) के नीचे लगी बार से [सर्च](/info/search.html) करें, जो टूल के साथ-साथ आपके सहेजे गए काम, कैटलॉग और आपकी सेटिंग तक भी पहुँचती है। किसी टूल के भीतर यह बार हट जाती है ताकि टूल का अपना क्रोम दिख सके।
 
-![The tool gallery - every tool as a card, grouped by category](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![The tool gallery - every tool as a card, grouped by category](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 हर टूल एक स्प्लिट व्यू है: एक तरफ़ **कंट्रोल**, दूसरी तरफ़ लाइव **प्रीव्यू** (कैनवस)। कोई भी कंट्रोल बदलें और प्रीव्यू तुरंत अपडेट हो जाता है।
 

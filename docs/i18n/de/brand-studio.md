@@ -29,7 +29,7 @@ Am **unteren Ende der Leiste** angeheftet sind die Aktionen, die zum gesamten De
 - **Tokens (.json)** - das reine Design-Tokens-Dokument für sich allein, für ein Repo, einen Build-Schritt oder ein anderes Tokens-Tool.
 - **Versions** - veröffentlicht, aktiviert und stellt benannte Kopien des Designsystems wieder her. Verborgen, bis es etwas Eigenes zum Veröffentlichen gibt (oder ein `?area=versions`-Link ausdrücklich danach verlangt).
 
-![Die Studio-Raumleiste - Overview, Colours, Type, Logos, Tokens und Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Die Studio-Raumleiste - Overview, Colours, Type, Logos, Tokens und Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

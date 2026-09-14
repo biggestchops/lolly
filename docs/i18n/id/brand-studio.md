@@ -29,7 +29,7 @@ Disematkan di **kaki rel** adalah aksi-aksi yang menjadi milik keseluruhan siste
 - **Tokens (.json)** - dokumen design-tokens polos secara terpisah, untuk repo, langkah build atau tool token lain.
 - **Versions** - publikasikan, aktifkan dan pulihkan salinan bernama dari sistem desain. Tersembunyi sampai ada sesuatu milik Anda sendiri untuk dipublikasikan (atau tautan `?area=versions` memintanya dengan nama).
 
-![Rel ruang studio - Overview, Colours, Type, Logos, Tokens dan Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Rel ruang studio - Overview, Colours, Type, Logos, Tokens dan Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

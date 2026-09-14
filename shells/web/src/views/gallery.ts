@@ -32,7 +32,7 @@ import { syncCatalog, prefetchAssetsById, defaultHiddenToolIds } from '../catalo
 import { shippedTemplateRef, userTemplateRef } from '../lib/template-ref.ts';
 import { createUserTemplateStore, type UserTemplate } from '../lib/user-templates.ts';
 import { galleryTemplates, templateLine, templateSearchTerms, templateMotionPreviews, infoTemplates, NO_INFO_TEMPLATES, type InfoTemplates } from './gallery-templates.ts';
-import { activeExampleIndex, carouselDotsMarkup, carouselNavMarkup, markLookFailed, markLookReady, stripCarouselNav, wireCarousel } from './gallery-carousel.ts';
+import { activeExampleIndex, carouselDotsMarkup, carouselNavMarkup, markLookFailed, stripCarouselNav, wireCarousel } from './gallery-carousel.ts';
 import { pinTool, unpinTool, pinnedToolIds, pinnedRenderLayouts } from '../lib/offline-pins.ts';
 import { getInjectedTools } from '../lib/injected-tools.ts';
 import { LEAD_TOOL_ORDER } from '../lib/lead-tools.ts';
@@ -45,6 +45,7 @@ import { mountFeaturedRow, resolveExamples } from '../components/featured-row.ts
 import { armMotionPreviews, playMotionIn, stopMotionIn } from '../lib/preview-media.ts';
 import { galleryPreviewLooks, galleryLookHref, renderGalleryLook } from '../lib/gallery-preview.ts';
 import { createPreviewQueue } from '../lib/preview-queue.ts';
+import { loadGalleryLook } from './gallery-look-loader.ts';
 import { renderFeaturedVariant, renderFeaturedPages, displayFormatOf } from '../lib/featured-render.ts';
 import { currentTheme } from '../theme.ts';
 import { prefersReducedMotion } from '../lib/a11y-prefs.ts';
@@ -1314,29 +1315,15 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
     const looks = resolveExamples(tool);
     const slides = [...gcar.querySelectorAll<HTMLElement>('.gcar-slide--ex')];
     const renderSlide = async (slide: HTMLElement): Promise<void> => {
-      const img = slide.querySelector<HTMLImageElement>('.gcar-img');
       const i = Number(slide.dataset.exIndex);
       const look = looks[i];
-      if (!gcar.isConnected || !img || img.getAttribute('src')) return;
-      // A dot with no look behind it must not sit pending for the life of the page.
       if (!look) { markLookFailed(gcar, slide); return; }
-      try {
+      await loadGalleryLook(gcar, slide, async () => {
         const [thumb, href] = await Promise.all([
           renderGalleryLook(host, tool, i, look), galleryLookHref(tool.id, look),
         ]);
-        if (!gcar.isConnected) return;
-        // The look's dot leaves its pending state in exactly these two handlers: the
-        // strip's state is only ever read off the slides (gallery-carousel.ts).
-        img.addEventListener('load', () => markLookReady(gcar, slide), { once: true });
-        img.addEventListener('error', () => markLookFailed(gcar, slide), { once: true });
-        img.src = thumb;
-        slide.querySelector('a')?.setAttribute('href', href);
-        await img.decode();
-      } catch (e) {
-        // Keep the brand-coloured icon when the tool cannot render a preview.
-        markLookFailed(gcar, slide);
-        host.log?.('warn', `Gallery preview failed for ${toolId}`, { error: String(e) });
-      }
+        return { thumb, href };
+      });
     };
     slides.forEach((slide, i) => previewQueue.add({
       priority: () => previewPriority(gcar, i === 0),
@@ -2505,14 +2492,14 @@ function cardMarkup(
     visual = `
       <div class="gcar" data-tool="${escape(tool.id)}" data-paged="1">
         ${iconBackdrop(tool.icon)}
-        <ol class="gcar-track"><li class="gcar-slide gcar-slide--ex" data-ex-index="0"><a class="gcar-open" href="${openHref}" data-new-tool="${escape(tool.id)}" tabindex="-1" aria-hidden="true"><img class="gcar-img" alt="" aria-hidden="true" decoding="async"></a></li></ol>
+        <ol class="gcar-track"><li class="gcar-slide gcar-slide--ex" data-ex-index="0" data-look-pending><a class="gcar-open" href="${openHref}" data-new-tool="${escape(tool.id)}" tabindex="-1" aria-hidden="true"><img class="gcar-img" alt="" aria-hidden="true" decoding="async"></a></li></ol>
         ${statusBadge}
       </div>`;
   } else if (hasExamples) {
     // One slide per template, or the tool's default state. Images arrive from
     // the active-brand render cache as the tile approaches the viewport.
     const exSlides = exampleLooks.map(({ i }, k) =>
-      `<li class="gcar-slide gcar-slide--ex" data-ex-index="${i}"${tool.templates?.[i]?.motion ? ` data-motion-template="${escape(tool.templates[i]!.id)}"` : ''}>
+      `<li class="gcar-slide gcar-slide--ex" data-ex-index="${i}"${exampleLooks.length === 1 ? ' data-look-pending' : ''}${tool.templates?.[i]?.motion ? ` data-motion-template="${escape(tool.templates[i]!.id)}"` : ''}>
          <a class="gcar-open" href="${openHref}" data-new-tool="${escape(tool.id)}" tabindex="-1" aria-hidden="true">
            <img class="gcar-img" alt="" aria-hidden="true"${eager && k === 0 ? ' fetchpriority="high"' : ''} decoding="async">
          </a>

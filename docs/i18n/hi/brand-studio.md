@@ -29,7 +29,7 @@
 - **Tokens (.json)** - plain design-tokens document अकेला, किसी repo, build step या दूसरे tokens टूल के लिए।
 - **Versions** - design system की नामित प्रतियाँ publish, activate और restore करें। तब तक छिपा रहता है जब तक publish करने के लिए आपका अपना कुछ न हो (या कोई `?area=versions` link नाम लेकर इसकी माँग न करे)।
 
-![स्टूडियो का room rail - Overview, Colours, Type, Logos, Tokens और Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![स्टूडियो का room rail - Overview, Colours, Type, Logos, Tokens और Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

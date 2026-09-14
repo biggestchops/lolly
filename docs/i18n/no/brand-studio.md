@@ -29,7 +29,7 @@ Festet til **bunnen av skinnen** er handlingene som hører til hele designsystem
 - **Tokens (.json)** - selve tokens-dokumentet alene, for et repo, et byggetrinn eller et annet tokens-verktøy.
 - **Versjoner** - publiser, aktiver og gjenopprett navngitte kopier av designsystemet. Skjult til det finnes noe eget å publisere (eller en `?area=versions`-lenke ber om det ved navn).
 
-![Skinnen med studiorom - Oversikt, Farger, Type, Logoer, Tokens og Filer](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Skinnen med studiorom - Oversikt, Farger, Type, Logoer, Tokens og Filer](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Oversikt
 

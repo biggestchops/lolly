@@ -29,7 +29,7 @@
 - **Tokens (.json)** - خالص ڈیزائن-ٹوکنز دستاویز اپنے طور پر، کسی repo، بلڈ اسٹیپ یا کسی دوسرے ٹوکنز ٹول کے لیے۔
 - **Versions** - ڈیزائن سسٹم کی نامزد کاپیاں شائع، فعال اور بحال کریں۔ یہ اُس وقت تک چھپا رہتا ہے جب تک شائع کرنے کے لیے آپ کا اپنا کچھ نہ ہو (یا کوئی `?area=versions` لنک اسے نام سے طلب کرے)۔
 
-![اسٹوڈیو کمرہ ریل - Overview, Colours, Type, Logos, Tokens اور Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![اسٹوڈیو کمرہ ریل - Overview, Colours, Type, Logos, Tokens اور Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

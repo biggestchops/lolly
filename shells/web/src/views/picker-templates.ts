@@ -16,6 +16,9 @@ import type { CollectResult } from './picker.ts';
 export interface CollectTemplates {
   /** Every template a person can start from, in display order. */
   list(): Promise<readonly PickerTemplate[]>;
+  /** A source can supply partial results while reporting an unavailable store. */
+  error?(): string | null;
+  hydrate?(root: HTMLElement): () => void;
   /** Open the tool seeded from this template. Navigates, so the dialog closes. */
   onOpen(ref: string): void;
   /** File a project from this template without opening the editor. */
@@ -34,6 +37,7 @@ export interface TemplatesTabDeps {
 }
 
 export interface TemplatesTab {
+  destroy(): void;
   render(query: string): void;
   /** Matches for the tab's search badge (0 until the list has arrived). */
   count(query: string): number;
@@ -59,15 +63,17 @@ export function matchesPickerTemplate(template: PickerTemplate, query: string): 
 }
 
 /** The pane's whole markup for one query: loading, empty, or the card grid. */
-export function templatesPaneHtml(list: readonly PickerTemplate[] | null, query: string): string {
+export function templatesPaneHtml(list: readonly PickerTemplate[] | null, query: string, failed = false): string {
+  const error = failed ? `<p class="asset-picker-empty" role="status">${t('Some templates could not be loaded. Try again.')} <button type="button" class="btn" data-template-retry>${t('Try again')}</button></p>` : '';
+  if (failed && !list?.length) return error;
   if (!list) return `<div class="asset-picker-loading">${t('Loading…')}</div>`;
   const kept = list.filter(template => matchesPickerTemplate(template, query));
   if (!kept.length) {
-    return `<p class="asset-picker-empty" role="status">${list.length
+    return error + `<p class="asset-picker-empty" role="status">${list.length
       ? t('No templates match.')
       : t('No templates yet. Save one from a tool with “Save as”, or from a project tile.')}</p>`;
   }
-  return `<div class="asset-picker-section-head">${t('Start a new creation from a template')} <span class="asset-picker-count">${list.length}</span></div>`
+  return error + `<div class="asset-picker-section-head">${t('Start a new creation from a template')} <span class="asset-picker-count">${list.length}</span></div>`
     + `<div class="asset-picker-grid asset-picker-toolgrid">${kept.map(template => templateCard(template, true)).join('')}</div>`;
 }
 
@@ -77,12 +83,32 @@ export function templatesPaneHtml(list: readonly PickerTemplate[] | null, query:
  */
 export function mountTemplatesTab(source: CollectTemplates, deps: TemplatesTabDeps): TemplatesTab {
   let list: readonly PickerTemplate[] | null = null;
-  void source.list()
-    .then((loaded) => { list = loaded; deps.onLoaded(); })
-    .catch(() => { list = []; deps.onLoaded(); });
+  let failed = false;
+  let stopped = false;
+  let loading = false;
+  let stopPreviews: (() => void) | undefined;
+  const pending = new Set<string>();
+  async function load(): Promise<void> {
+    if (loading || stopped) return;
+    loading = true;
+    try {
+      const loaded = await source.list();
+      if (stopped) return;
+      list = loaded;
+      failed = !!source.error?.();
+    } catch { failed = true; }
+    finally {
+      loading = false;
+      if (!stopped) deps.onLoaded();
+    }
+  }
+  void load();
 
   function render(query: string): void {
-    deps.pane.innerHTML = templatesPaneHtml(list, query);
+    if (stopped) return;
+    stopPreviews?.();
+    deps.pane.innerHTML = templatesPaneHtml(list, query, failed);
+    stopPreviews = source.hydrate?.(deps.pane);
   }
 
   function count(query: string): number {
@@ -90,16 +116,28 @@ export function mountTemplatesTab(source: CollectTemplates, deps: TemplatesTabDe
   }
 
   function handle(target: HTMLElement): boolean {
+    if (stopped) return false;
+    if (target.closest('[data-template-retry]')) {
+      void load();
+      return true;
+    }
     // The "+ Add" control sits INSIDE the card cell, so it is tested first.
     const quick = target.closest<HTMLElement>('[data-quickadd-template]');
     if (quick) {
+      const ref = quick.dataset.quickaddTemplate ?? '';
+      if (pending.has(ref)) return true;
+      pending.add(ref);
+      quick.setAttribute('aria-disabled', 'true');
       // Claiming the click is the synchronous part; filing the project is not, so it
       // runs on its own and flashes the card once it finishes.
       void (async () => {
-        const result = await source.onQuickAdd(quick.dataset.quickaddTemplate ?? '');
+        let result: CollectResult | boolean;
+        try { result = await source.onQuickAdd(ref); }
+        catch { result = { ok: false }; }
+        finally { pending.delete(ref); quick.removeAttribute('aria-disabled'); }
         // A silent result means the person dismissed a step, so nothing was added and
         // there is nothing to report.
-        if (!(typeof result === 'object' && result.silent)) deps.flash(quick, result);
+        if (!stopped && quick.isConnected && !(typeof result === 'object' && result.silent)) deps.flash(quick, result);
       })();
       return true;
     }
@@ -112,5 +150,5 @@ export function mountTemplatesTab(source: CollectTemplates, deps: TemplatesTabDe
     return false;
   }
 
-  return { render, count, handle };
+  return { render, count, handle, destroy: () => { stopped = true; stopPreviews?.(); } };
 }

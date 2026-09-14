@@ -119,6 +119,22 @@ function collection(over: Partial<TemplatesCtx> & { host: TemplatesCtx['host'] }
   return createTemplatesCollection(ctx);
 }
 
+test('a template store failure preserves shipped choices and clears after retry', async () => {
+  const { host } = memoryHost();
+  const get = host.profile.get;
+  host.profile.get = async () => { throw new Error('Unavailable'); };
+  const tpl = collection({ host: host as unknown as TemplatesCtx['host'] });
+  await tpl.load(null);
+  assert.match(tpl.loadError()!, /could not be loaded/);
+  assert.ok(tpl.pickable().length);
+  assert.match(tpl.html(''), /data-tpl-retry/);
+  host.profile.get = get;
+  await tpl.load(null);
+  assert.equal(tpl.loadError(), null);
+  assert.doesNotMatch(tpl.html(''), /data-tpl-retry/);
+  tpl.destroy();
+});
+
 // ── the model ───────────────────────────────────────────────────────────────
 
 test('the collection lists own + shipped + hidden from the index and the profile', () => {
@@ -376,7 +392,7 @@ test('the root shows the same create toolbar a folder header does (plans/245)', 
     'the root header row leads with the create buttons, in BOTH view modes');
   assert.match(VIEW, /\$\{nothingSaved \? '' : batchButtonHtml\(\)\}/,
     'Batch still waits for the first project - the create buttons do not');
-  const btns = bodyAfter(VIEW, 'function listCreateBtns(isUncat = false): string');
+  const btns = bodyAfter(readFileSync(new URL('./projects-create.ts', import.meta.url), 'utf8'), 'function listCreateBtns(isUncat = false, hasBlueprints = false): string');
   assert.match(btns, /btn\('folder', FOLDER_PLUS_ICON, t\('New folder'\)\)/);
   assert.match(btns, /btn\('tool', FILE_PLUS_ICON, t\('New asset'\)\)/);
   assert.match(VIEW, /\$\{searching \? '' : listCreateBtns\(isUncat\)\}/, 'a folder header keeps the same call');

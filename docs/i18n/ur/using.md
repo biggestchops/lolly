@@ -8,7 +8,7 @@
 
 ہوم اسکرین **گیلری** ہے - ہر ٹول، زمرے کے حساب سے گروپ شدہ۔ ٹول کھولنے کے لیے کسی کارڈ پر کلک کریں؛ اگر آپ اس پر پہلے کام کر چکے ہیں تو **Continue** بٹن آپ کا تازہ ترین سیشن دوبارہ شروع کر دیتا ہے۔ نام کے حساب سے فلٹر کرنے کے لیے سرچ باکس استعمال کریں - یا فہرست والی چھ اسکرینوں (گیلری، Utilities، Projects، کیٹلاگ، Dashboard اور Profile) کے نیچے موجود بار سے [تلاش](/info/search.html) کریں، جو ٹولز کے علاوہ آپ کے محفوظ کام، کیٹلاگ اور آپ کی سیٹنگز تک بھی پہنچتی ہے۔ ٹول کے اندر یہ بار ہٹ کر ٹول کے اپنے کروم کو جگہ دے دیتی ہے۔
 
-![ٹول گیلری - ہر ٹول ایک کارڈ کے طور پر، زمرے کے حساب سے گروپ شدہ](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![ٹول گیلری - ہر ٹول ایک کارڈ کے طور پر، زمرے کے حساب سے گروپ شدہ](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 ہر ٹول ایک سپلٹ ویو ہے: ایک طرف **کنٹرولز**، دوسری طرف ایک لائیو **پیش نظارہ** (کینوس)۔ کوئی بھی کنٹرول بدلیں اور پیش نظارہ فوراً اپ ڈیٹ ہو جاتا ہے۔
 

@@ -29,7 +29,7 @@ Fissate al **piede della barra laterale** ci sono le azioni che appartengono all
 - **Token (.json)** - il documento dei design token puro e semplice, per un repository, un passaggio di build o un altro strumento per token.
 - **Versioni** - pubblica, attiva e ripristina copie con nome del sistema di design. Nascosto finché non c'è qualcosa di tuo da pubblicare (o un link `?area=versions` lo richiede per nome).
 
-![La barra laterale delle stanze dello studio - Panoramica, Colori, Tipografia, Loghi, Token e File](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![La barra laterale delle stanze dello studio - Panoramica, Colori, Tipografia, Loghi, Token e File](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Panoramica
 

@@ -41,18 +41,15 @@
 import { escape as esc } from '../utils.ts';
 import { t } from '../i18n.ts';
 import { icon } from '../lib/icons.ts';
-import { LOOK_PENDING_ATTR } from '../lib/capture-neutral.ts';
+import { LOOK_PENDING_ATTR, captureNeutralPinned } from '../lib/capture-neutral.ts';
+import { prefersReducedMotion } from '../lib/a11y-prefs.ts';
 
 /** Attribute a dot carries while its look has not rendered yet. The capture pin owns
  *  the name (a docs capture waits on it), so the two can never drift apart. */
 export const CAR_PENDING_ATTR = LOOK_PENDING_ATTR;
 /** Attribute a dot carries once its look's render or image load failed. */
 export const CAR_FAILED_ATTR = 'data-failed';
-/** Attribute an arrow carries while there is nowhere to step. A data attribute, not
- *  `aria-disabled`: these arrows are `aria-hidden` with `tabindex="-1"` by design (the
- *  card's own link is what assistive tech reads), so an ARIA state on them would be
- *  markup no one can reach - a CSS hook wearing an accessibility name. See the class
- *  comment above for why the arrow stays visible rather than disappearing. */
+/** Styling hook for an arrow with fewer than two ready examples. */
 export const CAR_INERT_ATTR = 'data-nav-inert';
 
 const CHEVRON_LEFT = icon('chevronLeft', { strokeWidth: 2.4 });
@@ -69,8 +66,8 @@ const CHEVRON_RIGHT = icon('chevronRight', { strokeWidth: 2.4 });
 export function carouselDotsMarkup(count: number): string {
   if (count < 2) return '';
   const dots = Array.from({ length: count }, (_, k) =>
-    `<button class="gcar-dot${k === 0 ? ' is-active' : ''}" type="button" data-i="${k}" ${CAR_PENDING_ATTR} tabindex="-1" aria-hidden="true"></button>`).join('');
-  return `<div class="gcar-dots" aria-hidden="true">${dots}</div>`;
+    `<button class="gcar-dot${k === 0 ? ' is-active' : ''}" type="button" data-i="${k}" ${CAR_PENDING_ATTR} tabindex="-1" aria-label="${esc(t('Example {n}', { n: k + 1 }))}" aria-disabled="true"></button>`).join('');
+  return `<div class="gcar-dots">${dots}</div>`;
 }
 
 /**
@@ -80,8 +77,8 @@ export function carouselDotsMarkup(count: number): string {
  */
 export function carouselNavMarkup(count: number): string {
   if (count < 2) return '';
-  return `<button class="gcar-nav gcar-prev" type="button" tabindex="-1" aria-hidden="true" ${CAR_INERT_ATTR} title="${esc(t('Previous example'))}">${CHEVRON_LEFT}</button>`
-    + `<button class="gcar-nav gcar-next" type="button" tabindex="-1" aria-hidden="true" ${CAR_INERT_ATTR} title="${esc(t('Next example'))}">${CHEVRON_RIGHT}</button>`;
+  return `<button class="gcar-nav gcar-prev" type="button" ${CAR_INERT_ATTR} aria-disabled="true" aria-label="${esc(t('Previous example'))}" title="${esc(t('Previous example'))}">${CHEVRON_LEFT}</button>`
+    + `<button class="gcar-nav gcar-next" type="button" ${CAR_INERT_ATTR} aria-disabled="true" aria-label="${esc(t('Next example'))}" title="${esc(t('Next example'))}">${CHEVRON_RIGHT}</button>`;
 }
 
 /** Is this slide showing real art - a lead frame (real src from the start) or a
@@ -107,7 +104,11 @@ export function readyCarIndices(track: HTMLElement): number[] {
 
 /** Reflect the centred slide in the dots. */
 export function setCarDot(gcar: HTMLElement, idx: number): void {
-  gcar.querySelectorAll<HTMLElement>('.gcar-dot').forEach((d, k) => { d.classList.toggle('is-active', k === idx); });
+  gcar.querySelectorAll<HTMLElement>('.gcar-dot').forEach((d, k) => {
+    d.classList.toggle('is-active', k === idx);
+    d.setAttribute('aria-current', String(k === idx));
+  });
+  gcar.querySelectorAll<HTMLElement>('.gcar-slide').forEach((slide, k) => { slide.inert = k !== idx; });
 }
 
 /**
@@ -123,15 +124,23 @@ export function syncCarState(gcar: HTMLElement): void {
     const failed = !!slide && isSlideFailed(slide);
     dot.toggleAttribute(CAR_PENDING_ATTR, !ready && !failed);
     dot.toggleAttribute(CAR_FAILED_ATTR, !ready && failed);
+    dot.setAttribute('aria-disabled', String(!ready));
   });
   // Fewer than two ready looks ⇒ there is no second pane to step to. The arrows stay
   // in place and report it, rather than vanishing and reappearing as the strip fills.
   const inert = slides.filter(isSlideReady).length < 2;
-  gcar.querySelectorAll<HTMLElement>('.gcar-nav').forEach(b => { b.toggleAttribute(CAR_INERT_ATTR, inert); });
+  gcar.querySelectorAll<HTMLElement>('.gcar-nav').forEach(b => {
+    b.toggleAttribute(CAR_INERT_ATTR, inert);
+    b.setAttribute('aria-disabled', String(inert));
+  });
+  if (track) setCarDot(gcar, Math.round(track.scrollLeft / (track.clientWidth || 1)));
 }
 
 /** A look arrived: show it, stop the tile's waiting tracer, clear its dot. */
 export function markLookReady(gcar: HTMLElement, slide: HTMLElement): void {
+  slide.removeAttribute(CAR_PENDING_ATTR);
+  slide.removeAttribute('data-preview-label');
+  slide.removeAttribute('aria-label');
   slide.classList.remove('is-failed');
   slide.classList.add('is-loaded');
   gcar.classList.add('has-art');
@@ -141,6 +150,10 @@ export function markLookReady(gcar: HTMLElement, slide: HTMLElement): void {
 /** A look will not arrive (render threw, image errored, or the look is gone). The
  *  dot leaves the pending state either way - a dead look must not breathe forever. */
 export function markLookFailed(gcar: HTMLElement, slide: HTMLElement): void {
+  slide.removeAttribute(CAR_PENDING_ATTR);
+  slide.dataset.previewLabel = t('Preview unavailable');
+  slide.setAttribute('aria-label', t('Preview unavailable'));
+  slide.classList.remove('is-loaded', 'gcar-slide--lead');
   slide.classList.add('is-failed');
   gcar.classList.add('has-art');
   syncCarState(gcar);
@@ -163,7 +176,7 @@ export function stripCarouselNav(gcar: HTMLElement): void {
 export function scrollCarTo(gcar: HTMLElement, idx: number): void {
   const track = gcar.querySelector<HTMLElement>('.gcar-track');
   if (!track?.clientWidth) return;
-  track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+  track.scrollTo({ left: idx * track.clientWidth, behavior: prefersReducedMotion() || captureNeutralPinned() ? 'instant' : 'smooth' });
   setCarDot(gcar, idx);
 }
 
@@ -209,6 +222,21 @@ export function wireCarousel(gcar: HTMLElement): void {
   // pointer/wheel/touch = the user; NOT the programmatic scrollTo above (which emits no
   // such event), so auto-advance can't pause itself. Sync the dots on every scroll.
   track.addEventListener('scroll', () => { if (track.clientWidth) setCarDot(gcar, Math.round(track.scrollLeft / track.clientWidth)); }, { passive: true });
+  // Correct a swipe only after it settles. A pending pane must not leave the
+  // tile blank, and incoming previews must not pull against an active gesture.
+  let scrollTimer: ReturnType<typeof setTimeout> | undefined;
+  const settle = (): void => {
+    clearTimeout(scrollTimer);
+    if (!gcar.isConnected || !track.clientWidth) return;
+    const ready = readyCarIndices(track);
+    const current = Math.round(track.scrollLeft / track.clientWidth);
+    if (!ready.length || ready.includes(current)) return;
+    const nearest = ready.reduce((best, i) => Math.abs(i - current) < Math.abs(best - current) ? i : best);
+    track.scrollTo({ left: nearest * track.clientWidth, behavior: 'instant' });
+    setCarDot(gcar, nearest);
+  };
+  track.addEventListener('scrollend', settle);
+  track.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(settle, 180); }, { passive: true });
   // A lead frame ships real art, so the strip can already be part-ready at wiring.
   syncCarState(gcar);
 }

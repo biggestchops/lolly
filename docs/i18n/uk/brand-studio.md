@@ -29,7 +29,7 @@
 - **Tokens (.json)** (Токени) - самостійний документ звичайних токенів дизайну для репозиторію, кроку збирання чи іншого інструмента токенів.
 - **Versions** (Версії) - публікуйте, активуйте й відновлюйте іменовані копії дизайн-системи. Приховано, доки немає чого публікувати власного (або поки посилання `?area=versions` не запросить її за назвою).
 
-![Панель кімнат студії - Overview, Colours, Type, Logos, Tokens і Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Панель кімнат студії - Overview, Colours, Type, Logos, Tokens і Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview (Огляд)
 

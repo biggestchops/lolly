@@ -29,7 +29,7 @@ Fijadas al **pie del riel** están las acciones que pertenecen a todo el sistema
 - **Tokens (.json)** - el documento de tokens de diseño plano por sí solo, para un repositorio, un paso de compilación u otra herramienta de tokens.
 - **Versiones** - publica, activa y restaura copias con nombre del sistema de diseño. Oculto hasta que haya algo propio que publicar (o hasta que un enlace `?area=versions` lo pida por su nombre).
 
-![El riel de salas del estudio - Overview, Colours, Type, Logos, Tokens y Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![El riel de salas del estudio - Overview, Colours, Type, Logos, Tokens y Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

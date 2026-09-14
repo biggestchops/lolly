@@ -25,6 +25,7 @@ import { escape as escapeHtml } from '../utils.ts';
 import { icon } from '../lib/icons.ts';
 import { menuItemHtml } from '../lib/context-menu.ts';
 import { loadHiddenTemplates } from '../lib/hidden-templates.ts';
+import { previewDeadline } from '../lib/preview-deadline.ts';
 import { loadTemplateStart } from '../lib/template-start.ts';
 import { resolveTemplateSeed, shippedTemplateRef, userTemplateRef } from '../lib/template-ref.ts';
 import { createUserTemplateStore, type UserTemplate } from '../lib/user-templates.ts';
@@ -217,6 +218,7 @@ export function templateTileHtml(item: TemplateItem, selected: boolean): string 
         <span class="tile-meta">
           <span class="tile-title" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
           <span class="tile-sub">${escapeHtml(sub)}</span>
+          <span class="tile-sub" data-tpl-fallback hidden>${t('Preview unavailable')}</span>
           ${item.startsHere ? `<span class="tile-badges"><span class="tpl-starts">${t('Starts here')}</span></span>` : ''}
         </span>
       </a>
@@ -316,6 +318,8 @@ export interface TemplatesCollection {
   /** True while the collection has data for this ref (drives the view's kind lookup). */
   has(ref: string): boolean;
   load(profile: Profile | null): Promise<void>;
+  loadError(): string | null;
+  hydrate(root: HTMLElement): () => void;
   html(query: string): string;
   wire(root: HTMLElement, query: string): void;
   menuHtml(ref: string): string;
@@ -349,13 +353,16 @@ export function createTemplatesCollection(ctx: TemplatesCtx): TemplatesCollectio
   const canTemplateByTool = new Map<string, boolean>();
   const warming = new Set<string>();
   let stopPreviews: (() => void) | null = null;
+  let loadError: string | null = null;
+  let own: UserTemplate[] = [];
 
   const store = (): ReturnType<typeof createUserTemplateStore> =>
     createUserTemplateStore(ctx.host);
 
   async function load(profile: Profile | null): Promise<void> {
-    let own: UserTemplate[] = [];
-    try { own = await store().list(); } catch { own = []; }
+    loadError = null;
+    try { own = await store().list(); }
+    catch { loadError = tRaw('Your saved templates could not be loaded. Try again.'); }
     let defaults: readonly string[] = [];
     try { defaults = (await import('../catalog/sync.ts')).defaultHiddenTemplateRefs(); } catch { defaults = []; }
     model = buildTemplatesModel({
@@ -398,6 +405,11 @@ export function createTemplatesCollection(ctx: TemplatesCtx): TemplatesCollectio
   function wire(root: HTMLElement, query: string): void {
     root.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
+      if (target.closest('[data-tpl-retry]')) {
+        e.preventDefault();
+        void ctx.refresh();
+        return;
+      }
       const chip = target.closest<HTMLElement>('[data-tpl-tool]');
       if (chip) {
         e.preventDefault();
@@ -623,7 +635,10 @@ export function createTemplatesCollection(ctx: TemplatesCtx): TemplatesCollectio
   return {
     has: (ref) => byRef.has(ref),
     load,
-    html: (query) => templatesBodyHtml(model, state, { query, isSelected: ctx.isSelected }),
+    loadError: () => loadError,
+    hydrate: (root) => hydrateTemplatePreviews(root, ctx.host, pickable()),
+    html: (query) => (loadError ? `<p class="asset-picker-empty" role="status">${escapeHtml(loadError)} <button type="button" class="btn" data-tpl-retry>${t('Try again')}</button></p>` : '')
+      + (loadError && !model.items.length ? '' : templatesBodyHtml(model, state, { query, isSelected: ctx.isSelected })),
     wire,
     menuHtml: (ref) => { const item = byRef.get(ref); return item ? templateMenuHtml(item) : ''; },
     action,
@@ -657,27 +672,50 @@ export function hydrateTemplatePreviews(
   let running = false;
   let stopped = false;
 
+  function failed(img: HTMLImageElement): void {
+    if (stopped || !img.isConnected) return;
+    img.hidden = true;
+    img.removeAttribute('src');
+    const card = img.closest<HTMLElement>('[data-template-ref], [data-kind="template"]');
+    card?.classList.add('no-preview');
+    const fallback = card?.querySelector<HTMLElement>('[data-tpl-fallback]');
+    if (fallback) fallback.hidden = false;
+    img.dataset.previewState = 'failed';
+  }
+
   async function pump(): Promise<void> {
     if (running) return;
     running = true;
-    const { renderFeaturedVariant } = await import('../lib/featured-render.ts');
-    const { fetchTemplateFile } = await import('../lib/template-source.ts');
     while (queue.length && !stopped) {
       const img = queue.shift()!;
       const item = byRef.get(img.dataset.tplPreview ?? '');
       if (!item || !img.isConnected || img.getAttribute('src')) continue;
       try {
-        let values = item.values;
-        let posterMs = item.posterMs;
-        if (!values) {
-          const file = await fetchTemplateFile(item.toolId, item.id);
-          if (!file) continue;
-          values = file.values as Record<string, unknown>;
-          posterMs = posterMs ?? file.motion?.posterMs;
+        const thumb = await previewDeadline((async () => {
+          const { renderFeaturedVariant } = await import('../lib/featured-render.ts');
+          const { fetchTemplateFile } = await import('../lib/template-source.ts');
+          let values = item.values;
+          let posterMs = item.posterMs;
+          if (!values) {
+            const file = await fetchTemplateFile(item.toolId, item.id);
+            if (!file) throw new Error('Template unavailable');
+            values = file.values as Record<string, unknown>;
+            posterMs = posterMs ?? file.motion?.posterMs;
+          }
+          return renderFeaturedVariant(host, item.toolId, item.formats, item.id, values, 'template', posterMs);
+        })());
+        if (!thumb) throw new Error('Preview unavailable');
+        if (img.isConnected && !stopped) {
+          img.onload = () => {
+            if (stopped || !img.isConnected) return;
+            img.hidden = false;
+            img.dataset.previewState = 'ready';
+            img.closest('[data-template-ref]')?.classList.remove('no-preview');
+          };
+          img.onerror = () => failed(img);
+          img.src = thumb;
         }
-        const thumb = await renderFeaturedVariant(host, item.toolId, item.formats, item.id, values, 'template', posterMs);
-        if (thumb && img.isConnected && !stopped) img.src = thumb;
-      } catch { /* the glyph behind the image stays */ }
+      } catch { failed(img); }
     }
     running = false;
   }
@@ -689,14 +727,20 @@ export function hydrateTemplatePreviews(
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         observer?.unobserve(entry.target);
-        queue.push(entry.target as HTMLImageElement);
+        const img = entry.target instanceof HTMLImageElement ? entry.target : entry.target.querySelector<HTMLImageElement>('img[data-tpl-preview]');
+        if (img) queue.push(img);
       }
       void pump();
     }, { rootMargin: '200px' });
-    for (const img of imgs) observer.observe(img);
+    for (const img of imgs) observer.observe(img.parentElement ?? img);
   } else {
     queue.push(...imgs);
     void pump();
   }
-  return () => { stopped = true; queue.length = 0; observer?.disconnect(); };
+  return () => {
+    stopped = true;
+    queue.length = 0;
+    observer?.disconnect();
+    for (const img of imgs) { img.onload = null; img.onerror = null; }
+  };
 }

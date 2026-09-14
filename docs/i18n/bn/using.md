@@ -8,7 +8,7 @@
 
 হোম স্ক্রিনটি হলো **gallery** - প্রতিটি টুল, শ্রেণি অনুযায়ী সাজানো। টুল খুলতে একটি কার্ডে ক্লিক করুন; আগে যদি সেটিতে কাজ করে থাকেন, একটি **Continue** বোতাম আপনার সবচেয়ে সাম্প্রতিক সেশন ফিরিয়ে আনে। নাম দিয়ে ফিল্টার করতে সার্চ বাক্সটি ব্যবহার করুন - অথবা ছয়টি তালিকা স্ক্রিনের (gallery, Utilities, Projects, Catalogue, Dashboard ও Profile) নিচের বার থেকে [সার্চ](/info/search.html) করুন, যা টুলের পাশাপাশি আপনার সেভ করা কাজ, ক্যাটালগ ও সেটিংসেও পৌঁছায়। টুলের ভিতরে বারটি সরে গিয়ে টুলের নিজস্ব ক্রোমকে জায়গা দেয়।
 
-![টুল গ্যালারি - প্রতিটি টুল একটি কার্ড হিসেবে, শ্রেণি অনুযায়ী সাজানো](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![টুল গ্যালারি - প্রতিটি টুল একটি কার্ড হিসেবে, শ্রেণি অনুযায়ী সাজানো](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 প্রতিটি টুল একটি বিভক্ত ভিউ: এক দিকে **controls**, অন্য দিকে লাইভ **preview** (ক্যানভাস)। যেকোনো কন্ট্রোল বদলান, প্রিভিউ সঙ্গে সঙ্গে আপডেট হয়।
 
