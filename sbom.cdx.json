@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:82c3dbb1-004c-4e86-830c-778a8637f09b",
+  "serialNumber": "urn:uuid:30c27713-105d-41b9-84d2-9489e256ff00",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-14T14:02:38.519Z",
+    "timestamp": "2026-09-14T18:38:58.086Z",
     "tools": [
       {
         "vendor": "lolly",
@@ -11037,10 +11037,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/rustls-webpki@0.103.13",
+      "bom-ref": "pkg:cargo/rustls-webpki@0.103.15",
       "name": "rustls-webpki",
-      "version": "0.103.13",
-      "purl": "pkg:cargo/rustls-webpki@0.103.13",
+      "version": "0.103.15",
+      "purl": "pkg:cargo/rustls-webpki@0.103.15",
       "scope": "required",
       "licenses": [
         {
@@ -11052,7 +11052,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
+          "content": "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
         }
       ],
       "properties": [
@@ -11064,10 +11064,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/rustls@0.23.40",
+      "bom-ref": "pkg:cargo/rustls@0.23.45",
       "name": "rustls",
-      "version": "0.23.40",
-      "purl": "pkg:cargo/rustls@0.23.40",
+      "version": "0.23.45",
+      "purl": "pkg:cargo/rustls@0.23.45",
       "scope": "required",
       "licenses": [
         {
@@ -11077,38 +11077,13 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "ef86cd5876211988985292b91c96a8f2d298df24e75989a43a3c73f2d4d8168b"
+          "content": "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
         }
       ],
       "properties": [
         {
           "name": "lolly:source",
           "value": "shells/tauri-desktop/src-tauri/Cargo.lock"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:cargo/rustls@0.23.41",
-      "name": "rustls",
-      "version": "0.23.41",
-      "purl": "pkg:cargo/rustls@0.23.41",
-      "scope": "required",
-      "licenses": [
-        {
-          "expression": "Apache-2.0 OR ISC OR MIT"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "6b92b125634d9b795e7beca796cc790df15a7fb38323bf3196fda83292d06b1f"
-        }
-      ],
-      "properties": [
-        {
-          "name": "lolly:source",
-          "value": "shells/tauri-mobile/src-tauri/Cargo.lock"
         }
       ]
     },
