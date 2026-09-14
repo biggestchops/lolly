@@ -33,10 +33,15 @@ jobs:
           flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak install --user --noninteractive package/Lolly.flatpak
           flatpak info --user tools.lolly.Desktop
-      - name: Run the bundled CLI and render through WebKit
+      - name: Run the bundled CLI
         run: |
           mkdir -p "$RUNNER_TEMP/lolly-smoke"
+          flatpak run --user --command=sh tools.lolly.Desktop -c 'ls -l /app/bin/lolly*; /app/bin/lolly-cli --version; printf "Direct CLI exit: %s\n" "$?"'
           xvfb-run -a dbus-run-session -- flatpak run --user tools.lolly.Desktop list --json > "$RUNNER_TEMP/lolly-smoke/cli-list.json"
+      - name: Render through WebKit
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/lolly-smoke"
           xvfb-run -a dbus-run-session -- flatpak run --user \
             --filesystem="$RUNNER_TEMP/lolly-smoke" --env=LOLLY_CLI_TIMEOUT=180 \
             tools.lolly.Desktop qr-code --url=https://lolly.tools --format=svg \
@@ -44,6 +49,7 @@ jobs:
           test -s "$RUNNER_TEMP/lolly-smoke/qr.svg"
           grep -q '<svg' "$RUNNER_TEMP/lolly-smoke/qr.svg"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: ${{ !cancelled() }}
         with:
           name: flatpak-render-evidence
           path: ${{ runner.temp }}/lolly-smoke/
