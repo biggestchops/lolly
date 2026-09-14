@@ -9,7 +9,7 @@
 // Mirrors the colour-field popover lifecycle (Escape closes + refocuses the
 // trigger, outside-click disarms) so it matches the app's escape-to-close idiom.
 import './help-tip.css';
-import { escape } from '../utils.ts';
+import { escape, safeHref } from '../utils.ts';
 import { linkInputLabels } from './input-labels.ts';
 
 const INFO_ICON =
@@ -46,11 +46,10 @@ export function helpTip(
     `<button type="button" class="help-tip-btn" aria-label="More info" ` +
     `aria-expanded="false" aria-controls="${id}">${INFO_ICON}</button>`;
   let linkHtml = '';
-  if (link && link.href) {
+  if (link && safeHref(link.href)) {
     const external = /^https?:/i.test(link.href);
-    // nosemgrep: lolly-href-escape-is-not-scheme-validation - every call site passes a literal in-app route ('#/verify', '#/components'); no remote value reaches it
-    linkHtml =
-      ` <a class="help-tip-link" href="${escape(link.href)}"` +
+    // nosemgrep: lolly-href-escape-is-not-scheme-validation - safeHref() guards the destination above.
+    linkHtml = ` <a class="help-tip-link" href="${escape(link.href)}"` +
       (external ? ' target="_blank" rel="noopener"' : '') +
       `>${escape(link.text || 'Learn more')}</a>`;
   }
