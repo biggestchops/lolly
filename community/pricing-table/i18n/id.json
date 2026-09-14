@@ -1,4 +1,12 @@
 {
   "name": "Harga",
-  "description": "Paket sebagai kolom, fitur sebagai baris, tanda centang dan silang, dan satu paket ditandai sebagai yang disarankan."
+  "description": "Paket sebagai kolom, fitur sebagai baris, tanda centang dan silang, dan satu paket ditandai sebagai yang disarankan.",
+  "inputs.heading.section": "Teks",
+  "inputs.subheading.section": "Teks",
+  "inputs.cta.section": "Teks",
+  "inputs.highlight.section": "Sorotan",
+  "inputs.highlightLabel.section": "Sorotan",
+  "inputs.background.section": "Tampilan",
+  "inputs.accent.section": "Tampilan",
+  "inputs.layout.section": "Tampilan"
 }

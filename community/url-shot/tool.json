@@ -3,13 +3,19 @@
   "name": "URL Screenshot",
   "description": "Any web page, at any scroll depth, with custom CSS.",
   "a11yLabel": "Screenshot of {{default url \"(no URL set)\"}}",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "engineVersion": "^1.0.0",
   "status": "official",
   "category": "utility",
   "tags": ["url", "screenshot", "capture", "web", "preview", "developer", "qa"],
   "capabilities": ["capture"],
   "render": {
+    "sectionIcons": {
+      "Capture": "camera",
+      "Crop": "crop",
+      "Colour": "palette",
+      "Compare": "layers"
+    },
     "width": 1280,
     "height": 720,
     "formats": ["png", "jpg", "webp", "svg", "penpot", "pdf", "webm", "mp4", "avif", "tiff", "gif"],

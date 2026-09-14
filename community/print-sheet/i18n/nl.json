@@ -1,4 +1,13 @@
 {
   "name": "Afdrukvel",
-  "description": "Zet één ontwerp meerdere keren op een vel A4, Letter of A3, met snijtekens in de marge."
+  "description": "Zet één ontwerp meerdere keren op een vel A4, Letter of A3, met snijtekens in de marge.",
+  "inputs.fill.section": "Vel",
+  "inputs.pages.section": "Vel",
+  "inputs.sheet.section": "Vel",
+  "inputs.rows.section": "Lay-out",
+  "inputs.cols.section": "Lay-out",
+  "inputs.gap.section": "Lay-out",
+  "inputs.margin.section": "Lay-out",
+  "inputs.ticks.section": "Uitvoer",
+  "inputs.tickShape.section": "Uitvoer"
 }

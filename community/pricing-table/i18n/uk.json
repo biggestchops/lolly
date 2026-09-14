@@ -1,4 +1,12 @@
 {
   "name": "Тарифи",
-  "description": "Плани як колонки, функції як рядки, галочки та хрестики, і один план виділений як рекомендований."
+  "description": "Плани як колонки, функції як рядки, галочки та хрестики, і один план виділений як рекомендований.",
+  "inputs.heading.section": "Текст",
+  "inputs.subheading.section": "Текст",
+  "inputs.cta.section": "Текст",
+  "inputs.highlight.section": "Виділення",
+  "inputs.highlightLabel.section": "Виділення",
+  "inputs.background.section": "Вигляд",
+  "inputs.accent.section": "Вигляд",
+  "inputs.layout.section": "Вигляд"
 }

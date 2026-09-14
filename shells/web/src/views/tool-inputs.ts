@@ -26,8 +26,8 @@ import {
 } from '@lolly/engine';
 import type { TableValue } from '@lolly/engine';
 import { matchesShowIf } from '@lolly/engine';
-import { tableBodyCellHtml, tableColumnEditor } from './table-cells.ts';
-import { tableInputHtml } from './table-input-html.ts';
+import { mountInputEmoji, wireEmojiCells } from '../components/input-emoji.ts';
+import { tableInputHtml, tableGhostCells } from './table-input-html.ts';
 import { readTableCells, wireTableEnter, wireTableRowMoves } from './table-input-dom.ts';
 import { inputTableValue, inheritTableSources, tableInputValue, parseInputTable } from './block-table.ts';
 import { createToolRuntime as createRuntime } from '../lib/mount-runtime.ts';
@@ -612,6 +612,7 @@ function renderInputs(
   onDirty?: (id: string) => void,
   toolId?: string
 ): void {
+  el._emojiInputsDispose?.();
   // Generic input-policy overlay for the mounted tool (empty/no-op by default).
   const policyFor = (id: string): InputPolicy | undefined => getInputPolicy(toolId, id);
   const modelValues: Record<string, InputValue> = Object.fromEntries(
@@ -1605,19 +1606,7 @@ function renderInputs(
         const cols = read().columns;
         const ghostTr = document.createElement('tr');
         ghostTr.setAttribute('data-table-ghost', '');
-        ghostTr.innerHTML =
-          cols
-            .map((_c, ci) =>
-              tableBodyCellHtml(
-                '',
-                ri + 1,
-                ci,
-                cols,
-                tableColumnEditor(editors, ci),
-                `${tid}:t:${ri + 1}:${ci}`
-              )
-            )
-            .join('') + '<td class="table-rowctl"></td>';
+        ghostTr.innerHTML = tableGhostCells(tid, ri + 1, cols, editors);
         tr.after(ghostTr);
         wireCells(ghostTr);
       };
@@ -1659,27 +1648,13 @@ function renderInputs(
             commit(read());
           });
         });
-        // An `emoji` column's cells are buttons (manifest columnEditors), so they
-        // never fire `input`: the popover writes the button's native `value` and the
-        // pick is what commits. The picker, its stylesheet and the 1.9 MB colour
-        // font all arrive with this dynamic import, so a table nobody taps costs
-        // nothing. Focus goes back on the cell BEFORE the commit, because the
-        // rebuild restores the caret by data-field-id and the popover has just
-        // taken focus into itself. The glyph is written in place too - a deferred
-        // rebuild would otherwise leave the button showing "Pick" after a pick.
-        root.querySelectorAll<HTMLButtonElement>('[data-emoji-cell]').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            void import('../components/emoji-picker.ts').then(({ openEmojiPopover }) =>
-              openEmojiPopover(btn, (emoji) => {
-                btn.value = emoji;
-                btn.textContent = emoji;
-                maybePromote(btn);
-                btn.focus();
-                commit(read());
-                drawEmojiCells();
-              }, { emoji: { apply: (node) => runtime.applyEmojiToDom(node, { track: false, idScope: 'p' }) } })
-            );
-          });
+        wireEmojiCells(root, host, runtime, (btn, emoji) => {
+          btn.value = emoji;
+          btn.textContent = emoji;
+          maybePromote(btn);
+          btn.focus();
+          commit(read());
+          drawEmojiCells();
         });
       };
       wireCells(wrap);
@@ -2691,7 +2666,9 @@ function renderInputs(
   // so a migration written here would overwrite each sibling's rows with the
   // lead's. Rows minted from this panel are born with an id (newBlockRow).
 
+  el._emojiInputsDispose = mountInputEmoji(el, model, host, runtime);
   el._inputsDispose = () => {
+    el._emojiInputsDispose?.();
     el._audioThumbs?.destroy();
     el._audioThumbs = undefined;
     if (el._colorPopoverDismiss)
@@ -3665,11 +3642,14 @@ async function openEmbedEditor(
   if (!parsed) return null;
 
   let tool: LoadedTool, desc: EmbedDescribe | null, child: Runtime;
+  let emojiStyle: typeof import('../lib/emoji-runtime-style.ts');
   try {
     [tool, desc] = await Promise.all([getTool(parsed.toolId), host.compose._describeUrl(editUrl!)]);
     if (!tool || !desc) return null;
     const state = parseUrlState(parsed.query, tool.manifest);
     child = await createRuntime(tool, host, state.values);
+    emojiStyle = await import('../lib/emoji-runtime-style.ts');
+    await emojiStyle.seedEmojiRuntime(child, host, state.emoji ? { emoji: state.emoji, emojifx: state.emojiFx ?? '' } : null);
   } catch {
     return null; // unknown tool / bad link → silently no-op (button shouldn't have shown)
   }
@@ -3750,7 +3730,7 @@ async function openEmbedEditor(
       pending = null;
       applyBtn.disabled = true;
       previewEl.innerHTML = `<div class="asset-picker-loading">Rendering…</div>`;
-      const query = serializeUrlState(child.getModel());
+      const query = emojiStyle.queryWithEmoji(serializeUrlState(child.getModel()), child.emoji.style);
       const url = buildEmbedUrl({ toolId: parsed.toolId, format: fmtSel.value, query });
       const ref = url
         ? await host.compose!.renderUrl!(url, {
@@ -3788,6 +3768,11 @@ async function openEmbedEditor(
       schedulePreview();
     });
 
+    let lastEmoji = JSON.stringify(child.emoji.style);
+    const offEmoji = child.onEmojiChange(({ style }) => {
+      const next = JSON.stringify(style);
+      if (next !== lastEmoji) { lastEmoji = next; schedulePreview(); }
+    });
     let closed = false;
     const close = (value: AssetRef | null): void => {
       if (closed) return;
@@ -3798,6 +3783,7 @@ async function openEmbedEditor(
       // level capture dismissers + the child flatpickrs' body-level calendars -
       // in one aggregate call (mirrors mountTool's _cleanup).
       inputsEl._inputsDispose?.();
+      offEmoji();
       modal.close();
       overlay.remove();
       if (opener instanceof HTMLElement) opener.focus();

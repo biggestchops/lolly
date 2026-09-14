@@ -1,4 +1,13 @@
 {
   "name": "Lembar Cetak",
-  "description": "Susun satu karya seni berulang (n-up) pada kertas A4, Letter, atau A3, dengan tanda potong di margin."
+  "description": "Susun satu karya seni berulang (n-up) pada kertas A4, Letter, atau A3, dengan tanda potong di margin.",
+  "inputs.fill.section": "Lembar",
+  "inputs.pages.section": "Lembar",
+  "inputs.sheet.section": "Lembar",
+  "inputs.rows.section": "Tata letak",
+  "inputs.cols.section": "Tata letak",
+  "inputs.gap.section": "Tata letak",
+  "inputs.margin.section": "Tata letak",
+  "inputs.ticks.section": "Keluaran",
+  "inputs.tickShape.section": "Keluaran"
 }

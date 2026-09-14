@@ -1,4 +1,13 @@
 {
   "name": "ক্যাপশন",
-  "description": "একটি ক্লিপের জন্য সাবটাইটেল - ডিভাইসে ট্রান্সক্রাইব করুন বা SRT/VTT ফাইল দিন, কিউ স্টাইল করুন, এবং ক্যাপশন বার্ন-ইন করা ফ্রেমের সাথে পরিষ্কার .srt ও .vtt সাইডকার ফাইল এক্সপোর্ট করুন।"
+  "description": "একটি ক্লিপের জন্য সাবটাইটেল - ডিভাইসে ট্রান্সক্রাইব করুন বা SRT/VTT ফাইল দিন, কিউ স্টাইল করুন, এবং ক্যাপশন বার্ন-ইন করা ফ্রেমের সাথে পরিষ্কার .srt ও .vtt সাইডকার ফাইল এক্সপোর্ট করুন।",
+  "inputs.style.section": "ক্যাপশন",
+  "inputs.position.section": "ক্যাপশন",
+  "inputs.fontSize.section": "ক্যাপশন",
+  "inputs.color.section": "ক্যাপশন",
+  "inputs.background.section": "ক্যাপশন",
+  "inputs.maxLines.section": "ক্যাপশন",
+  "inputs.showTimecodes.section": "ক্যাপশন",
+  "inputs.burnIn.section": "আউটপুট",
+  "inputs.time.section": "সময়"
 }

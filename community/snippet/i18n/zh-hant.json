@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "視窗外框",
   "inputs.blinkCursor.label": "游標閃爍",
   "inputs.blinkCursor.help": "在程式碼後方顯示終端機風格的閃爍游標。關閉可讓匯出結果保持乾淨。",
-  "inputs.scale.label": "大小"
+  "inputs.scale.label": "大小",
+  "inputs.scale.section": "文字",
+  "inputs.lineHeight.section": "文字",
+  "inputs.lineNumbers.section": "文字",
+  "inputs.blinkCursor.section": "文字",
+  "inputs.fileName.section": "標題列",
+  "inputs.titleScale.section": "標題列",
+  "inputs.titleIcon.section": "標題列",
+  "inputs.iconScale.section": "標題列",
+  "inputs.windowStyle.section": "標題列",
+  "inputs.showWindow.section": "標題列",
+  "inputs.theme.section": "外觀",
+  "inputs.shadow.section": "外觀",
+  "inputs.calloutMode.section": "註解",
+  "inputs.calloutPrefix.section": "註解",
+  "inputs.calloutFont.section": "註解"
 }

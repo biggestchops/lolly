@@ -3,7 +3,7 @@
   "name": "Icon",
   "description": "Favicon and app-icon maker - a multi-size .ico, PNG and SVG, or the whole app kit as one zip.",
   "a11yLabel": "Web icon labelled {{default text \"untitled\"}}",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "engineVersion": "^1.0.0",
   "status": "community",
   "category": "everyone",
@@ -21,6 +21,11 @@
     "compose"
   ],
   "render": {
+    "sectionIcons": {
+      "Image": "image",
+      "Look": "paintbrush",
+      "App manifest": "code"
+    },
     "width": 512,
     "height": 512,
     "formats": ["ico", "png", "svg", "penpot", "zip", "webp"],

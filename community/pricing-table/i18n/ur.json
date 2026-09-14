@@ -1,4 +1,12 @@
 {
   "name": "قیمتیں",
-  "description": "پلانز کالمز کی صورت میں، خصوصیات قطاروں کی صورت میں، ٹِک اور کراس نشانات، اور ایک پلان کو تجویز کردہ کے طور پر نمایاں کیا گیا ہے۔"
+  "description": "پلانز کالمز کی صورت میں، خصوصیات قطاروں کی صورت میں، ٹِک اور کراس نشانات، اور ایک پلان کو تجویز کردہ کے طور پر نمایاں کیا گیا ہے۔",
+  "inputs.heading.section": "ٹیکسٹ",
+  "inputs.subheading.section": "ٹیکسٹ",
+  "inputs.cta.section": "ٹیکسٹ",
+  "inputs.highlight.section": "نمایاں کریں",
+  "inputs.highlightLabel.section": "نمایاں کریں",
+  "inputs.background.section": "شکل",
+  "inputs.accent.section": "شکل",
+  "inputs.layout.section": "شکل"
 }

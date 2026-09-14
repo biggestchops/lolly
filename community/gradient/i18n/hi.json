@@ -60,5 +60,18 @@
   "inputs.distance.help": "रंग बिंदु अपनी तय स्थिति से कितनी दूर तक ड्रिफ़्ट करते हैं। 100% डिफ़ॉल्ट कक्षा का आकार है; 0% उन्हें जगह पर स्थिर कर देता है।",
   "inputs.speed.label": "फ़्लोट गति",
   "inputs.speed.section": "टेक्सचर और मोशन",
-  "inputs.speed.help": "प्रति ड्रिफ़्ट लूप सेकंड - जितना अधिक, उतना धीमा। वीडियो एक्सपोर्ट फ़्रेम बजट के भीतर एक लूप कैप्चर करते हैं (लंबे लूप 60 fps पर छोटे कर दिए जाते हैं)।"
+  "inputs.speed.help": "प्रति ड्रिफ़्ट लूप सेकंड - जितना अधिक, उतना धीमा। वीडियो एक्सपोर्ट फ़्रेम बजट के भीतर एक लूप कैप्चर करते हैं (लंबे लूप 60 fps पर छोटे कर दिए जाते हैं)।",
+  "inputs.count.section": "रंग",
+  "inputs.color1.section": "रंग",
+  "inputs.pos1.section": "रंग",
+  "inputs.color2.section": "रंग",
+  "inputs.pos2.section": "रंग",
+  "inputs.color3.section": "रंग",
+  "inputs.pos3.section": "रंग",
+  "inputs.color4.section": "रंग",
+  "inputs.pos4.section": "रंग",
+  "inputs.color5.section": "रंग",
+  "inputs.pos5.section": "रंग",
+  "inputs.color6.section": "रंग",
+  "inputs.pos6.section": "रंग"
 }

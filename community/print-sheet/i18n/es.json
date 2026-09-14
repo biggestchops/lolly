@@ -1,4 +1,13 @@
 {
   "name": "Hoja de impresión",
-  "description": "Distribuye una misma pieza de arte varias veces por hoja (n-up), en A4, Carta o A3, con marcas de corte en el margen."
+  "description": "Distribuye una misma pieza de arte varias veces por hoja (n-up), en A4, Carta o A3, con marcas de corte en el margen.",
+  "inputs.fill.section": "Hoja",
+  "inputs.pages.section": "Hoja",
+  "inputs.sheet.section": "Hoja",
+  "inputs.rows.section": "Diseño",
+  "inputs.cols.section": "Diseño",
+  "inputs.gap.section": "Diseño",
+  "inputs.margin.section": "Diseño",
+  "inputs.ticks.section": "Salida",
+  "inputs.tickShape.section": "Salida"
 }

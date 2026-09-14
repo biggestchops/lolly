@@ -84,3 +84,12 @@ unicode-emoji-picker.emoji-browser {
 }
 
 unicode-emoji-picker.emoji-browser { width: 100%; max-width: 100%; font-size: var(--ui-type-heading); box-shadow: none; border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-card); --min-emoji-col-count: 4; --max-emoji-col-count: 12; --min-emoji-row-count: 4; --max-emoji-row-count: 7; --fill-color: var(--ui-color-surface-canvas); --text-color: var(--ui-color-text-default); --tab-active-marker-color: var(--ui-color-selection-border); --tabs-border-color: var(--ui-color-border-default); --search-input-border-color: var(--ui-color-border-default); }
+
+/* Set selection uses the same document control, inside the picker boundary. */
+.emoji-pop { background: hsl(var(--card)); color: hsl(var(--foreground)); border: 1px solid hsl(var(--border)); border-radius: 12px; overflow: auto; max-height: calc(100dvh - 16px); }
+.emoji-choice { width: min(340px, calc(100vw - 40px)); padding: 12px; box-sizing: border-box; }
+.emoji-choice h3 { margin: 0 0 12px; font-size: calc(15px * var(--a11y-fs, 1)); }
+.emoji-choice-message { padding: 12px; margin: 0; }
+.emoji-remember { display: flex; gap: 8px; align-items: start; margin: 12px 0; font-size: calc(12px * var(--a11y-fs, 1)); }
+.emoji-choice > button + button { margin-inline-start: 8px; }
+.emoji-change-set { margin: 6px; }

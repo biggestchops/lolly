@@ -127,6 +127,7 @@ export interface HistoryControls {
 
 /** The sidebar/actions panel element with the document-level dismissers renderInputs parks on it. */
 export interface PanelEl extends HTMLElement {
+  _emojiInputsDispose?: () => void;
   _colorPopoverDismiss?: (e: MouseEvent) => void;
   _blockMenuDismiss?: (e: MouseEvent) => void;
   _helpTipDismiss?: (e: MouseEvent) => void;

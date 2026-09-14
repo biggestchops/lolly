@@ -60,5 +60,18 @@
   "inputs.distance.help": "রঙের বিন্দুগুলি নির্ধারিত অবস্থান থেকে কতদূর ড্রিফট করবে। 100% হল ডিফল্ট কক্ষপথের আকার; 0% সেগুলিকে জায়গায় স্থির করে রাখে।",
   "inputs.speed.label": "ভাসার গতি",
   "inputs.speed.section": "টেক্সচার ও মোশন",
-  "inputs.speed.help": "প্রতি ড্রিফট লুপের সেকেন্ড - মান বেশি হলে ধীর। ফ্রেম বাজেট সায় দিলে ভিডিও এক্সপোর্টে একটি লুপ ধরা হয় (লম্বা লুপ 60 fps-এ ছোট করা হয়)।"
+  "inputs.speed.help": "প্রতি ড্রিফট লুপের সেকেন্ড - মান বেশি হলে ধীর। ফ্রেম বাজেট সায় দিলে ভিডিও এক্সপোর্টে একটি লুপ ধরা হয় (লম্বা লুপ 60 fps-এ ছোট করা হয়)।",
+  "inputs.count.section": "রং",
+  "inputs.color1.section": "রং",
+  "inputs.pos1.section": "রং",
+  "inputs.color2.section": "রং",
+  "inputs.pos2.section": "রং",
+  "inputs.color3.section": "রং",
+  "inputs.pos3.section": "রং",
+  "inputs.color4.section": "রং",
+  "inputs.pos4.section": "রং",
+  "inputs.color5.section": "রং",
+  "inputs.pos5.section": "রং",
+  "inputs.color6.section": "রং",
+  "inputs.pos6.section": "রং"
 }

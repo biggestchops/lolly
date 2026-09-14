@@ -60,5 +60,18 @@
   "inputs.distance.help": "Hur långt färgpunkterna driver från sin inställda position. 100 % är standardstorleken på banan; 0 % låser dem på plats.",
   "inputs.speed.label": "Drifthastighet",
   "inputs.speed.section": "Textur och rörelse",
-  "inputs.speed.help": "Sekunder per driftloop - högre värde är långsammare. Videoexporter fångar en hel loop när bildbudgeten tillåter det (långa loopar förkortas till 60 fps)."
+  "inputs.speed.help": "Sekunder per driftloop - högre värde är långsammare. Videoexporter fångar en hel loop när bildbudgeten tillåter det (långa loopar förkortas till 60 fps).",
+  "inputs.count.section": "Färg",
+  "inputs.color1.section": "Färg",
+  "inputs.pos1.section": "Färg",
+  "inputs.color2.section": "Färg",
+  "inputs.pos2.section": "Färg",
+  "inputs.color3.section": "Färg",
+  "inputs.pos3.section": "Färg",
+  "inputs.color4.section": "Färg",
+  "inputs.pos4.section": "Färg",
+  "inputs.color5.section": "Färg",
+  "inputs.pos5.section": "Färg",
+  "inputs.color6.section": "Färg",
+  "inputs.pos6.section": "Färg"
 }

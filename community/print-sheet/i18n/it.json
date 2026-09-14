@@ -1,4 +1,13 @@
 {
   "name": "Foglio di stampa",
-  "description": "Disponi una singola grafica in più copie sulla stessa pagina (n-up) in formato A4, Letter o A3, con segni di taglio nel margine."
+  "description": "Disponi una singola grafica in più copie sulla stessa pagina (n-up) in formato A4, Letter o A3, con segni di taglio nel margine.",
+  "inputs.fill.section": "Foglio",
+  "inputs.pages.section": "Foglio",
+  "inputs.sheet.section": "Foglio",
+  "inputs.rows.section": "Layout",
+  "inputs.cols.section": "Layout",
+  "inputs.gap.section": "Layout",
+  "inputs.margin.section": "Layout",
+  "inputs.ticks.section": "Output",
+  "inputs.tickShape.section": "Output"
 }

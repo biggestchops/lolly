@@ -9,10 +9,10 @@ Roughly 543,000 lines of TypeScript, tests included, and 48,000 lines of CSS.
 
 | Directory | Source | Tests | CSS |
 |---|---|---|---|
-| `views/` | 306 files, 150,836 lines | 150 files, 55,407 lines | 4 files, 735 lines |
-| `lib/` | 500 files, 114,080 lines | 299 files, 59,255 lines | 11 files, 1,732 lines |
+| `views/` | 306 files, 150,778 lines | 150 files, 55,428 lines | 4 files, 735 lines |
+| `lib/` | 502 files, 114,156 lines | 300 files, 59,280 lines | 11 files, 1,732 lines |
 | `bridge/` | 130 files, 45,825 lines | 87 files, 20,319 lines | none |
-| `components/` | 66 files, 21,601 lines | 31 files, 10,431 lines | 9 files, 685 lines |
+| `components/` | 68 files, 21,837 lines | 33 files, 10,527 lines | 10 files, 705 lines |
 | `collab/` | 20 files, 13,525 lines | 22 files, 14,131 lines | none |
 | `pro/` | 22 files, 8,401 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
 | `org/` | 19 files, 6,063 lines | 15 files, 4,053 lines | none |
@@ -61,7 +61,7 @@ Do not be ambushed by these. The largest source files, by line count:
 | 7,462 | `bridge/export.ts` | yes, but mostly gated. `export-audio-bed.test.ts` imports `bedStartOffset` and `connectMusic` directly and always runs; the SVG and PDF emission is covered by ten `chromiumOrSkip()` suites (`export-m3`, `export-paint-order`, `export-stroke-paint`, `export-shadow-fidelity`, `export-pdf-shadow-fidelity`, `export-emf-eps-shadow`, `export-atomic-inline`, `export-backdrop-blur`, `export-form-controls`, `export-text-emission`) that esbuild-bundle the real `renderSvgFromHtml` and drive it in Chromium, and which **self-skip** when no Chromium is installed. `export-text-emission` is the newest and covers the `<path>`-vs-`<text>` decision layer specifically; unlike the SUSE-gated golden suite it is brand-independent, so it runs on `lolly-start` too. |
 | 4,423 | `views/valid.ts` | `valid-verdict.test.ts` only |
 | 4,070 | `views/picker.ts` | partial - the format and embeddability rules are extracted to `picker-formats.ts` and covered by `picker-formats.test.ts`, plus `picker-initial-tab.test.ts`; the 3,000-line panel body is not. |
-| 4,000 | `views/tool-inputs.ts` | none |
+| 3,986 | `views/tool-inputs.ts` | none |
 | 3,659 | `views/color-lab.ts` | yes |
 | 3,276 | `views/projects.ts` | none |
 | 3,143 | `bridge/sequence-render.ts` | yes |

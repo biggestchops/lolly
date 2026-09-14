@@ -1,4 +1,13 @@
 {
   "name": "الترجمة",
-  "description": "ترجمة نصية لمقطع - فرّغها صوتيًا على جهازك أو أضف ملف SRT أو VTT جاهزًا، نسّق مظهر المقاطع، وصدّر إطارات بترجمة مدمجة في الصورة مع ملفي .srt و.vtt نظيفين مرفقين."
+  "description": "ترجمة نصية لمقطع - فرّغها صوتيًا على جهازك أو أضف ملف SRT أو VTT جاهزًا، نسّق مظهر المقاطع، وصدّر إطارات بترجمة مدمجة في الصورة مع ملفي .srt و.vtt نظيفين مرفقين.",
+  "inputs.style.section": "التسميات التوضيحية",
+  "inputs.position.section": "التسميات التوضيحية",
+  "inputs.fontSize.section": "التسميات التوضيحية",
+  "inputs.color.section": "التسميات التوضيحية",
+  "inputs.background.section": "التسميات التوضيحية",
+  "inputs.maxLines.section": "التسميات التوضيحية",
+  "inputs.showTimecodes.section": "التسميات التوضيحية",
+  "inputs.burnIn.section": "الإخراج",
+  "inputs.time.section": "التوقيت"
 }

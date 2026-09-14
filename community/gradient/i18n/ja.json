@@ -60,5 +60,18 @@
   "inputs.distance.help": "カラーポイントが設定位置からどれだけ離れて漂うかを設定します。100%が既定の軌道サイズ、0%にすると固定されます。",
   "inputs.speed.label": "ドリフト速度",
   "inputs.speed.section": "テクスチャ & モーション",
-  "inputs.speed.help": "1回のドリフトループにかかる秒数です。数値が大きいほどゆっくりになります。動画書き出しでは、フレーム予算が許す範囲で1ループ分を収録します(長いループは60fpsで短縮されます)。"
+  "inputs.speed.help": "1回のドリフトループにかかる秒数です。数値が大きいほどゆっくりになります。動画書き出しでは、フレーム予算が許す範囲で1ループ分を収録します(長いループは60fpsで短縮されます)。",
+  "inputs.count.section": "カラー",
+  "inputs.color1.section": "カラー",
+  "inputs.pos1.section": "カラー",
+  "inputs.color2.section": "カラー",
+  "inputs.pos2.section": "カラー",
+  "inputs.color3.section": "カラー",
+  "inputs.pos3.section": "カラー",
+  "inputs.color4.section": "カラー",
+  "inputs.pos4.section": "カラー",
+  "inputs.color5.section": "カラー",
+  "inputs.pos5.section": "カラー",
+  "inputs.color6.section": "カラー",
+  "inputs.pos6.section": "カラー"
 }

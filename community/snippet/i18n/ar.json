@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "إطار النافذة",
   "inputs.blinkCursor.label": "مؤشر وامض",
   "inputs.blinkCursor.help": "مؤشر وامض بأسلوب الطرفية يظهر بعد الكود على الشاشة فقط. إيقافه يحافظ على نظافة الصورة المُصدَّرة.",
-  "inputs.scale.label": "الحجم"
+  "inputs.scale.label": "الحجم",
+  "inputs.scale.section": "النص",
+  "inputs.lineHeight.section": "النص",
+  "inputs.lineNumbers.section": "النص",
+  "inputs.blinkCursor.section": "النص",
+  "inputs.fileName.section": "شريط العنوان",
+  "inputs.titleScale.section": "شريط العنوان",
+  "inputs.titleIcon.section": "شريط العنوان",
+  "inputs.iconScale.section": "شريط العنوان",
+  "inputs.windowStyle.section": "شريط العنوان",
+  "inputs.showWindow.section": "شريط العنوان",
+  "inputs.theme.section": "المظهر",
+  "inputs.shadow.section": "المظهر",
+  "inputs.calloutMode.section": "تعليقات توضيحية",
+  "inputs.calloutPrefix.section": "تعليقات توضيحية",
+  "inputs.calloutFont.section": "تعليقات توضيحية"
 }

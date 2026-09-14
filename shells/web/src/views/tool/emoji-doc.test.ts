@@ -48,7 +48,7 @@ function fakeRuntime() {
     styles,
     emoji: { present: true, replaced: 1, unresolved: 0, style: null as EmojiStyleV1 | null },
     onEmojiChange: () => () => {},
-    async setEmojiStyle(style: EmojiStyleV1 | null) { styles.push(style); },
+    async setEmojiStyle(style: EmojiStyleV1 | null) { styles.push(style); this.emoji.style = style; },
     async applyEmojiToDom() { return { present: true, replaced: 0, unresolved: 0, census: [] }; },
   };
 }

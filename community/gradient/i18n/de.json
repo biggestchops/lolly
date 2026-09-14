@@ -60,5 +60,18 @@
   "inputs.distance.help": "Wie weit sich die Farbpunkte von ihrer festgelegten Position entfernen. 100 % ist die Standard-Umlaufgröße; bei 0 % bleiben sie fixiert.",
   "inputs.speed.label": "Driftgeschwindigkeit",
   "inputs.speed.section": "Textur & Bewegung",
-  "inputs.speed.help": "Sekunden pro Drift-Schleife - je höher, desto langsamer. Videoexporte erfassen eine Schleife, sofern es das Bildbudget zulässt (lange Schleifen werden bei 60 fps verkürzt)."
+  "inputs.speed.help": "Sekunden pro Drift-Schleife - je höher, desto langsamer. Videoexporte erfassen eine Schleife, sofern es das Bildbudget zulässt (lange Schleifen werden bei 60 fps verkürzt).",
+  "inputs.count.section": "Farbe",
+  "inputs.color1.section": "Farbe",
+  "inputs.pos1.section": "Farbe",
+  "inputs.color2.section": "Farbe",
+  "inputs.pos2.section": "Farbe",
+  "inputs.color3.section": "Farbe",
+  "inputs.pos3.section": "Farbe",
+  "inputs.color4.section": "Farbe",
+  "inputs.pos4.section": "Farbe",
+  "inputs.color5.section": "Farbe",
+  "inputs.pos5.section": "Farbe",
+  "inputs.color6.section": "Farbe",
+  "inputs.pos6.section": "Farbe"
 }

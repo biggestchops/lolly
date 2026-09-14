@@ -60,5 +60,18 @@
   "inputs.distance.help": "رنگ پوائنٹس اپنی مقررہ پوزیشن سے کتنی دور بہتے ہیں۔ 100% ڈیفالٹ مدار کا سائز ہے؛ 0% انہیں اپنی جگہ پر منجمد کر دیتا ہے۔",
   "inputs.speed.label": "تیرنے کی رفتار",
   "inputs.speed.section": "ساخت اور حرکت",
-  "inputs.speed.help": "فی بہاؤ لوپ سیکنڈز - زیادہ ویلیو کا مطلب سست رفتار۔ ویڈیو ایکسپورٹ جہاں فریم بجٹ اجازت دے وہاں ایک لوپ کیپچر کرتا ہے (طویل لوپس 60 fps پر مختصر کر دیے جاتے ہیں)۔"
+  "inputs.speed.help": "فی بہاؤ لوپ سیکنڈز - زیادہ ویلیو کا مطلب سست رفتار۔ ویڈیو ایکسپورٹ جہاں فریم بجٹ اجازت دے وہاں ایک لوپ کیپچر کرتا ہے (طویل لوپس 60 fps پر مختصر کر دیے جاتے ہیں)۔",
+  "inputs.count.section": "رنگ",
+  "inputs.color1.section": "رنگ",
+  "inputs.pos1.section": "رنگ",
+  "inputs.color2.section": "رنگ",
+  "inputs.pos2.section": "رنگ",
+  "inputs.color3.section": "رنگ",
+  "inputs.pos3.section": "رنگ",
+  "inputs.color4.section": "رنگ",
+  "inputs.pos4.section": "رنگ",
+  "inputs.color5.section": "رنگ",
+  "inputs.pos5.section": "رنگ",
+  "inputs.color6.section": "رنگ",
+  "inputs.pos6.section": "رنگ"
 }

@@ -2,7 +2,7 @@
   "id": "snippet",
   "name": "Snippet",
   "description": "Turn code snippets into clean, syntax-highlighted, shareable images.",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "engineVersion": "^1.191.0",
   "status": "official",
   "category": "everyone",
@@ -16,6 +16,12 @@
     "order": 5
   },
   "render": {
+    "sectionIcons": {
+      "Text": "font",
+      "Title bar": "panelTop",
+      "Look": "paintbrush",
+      "Callouts": "messageCircle"
+    },
     "width": 1200,
     "height": 800,
     "formats": [
@@ -45,68 +51,6 @@
       "type": "longtext",
       "default": "const greet = (name) => {\n  console.log(`Hello, ${name}!`);\n  return name;\n};\n\ngreet('World');",
       "placeholder": "Paste your code here…"
-    },
-    {
-      "id": "scale",
-      "label": "Size",
-      "type": "number",
-      "display": "slider",
-      "default": 100,
-      "min": 70,
-      "max": 200,
-      "step": 5
-    },
-    {
-      "id": "lineHeight",
-      "label": "Line height",
-      "type": "number",
-      "display": "slider",
-      "default": 1.7,
-      "min": 0.75,
-      "max": 2,
-      "step": 0.05
-    },
-    {
-      "id": "fileName",
-      "label": "Filename",
-      "type": "text",
-      "urlKey": "name",
-      "default": "",
-      "placeholder": "snippet.js",
-      "help": "Shown in the window title bar. Spaces are fine (e.g. My Component.tsx)."
-    },
-    {
-      "id": "titleScale",
-      "section": "Title bar",
-      "label": "Title size",
-      "type": "number",
-      "display": "slider",
-      "help": "Scales the window title bar text (and its icon) independently of the code.",
-      "default": 100,
-      "min": 50,
-      "max": 200,
-      "step": 5
-    },
-    {
-      "id": "titleIcon",
-      "section": "Title bar",
-      "label": "Icon",
-      "type": "asset",
-      "assetType": "image",
-      "allowUpload": true,
-      "help": "Optional logo or glyph shown in the window title bar, before the filename. Drop in a logo to make the frame yours."
-    },
-    {
-      "id": "iconScale",
-      "section": "Title bar",
-      "label": "Icon size",
-      "type": "number",
-      "display": "slider",
-      "help": "Scales just the title bar icon, on top of the title size.",
-      "default": 100,
-      "min": 50,
-      "max": 250,
-      "step": 5
     },
     {
       "id": "language",
@@ -165,6 +109,118 @@
       ]
     },
     {
+      "id": "scale",
+      "label": "Size",
+      "type": "number",
+      "display": "slider",
+      "default": 100,
+      "min": 70,
+      "max": 200,
+      "step": 5,
+      "section": "Text"
+    },
+    {
+      "id": "lineHeight",
+      "label": "Line height",
+      "type": "number",
+      "display": "slider",
+      "default": 1.7,
+      "min": 0.75,
+      "max": 2,
+      "step": 0.05,
+      "section": "Text"
+    },
+    {
+      "id": "lineNumbers",
+      "display": "pill",
+      "label": "Line numbers",
+      "type": "boolean",
+      "default": true,
+      "section": "Text"
+    },
+    {
+      "id": "blinkCursor",
+      "display": "pill",
+      "label": "Blink cursor",
+      "help": "A terminal-style blinking caret after the code, on screen. Off keeps the exported still clean.",
+      "type": "boolean",
+      "default": false,
+      "section": "Text"
+    },
+    {
+      "id": "fileName",
+      "label": "Filename",
+      "type": "text",
+      "urlKey": "name",
+      "default": "",
+      "placeholder": "snippet.js",
+      "help": "Shown in the window title bar. Spaces are fine (e.g. My Component.tsx).",
+      "section": "Title bar"
+    },
+    {
+      "id": "titleScale",
+      "section": "Title bar",
+      "label": "Title size",
+      "type": "number",
+      "display": "slider",
+      "help": "Scales the window title bar text (and its icon) independently of the code.",
+      "default": 100,
+      "min": 50,
+      "max": 200,
+      "step": 5
+    },
+    {
+      "id": "titleIcon",
+      "section": "Title bar",
+      "label": "Icon",
+      "type": "asset",
+      "assetType": "image",
+      "allowUpload": true,
+      "help": "Optional logo or glyph shown in the window title bar, before the filename. Drop in a logo to make the frame yours."
+    },
+    {
+      "id": "iconScale",
+      "section": "Title bar",
+      "label": "Icon size",
+      "type": "number",
+      "display": "slider",
+      "help": "Scales just the title bar icon, on top of the title size.",
+      "default": 100,
+      "min": 50,
+      "max": 250,
+      "step": 5
+    },
+    {
+      "id": "windowStyle",
+      "label": "Frame style",
+      "type": "select",
+      "default": "nuremberg",
+      "help": "Which desktop the buttons imitate. Nuremberg is GNOME Adwaita, Cupertino is macOS and Redmond is Windows.",
+      "options": [
+        {
+          "value": "cupertino",
+          "label": "Cupertino"
+        },
+        {
+          "value": "redmond",
+          "label": "Redmond"
+        },
+        {
+          "value": "nuremberg",
+          "label": "Nuremberg"
+        }
+      ],
+      "section": "Title bar"
+    },
+    {
+      "id": "showWindow",
+      "display": "pill",
+      "label": "Window chrome",
+      "type": "boolean",
+      "default": true,
+      "section": "Title bar"
+    },
+    {
       "id": "theme",
       "label": "Theme",
       "type": "select",
@@ -186,28 +242,16 @@
           "value": "nord",
           "label": "Nord"
         }
-      ]
+      ],
+      "section": "Look"
     },
     {
-      "id": "windowStyle",
-      "label": "Frame style",
-      "type": "select",
-      "default": "nuremberg",
-      "help": "Which desktop the buttons imitate. Nuremberg is GNOME Adwaita, Cupertino is macOS and Redmond is Windows.",
-      "options": [
-        {
-          "value": "cupertino",
-          "label": "Cupertino"
-        },
-        {
-          "value": "redmond",
-          "label": "Redmond"
-        },
-        {
-          "value": "nuremberg",
-          "label": "Nuremberg"
-        }
-      ]
+      "id": "shadow",
+      "display": "pill",
+      "label": "Drop shadow",
+      "type": "boolean",
+      "default": true,
+      "section": "Look"
     },
     {
       "id": "calloutMode",
@@ -272,35 +316,6 @@
           "label": "Design system italic"
         }
       ]
-    },
-    {
-      "id": "lineNumbers",
-      "display": "pill",
-      "label": "Line numbers",
-      "type": "boolean",
-      "default": true
-    },
-    {
-      "id": "showWindow",
-      "display": "pill",
-      "label": "Window chrome",
-      "type": "boolean",
-      "default": true
-    },
-    {
-      "id": "shadow",
-      "display": "pill",
-      "label": "Drop shadow",
-      "type": "boolean",
-      "default": true
-    },
-    {
-      "id": "blinkCursor",
-      "display": "pill",
-      "label": "Blink cursor",
-      "help": "A terminal-style blinking caret after the code, on screen. Off keeps the exported still clean.",
-      "type": "boolean",
-      "default": false
     }
   ],
   "requires": [

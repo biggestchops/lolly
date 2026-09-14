@@ -60,5 +60,18 @@
   "inputs.distance.help": "Cât de departe se îndepărtează punctele de culoare de poziția lor fixă. 100% este dimensiunea implicită a orbitei; 0% le imobilizează pe loc.",
   "inputs.speed.label": "Viteza de derivă",
   "inputs.speed.section": "Textură și mișcare",
-  "inputs.speed.help": "Secunde per buclă de derivă - cu cât valoarea e mai mare, cu atât mișcarea e mai lentă. Exporturile video captează o buclă completă atunci când bugetul de cadre permite (buclele lungi sunt scurtate la 60 fps)."
+  "inputs.speed.help": "Secunde per buclă de derivă - cu cât valoarea e mai mare, cu atât mișcarea e mai lentă. Exporturile video captează o buclă completă atunci când bugetul de cadre permite (buclele lungi sunt scurtate la 60 fps).",
+  "inputs.count.section": "Culoare",
+  "inputs.color1.section": "Culoare",
+  "inputs.pos1.section": "Culoare",
+  "inputs.color2.section": "Culoare",
+  "inputs.pos2.section": "Culoare",
+  "inputs.color3.section": "Culoare",
+  "inputs.pos3.section": "Culoare",
+  "inputs.color4.section": "Culoare",
+  "inputs.pos4.section": "Culoare",
+  "inputs.color5.section": "Culoare",
+  "inputs.pos5.section": "Culoare",
+  "inputs.color6.section": "Culoare",
+  "inputs.pos6.section": "Culoare"
 }

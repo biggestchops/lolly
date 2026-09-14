@@ -1,4 +1,13 @@
 {
   "name": "Utskriftsark",
-  "description": "Legg ut ett motiv n-up på A4, Letter eller A3, med skjæremerker i margen."
+  "description": "Legg ut ett motiv n-up på A4, Letter eller A3, med skjæremerker i margen.",
+  "inputs.fill.section": "Ark",
+  "inputs.pages.section": "Ark",
+  "inputs.sheet.section": "Ark",
+  "inputs.rows.section": "Layout",
+  "inputs.cols.section": "Layout",
+  "inputs.gap.section": "Layout",
+  "inputs.margin.section": "Layout",
+  "inputs.ticks.section": "Utdata",
+  "inputs.tickShape.section": "Utdata"
 }

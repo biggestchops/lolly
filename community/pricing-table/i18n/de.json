@@ -1,4 +1,12 @@
 {
   "name": "Preise",
-  "description": "Pläne als Spalten, Funktionen als Zeilen, Häkchen und Kreuze, und ein Plan als Empfehlung hervorgehoben."
+  "description": "Pläne als Spalten, Funktionen als Zeilen, Häkchen und Kreuze, und ein Plan als Empfehlung hervorgehoben.",
+  "inputs.heading.section": "Text",
+  "inputs.subheading.section": "Text",
+  "inputs.cta.section": "Text",
+  "inputs.highlight.section": "Hervorhebung",
+  "inputs.highlightLabel.section": "Hervorhebung",
+  "inputs.background.section": "Look",
+  "inputs.accent.section": "Look",
+  "inputs.layout.section": "Look"
 }

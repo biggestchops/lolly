@@ -60,5 +60,18 @@
   "inputs.distance.help": "컬러 포인트가 설정된 위치에서 얼마나 멀리 떠다닐지 정해요. 100%가 기본 궤도 크기이고, 0%면 고정돼요.",
   "inputs.speed.label": "드리프트 속도",
   "inputs.speed.section": "질감 & 모션",
-  "inputs.speed.help": "드리프트 한 바퀴에 걸리는 초예요 - 값이 클수록 느려져요. 동영상 내보내기는 프레임 예산이 허용하는 한 한 바퀴를 담아요(긴 루프는 60fps에서 짧아져요)."
+  "inputs.speed.help": "드리프트 한 바퀴에 걸리는 초예요 - 값이 클수록 느려져요. 동영상 내보내기는 프레임 예산이 허용하는 한 한 바퀴를 담아요(긴 루프는 60fps에서 짧아져요).",
+  "inputs.count.section": "색상",
+  "inputs.color1.section": "색상",
+  "inputs.pos1.section": "색상",
+  "inputs.color2.section": "색상",
+  "inputs.pos2.section": "색상",
+  "inputs.color3.section": "색상",
+  "inputs.pos3.section": "색상",
+  "inputs.color4.section": "색상",
+  "inputs.pos4.section": "색상",
+  "inputs.color5.section": "색상",
+  "inputs.pos5.section": "색상",
+  "inputs.color6.section": "색상",
+  "inputs.pos6.section": "색상"
 }

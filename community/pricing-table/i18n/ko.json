@@ -1,4 +1,12 @@
 {
   "name": "가격",
-  "description": "요금제는 열로, 기능은 행으로 정리하고, 체크와 엑스 표시를 넣어요. 추천 요금제 하나는 따로 강조할 수 있어요."
+  "description": "요금제는 열로, 기능은 행으로 정리하고, 체크와 엑스 표시를 넣어요. 추천 요금제 하나는 따로 강조할 수 있어요.",
+  "inputs.heading.section": "텍스트",
+  "inputs.subheading.section": "텍스트",
+  "inputs.cta.section": "텍스트",
+  "inputs.highlight.section": "강조",
+  "inputs.highlightLabel.section": "강조",
+  "inputs.background.section": "룩",
+  "inputs.accent.section": "룩",
+  "inputs.layout.section": "룩"
 }

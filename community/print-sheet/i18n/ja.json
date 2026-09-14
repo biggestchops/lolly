@@ -1,4 +1,13 @@
 {
   "name": "印刷シート",
-  "description": "1つの作品をA4、レター、A3の用紙に面付けし、余白にトンボを入れます。"
+  "description": "1つの作品をA4、レター、A3の用紙に面付けし、余白にトンボを入れます。",
+  "inputs.fill.section": "用紙",
+  "inputs.pages.section": "用紙",
+  "inputs.sheet.section": "用紙",
+  "inputs.rows.section": "レイアウト",
+  "inputs.cols.section": "レイアウト",
+  "inputs.gap.section": "レイアウト",
+  "inputs.margin.section": "レイアウト",
+  "inputs.ticks.section": "出力",
+  "inputs.tickShape.section": "出力"
 }

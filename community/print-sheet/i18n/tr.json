@@ -1,4 +1,13 @@
 {
   "name": "Baskı Sayfası",
-  "description": "Tek bir tasarımı A4, Letter ya da A3 kağıdına çoklu kopya olarak diz, kenarlara kesim işaretleri ekle."
+  "description": "Tek bir tasarımı A4, Letter ya da A3 kağıdına çoklu kopya olarak diz, kenarlara kesim işaretleri ekle.",
+  "inputs.fill.section": "Sayfa",
+  "inputs.pages.section": "Sayfa",
+  "inputs.sheet.section": "Sayfa",
+  "inputs.rows.section": "Düzen",
+  "inputs.cols.section": "Düzen",
+  "inputs.gap.section": "Düzen",
+  "inputs.margin.section": "Düzen",
+  "inputs.ticks.section": "Çıktı",
+  "inputs.tickShape.section": "Çıktı"
 }

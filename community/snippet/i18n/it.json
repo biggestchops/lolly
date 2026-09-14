@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Cornice finestra",
   "inputs.blinkCursor.label": "Cursore lampeggiante",
   "inputs.blinkCursor.help": "Un cursore lampeggiante in stile terminale dopo il codice, a schermo. Disattivato mantiene pulito il fermo immagine esportato.",
-  "inputs.scale.label": "Dimensione"
+  "inputs.scale.label": "Dimensione",
+  "inputs.scale.section": "Testo",
+  "inputs.lineHeight.section": "Testo",
+  "inputs.lineNumbers.section": "Testo",
+  "inputs.blinkCursor.section": "Testo",
+  "inputs.fileName.section": "Barra del titolo",
+  "inputs.titleScale.section": "Barra del titolo",
+  "inputs.titleIcon.section": "Barra del titolo",
+  "inputs.iconScale.section": "Barra del titolo",
+  "inputs.windowStyle.section": "Barra del titolo",
+  "inputs.showWindow.section": "Barra del titolo",
+  "inputs.theme.section": "Aspetto",
+  "inputs.shadow.section": "Aspetto",
+  "inputs.calloutMode.section": "Annotazioni",
+  "inputs.calloutPrefix.section": "Annotazioni",
+  "inputs.calloutFont.section": "Annotazioni"
 }

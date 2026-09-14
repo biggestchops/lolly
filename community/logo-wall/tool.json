@@ -2,13 +2,18 @@
   "id": "logo-wall",
   "name": "Logo Wall",
   "description": "Arrange a pile of logos into a clean, even sponsor grid - the “NASCAR” wall.",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "engineVersion": "^1.0.0",
   "status": "official",
   "category": "designer",
   "tags": ["logo", "lockup", "wall", "grid", "nascar", "logos", "brand", "partners", "customers", "sponsors", "clients", "montage", "cloud", "vector", "threshold", "on-device"],
   "a11yLabel": "A grid of {{logos.length}} logos",
   "render": {
+    "sectionIcons": {
+      "Layout": "grid",
+      "Vector ink": "droplet",
+      "Step & repeat": "repeat"
+    },
     "width": 1280,
     "height": 720,
     "formats": ["png", "svg", "penpot", "pdf", "dxf", "jpg", "webp", "avif", "tiff", "emf", "eps", "pdf-cmyk"],

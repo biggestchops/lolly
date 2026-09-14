@@ -1,4 +1,13 @@
 {
   "name": "Субтитри",
-  "description": "Субтитри для кліпу - розшифруйте його прямо на пристрої або додайте готовий файл SRT/VTT, оформте репліки та експортуйте кадри із вбудованими субтитрами разом із чистими супровідними файлами .srt і .vtt."
+  "description": "Субтитри для кліпу - розшифруйте його прямо на пристрої або додайте готовий файл SRT/VTT, оформте репліки та експортуйте кадри із вбудованими субтитрами разом із чистими супровідними файлами .srt і .vtt.",
+  "inputs.style.section": "Субтитри",
+  "inputs.position.section": "Субтитри",
+  "inputs.fontSize.section": "Субтитри",
+  "inputs.color.section": "Субтитри",
+  "inputs.background.section": "Субтитри",
+  "inputs.maxLines.section": "Субтитри",
+  "inputs.showTimecodes.section": "Субтитри",
+  "inputs.burnIn.section": "Вивід",
+  "inputs.time.section": "Час"
 }

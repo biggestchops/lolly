@@ -1,4 +1,13 @@
 {
   "name": "سب ٹائٹلز",
-  "description": "کسی کلپ کے سب ٹائٹلز - اسے اپنے آلے پر ٹرانسکرائب کریں یا SRT/VTT فائل شامل کریں، کیپشنز کا انداز طے کریں، اور کیپشنز والے فریمز کے ساتھ ساتھ صاف .srt اور .vtt معاون فائلیں ایکسپورٹ کریں۔"
+  "description": "کسی کلپ کے سب ٹائٹلز - اسے اپنے آلے پر ٹرانسکرائب کریں یا SRT/VTT فائل شامل کریں، کیپشنز کا انداز طے کریں، اور کیپشنز والے فریمز کے ساتھ ساتھ صاف .srt اور .vtt معاون فائلیں ایکسپورٹ کریں۔",
+  "inputs.style.section": "کیپشنز",
+  "inputs.position.section": "کیپشنز",
+  "inputs.fontSize.section": "کیپشنز",
+  "inputs.color.section": "کیپشنز",
+  "inputs.background.section": "کیپشنز",
+  "inputs.maxLines.section": "کیپشنز",
+  "inputs.showTimecodes.section": "کیپشنز",
+  "inputs.burnIn.section": "آؤٹ پٹ",
+  "inputs.time.section": "وقت"
 }

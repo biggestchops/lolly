@@ -1,4 +1,13 @@
 {
   "name": "Аркуш для друку",
-  "description": "Розмістіть один макет по кілька копій (n-up) на аркуші A4, Letter або A3, з мітками обрізки на полях."
+  "description": "Розмістіть один макет по кілька копій (n-up) на аркуші A4, Letter або A3, з мітками обрізки на полях.",
+  "inputs.fill.section": "Аркуш",
+  "inputs.pages.section": "Аркуш",
+  "inputs.sheet.section": "Аркуш",
+  "inputs.rows.section": "Макет",
+  "inputs.cols.section": "Макет",
+  "inputs.gap.section": "Макет",
+  "inputs.margin.section": "Макет",
+  "inputs.ticks.section": "Вивід",
+  "inputs.tickShape.section": "Вивід"
 }

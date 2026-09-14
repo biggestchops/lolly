@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Рамка вікна",
   "inputs.blinkCursor.label": "Блимаючий курсор",
   "inputs.blinkCursor.help": "Блимаючий курсор у стилі терміналу після коду, на екрані. Вимкнено - експортоване зображення залишається чистим.",
-  "inputs.scale.label": "Розмір"
+  "inputs.scale.label": "Розмір",
+  "inputs.scale.section": "Текст",
+  "inputs.lineHeight.section": "Текст",
+  "inputs.lineNumbers.section": "Текст",
+  "inputs.blinkCursor.section": "Текст",
+  "inputs.fileName.section": "Рядок заголовка",
+  "inputs.titleScale.section": "Рядок заголовка",
+  "inputs.titleIcon.section": "Рядок заголовка",
+  "inputs.iconScale.section": "Рядок заголовка",
+  "inputs.windowStyle.section": "Рядок заголовка",
+  "inputs.showWindow.section": "Рядок заголовка",
+  "inputs.theme.section": "Вигляд",
+  "inputs.shadow.section": "Вигляд",
+  "inputs.calloutMode.section": "Примітки",
+  "inputs.calloutPrefix.section": "Примітки",
+  "inputs.calloutFont.section": "Примітки"
 }

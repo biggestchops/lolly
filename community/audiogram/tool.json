@@ -3,7 +3,7 @@
   "name": "Audiogram",
   "description": "Turn a voice clip or song into a video in your design system's colours that actually moves with the sound - bars, spectrum, ring, ridgeline or scope, ready for social.",
   "a11yLabel": "Audiogram card for {{default title \"an audio clip\"}} with a waveform animated from the audio",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "engineVersion": ">=1.150.0 <2.0.0",
   "status": "community",
   "category": "everyone",
@@ -90,6 +90,11 @@
     }
   ],
   "render": {
+    "sectionIcons": {
+      "Playback": "play",
+      "Captions": "transcript",
+      "Colour": "palette"
+    },
     "width": 1080,
     "height": 1080,
     "formats": ["png", "webm", "mp4", "gif", "webp-anim", "html", "wav", "mp3", "m4a", "opus", "srt", "vtt", "apng"],

@@ -1,4 +1,12 @@
 {
   "name": "Presyo",
-  "description": "Mga plano bilang column, mga feature bilang row, mga tsek at ekis, at isang plano na naka-highlight bilang ang rekomendado."
+  "description": "Mga plano bilang column, mga feature bilang row, mga tsek at ekis, at isang plano na naka-highlight bilang ang rekomendado.",
+  "inputs.heading.section": "Teksto",
+  "inputs.subheading.section": "Teksto",
+  "inputs.cta.section": "Teksto",
+  "inputs.highlight.section": "Itampok",
+  "inputs.highlightLabel.section": "Itampok",
+  "inputs.background.section": "Itsura",
+  "inputs.accent.section": "Itsura",
+  "inputs.layout.section": "Itsura"
 }

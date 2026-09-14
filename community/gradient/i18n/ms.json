@@ -60,5 +60,18 @@
   "inputs.distance.help": "Sejauh mana titik warna hanyut daripada kedudukan yang ditetapkan. 100% ialah saiz orbit lalai; 0% mengekalkannya tetap di tempatnya.",
   "inputs.speed.label": "Kelajuan hanyutan",
   "inputs.speed.section": "Tekstur & Gerakan",
-  "inputs.speed.help": "Saat setiap gelung hanyutan - semakin tinggi semakin perlahan. Eksport video merakam satu gelung apabila bajet bingkai mengizinkan (gelung panjang dipendekkan pada 60 fps)."
+  "inputs.speed.help": "Saat setiap gelung hanyutan - semakin tinggi semakin perlahan. Eksport video merakam satu gelung apabila bajet bingkai mengizinkan (gelung panjang dipendekkan pada 60 fps).",
+  "inputs.count.section": "Warna",
+  "inputs.color1.section": "Warna",
+  "inputs.pos1.section": "Warna",
+  "inputs.color2.section": "Warna",
+  "inputs.pos2.section": "Warna",
+  "inputs.color3.section": "Warna",
+  "inputs.pos3.section": "Warna",
+  "inputs.color4.section": "Warna",
+  "inputs.pos4.section": "Warna",
+  "inputs.color5.section": "Warna",
+  "inputs.pos5.section": "Warna",
+  "inputs.color6.section": "Warna",
+  "inputs.pos6.section": "Warna"
 }

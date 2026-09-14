@@ -1,4 +1,12 @@
 {
   "name": "Bảng Giá",
-  "description": "Xếp các gói dịch vụ theo cột, tính năng theo hàng, đánh dấu tích và dấu X, rồi làm nổi bật một gói được đề xuất."
+  "description": "Xếp các gói dịch vụ theo cột, tính năng theo hàng, đánh dấu tích và dấu X, rồi làm nổi bật một gói được đề xuất.",
+  "inputs.heading.section": "Văn bản",
+  "inputs.subheading.section": "Văn bản",
+  "inputs.cta.section": "Văn bản",
+  "inputs.highlight.section": "Nổi bật",
+  "inputs.highlightLabel.section": "Nổi bật",
+  "inputs.background.section": "Phong cách",
+  "inputs.accent.section": "Phong cách",
+  "inputs.layout.section": "Phong cách"
 }

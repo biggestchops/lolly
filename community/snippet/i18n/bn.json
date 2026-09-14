@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "উইন্ডো ক্রোম",
   "inputs.blinkCursor.label": "ব্লিঙ্কিং কার্সার",
   "inputs.blinkCursor.help": "কোডের পরে টার্মিনাল-স্টাইলের ব্লিঙ্কিং ক্যারেট, শুধু স্ক্রিনে। বন্ধ রাখলে এক্সপোর্ট করা স্টিল পরিচ্ছন্ন থাকে।",
-  "inputs.scale.label": "আকার"
+  "inputs.scale.label": "আকার",
+  "inputs.scale.section": "টেক্সট",
+  "inputs.lineHeight.section": "টেক্সট",
+  "inputs.lineNumbers.section": "টেক্সট",
+  "inputs.blinkCursor.section": "টেক্সট",
+  "inputs.fileName.section": "শিরোনাম বার",
+  "inputs.titleScale.section": "শিরোনাম বার",
+  "inputs.titleIcon.section": "শিরোনাম বার",
+  "inputs.iconScale.section": "শিরোনাম বার",
+  "inputs.windowStyle.section": "শিরোনাম বার",
+  "inputs.showWindow.section": "শিরোনাম বার",
+  "inputs.theme.section": "লুক",
+  "inputs.shadow.section": "লুক",
+  "inputs.calloutMode.section": "টীকা",
+  "inputs.calloutPrefix.section": "টীকা",
+  "inputs.calloutFont.section": "টীকা"
 }

@@ -1,4 +1,12 @@
 {
   "name": "定价",
-  "description": "以列显示套餐、以行显示功能，用勾号和叉号标示，并突出显示一个推荐套餐。"
+  "description": "以列显示套餐、以行显示功能，用勾号和叉号标示，并突出显示一个推荐套餐。",
+  "inputs.heading.section": "文本",
+  "inputs.subheading.section": "文本",
+  "inputs.cta.section": "文本",
+  "inputs.highlight.section": "突出显示",
+  "inputs.highlightLabel.section": "突出显示",
+  "inputs.background.section": "外观",
+  "inputs.accent.section": "外观",
+  "inputs.layout.section": "外观"
 }

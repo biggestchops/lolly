@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Decoración de ventana",
   "inputs.blinkCursor.label": "Cursor parpadeante",
   "inputs.blinkCursor.help": "Un cursor parpadeante estilo terminal después del código, en pantalla. Desactivarlo mantiene la exportación limpia.",
-  "inputs.scale.label": "Tamaño"
+  "inputs.scale.label": "Tamaño",
+  "inputs.scale.section": "Texto",
+  "inputs.lineHeight.section": "Texto",
+  "inputs.lineNumbers.section": "Texto",
+  "inputs.blinkCursor.section": "Texto",
+  "inputs.fileName.section": "Barra de título",
+  "inputs.titleScale.section": "Barra de título",
+  "inputs.titleIcon.section": "Barra de título",
+  "inputs.iconScale.section": "Barra de título",
+  "inputs.windowStyle.section": "Barra de título",
+  "inputs.showWindow.section": "Barra de título",
+  "inputs.theme.section": "Aspecto",
+  "inputs.shadow.section": "Aspecto",
+  "inputs.calloutMode.section": "Anotaciones",
+  "inputs.calloutPrefix.section": "Anotaciones",
+  "inputs.calloutFont.section": "Anotaciones"
 }

@@ -1,7 +1,7 @@
 {
   "id": "synth",
   "name": "Synth",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "engineVersion": "^1.152.0",
   "status": "experimental",
   "singleInstance": true,
@@ -16,6 +16,11 @@
     { "label": "Slow drift", "values": { "scene": "field", "symmetry": 1, "intensity": 1.2, "speed": 0.45, "seed": 5, "rampRotate": 40 } }
   ],
   "render": {
+    "sectionIcons": {
+      "Scene": "box",
+      "Colour": "palette",
+      "Motion": "animate"
+    },
     "width": 1280,
     "height": 720,
     "formats": ["png", "jpg", "webp", "webm", "mp4", "gif", "apng", "avif", "tiff", "webp-anim"],

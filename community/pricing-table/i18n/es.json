@@ -1,4 +1,12 @@
 {
   "name": "Precios",
-  "description": "Planes en columnas, funciones en filas, marcas de verificación y cruces, y un plan destacado como el recomendado."
+  "description": "Planes en columnas, funciones en filas, marcas de verificación y cruces, y un plan destacado como el recomendado.",
+  "inputs.heading.section": "Texto",
+  "inputs.subheading.section": "Texto",
+  "inputs.cta.section": "Texto",
+  "inputs.highlight.section": "Destacado",
+  "inputs.highlightLabel.section": "Destacado",
+  "inputs.background.section": "Aspecto",
+  "inputs.accent.section": "Aspecto",
+  "inputs.layout.section": "Aspecto"
 }

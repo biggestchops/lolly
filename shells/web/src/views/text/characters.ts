@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import type { EmojiPopoverOptions } from '../../components/emoji-picker.ts';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import { typographyFamilies } from '../../../../../engine/src/tokens.ts';
 import { characterFontFiles } from '../../bridge/font-registry.ts';
@@ -16,13 +17,7 @@ export async function mountCharacters(
    *  rather than the machine's own face. Left out, the grid is unchanged. The
    *  browser outlives a choice, unlike the popover, so it is handed the revert and
    *  the set-change subscription too and redraws itself when the set changes. */
-  options: {
-    emoji?: {
-      apply(node: unknown): Promise<unknown>;
-      revert?(node: unknown): Promise<unknown>;
-      onSetChange?(fn: () => void): () => void;
-    };
-  } = {}
+  options: EmojiPopoverOptions = {}
 ): Promise<() => void> {
   const abort = new AbortController();
   let generation = 0,
@@ -263,7 +258,7 @@ export async function mountCharacters(
               (value) => {
                 void pick(value);
               },
-              options.emoji ? { emoji: options.emoji } : {}
+              options
             );
             if (abort.signal.aborted) emojiCleanup();
           })

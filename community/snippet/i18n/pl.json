@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Ramka okna",
   "inputs.blinkCursor.label": "Migający kursor",
   "inputs.blinkCursor.help": "Migający kursor w stylu terminala po kodzie, na ekranie. Wyłączenie zachowuje czysty wygląd eksportu.",
-  "inputs.scale.label": "Rozmiar"
+  "inputs.scale.label": "Rozmiar",
+  "inputs.scale.section": "Tekst",
+  "inputs.lineHeight.section": "Tekst",
+  "inputs.lineNumbers.section": "Tekst",
+  "inputs.blinkCursor.section": "Tekst",
+  "inputs.fileName.section": "Pasek tytułu",
+  "inputs.titleScale.section": "Pasek tytułu",
+  "inputs.titleIcon.section": "Pasek tytułu",
+  "inputs.iconScale.section": "Pasek tytułu",
+  "inputs.windowStyle.section": "Pasek tytułu",
+  "inputs.showWindow.section": "Pasek tytułu",
+  "inputs.theme.section": "Wygląd",
+  "inputs.shadow.section": "Wygląd",
+  "inputs.calloutMode.section": "Adnotacje",
+  "inputs.calloutPrefix.section": "Adnotacje",
+  "inputs.calloutFont.section": "Adnotacje"
 }

@@ -461,45 +461,18 @@ test('the browsing surface draws too, and its cleanup stops the watch', async ()
 const source = (path: string): string =>
   readFileSync(resolve(import.meta.dirname, '..', path), 'utf8');
 
-test('the sidebar opens the picker with the runtime pass, and redraws its cells after a pick', () => {
-  const src = source('views/tool-inputs.ts');
-  const wiring = src.slice(src.indexOf('[data-emoji-cell]'), src.indexOf('wireCells(wrap);'));
-  assert.match(wiring, /\{ emoji: \{ apply: \(node\) => runtime\.applyEmojiToDom\(node, \{ track: false, idScope: 'p' \}\) \} \}/,
-    'the popover gets the runtime pass, untracked, so the grid draws the chosen set without becoming the render');
-  assert.match(wiring, /btn\.textContent = emoji;[\s\S]{0,200}?drawEmojiCells\(\);/,
-    'a pick writes the glyph and then draws it, so the cell never shows the machine font');
-  assert.match(src, /const drawEmojiCells = \(\): void => \{[\s\S]{0,240}?runtime\.applyEmojiToDom\?\.\(wrap, \{ track: false, idScope \}\)/,
-    'one pass over the whole table, untracked and in a scope of its own');
-  assert.match(src, /const idScope = emojiCellScope\(\);/,
-    'each table takes its own id scope, so its artwork cannot claim the canvas placement ids');
-  assert.match(src, /wireCells\(wrap\);\s*\n\s*drawEmojiCells\(\);/,
-    'the cells that already carry a value are drawn when the sidebar builds');
-});
-
-test('the sidebar table pass is not the render, so the Emoji section still sees the canvas', () => {
-  // The regression this pins: a tracked walk of a sidebar table overwrote the
-  // runtime's snapshot with that table's counts, which hid the Emoji section (it
-  // shows on replaced + unresolved > 0) and re-pointed the next set change at the
-  // table instead of the canvas. `track: false` is the whole fix, so it is read
-  // off the source of both call sites rather than trusted.
-  const src = source('views/tool-inputs.ts');
-  const calls = src.split('runtime.applyEmojiToDom').slice(1).map((tail) => tail.slice(0, 80));
-  assert.equal(calls.length, 2, `both table call sites, and no third: ${calls.join(' | ')}`);
-  for (const call of calls) {
-    assert.match(call, /track: false/, `a sidebar pass must not be tracked: ${call}`);
-    assert.match(call, /idScope/, `a sidebar pass needs an id scope of its own: ${call}`);
-  }
-});
-
-test('the text view hands its runtime pass to the character browser', () => {
-  const src = source('views/text.ts');
-  assert.match(src, /apply: \(node\) => runtime\.applyEmojiToDom\(node, \{ track: false, idScope: 'p' \}\)/,
-    'a picker cell is chrome, so its pass is untracked and scoped');
-  assert.match(src, /revert: \(node\) => runtime\.revertEmojiDom\(node\)/,
-    'the browser outlives a choice, so it can put the characters back and draw the new set');
-  assert.match(source('views/text/characters.ts'),
-    /mountEmojiBrowser\([\s\S]{0,200}?options\.emoji \? \{ emoji: options\.emoji \} : \{\}/,
-    'the browser is given the pass when there is one, and is untouched when there is not');
+test('sidebar cells and the text workspace use the shared runtime picker adapter', () => {
+  const inputs = source('views/tool-inputs.ts');
+  assert.match(inputs, /wireEmojiCells\(root, host, runtime,/);
+  assert.match(inputs, /btn\.textContent = emoji;[\s\S]{0,200}?drawEmojiCells\(\);/);
+  assert.match(inputs, /runtime\.applyEmojiToDom\?\.\(wrap, \{ track: false, idScope \}\)/);
+  assert.match(source('components/input-emoji.ts'), /emojiPickerOptions\(host, runtime\)/);
+  assert.match(source('views/text.ts'), /emojiPickerOptions\(host, runtime\)/);
+  assert.match(source('views/text/characters.ts'), /mountEmojiBrowser\([\s\S]{0,200}?options/);
+  const adapter = source('lib/emoji-picker-options.ts');
+  assert.match(adapter, /applyEmojiToDom\(node, \{ track: false, idScope: 'p' \}\)/);
+  assert.match(adapter, /revertEmojiDom\(node\)/);
+  assert.match(adapter, /setEmojiStyle\(style\)/);
 });
 
 // -- the chunk stays lazy ----------------------------------------------------

@@ -1,4 +1,13 @@
 {
   "name": "Subtitrări",
-  "description": "Subtitrări pentru un clip - transcrie-l pe dispozitiv sau adaugă un fișier SRT/VTT, stilizează replicile și exportă cadre video cu subtitrări incrustate, plus fișiere însoțitoare .srt și .vtt curate."
+  "description": "Subtitrări pentru un clip - transcrie-l pe dispozitiv sau adaugă un fișier SRT/VTT, stilizează replicile și exportă cadre video cu subtitrări incrustate, plus fișiere însoțitoare .srt și .vtt curate.",
+  "inputs.style.section": "Subtitrări",
+  "inputs.position.section": "Subtitrări",
+  "inputs.fontSize.section": "Subtitrări",
+  "inputs.color.section": "Subtitrări",
+  "inputs.background.section": "Subtitrări",
+  "inputs.maxLines.section": "Subtitrări",
+  "inputs.showTimecodes.section": "Subtitrări",
+  "inputs.burnIn.section": "Ieșire",
+  "inputs.time.section": "Temporizare"
 }

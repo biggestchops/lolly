@@ -60,5 +60,18 @@
   "inputs.distance.help": "Các điểm màu trôi dạt xa vị trí đã đặt bao nhiêu. 100% là kích thước quỹ đạo mặc định; 0% giữ chúng cố định tại chỗ.",
   "inputs.speed.label": "Tốc độ trôi dạt",
   "inputs.speed.section": "Kết cấu & Chuyển động",
-  "inputs.speed.help": "Số giây cho mỗi vòng lặp trôi dạt - giá trị càng cao thì càng chậm. Bản xuất video ghi lại một vòng lặp khi ngân sách khung hình cho phép (các vòng lặp dài sẽ được rút ngắn ở 60 khung hình/giây)."
+  "inputs.speed.help": "Số giây cho mỗi vòng lặp trôi dạt - giá trị càng cao thì càng chậm. Bản xuất video ghi lại một vòng lặp khi ngân sách khung hình cho phép (các vòng lặp dài sẽ được rút ngắn ở 60 khung hình/giây).",
+  "inputs.count.section": "Màu",
+  "inputs.color1.section": "Màu",
+  "inputs.pos1.section": "Màu",
+  "inputs.color2.section": "Màu",
+  "inputs.pos2.section": "Màu",
+  "inputs.color3.section": "Màu",
+  "inputs.pos3.section": "Màu",
+  "inputs.color4.section": "Màu",
+  "inputs.pos4.section": "Màu",
+  "inputs.color5.section": "Màu",
+  "inputs.pos5.section": "Màu",
+  "inputs.color6.section": "Màu",
+  "inputs.pos6.section": "Màu"
 }

@@ -1,4 +1,13 @@
 {
   "name": "Coală de Print",
-  "description": "Așază un singur design n-up pe o coală A4, Letter sau A3, cu semne de tăiere pe margine."
+  "description": "Așază un singur design n-up pe o coală A4, Letter sau A3, cu semne de tăiere pe margine.",
+  "inputs.fill.section": "Foaie",
+  "inputs.pages.section": "Foaie",
+  "inputs.sheet.section": "Foaie",
+  "inputs.rows.section": "Aspect",
+  "inputs.cols.section": "Aspect",
+  "inputs.gap.section": "Aspect",
+  "inputs.margin.section": "Aspect",
+  "inputs.ticks.section": "Ieșire",
+  "inputs.tickShape.section": "Ieșire"
 }

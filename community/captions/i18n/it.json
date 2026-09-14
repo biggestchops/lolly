@@ -1,4 +1,13 @@
 {
   "name": "Sottotitoli",
-  "description": "Sottotitoli per una clip - trascrivila sul dispositivo o carica un file SRT/VTT, personalizza lo stile delle battute ed esporta fotogrammi con sottotitoli incorporati, oltre a file .srt e .vtt puliti."
+  "description": "Sottotitoli per una clip - trascrivila sul dispositivo o carica un file SRT/VTT, personalizza lo stile delle battute ed esporta fotogrammi con sottotitoli incorporati, oltre a file .srt e .vtt puliti.",
+  "inputs.style.section": "Sottotitoli",
+  "inputs.position.section": "Sottotitoli",
+  "inputs.fontSize.section": "Sottotitoli",
+  "inputs.color.section": "Sottotitoli",
+  "inputs.background.section": "Sottotitoli",
+  "inputs.maxLines.section": "Sottotitoli",
+  "inputs.showTimecodes.section": "Sottotitoli",
+  "inputs.burnIn.section": "Output",
+  "inputs.time.section": "Tempi"
 }

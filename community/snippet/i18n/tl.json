@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Window Chrome",
   "inputs.blinkCursor.label": "Kumukurap na Cursor",
   "inputs.blinkCursor.help": "Isang kumukurap na caret sa istilong terminal pagkatapos ng code, sa screen. Naka-off nito para manatiling malinis ang na-export na still.",
-  "inputs.scale.label": "Laki"
+  "inputs.scale.label": "Laki",
+  "inputs.scale.section": "Teksto",
+  "inputs.lineHeight.section": "Teksto",
+  "inputs.lineNumbers.section": "Teksto",
+  "inputs.blinkCursor.section": "Teksto",
+  "inputs.fileName.section": "Title bar",
+  "inputs.titleScale.section": "Title bar",
+  "inputs.titleIcon.section": "Title bar",
+  "inputs.iconScale.section": "Title bar",
+  "inputs.windowStyle.section": "Title bar",
+  "inputs.showWindow.section": "Title bar",
+  "inputs.theme.section": "Itsura",
+  "inputs.shadow.section": "Itsura",
+  "inputs.calloutMode.section": "Mga anotasyon",
+  "inputs.calloutPrefix.section": "Mga anotasyon",
+  "inputs.calloutFont.section": "Mga anotasyon"
 }

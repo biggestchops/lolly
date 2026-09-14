@@ -1,4 +1,13 @@
 {
   "name": "인쇄 시트",
-  "description": "작품 하나를 A4·Letter·A3 용지에 n-up으로 배치해요. 여백에는 재단선이 들어가요."
+  "description": "작품 하나를 A4·Letter·A3 용지에 n-up으로 배치해요. 여백에는 재단선이 들어가요.",
+  "inputs.fill.section": "용지",
+  "inputs.pages.section": "용지",
+  "inputs.sheet.section": "용지",
+  "inputs.rows.section": "레이아웃",
+  "inputs.cols.section": "레이아웃",
+  "inputs.gap.section": "레이아웃",
+  "inputs.margin.section": "레이아웃",
+  "inputs.ticks.section": "출력",
+  "inputs.tickShape.section": "출력"
 }

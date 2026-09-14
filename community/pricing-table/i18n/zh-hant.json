@@ -1,4 +1,12 @@
 {
   "name": "定價",
-  "description": "方案排成欄，功能排成列，搭配打勾與打叉符號，並將其中一個方案標為建議方案。"
+  "description": "方案排成欄，功能排成列，搭配打勾與打叉符號，並將其中一個方案標為建議方案。",
+  "inputs.heading.section": "文字",
+  "inputs.subheading.section": "文字",
+  "inputs.cta.section": "文字",
+  "inputs.highlight.section": "醒目提示",
+  "inputs.highlightLabel.section": "醒目提示",
+  "inputs.background.section": "外觀",
+  "inputs.accent.section": "外觀",
+  "inputs.layout.section": "外觀"
 }
