@@ -2,7 +2,7 @@
 
 ایک Lolly صارف جو کچھ بھی جمع کرتا ہے وہ **اس کے اپنے ڈیوائس پر** رہتا ہے - کوئی اکاؤنٹ نہیں، کوئی کلاؤڈ نہیں۔ ڈیٹا-ٹرانسفر بنڈل وہ طریقہ ہے جس سے یہ قدر منتقل ہوتی ہے: اسے ایک انسٹال پر ایکسپورٹ کریں، فائل کو کسی بھی ذریعے (USB، AirDrop، خود کو ای میل، نیٹ ورک شیئر) سے لے جائیں اور اسے دوسرے پر امپورٹ کریں۔ فائل *ہی* ٹرانسپورٹ ہے۔ ٹارگٹ آف لائن یا آن لائن ہو سکتا ہے۔ کوئی فرق نہیں پڑتا، کیونکہ کبھی کوئی سرور سے بات نہیں ہوتی۔
 
-![دو بٹن جو پوری تنصیب منتقل کرتے ہیں: Export my data ایک zip لکھتا ہے، Import data اسے واپس پڑھتا ہے](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![دو بٹن جو پوری تنصیب منتقل کرتے ہیں: Export my data ایک zip لکھتا ہے، Import data اسے واپس پڑھتا ہے](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 یہ صفحہ فارمیٹ اسپیک ہے۔ اینڈ-یوزر واک تھرو کے لیے دیکھیں [Using Lolly → Moving to another device](/info/using.html)۔ عملدرآمد [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts) میں ہے، اور [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) راؤنڈ-ٹرپ کنٹریکٹ کو پن کرتا ہے۔
 

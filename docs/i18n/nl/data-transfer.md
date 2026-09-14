@@ -2,7 +2,7 @@
 
 Alles wat een Lolly-gebruiker opbouwt, staat **op zijn apparaat** - geen account, geen cloud. De gegevensoverdrachtbundel is hoe die waarde verplaatst: exporteer hem op de ene installatie, draag het bestand op elke manier over (USB, AirDrop, e-mail naar jezelf, een netwerkschijf) en importeer hem op een andere. Het bestand *is* het transport. Het doel kan offline of online zijn. Het maakt geen verschil, want er wordt nooit met een server gepraat.
 
-![De twee knoppen die een hele installatie verplaatsen: Mijn gegevens exporteren schrijft één zip, Gegevens importeren leest hem weer in](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![De twee knoppen die een hele installatie verplaatsen: Mijn gegevens exporteren schrijft één zip, Gegevens importeren leest hem weer in](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Deze pagina is de formaatspecificatie. Voor de walkthrough voor eindgebruikers, zie [Using Lolly → Moving to another device](/info/using.html). De implementatie is [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), en [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) legt het round-trip-contract vast.
 

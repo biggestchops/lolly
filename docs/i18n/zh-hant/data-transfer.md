@@ -2,7 +2,7 @@
 
 Lolly 使用者累積的一切都存放在**自己的裝置上** - 沒有帳號，沒有雲端。資料傳輸打包檔就是搬移這些資料的方式：在一台裝置上匯出，透過任何方式攜帶該檔案（USB、AirDrop、寄給自己的電子郵件、網路共用），再匯入另一台裝置。檔案本身*就是*傳輸方式。目標裝置可以離線或連線，兩者沒有差別，因為整個過程完全不會與任何伺服器通訊。
 
-![搬移整個安裝環境的兩個按鈕:匯出我的資料寫入一個 zip,匯入資料再讀回](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![搬移整個安裝環境的兩個按鈕:匯出我的資料寫入一個 zip,匯入資料再讀回](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 本頁面是格式規格說明。若需終端使用者的操作說明，請見 [Using Lolly → Moving to another device](/info/using.html)。實作程式碼位於 [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts)，而 [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) 則固定了往返（round-trip）的契約。
 

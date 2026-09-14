@@ -250,6 +250,17 @@ test('sign → verify → re-run: the second pass keeps the sidecar byte-identic
   assert.deepEqual(readFileSync(sidecar), before, 'an unchanged page re-signed itself');
 });
 
+test('the named page author is carried in its verifiable credential', async (t) => {
+  const { dir, page } = await miniSite();
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const authored = targets(dir).map(target => ({ ...target, author: 'Andy Fitzsimon' }));
+  const run = await sealPages({ outDir: dir, targets: authored, ...quiet });
+  assert.deepEqual(run.failed, []);
+  const report = await verifyC2pa(bytesOf(page), { externalManifest: bytesOf(join(dir, 'demo.c2pa')) });
+  assert.equal(report.state, 'valid');
+  assert.deepEqual(report.author, { name: 'Andy Fitzsimon' });
+});
+
 test('an edited page is re-sealed; an edited COMPONENT re-seals it too', async (t) => {
   const { dir, page, write } = await miniSite();
   t.after(() => rmSync(dir, { recursive: true, force: true }));

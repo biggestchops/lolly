@@ -81,7 +81,6 @@ strong{font-weight:600}
  * `html[data-theme="dark"] .quicknav` one (0,1,1) on specificity alone.
  */
 const LANDING_MODE_CSS = `
-@font-face{font-family:'Cinzel';src:url('/info/fonts/cinzel-latin.woff2') format('woff2-variations');font-weight:400 900;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+2122,U+2212}
 .docs-reader--landing .reveal,
 .docs-reader--landing .reveal.visible { opacity: 1; transform: none; transition: none; }
 .docs-reader--landing .quicknav { display: none; }

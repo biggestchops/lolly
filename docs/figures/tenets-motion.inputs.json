@@ -1,0 +1,83 @@
+{
+  "width": "800",
+  "height": "450",
+  "background": "#30ba78",
+  "seconds": "6",
+  "fps": "24",
+  "codec": "h264",
+  "boxes": [
+    {
+      "id": "canvas",
+      "kind": "box",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 450,
+      "bg": "#30ba78",
+      "shape": "rect",
+      "radius": 0
+    },
+    {
+      "id": "field",
+      "kind": "box",
+      "x": 24,
+      "y": 24,
+      "w": 752,
+      "h": 402,
+      "bg": "#0c322c",
+      "shape": "rect",
+      "radius": 0
+    },
+    {
+      "id": "ampersand",
+      "kind": "text",
+      "x": 358,
+      "y": 10,
+      "w": 380,
+      "h": 422,
+      "text": "&",
+      "fg": "#f4f5ee",
+      "bg": "transparent",
+      "font": "SUSE",
+      "weight": "650",
+      "fontSize": 410,
+      "align": "center",
+      "valign": "middle",
+      "pad": 0,
+      "tracking": 0,
+      "lineHeight": 1,
+      "fitText": true,
+      "start": 0,
+      "dur": 6,
+      "kf": "t0_es_x-190_s0.72_r-10*t1600_es_x0_s1_r0*t2800_es_x0_s1_r0*t4400_es_x-80_s0.88_r6*t6000_es_x0_s1_r0"
+    },
+    {
+      "id": "rule",
+      "kind": "box",
+      "x": 64,
+      "y": 90,
+      "w": 230,
+      "h": 4,
+      "bg": "#30ba78",
+      "shape": "rect",
+      "radius": 0,
+      "start": 0,
+      "dur": 6,
+      "kf": "t0_es_w48*t1600_es_w230*t2800_es_w230*t4400_es_w120*t6000_w230"
+    },
+    {
+      "id": "signature",
+      "kind": "box",
+      "x": 64,
+      "y": 326,
+      "w": 48,
+      "h": 24,
+      "bg": "#30ba78",
+      "shape": "rect",
+      "radius": 0,
+      "start": 0,
+      "dur": 6,
+      "kf": "t0_es_y-60*t1600_y0"
+    }
+  ]
+}

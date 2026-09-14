@@ -201,7 +201,7 @@ dışa aktardığın dosyaların anonim bir anahtar yerine "Verified - signed by
 bölümdeki hiçbir şey seni ilgilendirmez ve hiçbir kişisel veri cihazından çıkmaz.**
 
 ![Profil sayfasındaki Verified kimlik kartı, telefon genişliğinde: sertifika
-yaşam süresi seçici ve altındaki kayıt adımı, sen başlatana kadar hareketsiz](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+yaşam süresi seçici ve altındaki kayıt adımı, sen başlatana kadar hareketsiz](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Kayıt olursan, tam olarak şunlar gerçekleşir:
 

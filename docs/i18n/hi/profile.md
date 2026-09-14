@@ -21,13 +21,13 @@
 
 इनमें से कुछ भी अनिवार्य नहीं है। खाली प्रोफ़ाइल भी पूरी तरह अच्छी प्रोफ़ाइल है; आप बस वही भरते हैं जिससे आपकी टाइपिंग बचे।
 
-![Profile स्क्रीन - नाम, संपर्क, एक वैकल्पिक हेडशॉट और आपकी प्राथमिकताएं](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Profile स्क्रीन - नाम, संपर्क, एक वैकल्पिक हेडशॉट और आपकी प्राथमिकताएं](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 प्राथमिकताएँ वही एक हिस्सा हैं जो बदलती हैं कि ऐप आपको कैसा दिखता है। थीम कार्ड लाइव प्रीव्यू हैं और जिस पल आप कोई चुनते हैं, वह लागू हो जाता है — सिर्फ़ इस डिवाइस पर।
 
 यह पेज काफ़ी लंबा है, इसलिए इसके साथ किनारे पर अपनी एक **settings rail** चलती है - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - और उसके ऊपर एक **Search settings** फ़ील्ड होती है जो टाइप करते ही सूची को फ़िल्टर करती है। हर सेक्शन को `#/profile?focus=<section-id>` के रूप में डीप-लिंक किया जा सकता है, जो उसे खोलता है और व्यू में स्क्रॉल कर देता है (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, इत्यादि), इसलिए कोई लिंक पेज के शीर्ष के बजाय एक ही सेटिंग की ओर इशारा कर सकता है।
 
-![तीन थीम कार्ड, हर एक अपने ही टाइप और रंग का पूर्वावलोकन दिखाता हुआ, सक्रिय कार्ड चिह्नित है](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![तीन थीम कार्ड, हर एक अपने ही टाइप और रंग का पूर्वावलोकन दिखाता हुआ, सक्रिय कार्ड चिह्नित है](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## प्रोफ़ाइल एक संदर्भ है, सिर्फ़ एक व्यक्ति नहीं
 
@@ -35,9 +35,9 @@
 
 ### एक व्यक्ति के रूप में
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![हेडशॉट कंट्रोल, जो तब तक खाली रहता है जब तक आप एक फ़ोटो अपलोड नहीं करते, जो फिर इसी डिवाइस पर बनी रहती है](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![हेडशॉट कंट्रोल, जो तब तक खाली रहता है जब तक आप एक फ़ोटो अपलोड नहीं करते, जो फिर इसी डिवाइस पर बनी रहती है](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### एक टीम के रूप में
 
@@ -61,7 +61,7 @@ Lolly में वह भूमिका बस **एक और प्रोफ
 
 स्टोरेज वही जगह है जहाँ इसके दोनों हिस्से रहते हैं: मीटर श्रेणी-दर-श्रेणी हिसाब देता है कि यह इंस्टॉल कितने बाइट रखे हुए है, और उसके नीचे के बटन ही वह तरीक़ा हैं जिससे आप उसे साफ़ करते हैं या साथ ले जाते हैं।
 
-![स्टोरेज मीटर, जो सेव्ड सेशन, इमेज और कैश को इस आधार पर विभाजित करता है कि ब्राउज़र वास्तव में क्या रिपोर्ट करता है](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![स्टोरेज मीटर, जो सेव्ड सेशन, इमेज और कैश को इस आधार पर विभाजित करता है कि ब्राउज़र वास्तव में क्या रिपोर्ट करता है](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > हर संदर्भ के लिए एक बंडल रखें और फ़ाइलों के नाम उनके काम के हिसाब से रख दें (`LollyTools-events-2026.zip`, `LollyTools-me.zip`)। फ़ाइल *ही* प्रोफ़ाइल है।
 
@@ -104,7 +104,7 @@ parts के नीचे प्रति-टूल सूची है: हर 
 
 ## प्रोफ़ाइल को नई डिवाइस पर ले जाना
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 चूँकि प्रोफ़ाइल पूरी तरह स्थानीय है, इसे किसी खाली इंस्टॉल तक — नया लैपटॉप, ताज़ा रीसेट किया गया ब्राउज़र, किसी सहकर्मी की मशीन, एक ऑफ़लाइन बॉक्स — पहुँचाने का एकमात्र तरीक़ा है **फ़ाइल साथ ले जाना**। कोई लॉगिन इसे आपके लिए बहाल नहीं करता, और यही तो बात है: कुछ भी आपकी डिवाइस से बाहर गया ही नहीं था।
 
@@ -112,7 +112,7 @@ parts के नीचे प्रति-टूल सूची है: हर 
 - <!--i:upload--> दूसरी इंस्टॉल पर **Import data…** उस फ़ाइल को वापस पढ़ लेता है और आप ठीक वहीं से शुरू हो जाते हैं जहाँ आपने छोड़ा था।
 - <!--i:box--> **Export my data & render everything** वही backup लिखता है *साथ ही* एक दूसरा zip जो हर सेव किए गए session को उसके अंतिम आउटपुट फ़ाइल में render करता है, ऐसे folders में जो आपके Projects को दर्शाते हैं। sources और results दोनों का एक पूर्ण ऑफ़लाइन archive - और ज़्यादा sessions होने पर यह बड़ा और धीमा हो सकता है।
 
-![वे दो बटन जो पूरी इंस्टॉल को स्थानांतरित करते हैं: Export my data एक zip लिखता है, Import data उसे वापस पढ़ता है](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![वे दो बटन जो पूरी इंस्टॉल को स्थानांतरित करते हैं: Export my data एक zip लिखता है, Import data उसे वापस पढ़ता है](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 बंडल एक सादी, आत्मनिर्भर ZIP फ़ाइल है, इसलिए यह **किसी भी** माध्यम से सफ़र कर सकती है — USB, AirDrop, नेटवर्क शेयर, ख़ुद को ईमेल — और लक्ष्य डिवाइस पूरी तरह ऑफ़लाइन भी हो सकती है। हर हिस्से का चेकसम होता है, इसलिए रास्ते में क्षतिग्रस्त हुई फ़ाइल आधी-अधूरी बहाल होने के बजाय इंपोर्ट पर ही पकड़ में आ जाती है। इंपोर्ट **मर्ज** करता है (एक ही नाम वाली प्रोफ़ाइल/सेशन/इमेज ओवरराइट हो जाती है; बाक़ी सब रखा जाता है), इसलिए यह पहले से इस्तेमाल हो रहे लक्ष्य को कभी नहीं मिटाता।
 
@@ -122,13 +122,13 @@ parts के नीचे प्रति-टूल सूची है: हर 
 
 ## टूल आपकी प्रोफ़ाइल का उपयोग कैसे करते हैं
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 कोई भी टूल केवल वही प्रोफ़ाइल फ़ील्ड *प्री-फ़िल* करता है जिन्हें बाँधने के लिए वह स्पष्ट रूप से बनाया गया था:
 
 **ऑप्ट-इन (provenance)।** जब आप कोई asset export करते हैं, तो आपका विवरण वैकल्पिक रूप से **provenance** के रूप में साथ जाता है - फ़ाइल के metadata (PNG, PDF, SVG, …) में embed की गई एक author/credit line - ताकि तैयार asset यह बता सके कि उसे किसने बनाया। *यही* वह है जिसे **Use my details to create** नियंत्रित करता है: इसे बंद रखें तो भी export में "Made with Lolly" टूल/प्लेटफ़ॉर्म attribution रहती है, लेकिन कोई personal author/contact line embed नहीं होती। (यही ऑप्ट-इन **/pro** बैच रन पर author सेट करता है।) (टूल लेखकों के लिए: देखें [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) और [Host API → `host.profile`](/info/host-api.html#host-profile)।)
 
-![वह एकल Use my details to create स्विच, जो Save Profile के बगल में बैठा है और तब तक बंद रहता है जब तक आप इसे चालू नहीं करते](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![वह एकल Use my details to create स्विच, जो Save Profile के बगल में बैठा है और तब तक बंद रहता है जब तक आप इसे चालू नहीं करते](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## प्रोफ़ाइल बनाम प्लैटफ़ॉर्म बनाम क्षमताएँ
 
@@ -147,7 +147,7 @@ UI में तीन चीज़ें एक-दूसरे के पा�
 - <!--i:box--> **Content profile** - `profiles.json` में एक बिल्ड-टाइम कॉन्फ़िगरेशन जो टूल pack के एक सेट को किसी brand catalog (जैसे `suse`, `lolly-start`) से जोड़ता है। यह वह है जिसे कोई operator डिप्लॉय करते समय चुनता है, और यह वही है जिसे `profile` **URL/CLI parameter** भी export के समय एक *रंग* वेरिएंट के रूप में चुनता है (ICC/CMYK प्रेस कंडीशन - देखें [URL Mode](/info/url-mode.html))। दोनों ही *बिल्ड/आउटपुट* के बारे में हैं, *आप* के बारे में नहीं। देखें [Configuration](/info/configuration.html)।
 - <!--i:seal--> **Identity profile** - वैकल्पिक **सत्यापित Content Credentials identity** जिसे आप नामांकित कर सकते हैं (एक अल्पकालिक certificate जो आपके ईमेल को आपके signed exports से जोड़ता है)। यह एक signing identity है, जो personal profile के नाम/संपर्क फ़ील्ड्स से अलग है, हालाँकि **Use my details to create** यह नियंत्रित करता है कि इनमें से कोई embed होगा या नहीं। देखें [Content Credentials Identity](/info/content-credentials-identity.html)।
 
-![Verified identity card, फ़ोन-चौड़ाई में: certificate lifetime picker और उसके नीचे नामांकन चरण - identity profile, जो आपके व्यक्तिगत विवरण से अलग है](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Verified identity card, फ़ोन-चौड़ाई में: certificate lifetime picker और उसके नीचे नामांकन चरण - identity profile, जो आपके व्यक्तिगत विवरण से अलग है](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## गोपनीयता
 

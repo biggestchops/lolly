@@ -5,10 +5,12 @@ import {
   encodeLearningAttempt,
   decodeLearningAttempt,
 } from '../../../engine/src/learning/progress.ts';
+import { renderLearningRichText } from './authoring.ts';
+import { learningQuizCorrect } from '../../../engine/src/learning/authoring.ts';
 import { bootLearningPlayer } from './player.ts';
 import { createLearningTracking } from './tracking.ts';
 
-export const LEARNING_PLAYER_VERSION = '1.2.0';
+export const LEARNING_PLAYER_VERSION = '1.3.0';
 import { learningPresentationCss } from './presentation.ts';
 export const learningPlayerCss = `
 :root {
@@ -64,7 +66,7 @@ button:hover:not(:disabled) { background: var(--ui-color-surface-muted); }
 nav button { display: flex; align-items: start; gap: 12px; text-align: start; border-color: transparent; background: transparent; }
 .learning-nav-number { flex: none; width: 1.5em; font-variant-numeric: tabular-nums; color: var(--ui-color-text-muted); }
 .learning-nav-label { min-width: 0; }
-nav button[aria-current=step] { border-color: var(--ui-color-selection-border); background: var(--ui-color-selection-surface); font-weight: 650; }
+nav button[aria-current=step] { border-color: var(--ui-color-border-default); background: var(--ui-color-selection-surface); font-weight: 650; }
 button:disabled { opacity: .5; cursor: default; }
 button.btn--primary { background: var(--ui-color-action-primary); border-color: var(--ui-color-action-primary); color: var(--ui-color-action-on-primary); font-weight: 650; }
 button.btn--primary:hover:not(:disabled) { background: var(--ui-color-action-primary); filter: brightness(.95); }
@@ -85,7 +87,23 @@ a { color: var(--ui-color-action-primary); text-underline-offset: .2em; overflow
 .learning-resource { display: block; padding: var(--ui-space-panel); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); }
 footer { display: flex; gap: 12px; flex-wrap: wrap; padding: var(--ui-space-page); border-top: 1px solid var(--ui-color-border-default); }
 .learning-status { color: var(--ui-color-text-muted); font-size: .8125em; padding: var(--ui-space-panel) var(--ui-space-page); border-top: 1px solid var(--ui-color-border-default); }
-.learning-placeholder { padding: var(--ui-space-page); border: 1px dashed var(--ui-color-border-default); border-radius: var(--ui-radius-control); color: var(--ui-color-text-muted); background: var(--ui-color-surface-muted); }
+.learning-placeholder { padding: var(--ui-space-page); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); color: var(--ui-color-text-muted); background: var(--ui-color-surface-muted); }
+.learning-rich-text { max-width: 70ch; overflow-wrap: anywhere; }
+.learning-rich-text > * + * { margin-top: 1em; }
+.learning-rich-text h2 { font-size: 1.5em; }
+.learning-rich-text h3 { font-size: 1.25em; }
+.learning-rich-text blockquote { margin-inline: 0; padding: var(--ui-space-panel); background: var(--ui-color-surface-muted); border-left: 3px solid var(--ui-color-border-default); }
+.learning-rich-text code { font-size: .9em; background: var(--ui-color-surface-muted); padding: .1em .25em; }
+.learning-quiz { padding: var(--ui-space-page); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); background: var(--ui-color-surface-muted); display: grid; gap: var(--ui-space-panel); }
+.learning-quiz > p:first-child { color: var(--ui-color-text-muted); font-size: .875em; }
+.learning-quiz fieldset { min-width: 0; border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.learning-quiz legend { font-family: var(--learning-font-heading); font-size: 1.25em; font-weight: 650; margin-bottom: 12px; }
+.learning-quiz fieldset > p { font-size: .875em; color: var(--ui-color-text-muted); margin-bottom: 8px; }
+.learning-quiz label { display: flex; gap: 12px; align-items: center; min-height: 44px; padding: 12px; border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); background: var(--ui-color-surface-raised); cursor: pointer; }
+.learning-quiz label:has(:checked) { background: var(--ui-color-selection-surface); }
+.learning-quiz input { flex: none; width: 20px; height: 20px; accent-color: var(--ui-color-action-primary); }
+.learning-quiz button { justify-self: start; }
+.learning-quiz-feedback { padding: var(--ui-space-panel); background: var(--ui-color-surface-raised); border-radius: var(--ui-radius-control); }
 @media (max-width: 700px) {
   .learning-layout { grid-template-columns: minmax(0, 1fr); }
   .learning-sidebar { position: static; }
@@ -117,7 +135,7 @@ export function learningPlayerJs(
     .replace(/</g, '\\u003c')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
-  return `(${bootLearningPlayer.toString()})(window,${data},${JSON.stringify(target)},${learningProgress.toString()},${createLearningTracking.toString()},${encodeLearningAttempt.toString()},${decodeLearningAttempt.toString()});`;
+  return `(${bootLearningPlayer.toString()})(window,${data},${JSON.stringify(target)},${learningProgress.toString()},${createLearningTracking.toString()},${encodeLearningAttempt.toString()},${decodeLearningAttempt.toString()},${renderLearningRichText.toString()},${learningQuizCorrect.toString()});`;
 }
 
 export function learningPlayerHtml(title: string, language: string): string {

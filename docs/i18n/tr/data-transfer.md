@@ -2,7 +2,7 @@
 
 Bir Lolly kullanıcısının biriktirdiği her şey **cihazında** yaşar - hesap yok, bulut yok. Veri aktarımı demeti bu değerin nasıl taşındığıdır: bir kurulumda dışa aktar, dosyayı herhangi bir yolla taşı (USB, AirDrop, kendine e-posta, bir ağ paylaşımı) ve başka bir kurulumda içe aktar. Aktarım araç *dosyanın kendisidir*. Hedef çevrimdışı veya çevrimiçi olabilir. Hiçbir fark yaratmaz, çünkü hiçbir zaman bir sunucuyla konuşulmaz.
 
-![Bütün bir kurulumu taşıyan iki düğme: Export my data tek bir zip yazar, Import data onu geri okur](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Bütün bir kurulumu taşıyan iki düğme: Export my data tek bir zip yazar, Import data onu geri okur](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Bu sayfa biçim spesifikasyonudur. Son kullanıcı için adım adım anlatım için bkz. [Lolly'yi Kullanmak → Başka bir cihaza taşınmak](/info/using.html). Uygulama [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts) dosyasındadır ve [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) gidiş-dönüş sözleşmesini sabitler.
 

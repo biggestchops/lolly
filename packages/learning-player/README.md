@@ -12,7 +12,7 @@ decoding and reduction use the engine functions in author preview and LMS launch
 
 Targets are explicit: `static`, `scorm12`, `scorm2004`, `tincan`, `cmi5`. One module is one SCO
 or AU. All required lessons need acknowledgement followed by Finish. No scores or
-success status are invented. Preview uses an in-memory adapter and sends no records.
+success status are invented. Preview uses an in-memory adapter and sends no records. Schema 2 adds semantic rich text and practice quizzes, with submitted choices in the compact bookmark. The player builds native text and quiz controls using the frozen design-system presentation. Practice feedback never sets a grade or gates lesson acknowledgement. Schema 1 remains supported.
 
 Static delivery uses IndexedDB with a course, release and URL path key, optimistic
 transaction conflict detection and a visible in-memory fallback if storage cannot
@@ -38,7 +38,7 @@ Specification references: [cmi5 Quartz](https://github.com/AICC/CMI-5_Spec_Curre
 Run the deterministic module, package and adapter tests with:
 
 ```sh
-node --import ./tests/css-stub.mjs --test tests/learning.test.ts
+node --import ./tests/css-stub.mjs --test tests/learning.test.ts tests/learning-authoring.test.ts
 ```
 
 Creator instructions: [training-creators.md](../../docs/training-creators.md).

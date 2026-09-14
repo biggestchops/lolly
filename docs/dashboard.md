@@ -1,23 +1,22 @@
-# The Dashboard
+# Settings
 
-The Dashboard (`#/d`) is the instrument panel for a Lolly install: the brand it is wearing, what this device can do, the platform's capability map and a glance at your activity and storage. Four tabs, everything on them a read-out rather than a control - the one exception is the sound switch.
+**Settings** brings personal preferences and the former Dashboard together. Open it from the footer or the avatar menu. It starts on **Preferences**, with the other sections alongside it.
 
-It opens on **Design system**. The other three are one click away, and every tab and every section on them has an address of its own.
-
-| Tab | Address | What it shows |
+| Section | Address | What it contains |
 |---|---|---|
-| **This device** | `#/d?tab=device` | A live readout of the browser and machine this session is running on, plus sound and storage |
-| **Design system** | `#/d?tab=brand` | The brand in force - logo, colours, type, tokens, print reference. Read-only |
-| **Capabilities** | `#/d?tab=caps` | The whole platform as searchable cards, grouped by what they do |
-| **Activity & stats** | `#/d?tab=activity` | What ships in this build, plus your own local counters and recent work |
+| **Preferences** | `#/settings` | Your details, appearance, accessibility, connections, storage and offline downloads |
+| **This device** | `#/settings?tab=device` | A live readout of the browser and machine, plus sound and storage |
+| **Design system** | `#/settings?tab=brand` | The active design system: logo, colours, type, tokens and print reference |
+| **Capabilities** | `#/settings?tab=caps` | The platform's features, grouped into searchable cards |
+| **Activity & stats** | `#/settings?tab=activity` | The catalogue, your local counters and recent work |
 
-Switching a tab rewrites the address as you go, so the link you copy is the tab you are looking at.
+Each section has its own address. Existing `#/profile` and `#/d` links still work, including links to individual settings.
 
 ## This device
 
 - <!--i:monitor--> **This Machine** - screen, input, graphics, memory, codecs, storage backend and the rest, read live from this session. Nothing is stored and nothing is sent. It opens by itself on a wide screen, where the tab lays out in two columns, and stays folded on a narrow one.
 - <!--i:neurobeat--> **Sound** - interface sounds and the Neurospicy focus loops. This is the one switch on the page that writes anything, and the choice follows you across the app.
-- <!--i:database--> **Storage** - what Lolly is keeping on this device, category by category. A read-only view of the meter on your [Profile](/info/profile.html), which is where you clear or carry it.
+- <!--i:database--> **Storage** - what Lolly is keeping on this device, category by category. A read-only view of the meter on [Preferences](/info/profile.html), which is where you clear or carry it.
 
 ## Design system
 
@@ -25,9 +24,9 @@ The brand as it is actually loaded, rendered wearing its own variables: the name
 
 **Nothing on this tab writes brand state.** It is a mirror: the editing happens in the [Brand Studio](/info/brand-studio.html) at `#/start`, and the tab links there from the hero and from the tokens section. On a brand-locked build there is nothing to edit at all, and a **Brand locked** panel says so - the brand ships with the build, comes from the catalogue and is authoritative on that install.
 
-Personal preferences live elsewhere too: theme and sound are on your [Profile](/info/profile.html), not here.
+Theme and sound are in [Preferences](/info/profile.html), within the same Settings section.
 
-> `/b` and `/brand` are shortlinks straight to this tab. The retired `#/platform` and `#/capabilities` addresses both fold into the Dashboard, deep-link flags intact.
+> `/b` and `/brand` are shortlinks straight to this tab. The retired `#/platform` and `#/capabilities` addresses both fold into Settings, deep-link flags intact.
 
 ## Capabilities
 
@@ -45,14 +44,14 @@ Then your own side of it: **Your activity** counts what you have made on this de
 
 ## Deep links
 
-Every destination on the page is addressable, and the same registry the Dashboard renders from is what [Search](/info/search.html) points its **Settings** results at - so a section can never be renamed out from under a search result.
+Every destination on the page is addressable, and the same registry Settings renders from is what [Search](/info/search.html) points its **Settings** results at - so a section can never be renamed out from under a search result.
 
-- <!--i:hash--> **A tab:** `#/d?tab=brand`, `#/d?tab=caps`, `#/d?tab=device`, `#/d?tab=activity`.
-- <!--i:hash--> **A section, exactly:** its own id as a bare flag - `#/d?dash-storage`, `#/d?dash-tokens`, `#/d?cap-formats`. This is the precise form.
-- <!--i:search--> **A section by keyword:** `#/d?print`, `#/d?formats`, `#/d?palette`, `#/d?tokens`. Convenient, but keywords are shared - `print` belongs to both the brand tab's print reference and the Print production capability group - and the first one in page order wins. Use the id when it matters which.
+- <!--i:hash--> **A tab:** `#/settings?tab=brand`, `#/settings?tab=caps`, `#/settings?tab=device`, `#/settings?tab=activity`.
+- <!--i:hash--> **A section, exactly:** its own id as a bare flag - `#/settings?dash-storage`, `#/settings?dash-tokens`, `#/settings?cap-formats`. This is the precise form.
+- <!--i:search--> **A section by keyword:** `#/settings?print`, `#/settings?formats`, `#/settings?palette`, `#/settings?tokens`. Convenient, but keywords are shared - `print` belongs to both the brand tab's print reference and the Print production capability group - and the first one in page order wins. Use the id when it matters which.
 
 A deep link switches to the tab that owns the target, opens it (and any group it is folded inside), then scrolls to it, re-landing for a moment or so while the asynchronous sections above it finish laying out.
 
 ---
 
-**Related:** [The Brand Studio](/info/brand-studio.html) for editing what this page shows. [Your profile](/info/profile.html) for the settings, storage and offline downloads it mirrors. [Search](/info/search.html) for reaching any of these sections by typing.
+**Related:** [The Brand Studio](/info/brand-studio.html) for editing what this page shows. [Preferences](/info/profile.html) for the personal settings, storage and offline downloads it mirrors. [Search](/info/search.html) for reaching any of these sections by typing.

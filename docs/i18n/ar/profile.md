@@ -19,9 +19,9 @@
 | **إمكانية الوصول** | أربعة مفاتيح راحة - *تقليل الحركة*، و*إخفاء المعاينات الملوّنة*، و*تباين عالٍ*، و*نص كبير* - محفوظة في سجل الملف الشخصي، لذا تنتقل معه عند تصديره. انظر [إمكانية الوصول](#accessibility). |
 | **عملك** | الجلسات المحفوظة (مع الصور المصغَّرة) - منظَّمة في مجلدات متداخلة ضمن **[المشاريع](/info/using.html)** - ومكتبة **صوري** الخاصة بك، وإحصاءات النشاط المحلية، جميعها مرتبطة بهذا الملف الشخصي. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![شاشة الملف الشخصي - الاسم، والتواصل، وصورة شخصية اختيارية، وتفضيلاتك](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![شاشة الملف الشخصي - الاسم، والتواصل، وصورة شخصية اختيارية، وتفضيلاتك](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 | الجزء | ما هو |
 |---|---|
@@ -35,7 +35,7 @@
 
 الصفحة طويلة، لذا تحمل **شريط إعدادات** خاصًا بها على الجانب - تفاصيلك، المظهر، إمكانية الوصول، نسخة Lolly، نشاطك، التخزين، المتاح دون اتصال، أعلام الميزات، Content Credentials - مع حقل **بحث في الإعدادات** أعلاه يُصفّي القائمة أثناء الكتابة. كل قسم قابل للربط المباشر بصيغة `#/profile?focus=<section-id>`، ما يفتحه ويُمرّر إليه (`#/profile?focus=storage-section`، `?focus=feature-flags-section`، وهكذا)، بحيث يمكن لرابط أن يشير إلى إعداد واحد بدلاً من أعلى الصفحة.
 
-![ثلاث بطاقات سمات (themes)، تعرض كل واحدة نوعها ولونها الخاصين، مع تمييز السمة النشطة](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![ثلاث بطاقات سمات (themes)، تعرض كل واحدة نوعها ولونها الخاصين، مع تمييز السمة النشطة](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## الملف الشخصي سياق، لا مجرد شخص
 
@@ -43,9 +43,9 @@
 
 ### كفرد
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![عنصر تحكم الصورة الشخصية، فارغ إلى أن ترفع صورة تبقى بعدها على هذا الجهاز](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![عنصر تحكم الصورة الشخصية، فارغ إلى أن ترفع صورة تبقى بعدها على هذا الجهاز](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### كفريق
 
@@ -61,7 +61,7 @@
 
 في أي لحظة، تحتوي النسخة المثبَّتة على **ملف شخصي نشط واحد** - التفاصيل التي تراها الأداة الآن. لا يوجد مبدّل ملفات شخصية داخل التطبيق؛ بدلاً من ذلك، كل ملف شخصي هو **حزمة قابلة للنقل** (ملف `.zip` واحد، انظر [أدناه](#moving-a-profile-to-a-new-device)). وهذا عمدًا الآلية نفسها المستخدمة للانتقال إلى جهاز جديد - فالملف الشخصي ملف يمكنك حفظه ونسخه وتحميله.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **أنظف تبديل:** **Profile → Storage → Clear all my data**، ثم **Import** للحزمة الخاصة بالسياق الذي تنتقل إليه. أنت الآن تنشئ بحتًا باسم ذلك الملف الشخصي.
 - <!--i:layers--> **التكديس (Layering):** استيراد الحزمة *دون* المسح أولاً **يدمج** - يهبط الملف الشخصي والجلسات والصور المستوردة فوق ما هو موجود بالفعل، فيستبدل أي عنصر يحمل الاسم نفسه ويترك الباقي. مفيد لسحب جلسات محفوظة لفريق واحد إلى إعدادك الخاص؛ وليس ما تريده إن احتجت حدودًا نظيفة للأدوار.
@@ -69,7 +69,7 @@
 
 فإذا كنت فعلا تتنقل بين عدة سياقات (أنت، وفريقك، وقبعة مدير الفعاليات)، فاحتفظ بعدة حزم وحمل ما تحتاجه:
 
-![مقياس التخزين، يوضّح تفصيل الجلسات المحفوظة والصور والذاكرة المؤقتة (cache) مقارنة بما يُبلغ عنه المتصفح فعليًا](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![مقياس التخزين، يوضّح تفصيل الجلسات المحفوظة والصور والذاكرة المؤقتة (cache) مقارنة بما يُبلغ عنه المتصفح فعليًا](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > احتفظ بحزمة لكل سياق وأعد تسمية الملفات بما هي عليه (`LollyTools-events-2026.zip` و `LollyTools-me.zip`). الملف *هو* الملف الشخصي.
 
@@ -112,7 +112,7 @@
 
 ## نقل ملف شخصي إلى جهاز جديد
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 لأن الملف الشخصي محلي بالكامل، فالطريقة الوحيدة لوضعه على تثبيت فارغ — حاسوب محمول جديد، أو متصفح أعيد ضبطه للتو، أو جهاز زميل، أو جهاز دون اتصال — هي **حمل الملف**. لا يوجد تسجيل دخول يستعيده لك، وهذا هو المقصود: لم يغادر شيء جهازك أصلا.
 
@@ -120,7 +120,7 @@
 - <!--i:upload--> **استيراد بيانات…** في التثبيت الآخر يقرأ ذلك الملف من جديد فتستأنف تماما من حيث توقفت.
 - <!--i:box--> **تصدير بياناتي وعرض كل شيء** يكتب النسخة الاحتياطية نفسها *بالإضافة إلى* ملف مضغوط ثانٍ يُخرج كل جلسة محفوظة إلى ملفها النهائي، في مجلدات تعكس مشاريعك. أرشيف كامل غير متصل للمصادر والنتائج معا - وقد يكون كبيرا وبطيئا مع عدد كبير من الجلسات.
 
-![الزران اللذان ينقلان تثبيتا كاملا: تصدير بياناتي يكتب ملفا مضغوطا واحدا، واستيراد بيانات يقرأه من جديد](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![الزران اللذان ينقلان تثبيتا كاملا: تصدير بياناتي يكتب ملفا مضغوطا واحدا، واستيراد بيانات يقرأه من جديد](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 الحزمة ملف zip عادي مكتف بذاته، فتنتقل **بأي** وسيلة — USB، أو AirDrop، أو مشاركة شبكة، أو بريد إلكتروني إلى نفسك — ويمكن للجهاز الهدف أن يكون دون اتصال تماما. كل جزء له مجموع تحقق، فيكتشف الملف المتضرر أثناء النقل عند الاستيراد بدلا من استعادته نصف مكسور. الاستيراد **يدمج** (يستبدل الملف الشخصي/الجلسة/الصورة التي تحمل الاسم نفسه؛ ويحتفظ بكل شيء آخر)، فلا يمسح أبدا جهازا هدفا كان قيد الاستخدام أصلا.
 
@@ -130,13 +130,13 @@
 
 ## كيف تستخدم الأدوات ملفك الشخصي
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 الأداة لا تفعل أبدا سوى *الملء المسبق* لحقول الملف الشخصي التي بنيت صراحة لربطها:
 
 **الاشتراك الاختياري (المصدر).** عند تصدير أصل، ترافقه تفاصيلك اختياريا كـ**مصدر** (provenance) - سطر مؤلف/اعتماد مضمَّن في بيانات الملف الوصفية (PNG، PDF، SVG، …) - بحيث يمكن للأصل النهائي أن يبيّن من صنعه. *هذا* ما يتحكم فيه **استخدام تفاصيلي عند الإنشاء**: اتركه معطلا وسيظل التصدير يحمل نسبة الأداة/المنصة "صُنع باستخدام Lolly"، لكن دون تضمين سطر مؤلف/تواصل شخصي. (الاشتراك نفسه يضبط المؤلف في تشغيلات **/pro** الدفعية.) (لمؤلفي الأدوات: راجع [تأليف الأدوات → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) و[واجهة المضيف → `host.profile`](/info/host-api.html#host-profile).)
 
-![مفتاح استخدام تفاصيلي عند الإنشاء الوحيد، بجانب حفظ الملف الشخصي ومعطل حتى تُفعّله](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![مفتاح استخدام تفاصيلي عند الإنشاء الوحيد، بجانب حفظ الملف الشخصي ومعطل حتى تُفعّله](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## الملف الشخصي مقابل المنصة مقابل القدرات
 
@@ -155,7 +155,7 @@
 - <!--i:box--> **ملف المحتوى (Content profile)** - إعداد وقت البناء في `profiles.json` يربط مجموعة من حزم الأدوات بكتالوج علامة تجارية (مثل `suse`، `lolly-start`). هو ما يختاره المشغّل عند النشر، وهو ما تختاره **معطلة الرابط/سطر الأوامر** `profile` أيضا كبديل *لوني* عند التصدير (حالة الطباعة ICC/CMYK - راجع [وضع الرابط](/info/url-mode.html)). كلاهما يخص *البناء/الناتج*، لا *أنت*. راجع [الإعداد](/info/configuration.html).
 - <!--i:seal--> **ملف الهوية (Identity profile)** - **هوية Content Credentials الموثقة** الاختيارية التي يمكنك التسجيل فيها (شهادة قصيرة الأجل تربط بريدك الإلكتروني بصادراتك الموقّعة). هذه هوية توقيع، منفصلة عن حقول الاسم/التواصل في الملف الشخصي، رغم أن **استخدام تفاصيلي عند الإنشاء** يتحكم فيما إذا كان أي منهما مضمَّنا. راجع [هوية Content Credentials](/info/content-credentials-identity.html).
 
-![بطاقة الهوية الموثقة، بعرض الهاتف: منتقي مدة الشهادة وخطوة التسجيل أسفله - ملف الهوية، منفصل عن تفاصيلك الشخصية](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![بطاقة الهوية الموثقة، بعرض الهاتف: منتقي مدة الشهادة وخطوة التسجيل أسفله - ملف الهوية، منفصل عن تفاصيلك الشخصية](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## الخصوصية
 

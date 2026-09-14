@@ -8,6 +8,7 @@ export function syncBlockSelection(ctx: LearningCtx): void {
   for (const card of ctx.root.querySelectorAll<HTMLElement>('[data-block]')) {
     const selected = ctx.selectedBlocks.has(card.dataset.block!);
     card.dataset.selected = String(selected);
+    card.querySelector('[data-block-surface]')?.setAttribute('aria-pressed', String(selected));
     const check = card.querySelector<HTMLInputElement>('[data-block-select]');
     if (check) check.checked = selected;
   }
@@ -17,8 +18,7 @@ export function syncBlockSelection(ctx: LearningCtx): void {
   if (count) count.textContent = `${ctx.selectedBlocks.size} selected`;
 }
 
-/** Handle-only pointer dragging works with mouse, pen and touch without taking
- * away scrolling or text selection in the editor. No model edits until drop. */
+/** Dragging only starts on the grip or header. Editable content keeps native selection. */
 export function mountBlockInteraction(ctx: LearningCtx): () => void {
   const root = ctx.root;
   let drag:
@@ -37,6 +37,11 @@ export function mountBlockInteraction(ctx: LearningCtx): () => void {
       }
     | undefined;
   let tick = 0;
+  let destination: string | undefined;
+  let anchor: string | undefined;
+  let hold: ReturnType<typeof setTimeout> | undefined;
+  let suppressClick = false;
+  let waiting: { event: PointerEvent; surface: HTMLElement } | undefined;
   const marker = document.createElement('div');
   marker.className = 'learning-drop-marker';
   marker.setAttribute('aria-hidden', 'true');
@@ -51,6 +56,11 @@ export function mountBlockInteraction(ctx: LearningCtx): () => void {
     syncBlockSelection(ctx);
   };
   const clear = () => {
+    clearTimeout(hold);
+    waiting = undefined;
+    destination = undefined;
+    for (const row of root.querySelectorAll<HTMLElement>('[data-content-drop]'))
+      delete row.dataset.contentDrop;
     cancelAnimationFrame(tick);
     marker.remove();
     for (const card of cards()) delete card.dataset.dragging;
@@ -73,6 +83,17 @@ export function mountBlockInteraction(ctx: LearningCtx): () => void {
   };
   const positionAtPointer = () => {
     if (!drag) return;
+    const row = document
+      .elementFromPoint(drag.x, drag.y)
+      ?.closest<HTMLElement>('[data-lesson-row]');
+    destination = row?.dataset.lessonRow !== ctx.selected ? row?.dataset.lessonRow : undefined;
+    for (const item of root.querySelectorAll<HTMLElement>('[data-content-drop]'))
+      delete item.dataset.contentDrop;
+    if (destination && row) {
+      row.dataset.contentDrop = 'true';
+      marker.remove();
+      return;
+    }
     const at = drag.remaining.findIndex((card) => {
       const box = card.getBoundingClientRect();
       return drag!.y < box.top + box.height / 2;
@@ -149,10 +170,16 @@ export function mountBlockInteraction(ctx: LearningCtx): () => void {
     if (!drag) return;
     const { ids, remaining, index, lessonId, active } = drag;
     const beforeId = remaining[index]?.dataset.block;
+    const toLesson = destination;
+    if (active && drag.pointerId !== undefined) suppressClick = true;
     clear();
     if (!active) return;
     await ctx.flushTyping();
     if (ctx.disposed || ctx.busy || ctx.selected !== lessonId) return;
+    if (toLesson) {
+      ctx.edit.moveBlocks(toLesson);
+      return;
+    }
     const lesson = ctx.module.lessons.find((l) => l.id === lessonId)!;
     const moving = lesson.blocks.filter((b) => ids.includes(b.id));
     const rest = lesson.blocks.filter((b) => !ids.includes(b.id));
@@ -169,14 +196,46 @@ export function mountBlockInteraction(ctx: LearningCtx): () => void {
     );
   };
   const onPointerDown = (event: PointerEvent) => {
-    const handle = (event.target as Element).closest<HTMLElement>('[data-block-drag]');
-    if (!handle || ctx.busy || event.button !== 0 || !event.isPrimary) return;
-    event.preventDefault();
-    clear();
-    handle.focus({ preventScroll: true });
-    begin(handle, event);
+    if (ctx.busy || event.button !== 0 || !event.isPrimary) return;
+    const target = event.target as Element;
+    const handle = target.closest<HTMLElement>('[data-block-drag]');
+    const surface = target.closest<HTMLElement>('[data-block-surface]');
+    suppressClick = false;
+    if (handle) {
+      event.preventDefault();
+      clear();
+      handle.focus({ preventScroll: true });
+      begin(handle, event);
+    } else if (surface && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      clear();
+      waiting = { event, surface };
+      hold = setTimeout(() => {
+        if (!waiting) return;
+        begin(
+          surface.closest('[data-block]')!.querySelector<HTMLElement>('[data-block-drag]')!,
+          event
+        );
+        waiting = undefined;
+        activate();
+      }, 350);
+    }
   };
   const onPointerMove = (event: PointerEvent) => {
+    if (
+      waiting &&
+      Math.hypot(event.clientX - waiting.event.clientX, event.clientY - waiting.event.clientY) >= 6
+    ) {
+      const pending = waiting;
+      clearTimeout(hold);
+      waiting = undefined;
+      if (event.pointerType === 'mouse') {
+        begin(
+          pending.surface.closest('[data-block]')!.querySelector<HTMLElement>('[data-block-drag]')!,
+          pending.event
+        );
+        activate();
+      }
+    }
     if (!drag || drag.pointerId !== event.pointerId) return;
     drag.x = event.clientX;
     drag.y = event.clientY;
@@ -186,15 +245,55 @@ export function mountBlockInteraction(ctx: LearningCtx): () => void {
     positionAtPointer();
   };
   const onPointerUp = (event: PointerEvent) => {
+    clearTimeout(hold);
+    waiting = undefined;
     if (drag?.pointerId === event.pointerId) void drop().catch((e) => ctx.ui.status(String(e)));
   };
+  const onTouchMove = (event: TouchEvent) => {
+    // A completed hold owns the gesture; an ordinary swipe still scrolls.
+    if (drag?.active && drag.pointerId !== undefined && event.cancelable) event.preventDefault();
+  };
   const cancel = () => {
+    clearTimeout(hold);
+    waiting = undefined;
     if (drag) {
       clear();
       announce('Move cancelled. Content order is unchanged.');
     }
   };
+  const selectSurface = (surface: HTMLElement, extend: boolean, range: boolean) => {
+    const id = surface.closest<HTMLElement>('[data-block]')!.dataset.block!;
+    const all = cards().map((c) => c.dataset.block!);
+    if (range && anchor && all.includes(anchor)) {
+      const bounds = [all.indexOf(anchor), all.indexOf(id)].sort((a, b) => a - b);
+      if (!extend) ctx.selectedBlocks.clear();
+      for (const key of all.slice(bounds[0], bounds[1]! + 1)) ctx.selectedBlocks.add(key);
+    } else {
+      if (!extend) ctx.selectedBlocks.clear();
+      if (extend && ctx.selectedBlocks.has(id)) ctx.selectedBlocks.delete(id);
+      else ctx.selectedBlocks.add(id);
+      anchor = id;
+    }
+    syncBlockSelection(ctx);
+  };
+  const onClick = (event: MouseEvent) => {
+    if (suppressClick) {
+      suppressClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    const surface = (event.target as Element).closest<HTMLElement>('[data-block-surface]');
+    if (surface && !ctx.busy)
+      selectSurface(surface, event.metaKey || event.ctrlKey, event.shiftKey);
+  };
   const onKey = (event: KeyboardEvent) => {
+    const surface = (event.target as Element).closest<HTMLElement>('[data-block-surface]');
+    if (surface && !ctx.busy && [' ', 'Enter'].includes(event.key)) {
+      event.preventDefault();
+      selectSurface(surface, event.metaKey || event.ctrlKey, event.shiftKey);
+      return;
+    }
     const handle = (event.target as Element).closest<HTMLElement>('[data-block-drag]');
     if (event.key === 'Escape' && drag) {
       event.preventDefault();
@@ -236,27 +335,27 @@ export function mountBlockInteraction(ctx: LearningCtx): () => void {
       if (target.checked) ctx.selectedBlocks.add(id);
       else ctx.selectedBlocks.delete(id);
       syncBlockSelection(ctx);
-    } else if (!target.closest('[data-block-tools]') && !ctx.selectedBlocks.has(id)) select(id);
+    }
   };
+  root.addEventListener('click', onClick, true);
   root.addEventListener('pointerdown', onPointerDown);
   root.addEventListener('pointermove', onPointerMove);
   root.addEventListener('pointerup', onPointerUp);
+  root.addEventListener('touchmove', onTouchMove, { passive: false });
   root.addEventListener('pointercancel', cancel);
   root.addEventListener('lostpointercapture', cancel);
   root.addEventListener('keydown', onKey);
-  root.addEventListener('click', onSelect);
-  root.addEventListener('focusin', onSelect);
   root.addEventListener('change', onSelect);
   return () => {
     clear();
+    root.removeEventListener('click', onClick, true);
     root.removeEventListener('pointerdown', onPointerDown);
     root.removeEventListener('pointermove', onPointerMove);
     root.removeEventListener('pointerup', onPointerUp);
+    root.removeEventListener('touchmove', onTouchMove);
     root.removeEventListener('pointercancel', cancel);
     root.removeEventListener('lostpointercapture', cancel);
     root.removeEventListener('keydown', onKey);
-    root.removeEventListener('click', onSelect);
-    root.removeEventListener('focusin', onSelect);
     root.removeEventListener('change', onSelect);
   };
 }

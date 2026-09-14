@@ -1,0 +1,42 @@
+/* Shared heading and section navigation for Settings. */
+@layer views {
+  .settings-header {
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto 1.6rem;
+  }
+  .settings-title {
+    margin: 0 0 1.2rem;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    line-height: 1.15;
+    letter-spacing: -.03em;
+  }
+  .settings-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    padding: .35rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) * 1.1);
+    background: hsl(var(--muted) / .55);
+  }
+  .settings-nav-link {
+    flex: 1 1 auto;
+    padding: .65rem .85rem;
+    border-radius: var(--radius);
+    color: hsl(var(--muted-foreground));
+    font-size: var(--fs-lg);
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    text-decoration: none;
+  }
+  .settings-nav-link:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+  .settings-nav-link[aria-current="page"] { background: hsl(var(--card)); color: hsl(var(--foreground)); box-shadow: var(--ui-edge-faint), var(--ui-elevation-control); }
+  .settings-nav-link:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 1px; }
+  :is(.profile-view, .dashboard-view) > .settings-header {
+    padding: calc(var(--chrome-top) + var(--chrome-h) + 1rem) .5rem 0;
+  }
+  .profile-view:has(> .settings-header) .profile-layout { padding-top: 0; }
+  .dashboard-view:has(> .settings-header) .dash-layout { padding-top: 0; }
+}

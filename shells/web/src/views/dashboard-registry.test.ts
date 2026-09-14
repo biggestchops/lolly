@@ -28,7 +28,7 @@ globalThis.window = dom.window as unknown as typeof globalThis.window;
 globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
 
-const { DASH_SECTIONS, dashFlag, dashHref } = await import('./dashboard-registry.ts');
+const { DASH_SECTIONS, dashFlag, dashHref } = await import('../lib/dashboard-registry.ts');
 const { CAPABILITY_SECTIONS } = await import('../lib/capabilities-data.ts');
 
 const DASHBOARD_SRC = readFileSync(fileURLToPath(new URL('./dashboard.ts', import.meta.url)), 'utf8');
@@ -45,7 +45,7 @@ test('registry invariants: unique ids, tab rows are exactly the flagless ones', 
 });
 
 test('dashFlag answers every registered id (appending the id as its unique token) and is inert on unknowns', () => {
-  // The id rides along as a flag token so dashHref's `#/d?<id>` resolves to
+  // The id rides along as a flag token so dashHref's `#/settings?<id>` resolves to
   // exactly this section - keyword tokens collide across sections ('print',
   // 'color') and applyDeepLink takes the first DOM-order owner.
   assert.equal(dashFlag('dash-storage'), 'storage dash-storage');
@@ -53,14 +53,14 @@ test('dashFlag answers every registered id (appending the id as its unique token
 });
 
 test('dashHref: sections by their unique id, tabs by ?tab=', () => {
-  assert.equal(dashHref(DASH_SECTIONS.find((s) => s.id === 'dash-sound')!), '#/d?dash-sound');
-  assert.equal(dashHref(DASH_SECTIONS.find((s) => s.id === 'dpanel-brand')!), '#/d?tab=brand');
+  assert.equal(dashHref(DASH_SECTIONS.find((s) => s.id === 'dash-sound')!), '#/settings?dash-sound');
+  assert.equal(dashHref(DASH_SECTIONS.find((s) => s.id === 'dpanel-brand')!), '#/settings?tab=brand');
 });
 
 // ── Direction 1: the view renders FROM the registry ──────────────────────────
 
 test('dashboard.ts imports the registry and interpolates every data-flag', () => {
-  assert.ok(DASHBOARD_SRC.includes("from './dashboard-registry.ts'"), 'imports the registry');
+  assert.ok(DASHBOARD_SRC.includes("from '../lib/dashboard-registry.ts'"), 'imports the registry');
   // Every data-flag attribute in the source is template interpolation - a NEW
   // hand-rolled `data-flag="lock brand …"` literal fails this scan.
   const literal = DASHBOARD_SRC.match(/data-flag="(?!\$\{)[^"]*"/);
@@ -80,7 +80,9 @@ test('every dash-* registry section is wired in dashboard.ts via dashFlag(id)', 
 });
 
 test('the tab bar derives from the registry (no second label list)', () => {
-  assert.ok(/const DASH_TABS[^=]*=\s*\n?\s*DASH_SECTIONS\.filter/.test(DASHBOARD_SRC), 'DASH_TABS derived from DASH_SECTIONS');
+  const nav = readFileSync(new URL('../components/settings-nav.ts', import.meta.url), 'utf8');
+  assert.match(nav, /DASH_SECTIONS\.filter/, 'Settings navigation derives from DASH_SECTIONS');
+  assert.ok(DASHBOARD_SRC.includes('settingsNavHtml(initialTab)'), 'dashboard shares the Settings navigation');
 });
 
 // ── Direction 2: the capability-group copy matches its source ────────────────

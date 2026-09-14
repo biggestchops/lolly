@@ -76,7 +76,7 @@ function shellHtml(inner: string): string {
   return `
     ${backHomeHtml()}
     <div class="docs-topright" data-topright>
-      <a href="#/profile" class="docs-top-btn docs-profile-link" aria-label="${escape(t('Open your profile'))}" title="${escape(t('Profile'))}">${icon('user')}</a>
+      <a href="#/settings" class="docs-top-btn docs-profile-link" aria-label="${escape(t('Open settings'))}" title="${escape(t('Settings'))}">${icon('user')}</a>
     </div>
     <div class="docs-reader" data-reader>
       <div class="docs-pathways-slot" data-pathways hidden></div>
@@ -121,7 +121,7 @@ export async function mountDocs(
   // On mobile the profile pill becomes the consolidated menu (theme / Home /
   // Language / settings) - the same stable anchor the gallery topbar has - and
   // the standalone language button + home FAB hide (docs.css / overrides.css).
-  // Desktop is untouched: the pill stays a plain link to #/profile.
+  // Desktop is untouched: the pill stays a plain link to #/settings.
   const detachProfileMenu = attachProfileMenu(viewEl.querySelector<HTMLElement>('.docs-profile-link'), host);
   viewEl.querySelector('[data-topright]')?.prepend(createThemeToggle(host, { className: 'docs-top-btn' }));
   // Language switcher, styled as a docs top pill (not the bare .lang-fab icon) so it

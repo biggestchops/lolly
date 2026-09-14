@@ -2,7 +2,7 @@
 
 Tutto ciò che un utente Lolly accumula vive **sul suo dispositivo** - nessun account, nessun cloud. Il bundle di trasferimento dati è come quel valore si sposta: esportalo su un'installazione, porta il file con qualsiasi mezzo (USB, AirDrop, email a te stesso, una condivisione di rete) e importalo su un'altra. Il file *è* il trasporto. La destinazione può essere offline o online. Non fa differenza, perché nulla parla mai con un server.
 
-![I due pulsanti che spostano un'intera installazione: Esporta i miei dati scrive uno zip, Importa dati lo rilegge](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![I due pulsanti che spostano un'intera installazione: Esporta i miei dati scrive uno zip, Importa dati lo rilegge](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Questa pagina è la specifica del formato. Per la guida passo passo pensata per l'utente finale vedi [Usare Lolly → Passare a un altro dispositivo](/info/using.html). L'implementazione è in [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), e [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) fissa il contratto di andata e ritorno.
 

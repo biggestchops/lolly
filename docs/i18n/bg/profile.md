@@ -21,13 +21,13 @@
 
 Нищо от това не е задължително. Празният профил е напълно добър профил; попълваш само това, което ти спестява писане.
 
-![Екранът Profile - име, контакт, незадължителна снимка на глава и вашите предпочитания](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Екранът Profile - име, контакт, незадължителна снимка на глава и вашите предпочитания](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Предпочитанията са единствената част, която променя как приложението изглежда за теб. Картите с теми са живи прегледи и се прилагат в момента, в който избереш някоя — само на това устройство.
 
 Страницата е дълга, затова носи собствена **лента с настройки** отстрани - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - с поле **Search settings** над нея, което филтрира списъка, докато пишете. Всеки раздел е достъпен чрез дълбок линк като `#/profile?focus=<section-id>`, което го отваря и превърта до него (`#/profile?focus=storage-section`, `?focus=feature-flags-section` и т.н.), така че линк може да сочи към една настройка, а не към върха на страницата.
 
-![Три карти с теми, всяка предварително показваща собствения си шрифт и цвят, с отбелязана активна](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Три карти с теми, всяка предварително показваща собствения си шрифт и цвят, с отбелязана активна](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Профилът е контекст, а не просто човек
 
@@ -35,9 +35,9 @@
 
 ### Като отделен човек
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Контролът за снимка на глава, празен, докато не качите снимка, която след това остава на това устройство](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Контролът за снимка на глава, празен, докато не качите снимка, която след това остава на това устройство](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Като екип
 
@@ -61,7 +61,7 @@
 
 И двете половини на това живеят в раздела Хранилище: измерителят отчита всеки байт, който тази инсталация държи, категория по категория, а бутоните под него са начинът да изчистиш или пренесеш данните.
 
-![Измервателят на съхранение, разбиващ запазени сесии, изображения и кеш спрямо реално отчетеното от браузъра](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Измервателят на съхранение, разбиващ запазени сесии, изображения и кеш спрямо реално отчетеното от браузъра](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Пази по един пакет за всеки контекст и преименувай файловете според това, което са (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Файлът *е* профилът.
 
@@ -104,7 +104,7 @@ Lolly кешира в движение, но кеширането в движе�
 
 ## Преместване на профил на ново устройство
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Понеже профилът е изцяло локален, единственият начин да го качиш на празна инсталация — нов лаптоп, току-що нулиран браузър, машината на колега, офлайн компютър — е да **пренесеш файла**. Никакво влизане не го възстановява вместо теб и точно това е смисълът: нищо изобщо не е напускало устройството ти.
 
@@ -112,7 +112,7 @@ Lolly кешира в движение, но кеширането в движе�
 - <!--i:upload--> **Внеси данни…** на другата инсталация зарежда обратно този файл и продължаваш точно откъдето си спрял.
 - <!--i:box--> **Изнеси моите данни и изобрази всичко** записва същото резервно копие *плюс* втори zip, който изобразява всяка запазена сесия до готовия ѝ изходен файл, в папки, отразяващи твоите Проекти. Пълен офлайн архив както на изходните материали, така и на резултатите - и може да е голям и бавен при много сесии.
 
-![Двата бутона, които местят цяла инсталация: Изнеси моите данни записва един zip, Внеси данни го зарежда обратно](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Двата бутона, които местят цяла инсталация: Изнеси моите данни записва един zip, Внеси данни го зарежда обратно](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Пакетът е обикновен, самодостатъчен ZIP, така че пътува по **всякакъв** начин — USB, AirDrop, мрежово споделяне, имейл до самия теб — а целевото устройство може да е напълно офлайн. Всяка част има контролна сума, така че повреден при пренасяне файл се хваща при импортирането, вместо да бъде възстановен наполовина счупен. Импортирането **слива** (профил/сесия/изображение със същото име се презаписва; всичко останало се пази), така че никога не изтрива инсталация, която вече е била в употреба.
 
@@ -122,13 +122,13 @@ Lolly кешира в движение, но кеширането в движе�
 
 ## Как инструментите използват профила ти
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Един инструмент само *попълва предварително* профилните полета, които изрично е създаден да обвързва:
 
 **Опцията (произход).** Когато изнесеш актив, твоите данни по избор пътуват заедно като **произход (provenance)** - ред за автор/признание, вграден в метаданните на файла (PNG, PDF, SVG, …) - така че готовият актив може да покаже кой го е направил. *Това* управлява **Използвай моите данни при създаване**: остави го изключено и изнасянето пак носи приписването на инструмента/платформата „Направено с Lolly“, но не се вгражда личен ред за автор/контакт. (Същата опция задава автора и при партидни изпълнения в **/pro**.) (За авторите на инструменти: виж [Създаване на инструменти → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) и [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Единственият превключвател Използвай моите данни при създаване, разположен до Запази профил и изключен, докато не го включиш](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Единственият превключвател Използвай моите данни при създаване, разположен до Запази профил и изключен, докато не го включиш](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Профил срещу Платформа срещу Възможности
 
@@ -147,7 +147,7 @@ Lolly кешира в движение, но кеширането в движе�
 - <!--i:box--> **Профил на съдържание** - конфигурация по време на компилиране в `profiles.json`, която обвързва набор от пакети с инструменти с брандов каталог (напр. `suse`, `lolly-start`). Това е, което операторът избира при внедряване, и е и това, което **URL/CLI параметърът** `profile` избира и като *цветови* вариант при изнасяне (условието за печат ICC/CMYK - виж [Режим URL](/info/url-mode.html)). И двете се отнасят до *компилацията/резултата*, не до *теб*. Виж [Конфигурация](/info/configuration.html).
 - <!--i:seal--> **Профил на самоличност** - незадължителната **потвърдена самоличност с Content Credentials**, която можеш да регистрираш (краткотраен сертификат, свързващ имейла ти с подписаните ти изнасяния). Това е подписваща самоличност, отделна от полетата за име/контакт на личния профил, макар че **Използвай моите данни при създаване** определя дали изобщо се вгражда някое от двете. Виж [Самоличност Content Credentials](/info/content-credentials-identity.html).
 
-![Картата за потвърдена самоличност с ширина на телефон: избирачът за срока на сертификата и стъпката за регистрация под него - профилът на самоличност, отделен от личните ти данни](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Картата за потвърдена самоличност с ширина на телефон: избирачът за срока на сертификата и стъпката за регистрация под него - профилът на самоличност, отделен от личните ти данни](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Поверителност
 

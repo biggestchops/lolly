@@ -201,7 +201,7 @@ mendaftarkan identiti yang disahkan, supaya eksport anda memaparkan "Verified - 
 \<your email\>" dan bukannya kunci tanpa nama. **Jika anda melangkau pendaftaran, tiada apa dalam
 bahagian ini terpakai kepada anda, dan tiada data peribadi akan meninggalkan peranti anda.**
 
-![Kad identiti Verified pada halaman profil, lebar telefon: pemilih jangka hayat sijil dan langkah pendaftaran di bawahnya, tidak aktif sehingga anda memulakannya sendiri](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Kad identiti Verified pada halaman profil, lebar telefon: pemilih jangka hayat sijil dan langkah pendaftaran di bawahnya, tidak aktif sehingga anda memulakannya sendiri](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Jika anda mendaftar, inilah dengan tepat apa yang berlaku:
 

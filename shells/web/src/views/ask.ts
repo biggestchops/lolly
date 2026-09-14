@@ -128,7 +128,7 @@ export async function mountAsk(viewEl: HTMLElement, host: AskHost, params: strin
   viewEl.innerHTML = `
     ${backHomeHtml()}
     <div class="ask-topright" data-topright>
-      <a href="#/profile" class="ask-top-btn ask-profile-link" aria-label="${escape(t('Open your profile'))}" title="${escape(t('Profile'))}">${icon('user')}</a>
+      <a href="#/settings" class="ask-top-btn ask-profile-link" aria-label="${escape(t('Open settings'))}" title="${escape(t('Settings'))}">${icon('user')}</a>
     </div>
     <div class="platform-layout ask-layout">
       <header class="plat-header">

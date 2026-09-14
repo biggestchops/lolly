@@ -130,6 +130,56 @@ test('existing modules keep lesson requirements and get independent editing iden
   course.lessons[0]!.blocks[0]!.text = 'Changed';
   assert.equal(source.lessons[0]!.blocks[0]!.text, 'Keep');
 });
+
+test('folder assembly retains schema 2 quizzes and rich text from an existing module', async () => {
+  const source = newLearningModule('source', 'Source');
+  source.schemaVersion = 2;
+  source.lessons.push({
+    id: 'lesson',
+    title: 'Practice',
+    required: true,
+    blocks: [
+      {
+        id: 'text',
+        kind: 'text',
+        richText: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Keep this emphasis', marks: [{ type: 'bold' }] }],
+            },
+          ],
+        },
+      },
+      {
+        id: 'quiz',
+        kind: 'quiz',
+        quiz: {
+          mode: 'single',
+          prompt: 'Ready?',
+          feedback: 'Review first.',
+          options: [
+            { id: 'yes', text: 'Yes', correct: true },
+            { id: 'no', text: 'No', correct: false },
+          ],
+        },
+      },
+    ],
+  });
+  const candidates = await collectLearningSelection(
+    { sessionRefs: ['module'] },
+    { ...reader, load: async () => ({ __learningModule: source }) }
+  );
+  const assembled = moduleFromLearningCandidates('Copy', candidates);
+  assert.equal(assembled.schemaVersion, 2);
+  assert.deepEqual(
+    assembled.lessons[0]!.blocks[0]!.richText,
+    source.lessons[0]!.blocks[0]!.richText
+  );
+  assert.deepEqual(assembled.lessons[0]!.blocks[1]!.quiz, source.lessons[0]!.blocks[1]!.quiz);
+  assert.notEqual(assembled.lessons[0]!.blocks[1]!.id, 'quiz');
+});
 test('preflight is invalidated by content, target and limit changes but not a routine save', () => {
   const module = newLearningModule('module');
   const settings = { destination: 'Partner', maxMB: 20 };

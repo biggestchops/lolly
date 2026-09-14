@@ -19,9 +19,9 @@ Bir profildeki her şey, tarayıcının yerel veritabanında **cihazda** yaşar 
 | **Erişilebilirlik** | Profil kaydında tutulan dört konfor anahtarı - *Reduce motion*, *Hide colourful previews*, *High contrast*, *Large text* - böylece bir profil dışa aktarımında da eşlik ederler. Bkz. [Erişilebilirlik](#accessibility). |
 | **Çalışman** | **[Projects](/info/using.html)** içinde iç içe klasörlere düzenlenmiş kaydedilmiş oturumlar (küçük resimlerle) - **My images** kütüphanen (Görsellerim) ve bu profile bağlı yerel etkinlik istatistikleri. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Profile ekranı - ad, iletişim, isteğe bağlı bir vesikalık ve tercihlerin](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Profile ekranı - ad, iletişim, isteğe bağlı bir vesikalık ve tercihlerin](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 | Bölüm | Nedir |
 |---|---|
@@ -35,7 +35,7 @@ Bir profildeki her şey, tarayıcının yerel veritabanında **cihazda** yaşar 
 
 Sayfa uzun olduğundan, yanında kendi **ayarlar şeridini** taşır - Bilgilerin, Görünüm, Erişilebilirlik, Lolly örneği, Etkinliğin, Depolama, Çevrimdışı kullanılabilir, Özellik bayrakları, Content Credentials - üstünde de yazdıkça listeyi filtreleyen bir **Ayarlarda ara** alanı bulunur. Her bölüm `#/profile?focus=<section-id>` şeklinde derin bağlantı verilebilir durumdadır, bu da bölümü açar ve görünüme kaydırır (`#/profile?focus=storage-section`, `?focus=feature-flags-section` vb.), böylece bir bağlantı sayfanın en üstüne değil tek bir ayara işaret edebilir.
 
-![Her biri kendi tipografisini ve rengini önizleyen üç tema kartı, etkin olan işaretlenmiş](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Her biri kendi tipografisini ve rengini önizleyen üç tema kartı, etkin olan işaretlenmiş](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Bir profil, yalnızca bir kişi değil, bir bağlamdır
 
@@ -43,9 +43,9 @@ Sayfa uzun olduğundan, yanında kendi **ayarlar şeridini** taşır - Bilgileri
 
 ### Bir birey olarak
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Bir fotoğraf yükleyene kadar boş kalan, yüklendikten sonra bu cihazda kalan vesikalık kontrolü](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Bir fotoğraf yükleyene kadar boş kalan, yüklendikten sonra bu cihazda kalan vesikalık kontrolü](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Bir ekip olarak
 
@@ -61,7 +61,7 @@ Lolly'de o rol yalnızca **el altında tuttuğun bir başka profildir** - etkinl
 
 Herhangi bir anda bir kurulumun **tek bir etkin profili** vardır - bir aracın şu anda gördüğü detaylar. Uygulama içinde bir profil değiştirici yoktur; bunun yerine her profil **taşınabilir bir paket**tir (tek bir `.zip`, bkz. [aşağı](#moving-a-profile-to-a-new-device)). Bu, kasıtlı olarak yeni bir cihaza taşınmakla aynı mekanizmadır - bir profil, kaydedebileceğin, kopyalayabileceğin ve yükleyebileceğin bir dosyadır.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **En temiz geçiş:** **Profile → Storage → Clear all my data** (Profil → Depolama → Tüm verilerimi temizle), ardından geçtiğin bağlam için paketi **Import** (İçe aktar) et. Artık yalnızca o profil olarak oluşturuyorsun.
 - <!--i:layers--> **Katmanlama:** önce temizlemeden içe aktarmak **birleştirir** - içe aktarılan profil, oturumlar ve görseller zaten orada olanın üstüne iner, aynı isimdeki her şeyin yerini alır ve geri kalanını bırakır. Bir ekibin kaydedilmiş oturumlarını kendi kurulumuna çekmek için kullanışlıdır; net bir rol sınırına ihtiyacın varsa istediğin şey bu değildir.
@@ -69,7 +69,7 @@ Herhangi bir anda bir kurulumun **tek bir etkin profili** vardır - bir aracın 
 
 Yani gerçekten birkaç bağlamı bir arada yürütüyorsan (sen, ekibin, etkinlik yöneticisi şapkası) birkaç paket tutar ve ihtiyaç duyduğunu yüklersin:
 
-![Kaydedilmiş oturumları, görselleri ve önbelleği tarayıcının gerçekte bildirdiğine karşı ayrıştıran depolama göstergesi](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Kaydedilmiş oturumları, görselleri ve önbelleği tarayıcının gerçekte bildirdiğine karşı ayrıştıran depolama göstergesi](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Bağlam başına bir paket tut ve dosyaları ne olduklarına göre yeniden adlandır (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Dosya, profilin *ta kendisidir*.
 
@@ -112,7 +112,7 @@ Tarayıcı kalıcı depolama izni vermemişse bölüm bunu belirtir ve bunu iste
 
 ## Bir profili yeni bir cihaza taşıma
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Bir profil tamamen yerel olduğundan, onu boş bir kuruluma - yeni bir dizüstü, yeni sıfırlanmış bir tarayıcı, bir meslektaşın makinesi, çevrimdışı bir kutu - almanın tek yolu **dosyayı taşımaktır**. Hiçbir oturum açma onu senin için geri yüklemez ve mesele de budur: başından beri hiçbir şey cihazından çıkmadı.
 
@@ -120,7 +120,7 @@ Bir profil tamamen yerel olduğundan, onu boş bir kuruluma - yeni bir dizüstü
 - <!--i:upload--> Diğer kurulumdaki **Import data…**, o dosyayı geri okur ve tam olarak kaldığın yerden devam edersin.
 - <!--i:box--> **Export my data & render everything**, aynı yedeği, kaydedilen her oturumu tamamlanmış çıktı dosyasına dönüştüren ve Projelerini yansıtan klasörlere yerleştiren ikinci bir zip dosyasıyla *birlikte* yazar. Hem kaynakların hem sonuçların eksiksiz bir çevrimdışı arşivi - çok sayıda oturumda büyük ve yavaş olabilir.
 
-![Bütün bir kurulumu taşıyan iki düğme: Export my data tek bir zip yazar, Import data onu geri okur](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Bütün bir kurulumu taşıyan iki düğme: Export my data tek bir zip yazar, Import data onu geri okur](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Paket düz, kendi kendine yeten bir zip'tir; bu yüzden **her** yolla seyahat eder - USB, AirDrop, bir ağ paylaşımı, kendine e-posta - ve hedef tamamen çevrimdışı olabilir. Her parça sağlama toplamına tabidir; böylece aktarım sırasında hasar gören bir dosya, yarı bozuk geri yüklenmek yerine içe aktarmada yakalanır. İçe aktarma **birleştirir** (aynı adlı profil/oturum/görsel üzerine yazılır; gerisi korunur); bu yüzden zaten kullanımda olan bir hedefi asla silmez.
 
@@ -130,13 +130,13 @@ Tam paket düzeni, sürüm ilkesi ve bütünlük kuralları için bkz. **[Data T
 
 ## Araçlar profilini nasıl kullanır
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Bir araç yalnızca bağlamak üzere açıkça yapıldığı profil alanlarını *önceden doldurur*:
 
 **Onay kutusu (köken bilgisi).** Bir varlığı dışa aktardığında bilgilerin isteğe bağlı olarak **köken bilgisi (provenance)** olarak eşlik eder - dosyanın meta verisine gömülü bir yazar/kaynak satırı (PNG, PDF, SVG, …) - böylece bitmiş bir varlık kimin yaptığını söyleyebilir. **Use my details to create**'in yönettiği şey *tam olarak budur*: kapalı bırakırsan dışa aktarım yine de "Made with Lolly" araç/platform atfını taşır, ancak kişisel yazar/iletişim satırı gömülmez. (Aynı onay, **/pro** toplu çalıştırmalarında da yazarı ayarlar.) (Araç yazarları için bkz. [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) ve [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Save Profile'ın yanında duran ve sen açana kadar kapalı olan tek bir Use my details to create anahtarı](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Save Profile'ın yanında duran ve sen açana kadar kapalı olan tek bir Use my details to create anahtarı](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profil, Platform ve Yetenekler
 
@@ -155,7 +155,7 @@ Kelime, proje genelinde birden çok anlam taşır. Bunların hiçbiri, bu sayfan
 - <!--i:box--> **Content profile** - `profiles.json` içinde, bir dizi araç paketini bir marka kataloğuna bağlayan derleme zamanı yapılandırması (örn. `suse`, `lolly-start`). Bir operatörün dağıtım yaparken seçtiği şeydir; ayrıca `profile` **URL/CLI parametresi** de dışa aktarım sırasında bir *renk* varyantı seçmek için aynı adı kullanır (ICC/CMYK baskı koşulu - bkz. [URL Mode](/info/url-mode.html)). İkisi de *derleme/çıktı* ile ilgilidir, *seninle* değil. Bkz. [Configuration](/info/configuration.html).
 - <!--i:seal--> **Identity profile** - kaydolabileceğin isteğe bağlı **doğrulanmış Content Credentials kimliği** (e-postanı imzalı dışa aktarımlarına bağlayan kısa ömürlü bir sertifika). Bu, kişisel profilin ad/iletişim alanlarından ayrı bir imzalama kimliğidir, ancak ikisinin de gömülüp gömülmeyeceğini **Use my details to create** belirler. Bkz. [Content Credentials Identity](/info/content-credentials-identity.html).
 
-![Telefon genişliğinde Verified identity kartı: sertifika ömrü seçici ve altındaki kayıt adımı - kişisel bilgilerinden ayrı olan kimlik profili](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Telefon genişliğinde Verified identity kartı: sertifika ömrü seçici ve altındaki kayıt adımı - kişisel bilgilerinden ayrı olan kimlik profili](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Gizlilik
 

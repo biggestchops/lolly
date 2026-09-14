@@ -119,7 +119,7 @@ LollyはModel Context Protocol経由でAIエージェントからアクセスす
 
 Lollyは書き出したファイルに暗号学的な**Content Credential**を封入でき、それによりファイルがLollyを離れて以降改変されていないことを誰でもオフラインで検証できます。ここまでは**デフォルトで有効かつ完全にローカル**です - 署名鍵はお使いのデバイス上で生成され、署名自体もオフラインで行われます。登録(enrolment)を行わない場合、その鍵は使い捨てです: 書き出しごとに新しい鍵ペアが生成され、その書き出しとともに破棄されます。登録すると鍵は永続的なものになり、**取り出し不可能(non-extractable)**な形で生成されます - Lolly自身のコードであってもそれを読み取ることはできず、署名を依頼できるのみです。いずれの場合も、鍵がお使いのデバイスから外に出ることは一切ありません。このセクションでは、その上にある唯一の*任意*ステップを扱います: 検証済みアイデンティティを登録することで、書き出しファイルに匿名の鍵の代わりに"Verified - signed by \<your email\>"と表示されるようになります。**登録をスキップした場合、このセクションの内容はお客様には一切適用されず、個人データがお使いのデバイスから出ることもありません。**
 
-![プロフィールページのVerified identityカード(スマートフォン幅): 証明書の有効期間ピッカーと、その下にある登録ステップ。ご自身で開始するまでは休止状態です](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![プロフィールページのVerified identityカード(スマートフォン幅): 証明書の有効期間ピッカーと、その下にある登録ステップ。ご自身で開始するまでは休止状態です](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 登録を行った場合、正確には以下のことが起こります:
 

@@ -21,13 +21,13 @@
 
 এর কোনোটিই বাধ্যতামূলক নয়। একটি ফাঁকা প্রোফাইলও পুরোপুরি ভালো প্রোফাইল; আপনি শুধু ততটুকুই পূরণ করেন যা আপনার টাইপ করার শ্রম বাঁচায়।
 
-![Profile স্ক্রিন - নাম, যোগাযোগ, একটি ঐচ্ছিক হেডশট এবং আপনার পছন্দসমূহ](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Profile স্ক্রিন - নাম, যোগাযোগ, একটি ঐচ্ছিক হেডশট এবং আপনার পছন্দসমূহ](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 পছন্দসমূহই সেই একটা অংশ, যা বদলে দেয় অ্যাপটা আপনার দিকে কেমন দেখায়। থিম কার্ডগুলো লাইভ প্রিভিউ, আর আপনি একটা বাছার সঙ্গে সঙ্গেই সেটা প্রয়োগ হয় — শুধু এই ডিভাইসে।
 
 পাতাটি বেশ লম্বা, তাই এর পাশ দিয়ে নিজস্ব একটি **সেটিংস রেল** রয়েছে - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - এবং তার উপরে একটি **Search settings** ফিল্ড রয়েছে যা আপনি টাইপ করার সাথে সাথে তালিকা ফিল্টার করে। প্রতিটি সেকশন `#/profile?focus=<section-id>` হিসেবে ডিপ-লিংকযোগ্য, যা সেটি খুলে এবং স্ক্রল করে দৃশ্যে নিয়ে আসে (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, ইত্যাদি), তাই একটি লিংক পাতার শীর্ষের বদলে একটি নির্দিষ্ট সেটিং-এর দিকে নির্দেশ করতে পারে।
 
-![তিনটি থিম কার্ড, প্রতিটি নিজের টাইপ ও রং প্রিভিউ করছে, সক্রিয়টি চিহ্নিত করা](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![তিনটি থিম কার্ড, প্রতিটি নিজের টাইপ ও রং প্রিভিউ করছে, সক্রিয়টি চিহ্নিত করা](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## প্রোফাইল একটি প্রেক্ষাপট, কেবল একজন ব্যক্তি নয়
 
@@ -35,9 +35,9 @@
 
 ### একজন ব্যক্তি হিসেবে
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![হেডশট কন্ট্রোল, ফাঁকা থাকে যতক্ষণ না আপনি একটি ছবি আপলোড করেন যা এরপর এই ডিভাইসেই থেকে যায়](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![হেডশট কন্ট্রোল, ফাঁকা থাকে যতক্ষণ না আপনি একটি ছবি আপলোড করেন যা এরপর এই ডিভাইসেই থেকে যায়](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### একটি দল হিসেবে
 
@@ -61,7 +61,7 @@ Lolly-তে, সেই ভূমিকা কেবল **হাতের কা
 
 স্টোরেজেই এর দুটো দিকই থাকে: মিটার ক্যাটেগরি ধরে ধরে হিসাব দেয় এই ইনস্টলটা কত বাইট ধরে রেখেছে, আর তার নিচের বোতামগুলোই হলো সেটা মুছে ফেলার বা সঙ্গে নিয়ে যাওয়ার উপায়।
 
-![স্টোরেজ মিটার, সংরক্ষিত সেশন, ছবি ও ক্যাশকে ব্রাউজার প্রকৃতপক্ষে যা রিপোর্ট করে তার বিপরীতে ভেঙে দেখাচ্ছে](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![স্টোরেজ মিটার, সংরক্ষিত সেশন, ছবি ও ক্যাশকে ব্রাউজার প্রকৃতপক্ষে যা রিপোর্ট করে তার বিপরীতে ভেঙে দেখাচ্ছে](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > প্রতিটি প্রেক্ষাপটের জন্য একটি করে বান্ডল রাখুন এবং ফাইলগুলো যা, তা অনুযায়ী নাম বদলান (`LollyTools-events-2026.zip`, `LollyTools-me.zip`)। ফাইলটিই *হলো* প্রোফাইল।
 
@@ -104,7 +104,7 @@ Lolly আপনি যেতে যেতে ক্যাশ করে, কি�
 
 ## নতুন ডিভাইসে প্রোফাইল সরানো
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 যেহেতু একটি প্রোফাইল সম্পূর্ণ লোকাল, তাই এটি কোনো ফাঁকা ইনস্টলে নেওয়ার একমাত্র উপায় — একটি নতুন ল্যাপটপ, সদ্য রিসেট করা ব্রাউজার, সহকর্মীর মেশিন, একটি অফলাইন বক্স — হলো **ফাইলটি সঙ্গে নিয়ে যাওয়া**। কোনো লগইন এটি আপনার জন্য ফিরিয়ে আনে না, আর এটাই মূল কথা: প্রথম থেকেই কিছুই আপনার ডিভাইস ছেড়ে যায়নি।
 
@@ -112,7 +112,7 @@ Lolly আপনি যেতে যেতে ক্যাশ করে, কি�
 - <!--i:upload--> অন্য ইনস্টলে **Import data…** সেই ফাইলটি আবার পড়ে নেয় এবং আপনি ঠিক যেখানে ছেড়েছিলেন সেখান থেকে শুরু করতে পারেন।
 - <!--i:box--> **Export my data & render everything** সেই একই ব্যাকআপ *এবং* একটি দ্বিতীয় zip লেখে যা প্রতিটি সংরক্ষিত সেশনকে তার চূড়ান্ত আউটপুট ফাইলে রেন্ডার করে, এমন ফোল্ডারে যা আপনার Projects-কে প্রতিফলিত করে। উৎস এবং ফলাফল উভয়েরই একটি সম্পূর্ণ অফলাইন আর্কাইভ - এবং অনেক সেশন থাকলে এটি বড় ও ধীর হতে পারে।
 
-![পুরো একটি ইনস্টল সরিয়ে নেওয়ার দুটি বোতাম: Export my data একটি zip লেখে, Import data সেটি আবার পড়ে](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![পুরো একটি ইনস্টল সরিয়ে নেওয়ার দুটি বোতাম: Export my data একটি zip লেখে, Import data সেটি আবার পড়ে](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 বান্ডলটি একটি সাধারণ, স্বয়ংসম্পূর্ণ zip, তাই এটি **যেকোনো** উপায়ে যায় — USB, AirDrop, নেটওয়ার্ক শেয়ার, নিজেকে-ইমেল — এবং গন্তব্য সম্পূর্ণ অফলাইন হতে পারে। প্রতিটি অংশ চেকসাম করা, তাই পথে নষ্ট হওয়া কোনো ফাইল অর্ধেক-ভাঙা অবস্থায় ফিরিয়ে আনার বদলে ইমপোর্টের সময় ধরা পড়ে। ইমপোর্ট **মিশিয়ে দেয়** (একই নামের প্রোফাইল/সেশন/ছবি ওভাররাইট হয়; বাকি সব রাখা হয়), তাই এটি ইতিমধ্যে ব্যবহৃত কোনো গন্তব্য কখনো মুছে ফেলে না।
 
@@ -122,13 +122,13 @@ Lolly আপনি যেতে যেতে ক্যাশ করে, কি�
 
 ## আপনার প্রোফাইল টুল কীভাবে ব্যবহার করে
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 একটি টুল কেবল সেই প্রোফাইল ফিল্ডগুলোই *প্রি-ফিল* করে যেগুলো বাঁধার জন্য এটি স্পষ্টভাবে তৈরি করা হয়েছিল:
 
 **অপ্ট-ইন (provenance)।** আপনি যখন একটি অ্যাসেট এক্সপোর্ট করেন, তখন আপনার তথ্য ঐচ্ছিকভাবে **provenance** হিসেবে সঙ্গে যায় - ফাইলের মেটাডেটায় (PNG, PDF, SVG, …) এমবেড করা একটি author/credit লাইন - যাতে একটি চূড়ান্ত অ্যাসেট বলতে পারে কে এটি তৈরি করেছে। *এটাই* **Use my details to create** নিয়ন্ত্রণ করে: এটি বন্ধ রাখলে এক্সপোর্টে তখনও "Made with Lolly" টুল/প্ল্যাটফর্ম অ্যাট্রিবিউশন থাকবে, কিন্তু কোনো ব্যক্তিগত author/contact লাইন এমবেড হবে না। (একই অপ্ট-ইন **/pro** ব্যাচ রানেও author সেট করে।) (টুল লেখকদের জন্য: দেখুন [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) এবং [Host API → `host.profile`](/info/host-api.html#host-profile)।)
 
-![একমাত্র Use my details to create সুইচ, Save Profile এর পাশে থাকে এবং আপনি চালু না করা পর্যন্ত বন্ধ থাকে](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![একমাত্র Use my details to create সুইচ, Save Profile এর পাশে থাকে এবং আপনি চালু না করা পর্যন্ত বন্ধ থাকে](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## প্রোফাইল বনাম প্ল্যাটফর্ম বনাম সক্ষমতা
 
@@ -147,7 +147,7 @@ Lolly আপনি যেতে যেতে ক্যাশ করে, কি�
 - <!--i:box--> **Content profile** - `profiles.json`-এ একটি বিল্ড-টাইম কনফিগারেশন যা একগুচ্ছ টুল প্যাককে একটি ব্র্যান্ড ক্যাটালগের সাথে বাঁধে (যেমন `suse`, `lolly-start`)। ডিপ্লয় করার সময় একজন অপারেটর এটাই বেছে নেন, এবং এক্সপোর্টের সময় `profile` **URL/CLI parameter** এটারই একটি *রঙের* ভ্যারিয়েন্ট বেছে নেয় (ICC/CMYK প্রেস কন্ডিশন - দেখুন [URL Mode](/info/url-mode.html))। দুটোই *বিল্ড/আউটপুট* সম্পর্কে, *আপনার* সম্পর্কে নয়। দেখুন [Configuration](/info/configuration.html)।
 - <!--i:seal--> **Identity profile** - ঐচ্ছিক **verified Content Credentials identity** যা আপনি এনরোল করতে পারেন (একটি স্বল্পস্থায়ী সার্টিফিকেট যা আপনার ইমেইলকে আপনার স্বাক্ষরিত এক্সপোর্টের সাথে যুক্ত করে)। এটি একটি সাইনিং আইডেন্টিটি, পার্সোনাল প্রোফাইলের নাম/যোগাযোগ ফিল্ড থেকে আলাদা, যদিও **Use my details to create** নিয়ন্ত্রণ করে এই দুটির কোনটি এমবেড হবে কিনা। দেখুন [Content Credentials Identity](/info/content-credentials-identity.html)।
 
-![Verified identity কার্ড, ফোন-প্রস্থে: সার্টিফিকেট মেয়াদ নির্বাচক এবং তার নিচে এনরোলমেন্ট ধাপ - identity profile, আপনার ব্যক্তিগত তথ্য থেকে আলাদা](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Verified identity কার্ড, ফোন-প্রস্থে: সার্টিফিকেট মেয়াদ নির্বাচক এবং তার নিচে এনরোলমেন্ট ধাপ - identity profile, আপনার ব্যক্তিগত তথ্য থেকে আলাদা](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## গোপনীয়তা
 

@@ -835,16 +835,6 @@
    (desktop), tap (touch), or keyboard focus, instead of printing it under every
    control. The text stays in the DOM, wired to its control via aria-describedby. */
 .input-label-text { display: inline; }
-.help-tip-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  vertical-align: middle; margin-left: 4px;
-  width: 16px; height: 16px; padding: 0;
-  border: none; border-radius: var(--radius-round); background: transparent;
-  color: hsl(var(--muted-foreground)); cursor: help;
-  opacity: 0.55; transition: opacity var(--dur-1) ease, color var(--dur-1) ease;
-}
-.help-tip-btn:hover, .help-tip-btn:focus-visible { opacity: 1; color: hsl(var(--primary)); }
-.help-tip-btn:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; border-radius: var(--radius-round); }
 /* Unified "Add data" affordance (plan 87) - a text/longtext input's dataSource button,
    styled like the help-tip button so it reads as label chrome, not a primary control. */
 .input-data-src {
@@ -861,7 +851,7 @@
    negative margin pulls it back to its original 16px footprint (and 4px gap from
    the label text) in the flow, so no input row grows or reflows on every tool. */
 @media (pointer: coarse) {
-  .help-tip-btn, .input-data-src {
+  .input-data-src {
     padding: var(--sp-4);
     margin: -8px -8px -8px -4px;
   }
@@ -912,27 +902,12 @@
    the large-text factor, and growing the box would nudge the label's baseline
    on every row that has help text). 13px matches the inline attributes the
    icon ships with (components/help-tip.ts); a CSS rule outranks them. */
-.help-tip-btn svg { display: block; width: var(--fs-md); height: var(--fs-md); }
 .block-control { position: relative; }
 /* Generic tip host (outside the sidebar - e.g. the export dialog's C2PA card):
    anchor the drop-down pop to it, same as a .block-control. */
-.help-tip-host { position: relative; }
-.help-tip-pop {
-  position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 30;
-  padding: 7px 9px; border-radius: var(--radius);
-  background: hsl(var(--popover)); color: hsl(var(--popover-foreground));
-  border: 1px solid hsl(var(--border));
-  box-shadow: 0 8px 22px hsl(var(--foreground) / 0.16);
-  font-size: var(--fs-xs); font-weight: 400; line-height: 1.4;
-  letter-spacing: 0; text-transform: none; white-space: normal;
-}
 /* Block sub-field cells are narrow - let their tip take its own width, capped so a long
    help string WRAPS to several lines instead of one runaway line (white-space:normal above). */
 .block-control > .help-tip-pop { right: auto; width: max-content; min-width: 150px; max-width: 240px; }
-.help-tip-pop[hidden] { display: none; }
-/* Optional action link at the foot of a tip (e.g. "Check a file →" to /verify). */
-.help-tip-link { display: block; margin-top: 5px; color: hsl(var(--primary)); font-weight: 600; text-decoration: none; }
-.help-tip-link:hover, .help-tip-link:focus-visible { text-decoration: underline; }
 /* Sections clip their contents (clip-path, for rounded corners - see .input-section).
    Un-clip only while a popover that must escape the edge is active: a help tip, or an
    open colour picker (its absolute swatch panel would otherwise be clipped by the

@@ -4,6 +4,9 @@ import type { LearningBlock, LearningRelease, LearningTarget } from '@lolly-tool
 import type { PickerHost } from './picker.ts';
 import { newLearningModule, parseLearningModule } from '../../../../engine/src/learning/module.ts';
 import { createFolderStore } from '../folders.ts';
+import { richTextOps } from './learning/rich-text.ts';
+import { quizzesOps } from './learning/quizzes.ts';
+import { mountLessonInteraction } from './learning/lessons.ts';
 import { uiOps } from './learning/ui.ts';
 import { editOps } from './learning/edit.ts';
 import { sourcesOps } from './learning/sources.ts';
@@ -11,6 +14,7 @@ import { deliveryOps } from './learning/delivery.ts';
 import { publishingOps } from './learning/publishing.ts';
 import { persistenceOps, LEARNING_SLOT_PREFIX } from './learning/store.ts';
 import './learning/styles.css';
+import { mountLearningMenus } from './learning/menus.ts';
 import { mountBlockInteraction } from './learning/blocks.ts';
 
 export async function mountLearning(
@@ -57,6 +61,7 @@ export async function mountLearning(
       maxMB: Math.max(0, Number(storedSettings.maxMB) || 0),
     },
     sourceChoices: {},
+    sourceDisplay: {},
     checking: false,
     busy: false,
     disposed: false,
@@ -67,6 +72,8 @@ export async function mountLearning(
     previewUrls: [],
     preview: null,
   } as unknown as LearningCtx;
+  ctx.richText = richTextOps(ctx);
+  ctx.quizzes = quizzesOps(ctx);
   ctx.ui = uiOps(ctx);
   ctx.edit = editOps(ctx);
   ctx.sources = sourcesOps(ctx);
@@ -86,6 +93,8 @@ export async function mountLearning(
   }
   const click = (event: Event) => {
     const target = (event.target as Element).closest<HTMLElement>('[data-action]');
+    if (target?.dataset.action === 'insert-content') return;
+    if (target?.dataset.action?.startsWith('add-')) ctx.insertAfter = undefined;
     if (target)
       void ctx
         .flushTyping()
@@ -97,6 +106,7 @@ export async function mountLearning(
   const change = async (event: Event) => {
     if (ctx.busy) return;
     const el = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    if (ctx.quizzes.change(el)) return;
     const lesson = ctx.module.lessons.find((l) => l.id === ctx.selected);
     if (
       el.matches('[data-resource]') &&
@@ -119,12 +129,13 @@ export async function mountLearning(
         }),
         meta: { name: file.name },
       });
-      lesson.blocks.push({
+      ctx.edit.insert({
         id: crypto.randomUUID(),
         kind: 'resource',
         description: file.name,
         source: { kind: 'asset', asset: { source: 'user', id, type: 'data', format, url: '' } },
       });
+      ctx.insertAfter = undefined;
     } else if (el.dataset.module) {
       const key = el.dataset.module;
       if (key === 'title' || key === 'description' || key === 'objectives' || key === 'language')
@@ -200,6 +211,7 @@ export async function mountLearning(
     );
   };
   ctx.flushTyping = async () => {
+    ctx.richText.flush();
     if (pendingInput) await commit(pendingInput);
   };
   // Save a pause in typing without replacing the focused field. Blur commits
@@ -210,7 +222,9 @@ export async function mountLearning(
       ctx.busy ||
       !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) ||
       el.type === 'checkbox' ||
-      !el.matches('[data-module], [data-lesson], [data-block-field]')
+      !el.matches(
+        '[data-module], [data-lesson], [data-block-field], [data-quiz-field], [data-quiz-option-text]'
+      )
     )
       return;
     clearTimeout(inputTimer);
@@ -220,10 +234,10 @@ export async function mountLearning(
     inputTimer = setTimeout(() => onChange(event), 500);
   };
   const unload = (event: BeforeUnloadEvent) => {
-    if (pendingInput || ctx.dirty || ctx.busy) event.preventDefault();
+    if (pendingInput || ctx.richText.pending() || ctx.dirty || ctx.busy) event.preventDefault();
   };
   root._beforeLeave = async () => {
-    if (pendingInput) await commit(pendingInput);
+    await ctx.flushTyping();
     if (!ctx.dirty && !ctx.busy) return true;
     if (!ctx.busy) {
       try {
@@ -242,14 +256,19 @@ export async function mountLearning(
     return false;
   };
   root.addEventListener('click', click);
+  const cleanupLessons = mountLessonInteraction(ctx);
   const cleanupBlocks = mountBlockInteraction(ctx);
+  const cleanupMenus = mountLearningMenus(ctx);
   root.addEventListener('input', onInput);
   root.addEventListener('change', onChange);
   window.addEventListener('beforeunload', unload);
   root._cleanup = () => {
+    ctx.richText.destroy();
     ctx.disposed = true;
+    cleanupLessons();
     clearTimeout(inputTimer);
     cleanupBlocks();
+    cleanupMenus();
     ctx.publishing.closePreview();
     ctx.delivery.close();
     root.removeEventListener('click', click);

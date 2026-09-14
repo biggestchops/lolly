@@ -19,15 +19,15 @@ Mọi thứ trong hồ sơ đều nằm **trên thiết bị**, trong cơ sở d
 | **Accessibility** | Bốn công tắc tiện nghi - *Reduce motion*, *Hide colourful previews*, *High contrast*, *Large text* - được giữ trên bản ghi profile, nên chúng đi kèm khi xuất profile. Xem [Accessibility](#accessibility). |
 | **Your work** | Các phiên đã lưu (kèm ảnh thu nhỏ) - được tổ chức thành các thư mục lồng nhau trong **[Projects](/info/using.html)** - thư viện **My images** của bạn và số liệu thống kê hoạt động cục bộ, tất cả đều gắn với profile này. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Màn hình Profile - tên, liên hệ, một ảnh chân dung tùy chọn và các tùy chỉnh của bạn](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Màn hình Profile - tên, liên hệ, một ảnh chân dung tùy chọn và các tùy chỉnh của bạn](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Không có mục nào là bắt buộc. Một hồ sơ trống vẫn là một hồ sơ hoàn toàn tốt; bạn chỉ cần điền những gì giúp bạn đỡ phải gõ lại.
 
 Trang này khá dài, nên nó có riêng một **thanh cài đặt** dọc theo cạnh - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - cùng một ô **Search settings** phía trên lọc danh sách khi bạn gõ. Mỗi mục đều có thể liên kết trực tiếp dưới dạng `#/profile?focus=<section-id>`, việc này sẽ mở nó và cuộn nó vào tầm nhìn (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, v.v.), nên một link có thể trỏ tới một cài đặt cụ thể thay vì đầu trang.
 
-![Ba thẻ chủ đề, mỗi thẻ xem trước kiểu chữ và màu sắc riêng, với thẻ đang hoạt động được đánh dấu](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Ba thẻ chủ đề, mỗi thẻ xem trước kiểu chữ và màu sắc riêng, với thẻ đang hoạt động được đánh dấu](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Hồ sơ là một bối cảnh, không chỉ là một con người
 
@@ -35,9 +35,9 @@ Từ "hồ sơ" gợi ý một con người cố định duy nhất, nhưng tron
 
 ### Với tư cách cá nhân
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Công cụ ảnh chân dung, trống cho tới khi bạn tải lên một ảnh rồi ảnh đó ở lại trên thiết bị này](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Công cụ ảnh chân dung, trống cho tới khi bạn tải lên một ảnh rồi ảnh đó ở lại trên thiết bị này](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Với tư cách một nhóm
 
@@ -53,7 +53,7 @@ Trong Lolly, vai trò đó chỉ đơn giản là **một hồ sơ khác mà b�
 
 Tại mọi thời điểm, một bản cài đặt chỉ có **một profile đang hoạt động** - những thông tin mà một công cụ nhìn thấy ngay lúc này. Không có bộ chuyển profile trong ứng dụng; thay vào đó, mỗi profile là một **gói di động** (một file `.zip` duy nhất, xem [bên dưới](#moving-a-profile-to-a-new-device)). Đó là cơ chế cố ý giống hệt việc chuyển sang thiết bị mới - một profile là một file bạn có thể lưu, sao chép và nạp lại.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Cách chuyển sạch nhất:** **Profile → Storage → Clear all my data**, sau đó **Import** gói cho ngữ cảnh bạn đang bước vào. Giờ bạn đang tạo hoàn toàn với tư cách profile đó.
 - <!--i:layers--> **Xếp lớp:** import mà *không* xóa trước sẽ **hợp nhất** - profile, phiên và ảnh được import chồng lên những gì đã có sẵn, thay thế bất kỳ thứ gì trùng tên và giữ nguyên phần còn lại. Tiện khi kéo các phiên đã lưu của một nhóm vào bộ thiết lập của riêng bạn; không phải điều bạn muốn nếu cần một ranh giới vai trò sạch sẽ.
@@ -61,7 +61,7 @@ Tại mọi thời điểm, một bản cài đặt chỉ có **một profile đ
 
 Vì vậy nếu bạn thực sự phải xoay sở giữa nhiều bối cảnh (bạn, nhóm của bạn, chiếc mũ quản lý sự kiện), bạn giữ nhiều gói và nạp gói bạn cần:
 
-![Đồng hồ đo dung lượng lưu trữ, phân tách các phiên đã lưu, ảnh và cache so với những gì trình duyệt thực sự báo cáo](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Đồng hồ đo dung lượng lưu trữ, phân tách các phiên đã lưu, ảnh và cache so với những gì trình duyệt thực sự báo cáo](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Giữ một gói cho mỗi bối cảnh và đổi tên tệp theo đúng nội dung của chúng (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Tệp đó *chính là* hồ sơ.
 
@@ -104,7 +104,7 @@ Nếu trình duyệt chưa cấp quyền lưu trữ lâu dài (persistent storag
 
 ## Chuyển hồ sơ sang thiết bị mới
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Vì hồ sơ hoàn toàn cục bộ, cách duy nhất để đưa nó vào một bản cài đặt trống - một laptop mới, một trình duyệt vừa được đặt lại, máy của đồng nghiệp, một thiết bị ngoại tuyến - là **mang theo tệp**. Không có đăng nhập nào khôi phục nó giúp bạn, và đó chính là mấu chốt: ngay từ đầu chưa từng có gì rời khỏi thiết bị của bạn.
 
@@ -112,7 +112,7 @@ Vì hồ sơ hoàn toàn cục bộ, cách duy nhất để đưa nó vào một
 - <!--i:upload--> **Import data…** trên máy cài đặt khác sẽ đọc lại tệp đó và bạn tiếp tục đúng từ chỗ đã dừng.
 - <!--i:box--> **Export my data & render everything** ghi ra cùng bản sao lưu đó *cộng thêm* một tệp zip thứ hai render mọi phiên đã lưu thành tệp kết quả hoàn chỉnh, trong các thư mục phản chiếu Projects của bạn. Một kho lưu trữ offline đầy đủ gồm cả nguồn lẫn kết quả - và có thể lớn và chậm nếu có nhiều phiên.
 
-![Hai nút di chuyển toàn bộ bản cài đặt: Export my data ghi ra một tệp zip, Import data đọc lại tệp đó](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Hai nút di chuyển toàn bộ bản cài đặt: Export my data ghi ra một tệp zip, Import data đọc lại tệp đó](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Gói này là một tệp zip đơn giản, tự chứa toàn bộ, nên nó có thể di chuyển bằng **bất kỳ** phương tiện nào - USB, AirDrop, một ổ mạng chia sẻ, tự gửi email cho chính mình - và đích đến có thể hoàn toàn ngoại tuyến. Mỗi phần đều được tính checksum, nên một tệp bị hỏng trong quá trình truyền sẽ bị phát hiện khi nhập vào thay vì được khôi phục ở trạng thái hỏng dở dang. Việc nhập sẽ **hợp nhất** (hồ sơ/phiên/hình ảnh trùng tên sẽ bị ghi đè; mọi thứ khác được giữ nguyên), nên nó không bao giờ xóa sạch một đích đến đang được sử dụng.
 
@@ -122,13 +122,13 @@ Những gì không được mang theo: bộ nhớ đệm danh mục (nó sẽ t�
 
 ## Cách các công cụ sử dụng hồ sơ của bạn
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Một công cụ chỉ bao giờ *điền sẵn* những trường hồ sơ mà nó được xây dựng rõ ràng để liên kết:
 
 **Tùy chọn tham gia (provenance).** Khi bạn export một tài sản, thông tin của bạn có thể tùy chọn đi kèm dưới dạng **provenance** - một dòng tác giả/ghi công được nhúng vào metadata của tệp (PNG, PDF, SVG, …) - để tài sản hoàn chỉnh có thể cho biết ai đã tạo ra nó. *Đây* chính là điều mà **Use my details to create** kiểm soát: để tắt thì export vẫn mang ghi công công cụ/nền tảng "Made with Lolly", nhưng không có dòng tác giả/liên hệ cá nhân nào được nhúng vào. (Cùng một tùy chọn này đặt tác giả cho các lượt chạy hàng loạt trên **/pro**.) (Tác giả công cụ: xem [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) và [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Công tắc duy nhất Use my details to create, nằm cạnh Save Profile và tắt cho đến khi bạn bật nó lên](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Công tắc duy nhất Use my details to create, nằm cạnh Save Profile và tắt cho đến khi bạn bật nó lên](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Hồ sơ so với Nền tảng so với Năng lực
 
@@ -147,7 +147,7 @@ Từ này bị dùng chồng chéo trong toàn bộ dự án. Không nghĩa nào
 - <!--i:box--> **Content profile** - một cấu hình tại thời điểm build trong `profiles.json` liên kết một tập hợp gói công cụ với một danh mục thương hiệu (ví dụ `suse`, `lolly-start`). Đây là thứ mà một operator chọn khi triển khai, và cũng là thứ mà **URL/CLI parameter** `profile` chọn một biến thể *màu sắc* tại thời điểm export (điều kiện in ICC/CMYK - xem [URL Mode](/info/url-mode.html)). Cả hai đều liên quan đến *build/output*, không liên quan đến *bạn*. Xem [Configuration](/info/configuration.html).
 - <!--i:seal--> **Identity profile** - **danh tính Content Credentials đã xác minh** tùy chọn mà bạn có thể đăng ký (một chứng chỉ ngắn hạn liên kết email của bạn với các bản export đã ký của bạn). Đó là một danh tính ký số, tách biệt với các trường tên/liên hệ của hồ sơ cá nhân, mặc dù **Use my details to create** kiểm soát việc liệu cái nào trong hai thứ đó có được nhúng vào hay không. Xem [Content Credentials Identity](/info/content-credentials-identity.html).
 
-![Thẻ Verified identity, chiều rộng điện thoại: bộ chọn thời hạn chứng chỉ và bước đăng ký bên dưới - identity profile, tách biệt với thông tin cá nhân của bạn](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Thẻ Verified identity, chiều rộng điện thoại: bộ chọn thời hạn chứng chỉ và bước đăng ký bên dưới - identity profile, tách biệt với thông tin cá nhân của bạn](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Quyền riêng tư
 

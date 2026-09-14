@@ -19,15 +19,15 @@ Allt i en profil finns **på enheten**, i webbläsarens lokala databas (IndexedD
 | **Tillgänglighet** | Fyra komfortomkopplare - *Minska rörelse*, *Dölj färgglada förhandsvisningar*, *Hög kontrast*, *Stor text* - lagrade på profilposten, så de följer med i en profilexport. Se [Tillgänglighet](#accessibility). |
 | **Ditt arbete** | Sparade sessioner (med miniatyrbilder) - organiserade i nästlade mappar i **[Projects](/info/using.html)** - ditt **My images**-bibliotek och den lokala aktivitetsstatistiken, alla kopplade till denna profil. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Profilskärmen - namn, kontakt, en valfri profilbild och dina inställningar](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Profilskärmen - namn, kontakt, en valfri profilbild och dina inställningar](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Inget av detta är obligatoriskt. En tom profil är en fullt godtagbar profil; du fyller bara i det som besparar dig onödigt skrivande.
 
 Sidan är lång, så den har en egen **inställningsskena** längs sidan - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - med ett **Search settings**-fält ovanför som filtrerar listan medan du skriver. Varje sektion kan djuplänkas som `#/profile?focus=<section-id>`, vilket öppnar den och skrollar den i vy (`#/profile?focus=storage-section`, `?focus=feature-flags-section` och så vidare), så en länk kan peka på en enskild inställning i stället för toppen av sidan.
 
-![Tre temakort, vart och ett med en förhandsvisning av sin egen typografi och färg, med det aktiva flaggat](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Tre temakort, vart och ett med en förhandsvisning av sin egen typografi och färg, med det aktiva flaggat](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## En profil är ett sammanhang, inte bara en person
 
@@ -35,9 +35,9 @@ Ordet "profil" antyder en fast person, men i Lolly är det egentligen ett **skap
 
 ### Som individ
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Profilbildskontrollen, tom tills du laddar upp ett foto som sedan stannar på den här enheten](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Profilbildskontrollen, tom tills du laddar upp ett foto som sedan stannar på den här enheten](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Som ett team
 
@@ -53,7 +53,7 @@ I Lolly är den rollen bara **ännu en profil du har till hands** - ett sparat p
 
 I varje ögonblick har en installation **en aktiv profil** - de uppgifter ett verktyg ser just nu. Det finns ingen profilväxlare i appen; i stället är varje profil ett **portabelt paket** (en enda `.zip`, se [nedan](#moving-a-profile-to-a-new-device)). Det är medvetet samma mekanism som att flytta till en ny enhet - en profil är en fil du kan spara, kopiera och ladda.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Renaste bytet:** **Profile → Storage → Clear all my data**, och sedan **Import** paketet för det sammanhang du går in i. Nu skapar du helt och hållet som den profilen.
 - <!--i:layers--> **Lagring:** att importera *utan* att först rensa **slår ihop** - den importerade profilen, sessionerna och bilderna hamnar ovanpå det som redan finns, ersätter allt med samma namn och lämnar resten. Praktiskt för att dra in ett teams sparade sessioner i din egen uppsättning; inte vad du vill om du behöver en ren rollgräns.
@@ -61,7 +61,7 @@ I varje ögonblick har en installation **en aktiv profil** - de uppgifter ett ve
 
 Så om du verkligen jonglerar flera sammanhang (du, ditt team, eventansvarig-hatten), håller du flera paket och läser in det du behöver:
 
-![Lagringsmätaren, som bryter ned sparade sessioner, bilder och cache mot vad webbläsaren faktiskt rapporterar](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Lagringsmätaren, som bryter ned sparade sessioner, bilder och cache mot vad webbläsaren faktiskt rapporterar](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Håll ett paket per sammanhang och döp om filerna efter vad de är (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Filen *är* profilen.
 
@@ -104,7 +104,7 @@ Om webbläsaren inte har beviljat permanent lagring säger avsnittet det och erb
 
 ## Flytta en profil till en ny enhet
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Eftersom en profil är helt lokal är det enda sättet att få den till en tom installation - en ny bärbar dator, en nyligen återställd webbläsare, en kollegas maskin, en offline-burk - att **ta med filen**. Ingen inloggning återställer den åt dig, och det är hela poängen: inget lämnade någonsin din enhet från början.
 
@@ -112,7 +112,7 @@ Eftersom en profil är helt lokal är det enda sättet att få den till en tom i
 - <!--i:upload--> **Import data…** på den andra installationen läser in den filen igen så att du fortsätter precis där du slutade.
 - <!--i:box--> **Export my data & render everything** skriver samma säkerhetskopia *plus* en andra zip-fil som renderar varje sparad session till sin färdiga utdatafil, i mappar som speglar dina Projects. Ett komplett offlinearkiv av både källorna och resultaten - och det kan bli stort och långsamt med många sessioner.
 
-![De två knapparna som flyttar en hel installation: Exportera mina data skriver en zip, Importera data läser in den igen](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![De två knapparna som flyttar en hel installation: Exportera mina data skriver en zip, Importera data läser in den igen](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Paketet är en enkel, självständig zip-fil, så den kan färdas på **vilket** sätt som helst - USB, AirDrop, en nätverksdelning, e-post till dig själv - och målet kan vara helt offline. Varje del är checksummerad, så en fil som skadats under transporten fångas upp vid import istället för att återställas halvtrasig. Import **slår samman** (profil/session/bild med samma namn skrivs över; allt annat behålls), så den suddar aldrig ut ett mål som redan är i bruk.
 
@@ -122,13 +122,13 @@ För den exakta paketstrukturen, versionspolicyn och integritetsreglerna, se **[
 
 ## Hur verktyg använder din profil
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Ett verktyg *förifyller* bara någonsin de profilfält det uttryckligen är byggt för att binda till:
 
 **Tillvalet (proveniens).** När du exporterar en tillgång följer dina uppgifter valfritt med som **proveniens** - en upphovs-/krediteringsrad inbäddad i filens metadata (PNG, PDF, SVG, …) - så att en färdig tillgång kan visa vem som gjorde den. Det är *detta* som **Använd mina uppgifter för att skapa** styr: låt den vara av och exporten bär ändå attributionen "Made with Lolly" för verktyg/plattform, men ingen personlig upphovs-/kontaktrad bäddas in. (Samma tillval sätter upphovspersonen på batchkörningar i **/pro**.) (Verktygsförfattare: se [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) och [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Den enda omkopplaren Använd mina uppgifter för att skapa, bredvid Spara profil och av tills du slår på den](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Den enda omkopplaren Använd mina uppgifter för att skapa, bredvid Spara profil och av tills du slår på den](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profil vs plattform vs funktioner
 
@@ -147,7 +147,7 @@ Ordet är överanvänt i projektet. Ingen av dessa är den personliga profil som
 - <!--i:box--> **Innehållsprofil** - en byggtidskonfiguration i `profiles.json` som binder en uppsättning verktygspaket till en varumärkeskatalog (t.ex. `suse`, `lolly-start`). Det är vad en operatör väljer vid driftsättning, och det är vad **URL-/CLI-parametern** `profile` också väljer - en *färg*-variant vid export (pressförhållandet ICC/CMYK - se [URL-läge](/info/url-mode.html)). Båda handlar om *bygget/utdatan*, inte om *dig*. Se [Konfiguration](/info/configuration.html).
 - <!--i:seal--> **Identitetsprofil** - den valfria **verifierade Content Credentials-identiteten** du kan registrera (ett kortlivat certifikat som knyter din e-post till dina signerade exporter). Det är en signeringsidentitet, skild från den personliga profilens namn-/kontaktfält, även om **Använd mina uppgifter för att skapa** styr om någon av dem bäddas in. Se [Content Credentials-identitet](/info/content-credentials-identity.html).
 
-![Kortet Verifierad identitet, telefonbredd: väljaren för certifikatets livslängd och registreringssteget under den - identitetsprofilen, skild från dina personliga uppgifter](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Kortet Verifierad identitet, telefonbredd: väljaren för certifikatets livslängd och registreringssteget under den - identitetsprofilen, skild från dina personliga uppgifter](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Integritet
 

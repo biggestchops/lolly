@@ -187,7 +187,7 @@ Lolly आपके एक्सपोर्ट में एक क्रिप�
 signed by \<your email\>" कहें। **अगर आप एनरोलमेंट छोड़ देते हैं, तो इस खंड में कुछ भी आप
 पर लागू नहीं होता, और कोई व्यक्तिगत डेटा आपके डिवाइस से कभी बाहर नहीं जाता।**
 
-![प्रोफ़ाइल पेज पर Verified identity कार्ड, फ़ोन-चौड़ाई: सर्टिफ़िकेट लाइफ़टाइम पिकर और उसके नीचे एनरोलमेंट स्टेप, जब तक आप इसे खुद शुरू न करें तब तक निष्क्रिय](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![प्रोफ़ाइल पेज पर Verified identity कार्ड, फ़ोन-चौड़ाई: सर्टिफ़िकेट लाइफ़टाइम पिकर और उसके नीचे एनरोलमेंट स्टेप, जब तक आप इसे खुद शुरू न करें तब तक निष्क्रिय](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 अगर आप एनरोल करते हैं, तो ठीक यही होता है:
 

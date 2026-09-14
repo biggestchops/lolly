@@ -19,15 +19,15 @@ Tot ce ține de un profil trăiește **pe dispozitiv**, în baza de date locală
 | **Accesibilitate** | Patru comutatoare de confort - *Reduce motion*, *Hide colourful previews*, *High contrast*, *Large text* - păstrate în înregistrarea profilului, deci sunt incluse la exportul unui profil. Vezi [Accessibility](#accessibility). |
 | **Munca ta** | Sesiuni salvate (cu miniaturi) - organizate în foldere imbricate în **[Projects](/info/using.html)** - biblioteca ta **My images** și statisticile locale de activitate, toate asociate acestui profil. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Ecranul Profile - nume, contact, o fotografie de profil opțională și preferințele tale](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Ecranul Profile - nume, contact, o fotografie de profil opțională și preferințele tale](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Nimic din toate acestea nu este obligatoriu. Un profil gol este un profil perfect valid; completezi doar ce îți economisește tastarea.
 
 Pagina este lungă, așa că are propriul **rail de setări** pe lateral - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - cu un câmp **Search settings** deasupra lui, care filtrează lista pe măsură ce tastezi. Fiecare secțiune poate fi accesată direct printr-un link de forma `#/profile?focus=<section-id>`, care o deschide și o derulează în vizor (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, și așa mai departe), astfel încât un link poate indica o singură setare, nu doar începutul paginii.
 
-![Trei carduri de temă, fiecare previzualizând propriul tip și propria culoare, cu cel activ marcat](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Trei carduri de temă, fiecare previzualizând propriul tip și propria culoare, cu cel activ marcat](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Un profil este un context, nu doar o persoană
 
@@ -35,9 +35,9 @@ Cuvântul „profil" sugerează o singură persoană fixă, dar în Lolly este d
 
 ### Ca individ
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Controlul pentru fotografia de profil, gol până încarci o fotografie care apoi rămâne pe acest dispozitiv](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Controlul pentru fotografia de profil, gol până încarci o fotografie care apoi rămâne pe acest dispozitiv](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Ca echipă
 
@@ -53,7 +53,7 @@ Acesta este cazul pe care modelul rigid „o persoană, un profil" îl ratează.
 
 În orice moment, o instalare are **un singur profil activ** - detaliile pe care le vede un instrument chiar acum. Nu există un comutator de profiluri în aplicație; în schimb, fiecare profil este un **pachet portabil** (un singur `.zip`, vezi [mai jos](#moving-a-profile-to-a-new-device)). Acesta este, în mod deliberat, același mecanism ca mutarea pe un dispozitiv nou - un profil este un fișier pe care îl poți salva, copia și încărca.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Comutarea cea mai curată:** **Profile → Storage → Clear all my data**, apoi **Import** pachetul pentru contextul în care intri. Acum creezi exclusiv sub acel profil.
 - <!--i:layers--> **Suprapunere:** importul *fără* a curăța mai întâi **suprapune** - profilul, sesiunile și imaginile importate se așază peste ce există deja, înlocuind orice are același nume și lăsând restul neatins. Util pentru a prelua sesiunile salvate ale unei echipe în propria configurație; nu ce vrei dacă ai nevoie de o delimitare clară de rol.
@@ -61,7 +61,7 @@ Acesta este cazul pe care modelul rigid „o persoană, un profil" îl ratează.
 
 Deci dacă chiar jonglezi cu mai multe contexte (tu, echipa ta, pălăria de manager de eveniment), păstrezi mai multe pachete și încarci pe cel de care ai nevoie:
 
-![Contorul de stocare, care detaliază sesiunile salvate, imaginile și cache-ul în raport cu ce raportează efectiv browserul](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Contorul de stocare, care detaliază sesiunile salvate, imaginile și cache-ul în raport cu ce raportează efectiv browserul](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Păstrează un pachet per context și redenumește fișierele după ce reprezintă (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Fișierul *este* profilul.
 
@@ -104,7 +104,7 @@ Dacă browserul nu a acordat stocare persistentă, secțiunea spune asta și ofe
 
 ## Mutarea unui profil pe un dispozitiv nou
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Pentru că un profil este în întregime local, singura modalitate de a-l aduce pe o instalare goală - un laptop nou, un browser resetat, mașina unui coleg, o cutie offline - este să **cari fișierul**. Niciun login nu îl restaurează pentru tine, și asta e ideea: nu a părăsit niciodată dispozitivul tău, de la bun început.
 
@@ -112,7 +112,7 @@ Pentru că un profil este în întregime local, singura modalitate de a-l aduce 
 - <!--i:upload--> **Import data…** pe cealaltă instalare citește acel fișier înapoi și continui exact de unde ai rămas.
 - <!--i:box--> **Export my data & render everything** scrie aceeași copie de rezervă *plus* un al doilea zip care randează fiecare sesiune salvată în fișierul ei final, în foldere care oglindesc Proiectele tale. O arhivă offline completă a surselor și a rezultatelor - poate fi mare și lentă cu multe sesiuni.
 
-![Cele două butoane care mută o instalare întreagă: Export my data scrie un zip, Import data îl citește înapoi](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Cele două butoane care mută o instalare întreagă: Export my data scrie un zip, Import data îl citește înapoi](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Pachetul este un zip simplu, autonom, deci călătorește prin **orice** mijloc - USB, AirDrop, un partaj de rețea, email către tine însuți - iar ținta poate fi complet offline. Fiecare parte are checksum, deci un fișier deteriorat în tranzit este detectat la import, în loc să fie restaurat pe jumătate stricat. Importul **fuzionează** (profilul/sesiunea/imaginea cu același nume este suprascrisă; tot restul este păstrat), deci nu șterge niciodată o țintă deja în uz.
 
@@ -122,13 +122,13 @@ Pentru structura exactă a pachetului, politica de versiuni și regulile de inte
 
 ## Cum folosesc instrumentele profilul tău
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Un instrument doar *precompletează* câmpurile de profil pentru care a fost construit explicit să se lege:
 
 **Opțiunea (proveniență).** Când exporți un asset, datele tale călătoresc opțional alături ca **proveniență** - o linie de autor/credit inclusă în metadatele fișierului (PNG, PDF, SVG, …) - astfel încât un asset finalizat poate spune cine l-a creat. *Asta* guvernează **Use my details to create**: lasă-l dezactivat și exportul tot poartă atribuția unealtă/platformă "Made with Lolly", dar nicio linie personală de autor/contact nu este inclusă. (Aceeași opțiune setează autorul și pe rulările batch **/pro**.) (Autori de unelte: vezi [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) și [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Singurul comutator Use my details to create, lângă Save Profile și dezactivat până îl pornești](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Singurul comutator Use my details to create, lângă Save Profile și dezactivat până îl pornești](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profil vs. Platformă vs. Capabilități
 
@@ -147,7 +147,7 @@ Cuvântul are mai multe sensuri diferite în tot proiectul. Niciunul dintre aces
 - <!--i:box--> **Content profile** - o configurație la momentul compilării în `profiles.json` care leagă un set de pachete de unelte de un catalog de brand (de ex. `suse`, `lolly-start`). Este ceea ce alege un operator la desfășurare, și este ceea ce selectează și **parametrul URL/CLI** `profile` - o variantă de *culoare* la export (condiția de tipar ICC/CMYK - vezi [URL Mode](/info/url-mode.html)). Ambele privesc *compilarea/rezultatul*, nu pe *tine*. Vezi [Configuration](/info/configuration.html).
 - <!--i:seal--> **Identity profile** - **identitatea Content Credentials verificată** opțională pe care o poți înregistra (un certificat pe termen scurt care leagă emailul tău de exporturile tale semnate). Aceasta este o identitate de semnare, separată de câmpurile nume/contact ale profilului personal, deși **Use my details to create** guvernează dacă oricare dintre ele este inclus. Vezi [Content Credentials Identity](/info/content-credentials-identity.html).
 
-![Cardul Verified identity, lățime de telefon: selectorul duratei certificatului și pasul de înregistrare de sub el - profilul de identitate, separat de datele tale personale](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Cardul Verified identity, lățime de telefon: selectorul duratei certificatului și pasul de înregistrare de sub el - profilul de identitate, separat de datele tale personale](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Confidențialitate
 

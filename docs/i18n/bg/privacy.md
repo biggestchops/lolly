@@ -187,7 +187,7 @@ Lolly може да запечата криптографски **Content Creden
 \<your email\>" вместо анонимен ключ. **Ако пропуснете регистрацията, нищо в
 този раздел не важи за вас и никакви лични данни никога не напускат устройството ви.**
 
-![Картата Verified identity на страницата на профила, при ширина на екран колкото телефон: селекторът за срока на валидност на сертификата и стъпката за регистрация под него, бездействащи, докато сами не ги стартирате](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Картата Verified identity на страницата на профила, при ширина на екран колкото телефон: селекторът за срока на валидност на сертификата и стъпката за регистрация под него, бездействащи, докато сами не ги стартирате](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Ако се регистрирате, ето какво точно се случва:
 

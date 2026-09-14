@@ -247,5 +247,7 @@ export function moduleFromLearningCandidates(
       });
     }
   }
+  if (module.lessons.some((lesson) => lesson.blocks.some((block) => block.richText || block.quiz)))
+    module.schemaVersion = 2;
   return parseLearningModule(module);
 }

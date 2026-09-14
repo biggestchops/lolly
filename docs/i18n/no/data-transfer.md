@@ -2,7 +2,7 @@
 
 Alt en Lolly-bruker samler seg opp, lever **på enheten deres** - ingen konto, ingen sky. Dataoverføringspakken er hvordan den verdien flytter seg: eksporter den på én installasjon, bær filen på hvilken som helst måte (USB, AirDrop, e-post til deg selv, en nettverksdeling) og importer den på en annen. Filen *er* transporten. Målet kan være offline eller online. Det spiller ingen rolle, fordi ingenting noensinne snakker med en server.
 
-![De to knappene som flytter en hel installasjon: Eksporter dataene mine skriver én zip, Importer data leser den tilbake](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![De to knappene som flytter en hel installasjon: Eksporter dataene mine skriver én zip, Importer data leser den tilbake](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Denne siden er formatspesifikasjonen. For sluttbrukergjennomgangen, se [Using Lolly → Moving to another device](/info/using.html). Implementasjonen er [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), og [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) fastlåser tur-retur-kontrakten.
 

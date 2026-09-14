@@ -1,0 +1,38 @@
+{
+  "width": "480",
+  "height": "480",
+  "background": "transparent",
+  "boxes": [
+    {
+      "id": "ampersand",
+      "kind": "text",
+      "x": 35,
+      "y": 2,
+      "w": 410,
+      "h": 424,
+      "text": "&",
+      "fg": "#30ba78",
+      "bg": "transparent",
+      "font": "SUSE",
+      "weight": "650",
+      "fontSize": 410,
+      "align": "center",
+      "valign": "middle",
+      "pad": 0,
+      "tracking": 0,
+      "lineHeight": 1,
+      "fitText": true
+    },
+    {
+      "id": "rule",
+      "kind": "box",
+      "x": 70,
+      "y": 447,
+      "w": 340,
+      "h": 4,
+      "bg": "#30ba78",
+      "shape": "rect",
+      "radius": 0
+    }
+  ]
+}

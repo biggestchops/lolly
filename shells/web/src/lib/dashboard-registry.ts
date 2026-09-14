@@ -11,9 +11,9 @@
  *    that originate here by construction;
  *  - the spotlight settings provider (lib/search/providers/settings.ts) turns
  *    each entry into a search hit ("palette" typed in the bottom bar anywhere
- *    lands on the dashboard's colour section) - a section rename can therefore
+ *    opens the dashboard's colour section) - a section rename can therefore
  *    never leave search pointing at a retired flag;
- *  - the co-located test walks it both ways (registry ⇄ dashboard.ts markup).
+ *  - the registry test walks it both ways (registry ⇄ dashboard.ts markup).
  *
  * DELIBERATELY dependency-free: labels are English t() keys translated at
  * render/search time by the consumer, and the capability-group rows are a
@@ -30,7 +30,7 @@ export interface DashSection {
   /** Space-separated deep-link keyword alternates - rendered as the section's
    *  `data-flag` (any one of them in the hash query opens + scrolls to it, see
    *  applyDeepLink). `''` marks a TAB entry: no data-flag anywhere, deep-linked
-   *  as `#/d?tab=<tab>` instead. */
+   *  as `#/settings?tab=<tab>` instead. */
   flag: string;
   /** English t() key matching the section's visible heading (or tab label). */
   label: string;
@@ -87,14 +87,14 @@ const byId = new Map(DASH_SECTIONS.map((s) => [s.id, s]));
 /**
  * The data-flag keyword list for a section id - dashboard.ts's template
  * interpolation point. Unknown ids return '' (an empty data-flag renders inert
- * rather than crashing the view); the co-located test pins every id dashboard.ts
+ * rather than crashing the view); the registry test pins every id dashboard.ts
  * actually asks for, so a typo fails the suite, not the render.
  *
  * The section's own id is APPENDED as a flag token: keyword flags collide
  * across sections ('print' belongs to both dash-print and cap-print, 'color'
  * to both palette sections), and applyDeepLink resolves a flag to the FIRST
  * DOM-order owner - so a keyword href can land on the wrong section. Ids are
- * unique by construction, which makes `#/d?<id>` an exact address.
+ * unique by construction, which makes `#/settings?<id>` an exact address.
  */
 export function dashFlag(id: string): string {
   const flag = byId.get(id)?.flag;
@@ -102,9 +102,9 @@ export function dashFlag(id: string): string {
 }
 
 /** A registry entry's deep-link href - sections by their own unique id
- *  (`#/d?dash-storage` - dashFlag() plants the id as a flag token, see above),
- *  tab entries by their tab key (`#/d?tab=brand`). Shared by the settings
+ *  (`#/settings?dash-storage` - dashFlag() plants the id as a flag token, see above),
+ *  tab entries by their tab key (`#/settings?tab=brand`). Shared by the settings
  *  provider so hit hrefs and applyDeepLink cannot diverge. */
 export function dashHref(entry: DashSection): string {
-  return entry.flag ? `#/d?${encodeURIComponent(entry.id)}` : `#/d?tab=${encodeURIComponent(entry.tab ?? '')}`;
+  return entry.flag ? `#/settings?${encodeURIComponent(entry.id)}` : `#/settings?tab=${encodeURIComponent(entry.tab ?? '')}`;
 }

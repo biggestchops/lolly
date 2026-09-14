@@ -183,7 +183,7 @@ Lolly آپ کی ایکسپورٹس میں ایک کرپٹوگرافک **Content 
 \<your email\>" کہیں نہ کہ ایک گمنام کی۔ **اگر آپ اندراج نہ کریں تو اس سیکشن میں کچھ بھی
 آپ پر لاگو نہیں ہوتا، اور کوئی ذاتی ڈیٹا کبھی بھی آپ کی ڈیوائس سے باہر نہیں جاتا۔**
 
-![پروفائل صفحے پر Verified شناخت کارڈ، فون کی چوڑائی میں: سرٹیفکیٹ کی مدت کا انتخاب کنندہ اور اس کے نیچے اندراج کا مرحلہ، خاموش جب تک آپ خود اسے شروع نہ کریں](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![پروفائل صفحے پر Verified شناخت کارڈ، فون کی چوڑائی میں: سرٹیفکیٹ کی مدت کا انتخاب کنندہ اور اس کے نیچے اندراج کا مرحلہ، خاموش جب تک آپ خود اسے شروع نہ کریں](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 اگر آپ واقعی اندراج کرتے ہیں، تو بالکل یہی ہوتا ہے:
 

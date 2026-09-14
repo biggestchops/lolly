@@ -21,13 +21,13 @@
 
 ان میں سے کوئی چیز لازمی نہیں۔ خالی پروفائل بھی بالکل ٹھیک پروفائل ہے؛ آپ صرف وہی بھرتے ہیں جو آپ کو ٹائپنگ سے بچائے۔
 
-![Profile اسکرین - نام، رابطہ، ایک اختیاری ہیڈ شاٹ اور آپ کی ترجیحات](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Profile اسکرین - نام، رابطہ، ایک اختیاری ہیڈ شاٹ اور آپ کی ترجیحات](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 ترجیحات ہی وہ ایک حصہ ہیں جو یہ بدلتی ہیں کہ ایپ آپ کو کیسا دکھائی دیتا ہے۔ تھیم کارڈز لائیو پری ویو ہیں اور جس لمحے آپ کوئی چنتے ہیں وہ لاگو ہو جاتا ہے — صرف اِسی ڈیوائس پر۔
 
 یہ صفحہ کافی طویل ہے، لہٰذا اس کے ساتھ اپنی **settings rail** سائیڈ پر موجود ہے - Your details، Appearance، Accessibility، Lolly instance، Your activity، Storage، Available offline، Feature flags، Content Credentials - جس کے اوپر ایک **Search settings** فیلڈ ہے جو ٹائپ کرتے ہی فہرست کو فلٹر کرتی ہے۔ ہر سیکشن `#/profile?focus=<section-id>` کے طور پر ڈیپ-لنک ایبل ہے، جو اسے کھولتا اور نظر میں لاتا ہے (`#/profile?focus=storage-section`، `?focus=feature-flags-section`، وغیرہ)، لہٰذا کوئی لنک صفحے کے اوپر کی بجائے ایک مخصوص سیٹنگ کی طرف اشارہ کر سکتا ہے۔
 
-![تین تھیم کارڈز، ہر ایک اپنی ٹائپ اور رنگ کا پیش نظارہ دکھاتا ہوا، فعال ایک نشان زد](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![تین تھیم کارڈز، ہر ایک اپنی ٹائپ اور رنگ کا پیش نظارہ دکھاتا ہوا، فعال ایک نشان زد](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## پروفائل ایک سیاق و سباق ہے، صرف ایک شخص نہیں
 
@@ -35,9 +35,9 @@
 
 ### ایک فرد کے طور پر
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![ہیڈ شاٹ کنٹرول، خالی جب تک آپ کوئی تصویر اپ لوڈ نہ کریں، جو پھر اسی ڈیوائس پر رہتی ہے](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![ہیڈ شاٹ کنٹرول، خالی جب تک آپ کوئی تصویر اپ لوڈ نہ کریں، جو پھر اسی ڈیوائس پر رہتی ہے](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### ایک ٹیم کے طور پر
 
@@ -61,7 +61,7 @@ Lolly میں، وہ کردار بس **ایک اور پروفائل ہے جو آ�
 
 اسٹوریج ہی وہ جگہ ہے جہاں اِس کے دونوں حصے رہتے ہیں: میٹر زمرہ بہ زمرہ حساب دیتا ہے کہ یہ انسٹال کتنے بائٹ رکھے ہوئے ہے، اور اُس کے نیچے کے بٹن ہی وہ طریقہ ہیں جس سے آپ اسے صاف کرتے یا ساتھ لے جاتے ہیں۔
 
-![اسٹوریج میٹر، محفوظ سیشنز، تصاویر اور کیش کو اس کے مقابلے میں توڑتا ہوا جو براؤزر دراصل رپورٹ کرتا ہے](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![اسٹوریج میٹر، محفوظ سیشنز، تصاویر اور کیش کو اس کے مقابلے میں توڑتا ہوا جو براؤزر دراصل رپورٹ کرتا ہے](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > ہر سیاق کے لیے ایک بنڈل رکھیں اور فائلوں کا نام ان کی حیثیت کے مطابق رکھیں (`LollyTools-events-2026.zip`، `LollyTools-me.zip`)۔ فائل *ہی* پروفائل ہے۔
 
@@ -104,7 +104,7 @@ Lolly چلتے چلتے کیش کرتا ہے، لیکن چلتے چلتے کیش
 
 ## پروفائل کو نئے ڈیوائس پر منتقل کرنا
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 چونکہ پروفائل مکمل طور پر مقامی ہے، اسے کسی خالی انسٹال پر لانے کا واحد طریقہ — نیا لیپ ٹاپ، تازہ ری سیٹ کیا گیا براؤزر، کسی ساتھی کی مشین، ایک آف لائن باکس — یہ ہے کہ **فائل کو ساتھ لے جائیں**۔ کوئی لاگ ان اسے آپ کے لیے بحال نہیں کرتا، اور یہی نکتہ ہے: شروع سے ہی کچھ بھی آپ کے ڈیوائس سے باہر نہیں گیا۔
 
@@ -112,7 +112,7 @@ Lolly چلتے چلتے کیش کرتا ہے، لیکن چلتے چلتے کیش
 - <!--i:upload--> **Import data…** دوسری تنصیب پر وہ فائل واپس پڑھتا ہے اور آپ بالکل وہیں سے آگے بڑھتے ہیں جہاں چھوڑا تھا۔
 - <!--i:box--> **Export my data & render everything** وہی بیک اپ لکھتا ہے *اور اس کے علاوہ* ایک دوسری zip، جو ہر محفوظ کردہ سیشن کو اُس کی حتمی آؤٹ پٹ فائل میں رینڈر کرتی ہے، ایسے فولڈرز میں جو آپ کے Projects کی عکاسی کرتے ہیں۔ ذرائع اور نتائج دونوں کا ایک مکمل آف لائن آرکائیو - اور زیادہ سیشنز کے ساتھ یہ بڑا اور سست ہو سکتا ہے۔
 
-![دو بٹن جو پوری تنصیب منتقل کرتے ہیں: Export my data ایک zip لکھتا ہے، Import data اسے واپس پڑھتا ہے](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![دو بٹن جو پوری تنصیب منتقل کرتے ہیں: Export my data ایک zip لکھتا ہے، Import data اسے واپس پڑھتا ہے](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 بنڈل ایک سادہ، خود مکتفی zip ہے، لہٰذا یہ **کسی بھی** ذریعے سفر کرتا ہے — USB، AirDrop، ایک نیٹ ورک شیئر، اپنے آپ کو ای میل — اور ہدف مکمل طور پر آف لائن ہو سکتا ہے۔ ہر حصے کا چیک سم ہوتا ہے، لہٰذا سفر میں خراب ہونے والی فائل کو ادھوری بحال کرنے کے بجائے امپورٹ کے وقت پکڑ لیا جاتا ہے۔ امپورٹ **ضم** کرتا ہے (ایک ہی نام والی پروفائل/سیشن/تصویر کو اوور رائٹ کیا جاتا ہے؛ باقی سب کچھ رکھا جاتا ہے)، لہٰذا یہ کبھی بھی ایسے ہدف کو صاف نہیں کرتا جو پہلے سے استعمال میں ہو۔
 
@@ -122,13 +122,13 @@ Lolly چلتے چلتے کیش کرتا ہے، لیکن چلتے چلتے کیش
 
 ## ٹولز آپ کی پروفائل کو کیسے استعمال کرتے ہیں
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 کوئی ٹول صرف انہی پروفائل فیلڈز کو *پہلے سے بھرتا* ہے جنہیں بائنڈ کرنے کے لیے اسے واضح طور پر بنایا گیا تھا:
 
 **آپٹ-اِن (provenance)۔** جب آپ کوئی ایسیٹ ایکسپورٹ کرتے ہیں تو آپ کی تفصیلات اختیاری طور پر **provenance** کے طور پر ساتھ جاتی ہیں - فائل کے میٹا ڈیٹا (PNG, PDF, SVG، …) میں شامل کردہ ایک مصنف/کریڈٹ لائن - تاکہ حتمی ایسیٹ یہ بتا سکے کہ اسے کس نے بنایا۔ *یہی* وہ چیز ہے جسے **Use my details to create** کنٹرول کرتا ہے: اسے آف رکھیں تو ایکسپورٹ پھر بھی "Made with Lolly" ٹول/پلیٹ فارم اٹریبیوشن ساتھ لے جاتا ہے، لیکن کوئی ذاتی مصنف/رابطہ لائن شامل نہیں کی جاتی۔ (یہی آپٹ-اِن **/pro** بیچ رنز پر مصنف مقرر کرتا ہے۔) (ٹول مصنفین کے لیے: دیکھیں [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) اور [Host API → `host.profile`](/info/host-api.html#host-profile)۔)
 
-![واحد Use my details to create سوئچ، Save Profile کے ساتھ موجود اور جب تک آپ اسے آن نہ کریں آف رہتا ہے](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![واحد Use my details to create سوئچ، Save Profile کے ساتھ موجود اور جب تک آپ اسے آن نہ کریں آف رہتا ہے](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## پروفائل بمقابلہ پلیٹ فارم بمقابلہ کیپیبلٹیز
 
@@ -147,7 +147,7 @@ Lolly چلتے چلتے کیش کرتا ہے، لیکن چلتے چلتے کیش
 - <!--i:box--> **Content profile** - `profiles.json` میں ایک بلڈ-ٹائم کنفیگریشن جو ٹول پیکس کے ایک سیٹ کو برانڈ کیٹلاگ سے جوڑتی ہے (مثلاً `suse`, `lolly-start`)۔ یہ وہی ہے جسے آپریٹر ڈیپلائے کرتے وقت چنتا ہے، اور یہی وہ چیز ہے جسے `profile` **URL/CLI پیرامیٹر** ایکسپورٹ کے وقت *رنگ* کی ایک ویریئنٹ منتخب کرنے کے لیے بھی استعمال کرتا ہے (ICC/CMYK پریس کنڈیشن - دیکھیں [URL Mode](/info/url-mode.html))۔ دونوں کا تعلق *بلڈ/آؤٹ پٹ* سے ہے، *آپ* سے نہیں۔ دیکھیں [Configuration](/info/configuration.html)۔
 - <!--i:seal--> **Identity profile** - اختیاری **تصدیق شدہ Content Credentials شناخت** جسے آپ اندراج کر سکتے ہیں (ایک قلیل المدت سرٹیفکیٹ جو آپ کے ای میل کو آپ کے دستخط شدہ ایکسپورٹس سے جوڑتا ہے)۔ یہ ایک سائننگ شناخت ہے، ذاتی پروفائل کے نام/رابطہ فیلڈز سے الگ، اگرچہ **Use my details to create** یہ کنٹرول کرتا ہے کہ آیا ان میں سے کوئی شامل کیا جائے گا۔ دیکھیں [Content Credentials Identity](/info/content-credentials-identity.html)۔
 
-![تصدیق شدہ شناخت کارڈ، فون کی چوڑائی میں: سرٹیفکیٹ کی مدت منتخب کرنے والا اور اس کے نیچے اندراج کا مرحلہ - identity profile، جو آپ کی ذاتی تفصیلات سے الگ ہے](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![تصدیق شدہ شناخت کارڈ، فون کی چوڑائی میں: سرٹیفکیٹ کی مدت منتخب کرنے والا اور اس کے نیچے اندراج کا مرحلہ - identity profile، جو آپ کی ذاتی تفصیلات سے الگ ہے](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## رازداری
 

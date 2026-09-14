@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 /**
- * Dashboard view (#/d) - the "instrument panel" for the whole platform. It
- * merges what used to be two pages (#/platform and #/capabilities) and pulls
- * read-only glances of your own data (activity + storage) from the Profile.
- * Nothing here is removed from Profile; this is a mirror, not a move.
- * The Design-system tab is deliberately READ-ONLY: it renders the loaded
- * brand (name, logo, primary colour, the faces in force, the palette and the
- * token primitives) wearing the brand's own variables (see brandHero()), and,
- * when the catalogue isn't locked, points at #/start where the brand is
- * actually adjusted. Nothing on this page writes brand state; personal
- * preferences (theme, sound) live on #/profile.
+ * Device, design system, capabilities and activity sections within Settings.
+ * The former #/d and #/dashboard routes still mount this renderer. Personal
+ * preferences use the profile renderer, with the same heading and navigation.
+ * Design system editing lives at #/start; this view reads the active system.
  *
  * The layout is deliberate: the brand hero leads (full-width, never
  * collapsible), then the bento of instrument tiles (palette wheel, type in
@@ -17,7 +11,7 @@
  * reference, with THIS DEVICE (the live machine readout people find
  * genuinely interesting), the full capability map, and activity/storage on
  * the other tabs. Each primary section folds to its title bar with a soft
- * hydraulic cue (see the toggle listener in mountDashboard). Apart from the
+ * click. Apart from the
  * sound switch, everything here is a snapshot of what this session currently
  * knows.
  *
@@ -58,8 +52,7 @@ import { CMYK_CONDITIONS, DEFAULT_CMYK_CONDITION, hexToOklch, formatOklch, creat
 import { getMetrics } from '../metrics.ts';
 import { renderActivity } from '../lib/activity-summary.ts';
 import { collectDevice, renderDeviceCards, renderDeviceStat, wireDeviceLive, fmtBytes } from '../lib/device-info.ts';
-import { playSfx } from '../lib/sfx.ts';
-import { wireTabs } from '../lib/tabs.ts';
+import { settingsNavHtml, wireSettingsNav } from '../components/settings-nav.ts';
 import { soundSwitchHtml, wireSoundSwitch } from '../components/sound-toggle.ts';
 import { activeDesignSystemLabel, isUserDesignSystemActive } from '../lib/design-system/active.ts';
 import { applyBrandVars, brandRadiusValue, tokenValueToHex } from '../brand-vars.ts';
@@ -77,7 +70,7 @@ import { mountProfileFab } from '../components/profile-menu.ts';
 // keyword set lives THERE, interpolated here via dashFlag(), never as a string
 // literal in this file, so the spotlight settings provider and applyDeepLink
 // read the same single source (dashboard-registry.test.ts pins it both ways).
-import { DASH_SECTIONS, dashFlag } from './dashboard-registry.ts';
+import { DASH_SECTIONS, dashFlag } from '../lib/dashboard-registry.ts';
 
 /** A compact personal shelf needs the catalogue's display name when it has one, but the
  * lightweight dashboard index deliberately only promises the smaller CatalogTool shape. */
@@ -109,49 +102,18 @@ const SEARCH_GLYPH = icon('search');
 // device probe, storage, type demo, deep links) works unchanged whichever tab
 // is showing. Inactive panels are `hidden`, not removed. The `key` doubles as
 // the ?tab= deep-link value and the /b · /brand alias target (Design system).
-const TAB_ICON: Record<string, string> = {
-  // Monitor - this device.
-  device: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
-  // Palette - the design system (colour, type, brand).
-  brand: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.05 0 1.5-.86 1.5-1.75 0-1.16-.98-2.1-.98-2.1s1.98.35 3.98.35A4.5 4.5 0 0 0 21 12.5C21 7 17 3 12 3z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg>`,
-  // App grid - the full feature set.
-  caps: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
-  // Bars - activity & stats.
-  activity: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><rect x="5" y="11" width="3.4" height="6" rx="0.6"/><rect x="10.3" y="7" width="3.4" height="10" rx="0.6"/><rect x="15.6" y="4" width="3.4" height="13" rx="0.6"/></svg>`,
-};
-// Derived from the registry's tab rows (the flagless entries) so the tab bar
-// and the search registry can't disagree on keys or labels.
-const DASH_TABS: ReadonlyArray<{ key: string; label: string }> =
-  DASH_SECTIONS.filter((s) => !s.flag && s.tab).map((s) => ({ key: s.tab!, label: s.label }));
-const DASH_TAB_KEYS = new Set(DASH_TABS.map((tab) => tab.key));
-
-// The tablist. Roving tabindex (only the active tab is focusable) + arrow-key nav
-// are wired in wireTabs; labels display uppercase via CSS while the DOM keeps a
-// clean accessible name.
-function tabBar(active: string): string {
-  return `
-    <div class="dash-tabs" role="tablist" aria-label="${escape(t('Dashboard sections'))}">
-      ${DASH_TABS.map((tab) => `
-        <button type="button" role="tab" id="dtab-${tab.key}" class="dash-tab${tab.key === active ? ' is-active' : ''}"
-                data-dash-tab="${tab.key}" aria-controls="dpanel-${tab.key}" aria-selected="${tab.key === active ? 'true' : 'false'}"
-                tabindex="${tab.key === active ? '0' : '-1'}">
-          <span class="dash-tab-icon" aria-hidden="true">${TAB_ICON[tab.key] ?? ''}</span>
-          <span class="dash-tab-label">${escape(t(tab.label))}</span>
-        </button>`).join('')}
-    </div>`;
-}
+const DASH_TAB_KEYS = new Set(DASH_SECTIONS.filter(section => !section.flag).map(section => section.tab));
 
 // One tabpanel wrapper. Inactive panels stay in the DOM (so async hydration + live
 // listeners keep resolving onto them) but are `hidden`.
 function panel(key: string, active: string, inner: string): string {
-  return `<section role="tabpanel" id="dpanel-${key}" class="dash-panel" data-dash-panel="${key}" aria-labelledby="dtab-${key}" tabindex="0"${key === active ? '' : ' hidden'}>${inner}</section>`;
+  return `<section role="region" id="dpanel-${key}" class="dash-panel" data-dash-panel="${key}" aria-labelledby="settings-tab-${key}" tabindex="0"${key === active ? '' : ' hidden'}>${inner}</section>`;
 }
 
 // A collapsible primary section: the whole card folds to its title bar,
 // reusing the reference-panel <details> chrome (.plat-section-summary /
 // .plat-section-body handle the chevron rotation + padding). `half` sizes it
-// for the two-up palette/catalogue row. Marked data-dash-collapse so the
-// mount wires a soft open/close cue on toggle. `iconSlot`/`chipsSlot` render
+// for the two-up palette/catalogue row. `iconSlot`/`chipsSlot` render
 // EMPTY hooks (data-dash-collapse-icon/-chips) instead of real content: some
 // callers' icon/facts are only known after an async client-side probe (see
 // collectDevice()), so they hydrate in later exactly like the hero stats do.
@@ -161,7 +123,7 @@ function collapse(o: {
 }): string {
   return `
     <details class="plat-section dash-collapse${o.half ? ' dash-collapse--half' : ''}${o.cls ? ' ' + o.cls : ''}" id="${o.id}"${
-      o.flag ? ` data-flag="${escape(o.flag)}"` : ''} data-dash-collapse${o.open === false ? '' : ' open'}>
+      o.flag ? ` data-flag="${escape(o.flag)}"` : ''}${o.open === false ? '' : ' open'}>
       <summary class="plat-section-summary dash-collapse-summary">
         ${o.iconSlot ? `<span class="dash-collapse-icon" data-dash-collapse-icon aria-hidden="true"></span>` : ''}
         <h2 class="plat-section-title" id="${o.id}-h">${escape(o.title)}</h2>
@@ -485,7 +447,7 @@ async function capabilitiesSection(): Promise<string> {
   // A section's summary also carries its card count: the folded state otherwise
   // gives no clue whether opening it reveals one card or eight.
   const groups = CAPABILITY_SECTIONS.map((s, idx) => `
-    <details class="dash-cap-group" id="${s.id}" data-flag="${escape(s.flag)}" data-dash-collapse${idx === 0 ? ' open' : ''}>
+    <details class="dash-cap-group" id="${s.id}" data-flag="${escape(s.flag)}"${idx === 0 ? ' open' : ''}>
       <summary class="dash-cap-group-head">
         <span class="dash-cap-group-icon" aria-hidden="true">${s.icon}</span>
         <div class="dash-cap-group-text">
@@ -698,13 +660,13 @@ function renderStorageGlance(m: StorageGlance): string {
     ${hero}
     <div class="dash-store-bar" role="img" aria-label="${escape(tRaw('Storage composition: {list}', { list: segs.map((s) => `${s.label} ${fmtBytes(s.bytes)}`).join(', ') }))}">${bar || '<span class="dash-store-seg dash-store-seg--other" style="flex:1"></span>'}</div>
     <div class="dash-store-legend">${legend}</div>
-    <p class="dash-store-note">${tRaw('A read-only view - manage or clear it in your {link}. Nothing is uploaded.', { link: `<a href="#/profile?focus=storage-section">${t('Profile')}</a>` })}</p>`;
+    <p class="dash-store-note">${tRaw('A read-only view - manage or clear it in your {link}. Nothing is uploaded.', { link: `<a href="#/settings?focus=storage-section">${t('Preferences')}</a>` })}</p>`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
 
 export async function mountDashboard(viewEl: HTMLElement, host: HostV1, routeParams?: string): Promise<void> {
-  document.title = t('Dashboard - Lolly');
+  document.title = `${t('Settings')} - Lolly`;
 
   // Deep links: `#/d?print`, `#/d?formats`, ... force-open a reference panel
   // or a capability group and scroll to it. The router hands its parsed query
@@ -762,17 +724,9 @@ export async function mountDashboard(viewEl: HTMLElement, host: HostV1, routePar
   viewEl.innerHTML = `
     ${backHomeHtml()}
     <div class="gallery-topright">${langFabHtml()}</div>
+    ${settingsNavHtml(initialTab)}
     <div class="dash-layout">
-      <header class="plat-header dash-header">
-        <h1 class="plat-title">${t('Dashboard')}</h1>
-        <div class="plat-header-text">
-
-        </div>
-      </header>
-
-      ${tabBar(initialTab)}
-
-      <div class="dash-panels">
+      <div class="dash-panels" data-reveal-sound="off">
         ${panel('device', initialTab, `
           <div class="dash-device-grid">
             <div class="dash-device-col">
@@ -832,7 +786,7 @@ export async function mountDashboard(viewEl: HTMLElement, host: HostV1, routePar
           ${tokensSection()}
           ${refPanel(dashFlag('dash-print'), false, 'dash-print', t('Print & CMYK'), printBody(palette))}
           <p class="plat-note dash-foot" role="note">
-            ${tRaw('<strong>This page is read-only</strong> - it renders the brand this device is wearing; every tool, page and export follows it. The brand itself is adjusted at {start}; personal preferences - theme and sound - live on your {profile}.', { start: `<a href="#/start">${t('Start')}</a>`, profile: `<a href="#/profile">${t('Profile')}</a>` })}
+            ${tRaw('This section shows your active design system. Edit it in {start}, or change theme and sound in {profile}.', { start: `<a href="#/start">${t('Start')}</a>`, profile: `<a href="#/settings">${t('Preferences')}</a>` })}
             ${' '}${tRaw('Building the UI? Browse the shell’s primitives & views in the {link}.', { link: `<a href="#/components">${t('Component library')}</a>` })}
           </p>
         `)}
@@ -878,7 +832,7 @@ export async function mountDashboard(viewEl: HTMLElement, host: HostV1, routePar
   // Include the read-only foot note (now inside the Design system panel) in
   // the reveal ladder so it settles in with that panel's other sections
   // instead of snapping in at full opacity beneath the cascade.
-  armViewEnter(viewEl, '.tools-home, .plat-header, .dash-tabs, .plat-section, .dash-foot');
+  armViewEnter(viewEl, '.tools-home, .settings-header, .plat-section, .dash-foot');
   mountBackPill(viewEl);
   mountHomeFab(viewEl);
   // The dashboard renders your brand read-only; a theme flip here checks it in
@@ -898,33 +852,20 @@ export async function mountDashboard(viewEl: HTMLElement, host: HostV1, routePar
   // as two columns (≥900px, matching .dash-device-grid's breakpoint in
   // dashboard.css). There's room to just show it there, whereas mobile's
   // single column wants everything folded by default. Runs before the
-  // toggle-cue listener below is attached, so this doesn't play the fold
-  // sound on page load.
+  // live device listeners below are attached.
   const deviceDetails = viewEl.querySelector<HTMLDetailsElement>('#dash-device');
   if (deviceDetails && window.matchMedia('(min-width: 900px)').matches) deviceDetails.open = true;
 
-  // Primary tabs (lib/tabs.ts's shared roving-tabindex machinery, component
-  // audit rec 1). Returns a `selectTab(key)` so the deep-link handler can
-  // jump to the panel that owns a flagged section. Wiring the tabs before the
-  // deep link means a `?print`/`?formats` link both switches to the right
-  // tab AND scrolls. `onSelect` owns everything view-specific: showing the
-  // matching panel, and, for a live click/arrow-key selection (not the
-  // initial paint or a deep link), the toggle sound plus mirroring the tab
-  // into the URL (replaceState, so it fires no hashchange and doesn't
-  // re-mount the view).
+  wireSettingsNav(viewEl);
+  // Deep links select their owning panel and the matching navigation link.
   const dashPanels = [...viewEl.querySelectorAll<HTMLElement>('[data-dash-panel]')];
-  const dashTabsEl = viewEl.querySelector<HTMLElement>('.dash-tabs');
-  const selectTab = dashTabsEl ? wireTabs(dashTabsEl, {
-    key: 'dashTab',
-    onSelect: (key, { reason }) => {
-      for (const p of dashPanels) p.hidden = p.dataset.dashPanel !== key;
-      if (reason !== 'programmatic') {
-        playSfx('toggle');
-        try { history.replaceState(history.state, '', `#/d?tab=${key}`); } catch { /* history unavailable */ }
-      }
-    },
-  }) : (() => {});
-  // Establish the initial state without rewriting the URL (aliases already set it).
+  const selectTab = (key: string): void => {
+    for (const panel of dashPanels) panel.hidden = panel.dataset.dashPanel !== key;
+    for (const link of viewEl.querySelectorAll<HTMLElement>('[data-settings-tab]')) {
+      if (link.dataset.settingsTab === key) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    }
+  };
   selectTab(initialTab);
 
   // The brand hero + token chips, hydrated just after first paint instead of
@@ -1081,18 +1022,6 @@ export async function mountDashboard(viewEl: HTMLElement, host: HostV1, routePar
       }
     } catch { /* tokens unreadable - the section stays hidden */ }
   })();
-
-  // Fold cue: a soft hydraulic open/close whenever a primary section (device,
-  // palette, catalogue, capabilities) is collapsed or revealed. Capture
-  // phase: the <details> `toggle` event does not bubble, so a bubble-phase
-  // delegated listener never sees it. Respects the global mute (playSfx
-  // no-ops when muted).
-  viewEl.addEventListener('toggle', (e) => {
-    const d = e.target;
-    if (d instanceof HTMLDetailsElement && d.hasAttribute('data-dash-collapse')) {
-      playSfx(d.open ? 'hydraulicOpen' : 'hydraulicClose');
-    }
-  }, true);
 
   // Deep-link: switch to the owning tab, then open + scroll to any panel/group
   // whose flag is in the hash query.

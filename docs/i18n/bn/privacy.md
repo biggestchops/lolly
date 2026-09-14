@@ -185,7 +185,7 @@ Lolly-র নিজের কোডও এটি পড়তে পারে �
 সেকশনের কিছুই আপনার জন্য প্রযোজ্য নয়, এবং কোনো ব্যক্তিগত ডেটা কখনো আপনার ডিভাইস
 ছাড়ে না।**
 
-![প্রোফাইল পেজে Verified identity কার্ড, ফোন-প্রস্থ: সার্টিফিকেট লাইফটাইম পিকার এবং তার নিচে এনরোলমেন্ট ধাপ, আপনি নিজে শুরু না করা পর্যন্ত সুপ্ত](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![প্রোফাইল পেজে Verified identity কার্ড, ফোন-প্রস্থ: সার্টিফিকেট লাইফটাইম পিকার এবং তার নিচে এনরোলমেন্ট ধাপ, আপনি নিজে শুরু না করা পর্যন্ত সুপ্ত](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 আপনি যদি এনরোল করেন, এখানে ঠিক কী ঘটে:
 

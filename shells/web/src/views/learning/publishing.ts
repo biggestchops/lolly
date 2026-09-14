@@ -22,7 +22,7 @@ export function publishingOps(ctx: LearningCtx): LearningCtx['publishing'] {
     preview: () => preview(ctx),
     build: () => build(ctx),
     variant: (id) => variant(ctx, id),
-    download: (id) => download(ctx, id),
+    download: (id, owner, surface) => download(ctx, id, owner, surface),
     closePreview: () => closePreview(ctx),
   };
 }
@@ -141,6 +141,16 @@ export async function preview(ctx: LearningCtx): Promise<void> {
         status('Close preview and try again. Your course is saved on this device.');
         return;
       }
+      frame.contentDocument.addEventListener(
+        'keydown',
+        (event) => {
+          if (event.key !== 'Escape' || event.defaultPrevented) return;
+          event.preventDefault();
+          event.stopPropagation();
+          closePreview(ctx);
+        },
+        { signal }
+      );
       frame.hidden = false;
       loading.remove();
       status('Preview ready. Test progress is not sent to an LMS.');
@@ -162,7 +172,12 @@ export async function preview(ctx: LearningCtx): Promise<void> {
 export async function build(ctx: LearningCtx): Promise<void> {
   ctx.delivery.open();
 }
-export async function download(ctx: LearningCtx, id: string): Promise<void> {
+export async function download(
+  ctx: LearningCtx,
+  id: string,
+  owner?: HTMLElement,
+  surface?: HTMLElement
+): Promise<void> {
   const [releaseId, target] = id.split('/');
   const release = ctx.releases.find((r) => r.id === releaseId);
   const artifact = target
@@ -178,12 +193,16 @@ export async function download(ctx: LearningCtx, id: string): Promise<void> {
   const blob = await response.blob();
   if ((await sha256(new Uint8Array(await blob.arrayBuffer()))) !== artifact.hash)
     throw new Error('The saved package checksum has changed. Restore it from a backup.');
-  await deliverBatchFile(
-    undefined,
-    undefined,
+  const delivery = await deliverBatchFile(
+    owner,
+    surface,
     { blob, filename: artifact.filename, label: 'Saved course version' },
     ctx.host
   );
+  if (delivery.state === 'failed')
+    throw new Error(
+      delivery.error || 'The ZIP could not be downloaded. Use Download help to retry.'
+    );
 }
 
 export async function variant(ctx: LearningCtx, id: string): Promise<void> {

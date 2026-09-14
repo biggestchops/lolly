@@ -7,15 +7,15 @@
  *
  * Federates FOUR static sources, all in-memory and instant (no host slice):
  *  1. Profile sections - views/profile.ts NAV_SECTIONS, the same array that
- *     renders the settings rail. Hits deep-link #/profile?focus=<id>, which the
+ *     renders the settings rail. Hits deep-link #/settings?focus=<id>, which the
  *     profile view honours for every section (not just the collapsibles).
  *  2. Individual feature flags - feature-flags.ts consts, so "jelly" or "batch"
  *     lands on the Feature flags drawer with the flag named in the hit title.
  *     Flags a control plane hides are skipped, mirroring the profile's flagRow.
  *  3. The four accessibility prefs - the Accessibility card's rows, with
  *     generous keywords ("animation", "text size", "calm"), all deep-linking
- *     #/profile?focus=a11y-section.
- *  4. Dashboard destinations - views/dashboard-registry.ts, the same registry
+ *     #/settings?focus=a11y-section.
+ *  4. Dashboard destinations - lib/dashboard-registry.ts, the same registry
  *     dashboard.ts renders its data-flag sections from, so "palette" or
  *     "typography" lands on the right dashboard section via its own deep link.
  *
@@ -29,7 +29,7 @@ import type { SearchField } from '../match.ts';
 import { t } from '../../../i18n.ts';
 import { icon } from '../../icons.ts';
 import { NAV_SECTIONS } from '../../../views/profile.ts';
-import { DASH_SECTIONS, dashHref } from '../../../views/dashboard-registry.ts';
+import { DASH_SECTIONS, dashHref } from '../../dashboard-registry.ts';
 import {
   CATEGORY_FLAGS, JELLY_FLAG, WOBBLY_FLAG, WOBBLY_MESH_FLAG, STRIP_UPLOAD_META_FLAG, PREFLIGHT_FLAG,
   flagHidden,
@@ -83,8 +83,8 @@ function buildItems(): SettingsItem[] {
     items.push({
       icon: icon(s.icon, { size: 16 }),
       title: t(s.label),
-      subtitle: t('Profile settings'),
-      href: `#/profile?focus=${encodeURIComponent(s.id)}`,
+      subtitle: t('Preferences'),
+      href: `#/settings?focus=${encodeURIComponent(s.id)}`,
       fields: fieldsOf([t(s.label), s.label], [s.keywords]),
     });
   }
@@ -97,7 +97,7 @@ function buildItems(): SettingsItem[] {
       icon: icon('flask', { size: 16 }),
       title: t(f.label),
       subtitle: t('Feature flags'),
-      href: '#/profile?focus=feature-flags-section',
+      href: '#/settings?focus=feature-flags-section',
       fields: fieldsOf([t(f.label), f.label], f.pill ? [t(f.pill), f.pill] : []),
     });
   }
@@ -108,7 +108,7 @@ function buildItems(): SettingsItem[] {
       icon: icon('eye', { size: 16 }),
       title: t(p.label),
       subtitle: t('Accessibility'),
-      href: '#/profile?focus=a11y-section',
+      href: '#/settings?focus=a11y-section',
       fields: fieldsOf([t(p.label), p.label], [p.keywords]),
     });
   }
@@ -118,9 +118,9 @@ function buildItems(): SettingsItem[] {
   // cannot diverge.
   for (const d of DASH_SECTIONS) {
     items.push({
-      icon: icon('dashboard', { size: 16 }),
+      icon: icon('sliders', { size: 16 }),
       title: t(d.label),
-      subtitle: t('Dashboard'),
+      subtitle: t('Settings'),
       href: dashHref(d),
       fields: fieldsOf([t(d.label), d.label], [d.flag]),
     });

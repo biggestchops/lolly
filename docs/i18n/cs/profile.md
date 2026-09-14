@@ -21,13 +21,13 @@ Všechno v profilu zůstává **na zařízení**, v místní databázi prohlíž
 
 Nic z toho není povinné. Prázdný profil je naprosto v pořádku - vyplníš si jen to, co ti ušetří psaní.
 
-![Obrazovka Profilu - jméno, kontakt, volitelná fotka a tvé předvolby](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Obrazovka Profilu - jméno, kontakt, volitelná fotka a tvé předvolby](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Preference jsou ta jediná část, která mění, jak se aplikace dívá zpátky na tebe. Karty motivů jsou živé náhledy a použijí se ve chvíli, kdy si jednu vybereš - jen na tomhle zařízení.
 
 Stránka je dlouhá, takže má vlastní **postranní lištu nastavení** - Tvé údaje, Vzhled, Přístupnost, Instance Lolly, Tvá aktivita, Úložiště, Dostupné offline, Feature flags, Content Credentials - a nad ní pole **Hledat v nastavení**, které seznam filtruje za psaní. Každá sekce je odkazovatelná jako `#/profile?focus=<section-id>`, což ji otevře a odscrolluje do zobrazení (`#/profile?focus=storage-section`, `?focus=feature-flags-section` a tak dále), takže odkaz může mířit na jedno konkrétní nastavení místo na začátek stránky.
 
-![Tři karty motivů, každá s náhledem vlastního typu a barvy, s vyznačenou aktivní](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Tři karty motivů, každá s náhledem vlastního typu a barvy, s vyznačenou aktivní](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Profil je kontext, ne jen osoba
 
@@ -35,9 +35,9 @@ Slovo „profil" navozuje dojem jedné pevně dané osoby, ale v Lolly je to sp�
 
 ### Jako jednotlivec
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Ovládací prvek fotky, prázdný, dokud nenahraješ snímek, který pak zůstane na tomto zařízení](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Ovládací prvek fotky, prázdný, dokud nenahraješ snímek, který pak zůstane na tomto zařízení](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Jako tým
 
@@ -61,7 +61,7 @@ Pokud tedy opravdu žongluješ s víc kontexty (ty, tvůj tým, role manažera a
 
 Obojí se odehrává v sekci Storage: ukazatel vyúčtuje každý bajt, který tahle instalace drží, kategorii po kategorii, a tlačítka pod ním jsou to, čím data smažeš nebo přeneseš.
 
-![Ukazatel úložiště, rozklad uložených relací, obrázků a cache proti tomu, co skutečně hlásí prohlížeč](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Ukazatel úložiště, rozklad uložených relací, obrázků a cache proti tomu, co skutečně hlásí prohlížeč](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Drž si jeden balíček na kontext a přejmenuj soubory tak, aby bylo jasné, co jsou (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Soubor *je* profil.
 
@@ -104,7 +104,7 @@ Pokud prohlížeč neudělil trvalé úložiště, sekce to uvede a nabídne **C
 
 ## Přesun profilu na nové zařízení
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Protože je profil čistě lokální, jediný způsob, jak ho dostat do čisté instalace - na nový notebook, čerstvě resetovaný prohlížeč, kolegův počítač, offline stroj - je **přenést soubor**. Žádné přihlášení ti ho neobnoví, a to je právě smysl: nic z tvého zařízení nikdy neodešlo.
 
@@ -112,7 +112,7 @@ Protože je profil čistě lokální, jediný způsob, jak ho dostat do čisté 
 - <!--i:upload--> **Import data…** na jiné instalaci soubor znovu načte a pokračuješ přesně tam, kde jsi skončil(a).
 - <!--i:box--> **Export my data & render everything** zapíše stejnou zálohu *plus* druhý zip, který vyrenderuje každou uloženou relaci do jejího hotového výstupního souboru, ve složkách odpovídajících tvým Projects. Kompletní offline archiv zdrojů i výsledků - u velkého množství relací může být rozsáhlý a pomalý.
 
-![Dvě tlačítka, která přesunou celou instalaci: Exportovat má data zapíše jeden zip, Importovat data ho zase načte](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Dvě tlačítka, která přesunou celou instalaci: Exportovat má data zapíše jeden zip, Importovat data ho zase načte](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Balíček je obyčejný, samostatný zip, takže se dá přenést **jakýmkoliv** způsobem - přes USB, AirDrop, síťové úložiště, e-mail sám sobě - a cíl může být úplně offline. Každá část má kontrolní součet, takže soubor poškozený při přenosu se odhalí při importu, místo aby se obnovil napůl rozbitý. Import **slučuje** (profil/relace/obrázek se stejným názvem se přepíše, zbytek zůstane zachovaný), takže nikdy nesmaže cíl, který se už používal.
 
@@ -122,13 +122,13 @@ Přesné rozvržení balíčku, zásady verzí a pravidla integrity najdeš v **
 
 ## Jak nástroje používají tvůj profil
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Nástroj vždy jen *předvyplní* ta pole profilu, pro která byl výslovně postavený:
 
 **Opt-in (provenience).** Když exportuješ asset, tvé údaje volitelně jedou s sebou jako **provenience** - řádek autora/kreditu vložený do metadat souboru (PNG, PDF, SVG, …) - takže hotový asset může říct, kdo ho vytvořil. *Tohle* řídí **Použít mé údaje pro tvorbu**: nech to vypnuté a export pořád ponese atribuci nástroje/platformy „Vytvořeno v Lolly“, ale žádný osobní řádek autora/kontaktu se nevloží. (Stejný opt-in nastavuje autora u dávkových běhů **/pro**.) (Autoři nástrojů: viz [Tvorba nástrojů → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) a [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Jediný přepínač Použít mé údaje pro tvorbu, umístěný vedle Uložit profil a vypnutý, dokud ho nezapneš](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Jediný přepínač Použít mé údaje pro tvorbu, umístěný vedle Uložit profil a vypnutý, dokud ho nezapneš](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profil vs Platforma vs Možnosti
 
@@ -147,7 +147,7 @@ Slovo je v projektu přetížené. Ani jedno z toho není osobní profil, o kter
 - <!--i:box--> **Obsahový profil** - konfigurace v čase buildu v `profiles.json`, která svazuje sadu balíčků nástrojů se značkovým katalogem (např. `suse`, `lolly-start`). To si vybírá operátor při nasazení, a je to i to, co **parametr URL/CLI** `profile` volí jako *barevnou* variantu při exportu (tiskovou podmínku ICC/CMYK - viz [Režim URL](/info/url-mode.html)). Obojí se týká *buildu/výstupu*, ne *tebe*. Viz [Konfigurace](/info/configuration.html).
 - <!--i:seal--> **Identitní profil** - volitelná **ověřená identita Content Credentials**, kterou si můžeš zaregistrovat (krátkodobý certifikát, který svazuje tvůj e-mail s tvými podepsanými exporty). To je podpisová identita, oddělená od polí jména/kontaktu osobního profilu, ačkoli **Použít mé údaje pro tvorbu** řídí, jestli se vloží kterékoli z nich. Viz [Identita Content Credentials](/info/content-credentials-identity.html).
 
-![Karta Ověřená identita v šířce telefonu: výběr platnosti certifikátu a pod ním krok registrace - identitní profil, oddělený od tvých osobních údajů](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Karta Ověřená identita v šířce telefonu: výběr platnosti certifikátu a pod ním krok registrace - identitní profil, oddělený od tvých osobních údajů](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Soukromí
 

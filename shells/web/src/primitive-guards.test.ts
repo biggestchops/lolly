@@ -237,7 +237,7 @@ const INLINE_GLYPH_ALLOWED: Record<string, number> = {
   'theme.ts': 3,
   'views/catalog.ts': 1,   // +2 2026-08-18: INTERP_ICON + FIT_ICON zoom-pill glyphs (inline, like ZOOM_IN/OUT_ICON)
   'views/catalog/shared.ts': 22,   // 2026-09-09: moved verbatim out of the parent view by scripts/split-closure.ts (the zoom-pill and treatment glyph constants)
-  'views/dashboard.ts': 5,
+  'views/dashboard.ts': 1,
   'views/doc-editor.ts': 23,
   // Moved verbatim from free-canvas.ts into its icon registry during the plan
   // 198 seam extraction. One existing wrapper, no new glyph.
@@ -1560,6 +1560,8 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // here reads a document or a network response.
   'lib/learning-entry.ts': 1,
   'views/learning/delivery.ts': 1,
+  // Fixed menu actions through menuItemHtml, which escapes every label.
+  'views/learning/menus.ts': 1,
   'views/learning/ui.ts': 1,
   // Text surfaces: code uses the engine's escaping highlighter; action/font labels
   // use escapeHtml. Markdown uses the shared safe renderer. Other markup is static.
@@ -1798,7 +1800,8 @@ const R12_RATCHETS: Array<{ what: string; pin: number; count: (text: string) => 
     // 302 to 301: object cards share their shadow recipe.
     // 301 to 300: the utilities.css boxed-field alias went; the field primitive
     // owns the profile and export inputs by class now.
-    pin: 300,
+    // 300 to 299: help-tip paint is shared by the component and uses semantic elevation.
+    pin: 299,
     count: (t) => [...t.matchAll(/box-shadow:\s*([^;}]+)/g)]
       .map(m => m[1]!.trim())
       .filter(v => v !== 'none' && !/var\(--(?:ui-(?:edge|elevation|effect)|shadow|edge|ring-focus|bevel)/.test(v)).length,

@@ -14,6 +14,16 @@ The static adapter stores progress in IndexedDB. Its key includes the current or
 
 The host platform controls access to the files. This release supplies no learner identity, accounts, enrolment, grades, analytics endpoint or server progress record. It does not ask the creator for LRS credentials. Use an LMS target when the receiving LMS owns those responsibilities.
 
+## Rich text and practice questions
+
+Learning document schema 2 adds `richText` to text blocks and the `quiz` block kind. Schema 1 remains supported. `packages/core/schema/learning-module-v2.schema.json` describes the new document, and `parseLearningModule` also checks identifier uniqueness, section references, document size and tree limits. The current completion policy is unchanged.
+
+Rich text is a bounded semantic document: paragraphs, two heading levels, lists, quotes, line breaks and inline emphasis or links. The player builds native elements from this tree without treating author text as HTML. Styling comes from the frozen presentation, not inline author CSS. The `text` field remains a plain text fallback; `richText` is authoritative when present.
+
+A quiz supplies a prompt, `single`, `multiple` or `true-false` mode, two to eight choices with stable local identifiers and `correct` flags, and feedback. Quiz blocks have no media source. Submitted choices are kept in `LearningAttempt.quizAnswers` under the block identifier. They are practice records, not grades; the player does not emit SCORM score fields or xAPI scored interaction statements.
+
+The compact v1 attempt tuple accepts an optional sixth field containing two hexadecimal digits per quiz in compiled order. Each bit identifies a selected option; `00` means no submitted answer. The maximum 1000-block document fits within the existing 4096-character suspend limit. Old tuples remain readable, and bookmarks from another release are discarded. Successful static saves include quiz choices in IndexedDB, while the public progress event keeps its existing completion-only shape.
+
 ## Browser progress event, version 1
 
 After a successful static progress save, the player dispatches a DOM `CustomEvent` named `lolly:learning-progress` on its own `window`. `detail` follows the SDK's `LearningProgressEventV1` type:
@@ -32,7 +42,7 @@ interface LearningProgressEventV1 {
 
 `lessonId` is the current location. `acknowledged` contains lesson identifiers, including optional lessons when acknowledged. `completed` becomes true only through the required-lesson policy and Finish. `persistence` states whether that save used browser storage or the open page's memory.
 
-Navigation, acknowledgement, periodic saves, Finish and Save and exit can emit the event. The event contains the whole current attempt, so consumers must tolerate repetition. It has no guaranteed delivery, replay, initial-load event, unique event identifier or cross-device ordering. Event details are copied from player state; listeners cannot modify the player by changing them. This contract observes saves. It supplies no command to restore, reset or remotely complete an attempt.
+Navigation, acknowledgement, checked practice answers, periodic saves, Finish and Save and exit can emit the event. The event contains the completion and location fields of the current attempt, so consumers must tolerate repetition. It has no guaranteed delivery, replay, initial-load event, unique event identifier or cross-device ordering. Event details are copied from player state; listeners cannot modify the player by changing them. This contract observes saves. It supplies no command to restore, reset or remotely complete an attempt.
 
 A same-origin host can listen inside its iframe after load:
 

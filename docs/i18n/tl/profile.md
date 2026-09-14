@@ -19,15 +19,15 @@ Ang lahat ng nasa profile ay nananatili **sa device**, sa local database ng brow
 | **Accessibility** | Apat na comfort switch - *Reduce motion*, *Hide colourful previews*, *High contrast*, *Large text* - na nakatago sa profile record, kaya sumasama ito sa isang profile export. Tingnan ang [Accessibility](#accessibility). |
 | **Ang trabaho mo** | Naka-save na sessions (may thumbnails) - naka-organisa sa nested folders sa **[Projects](/info/using.html)** - ang **My images** library mo at ang lokal na activity stats, lahat naka-key sa profile na ito. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Ang Profile screen - pangalan, contact, isang optional na headshot at ang mga preference mo](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Ang Profile screen - pangalan, contact, isang optional na headshot at ang mga preference mo](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Wala sa mga ito ang required. Ang blangkong profile ay perpektong profile pa rin; punan mo lang ang mga bagay na makakatipid sa iyo ng pag-type.
 
 Mahaba ang page, kaya may sarili itong **settings rail** pababa sa gilid - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - na may **Search settings** field sa itaas nito na nagfi-filter sa listahan habang nagta-type ka. Deep-linkable ang bawat section bilang `#/profile?focus=<section-id>`, na nagbubukas dito at nag-i-scroll papunta rito (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, at iba pa), kaya maaaring itugma ng isang link ang isang setting sa halip na ang itaas ng page.
 
-![Tatlong theme card, bawat isa ay nagpe-preview ng sariling type at kulay, na may naka-flag na aktibo](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Tatlong theme card, bawat isa ay nagpe-preview ng sariling type at kulay, na may naka-flag na aktibo](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Ang profile ay isang konteksto, hindi lang isang tao
 
@@ -35,9 +35,9 @@ Ang salitang "profile" ay parang tumutukoy sa iisang fixed na tao, pero sa Lolly
 
 ### Bilang indibidwal
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Ang headshot control, walang laman hanggang mag-upload ka ng larawan na nananatili sa device na ito pagkatapos](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Ang headshot control, walang laman hanggang mag-upload ka ng larawan na nananatili sa device na ito pagkatapos](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Bilang isang team
 
@@ -53,7 +53,7 @@ Sa Lolly, ang role na iyon ay isa lamang **ibang profile na nakalaan sa iyo** - 
 
 Sa anumang sandali, may **isang aktibong profile** ang isang install - ang mga detalyeng nakikita ng isang tool ngayon. Walang in-app profile switcher; sa halip, ang bawat profile ay isang **portable bundle** (isang solong `.zip`, tingnan [sa ibaba](#moving-a-profile-to-a-new-device)). Sadya iyon ang parehong mekanismo ng paglipat sa bagong device - ang isang profile ay isang file na maaari mong i-save, kopyahin at i-load.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Pinakamalinis na paglipat:** **Profile → Storage → Clear all my data**, tapos **Import** ang bundle para sa context na papasukan mo. Purong gumagawa ka na bilang profile na iyon.
 - <!--i:layers--> **Layering:** ang pag-import *nang hindi* muna nililinis ay **nag-me-merge** - ang na-import na profile, sessions at larawan ay dumadapo sa ibabaw ng nandiyan na, pinapalitan ang anumang may parehong pangalan at iniiwan ang iba. Kapaki-pakinabang para sa pagkuha ng naka-save na sessions ng isang team papunta sa sarili mong setup; hindi ito para sa iyo kung kailangan mo ng malinis na role boundary.
@@ -61,7 +61,7 @@ Sa anumang sandali, may **isang aktibong profile** ang isang install - ang mga d
 
 Kaya kung talagang nagpapalit-palit ka ng maraming konteksto (ikaw, ang team mo, ang event-manager hat), magtago ka ng ilang bundle at i-load ang kailangan mo:
 
-![Ang storage meter, na nagbabreak down ng naka-save na sessions, mga larawan at cache laban sa aktwal na iniuulat ng browser](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Ang storage meter, na nagbabreak down ng naka-save na sessions, mga larawan at cache laban sa aktwal na iniuulat ng browser](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Magtago ng isang bundle bawat konteksto at palitan ang pangalan ng mga file ayon sa kung ano sila (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Ang file *ang* profile.
 
@@ -104,7 +104,7 @@ Kung hindi pa nagbigay ang browser ng persistent storage, sinasabi ito ng seksyo
 
 ## Paglipat ng profile sa bagong device
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Dahil ganap na local ang profile, ang tanging paraan para mailagay ito sa isang blangkong install - bagong laptop, bagong-reset na browser, makina ng katrabaho, o offline na device - ay ang **dalhin ang file**. Walang login ang magre-restore nito para sa iyo, at iyon nga ang punto: wala talagang lumabas sa iyong device mula sa umpisa.
 
@@ -112,7 +112,7 @@ Dahil ganap na local ang profile, ang tanging paraan para mailagay ito sa isang 
 - <!--i:upload--> Ang **Import data…** sa ibang install ay babasahin ang file na iyon at magpapatuloy ka mula mismo sa iyong iniwan.
 - <!--i:box--> Isinusulat ng **Export my data & render everything** ang parehong backup *kasama* ang pangalawang zip na nagre-render ng bawat na-save na session sa finished output file nito, sa mga folder na kagaya ng iyong Projects. Isang kompletong offline archive ng parehong sources at resulta - at maaari itong maging malaki at mabagal kung marami ang sessions.
 
-![Ang dalawang button na naglilipat ng buong install: isinusulat ng Export my data ang isang zip, binabasa ito pabalik ng Import data](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Ang dalawang button na naglilipat ng buong install: isinusulat ng Export my data ang isang zip, binabasa ito pabalik ng Import data](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Ang bundle ay simple at self-contained na zip, kaya puwede itong dalhin sa **anumang** paraan - USB, AirDrop, network share, email-to-yourself - at maaaring ganap na offline ang target. Bawat bahagi ay may checksum, kaya ang file na nasira sa paglipat ay mahuhuli sa import sa halip na ma-restore nang kalahating-sira. Ang Import ay **nag-me-merge** (ang profile/session/image na may parehong pangalan ay ino-overwrite; pinapanatili ang lahat ng iba), kaya hindi nito kailanman bubura ang isang target na ginagamit na.
 
@@ -122,13 +122,13 @@ Para sa eksaktong bundle layout, version policy at integrity rules, tingnan ang 
 
 ## Paano ginagamit ng mga tool ang iyong profile
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Ang isang tool ay *nagpu-pre-fill* lamang ng mga field ng profile na talagang dinisenyo nitong i-bind:
 
 **Ang opt-in (provenance).** Kapag nag-export ka ng asset, ang iyong mga detalye ay opsyonal na sumasama bilang **provenance** - isang author/credit line na naka-embed sa metadata ng file (PNG, PDF, SVG, …) - para masabi ng natapos na asset kung sino ang gumawa nito. *Ito* ang pinagagana ng **Use my details to create**: iwanan itong naka-off at dadalhin pa rin ng export ang "Made with Lolly" tool/platform attribution, pero walang personal na author/contact line na naka-embed. (Pinagagana rin ng parehong opt-in ang author sa **/pro** batch runs.) (Para sa tool authors: tingnan ang [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) at [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Ang iisang Use my details to create switch, katabi ng Save Profile at naka-off hangga't hindi mo ito binubuksan](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Ang iisang Use my details to create switch, katabi ng Save Profile at naka-off hangga't hindi mo ito binubuksan](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profile vs Platform vs Capabilities
 
@@ -147,7 +147,7 @@ Masyadong marami ang kahulugan ng salitang ito sa buong proyekto. Wala sa mga su
 - <!--i:box--> **Content profile** - isang build-time configuration sa `profiles.json` na nagbibigkis ng set ng tool packs sa isang brand catalog (hal. `suse`, `lolly-start`). Ito ang pinipili ng operator kapag nag-de-deploy, at ito rin ang pinipili ng `profile` **URL/CLI parameter** bilang *kulay* variant sa oras ng export (ang ICC/CMYK press condition - tingnan ang [URL Mode](/info/url-mode.html)). Pareho itong tungkol sa *build/output*, hindi tungkol sa *iyo*. Tingnan ang [Configuration](/info/configuration.html).
 - <!--i:seal--> **Identity profile** - ang opsyonal na **verified Content Credentials identity** na maaari mong i-enrol (isang short-lived certificate na nag-uugnay ng iyong email sa iyong mga naka-sign na exports). Ito ay isang signing identity, hiwalay sa mga name/contact fields ng personal profile, bagaman pinagagana ng **Use my details to create** kung ang alinman sa dalawa ay naka-embed. Tingnan ang [Content Credentials Identity](/info/content-credentials-identity.html).
 
-![Ang Verified identity card, phone-width: ang certificate lifetime picker at ang enrolment step sa ibaba nito - ang identity profile, hiwalay sa iyong personal na detalye](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Ang Verified identity card, phone-width: ang certificate lifetime picker at ang enrolment step sa ibaba nito - ang identity profile, hiwalay sa iyong personal na detalye](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Privacy
 

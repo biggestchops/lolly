@@ -2,7 +2,7 @@
 
 Alles, was sich bei einem Lolly-Nutzer ansammelt, lebt **auf seinem Gerät** - kein Konto, keine Cloud. Das Datenübertragungsbündel ist der Weg, wie dieser Wert sich bewegt: exportieren Sie es auf einer Installation, tragen Sie die Datei auf beliebigem Weg (USB, AirDrop, E-Mail an sich selbst, eine Netzwerkfreigabe) und importieren Sie sie auf einer anderen. Die Datei *ist* der Transport. Das Ziel kann offline oder online sein. Es macht keinen Unterschied, denn nichts spricht je mit einem Server.
 
-![Die beiden Schaltflächen, die eine ganze Installation umziehen: Meine Daten exportieren schreibt ein Zip, Daten importieren liest es wieder ein](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Die beiden Schaltflächen, die eine ganze Installation umziehen: Meine Daten exportieren schreibt ein Zip, Daten importieren liest es wieder ein](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Diese Seite ist die Formatspezifikation. Die Anleitung für Endnutzer finden Sie unter [Lolly verwenden → Auf ein anderes Gerät wechseln](/info/using.html). Die Implementierung ist [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), und [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) legt den Round-Trip-Vertrag fest.
 

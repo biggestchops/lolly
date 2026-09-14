@@ -2,7 +2,7 @@
 
 Усе, що накопичує користувач Lolly, зберігається **на його пристрої** - без облікового запису, без хмари. Пакет передавання даних - це спосіб перенести це: експортуйте його на одній інсталяції, перенесіть файл будь-яким способом (USB, AirDrop, лист собі на пошту, мережевий спільний ресурс) і імпортуйте на іншій. Файл *і є* транспорт. Цільовий пристрій може бути офлайн або онлайн. Це не має значення, оскільки нічого й ніколи не звертається до сервера.
 
-![Дві кнопки, що переносять всю інсталяцію: Export my data записує один архів, Import data зчитує його назад](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Дві кнопки, що переносять всю інсталяцію: Export my data записує один архів, Import data зчитує його назад](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Ця сторінка - специфікація формату. Покроковий опис для кінцевого користувача - у [Using Lolly → Moving to another device](/info/using.html). Реалізація - [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), а [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) фіксує контракт двостороннього обміну.
 

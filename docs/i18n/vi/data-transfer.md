@@ -2,7 +2,7 @@
 
 Mọi thứ mà một người dùng Lolly tích lũy đều nằm **trên thiết bị của họ** - không tài khoản, không đám mây. Gói chuyển dữ liệu là cách giá trị đó di chuyển: xuất nó trên một bản cài đặt, mang file đi bằng bất kỳ phương tiện nào (USB, AirDrop, gửi email cho chính mình, chia sẻ mạng) rồi nhập nó vào một bản cài đặt khác. File *chính là* phương tiện vận chuyển. Đích đến có thể offline hoặc online. Điều đó không quan trọng, vì không có gì từng liên lạc với máy chủ.
 
-![Hai nút di chuyển toàn bộ bản cài đặt: Export my data ghi ra một tệp zip, Import data đọc lại tệp đó](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Hai nút di chuyển toàn bộ bản cài đặt: Export my data ghi ra một tệp zip, Import data đọc lại tệp đó](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Trang này là đặc tả định dạng. Để xem hướng dẫn dành cho người dùng cuối, xem [Using Lolly → Moving to another device](/info/using.html). Việc triển khai nằm ở [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), và [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) chốt hợp đồng khứ hồi.
 

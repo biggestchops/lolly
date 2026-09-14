@@ -2,7 +2,7 @@
 
 Tudo que um usuário do Lolly acumula vive **no seu dispositivo** - sem conta, sem nuvem. O pacote de transferência de dados é como esse valor se move: exporte-o em uma instalação, leve o arquivo por qualquer meio (USB, AirDrop, e-mail para si mesmo, um compartilhamento de rede) e importe-o em outra. O arquivo *é* o transporte. O destino pode estar offline ou online. Não faz diferença, porque nada nunca fala com um servidor.
 
-![Os dois botões que movem uma instalação inteira: Export my data grava um zip, Import data o lê de volta](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Os dois botões que movem uma instalação inteira: Export my data grava um zip, Import data o lê de volta](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Esta página é a especificação do formato. Para o passo a passo do usuário final, veja [Using Lolly → Moving to another device](/info/using.html). A implementação está em [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), e [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) fixa o contrato de ida e volta.
 

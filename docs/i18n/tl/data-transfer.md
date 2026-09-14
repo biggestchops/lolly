@@ -2,7 +2,7 @@
 
 Ang lahat ng naiipon ng isang user ng Lolly ay nasa **kanilang device** - walang account, walang cloud. Ang data-transfer bundle ang paraan para ilipat ang halagang iyon: i-export ito sa isang install, dalhin ang file sa anumang paraan (USB, AirDrop, email-to-self, isang network share) at i-import ito sa isa pa. Ang file mismo *ang* transport. Maaaring offline o online ang target. Walang pagkakaiba, dahil walang kailanman nakikipag-usap sa isang server.
 
-![Ang dalawang button na naglilipat ng buong install: isinusulat ng Export my data ang isang zip, binabasa ito pabalik ng Import data](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Ang dalawang button na naglilipat ng buong install: isinusulat ng Export my data ang isang zip, binabasa ito pabalik ng Import data](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Ang pahinang ito ang format spec. Para sa end-user na walkthrough, tingnan ang [Using Lolly → Moving to another device](/info/using.html). Ang implementation ay nasa [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), at itinatakda ng [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) ang round-trip contract.
 

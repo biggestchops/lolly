@@ -2,7 +2,7 @@
 
 Segala yang terkumpul oleh pengguna Lolly berada **pada peranti mereka** - tiada akaun, tiada awan. Bundel pemindahan data adalah cara nilai itu berpindah: eksportkannya pada satu pemasangan, bawa fail itu dengan apa cara sekalipun (USB, AirDrop, e-mel-kepada-diri-sendiri, perkongsian rangkaian) dan import pada yang lain. Fail itu *ialah* pengangkutan tersebut. Sasaran boleh berada dalam talian atau luar talian. Tiada bezanya, kerana tiada apa pun yang pernah berhubung dengan pelayan.
 
-![Dua butang yang memindahkan keseluruhan pemasangan: Export my data menulis satu zip, Import data membacanya semula](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Dua butang yang memindahkan keseluruhan pemasangan: Export my data menulis satu zip, Import data membacanya semula](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Halaman ini adalah spesifikasi format. Untuk panduan pengguna akhir lihat [Using Lolly → Moving to another device](/info/using.html). Pelaksanaannya ialah [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), dan [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) mengunci kontrak pergi-balik itu.
 

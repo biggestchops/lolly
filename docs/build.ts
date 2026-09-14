@@ -129,6 +129,7 @@ type Pathway = 'quickstart' | 'builders' | 'creators' | 'operators' | 'trust';
 interface Page {
   slug: string;
   title: string;
+  author?: string;
   src: string;
   isLanding?: boolean;
   // Which pathway this page belongs under - drives the docs sidebar + which top-nav
@@ -199,7 +200,7 @@ const pages: Page[] = [
   { slug: 'operators',        title: 'Lolly for Operators', src: 'operators.md', pathway: 'operators', isHub: true, description: "Roll Lolly out across an organisation: governance, deployment, configuration and the trust properties your security review will ask about." },
   { slug: 'trust',            title: 'Trust',               src: 'trust.md',     pathway: 'trust',     isHub: true, description: "Where your content comes from, how to check it yourself, and what happens to your data. The claims on this site with the mechanism that enforces each one." },
   { slug: 'status-quo',       title: 'The trade we never agreed to', src: 'status-quo.md', pathway: 'trust', description: "Uploading a logo to a stranger to resize it. Artwork locked behind a lapsed plan. The frictions we all learned to accept, and what replaces them." },
-  { slug: 'tenets',           title: 'What we stand for', src: 'tenets.md', pathway: 'trust', description: "The foundational page: the vision, three values, the mission and the mantra Lolly holds itself to, each in its own words.", render: renderTenetsPage, immersive: true },
+  { slug: 'tenets',           title: 'Tenets', author: 'Andy Fitzsimon', src: 'tenets.md', pathway: 'trust', description: "Our vision, values and mission: all potential to all mediums.", render: renderTenetsPage, immersive: true },
   { slug: 'input-not-impersonation', title: 'Input, not impersonation', src: 'input-not-impersonation.md', pathway: 'trust', description: "An AI agent may fill in the inputs and may not claim to be you. Where the line sits, how it is enforced, and what a rogue agent still cannot do." },
   { slug: 'creative-rights', title: 'Creative rights and credits', src: 'creative-rights.md', pathway: 'trust', description: "How Lolly records a source licence, works out what it asks of the use you are making, writes the credit into the file, and names the part only you can do." },
 
@@ -585,7 +586,7 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
     groups: [
       { label: 'Trust', items: [
         { slug: 'trust',            label: 'Overview' },
-        { slug: 'tenets',           label: 'What we stand for' },
+        { slug: 'tenets',           label: 'Tenets' },
         { slug: 'status-quo',       label: 'Why this differs' },
         { slug: 'inclusive-design', label: 'Inclusive Design' } ] },
       { label: 'Where content comes from', items: [
@@ -1783,45 +1784,58 @@ function renderFaqPage(_md: string, lang: Lang): string {
 ${FAQ_JS}`;
 }
 
-/** /info/start/make-something.html opens with the three worked scenes - they moved
- *  here from the landing (plans/177 disposition; the covers carry the show-me job
- *  on the door now). NAMED function for check-docs-nav's brace-free match. */
-// ── What we stand for (docs/tenets.md) ────────────────────────────────────────
-// The foundational page, kept short on purpose: Vision (the hero), Values (three
-// words in three columns), Mission and Mantra - Andy's brand-tenet taxonomy, the parts
-// of it the project has settled. The words stay in markdown (twin, search, translation
-// and the vernacular gate all read the .md); this renderer only turns each `## `
-// section into a band, in document order, stamped with the tenet's meaning. Section
-// splits are fence-aware: a `## ` inside a `::: cols` fence stays in its band.
-const TENET_ORDER = ['values', 'mission', 'mantra'] as const;
-type TenetKey = typeof TENET_ORDER[number];
-// Tenet name + its meaning, in the project's own voice (Andy's taxonomy, first person).
-const TENET_KICKER: Record<TenetKey | 'vision', [string, string]> = {
-  vision:  ['Vision',  'The future we want to create'],
-  values:  ['Values',  'The attitudes that drive our work'],
-  mission: ['Mission', 'The role we play'],
-  mantra:  ['Mantra',  'What has to be part of everything we do'],
-};
-const TENET_DARK = new Set<TenetKey>(['mantra']);
-// Icons over the three Values columns, by column order: Anyone, Easy, Honest.
+// Tenet copy stays in markdown for search, translation and the downloadable source.
+// The renderer gives each tenet its own visual section.
+const TENET_ORDER = ['mantra', 'values', 'mission'] as const;
 const VALUE_ICONS = ['people', 'star', 'seal'];
-// Banked masthead art behind the hero (docs/mastheads/<id>). Decorative: aria-hidden,
-// credentialed like a masthead, never a substitute for the words.
-const TENET_HERO_ART = 'trust-mesh';
-function tenetArt(id: string): string {
-  const art = resolveDocsArt('mastheads', id, { dir: __dirname, lang: activeLang });
-  if (!art) { console.warn(`⚠  tenets: art '${id}' is not in docs/mastheads/`); return ''; }
-  const inlined = inlineDocsArt(art);
-  if ('error' in inlined) { console.warn(`⚠  tenets art ${id}: ${inlined.error}`); return ''; }
-  const cred = shotCredential(art.file, 'shot-cred--mast', { path: art.path, src: art.src, art: true });
-  if (!cred) console.warn(`⚠  tenets art ${art.file}: no readable Content Credential - run 'node scripts/sign-docs-art.ts'`);
-  return `<div class="tn-art" aria-hidden="true">${inlined.html}</div>${cred}`;
+const TENET_SAMPLES = [
+  { id: 'print', label: 'Print', format: 'pdf', width: 480, height: 640 },
+  { id: 'screen', label: 'Screen', format: 'png', width: 800, height: 450 },
+  { id: 'motion', label: 'Motion', format: 'mp4', width: 800, height: 450 },
+  { id: 'vector', label: 'Vector', format: 'svg', width: 480, height: 480 },
+] as const;
+
+function tenetSamples(lang: Lang): string {
+  const radios = TENET_SAMPLES.map(s => `<input class="tn-sample-radio" type="radio" name="tenet-medium" id="tenet-${s.id}"${s.id === 'motion' ? ' checked' : ''}>`).join('');
+  const tabs = TENET_SAMPLES.map(s => `<label for="tenet-${s.id}">${esc(t(s.label))}</label>`).join('');
+  const panels = TENET_SAMPLES.map(s => {
+    const art = resolveDocsArt('figures', `tenets-${s.id === 'motion' ? 'screen' : s.id}`, { dir: __dirname, lang });
+    if (!art || !docCtx.credential(art.file, { assetSrc: art.src, art: true })) {
+      throw new Error(`Missing signed tenets sample: ${s.id}`);
+    }
+    const file = `/info/figures/tenets-${s.id}.${s.format}`;
+    const inputs = JSON.parse(readFileSync(resolve(__dirname, `figures/tenets-${s.id}.inputs.json`), 'utf8'));
+    const params = new URLSearchParams(Object.entries(inputs).map(([key, value]) =>
+      [key, typeof value === 'string' ? value : JSON.stringify(value)]));
+    const edit = appHref(lang, `#/tool/design?${params}`);
+    const media = s.id === 'motion'
+      ? `<video src="${file}" poster="${esc(art.src)}" width="${s.width}" height="${s.height}" controls muted playsinline preload="metadata" aria-label="${esc(t('Animated ampersand made with Lolly Design'))}"></video>`
+      : `<img src="${esc(art.src)}" width="${s.width}" height="${s.height}" alt="${esc(t('The same ampersand and colour palette, composed for {medium}.').replace('{medium}', t(s.label).toLowerCase()))}">`;
+    return `<figure class="tn-sample-panel tn-sample--${s.id}" data-art="${esc(art.src)}">
+      <div class="tn-sample-stage">${media}</div>
+      <figcaption class="tn-sample-actions">
+        <a href="${esc(edit)}">${esc(t('Edit in Design'))}</a>
+        <a class="tn-credential" href="/#/verify?src=${encodeURIComponent(file)}&check=1" aria-label="${esc(t('Content Credentials'))}: ${s.format.toUpperCase()}">${docIcon('imprint')}</a>
+        <a href="${file}" download aria-label="${esc(t('Download'))} ${s.format.toUpperCase()}">${s.format.toUpperCase()} ${docIcon('download')}</a>
+      </figcaption>
+    </figure>`;
+  }).join('');
+  return `<fieldset class="tn-samples" aria-label="${esc(t('Choose a medium'))}">${radios}<div class="tn-sample-tabs">${tabs}</div><div class="tn-sample-panels">${panels}</div></fieldset>`;
 }
-// `withName` false when the band's own h2 already says the tenet's name (the usual
-// case): the kicker then carries only the meaning, so the word is not set twice.
-function tenetKicker(key: TenetKey | 'vision', withName = true): string {
-  const k = TENET_KICKER[key];
-  return `<p class="tn-kicker">${withName ? `<span class="tn-kicker-name">${esc(t(k[0]))}</span>` : ''}<span class="tn-kicker-desc">${esc(t(k[1]))}</span></p>`;
+
+function tenetIllustration(id: string, cls: string, width: number, height: number): string {
+  const art = resolveDocsArt('figures', id, { dir: __dirname, lang: activeLang });
+  if (!art) throw new Error(`Missing tenets illustration: ${id}`);
+  const facts = docCtx.credential(art.file, { assetSrc: art.src, art: true });
+  if (!facts) throw new Error(`Sign the tenets illustration before building: ${id}`);
+  const verify = `/#/verify?src=${encodeURIComponent(art.src)}&check=1`;
+  return `<div class="tn-art tn-art--${cls}" data-art="${esc(art.src)}">
+    <img src="${esc(art.src)}" width="${width}" height="${height}" alt="" aria-hidden="true">
+    <span class="tn-art-credentials">
+      <a class="tn-credential" href="${verify}" aria-label="${esc(t('Content Credentials'))}: ${esc(facts.generator ?? 'Lolly Design')}">${docIcon('imprint')}<span>${esc(t('Content Credentials'))}</span></a>
+      <a class="tn-art-download" href="${esc(art.src)}" download aria-label="${esc(t('Get the signed file'))}">${docIcon('download')}</a>
+    </span>
+  </div>`;
 }
 function renderTenetsPage(md: string, lang: Lang): string {
   const lines = md.split('\n');
@@ -1836,34 +1850,36 @@ function renderTenetsPage(md: string, lang: Lang): string {
   const head = parts.shift()!.join('\n');
   const headHtml = mdToHtml(head);
   const h1 = /<h1[^>]*>[\s\S]*?<\/h1>/.exec(headHtml)?.[0] ?? '';
-  const afterH1 = headHtml.replace(h1, '');
-  const visionM = /<p>([\s\S]*?)<\/p>/.exec(afterH1);
-  const vision = visionM?.[1] ?? '';
-  const afterVision = afterH1.replace(visionM?.[0] ?? '', '');
-  const gloss = /<p>([\s\S]*?)<\/p>/.exec(afterVision)?.[1] ?? '';
+  const gloss = /<p>([\s\S]*?)<\/p>/.exec(headHtml.replace(h1, ''))?.[1] ?? '';
 
-  const hero = `<section class="tn-band tn-band--dark tn-hero">${tenetArt(TENET_HERO_ART)}<div class="tn-inner">
-  ${h1.replace('<h1', '<h1 class="tn-eyebrow"')}
-  ${tenetKicker('vision')}
-  <p class="tn-vision">${vision}</p>
-  ${gloss ? `<p class="tn-gloss">${gloss}</p>` : ''}
+  const hero = `<section class="tn-band tn-band--dark tn-hero"><div class="tn-inner tn-hero-grid">
+  <div class="tn-hero-copy">
+    <p class="tn-label">${esc(t('Vision'))}</p>
+    ${h1.replace('<h1', '<h1 class="tn-vision"').replace('to all mediums</h1>', '<span class="tn-vision-end">to all mediums</span></h1>')}
+    ${gloss ? `<p class="tn-gloss">${gloss}</p>` : ''}
+  </div>
+  ${tenetSamples(lang)}
 </div></section>`;
 
-  const bands = parts.map((block, i) => {
-    const key: TenetKey = TENET_ORDER[i] ?? 'mantra';
+  const bands = parts.slice(0, TENET_ORDER.length).map((block, i) => {
+    const key = TENET_ORDER[i]!;
     let html = mdToHtml(block.join('\n'));
+    html = html.replace(/<h2([^>]*)>/, '<h2 class="tn-label"$1>');
     if (key === 'values') {
       let col = 0;
-      html = html.replace(/<div class="md-col"><h2/g, () => `<div class="md-col"><span class="tn-col-icon" aria-hidden="true">${docIcon(VALUE_ICONS[col++] ?? 'star')}</span><h2`);
+      html = html.replace(/<div class="md-col"><h2([^>]*)>([\s\S]*?)<\/h2>/g, (_match, attrs, title) =>
+        `<div class="md-col"><span class="tn-col-icon" aria-hidden="true">${docIcon(VALUE_ICONS[col++] ?? 'star')}</span><h3${attrs}>${title}</h3>`);
+    } else if (key === 'mission') {
+      html = html.replace(/<p>([\s\S]*?)<\/p>/, '<h3 class="tn-mission-line">$1</h3>');
     }
-    const h2Text = (/<h2[^>]*>([\s\S]*?)<\/h2>/.exec(html)?.[1] ?? '').replace(/<[^>]+>/g, '').trim();
-    const nameInHeading = h2Text.toLowerCase() === t(TENET_KICKER[key][0]).toLowerCase();
-    return `<section class="tn-band tn-${key}${TENET_DARK.has(key) ? ' tn-band--dark' : ''}" id="tenet-${key}"><div class="tn-inner tn-prose reveal">${tenetKicker(key, !nameInHeading)}${html}</div></section>`;
+    const author = key === 'mission' ? `<p class="tn-author"><a href="/#/verify?src=${encodeURIComponent(localeHref('en', 'tenets'))}&check=1">Andy Fitzsimon ${docIcon('imprint')}</a></p>` : '';
+    return `<section class="tn-band tn-${key}${key === 'mission' ? ' tn-band--dark' : ''}" id="tenet-${key}"><div class="tn-inner tn-prose">${html}${author}${key === 'mission' ? tenetIllustration('tenets-infinity', 'infinity', 660, 400) : ''}</div></section>`;
   });
   void lang;
   return [hero, ...bands].join('\n');
 }
 
+/** /info/start/make-something.html opens with the three worked scenes. */
 function renderMakeSomethingPage(md: string, lang: Lang): string {
   return `${makeSomethingBlock(lang)}\n${mdToHtml(md)}`;
 }
@@ -3283,6 +3299,9 @@ tr:nth-child(even) td{background:hsl(var(--muted) / 0.4)}
 footer{border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--muted);font-size:.8125rem;background:var(--pale)}
 footer a{color:var(--muted);text-decoration:underline}
 footer a:hover{color:var(--dark)}
+.sitemap-disclosure{grid-column:1/-1;text-align:start}
+.sitemap-disclosure>summary{width:fit-content;margin:0 auto;cursor:pointer;font-weight:600;padding:.5rem}
+.sitemap-expanded{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:2rem;margin-top:2rem}
 footer .founded-badge{margin-top:.5rem}
 /* Footer sitemap - the whole docs set, ten columns (see FOOTER_SECTIONS).
    auto-fit is right for a handful of columns and wrong for ten: it maximises the
@@ -3459,62 +3478,7 @@ footer .founded-badge{margin-top:.5rem}
 .page-beatrice-warde .docs-content pre{font-family:'Cinzel',Georgia,serif;font-size:1.0625rem;line-height:2.05;letter-spacing:.055em;text-align:center;background:linear-gradient(#fbfaf7,#f4f2ec);color:#25313a;padding:2.5rem 1.5rem;border-radius:10px;box-shadow:inset 0 0 0 1px #0000000f,0 1px 2px #0000000a;white-space:pre-wrap;text-wrap:balance}
 .page-beatrice-warde .docs-content pre code{font-family:inherit;font-size:inherit;background:none;padding:0}
 [data-theme="dark"] .page-beatrice-warde .docs-content pre,[data-theme="brand"] .page-beatrice-warde .docs-content pre{background:linear-gradient(#12271d,#0d2016);color:#e8f0ea;box-shadow:inset 0 0 0 1px #ffffff14}
-/* ── What we stand for (docs/tenets.md, renderTenetsPage) ──────────────────────
-   Four full-bleed bands under the site nav: a dark hero carrying the vision over
-   banked art, Values as three words in three columns, Mission, and the Mantra in
-   Cinzel on a dark band. Each band opens with a kicker: the tenet's meaning. Motion is
-   the shared .reveal fade plus the art's own guarded loop; both stop under reduced motion. */
 .docs-immersive{padding:0;margin:0}
-.page-tenets .tn-band{position:relative;isolation:isolate;overflow:hidden;padding:clamp(3.5rem,9vw,7.5rem) 1.5rem;background:var(--page);color:var(--text)}
-.page-tenets .tn-band--dark{background:hsl(var(--band-dark));color:hsl(var(--on-band-dark))}
-.page-tenets .tn-band--dark a{color:hsl(var(--band-accent))}
-.page-tenets .tn-band--dark h2,.page-tenets .tn-band--dark strong{color:hsl(var(--on-band-dark))}
-.page-tenets .tn-inner{position:relative;z-index:2;max-width:1100px;margin:0 auto}
-.page-tenets .tn-prose>p{max-width:46rem}
-.page-tenets .tn-prose p{font-size:1.125rem;line-height:1.65;margin:0 0 1.25rem}
-.page-tenets .tn-prose h2{font-size:clamp(1.9rem,3.4vw,2.7rem);font-weight:800;letter-spacing:-.02em;line-height:1.12;margin:0 0 1.25rem;border:0;padding:0;text-transform:none;color:inherit}
-.page-tenets .tn-art{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:.55}
-.page-tenets .tn-art>svg{display:block;width:100%;height:100%}
-.page-tenets .tn-band .shot-cred--mast{position:absolute;inset-block-end:.8rem;inset-inline-end:1.2rem;z-index:3}
-/* The kicker: the tenet's meaning (and its name, where no heading says it) */
-.page-tenets .tn-kicker{display:flex;flex-wrap:wrap;align-items:baseline;gap:.35rem 1rem;margin:0 0 .6rem;font-size:.9375rem;line-height:1.3}
-.page-tenets .tn-kicker-name{font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--green)}
-.page-tenets .tn-band--dark .tn-kicker-name{color:hsl(var(--band-accent))}
-.page-tenets .tn-kicker-desc{color:var(--muted);font-weight:500}
-.page-tenets .tn-band--dark .tn-kicker-desc{color:hsl(var(--on-band-dark)/.62)}
-/* Hero: the eyebrow is the page's h1 (search, seal, listen all key on it); the vision is the show. */
-.page-tenets .tn-hero{min-height:min(88vh,52rem);display:flex;align-items:flex-end;padding-top:clamp(7rem,16vw,11rem)}
-.page-tenets .tn-hero::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,hsl(var(--band-dark)/.15) 0%,hsl(var(--band-dark)/.55) 55%,hsl(var(--band-dark)) 100%)}
-.page-tenets .tn-eyebrow{font-size:.8125rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:hsl(var(--on-band-dark)/.55);margin:0 0 2rem;padding:0;border:0;line-height:1}
-.page-tenets .tn-hero .tn-kicker{margin-bottom:1.25rem}
-.page-tenets .tn-vision{font-size:clamp(2.4rem,6vw,5.2rem);font-weight:800;line-height:1.02;letter-spacing:-.03em;text-wrap:balance;max-width:16ch;margin:0;color:hsl(var(--on-band-dark))}
-.page-tenets .tn-gloss{font-size:clamp(1.1rem,1.8vw,1.5rem);font-weight:400;line-height:1.4;color:hsl(var(--on-band-dark)/.82);margin:1.75rem 0 0;max-width:38ch;text-wrap:balance}
-/* Values: three words, three columns, an icon over each */
-.page-tenets .tn-values .md-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2.5rem;margin:1.5rem 0 0}
-.page-tenets .tn-values .md-col{padding-top:1.1rem;border-top:2px solid var(--green)}
-.page-tenets .tn-col-icon{display:inline-flex;width:2.4rem;height:2.4rem;border-radius:.8em;align-items:center;justify-content:center;background:hsl(var(--primary)/.12);color:var(--green);margin:0 0 .9rem}
-.page-tenets .tn-col-icon svg{width:1.25rem;height:1.25rem}
-.page-tenets .tn-values .md-col h2{font-size:clamp(1.6rem,2.6vw,2.2rem);font-weight:800;letter-spacing:-.02em;margin:0 0 .6rem;color:var(--dark)}
-.page-tenets .tn-values .md-col p{font-size:1.0625rem;line-height:1.55;margin:0}
-.page-tenets .tn-values .md-col p strong{color:var(--dark)}
-/* Mission: the line, then the reason */
-.page-tenets .tn-mission .tn-prose>h2+p{font-size:clamp(1.5rem,3vw,2.4rem);font-weight:800;line-height:1.15;letter-spacing:-.02em;text-wrap:balance;margin:0 0 1.25rem;color:var(--dark)}
-/* Mantra: one line, large, Cinzel */
-.page-tenets .tn-mantra .tn-prose{text-align:center;margin:0 auto;max-width:52rem}
-.page-tenets .tn-mantra .tn-prose>p{max-width:none}
-.page-tenets .tn-mantra .tn-kicker{justify-content:center}
-.page-tenets .tn-mantra blockquote{margin:1rem auto 1.5rem;transform:none;padding:0;background:none;box-shadow:none;font-family:'Cinzel',Georgia,serif;font-size:clamp(1.6rem,3.6vw,3rem);letter-spacing:.04em;line-height:1.25;color:hsl(var(--on-band-dark));max-width:none;text-wrap:balance}
-.page-tenets .tn-mantra p{color:hsl(var(--on-band-dark)/.8)}
-/* Reveal, and the a11y contract */
-.page-tenets .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.16,.84,.3,1),transform .7s cubic-bezier(.16,.84,.3,1)}
-.page-tenets .reveal.visible{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.page-tenets .reveal{opacity:1;transform:none;transition:none}}
-html[data-a11y-motion="reduce"] .page-tenets .reveal{opacity:1;transform:none;transition:none}
-@media (max-width:760px){
-  .page-tenets .tn-band{padding-inline:1.1rem}
-  .page-tenets .tn-hero{min-height:0;padding-top:6rem}
-  .page-tenets .tn-values .md-cols{grid-template-columns:1fr;gap:1.5rem}
-}
 .doc-audio{margin:0 0 .5rem;padding:0}
 .doc-audio audio{width:100%;height:40px;display:block}
 /* An audiogram MP4 is square (1080²) and would swamp the column at full width -
@@ -4848,7 +4812,7 @@ function sitemapLabel(slug: string, hub: Pathway): string {
   return pages.find(p => p.slug === slug)?.title ?? slug;
 }
 
-function footerSitemap(lang: Lang): string {
+function footerSitemap(lang: Lang, compact = false): string {
   // Each link opens with the SAME glyph the docs sidebar gives that page - 
   // SIDEBAR_ICON is the one page→icon mapping, shared, so the footer and the rail
   // can never disagree about what a destination looks like (headings included:
@@ -4869,10 +4833,11 @@ function footerSitemap(lang: Lang): string {
   // element as the fixed top bar (position:fixed; top:0; height:3.75rem; flex),
   // so a second <nav> anywhere on the page is pinned over the real one with its
   // column titles laid out as a nav row. Same landmark semantics, no inheritance.
-  return `<div role="navigation" class="footer-sitemap" aria-label="${esc(t('Sitemap'))}">${cols}</div>`;
+  const body = compact ? `<details class="sitemap-disclosure"><summary>${esc(t('Documentation'))}</summary><div class="sitemap-expanded">${cols}</div></details>` : cols;
+  return `<div role="navigation" class="footer-sitemap" aria-label="${esc(t('Sitemap'))}">${body}</div>`;
 }
 
-const FOOTER = (lang: Lang) => `<footer>${footerSitemap(lang)}<p>Lolly - <a href="${REPO_URL}">${esc(t('Open Source'))}</a> · <a href="${localeHref(lang, 'privacy')}">${esc(t('Privacy Policy'))}</a> · <a href="${localeHref(lang, 'inclusive-design')}">${esc(t('Inclusive Design'))}</a></p><p>${esc(t('Questions? Contact Andy Fitzsimon -'))} <a href="mailto:fitzy@suse.com">fitzy@suse.com</a></p>${FOUNDED_BY}</footer>`;
+const FOOTER = (lang: Lang, compact = false) => `<footer>${footerSitemap(lang, compact)}<p>Lolly - <a href="${REPO_URL}">${esc(t('Open Source'))}</a> · <a href="${localeHref(lang, 'privacy')}">${esc(t('Privacy Policy'))}</a> · <a href="${localeHref(lang, 'inclusive-design')}">${esc(t('Inclusive Design'))}</a></p>${compact ? '' : `<p>${esc(t('Questions? Contact Andy Fitzsimon -'))} <a href="mailto:fitzy@suse.com">fitzy@suse.com</a></p>`}${FOUNDED_BY}</footer>`;
 
 // Docs sidebar for a page, driven by its pathway. Falls back to the builders
 // sidebar for any non-landing page without an explicit pathway.
@@ -5433,6 +5398,7 @@ ${mast ? mast.band : ''}
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(pageTitle)}</title>
 <meta name="description" content="${esc(description)}">
+${page.author ? `<meta name="author" content="${esc(page.author)}">` : ''}
 <link rel="canonical" href="${esc(localeUrl)}">
 ${alternates}${seal}
 <meta property="og:type" content="website">
@@ -5460,7 +5426,7 @@ ${DOCS_CSS_LINK}
 <body class="page-${slugClass}">
 ${buildNav(lang, page.slug, activeHref, isLanding, page.pathway)}
 ${body}
-${FOOTER(lang)}
+${FOOTER(lang, page.slug === 'tenets')}
 ${jump}
 ${DOCS_JS_TAG}
 </body>
@@ -5644,6 +5610,10 @@ async function build() {
     for (const f of art) copyFileSync(resolve(src, f), resolve(outDir, bank, f));
     console.log(`✓  /info/${bank}/ (${art.length} signed ${art.length === 1 ? 'artifact' : 'artifacts'})`);
   }
+  // Native Design exports accompanying the signed SVG previews.
+  for (const file of ['tenets-print.pdf', 'tenets-screen.png', 'tenets-motion.mp4']) {
+    copyFileSync(resolve(__dirname, 'figures', file), resolve(outDir, 'figures', file));
+  }
 
   // Docs narration - mirror the committed artefacts and link them (plan section 4.5).
   // Same mirror-don't-accumulate rule as shots: a withdrawn narration must not
@@ -5746,6 +5716,7 @@ async function build() {
           slug: page.slug,
           path: resolve(localeOutDir, outFile),
           title: t(page.title),
+          ...(page.author ? { author: page.author } : {}),
           // The file that was actually read, repo-relative - not `page.src`
           // re-derived, so the claim names the source this page really came from.
           source: relative(repoRoot, srcPath).split(sep).join('/'),

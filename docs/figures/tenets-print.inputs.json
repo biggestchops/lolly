@@ -1,0 +1,71 @@
+{
+  "width": "480",
+  "height": "640",
+  "background": "#f4f5ee",
+  "boxes": [
+    {
+      "id": "paper",
+      "kind": "box",
+      "x": 0,
+      "y": 0,
+      "w": 480,
+      "h": 640,
+      "bg": "#f4f5ee",
+      "shape": "rect",
+      "radius": 0
+    },
+    {
+      "id": "field",
+      "kind": "box",
+      "x": 28,
+      "y": 28,
+      "w": 424,
+      "h": 492,
+      "bg": "#30ba78",
+      "shape": "rect",
+      "radius": 0
+    },
+    {
+      "id": "ampersand",
+      "kind": "text",
+      "x": 43,
+      "y": 55,
+      "w": 394,
+      "h": 426,
+      "text": "&",
+      "fg": "#0c322c",
+      "bg": "transparent",
+      "font": "SUSE",
+      "weight": "650",
+      "fontSize": 410,
+      "align": "center",
+      "valign": "middle",
+      "pad": 0,
+      "tracking": 0,
+      "lineHeight": 1,
+      "fitText": true
+    },
+    {
+      "id": "rule",
+      "kind": "box",
+      "x": 28,
+      "y": 548,
+      "w": 424,
+      "h": 4,
+      "bg": "#0c322c",
+      "shape": "rect",
+      "radius": 0
+    },
+    {
+      "id": "signature",
+      "kind": "box",
+      "x": 28,
+      "y": 576,
+      "w": 48,
+      "h": 24,
+      "bg": "#30ba78",
+      "shape": "rect",
+      "radius": 0
+    }
+  ]
+}

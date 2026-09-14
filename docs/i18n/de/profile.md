@@ -19,15 +19,15 @@ Alles in einem Profil befindet sich **auf dem Gerät**, in der lokalen Datenbank
 | **Barrierefreiheit** | Vier Komfortschalter - *Bewegung reduzieren*, *Farbige Vorschauen ausblenden*, *Hoher Kontrast*, *Große Schrift* - im Profil gespeichert, sodass sie bei einem Profilexport mitwandern. Siehe [Barrierefreiheit](#accessibility). |
 | **Ihre Arbeit** | Gespeicherte Sitzungen (mit Vorschaubildern) - organisiert in verschachtelten Ordnern unter **[Projekte](/info/using.html)** -, Ihre **Meine Bilder**-Bibliothek und die lokalen Aktivitätsstatistiken, alle diesem Profil zugeordnet. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Der Profil-Bildschirm - Name, Kontakt, ein optionales Porträtfoto und Ihre Einstellungen](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Der Profil-Bildschirm - Name, Kontakt, ein optionales Porträtfoto und Ihre Einstellungen](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Nichts davon ist erforderlich. Ein leeres Profil ist ein vollkommen gutes Profil; Sie füllen nur das aus, was Ihnen Tipparbeit erspart.
 
 Die Seite ist lang, deshalb hat sie eine eigene **Einstellungsleiste** an der Seite - Ihre Angaben, Erscheinungsbild, Barrierefreiheit, Lolly-Instanz, Ihre Aktivität, Speicher, Offline verfügbar, Feature-Flags, Content Credentials - mit einem Feld **Einstellungen durchsuchen** darüber, das die Liste beim Tippen filtert. Jeder Abschnitt ist über `#/profile?focus=<section-id>` verlinkbar, was ihn öffnet und in den sichtbaren Bereich scrollt (`#/profile?focus=storage-section`, `?focus=feature-flags-section` und so weiter), sodass ein Link auf eine einzelne Einstellung statt auf den Seitenanfang zeigen kann.
 
-![Drei Theme-Karten, jede mit Vorschau ihrer eigenen Schrift und Farbe, die aktive markiert](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Drei Theme-Karten, jede mit Vorschau ihrer eigenen Schrift und Farbe, die aktive markiert](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Ein Profil ist ein Kontext, keine bloße Person
 
@@ -35,9 +35,9 @@ Das Wort „Profil" legt eine feste Person nahe, aber in Lolly ist es eigentlich
 
 ### Als Einzelperson
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Die Porträtfoto-Steuerung, leer bis Sie ein Foto hochladen, das dann auf diesem Gerät bleibt](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Die Porträtfoto-Steuerung, leer bis Sie ein Foto hochladen, das dann auf diesem Gerät bleibt](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Als Team
 
@@ -53,7 +53,7 @@ In Lolly ist diese Rolle einfach **ein weiteres Profil, das Sie griffbereit halt
 
 Zu jedem Zeitpunkt hat eine Installation **ein aktives Profil** - die Angaben, die ein Tool gerade sieht. Es gibt keinen In-App-Profilwechsler; stattdessen ist jedes Profil ein **portables Bündel** (eine einzelne `.zip`-Datei, siehe [unten](#moving-a-profile-to-a-new-device)). Das ist bewusst derselbe Mechanismus wie der Wechsel auf ein neues Gerät - ein Profil ist eine Datei, die Sie speichern, kopieren und laden können.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Sauberster Wechsel:** **Profil → Speicher → Alle meine Daten löschen**, dann das Bündel für den Kontext **importieren**, in den Sie wechseln. Sie erstellen jetzt ausschließlich als dieses Profil.
 - <!--i:layers--> **Schichtung:** Ein Import *ohne* vorheriges Löschen **verschmilzt** - das importierte Profil, die Sitzungen und Bilder landen oben auf dem, was schon da ist, ersetzen alles mit demselben Namen und lassen den Rest unberührt. Praktisch, um die gespeicherten Sitzungen eines Teams in Ihr eigenes Setup zu übernehmen; nicht das Richtige, wenn Sie eine saubere Rollentrennung brauchen.
@@ -61,7 +61,7 @@ Zu jedem Zeitpunkt hat eine Installation **ein aktives Profil** - die Angaben, d
 
 Wenn Sie also tatsächlich mehrere Kontexte jonglieren (Sie selbst, Ihr Team, den Eventmanager-Hut), bewahren Sie mehrere Bundles auf und laden das, das Sie gerade brauchen:
 
-![Der Speichermesser, der gespeicherte Sitzungen, Bilder und Cache gegenüber dem, was der Browser tatsächlich meldet, aufschlüsselt](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Der Speichermesser, der gespeicherte Sitzungen, Bilder und Cache gegenüber dem, was der Browser tatsächlich meldet, aufschlüsselt](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Bewahren Sie ein Bundle pro Kontext auf und benennen Sie die Dateien danach, was sie sind (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Die Datei *ist* das Profil.
 
@@ -104,7 +104,7 @@ Hat der Browser keinen dauerhaften Speicher gewährt, weist der Abschnitt darauf
 
 ## Ein Profil auf ein neues Gerät übertragen
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Da ein Profil vollständig lokal ist, besteht die einzige Möglichkeit, es auf eine leere Installation zu bringen - einen neuen Laptop, einen frisch zurückgesetzten Browser, den Rechner eines Kollegen, eine Offline-Maschine - darin, **die Datei mitzunehmen**. Kein Login stellt es für Sie wieder her, und genau das ist der Punkt: Es hat Ihr Gerät von vornherein nie verlassen.
 
@@ -112,7 +112,7 @@ Da ein Profil vollständig lokal ist, besteht die einzige Möglichkeit, es auf e
 - <!--i:upload--> **Import data…** auf der anderen Installation liest diese Datei wieder ein, und Sie machen genau dort weiter, wo Sie aufgehört haben.
 - <!--i:box--> **Export my data & render everything** schreibt dasselbe Backup *plus* eine zweite Zip-Datei, die jede gespeicherte Sitzung zu ihrer fertigen Ausgabedatei rendert, in Ordnern, die Ihre Projekte spiegeln. Ein vollständiges Offline-Archiv sowohl der Quellen als auch der Ergebnisse - und das kann bei vielen Sitzungen groß und langsam werden.
 
-![Die beiden Schaltflächen, die eine ganze Installation umziehen: Meine Daten exportieren schreibt ein Zip, Daten importieren liest es wieder ein](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Die beiden Schaltflächen, die eine ganze Installation umziehen: Meine Daten exportieren schreibt ein Zip, Daten importieren liest es wieder ein](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Das Bundle ist ein einfaches, in sich geschlossenes Zip, das daher auf **jedem** Weg reist - USB, AirDrop, eine Netzwerkfreigabe, E-Mail an sich selbst - und das Ziel kann vollständig offline sein. Jeder Teil ist mit einer Prüfsumme versehen, sodass eine beim Transport beschädigte Datei beim Import erkannt wird, statt halb kaputt wiederhergestellt zu werden. Der Import **führt zusammen** (gleichnamiges Profil/Sitzung/Bild wird überschrieben; alles andere bleibt erhalten), sodass ein bereits genutztes Ziel nie gelöscht wird.
 
@@ -122,13 +122,13 @@ Für den genauen Bündelaufbau, die Versionsrichtlinie und die Integritätsregel
 
 ## Wie Tools Ihr Profil nutzen
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Ein Tool *füllt* stets nur die Profilfelder *vor*, für deren Bindung es ausdrücklich gebaut wurde:
 
 **Das Opt-in (Provenienz).** Wenn Sie ein Asset exportieren, reisen Ihre Angaben optional als **Provenienz** mit - eine Autoren-/Credit-Zeile, die in die Metadaten der Datei (PNG, PDF, SVG, …) eingebettet wird -, sodass ein fertiges Asset sagen kann, wer es erstellt hat. *Das* ist es, was **Meine Angaben zum Erstellen verwenden** steuert: Lassen Sie es aus, trägt der Export weiterhin die „Made with Lolly“-Tool-/Plattform-Zuschreibung, aber es wird keine persönliche Autoren-/Kontaktzeile eingebettet. (Dasselbe Opt-in legt den Autor bei **/pro**-Stapelläufen fest.) (Für Tool-Autoren: siehe [Tools erstellen → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) und [Host-API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Der einzelne Schalter Meine Angaben zum Erstellen verwenden, neben Profil speichern, ausgeschaltet bis Sie ihn aktivieren](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Der einzelne Schalter Meine Angaben zum Erstellen verwenden, neben Profil speichern, ausgeschaltet bis Sie ihn aktivieren](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profil vs. Plattform vs. Fähigkeiten
 
@@ -147,7 +147,7 @@ Der Begriff ist im gesamten Projekt überladen. Keines der beiden ist das persö
 - <!--i:box--> **Content-Profil** - eine Build-Zeit-Konfiguration in `profiles.json`, die eine Reihe von Tool-Paketen an einen Markenkatalog bindet (z. B. `suse`, `lolly-start`). Das wählt ein Betreiber beim Deployment, und auch der `profile`-**URL-/CLI-Parameter** wählt damit zur Exportzeit eine *Farb*-Variante (die ICC-/CMYK-Druckbedingung - siehe [URL-Modus](/info/url-mode.html)). Beide betreffen den *Build/die Ausgabe*, nicht *Sie*. Siehe [Konfiguration](/info/configuration.html).
 - <!--i:seal--> **Identitätsprofil** - die optionale **verifizierte Content-Credentials-Identität**, die Sie registrieren können (ein kurzlebiges Zertifikat, das Ihre E-Mail an Ihre signierten Exporte bindet). Das ist eine Signaturidentität, getrennt von den Name-/Kontaktfeldern des persönlichen Profils, wobei **Meine Angaben zum Erstellen verwenden** steuert, ob eines von beiden eingebettet wird. Siehe [Content Credentials Identität](/info/content-credentials-identity.html).
 
-![Die Karte Verifizierte Identität, Telefonbreite: der Auswähler für die Zertifikatslaufzeit und der Registrierungsschritt darunter - das Identitätsprofil, getrennt von Ihren persönlichen Angaben](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Die Karte Verifizierte Identität, Telefonbreite: der Auswähler für die Zertifikatslaufzeit und der Registrierungsschritt darunter - das Identitätsprofil, getrennt von Ihren persönlichen Angaben](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Datenschutz
 

@@ -2,7 +2,7 @@
 
 Lolly 用户积累的一切都保存**在自己的设备上** - 没有账号,没有云端。数据迁移包就是这些数据移动的方式:在一个安装实例上导出它,通过任何方式携带该文件(USB、AirDrop、发送给自己的邮件、网络共享),再在另一个实例上导入。文件*本身*就是传输媒介。目标设备是否联网都无所谓,因为整个过程从不与任何服务器通信。
 
-![移动整个安装内容的两个按钮:导出我的数据写出一个 zip,导入数据将其读回](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![移动整个安装内容的两个按钮:导出我的数据写出一个 zip,导入数据将其读回](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 本页是格式规范。终端用户的操作说明参见 [使用 Lolly → 迁移到另一台设备](/info/using.html)。实现代码见 [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts),[`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) 固定了往返转换的约定。
 
