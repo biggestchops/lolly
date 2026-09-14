@@ -140,6 +140,37 @@ if (!runner) {
   console.log(`• lighthouse ${lhVersion} via ${runner.label}`);
 }
 
+// --- Is anyone actually serving our app at that URL? --------------------------
+// A Vercel preview URL can sit behind deployment protection, which answers 401 with
+// Vercel's own sign-in page. Lighthouse happily measures THAT: on 2026-09-14 a release
+// was held back by a 0.56 score and a 9.6 s largest paint that belonged to vercel.com's
+// chunks, its Google sign-in script and prefetches of its legal pages, none of it ours.
+// A budget can only mean something over bytes we wrote, so refuse the measurement rather
+// than report it. VERCEL_AUTOMATION_BYPASS_SECRET (Project Settings, Deployment
+// Protection) is the way through: with it set, the URL carries the bypass and the real
+// app is measured.
+const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+if (BYPASS) {
+  target!.searchParams.set('x-vercel-protection-bypass', BYPASS);
+  target!.searchParams.set('x-vercel-set-bypass-cookie', 'true');
+}
+{
+  const probe = await fetch(target!.href, { redirect: 'follow', headers: { accept: 'text/html' } })
+    .catch((e: unknown) => { fail(`could not reach ${target!.href} - ${(e as Error).message}`); });
+  const body = probe.status === 200 ? (await probe.text().catch(() => '')).slice(0, 4096) : '';
+  const gated = probe.status === 401 || probe.status === 403
+    || new URL(probe.url).hostname === 'vercel.com'
+    || /vercel\.com\/sso-api|Authentication Required|_vercel_sso_nonce/i.test(body);
+  if (gated) {
+    fail(`${target!.href} is behind deployment protection (HTTP ${probe.status}${
+      new URL(probe.url).hostname === 'vercel.com' ? ', redirected to vercel.com' : ''
+    }).\n`
+      + '  Lighthouse would measure the sign-in page, not this app, and every number would describe vercel.com.\n'
+      + '  Set VERCEL_AUTOMATION_BYPASS_SECRET (Project Settings, Deployment Protection, Protection Bypass for\n'
+      + '  Automation) in the shipping environment, or measure a URL that is publicly readable.');
+  }
+}
+
 // --- Run it ------------------------------------------------------------------
 const tmp = mkdtempSync(path.join(tmpdir(), 'lolly-first-load-'));
 const reportPath = path.join(tmp, 'lighthouse.json');
