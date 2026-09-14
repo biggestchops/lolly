@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const config = JSON.parse(readFileSync('shells/tauri-desktop/src-tauri/tauri.conf.json', 'utf8'));
 const cli = readFileSync('shells/tauri-desktop/src-tauri/src/cli.rs', 'utf8');
@@ -20,6 +21,15 @@ test('desktop bundle declares the CLI SEA and package resource without duplicati
   assert.match(cli, /root_export::ensure_root/);
   assert.match(cli, /command\.env\("LOLLY_ROOT", root\)/);
   assert.match(config.build.beforeBuildCommand, /build:cli-sidecar/);
+});
+
+test('macOS signing preserves the JIT entitlement required by the bundled Node CLI', () => {
+  assert.equal(config.bundle.macOS.hardenedRuntime ?? true, true);
+  const filename = config.bundle.macOS.entitlements;
+  assert.equal(typeof filename, 'string');
+  const entitlements = readFileSync(resolve('shells/tauri-desktop/src-tauri', filename), 'utf8');
+  assert.match(entitlements, /<key>com\.apple\.security\.cs\.allow-jit<\/key>\s*<true\s*\/>/);
+  assert.doesNotMatch(entitlements, /disable-library-validation|allow-unsigned-executable-memory/);
 });
 
 test('desktop classifier forwards full verbs but reserves native run for rendering', () => {

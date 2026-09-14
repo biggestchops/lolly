@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: MPL-2.0
+name: Flatpak release smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Completed Flatpak build workflow run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Download the built package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          [[ "$BUILD_RUN_ID" =~ ^[0-9]+$ ]]
+          gh run download "$BUILD_RUN_ID" --name Lolly-x86_64.flatpak --dir package
+      - name: Install the native runtime and package
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak xvfb xauth dbus-x11
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive package/Lolly.flatpak
+          flatpak info --user tools.lolly.Desktop
+      - name: Run the bundled CLI and render through WebKit
+        run: |
+          mkdir -p "$RUNNER_TEMP/lolly-smoke"
+          xvfb-run -a dbus-run-session -- flatpak run --user tools.lolly.Desktop list --json > "$RUNNER_TEMP/lolly-smoke/cli-list.json"
+          xvfb-run -a dbus-run-session -- flatpak run --user \
+            --filesystem="$RUNNER_TEMP/lolly-smoke" --env=LOLLY_CLI_TIMEOUT=180 \
+            tools.lolly.Desktop qr-code --url=https://lolly.tools --format=svg \
+            --output="$RUNNER_TEMP/lolly-smoke/qr.svg"
+          test -s "$RUNNER_TEMP/lolly-smoke/qr.svg"
+          grep -q '<svg' "$RUNNER_TEMP/lolly-smoke/qr.svg"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: flatpak-render-evidence
+          path: ${{ runner.temp }}/lolly-smoke/
+          if-no-files-found: error
