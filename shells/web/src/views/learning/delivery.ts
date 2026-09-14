@@ -21,6 +21,10 @@ import {
 import { buildLearningPackage } from '../../../../../packages/learning-player/src/package.ts';
 import { mountModal, type ModalHandle } from '../../components/modal.ts';
 import { resolveLearningBlock } from '../../lib/learning-render.ts';
+import {
+  captureLearningPresentation,
+  freezeLearningPresentation,
+} from '../../lib/learning-presentation.ts';
 import { startJob, cancelJob, type JobHandle } from '../../lib/jobs.ts';
 import { deliverBatchFile } from '../../lib/background-delivery.ts';
 import { getExportPolicy, exportAffordance } from '../../lib/export-policy.ts';
@@ -55,17 +59,25 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
   let step = 0;
   let tone = 'info';
   const snapshot = () => original?.snapshot || ctx.module;
-  const key = () => learningExportKey(snapshot(), ctx.target, ctx.exportSettings);
+  const key = () =>
+    JSON.stringify([
+      learningExportKey(snapshot(), ctx.target, ctx.exportSettings),
+      original ? null : captureLearningPresentation(ctx.root),
+    ]);
   const ready = () => !!checked && checked.key === key();
   const cancel = () => {
     if (job) cancelJob(job.id);
   };
   const invalidate = () => {
     if (original) return;
+    const hadPreparedPackage = !!checked || !!saved || ctx.checking;
     checked = undefined;
     saved = undefined;
     cancel();
-    message = 'The course changed. Check the updated version before downloading.';
+    message = hadPreparedPackage
+      ? 'The course changed. Check the updated version before downloading.'
+      : '';
+    tone = 'info';
     step = Math.min(step, 1);
     paint();
   };
@@ -144,7 +156,8 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
     const draft = structuredClone(snapshot()),
       target = ctx.target,
       settings = { ...ctx.exportSettings };
-    const fingerprint = learningExportKey(draft, target, settings);
+    const presentation = original ? null : captureLearningPresentation(ctx.root);
+    const fingerprint = JSON.stringify([learningExportKey(draft, target, settings), presentation]);
     const releaseId = original?.id || crypto.randomUUID();
     const frozen = original;
     controller = new AbortController();
@@ -184,7 +197,7 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
             Object.entries(unzipSync(bytes)).filter(([path]) => path.startsWith('media/'))
           ),
         };
-      } else
+      } else {
         compiled = await compileLearningModule(
           draft,
           releaseId,
@@ -196,6 +209,8 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
           },
           { throwIfCancelled: () => signal.throwIfAborted() }
         );
+        await freezeLearningPresentation(ctx, compiled, presentation!, hash, signal);
+      }
       signal.throwIfAborted();
       status('Checking package size and integrity...');
       // Yield before compression so Cancel can be handled after the final render.
@@ -238,7 +253,7 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
         const body = modal?.el.querySelector('[data-delivery-body]');
         if (body) body.scrollTop = 0;
         modal?.el
-          .querySelector<HTMLElement>('[data-delivery-save]')
+          .querySelector<HTMLElement>('[data-delivery-save], [data-delivery-download]')
           ?.focus({ preventScroll: true });
       }
       if (!ctx.disposed) ctx.ui.render();
@@ -311,7 +326,7 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
         const body = modal?.el.querySelector('[data-delivery-body]');
         if (body) body.scrollTop = 0;
         modal?.el
-          .querySelector<HTMLElement>('[data-delivery-save]')
+          .querySelector<HTMLElement>('[data-delivery-save], [data-delivery-download]')
           ?.focus({ preventScroll: true });
       }
       if (!ctx.disposed) ctx.ui.render();

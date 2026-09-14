@@ -86,6 +86,7 @@ jobs:
       # nothing here selects it.
       - name: Build desktop .deb
         env:
+          LOLLY_PROFILE: lolly-start
           LOLLY_EMBED_CATALOG: profile
           LOLLY_CATALOG_SIGNING_KEY: ${{ secrets.LOLLY_CATALOG_SIGNING_KEY }}
           VITE_CATALOG_PUBLIC_KEY_JWK: ${{ vars.VITE_CATALOG_PUBLIC_KEY_JWK }}

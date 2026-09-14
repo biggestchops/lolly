@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import type { LearningCtx } from './context.ts';
+import { syncBlockSelection } from './blocks.ts';
 
 export function editOps(ctx: LearningCtx): LearningCtx['edit'] {
   return {
@@ -52,7 +53,8 @@ export async function act(ctx: LearningCtx, action: string, id?: string): Promis
   }
   if (action === 'lesson') {
     ctx.selected = id || '';
-    ctx.ui.render();
+    ctx.selectedBlocks.clear();
+    ctx.ui.render('[data-lesson="title"]');
     return;
   }
   if (action === 'add-lesson') {
@@ -100,6 +102,24 @@ export async function act(ctx: LearningCtx, action: string, id?: string): Promis
     return;
   }
   if (!lesson) return;
+  if (action === 'clear-selection') {
+    ctx.selectedBlocks.clear();
+    syncBlockSelection(ctx);
+    ctx.root.querySelector<HTMLElement>('[data-block-drag]')?.focus();
+    return;
+  }
+  if (action === 'remove-selected')
+    lesson.blocks = lesson.blocks.filter((b) => !ctx.selectedBlocks.has(b.id));
+  if (action === 'duplicate-selected') {
+    const selected = new Set(ctx.selectedBlocks);
+    ctx.selectedBlocks.clear();
+    lesson.blocks = lesson.blocks.flatMap((b) => {
+      if (!selected.has(b.id)) return [b];
+      const copy = { ...structuredClone(b), id: crypto.randomUUID() };
+      ctx.selectedBlocks.add(copy.id);
+      return [b, copy];
+    });
+  }
   if (action === 'add-text')
     lesson.blocks.push({ id: crypto.randomUUID(), kind: 'text', text: '' });
   if (action === 'remove-block') lesson.blocks = lesson.blocks.filter((b) => b.id !== id);
@@ -125,16 +145,20 @@ export async function act(ctx: LearningCtx, action: string, id?: string): Promis
   }
   change(ctx);
   const focus =
-    action === 'add-text'
-      ? '[data-block]:last-child [data-block-field=text]'
-      : action === 'remove-block'
-        ? lesson.blocks.length
-          ? `[data-block]:nth-child(${Math.min(blockIndex + 1, lesson.blocks.length)}) summary`
-          : '[data-action=add-text]'
-        : action === 'remove-lesson'
-          ? ctx.selected
-            ? '[data-action=lesson][aria-current=true]'
-            : '[data-action=add-lesson]'
-          : undefined;
+    action === 'remove-selected'
+      ? '[data-action=add-text]'
+      : action === 'duplicate-selected'
+        ? `[data-block="${CSS.escape([...ctx.selectedBlocks][0] || '')}"] [data-block-drag]`
+        : action === 'add-text'
+          ? '[data-block]:last-child [data-block-field=text]'
+          : action === 'remove-block'
+            ? lesson.blocks.length
+              ? `[data-block]:nth-child(${Math.min(blockIndex + 1, lesson.blocks.length)}) summary`
+              : '[data-action=add-text]'
+            : action === 'remove-lesson'
+              ? ctx.selected
+                ? '[data-action=lesson][aria-current=true]'
+                : '[data-action=add-lesson]'
+              : undefined;
   ctx.ui.render(focus);
 }

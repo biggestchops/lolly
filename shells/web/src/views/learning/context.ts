@@ -7,6 +7,7 @@ import type {
 import type { CompiledLearning } from '../../../../../engine/src/learning/compile.ts';
 import type { LearningRendition } from '../../../../../engine/src/learning/delivery.ts';
 import type { PickerHost } from '../picker.ts';
+import type { ModalHandle } from '../../components/modal.ts';
 
 export interface LearningCtx {
   root: HTMLElement;
@@ -17,6 +18,8 @@ export interface LearningCtx {
   undo: LearningModule[];
   lastEdit: LearningModule;
   selected: string;
+  selectedBlocks: Set<string>;
+  flushTyping(): Promise<void>;
   target: LearningTarget;
   exportSettings: { destination: string; maxMB: number };
   sourceChoices: Record<string, LearningRendition[]>;
@@ -25,10 +28,12 @@ export interface LearningCtx {
   busy: boolean;
   disposed: boolean;
   dirty: boolean;
+  pendingTyping: boolean;
   savedRevision: number;
   saving: Promise<void>;
   previewUrls: string[];
   preview: CompiledLearning | null;
+  previewModal?: ModalHandle<void>;
   ui: { render(focus?: string): void; checks(): void; status(message: string): void };
   edit: { change(): void; addLesson(): void; action(action: string, id?: string): Promise<void> };
   sources: {

@@ -85,6 +85,10 @@ modules:
       - ar x lolly.deb
       - tar -xzf data.tar.gz
       - install -Dm755 usr/bin/lolly-desktop /app/bin/lolly-desktop
+      - install -Dm755 usr/bin/lolly-cli /app/bin/lolly-cli
+      - mkdir -p /app/lib
+      - cp -a usr/lib/Lolly /app/lib/Lolly
+      - test -f /app/lib/Lolly/cli-lib/dist/cli.js
       # 2) Ship a deterministic desktop entry, AppStream metainfo, and icons rather
       #    than fishing them out of the .deb's internal layout (names/paths vary by
       #    Tauri version). flatpak-builder auto-exports the .desktop + metainfo.

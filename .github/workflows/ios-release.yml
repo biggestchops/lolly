@@ -44,6 +44,9 @@ jobs:
   build:
     runs-on: macos-15   # released (non-beta) macOS — the whole point
     timeout-minutes: 75
+    env:
+      LOLLY_PROFILE: lolly-start
+      LOLLY_EMBED_CATALOG: profile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

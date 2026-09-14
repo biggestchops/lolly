@@ -30,6 +30,10 @@ const server = createServer((request, response) => {
         js: 'text/javascript',
         css: 'text/css',
         png: 'image/png',
+        woff2: 'font/woff2',
+        woff: 'font/woff',
+        ttf: 'font/ttf',
+        otf: 'font/otf',
         json: 'application/json',
       } as Record<string, string>
     )[ext] || 'application/octet-stream'
@@ -168,6 +172,16 @@ try {
     );
   });
   await learner.goto(hosted);
+  await learner.locator('main').waitFor();
+  assert.equal(
+    await learner.evaluate(async () => {
+      await document.fonts.ready;
+      return document.fonts.check('16px SUSE');
+    }),
+    true
+  );
+  assert.ok(JSON.parse(strFromU8(files['content.json']!)).presentation.fonts.length);
+
   await learner.getByRole('button', { name: 'Complete lesson and continue', exact: true }).click();
   await learner.getByRole('status').filter({ hasText: 'Progress saved in this browser' }).waitFor();
   await learner.reload();

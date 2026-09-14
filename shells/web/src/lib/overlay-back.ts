@@ -68,10 +68,23 @@ let depth = 0;
  *  count, not a flag: two stacked overlays closed in one tick pop two entries, and
  *  the second popstate can arrive after a NEW overlay has opened. */
 let selfPops = 0;
+let listening = false;
+
+/** A final dialog's deferred back() still needs its popstate accounted for,
+ * even while no overlay is open. Otherwise the next real Back is swallowed. */
+function syncListeners(): void {
+  const needed = openStack.length > 0 || selfPops > 0;
+  if (needed === listening) return;
+  listening = needed;
+  NAV_EVENTS.forEach(ev => {
+    if (needed) window.addEventListener(ev, onNavEvent);
+    else window.removeEventListener(ev, onNavEvent);
+  });
+}
 
 const onNavEvent = (e: Event): void => {
   if (e.type === 'popstate') {
-    if (selfPops) { selfPops -= 1; return; }
+    if (selfPops) { selfPops -= 1; syncListeners(); return; }
     // One Back, the innermost overlay - the rule everywhere else in the shell. The
     // entry it popped was that overlay's own, so the URL is unchanged and main.ts's
     // navigate() resolves the same route signature and returns without re-mounting.
@@ -95,7 +108,8 @@ function consume(entry: StackEntry): void {
     if (entry.seq < depth || location.href !== entry.pushedHref) return;
     depth -= 1;
     selfPops += 1;
-    try { history.back(); } catch { selfPops -= 1; }
+    syncListeners();
+    try { history.back(); } catch { selfPops -= 1; syncListeners(); }
   });
 }
 
@@ -116,7 +130,7 @@ export function registerOverlay(record: OverlayRecord): OverlayEntry {
     entry.pushedHref = location.href;
   } catch { /* history unavailable */ }
   openStack.push(entry);
-  if (openStack.length === 1) NAV_EVENTS.forEach(ev => window.addEventListener(ev, onNavEvent));
+  syncListeners();
 
   let live = true;
   return {
@@ -126,7 +140,7 @@ export function registerOverlay(record: OverlayRecord): OverlayEntry {
       live = false;
       const i = openStack.indexOf(entry);
       if (i >= 0) openStack.splice(i, 1);
-      if (!openStack.length) NAV_EVENTS.forEach(ev => window.removeEventListener(ev, onNavEvent));
+      syncListeners();
       if (entry.owed) consume(entry);
     },
   };

@@ -58,11 +58,24 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   NoDerivatives are recorded and deliberately not interpreted. Lolly never says copyright is
   verified, because no program can check that.
 
-- **Training courses.** A project folder becomes a learning module: ordered lessons with
-  text, images, slides, video, audio and downloadable resources, checked for size and
-  accessibility, then exported as a versioned package for a website or an LMS. Learner
-  progress stays in the learner's browser for a website package, and the LMS records
-  completion for an LMS package. No account is needed to build one.
+- **Create and preview training courses.** Turn a project folder into ordered lessons with
+  text, images, slides, video, audio and downloadable resources. Select content blocks,
+  drag one or several into place with a mouse or touch, or reorder with the keyboard.
+  Duplicate, remove and undo grouped changes; edits save automatically as you work.
+  Preview as learner now opens unfinished drafts, with clear placeholders for missing
+  content, while publishing still checks size, accessibility and completeness.
+
+- **Courses carry your brand.** The course editor uses the app's shared controls and brand
+  tokens. The learner view has a clear lesson outline, progress and comfortable reading
+  layouts across desktop, tablet and phone. Website and LMS packages preserve the course's
+  colours, fonts and font licences with that version, so a later brand change cannot alter
+  an existing delivery. Website progress stays in the learner's browser; an LMS records
+  completion for an LMS package. No account is needed to build a course.
+
+- **Clearer controls on smaller screens.** Utilities favourites keep their icons centred,
+  larger and fully visible, with cards sized to fit tablets and phones. Buttons choose
+  readable text against the active brand colour, and learning controls retain visible
+  keyboard focus and comfortable touch targets.
 
 - **Projects, templates and recovering a download.** The Projects root gained a templates
   tile and a toolbar, saving your own template is a first-class action, and a download that
@@ -219,7 +232,7 @@ carry a PREVIEW watermark for testing until graduated).
     channel - add `[lolly]` with `Server = https://lolli.li/arch/$arch`
     (`SigLevel = Optional TrustAll`) to `/etc/pacman.conf`, then `pacman -Syu lolly-desktop-bin`.
   - **Android**: [`.apk`](https://lolli.li/lolly-latest.apk) (sideload; no store).
-  - **iOS**: 1.0.6 goes to App Store review with this release (1.0.5 was not approved); a sideloadable build exists on request.
+  - **iOS**: availability depends on App Store review; signed build artifacts are prepared separately.
 - **Build from source / self-host** - clone, `npm install`, `npm run dev:web` (Node >=22.18 or
   >=24); a first render takes about 60 seconds ([`docs/make-something.md`](docs/make-something.md)).
   Self-host the built web shell for a team; full operator documentation lives under `docs/`.

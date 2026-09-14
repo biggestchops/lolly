@@ -550,27 +550,10 @@ export function lchTrackGradients(l: number, c: number, h: number): { l: string;
 }
 
 /**
- * Black or white - whichever reads on `hex`. Perceptual luminance threshold.
- *
- * **This is the ONE inversion rule for ink sitting on a colour**, and every surface
- * that flips ink must use it: the dial's output disc, the value pill, the swatch
- * tips, and Colour Lab's big swatch and ramp step labels. There were three
- * different rules before - this luma threshold, a WCAG-ratio winner, and a
- * `>= 4.5 against white` test - and the last two both flip around relative
- * luminance 0.18, far darker than this one. The visible result was ink flipping to
- * black on the pill and the swatch while the disc beside them was still white:
- * `#CF6CA9` (luma 144.6) and `#DD79B6` (157.9) sit either side of THIS threshold
- * but on the same side of the other two. Andy asked for the disc's flip point
- * everywhere, so this is it.
- *
- * Why the luma threshold rather than the WCAG ratio: the ratio's crossover is where
- * the two ratios are numerically equal, which is a contrast-compliance question, not
- * a legibility one - it hands black to almost every mid-tone. 0.299/0.587/0.114 at
- * 150 flips where the eye flips.
- *
- * The implementation lives in brand-vars.ts now (re-exported here unchanged):
- * the app chrome's accent ink is computed with the same rule, and that module
- * is on the boot path where this file's engine-barrel import is off-limits.
+ * One shared ink rule for the dial, value pill, swatches and app chrome.
+ * The implementation in brand-vars.ts selects the higher-contrast black/white
+ * using linear sRGB luminance, including mid-tone accents. Keeping it on the
+ * boot path avoids pulling this component's engine imports into app startup.
  */
 export { contrastText };
 

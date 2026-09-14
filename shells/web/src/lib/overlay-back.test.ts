@@ -115,6 +115,29 @@ test('a closed menu unregisters, and a self-pop closes nothing', async () => {
   assert.deepEqual(closed, ['esc'], 'with the menu off the stack the dialog takes the press again');
 });
 
+test('closing the last overlay consumes its self-pop before a later dialog uses Back', async () => {
+  const first = mountModal('<p>First</p>', { className: 'modal' });
+  first.close();
+  await settle();
+  fire('popstate'); // deferred history.back(), with no overlays open
+  const closed: string[] = [];
+  mountModal('<p>Later</p>', { className: 'modal', onClose: () => closed.push('later') });
+  fire('popstate');
+  assert.deepEqual(closed, ['later'], 'a completed self-pop cannot swallow the next real Back');
+  assert.equal(dialogs(), 0);
+});
+
+test('a replacement dialog survives the previous dialog’s pending self-pop', async () => {
+  const first = mountModal('<p>First</p>', { className: 'modal' });
+  first.close();
+  await settle();
+  mountModal('<p>Replacement</p>', { className: 'modal' });
+  fire('popstate');
+  assert.equal(dialogs(), 1);
+  fire('popstate');
+  assert.equal(dialogs(), 0);
+});
+
 test('a menu on a coarse pointer pushes exactly one entry per open', async () => {
   backs = 0;
   const before = window.history.length;

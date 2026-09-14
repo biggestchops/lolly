@@ -39,9 +39,17 @@ export async function bootLearningPlayer(
     return el;
   };
   const header = make('header');
-  header.append(make('h1', content.title), make('p', content.description));
-  if (content.objectives)
-    header.append(make('h2', 'Learning objectives'), make('p', content.objectives));
+  header.className = 'learning-course-header';
+  const eyebrow = make('p', target === 'preview' ? 'Course preview' : 'Your learning');
+  eyebrow.className = 'learning-eyebrow';
+  header.append(eyebrow, make('h1', content.title));
+  if (content.description) header.append(make('p', content.description));
+  if (content.objectives) {
+    const objectives = make('details');
+    objectives.className = 'learning-objectives';
+    objectives.append(make('summary', 'Learning objectives'), make('p', content.objectives));
+    header.append(objectives);
+  }
   const status = make(
     'p',
     target === 'preview'
@@ -51,10 +59,22 @@ export async function bootLearningPlayer(
         : 'Connecting to your LMS.'
   );
   status.setAttribute('role', 'status');
+  status.className = 'learning-status';
   const layout = make('div');
   layout.className = 'learning-layout';
   const nav = make('nav');
   nav.setAttribute('aria-label', 'Lessons');
+  const sidebar = make('aside');
+  sidebar.className = 'learning-sidebar';
+  const progressPanel = make('div');
+  progressPanel.className = 'learning-progress';
+  const progressLabel = make('strong');
+  const meter = make('progress');
+  meter.setAttribute('aria-label', 'Required lessons completed');
+  progressPanel.append(progressLabel, meter);
+  sidebar.append(progressPanel, nav);
+  const reading = make('div');
+  reading.className = 'learning-reading';
   const lessonView = make('main');
   lessonView.tabIndex = -1;
   const controls = make('footer');
@@ -66,8 +86,9 @@ export async function bootLearningPlayer(
   retry.hidden = true;
   for (const b of [previous, next, finish, exit, retry]) b.type = 'button';
   controls.append(previous, next, finish, exit, retry);
-  layout.append(nav, lessonView);
-  root.append(header, status, layout, controls);
+  reading.append(lessonView, controls, status);
+  layout.append(sidebar, reading);
+  root.append(header, layout);
 
   const encode = () => encodeAttempt(content, state);
   const restore = (raw: string) => {
@@ -77,19 +98,29 @@ export async function bootLearningPlayer(
   const refresh = () => {
     nav.replaceChildren();
     let section = '';
-    for (const lesson of content.lessons) {
+    for (const [lessonIndex, lesson] of content.lessons.entries()) {
       if (lesson.sectionId && section !== lesson.sectionId) {
         section = lesson.sectionId;
         nav.append(make('h2', content.sections.find((s) => s.id === section)?.title || ''));
       }
       if (!lesson.sectionId) section = '';
-      const button = make(
-        'button',
+      const button = make('button');
+      const number = make(
+        'span',
+        state.acknowledged.includes(lesson.id) ? '✓' : String(lessonIndex + 1)
+      );
+      number.className = 'learning-nav-number';
+      number.setAttribute('aria-hidden', 'true');
+      const label = make('span', `${lesson.title}${lesson.required ? '' : ' (optional)'}`);
+      label.className = 'learning-nav-label';
+      button.append(number, label);
+      button.setAttribute(
+        'aria-label',
         `${state.acknowledged.includes(lesson.id) ? '✓ ' : ''}${lesson.title}${lesson.required ? '' : ' (optional)'}`
       );
       button.type = 'button';
       button.setAttribute('aria-current', lesson.id === state.lessonId ? 'step' : 'false');
-      button.disabled = busy || ended;
+      button.disabled = busy;
       button.onclick = () => {
         state = progress(content, state, { kind: 'open', lessonId: lesson.id });
         refresh();
@@ -103,9 +134,28 @@ export async function bootLearningPlayer(
       lessonView.replaceChildren();
       const lesson = content.lessons.find((l) => l.id === state.lessonId);
       if (lesson) {
+        const position = make(
+          'p',
+          `Lesson ${content.lessons.indexOf(lesson) + 1} of ${content.lessons.length}${lesson.required ? '' : ' · Optional'}`
+        );
+        position.className = 'learning-position';
+        lessonView.append(position);
         lessonView.append(make('h2', lesson.title));
+        if (!lesson.blocks.length && target === 'preview') {
+          const empty = make(
+            'p',
+            'This lesson is still empty. Add content in the editor to see it here.'
+          );
+          empty.className = 'learning-placeholder';
+          lessonView.append(empty);
+        }
         for (const block of lesson.blocks) {
           const sectionEl = make('section');
+          if (block.previewIssue && target === 'preview') {
+            const issue = make('p', block.previewIssue);
+            issue.className = 'learning-placeholder';
+            sectionEl.append(issue);
+          }
           if (block.kind === 'text') {
             const text = make('p', block.text);
             text.className = 'learning-text';
@@ -136,6 +186,7 @@ export async function bootLearningPlayer(
               sectionEl.append(media);
             } else {
               const link = make('a', block.description || file.path.split('/').pop());
+              link.className = 'learning-resource';
               link.href = file.path;
               link.download = '';
               sectionEl.append(link);
@@ -154,6 +205,12 @@ export async function bootLearningPlayer(
     }
     const index = content.lessons.findIndex((l) => l.id === state.lessonId);
     const required = content.lessons.filter((l) => l.required);
+    const acknowledged = required.filter((l) => state.acknowledged.includes(l.id)).length;
+    meter.max = Math.max(1, required.length);
+    meter.value = acknowledged;
+    progressLabel.textContent = state.completed
+      ? 'Course completed'
+      : `${acknowledged} of ${required.length} required lessons complete`;
     previous.disabled = busy || ended || index <= 0;
     next.disabled = busy || ended || !tracking || tracking.readOnly;
     finish.disabled =
@@ -165,6 +222,8 @@ export async function bootLearningPlayer(
       !required.length ||
       required.some((l) => !state.acknowledged.includes(l.id));
     exit.disabled = busy || ended || !tracking;
+    next.className = !state.completed && finish.disabled ? 'btn btn--primary' : 'btn';
+    finish.className = !finish.disabled ? 'btn btn--primary' : 'btn';
     next.textContent =
       index === content.lessons.length - 1 ? 'Complete lesson' : 'Complete lesson and continue';
   };
@@ -220,6 +279,7 @@ export async function bootLearningPlayer(
     if (lesson) {
       state = progress(content, state, { kind: 'open', lessonId: lesson.id });
       refresh();
+      lessonView.focus();
       void save();
     }
   };

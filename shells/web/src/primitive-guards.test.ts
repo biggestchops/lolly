@@ -113,13 +113,6 @@ const DIALOG_CREATE_ALLOWED: Record<string, number> = {
   // element; the zoom also fills the viewport with its own dim ground (no ::backdrop box to
   // hit-test) and re-renders the QR at full size. Documented at openQrZoom.
   'components/collab-ceremony.ts': 1,
-  // The learner preview: a full-bleed dialog holding ONE sandboxed iframe that runs the
-  // compiled course exactly as a learner's browser would. mountModal is a centred
-  // content-box whose teardown revokes nothing, and this panel owns a set of blob URLs it
-  // must revoke on close, so its lifecycle is the revoke. It keeps the two things the rule
-  // is actually protecting: `cancel` is handled (Escape closes) and focus returns to the
-  // Preview button. Documented at openPreview.
-  'views/learning/publishing.ts': 1,
 };
 const SHOW_MODAL_ALLOWED: Record<string, number> = {
   'components/modal.ts': 1,  // the primitive itself
@@ -134,9 +127,6 @@ const SHOW_MODAL_ALLOWED: Record<string, number> = {
   // The collab QR-zoom opens the nested full-screen dialog it mints (see DIALOG_CREATE_ALLOWED):
   // mountModal cannot own a nested dialog's Escape, so this one lifecycle is deliberate + local.
   'components/collab-ceremony.ts': 1,
-  // Opens the learner-preview dialog it mints (see DIALOG_CREATE_ALLOWED): one lifecycle,
-  // because closing it has to revoke the preview's blob URLs.
-  'views/learning/publishing.ts': 1,
 };
 
 test('R1 (rec 4): the <dialog> lifecycle is minted only by components/modal.ts (mountModal)', () => {

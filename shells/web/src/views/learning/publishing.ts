@@ -5,11 +5,17 @@ import {
   type CompiledLearning,
 } from '../../../../../engine/src/learning/compile.ts';
 import {
-  learningPlayerCss,
+  learningPlayerStyles,
   learningPlayerJs,
 } from '../../../../../packages/learning-player/src/bundle.ts';
 import { resolveLearningBlock } from '../../lib/learning-render.ts';
 import { deliverBatchFile } from '../../lib/background-delivery.ts';
+import { mountModal } from '../../components/modal.ts';
+import { escape as esc } from '../../utils.ts';
+import {
+  captureLearningPresentation,
+  freezeLearningPresentation,
+} from '../../lib/learning-presentation.ts';
 
 export function publishingOps(ctx: LearningCtx): LearningCtx['publishing'] {
   return {
@@ -25,87 +31,132 @@ export async function sha256(bytes: Uint8Array): Promise<string> {
     .map((n) => n.toString(16).padStart(2, '0'))
     .join('');
 }
-async function prepare(ctx: LearningCtx, releaseId: string): Promise<CompiledLearning> {
-  await ctx.persistence.save();
-  return compileLearningModule(
-    ctx.module,
-    releaseId,
-    (block) => resolveLearningBlock(ctx.host, block),
-    sha256,
-    (message) => ctx.ui.status(message)
-  );
-}
 export function closePreview(ctx: LearningCtx): void {
-  const panel = ctx.root.querySelector<HTMLDialogElement>('.learning-preview');
-  if (panel) {
-    if (panel.open) panel.close();
-    panel.remove();
-    ctx.root.querySelector<HTMLElement>('[data-action=preview]')?.focus({ preventScroll: true });
-  }
+  ctx.previewModal?.close();
+  ctx.previewModal = undefined;
   for (const url of ctx.previewUrls) URL.revokeObjectURL(url);
   ctx.previewUrls = [];
 }
 export async function preview(ctx: LearningCtx): Promise<void> {
+  await ctx.flushTyping();
   ctx.busy = true;
   ctx.ui.render();
+  const controller = new AbortController();
+  const { signal } = controller;
+  const close = document.createElement('button');
+  close.textContent = 'Close preview';
+  close.className = 'btn btn--ghost';
+  close.onclick = () => closePreview(ctx);
+  const heading = document.createElement('header');
+  heading.className = 'learning-preview-header';
+  const label = document.createElement('div');
+  const title = document.createElement('strong');
+  title.textContent = 'Learner preview';
+  const hint = document.createElement('span');
+  hint.textContent = 'Explore your draft. Unfinished content is marked; progress is only a test.';
+  label.append(title, hint);
+  heading.append(label, close);
+  const loading = document.createElement('section');
+  loading.className = 'learning-preview-loading';
+  const loadingTitle = document.createElement('h2');
+  loadingTitle.textContent = 'Opening your course';
+  const progress = document.createElement('progress');
+  progress.setAttribute('aria-label', 'Preparing learner preview');
+  const loadingStatus = document.createElement('p');
+  loadingStatus.setAttribute('role', 'status');
+  loadingStatus.textContent = 'Preparing content…';
+  loading.append(loadingTitle, progress, loadingStatus);
+  const status = (message: string) => {
+    loadingStatus.textContent = message;
+    ctx.ui.status(message);
+  };
+  ctx.previewModal = mountModal('', {
+    className: 'learning-ui learning-preview',
+    ariaLabel: 'Learner preview',
+    onClose: () => {
+      controller.abort();
+      ctx.previewModal = undefined;
+      for (const url of ctx.previewUrls) URL.revokeObjectURL(url);
+      ctx.previewUrls = [];
+      ctx.busy = false;
+      if (!ctx.disposed) {
+        ctx.ui.checks();
+        ctx.root
+          .querySelector<HTMLElement>('[data-action=preview]')
+          ?.focus({ preventScroll: true });
+      }
+    },
+  });
+  ctx.previewModal.el.prepend(heading, loading);
+  close.focus();
   try {
-    const compiled = await prepare(ctx, `preview-${ctx.module.id}`);
+    const presentation = captureLearningPresentation(ctx.root);
+    await ctx.persistence.save();
+    signal.throwIfAborted();
+    const compiled: CompiledLearning = await compileLearningModule(
+      ctx.module,
+      `preview-${crypto.randomUUID()}`,
+      (block) => resolveLearningBlock(ctx.host, block, signal),
+      sha256,
+      status,
+      { preview: true, throwIfCancelled: () => signal.throwIfAborted() }
+    );
+    await freezeLearningPresentation(ctx, compiled, presentation, sha256, signal);
+    signal.throwIfAborted();
     if (ctx.disposed) return;
-    closePreview(ctx);
     ctx.preview = compiled;
     const content = structuredClone(compiled.content);
     const url = (blob: Blob) => {
-      const u = URL.createObjectURL(blob);
-      ctx.previewUrls.push(u);
-      return u;
+      const value = URL.createObjectURL(blob);
+      ctx.previewUrls.push(value);
+      return value;
     };
+    const fileUrl = (path: string, mime: string) =>
+      url(new Blob([compiled.files[path]!.slice().buffer], { type: mime }));
     for (const lesson of content.lessons)
       for (const block of lesson.blocks)
         for (const file of [
           ...(block.files || []),
           ...(block.captionFile ? [block.captionFile] : []),
         ])
-          file.path = url(
-            new Blob([compiled.files[file.path]!.slice().buffer], { type: file.mime })
-          );
-    const panel = document.createElement('dialog');
-    panel.className = 'learning-preview';
-    panel.setAttribute('aria-label', 'Learner preview');
-    panel.addEventListener('cancel', (event) => {
-      event.preventDefault();
-      closePreview(ctx);
-    });
-    const close = document.createElement('button');
-    close.textContent = 'Close preview';
-    close.className = 'btn btn--ghost';
-    close.onclick = () => {
-      closePreview(ctx);
-      ctx.root.querySelector<HTMLButtonElement>('[data-action=preview]')?.focus();
-    };
+          file.path = fileUrl(file.path, file.mime);
+    const fonts = new Map(
+      content.presentation?.fonts.map((font) => [
+        font.file.path,
+        fileUrl(font.file.path, font.file.mime),
+      ])
+    );
     const frame = document.createElement('iframe');
     frame.title = 'Learner preview';
+    frame.hidden = true;
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-downloads');
     const script = url(
       new Blob([learningPlayerJs(content, 'preview')], { type: 'text/javascript' })
     );
-    frame.srcdoc = `<!doctype html><html lang="en"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src blob:; style-src 'unsafe-inline'; img-src blob: data:; media-src blob: data:"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${learningPlayerCss}</style><div id="learning-player"></div><script src="${script}"></script></html>`;
-    const heading = document.createElement('header');
-    heading.className = 'learning-preview-header';
-    const label = document.createElement('div');
-    const title = document.createElement('strong');
-    title.textContent = 'Learner preview';
-    const hint = document.createElement('span');
-    hint.textContent = 'Test the course. Preview progress is separate from learner records.';
-    label.append(title, hint);
-    heading.append(label, close);
-    panel.append(heading, frame);
-    ctx.root.append(panel);
-    panel.showModal();
-    close.focus();
-    ctx.ui.status('Preview ready. Test progress is not sent to an LMS.');
+    frame.onload = () => {
+      if (signal.aborted) return;
+      if (!frame.contentDocument?.querySelector('#learning-player main')) {
+        loading.querySelector('h2')!.textContent = 'Preview could not start';
+        loading.querySelector('progress')?.remove();
+        status('Close preview and try again. Your course is saved on this device.');
+        return;
+      }
+      frame.hidden = false;
+      loading.remove();
+      status('Preview ready. Test progress is not sent to an LMS.');
+    };
+    frame.srcdoc = `<!doctype html><html lang="${esc(content.language)}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src blob:; style-src 'unsafe-inline'; img-src blob: data:; media-src blob: data:; font-src blob:"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${learningPlayerStyles(content, (path) => fonts.get(path)!)}</style></head><body><div id="learning-player"></div><script src="${script}"></script></body></html>`;
+    ctx.previewModal!.el.append(frame);
+  } catch (error) {
+    if (signal.aborted || ctx.disposed) return;
+    loading.querySelector('h2')!.textContent = 'Preview could not open';
+    loading.querySelector('progress')?.remove();
+    status(error instanceof Error ? error.message : 'Close preview and try again.');
   } finally {
-    ctx.busy = false;
-    ctx.ui.checks();
+    if (!signal.aborted) {
+      ctx.busy = false;
+      ctx.ui.checks();
+    }
   }
 }
 export async function build(ctx: LearningCtx): Promise<void> {

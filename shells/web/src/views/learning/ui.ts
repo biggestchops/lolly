@@ -10,6 +10,7 @@ import {
   targetLabel,
 } from '../../lib/learning-ui.ts';
 import { blockExcerpt, blockMarkup } from './shared.ts';
+import { syncBlockSelection } from './blocks.ts';
 
 interface ViewState {
   disclosures: Map<string, boolean>;
@@ -24,6 +25,7 @@ export function uiOps(ctx: LearningCtx): LearningCtx['ui'] {
     render: (focus) => render(ctx, state, focus),
     checks: () => refreshChecks(ctx),
     status: (message) => {
+      if (message === 'Saved on this device' && ctx.pendingTyping) message = 'Saving changes...';
       const el = ctx.root.querySelector('[data-status]');
       if (el) el.textContent = message;
       const retry = ctx.root.querySelector<HTMLButtonElement>('[data-action=retry]');
@@ -43,7 +45,7 @@ function render(ctx: LearningCtx, state: ViewState, focus?: string): void {
   ctx.root.innerHTML = `<div class="learning-ui learning-author">
     <header class="learning-header"><div class="learning-heading"><a href="#/p${ctx.module.projectId ? `/${encodeURIComponent(ctx.module.projectId)}` : ''}">Projects</a><h1>Course editor</h1></div><div class="learning-toolbar">${button('preview', 'Preview as learner', '', { disabled: !ctx.module.lessons.length || ctx.checking })}${button('build', ctx.checking ? 'View export check' : 'Export course', '', { primary: true })}</div></header>
     <div class="learning-course-title">${field('learning-title', 'Course title', ctx.module.title, 'data-module="title" maxlength="500"')}<div class="learning-save"><span role="status" data-status>${esc(status)}</span>${button('undo', 'Undo edit', '', { icon: 'undo', disabled: !ctx.undo.length })}${button('retry', 'Retry save')}</div></div>
-    <details class="learning-settings" data-disclosure="settings" ${open('settings') ? 'open' : ''}><summary>Module details<span>Description, objectives and language</span></summary><div class="learning-settings-body">
+    <details class="learning-settings" data-disclosure="settings" ${open('settings') ? 'open' : ''}><summary>Course details<span>Description, objectives and language</span></summary><div class="learning-settings-body">
       ${field('learning-description', 'Description', ctx.module.description, 'data-module="description"', true)}
       ${field('learning-objectives', 'Learning objectives', ctx.module.objectives, 'data-module="objectives"', true)}
       ${field('learning-language', 'Content language', ctx.module.language, 'data-module="language" maxlength="50" aria-describedby="learning-language-help"')}
@@ -56,8 +58,9 @@ function render(ctx: LearningCtx, state: ViewState, focus?: string): void {
       lesson
         ? `<header class="learning-section-heading"><h2>Lesson ${lessonIndex + 1}</h2><div class="learning-toolbar" role="group" aria-label="Lesson actions">${button('up', 'Move lesson up', '', { icon: 'chevronDown', iconOnly: true, disabled: lessonIndex === 0, className: 'learning-move-up' })}${button('down', 'Move lesson down', '', { icon: 'chevronDown', iconOnly: true, disabled: lessonIndex === ctx.module.lessons.length - 1 })}${button('remove-lesson', 'Remove lesson', '', { icon: 'trash', iconOnly: true, className: 'learning-remove' })}</div></header>
       ${field('learning-lesson-title', 'Lesson title', lesson.title, 'data-lesson="title" maxlength="500"')}
-      <div class="learning-lesson-settings">${field('learning-section', 'Section (optional)', ctx.module.sections.find((s) => s.id === lesson.sectionId)?.title || '', 'data-lesson="section" maxlength="500" list="learning-sections"')}<datalist id="learning-sections">${ctx.module.sections.map((s) => `<option value="${esc(s.title)}"></option>`).join('')}</datalist><label class="learning-check"><input type="checkbox" aria-label="Required for completion" data-lesson="required" ${lesson.required ? 'checked' : ''}><span>Required for completion<small>Learners acknowledge this lesson.</small></span></label></div>
-      <div class="learning-content-heading"><h3>Lesson content <span>${lesson.blocks.length}</span></h3><p class="learning-hint">Open an item to edit it. Use the arrows to change its order.</p></div>
+      <div class="learning-lesson-settings">${field('learning-section', 'Section (optional)', ctx.module.sections.find((s) => s.id === lesson.sectionId)?.title || '', 'data-lesson="section" maxlength="500" list="learning-sections"')}<datalist id="learning-sections">${ctx.module.sections.map((s) => `<option value="${esc(s.title)}"></option>`).join('')}</datalist><label class="learning-check"><input class="field-check" type="checkbox" aria-label="Required for completion" data-lesson="required" ${lesson.required ? 'checked' : ''}><span>Required for completion<small>Learners acknowledge this lesson.</small></span></label></div>
+      <div class="learning-content-heading"><h3>Lesson content <span>${lesson.blocks.length}</span></h3><p class="learning-hint" id="learning-drag-help">Open a block to edit. Drag its handle to reorder, or select several to move together. On a handle, press Space, then use arrow keys and Space to place.</p></div>
+      <div class="learning-block-selection" data-block-selection hidden role="group" aria-label="Selected content"><strong data-block-selection-count></strong><div class="learning-toolbar">${button('duplicate-selected', 'Duplicate selected')}${button('remove-selected', 'Remove selected')}${button('clear-selection', 'Clear selection')}</div></div><p class="visually-hidden" data-block-status aria-live="polite" aria-atomic="true"></p>
       <div class="learning-content-list">${lesson.blocks.map((block, index) => blockMarkup(block, index, lesson.blocks.length, ctx.sourceChoices[block.source?.toolId || ''] || [], open(`block-${block.id}`, !state.knownBlocks.has(block.id) || index === 0))).join('')}</div>
       ${!lesson.blocks.length ? '<div class="learning-empty"><h3>What should this lesson teach?</h3><p>Add an explanation, choose saved designs or media, or attach a reference file.</p></div>' : ''}
       <div class="learning-add-content" role="group" aria-label="Add lesson content">${button('add-text', 'Add text', '', { icon: 'font' })}${button('add-source', 'Add content', '', { icon: 'image' })}${button('add-resource', 'Add resource', '', { icon: 'filePlus' })}<input type="file" data-resource accept=".pdf,.txt" aria-label="Resource file" hidden></div><p class="learning-hint">Resources are PDF or text downloads, up to 50 MB.</p>`
@@ -72,6 +75,7 @@ function render(ctx: LearningCtx, state: ViewState, focus?: string): void {
       el.open = state.disclosures.get(el.dataset.disclosure!)!;
   for (const block of ctx.module.lessons.flatMap((l) => l.blocks)) state.knownBlocks.add(block.id);
   refreshChecks(ctx);
+  syncBlockSelection(ctx);
   ctx.ui.status(status);
   if (restoreFocus) {
     const control = ctx.root.querySelector<HTMLElement>(restoreFocus);

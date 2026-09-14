@@ -21,6 +21,26 @@ try {
   await page.getByLabel('Section (optional)', { exact: true }).fill('Getting started');
   await page.getByRole('button', { name: 'Add text', exact: true }).click();
   await page.getByLabel('Lesson text', { exact: true }).fill('First explanation');
+  await page.waitForFunction(
+    () => document.querySelector('[data-status]')?.textContent === 'Saved on this device'
+  );
+  assert.equal(
+    await page
+      .getByLabel('Lesson text', { exact: true })
+      .evaluate((el) => el === document.activeElement),
+    true,
+    'autosave keeps the creator in the text field'
+  );
+  assert.equal(
+    await page.evaluate(async () => {
+      const path = '/src/bridge/index.ts';
+      const host = await (await import(/* @vite-ignore */ path)).createBridge();
+      const slot = new URLSearchParams(location.hash.split('?')[1]).get('slot');
+      return (await host.state.load(slot)).__learningModule.lessons[0].blocks[0].text;
+    }),
+    'First explanation',
+    'typing is saved without requiring a blur'
+  );
   await page.getByRole('heading', { name: 'Course editor', exact: true }).click();
   assert.match(
     await page.locator('[data-block] > details > summary').innerText(),
@@ -69,6 +89,11 @@ try {
   assert.notEqual(await page.locator('[data-disclosure=settings]').getAttribute('open'), null);
   await page.getByRole('button', { name: 'Export course', exact: true }).click();
   const modal = page.getByRole('dialog', { name: 'Export course', exact: true });
+  assert.equal(
+    await modal.locator('[data-delivery-status]').isVisible(),
+    false,
+    'a first export does not warn about invalidating a package that was never prepared'
+  );
   const footprint = async () =>
     assert.equal(
       await modal.evaluate((el) => {
@@ -217,6 +242,21 @@ try {
     'the author edits an assembled course before exporting'
   );
   assert.equal(await page.locator('.learning-lesson-list > li').count(), 8);
+  const slot = new URLSearchParams(new URL(page.url()).hash.split('?')[1]).get('slot');
+  await page.getByLabel('Course title', { exact: true }).fill('Updated partner onboarding');
+  await page.evaluate(() => {
+    window.location.hash = '#/p';
+  });
+  await page.locator('.projects').waitFor();
+  assert.equal(
+    await page.evaluate(async (slot) => {
+      const path = '/src/bridge/index.ts';
+      const host = await (await import(/* @vite-ignore */ path)).createBridge();
+      return (await host.state.load(slot)).__learningModule.title;
+    }, slot),
+    'Updated partner onboarding',
+    'leaving the route flushes a pending typing save'
+  );
   console.log(
     'Course UI checks passed: editing, focus, reordering, undo, validation, destination changes, search and phone layout.'
   );

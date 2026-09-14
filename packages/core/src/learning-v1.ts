@@ -62,9 +62,27 @@ export interface LearningFile {
 export interface LearningContentBlock extends Omit<LearningBlock, 'source'> {
   files?: LearningFile[];
   captionFile?: LearningFile;
+  /** Draft preview only; never allowed into a deliverable package. */
+  previewIssue?: string;
+}
+/** Resolved presentation captured with a release, independent of later profile edits. */
+export interface LearningPresentation {
+  version: 1;
+  colorScheme: 'light' | 'dark';
+  tokens: Record<string, string>;
+  fonts: Array<{
+    family: string;
+    weight: string;
+    style: string;
+    unicodeRange: string;
+    file: LearningFile;
+  }>;
+  licenses: LearningFile[];
 }
 export interface LearningContent {
   schemaVersion: 1;
+  previewOnly?: true;
+  presentation?: LearningPresentation;
   moduleId: string;
   releaseId: string;
   objectives: string;

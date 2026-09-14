@@ -141,7 +141,7 @@ This is convenient local progress, not an authenticated training record. Keep ex
 | **xAPI / Tin Can** | An experimental ZIP for an LMS with a compatible Tin Can launch. The launch must supply learner identity, registration and temporary tracking authorization. |
 | **cmi5** | An experimental package for a cmi5 LMS. It uses the cmi5 launch and authorization process. Do not assume it is interchangeable with Tin Can. |
 
-Litmos publicly lists SCORM 1.2, SCORM 2004 and xAPI/Tin Can support. That does not establish the settings or exact conventions in SUSE's tenant. Lolly's generated packages have not yet completed acceptance testing there or in partner tenants. [Litmos content support](https://www.litmos.com/platform/content-authoring/).
+Litmos publicly lists SCORM 1.2, SCORM 2004 and xAPI/Tin Can support. That does not establish the settings or exact conventions in a specific LMS tenant. Lolly's generated packages have not yet completed acceptance testing in a partner or customer tenant. [Litmos content support](https://www.litmos.com/platform/content-authoring/).
 
 Ask a partner which format and edition they accept, their package size limit and which learner browsers they support. For example, Moodle documents SCORM 1.2 support and does not provide native SCORM 2004 support. [Moodle SCORM FAQ](https://docs.moodle.org/502/en/SCORM_FAQ).
 

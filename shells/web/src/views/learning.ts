@@ -11,6 +11,7 @@ import { deliveryOps } from './learning/delivery.ts';
 import { publishingOps } from './learning/publishing.ts';
 import { persistenceOps, LEARNING_SLOT_PREFIX } from './learning/store.ts';
 import './learning/styles.css';
+import { mountBlockInteraction } from './learning/blocks.ts';
 
 export async function mountLearning(
   root: HTMLElement & { _cleanup?: () => void; _beforeLeave?: () => Promise<boolean> },
@@ -44,6 +45,8 @@ export async function mountLearning(
       ? data.__learningReleases
       : []) as LearningRelease[],
     selected: module.lessons[0]?.id || '',
+    selectedBlocks: new Set<string>(),
+    flushTyping: async () => {},
     target: ['static', 'scorm12', 'scorm2004', 'tincan', 'cmi5'].includes(
       String(data?.__learningTarget)
     )
@@ -58,6 +61,7 @@ export async function mountLearning(
     busy: false,
     disposed: false,
     dirty: false,
+    pendingTyping: false,
     savedRevision: data ? module.revision : 0,
     saving: Promise.resolve(),
     previewUrls: [],
@@ -83,8 +87,9 @@ export async function mountLearning(
   const click = (event: Event) => {
     const target = (event.target as Element).closest<HTMLElement>('[data-action]');
     if (target)
-      void ctx.edit
-        .action(target.dataset.action!, target.dataset.id)
+      void ctx
+        .flushTyping()
+        .then(() => ctx.edit.action(target.dataset.action!, target.dataset.id))
         .catch((error) =>
           ctx.ui.status(error instanceof Error ? error.message : 'The operation failed.')
         );
@@ -169,15 +174,56 @@ export async function mountLearning(
       ctx.ui.checks();
     }
   };
+  let inputTimer: ReturnType<typeof setTimeout> | undefined;
+  let pendingInput: Event | undefined;
+  const committedValues = new WeakMap<EventTarget, string>();
+  const commit = async (event: Event) => {
+    if (pendingInput?.target === event.target) {
+      clearTimeout(inputTimer);
+      pendingInput = undefined;
+      ctx.pendingTyping = false;
+    }
+    const el = event.target;
+    const textField =
+      el instanceof HTMLTextAreaElement ||
+      (el instanceof HTMLInputElement && el.type !== 'checkbox' && el.type !== 'file');
+    if (textField && committedValues.get(el) === el.value) {
+      if (!ctx.dirty) ctx.ui.status('Saved on this device');
+      return;
+    }
+    await change(event);
+    if (textField) committedValues.set(el, el.value);
+  };
   const onChange = (event: Event) => {
-    void change(event).catch((error) =>
+    void commit(event).catch((error) =>
       ctx.ui.status(error instanceof Error ? error.message : 'The content could not be added.')
     );
   };
+  ctx.flushTyping = async () => {
+    if (pendingInput) await commit(pendingInput);
+  };
+  // Save a pause in typing without replacing the focused field. Blur commits
+  // immediately, and leaving the route flushes the same pending edit.
+  const onInput = (event: Event) => {
+    const el = event.target;
+    if (
+      ctx.busy ||
+      !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) ||
+      el.type === 'checkbox' ||
+      !el.matches('[data-module], [data-lesson], [data-block-field]')
+    )
+      return;
+    clearTimeout(inputTimer);
+    pendingInput = event;
+    ctx.pendingTyping = true;
+    ctx.ui.status('Saving changes...');
+    inputTimer = setTimeout(() => onChange(event), 500);
+  };
   const unload = (event: BeforeUnloadEvent) => {
-    if (ctx.dirty || ctx.busy) event.preventDefault();
+    if (pendingInput || ctx.dirty || ctx.busy) event.preventDefault();
   };
   root._beforeLeave = async () => {
+    if (pendingInput) await commit(pendingInput);
     if (!ctx.dirty && !ctx.busy) return true;
     if (!ctx.busy) {
       try {
@@ -196,13 +242,18 @@ export async function mountLearning(
     return false;
   };
   root.addEventListener('click', click);
+  const cleanupBlocks = mountBlockInteraction(ctx);
+  root.addEventListener('input', onInput);
   root.addEventListener('change', onChange);
   window.addEventListener('beforeunload', unload);
   root._cleanup = () => {
     ctx.disposed = true;
+    clearTimeout(inputTimer);
+    cleanupBlocks();
     ctx.publishing.closePreview();
     ctx.delivery.close();
     root.removeEventListener('click', click);
+    root.removeEventListener('input', onInput);
     root.removeEventListener('change', onChange);
     window.removeEventListener('beforeunload', unload);
   };

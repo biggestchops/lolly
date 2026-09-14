@@ -211,6 +211,12 @@ cargo build \
 install -Dm0755 src-tauri/target/release/lolly-desktop \
     %{buildroot}%{_bindir}/lolly-desktop
 
+# Keep the Node CLI beside the app, with its payload at Tauri's resource path.
+install -Dm0755 src-tauri/bin/lolly-cli-%{_target_cpu}-unknown-linux-gnu \
+    %{buildroot}%{_bindir}/lolly-cli
+mkdir -p %{buildroot}%{_prefix}/lib/Lolly
+cp -a src-tauri/cli-lib %{buildroot}%{_prefix}/lib/Lolly/cli-lib
+
 # Desktop entry and AppStream metainfo. The component id, the .desktop basename and
 # the icon name are all the Tauri identifier (tools.lolly.Desktop) and must stay in
 # agreement or appstream drops the app from the catalog.
@@ -264,6 +270,9 @@ done
 %fdupes %{buildroot}%{_datadir}/icons
 
 %check
+test -x %{buildroot}%{_bindir}/lolly-cli
+test -f %{buildroot}%{_prefix}/lib/Lolly/cli-lib/dist/cli.js
+test -f %{buildroot}%{_prefix}/lib/Lolly/cli-lib/addons/resvgjs.node
 # The binary links a static ONNX Runtime, so it must NOT have picked up a shared one.
 # If this ever fires, ORT_LIB_LOCATION stopped taking effect and the build silently
 # changed linking strategy.
@@ -316,6 +325,8 @@ fi
 %license LICENSE
 %doc README.md
 %{_bindir}/lolly-desktop
+%{_bindir}/lolly-cli
+%{_prefix}/lib/Lolly
 %{_datadir}/applications/tools.lolly.Desktop.desktop
 %{_datadir}/metainfo/tools.lolly.Desktop.metainfo.xml
 %{_datadir}/icons/hicolor/*/apps/tools.lolly.Desktop.png

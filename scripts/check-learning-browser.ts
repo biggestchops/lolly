@@ -74,10 +74,23 @@ try {
   );
   const contents = unzipSync(first);
   assert.ok(contents['imsmanifest.xml']);
-  assert.equal(Object.keys(contents).filter((path) => path.startsWith('media/')).length, 2);
   const content = JSON.parse(strFromU8(contents['content.json']!));
+  assert.equal(
+    content.lessons.flatMap((l: { blocks: Array<{ files?: unknown[] }> }) =>
+      l.blocks.flatMap((b) => b.files || [])
+    ).length,
+    2
+  );
+  assert.ok(content.presentation.fonts.length >= 2, 'brand fonts travel with the course');
+  for (const font of content.presentation.fonts)
+    assert.equal(contents[font.file.path]!.length, font.file.size);
+  assert.ok(content.presentation.licenses.length, 'shipped font licence travels with its bytes');
+  assert.match(strFromU8(contents['player.css']!), /@font-face/);
   assert.ok(!strFromU8(contents['content.json']!).includes('blob:'));
   await page.reload();
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty('--ui-color-action-primary', '#6336b5')
+  );
   await page.locator('[data-disclosure=versions] > summary').click();
   const repeated = await save(
     () => page.getByRole('button', { name: 'Download SCORM 1.2 ZIP', exact: true }).click(),
@@ -97,6 +110,11 @@ try {
   );
   const variantFiles = unzipSync(variant);
   assert.deepEqual(variantFiles['content.json'], contents['content.json']);
+  assert.deepEqual(
+    variantFiles['player.css'],
+    contents['player.css'],
+    'a saved version retains its presentation after the active profile changes'
+  );
   assert.match(strFromU8(variantFiles['imsmanifest.xml']!), /2004 4th Edition/);
   await page.locator('[data-delivery-close]').click();
   await page.getByRole('link', { name: 'Projects', exact: true }).click();

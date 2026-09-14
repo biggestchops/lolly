@@ -43,7 +43,7 @@ export function courseField(
   attributes: string,
   multiline = false
 ): string {
-  return `<div class="learning-field"><label for="${esc(id)}">${esc(label)}</label>${multiline ? `<textarea id="${esc(id)}" ${attributes}>${esc(value)}</textarea>` : `<input id="${esc(id)}" ${attributes} value="${esc(value)}">`}</div>`;
+  return `<div class="learning-field"><label for="${esc(id)}">${esc(label)}</label>${multiline ? `<textarea class="field-input" id="${esc(id)}" ${attributes}>${esc(value)}</textarea>` : `<input class="field-input" id="${esc(id)}" ${attributes} value="${esc(value)}">`}</div>`;
 }
 export function targetLabel(target: string): string {
   return LEARNING_TARGETS.find((t) => t.id === target)?.label || target;

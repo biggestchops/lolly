@@ -381,28 +381,20 @@ export function tokenValueToHex(value: unknown): string | null {
 }
 
 /**
- * Black or white - whichever reads on `hex`. Perceptual luminance threshold.
- *
- * **This is the ONE inversion rule for ink sitting on a colour**, app-wide: the
- * flip point Andy picked from the colour picker's dial disc (the full history
- * lives with the picker surfaces in components/color-field.ts, which re-exports
- * this). It is defined HERE because the chrome accent below is on the boot path
- * and color-field.ts pulls in the engine barrel.
- *
- * The chrome's `--primary-foreground` is COMPUTED with it from the brand
- * primary rather than taken from the authored `on-primary` token: authored
- * pairs kept shipping dark inks on mid-tone accents (SUSE's near-black teal on
- * Jungle green) that sat on the wrong side of the flip point every other
- * surface uses. The authored `on-primary` still reaches tool templates
- * untouched via `--brand-on-primary` (applyBrandVars), so exported pixels
- * never move; the high-contrast accent keeps its own APCA search, which
- * outranks this rule.
+ * Shared chrome ink: choose the higher-contrast black/white using linear sRGB
+ * luminance. This guarantees at least 4.5:1 on an opaque sRGB fill, including
+ * mid greens. Authored artwork still uses --brand-on-primary unchanged;
+ * the high-contrast preference retains its separate APCA search.
  */
 export function contrastText(hex: string): string {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(hex);
   if (!m) return '#000000';
-  const r = parseInt(m[1]!, 16), g = parseInt(m[2]!, 16), b = parseInt(m[3]!, 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#000000' : '#ffffff';
+  const linear = (channel: string) => {
+    const value = parseInt(channel, 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * linear(m[1]!) + 0.7152 * linear(m[2]!) + 0.0722 * linear(m[3]!);
+  return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05) ? '#000000' : '#ffffff';
 }
 
 // ── Warm accent (--brand-warn) ───────────────────────────────────────────────

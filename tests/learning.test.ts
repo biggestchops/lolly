@@ -307,6 +307,17 @@ async function exercisePlayer(source: string, content: LearningContent) {
   await turn();
   assert.equal(values['cmi.core.lesson_status'], 'completed');
   assert.equal(decodeLearningAttempt(content, values['cmi.suspend_data']!).completed, true);
+  const savedAttempt = values['cmi.suspend_data'];
+  const review = dom.window.document.querySelector<HTMLButtonElement>('nav button')!;
+  assert.equal(review.disabled, false, 'completed learners can revisit the course');
+  review.click();
+  await turn();
+  assert.equal(dom.window.document.querySelector('main h2')!.textContent, 'Introduction');
+  assert.equal(
+    values['cmi.suspend_data'],
+    savedAttempt,
+    'reviewing after finish does not write to a terminated LMS session'
+  );
   dom.window.close();
 }
 test('generated learner JavaScript completes required lessons and keeps background saves stable', async () => {
@@ -531,4 +542,76 @@ test('compiler cancellation stops required media without returning a partial pac
     /Cancelled/
   );
   assert.equal(calls, 1);
+});
+
+test('unfinished previews retain every lesson and show unavailable content without weakening exports', async () => {
+  const module = moduleFixture();
+  module.title = '';
+  module.lessons[0]!.blocks.push(
+    { id: 'empty', kind: 'text', text: '' },
+    { id: 'missing', kind: 'image' }
+  );
+  module.lessons[1]!.blocks = [];
+  module.lessons.forEach((lesson) => {
+    lesson.required = false;
+  });
+  const preview = await compileLearningModule(
+    module,
+    'preview',
+    async () => {
+      throw new Error('Missing source image');
+    },
+    hash,
+    undefined,
+    { preview: true }
+  );
+  assert.equal(preview.content.lessons.length, 3);
+  assert.equal(preview.content.lessons[0]!.blocks.length, 3);
+  assert.match(preview.content.lessons[0]!.blocks[1]!.previewIssue!, /empty/);
+  assert.match(preview.content.lessons[0]!.blocks[2]!.previewIssue!, /Missing source/);
+  assert.throws(() => buildLearningPackage(preview, 'static'), /Draft previews cannot be exported/);
+  await assert.rejects(compile(module), /title|lesson/);
+});
+
+test('saved presentation includes validated local fonts and remains deterministic across targets', async () => {
+  const compiled = await compile();
+  const bytes = new Uint8Array([119, 79, 70, 50, 1, 2]);
+  const digest = await hash(bytes);
+  const path = `media/${digest}.woff2`;
+  compiled.files[path] = bytes;
+  compiled.content.presentation = {
+    version: 1,
+    colorScheme: 'dark',
+    tokens: {
+      '--ui-color-action-primary': 'rgb(48, 186, 120)',
+      '--ui-type-ui-family': 'Course Sans, sans-serif',
+    },
+    fonts: [
+      {
+        family: 'Course Sans',
+        weight: '100 900',
+        style: 'normal',
+        unicodeRange: '',
+        file: { path, size: bytes.length, hash: digest, mime: 'font/woff2' },
+      },
+    ],
+    licenses: [],
+  };
+  const first = buildLearningPackage(compiled, 'static');
+  assert.deepEqual(first, buildLearningPackage(compiled, 'static'));
+  const files = unzipSync(first);
+  assert.deepEqual(files[path], bytes);
+  assert.match(strFromU8(files['player.css']!), /@font-face/);
+  const variant = unzipSync(buildLearningPackage(compiled, 'scorm12'));
+  assert.deepEqual(files['content.json'], variant['content.json']);
+  assert.deepEqual(files['player.css'], variant['player.css']);
+  compiled.content.presentation.tokens['--ui-color-action-primary'] =
+    'red;}body{background:url(https://invalid.test)';
+  assert.throws(() => buildLearningPackage(compiled, 'static'), /Invalid course presentation/);
+  compiled.content.presentation.tokens['--ui-color-action-primary'] = '#30ba78';
+  compiled.content.presentation.fonts[0]!.file.path = 'https://invalid.test/font.woff2';
+  assert.throws(() => buildLearningPackage(compiled, 'static'));
+  compiled.content.presentation.fonts[0]!.file.path = path;
+  delete compiled.files[path];
+  assert.throws(() => buildLearningPackage(compiled, 'static'), /Missing or changed presentation/);
 });

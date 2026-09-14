@@ -923,16 +923,11 @@ test('the third surface’s picker survives its own change - the card is scored,
 });
 
 test('one inversion rule: the swatch, the ramp labels and the picker flip together', async () => {
-  // Andy's report: he liked the dial disc's flip point and wanted the value pill and
-  // the big swatch - which flipped a good deal earlier - to match. There were three
-  // rules: contrastText's luma threshold (the disc), a WCAG-ratio winner (the pill),
-  // and `>= 4.5 against white` (the swatch and the ramp labels). The last two both
-  // cross around relative luminance 0.18, far darker than the first.
-  //
-  // These two pinks sit either side of contrastText's threshold (luma 144.6 and
-  // 157.9 against a 150 cut) but on the SAME side of the other two - so if any
-  // surface reverts to an old rule, one of these two mounts disagrees.
-  for (const [hex, want] of [['%23cf6ca9', '#ffffff'], ['%23dd79b6', '#000000']] as const) {
+  // Shared chrome now chooses the black/white ink with the stronger WCAG contrast.
+  // Include a dark colour and the pink and green that the old luma cut misclassified.
+  for (const [hex, want] of [
+    ['%234b2458', '#ffffff'], ['%23cf6ca9', '#000000'], ['%2330ba78', '#000000'],
+  ] as const) {
     await mount('?c=' + hex);
     const subject = decodeURIComponent(hex);
     assert.equal(contrastText(subject), want, `the fixture is on the right side: ${subject}`);

@@ -7,7 +7,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hexToHslTriple, chromeBrandCss, brandThemeCss, brandFontStack, brandRadiusValue, brandSpaceValue, brandMarkHue, brandMarkPrimary, lollyMarkCss, highContrastAccent, apcaLcAbs, HC_TARGET_LC, uiTokenCssValue } from './brand-vars.ts';
+import { hexToHslTriple, chromeBrandCss, brandThemeCss, brandFontStack, brandRadiusValue, brandSpaceValue, brandMarkHue, brandMarkPrimary, lollyMarkCss, highContrastAccent, apcaLcAbs, HC_TARGET_LC, uiTokenCssValue, contrastText } from './brand-vars.ts';
 import { apcaContrast } from '../../../engine/src/color-tools.ts';
 import { hexToOklch } from '../../../engine/src/brand-derive.ts';
 
@@ -257,7 +257,7 @@ test('high contrast forces an explicit ink when the theme ink is unknowable', ()
 test('the ungated chrome CSS is pinned, with computed accent inks', () => {
   // The gated high-contrast blocks are appended last; everything above them is
   // the no-pref stylesheet, pinned here for the SUSE palette. The accent inks
-  // are contrastText's picks (white on the dark teal AND on Jungle green) - 
+  // are contrastText's picks (white on dark teal, black on Jungle green) -
   // the authored on-primary pair is deliberately not consulted.
   const css = chromeBrandCss(
     { primary: '#0c322c', onPrimary: '#f7f7f5' },
@@ -273,7 +273,7 @@ test('the ungated chrome CSS is pinned, with computed accent inks', () => {
     '[data-theme="dark"] {',
     '  --primary: 151.3 59% 45.9%;',
     '  --ring: 151.3 59% 45.9%;',
-    '  --primary-foreground: 0 0% 100%;',
+    '  --primary-foreground: 0 0% 0%;',
     '}',
     brandThemeCss('#0c322c', '#30ba78'),
     lollyMarkCss('#0c322c', '#30ba78'),
@@ -305,4 +305,9 @@ test('lollyMarkCss emits the brand-hued glyph/text tone + coin glow, or nothing 
   // No brand hue → nothing, so the CSS green fallbacks stand.
   assert.equal(lollyMarkCss('#1c1c22', '#f7f7f5'), '');
   assert.equal(lollyMarkCss(null, null), '');
+});
+
+test('chrome ink stays readable on mid-tone brand accents', () => {
+  for (const [fill, ink] of [['#30ba78', '#000000'], ['#0c322c', '#ffffff'], ['#6336b5', '#ffffff'], ['#808080', '#000000']])
+    assert.equal(contrastText(fill!), ink);
 });

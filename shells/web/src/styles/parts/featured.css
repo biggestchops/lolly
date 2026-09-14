@@ -341,13 +341,21 @@
 /* The pill IS the title on these tiles, so no second caption is needed below. */
 .ftile--icon .ftile-meta { display: none; }
 
-/* Cover Flow: the covers are a third the size of the Gallery hero tiles, so the
-   lockup scales down with them (same two knobs). The pill stays visible on every
-   cover, unlike .ftile-meta - it's artwork here, and a cover whose art is an
-   unlabelled glyph is the blank card this whole treatment exists to avoid. */
+/* Cover Flow keeps the title visible on every cover. Let the icon shrink into
+   the space above it when the cover is short or the title wraps. */
 .featured--coverflow .ftile--icon {
-  --fic-size: clamp(64px, 12vh, 112px);
+  --fic-size: calc(clamp(112px, 18vh, 160px) * var(--a11y-fs));
   --fic-stroke: .72em;
+}
+.featured--coverflow .ftile--icon .ftile-iconfill {
+  flex: 0 1 var(--fic-size);
+  width: var(--fic-size);
+  max-width: 72%;
+  min-height: 0;
+}
+.featured--coverflow .ftile--icon .ftile-iconfill svg {
+  width: 100%;
+  height: 100%;
 }
 .featured--coverflow .ftile--icon .ftile-iconname { font-size: calc(clamp(12px, 1.5vh, 15px) * var(--a11y-fs)); }
 
@@ -647,9 +655,14 @@
 /* The dots row sits on the cover's bottom edge, which the button now owns - lift it
    clear so the two never overlap. */
 .featured--coverflow .ftile-dots { padding-bottom: calc(var(--cf-go-h) + 10px); }
-.featured--coverflow .ftile--icon .ftile-stage { padding-bottom: calc(var(--cf-go-h) + 16px); }
+.featured--coverflow .ftile--icon .ftile-stage {
+  gap: clamp(10px, 1.5vh, 16px);
+  padding: 16px 12px 12px;
+}
+/* The empty dots row already reserves Open's space. Reserving it again in the
+   stage pushed the icon above the card's clipped top edge on short viewports. */
+.featured--coverflow .ftile--icon .ftile-iconname { flex: none; }
 .featured--coverflow .ftile-name { overflow-wrap: anywhere; }
-.featured--coverflow .ftile--icon { --fic-size: min(30vw, calc(clamp(64px, 12vh, 112px) * var(--a11y-fs))); }
 
 /* ── Cover Flow on a phone (see the order note above the base rules) ──────────
    TWO things happen here, and both need to out-rank the base rules above.
@@ -705,6 +718,15 @@
     background: #000c;
   }
 }
+
+/* Utilities have an icon and title instead of preview artwork. Keep their
+   frames compact across the tablet breakpoint and cap both axes on phones,
+   including when larger text expands the preferred cover width. */
+.utilities-view .featured--coverflow {
+  --cf-cover-w: min(86vw, calc(clamp(240px, 32vw, 320px) * var(--a11y-fs)));
+  --cf-cover-h: clamp(260px, var(--cf-cover-w), 320px);
+}
+.utilities-view .featured--coverflow .ftile { width: var(--cf-cover-w); }
 
 /* ── Mobile drag handle ──────────────────────────────────────────────────────
    Matches the tool editor's sheet grip. A belt-and-braces explicit "grab here to

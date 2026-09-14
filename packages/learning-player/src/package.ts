@@ -6,7 +6,7 @@ import { learningPath } from '../../../engine/src/learning/module.ts';
 import { learningHandoff } from '../../../engine/src/learning/preflight.ts';
 import { scormManifest } from '../../../engine/src/scorm.ts';
 import {
-  learningPlayerCss,
+  learningPlayerStyles,
   learningPlayerHtml,
   learningPlayerJs,
   LEARNING_PLAYER_VERSION,
@@ -26,6 +26,8 @@ export function buildLearningPackage(
   if (!['static', 'scorm12', 'scorm2004', 'tincan', 'cmi5'].includes(target))
     throw new Error('Unsupported learning package target.');
   const { content } = compiled;
+  if (content.previewOnly || content.lessons.some((l) => l.blocks.some((b) => b.previewIssue)))
+    throw new Error('Draft previews cannot be exported. Run the course export check.');
   const files: Record<string, Uint8Array> = {};
   for (const [path, bytes] of Object.entries(compiled.files)) {
     learningPath(path);
@@ -41,8 +43,14 @@ export function buildLearningPackage(
         if (!files[learningPath(file.path)] || files[file.path]!.length !== file.size)
           throw new Error(`Missing or changed package file: ${file.path}`);
       }
+  for (const file of [
+    ...(content.presentation?.fonts.map((f) => f.file) || []),
+    ...(content.presentation?.licenses || []),
+  ])
+    if (!files[learningPath(file.path)] || files[file.path]!.length !== file.size)
+      throw new Error(`Missing or changed presentation file: ${file.path}`);
   files['index.html'] = strToU8(learningPlayerHtml(content.title, content.language));
-  files['player.css'] = strToU8(learningPlayerCss);
+  files['player.css'] = strToU8(learningPlayerStyles(content));
   files['player.js'] = strToU8(learningPlayerJs(content, target));
   files['content.json'] = strToU8(JSON.stringify(content));
   files['release.json'] = strToU8(
