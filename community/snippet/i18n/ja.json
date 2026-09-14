@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "ウィンドウ装飾",
   "inputs.blinkCursor.label": "点滅カーソル",
   "inputs.blinkCursor.help": "画面上でコードの後ろに表示される、ターミナル風の点滅カーソルです。オフにすると、書き出し画像はすっきりした状態を保てます。",
-  "inputs.scale.label": "サイズ"
+  "inputs.scale.label": "サイズ",
+  "inputs.scale.section": "テキスト",
+  "inputs.lineHeight.section": "テキスト",
+  "inputs.lineNumbers.section": "テキスト",
+  "inputs.blinkCursor.section": "テキスト",
+  "inputs.fileName.section": "タイトルバー",
+  "inputs.titleScale.section": "タイトルバー",
+  "inputs.titleIcon.section": "タイトルバー",
+  "inputs.iconScale.section": "タイトルバー",
+  "inputs.windowStyle.section": "タイトルバー",
+  "inputs.showWindow.section": "タイトルバー",
+  "inputs.theme.section": "ルック",
+  "inputs.shadow.section": "ルック",
+  "inputs.calloutMode.section": "注釈",
+  "inputs.calloutPrefix.section": "注釈",
+  "inputs.calloutFont.section": "注釈"
 }

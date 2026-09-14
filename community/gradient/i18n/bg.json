@@ -60,5 +60,18 @@
   "inputs.distance.help": "Колко далеч се отклоняват цветните точки от зададената им позиция. 100% е стандартният размер на орбитата; 0% ги замразява на място.",
   "inputs.speed.label": "Скорост на дрейфа",
   "inputs.speed.section": "Текстура и движение",
-  "inputs.speed.help": "Секунди за един цикъл на дрейфа - по-високата стойност е по-бавна. Видео експортите записват един цикъл, когато кадровият бюджет позволява (дългите цикли се съкращават при 60 fps)."
+  "inputs.speed.help": "Секунди за един цикъл на дрейфа - по-високата стойност е по-бавна. Видео експортите записват един цикъл, когато кадровият бюджет позволява (дългите цикли се съкращават при 60 fps).",
+  "inputs.count.section": "Цвят",
+  "inputs.color1.section": "Цвят",
+  "inputs.pos1.section": "Цвят",
+  "inputs.color2.section": "Цвят",
+  "inputs.pos2.section": "Цвят",
+  "inputs.color3.section": "Цвят",
+  "inputs.pos3.section": "Цвят",
+  "inputs.color4.section": "Цвят",
+  "inputs.pos4.section": "Цвят",
+  "inputs.color5.section": "Цвят",
+  "inputs.pos5.section": "Цвят",
+  "inputs.color6.section": "Цвят",
+  "inputs.pos6.section": "Цвят"
 }

@@ -1,4 +1,13 @@
 {
   "name": "Arkusz do druku",
-  "description": "Rozmieść jeden projekt w układzie n-up na arkuszu A4, Letter lub A3, ze znacznikami cięcia na marginesie."
+  "description": "Rozmieść jeden projekt w układzie n-up na arkuszu A4, Letter lub A3, ze znacznikami cięcia na marginesie.",
+  "inputs.fill.section": "Arkusz",
+  "inputs.pages.section": "Arkusz",
+  "inputs.sheet.section": "Arkusz",
+  "inputs.rows.section": "Układ",
+  "inputs.cols.section": "Układ",
+  "inputs.gap.section": "Układ",
+  "inputs.margin.section": "Układ",
+  "inputs.ticks.section": "Wyjście",
+  "inputs.tickShape.section": "Wyjście"
 }

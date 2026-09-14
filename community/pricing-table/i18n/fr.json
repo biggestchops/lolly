@@ -1,4 +1,12 @@
 {
   "name": "Tarifs",
-  "description": "Les formules en colonnes, les fonctionnalités en lignes, des coches et des croix. Une formule est mise en avant comme recommandée."
+  "description": "Les formules en colonnes, les fonctionnalités en lignes, des coches et des croix. Une formule est mise en avant comme recommandée.",
+  "inputs.heading.section": "Texte",
+  "inputs.subheading.section": "Texte",
+  "inputs.cta.section": "Texte",
+  "inputs.highlight.section": "Mise en avant",
+  "inputs.highlightLabel.section": "Mise en avant",
+  "inputs.background.section": "Style",
+  "inputs.accent.section": "Style",
+  "inputs.layout.section": "Style"
 }

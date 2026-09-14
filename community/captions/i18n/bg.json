@@ -1,4 +1,13 @@
 {
   "name": "Субтитри",
-  "description": "Субтитри за клип - транскрибирай го на устройството или добави SRT/VTT файл, оформи репликите и експортирай кадри с вградени субтитри, плюс чисти .srt и .vtt файлове."
+  "description": "Субтитри за клип - транскрибирай го на устройството или добави SRT/VTT файл, оформи репликите и експортирай кадри с вградени субтитри, плюс чисти .srt и .vtt файлове.",
+  "inputs.style.section": "Надписи",
+  "inputs.position.section": "Надписи",
+  "inputs.fontSize.section": "Надписи",
+  "inputs.color.section": "Надписи",
+  "inputs.background.section": "Надписи",
+  "inputs.maxLines.section": "Надписи",
+  "inputs.showTimecodes.section": "Надписи",
+  "inputs.burnIn.section": "Изход",
+  "inputs.time.section": "Време"
 }

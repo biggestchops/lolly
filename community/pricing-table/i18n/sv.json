@@ -1,4 +1,12 @@
 {
   "name": "Prissättning",
-  "description": "Planer som kolumner, funktioner som rader, bockar och kryss, och en plan som markeras som den rekommenderade."
+  "description": "Planer som kolumner, funktioner som rader, bockar och kryss, och en plan som markeras som den rekommenderade.",
+  "inputs.heading.section": "Text",
+  "inputs.subheading.section": "Text",
+  "inputs.cta.section": "Text",
+  "inputs.highlight.section": "Framhävning",
+  "inputs.highlightLabel.section": "Framhävning",
+  "inputs.background.section": "Utseende",
+  "inputs.accent.section": "Utseende",
+  "inputs.layout.section": "Utseende"
 }

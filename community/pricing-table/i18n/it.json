@@ -1,4 +1,12 @@
 {
   "name": "Prezzi",
-  "description": "Piani in colonna, funzionalità in riga, segni di spunta e crocette, e un piano evidenziato come consigliato."
+  "description": "Piani in colonna, funzionalità in riga, segni di spunta e crocette, e un piano evidenziato come consigliato.",
+  "inputs.heading.section": "Testo",
+  "inputs.subheading.section": "Testo",
+  "inputs.cta.section": "Testo",
+  "inputs.highlight.section": "In evidenza",
+  "inputs.highlightLabel.section": "In evidenza",
+  "inputs.background.section": "Aspetto",
+  "inputs.accent.section": "Aspetto",
+  "inputs.layout.section": "Aspetto"
 }

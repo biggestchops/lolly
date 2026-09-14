@@ -60,5 +60,18 @@
   "inputs.distance.help": "Hoe ver de kleurpunten van hun ingestelde positie wegdrijven. 100% is de standaard baangrootte; bij 0% blijven ze vast op hun plek.",
   "inputs.speed.label": "Deiningssnelheid",
   "inputs.speed.section": "Textuur & beweging",
-  "inputs.speed.help": "Seconden per deiningslus - hoe hoger, hoe langzamer. Video-exports leggen één lus vast als het framebudget dat toelaat (lange lussen worden bij 60 fps ingekort)."
+  "inputs.speed.help": "Seconden per deiningslus - hoe hoger, hoe langzamer. Video-exports leggen één lus vast als het framebudget dat toelaat (lange lussen worden bij 60 fps ingekort).",
+  "inputs.count.section": "Kleur",
+  "inputs.color1.section": "Kleur",
+  "inputs.pos1.section": "Kleur",
+  "inputs.color2.section": "Kleur",
+  "inputs.pos2.section": "Kleur",
+  "inputs.color3.section": "Kleur",
+  "inputs.pos3.section": "Kleur",
+  "inputs.color4.section": "Kleur",
+  "inputs.pos4.section": "Kleur",
+  "inputs.color5.section": "Kleur",
+  "inputs.pos5.section": "Kleur",
+  "inputs.color6.section": "Kleur",
+  "inputs.pos6.section": "Kleur"
 }

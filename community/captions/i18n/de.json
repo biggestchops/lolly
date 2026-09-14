@@ -1,4 +1,13 @@
 {
   "name": "Untertitel",
-  "description": "Untertitel für einen Clip - transkribieren Sie ihn auf dem Gerät oder fügen Sie eine SRT- oder VTT-Datei ein, gestalten Sie die Zeilen und exportieren Sie Bilder mit eingebrannten Untertiteln sowie saubere .srt- und .vtt-Begleitdateien."
+  "description": "Untertitel für einen Clip - transkribieren Sie ihn auf dem Gerät oder fügen Sie eine SRT- oder VTT-Datei ein, gestalten Sie die Zeilen und exportieren Sie Bilder mit eingebrannten Untertiteln sowie saubere .srt- und .vtt-Begleitdateien.",
+  "inputs.style.section": "Untertitel",
+  "inputs.position.section": "Untertitel",
+  "inputs.fontSize.section": "Untertitel",
+  "inputs.color.section": "Untertitel",
+  "inputs.background.section": "Untertitel",
+  "inputs.maxLines.section": "Untertitel",
+  "inputs.showTimecodes.section": "Untertitel",
+  "inputs.burnIn.section": "Ausgabe",
+  "inputs.time.section": "Zeitsteuerung"
 }

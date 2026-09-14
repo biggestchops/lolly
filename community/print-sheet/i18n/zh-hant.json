@@ -1,4 +1,13 @@
 {
   "name": "列印拼版",
-  "description": "將同一份作品以 n-up 方式重複排列於 A4、Letter 或 A3 紙張上，邊界處印有裁切線。"
+  "description": "將同一份作品以 n-up 方式重複排列於 A4、Letter 或 A3 紙張上，邊界處印有裁切線。",
+  "inputs.fill.section": "紙張",
+  "inputs.pages.section": "紙張",
+  "inputs.sheet.section": "紙張",
+  "inputs.rows.section": "版面",
+  "inputs.cols.section": "版面",
+  "inputs.gap.section": "版面",
+  "inputs.margin.section": "版面",
+  "inputs.ticks.section": "輸出",
+  "inputs.tickShape.section": "輸出"
 }

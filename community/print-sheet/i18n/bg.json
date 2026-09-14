@@ -1,4 +1,13 @@
 {
   "name": "Печатен лист",
-  "description": "Подреди едно изделие в няколко копия на един лист A4, Letter или A3, с маркери за рязане в полето."
+  "description": "Подреди едно изделие в няколко копия на един лист A4, Letter или A3, с маркери за рязане в полето.",
+  "inputs.fill.section": "Лист",
+  "inputs.pages.section": "Лист",
+  "inputs.sheet.section": "Лист",
+  "inputs.rows.section": "Оформление",
+  "inputs.cols.section": "Оформление",
+  "inputs.gap.section": "Оформление",
+  "inputs.margin.section": "Оформление",
+  "inputs.ticks.section": "Изход",
+  "inputs.tickShape.section": "Изход"
 }

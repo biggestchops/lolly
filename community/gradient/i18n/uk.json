@@ -60,5 +60,18 @@
   "inputs.distance.section": "Текстура й рух",
   "inputs.speed.label": "Швидкість плавання",
   "inputs.speed.help": "Секунд на цикл дрейфу - вище значення означає повільніше. Відео-експорт фіксує один цикл, де це дозволяє бюджет кадрів (довгі цикли скорочуються при 60 fps).",
-  "inputs.speed.section": "Текстура й рух"
+  "inputs.speed.section": "Текстура й рух",
+  "inputs.count.section": "Колір",
+  "inputs.color1.section": "Колір",
+  "inputs.pos1.section": "Колір",
+  "inputs.color2.section": "Колір",
+  "inputs.pos2.section": "Колір",
+  "inputs.color3.section": "Колір",
+  "inputs.pos3.section": "Колір",
+  "inputs.color4.section": "Колір",
+  "inputs.pos4.section": "Колір",
+  "inputs.color5.section": "Колір",
+  "inputs.pos5.section": "Колір",
+  "inputs.color6.section": "Колір",
+  "inputs.pos6.section": "Колір"
 }

@@ -417,3 +417,19 @@ test('the shipped set travels into the rights record as its own declaration, and
   assert.equal(treated.uses[0]!.classification, 'adaptation');
   assert.match(treated.plan.required[0]!.credit, /Recoloured every paint with emoji-treatment-v1 in snap mode\.$/);
 });
+
+test('reverting picker artwork preserves the canvas as the tracked render', async () => {
+  const { host } = hostDouble(await catalogEmoji());
+  const runtime = await createRuntime(toolDouble(), host);
+  await runtime.setEmojiStyle(await starterStyle());
+  const view = page(runtime.getHydrated());
+  await runtime.applyEmojiToDom(view.canvas);
+  const chrome = view.canvas.ownerDocument.createElement('span');
+  chrome.textContent = GRIN;
+  await runtime.applyEmojiToDom(chrome, { track: false, idScope: 'p' });
+  await runtime.revertEmojiDom(chrome);
+  await runtime.setEmojiStyle(null);
+  assert.ok(view.canvas.querySelector('.lolly-emoji--unset'));
+  assert.equal(chrome.textContent, GRIN);
+  assert.equal(runtime.emoji.unresolved, 1);
+});

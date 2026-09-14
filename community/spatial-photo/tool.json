@@ -1,7 +1,7 @@
 {
   "id": "spatial-photo",
   "name": "Spatial Photo",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "engineVersion": "^1.152.0",
   "status": "experimental",
   "singleInstance": true,
@@ -10,6 +10,11 @@
   "a11yLabel": "Parallax {{default move \"dolly-in\"}} camera move through a photograph",
   "tags": ["photo", "depth", "parallax", "3d", "motion", "loop", "webgl"],
   "render": {
+    "sectionIcons": {
+      "Move": "move",
+      "Focus": "eye",
+      "Atmosphere": "cloudRain"
+    },
     "width": 1280,
     "height": 720,
     "formats": ["png", "jpg", "webp", "webm", "mp4", "gif", "avif", "tiff", "webp-anim"],

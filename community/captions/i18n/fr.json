@@ -1,4 +1,13 @@
 {
   "name": "Sous-titres",
-  "description": "Des sous-titres pour un clip - transcris-le sur ton appareil ou importe un fichier SRT/VTT, personnalise le style des sous-titres, puis exporte des images avec sous-titres incrustés et des fichiers .srt et .vtt propres."
+  "description": "Des sous-titres pour un clip - transcris-le sur ton appareil ou importe un fichier SRT/VTT, personnalise le style des sous-titres, puis exporte des images avec sous-titres incrustés et des fichiers .srt et .vtt propres.",
+  "inputs.style.section": "Sous-titres",
+  "inputs.position.section": "Sous-titres",
+  "inputs.fontSize.section": "Sous-titres",
+  "inputs.color.section": "Sous-titres",
+  "inputs.background.section": "Sous-titres",
+  "inputs.maxLines.section": "Sous-titres",
+  "inputs.showTimecodes.section": "Sous-titres",
+  "inputs.burnIn.section": "Sortie",
+  "inputs.time.section": "Minutage"
 }

@@ -1,4 +1,12 @@
 {
   "name": "Preços",
-  "description": "Planos em colunas, recursos em linhas e marcas de certo e de errado, com um plano destacado como o recomendado."
+  "description": "Planos em colunas, recursos em linhas e marcas de certo e de errado, com um plano destacado como o recomendado.",
+  "inputs.heading.section": "Texto",
+  "inputs.subheading.section": "Texto",
+  "inputs.cta.section": "Texto",
+  "inputs.highlight.section": "Destaque",
+  "inputs.highlightLabel.section": "Destaque",
+  "inputs.background.section": "Aparência",
+  "inputs.accent.section": "Aparência",
+  "inputs.layout.section": "Aparência"
 }

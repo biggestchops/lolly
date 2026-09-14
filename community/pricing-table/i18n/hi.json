@@ -1,4 +1,12 @@
 {
   "name": "प्राइसिंग",
-  "description": "प्लान कॉलम में, फ़ीचर पंक्तियों में, टिक और क्रॉस चिह्न के साथ, और एक प्लान को अनुशंसित के तौर पर हाइलाइट किया गया।"
+  "description": "प्लान कॉलम में, फ़ीचर पंक्तियों में, टिक और क्रॉस चिह्न के साथ, और एक प्लान को अनुशंसित के तौर पर हाइलाइट किया गया।",
+  "inputs.heading.section": "टेक्स्ट",
+  "inputs.subheading.section": "टेक्स्ट",
+  "inputs.cta.section": "टेक्स्ट",
+  "inputs.highlight.section": "हाइलाइट",
+  "inputs.highlightLabel.section": "हाइलाइट",
+  "inputs.background.section": "लुक",
+  "inputs.accent.section": "लुक",
+  "inputs.layout.section": "लुक"
 }

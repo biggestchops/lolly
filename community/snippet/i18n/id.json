@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Bingkai Jendela",
   "inputs.blinkCursor.label": "Kursor berkedip",
   "inputs.blinkCursor.help": "Kursor berkedip bergaya terminal setelah kode, di layar. Nonaktifkan agar hasil ekspor tetap bersih.",
-  "inputs.scale.label": "Ukuran"
+  "inputs.scale.label": "Ukuran",
+  "inputs.scale.section": "Teks",
+  "inputs.lineHeight.section": "Teks",
+  "inputs.lineNumbers.section": "Teks",
+  "inputs.blinkCursor.section": "Teks",
+  "inputs.fileName.section": "Bilah judul",
+  "inputs.titleScale.section": "Bilah judul",
+  "inputs.titleIcon.section": "Bilah judul",
+  "inputs.iconScale.section": "Bilah judul",
+  "inputs.windowStyle.section": "Bilah judul",
+  "inputs.showWindow.section": "Bilah judul",
+  "inputs.theme.section": "Tampilan",
+  "inputs.shadow.section": "Tampilan",
+  "inputs.calloutMode.section": "Anotasi",
+  "inputs.calloutPrefix.section": "Anotasi",
+  "inputs.calloutFont.section": "Anotasi"
 }

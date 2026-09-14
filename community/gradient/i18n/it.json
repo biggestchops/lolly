@@ -60,5 +60,18 @@
   "inputs.distance.help": "Quanto si allontanano i punti colore dalla posizione impostata. 100% è la dimensione di orbita predefinita; a 0% restano fissi.",
   "inputs.speed.label": "Velocità di deriva",
   "inputs.speed.section": "Texture e movimento",
-  "inputs.speed.help": "Secondi per ciclo di deriva - più alto è, più lento è. Gli export video catturano un ciclo completo quando il budget di fotogrammi lo consente (i cicli lunghi vengono accorciati a 60 fps)."
+  "inputs.speed.help": "Secondi per ciclo di deriva - più alto è, più lento è. Gli export video catturano un ciclo completo quando il budget di fotogrammi lo consente (i cicli lunghi vengono accorciati a 60 fps).",
+  "inputs.count.section": "Colore",
+  "inputs.color1.section": "Colore",
+  "inputs.pos1.section": "Colore",
+  "inputs.color2.section": "Colore",
+  "inputs.pos2.section": "Colore",
+  "inputs.color3.section": "Colore",
+  "inputs.pos3.section": "Colore",
+  "inputs.color4.section": "Colore",
+  "inputs.pos4.section": "Colore",
+  "inputs.color5.section": "Colore",
+  "inputs.pos5.section": "Colore",
+  "inputs.color6.section": "Colore",
+  "inputs.pos6.section": "Colore"
 }

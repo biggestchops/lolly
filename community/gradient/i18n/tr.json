@@ -60,5 +60,18 @@
   "inputs.distance.help": "Renk noktalarının ayarlı konumlarından ne kadar uzağa kaydığı. Varsayılan yörünge boyutu %100; %0 onları olduğu yerde dondurur.",
   "inputs.speed.label": "Kayma hızı",
   "inputs.speed.section": "Doku ve Hareket",
-  "inputs.speed.help": "Kayma döngüsü başına saniye - yüksek değer daha yavaş demektir. Video dışa aktarımları, kare bütçesi izin verdiğinde tek bir döngüyü yakalar (uzun döngüler 60 fps'de kısaltılır)."
+  "inputs.speed.help": "Kayma döngüsü başına saniye - yüksek değer daha yavaş demektir. Video dışa aktarımları, kare bütçesi izin verdiğinde tek bir döngüyü yakalar (uzun döngüler 60 fps'de kısaltılır).",
+  "inputs.count.section": "Renk",
+  "inputs.color1.section": "Renk",
+  "inputs.pos1.section": "Renk",
+  "inputs.color2.section": "Renk",
+  "inputs.pos2.section": "Renk",
+  "inputs.color3.section": "Renk",
+  "inputs.pos3.section": "Renk",
+  "inputs.color4.section": "Renk",
+  "inputs.pos4.section": "Renk",
+  "inputs.color5.section": "Renk",
+  "inputs.pos5.section": "Renk",
+  "inputs.color6.section": "Renk",
+  "inputs.pos6.section": "Renk"
 }

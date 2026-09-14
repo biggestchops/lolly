@@ -1,4 +1,13 @@
 {
   "name": "پرنٹ شیٹ",
-  "description": "ایک آرٹ ورک کو A4، لیٹر یا A3 پر متعدد کاپیوں (n-up) میں ترتیب دیں، مارجن میں کراپ مارکس کے ساتھ۔"
+  "description": "ایک آرٹ ورک کو A4، لیٹر یا A3 پر متعدد کاپیوں (n-up) میں ترتیب دیں، مارجن میں کراپ مارکس کے ساتھ۔",
+  "inputs.fill.section": "شیٹ",
+  "inputs.pages.section": "شیٹ",
+  "inputs.sheet.section": "شیٹ",
+  "inputs.rows.section": "لے آؤٹ",
+  "inputs.cols.section": "لے آؤٹ",
+  "inputs.gap.section": "لے آؤٹ",
+  "inputs.margin.section": "لے آؤٹ",
+  "inputs.ticks.section": "آؤٹ پٹ",
+  "inputs.tickShape.section": "آؤٹ پٹ"
 }

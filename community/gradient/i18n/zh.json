@@ -60,5 +60,18 @@
   "inputs.distance.help": "色点偏离设定位置的程度。100% 为默认轨道大小,设为 0% 则会固定在原位。",
   "inputs.speed.label": "漂移速度",
   "inputs.speed.section": "纹理与动效",
-  "inputs.speed.help": "每次漂移循环的秒数--数值越高,速度越慢。视频导出会在帧数允许的情况下捕捉一个完整循环(较长的循环会以 60 帧/秒缩短)。"
+  "inputs.speed.help": "每次漂移循环的秒数--数值越高,速度越慢。视频导出会在帧数允许的情况下捕捉一个完整循环(较长的循环会以 60 帧/秒缩短)。",
+  "inputs.count.section": "颜色",
+  "inputs.color1.section": "颜色",
+  "inputs.pos1.section": "颜色",
+  "inputs.color2.section": "颜色",
+  "inputs.pos2.section": "颜色",
+  "inputs.color3.section": "颜色",
+  "inputs.pos3.section": "颜色",
+  "inputs.color4.section": "颜色",
+  "inputs.pos4.section": "颜色",
+  "inputs.color5.section": "颜色",
+  "inputs.pos5.section": "颜色",
+  "inputs.color6.section": "颜色",
+  "inputs.pos6.section": "颜色"
 }

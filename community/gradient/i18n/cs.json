@@ -60,5 +60,18 @@
   "inputs.distance.help": "Jak daleko se barevné body vzdálí od nastavené pozice. 100 % je výchozí velikost dráhy; 0 % je zafixuje na místě.",
   "inputs.speed.label": "Rychlost unášení",
   "inputs.speed.section": "Textura a pohyb",
-  "inputs.speed.help": "Sekundy na jednu smyčku unášení - vyšší hodnota znamená pomalejší pohyb. Export videa zachytí jednu smyčku, pokud to dovolí rozpočet snímků (dlouhé smyčky se zkrátí při 60 fps)."
+  "inputs.speed.help": "Sekundy na jednu smyčku unášení - vyšší hodnota znamená pomalejší pohyb. Export videa zachytí jednu smyčku, pokud to dovolí rozpočet snímků (dlouhé smyčky se zkrátí při 60 fps).",
+  "inputs.count.section": "Barva",
+  "inputs.color1.section": "Barva",
+  "inputs.pos1.section": "Barva",
+  "inputs.color2.section": "Barva",
+  "inputs.pos2.section": "Barva",
+  "inputs.color3.section": "Barva",
+  "inputs.pos3.section": "Barva",
+  "inputs.color4.section": "Barva",
+  "inputs.pos4.section": "Barva",
+  "inputs.color5.section": "Barva",
+  "inputs.pos5.section": "Barva",
+  "inputs.color6.section": "Barva",
+  "inputs.pos6.section": "Barva"
 }

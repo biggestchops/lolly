@@ -60,5 +60,18 @@
   "inputs.distance.help": "Hvor langt fargepunktene driver fra sin faste posisjon. 100 % er standard baneomkrets; ved 0 % låses de fast.",
   "inputs.speed.label": "Drifthastighet",
   "inputs.speed.section": "Tekstur og bevegelse",
-  "inputs.speed.help": "Sekunder per drift-sløyfe - høyere er tregere. Videoeksport fanger én sløyfe der bildebudsjettet tillater det (lange sløyfer forkortes ved 60 bilder/sek)."
+  "inputs.speed.help": "Sekunder per drift-sløyfe - høyere er tregere. Videoeksport fanger én sløyfe der bildebudsjettet tillater det (lange sløyfer forkortes ved 60 bilder/sek).",
+  "inputs.count.section": "Farge",
+  "inputs.color1.section": "Farge",
+  "inputs.pos1.section": "Farge",
+  "inputs.color2.section": "Farge",
+  "inputs.pos2.section": "Farge",
+  "inputs.color3.section": "Farge",
+  "inputs.pos3.section": "Farge",
+  "inputs.color4.section": "Farge",
+  "inputs.pos4.section": "Farge",
+  "inputs.color5.section": "Farge",
+  "inputs.pos5.section": "Farge",
+  "inputs.color6.section": "Farge",
+  "inputs.pos6.section": "Farge"
 }

@@ -16,10 +16,12 @@
  */
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import type { EmojiSetInfoV1, EmojiStyleV1 } from '@lolly-tools/core/emoji-v1';
-import { emojiParams, parseEmojiParams } from '../../../../../engine/src/emoji-style.ts';
+import { emojiParams } from '../../../../../engine/src/emoji-style.ts';
 import type { EmojiPaletteEntry } from '../../../../../engine/src/emoji-style.ts';
 import type { EmojiParamPair } from '../../lib/emoji-prefs.ts';
 import { currentEmojiPreference, emojiSeedParams } from '../../lib/emoji-prefs.ts';
+import { emojiStyleFrom } from '../../lib/emoji-runtime-style.ts';
+export { emojiStyleFrom } from '../../lib/emoji-runtime-style.ts';
 import { notifyEmojiDocument, setEmojiDocumentPort } from './emoji-doc.ts';
 
 /** What the section reads off each pass. The counts are what make the section
@@ -80,30 +82,13 @@ export function showEmojiSection(state: EmojiSectionState, setCount: number): bo
   return state.replaced + state.unresolved > 0 || Boolean(state.style);
 }
 
-/** The style the two params name, pinned against the host's listing and the brand's colours. */
-export function emojiStyleFrom(
-  pair: EmojiParamPair | null,
-  sets: readonly { pin: EmojiSetInfoV1['pin'] }[],
-  palette: readonly EmojiPaletteEntry[],
-): EmojiStyleV1 | null {
-  if (!pair?.emoji) return null;
-  const parsed = parseEmojiParams({ emoji: pair.emoji, emojifx: pair.emojifx }, sets, palette);
-  if (!parsed.pin) return null;
-  return {
-    schemaVersion: 1,
-    primary: parsed.pin,
-    fallbacks: [],
-    metricsPolicy: 'inline-em-v1',
-    treatment: parsed.treatment ?? { mode: 'original', strengthBps: 0 },
-  };
-}
-
 export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSection> {
   const { host, root, runtime } = opts;
   const section = root.querySelector<HTMLDetailsElement>('#emoji-section');
   const body = root.querySelector<HTMLElement>('#emoji-section-body');
   let style: EmojiStyleV1 | null = null;
   let destroyed = false;
+  const initialStyle = JSON.stringify(runtime.emoji.style);
 
   const sets = host.emoji ? await host.emoji.sets().catch(() => [] as EmojiSetInfoV1[]) : [];
   const swatches = host.tokens ? await host.tokens.colors().catch(() => []) : [];
@@ -119,38 +104,38 @@ export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSe
   });
   const announce = (next: EmojiStyleV1 | null): void => opts.onStyle(next, next ? emojiParams(next) : null);
 
-  /**
-   * One writer for every surface. `fromControl` says the sidebar control already
-   * knows (it re-rendered itself on the way in), so only the OTHER surfaces are
-   * told; a choice from the design dock comes through here with false and pushes
-   * the new value back onto the sidebar control.
-   */
   let control: { update(next: EmojiStyleV1 | null): void; destroy(): void } | null = null;
-  const commit = (next: EmojiStyleV1 | null, fromControl: boolean): void => {
+  // The runtime also receives choices from generic text fields and table cells.
+  // Observe those here so links, sessions and the document dock stay in step.
+  const sync = (next: EmojiStyleV1 | null): void => {
+    if (destroyed || JSON.stringify(style) === JSON.stringify(next)) return;
     style = next;
-    void (async () => {
-      await runtime.setEmojiStyle(next);
-      announce(next);
-    })();
-    if (!fromControl) control?.update(next);
+    control?.update(next);
+    announce(next);
     notifyEmojiDocument();
+  };
+  const commit = (next: EmojiStyleV1 | null): void => {
+    void runtime.setEmojiStyle(next).then(() => sync(runtime.emoji.style));
   };
 
   // Registered before the sidebar check below, because the surfaces that need it
   // most are the ones with NO sidebar: the design tool and Doc Studio render no
   // aside at all, so the Document dock is the only control they have.
-  setEmojiDocumentPort({ value: () => style, set: (next) => commit(next, false) });
+  setEmojiDocumentPort({ value: () => style, set: (next) => commit(next) });
   const release = (): void => setEmojiDocumentPort(null);
 
-  style = emojiStyleFrom(seed, sets, palette);
+  style = JSON.stringify(runtime.emoji.style) !== initialStyle
+    ? runtime.emoji.style : emojiStyleFrom(seed, sets, palette);
   if (style) {
     await runtime.setEmojiStyle(style);
     announce(style);
     notifyEmojiDocument();
   }
 
+  const offStyle = runtime.onEmojiChange((state) => sync(state.style));
+
   if (!section || !body) {
-    return { get style() { return style; }, destroy() { destroyed = true; release(); } };
+    return { get style() { return style; }, destroy() { destroyed = true; offStyle(); release(); } };
   }
 
   const { mountEmojiStyleControl, EMOJI_SPECIMEN } = await import('../../components/emoji-style-control.ts');
@@ -181,7 +166,7 @@ export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSe
     // than asking the catalog a second time.
     sets,
     palette,
-    onChange: (next) => commit((next && 'primary' in next ? next : null) as EmojiStyleV1 | null, true),
+    onChange: (next) => commit((next && 'primary' in next ? next : null) as EmojiStyleV1 | null),
     specimen,
   });
 
@@ -206,6 +191,7 @@ export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSe
       destroyed = true;
       release();
       off();
+      offStyle();
       control?.destroy();
     },
   };

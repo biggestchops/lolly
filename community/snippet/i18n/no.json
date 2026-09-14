@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Vindusramme",
   "inputs.blinkCursor.label": "Blinkende markør",
   "inputs.blinkCursor.help": "En blinkende markør i terminalstil etter koden, på skjermen. Av gir et rent eksportert stillbilde.",
-  "inputs.scale.label": "Størrelse"
+  "inputs.scale.label": "Størrelse",
+  "inputs.scale.section": "Tekst",
+  "inputs.lineHeight.section": "Tekst",
+  "inputs.lineNumbers.section": "Tekst",
+  "inputs.blinkCursor.section": "Tekst",
+  "inputs.fileName.section": "Tittellinje",
+  "inputs.titleScale.section": "Tittellinje",
+  "inputs.titleIcon.section": "Tittellinje",
+  "inputs.iconScale.section": "Tittellinje",
+  "inputs.windowStyle.section": "Tittellinje",
+  "inputs.showWindow.section": "Tittellinje",
+  "inputs.theme.section": "Utseende",
+  "inputs.shadow.section": "Utseende",
+  "inputs.calloutMode.section": "Merknader",
+  "inputs.calloutPrefix.section": "Merknader",
+  "inputs.calloutFont.section": "Merknader"
 }

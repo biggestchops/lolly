@@ -1,4 +1,12 @@
 {
   "name": "料金表",
-  "description": "プランを列、機能を行として並べ、チェックマークとバツ印で対応状況を示します。おすすめのプランは1つだけ強調表示できます。"
+  "description": "プランを列、機能を行として並べ、チェックマークとバツ印で対応状況を示します。おすすめのプランは1つだけ強調表示できます。",
+  "inputs.heading.section": "テキスト",
+  "inputs.subheading.section": "テキスト",
+  "inputs.cta.section": "テキスト",
+  "inputs.highlight.section": "強調",
+  "inputs.highlightLabel.section": "強調",
+  "inputs.background.section": "ルック",
+  "inputs.accent.section": "ルック",
+  "inputs.layout.section": "ルック"
 }

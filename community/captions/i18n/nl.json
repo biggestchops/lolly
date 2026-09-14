@@ -1,4 +1,13 @@
 {
   "name": "Ondertitels",
-  "description": "Ondertitels voor een clip - transcribeer hem op je apparaat of sleep er een SRT- of VTT-bestand in, pas de opmaak van de ondertitels aan en exporteer beelden met ingebrande ondertitels plus schone .srt- en .vtt-bestanden."
+  "description": "Ondertitels voor een clip - transcribeer hem op je apparaat of sleep er een SRT- of VTT-bestand in, pas de opmaak van de ondertitels aan en exporteer beelden met ingebrande ondertitels plus schone .srt- en .vtt-bestanden.",
+  "inputs.style.section": "Ondertitels",
+  "inputs.position.section": "Ondertitels",
+  "inputs.fontSize.section": "Ondertitels",
+  "inputs.color.section": "Ondertitels",
+  "inputs.background.section": "Ondertitels",
+  "inputs.maxLines.section": "Ondertitels",
+  "inputs.showTimecodes.section": "Ondertitels",
+  "inputs.burnIn.section": "Uitvoer",
+  "inputs.time.section": "Timing"
 }

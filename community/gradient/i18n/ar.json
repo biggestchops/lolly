@@ -60,5 +60,18 @@
   "inputs.distance.help": "إلى أي مدى تنجرف نقاط الألوان عن موضعها المحدد. 100% هو حجم المدار الافتراضي؛ 0% يجمدها في مكانها.",
   "inputs.speed.label": "سرعة الانجراف",
   "inputs.speed.section": "الملمس والحركة",
-  "inputs.speed.help": "عدد الثواني لكل حلقة انجراف - كلما زاد الرقم كانت أبطأ. تصدير الفيديو يلتقط حلقة واحدة حيث تسمح ميزانية الإطارات (الحلقات الطويلة تقصر عند 60 إطارا في الثانية)."
+  "inputs.speed.help": "عدد الثواني لكل حلقة انجراف - كلما زاد الرقم كانت أبطأ. تصدير الفيديو يلتقط حلقة واحدة حيث تسمح ميزانية الإطارات (الحلقات الطويلة تقصر عند 60 إطارا في الثانية).",
+  "inputs.count.section": "اللون",
+  "inputs.color1.section": "اللون",
+  "inputs.pos1.section": "اللون",
+  "inputs.color2.section": "اللون",
+  "inputs.pos2.section": "اللون",
+  "inputs.color3.section": "اللون",
+  "inputs.pos3.section": "اللون",
+  "inputs.color4.section": "اللون",
+  "inputs.pos4.section": "اللون",
+  "inputs.color5.section": "اللون",
+  "inputs.pos5.section": "اللون",
+  "inputs.color6.section": "اللون",
+  "inputs.pos6.section": "اللون"
 }

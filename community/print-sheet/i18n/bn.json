@@ -1,4 +1,13 @@
 {
   "name": "প্রিন্ট শিট",
-  "description": "একটি আর্টওয়ার্ক A4, Letter বা A3 শিটে একাধিক কপি হিসেবে সাজান, মার্জিনে ক্রপ মার্ক সহ।"
+  "description": "একটি আর্টওয়ার্ক A4, Letter বা A3 শিটে একাধিক কপি হিসেবে সাজান, মার্জিনে ক্রপ মার্ক সহ।",
+  "inputs.fill.section": "শিট",
+  "inputs.pages.section": "শিট",
+  "inputs.sheet.section": "শিট",
+  "inputs.rows.section": "লেআউট",
+  "inputs.cols.section": "লেআউট",
+  "inputs.gap.section": "লেআউট",
+  "inputs.margin.section": "লেআউট",
+  "inputs.ticks.section": "আউটপুট",
+  "inputs.tickShape.section": "আউটপুট"
 }

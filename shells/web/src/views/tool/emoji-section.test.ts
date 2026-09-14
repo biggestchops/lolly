@@ -223,3 +223,24 @@ test('emojiStyleFrom refuses a set this device does not hold', () => {
   assert.equal(style.treatment.mode, 'original', 'no treatment named is the untouched artwork, never a guess');
   assert.deepEqual(style.primary, SET.pin, 'the checksum comes from the listing, never from the link');
 });
+
+test('picker choices update the sidebar, document writer and chromeless dock exactly once', async () => {
+  for (const chromeless of [false, true]) {
+    const root = sidebar();
+    if (chromeless) root.querySelector('#emoji-section')!.remove();
+    const runtime = fakeRuntime();
+    const written: (EmojiParamPair | null)[] = [];
+    const mounted = await mountEmojiSection({ root, host: fakeHost(), runtime, onStyle: (_style, params) => written.push(params) });
+    const style = emojiStyleFrom({ emoji: SET_KEY, emojifx: 'original' }, [SET], []);
+    runtime.announce({ style });
+    runtime.announce({ replaced: 3 });
+    assert.equal(mounted.style?.primary.id, SET.pin.id);
+    assert.deepEqual(written, [{ emoji: SET_KEY, emojifx: 'original' }]);
+    if (!chromeless) assert.equal(root.querySelector<HTMLSelectElement>('[data-emoji-set]')!.value, SET_KEY);
+    runtime.announce({ style: null });
+    assert.equal(written.at(-1), null);
+    mounted.destroy();
+    runtime.announce({ style });
+    assert.equal(written.length, 2);
+  }
+});

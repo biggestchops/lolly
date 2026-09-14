@@ -3,7 +3,7 @@
   "name": "Backdrop",
   "description": "Living backdrops from your design system's colours: sixteen GPU effects - flowing silk, prismatic blooms, liquid contours, metaballs, god rays and more. Tune, freeze the exact moment you want, and export stills or motion loops for heroes, walls and meeting backgrounds.",
   "a11yLabel": "Animated {{effect}} backdrop",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "engineVersion": "^1.0.0",
   "status": "official",
   "singleInstance": true,
@@ -20,6 +20,10 @@
     { "label": "Mercury contours", "values": { "effect": "liquid-contours", "count": 3, "intensity": 65, "density": 40, "speed": 70 } }
   ],
   "render": {
+    "sectionIcons": {
+      "Character": "shapes",
+      "Motion": "animate"
+    },
     "width": 1600,
     "height": 900,
     "formats": ["png", "jpg", "webp", "avif", "webm", "mp4", "gif", "tiff", "webp-anim"],

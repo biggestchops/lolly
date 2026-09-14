@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Рамка на прозореца",
   "inputs.blinkCursor.label": "Мигащ курсор",
   "inputs.blinkCursor.help": "Мигащ курсор в терминален стил след кода, на екрана. Изключено запазва експортираното изображение чисто.",
-  "inputs.scale.label": "Размер"
+  "inputs.scale.label": "Размер",
+  "inputs.scale.section": "Текст",
+  "inputs.lineHeight.section": "Текст",
+  "inputs.lineNumbers.section": "Текст",
+  "inputs.blinkCursor.section": "Текст",
+  "inputs.fileName.section": "Заглавна лента",
+  "inputs.titleScale.section": "Заглавна лента",
+  "inputs.titleIcon.section": "Заглавна лента",
+  "inputs.iconScale.section": "Заглавна лента",
+  "inputs.windowStyle.section": "Заглавна лента",
+  "inputs.showWindow.section": "Заглавна лента",
+  "inputs.theme.section": "Стил",
+  "inputs.shadow.section": "Стил",
+  "inputs.calloutMode.section": "Пояснения",
+  "inputs.calloutPrefix.section": "Пояснения",
+  "inputs.calloutFont.section": "Пояснения"
 }

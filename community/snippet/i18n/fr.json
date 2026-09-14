@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Cadre de la fenêtre",
   "inputs.blinkCursor.label": "Curseur clignotant",
   "inputs.blinkCursor.help": "Un curseur clignotant façon terminal après le code, à l'écran. Désactive-le pour garder l'export bien net.",
-  "inputs.scale.label": "Taille"
+  "inputs.scale.label": "Taille",
+  "inputs.scale.section": "Texte",
+  "inputs.lineHeight.section": "Texte",
+  "inputs.lineNumbers.section": "Texte",
+  "inputs.blinkCursor.section": "Texte",
+  "inputs.fileName.section": "Barre de titre",
+  "inputs.titleScale.section": "Barre de titre",
+  "inputs.titleIcon.section": "Barre de titre",
+  "inputs.iconScale.section": "Barre de titre",
+  "inputs.windowStyle.section": "Barre de titre",
+  "inputs.showWindow.section": "Barre de titre",
+  "inputs.theme.section": "Style",
+  "inputs.shadow.section": "Style",
+  "inputs.calloutMode.section": "Annotations",
+  "inputs.calloutPrefix.section": "Annotations",
+  "inputs.calloutFont.section": "Annotations"
 }

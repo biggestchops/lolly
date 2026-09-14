@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Khung cửa sổ",
   "inputs.blinkCursor.label": "Con trỏ nhấp nháy",
   "inputs.blinkCursor.help": "Con trỏ nhấp nháy kiểu terminal hiển thị sau đoạn mã, trên màn hình. Tắt để giữ ảnh xuất ra luôn gọn gàng.",
-  "inputs.scale.label": "Kích thước"
+  "inputs.scale.label": "Kích thước",
+  "inputs.scale.section": "Văn bản",
+  "inputs.lineHeight.section": "Văn bản",
+  "inputs.lineNumbers.section": "Văn bản",
+  "inputs.blinkCursor.section": "Văn bản",
+  "inputs.fileName.section": "Thanh tiêu đề",
+  "inputs.titleScale.section": "Thanh tiêu đề",
+  "inputs.titleIcon.section": "Thanh tiêu đề",
+  "inputs.iconScale.section": "Thanh tiêu đề",
+  "inputs.windowStyle.section": "Thanh tiêu đề",
+  "inputs.showWindow.section": "Thanh tiêu đề",
+  "inputs.theme.section": "Phong cách",
+  "inputs.shadow.section": "Phong cách",
+  "inputs.calloutMode.section": "Chú thích",
+  "inputs.calloutPrefix.section": "Chú thích",
+  "inputs.calloutFont.section": "Chú thích"
 }

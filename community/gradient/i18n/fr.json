@@ -60,5 +60,18 @@
   "inputs.distance.help": "Jusqu'où les points de couleur dérivent de leur position définie. 100 % est la taille d'orbite par défaut ; 0 % les fige en place.",
   "inputs.speed.label": "Vitesse de dérive",
   "inputs.speed.section": "Texture et mouvement",
-  "inputs.speed.help": "Secondes par boucle de dérive - plus la valeur est élevée, plus c'est lent. Les exports vidéo capturent une boucle complète quand le budget d'images le permet (les boucles longues sont raccourcies à 60 images/seconde)."
+  "inputs.speed.help": "Secondes par boucle de dérive - plus la valeur est élevée, plus c'est lent. Les exports vidéo capturent une boucle complète quand le budget d'images le permet (les boucles longues sont raccourcies à 60 images/seconde).",
+  "inputs.count.section": "Couleur",
+  "inputs.color1.section": "Couleur",
+  "inputs.pos1.section": "Couleur",
+  "inputs.color2.section": "Couleur",
+  "inputs.pos2.section": "Couleur",
+  "inputs.color3.section": "Couleur",
+  "inputs.pos3.section": "Couleur",
+  "inputs.color4.section": "Couleur",
+  "inputs.pos4.section": "Couleur",
+  "inputs.color5.section": "Couleur",
+  "inputs.pos5.section": "Couleur",
+  "inputs.color6.section": "Couleur",
+  "inputs.pos6.section": "Couleur"
 }

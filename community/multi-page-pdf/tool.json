@@ -3,7 +3,7 @@
   "name": "Booklet",
   "description": "Build a multi-page PDF - a cover, flowing content blocks, and a back page.",
   "a11yLabel": "{{default coverTitle \"Untitled\"}} - multi-page PDF document",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "engineVersion": "^1.0.0",
   "status": "official",
   "category": "designer",
@@ -13,6 +13,11 @@
     "blurb": "Multi-page PDFs - cover, content, back"
   },
   "render": {
+    "sectionIcons": {
+      "Typography": "font",
+      "Cover": "document",
+      "Back page": "document"
+    },
     "width": 794,
     "height": 1123,
     "formats": ["pdf", "pptx", "svg", "penpot", "md"],

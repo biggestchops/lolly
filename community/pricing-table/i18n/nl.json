@@ -1,4 +1,12 @@
 {
   "name": "Prijzen",
-  "description": "Abonnementen als kolommen, functies als rijen, vinkjes en kruisjes, en één abonnement uitgelicht als aanbevolen."
+  "description": "Abonnementen als kolommen, functies als rijen, vinkjes en kruisjes, en één abonnement uitgelicht als aanbevolen.",
+  "inputs.heading.section": "Tekst",
+  "inputs.subheading.section": "Tekst",
+  "inputs.cta.section": "Tekst",
+  "inputs.highlight.section": "Uitgelicht",
+  "inputs.highlightLabel.section": "Uitgelicht",
+  "inputs.background.section": "Uiterlijk",
+  "inputs.accent.section": "Uiterlijk",
+  "inputs.layout.section": "Uiterlijk"
 }

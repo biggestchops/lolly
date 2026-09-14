@@ -1,4 +1,12 @@
 {
   "name": "Цени",
-  "description": "Планове като колони, функции като редове, отметки и кръстчета, и един план, откроен като препоръчания."
+  "description": "Планове като колони, функции като редове, отметки и кръстчета, и един план, откроен като препоръчания.",
+  "inputs.heading.section": "Текст",
+  "inputs.subheading.section": "Текст",
+  "inputs.cta.section": "Текст",
+  "inputs.highlight.section": "Акцент",
+  "inputs.highlightLabel.section": "Акцент",
+  "inputs.background.section": "Стил",
+  "inputs.accent.section": "Стил",
+  "inputs.layout.section": "Стил"
 }

@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Fensterdekoration",
   "inputs.blinkCursor.label": "Blinkender Cursor",
   "inputs.blinkCursor.help": "Ein blinkender Cursor im Terminal-Stil nach dem Code, auf dem Bildschirm. Deaktiviert sorgt dafür, dass das exportierte Standbild sauber bleibt.",
-  "inputs.scale.label": "Größe"
+  "inputs.scale.label": "Größe",
+  "inputs.scale.section": "Text",
+  "inputs.lineHeight.section": "Text",
+  "inputs.lineNumbers.section": "Text",
+  "inputs.blinkCursor.section": "Text",
+  "inputs.fileName.section": "Titelleiste",
+  "inputs.titleScale.section": "Titelleiste",
+  "inputs.titleIcon.section": "Titelleiste",
+  "inputs.iconScale.section": "Titelleiste",
+  "inputs.windowStyle.section": "Titelleiste",
+  "inputs.showWindow.section": "Titelleiste",
+  "inputs.theme.section": "Look",
+  "inputs.shadow.section": "Look",
+  "inputs.calloutMode.section": "Anmerkungen",
+  "inputs.calloutPrefix.section": "Anmerkungen",
+  "inputs.calloutFont.section": "Anmerkungen"
 }

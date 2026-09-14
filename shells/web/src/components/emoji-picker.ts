@@ -36,6 +36,8 @@
  * with no chosen set keeps the grid it already had.
  */
 import './emoji-picker.css';
+import { mountEmojiChoice } from './emoji-choice.ts';
+import type { EmojiSelection } from './emoji-choice.ts';
 import { fixedContainingBlockOrigin } from './color-field.ts';
 import { tRaw } from '../i18n.ts';
 
@@ -77,6 +79,8 @@ export interface EmojiPopoverOptions {
   /** Draw every cell from the chosen emoji set. Left out, the grid stays exactly
    *  as the component drew it. */
   emoji?: EmojiArtworkPass;
+  /** Require a document set before offering characters. */
+  selection?: EmojiSelection;
 }
 
 /** A rectangle, in the members the placement maths actually reads. */
@@ -364,44 +368,44 @@ export async function openEmojiPopover(
   pop.setAttribute('aria-label', tRaw('Pick an emoji'));
   document.body.append(pop);
 
+  anchor.setAttribute('aria-expanded', 'true');
+  const watchAnchor = new window.MutationObserver(() => { if (!anchor.isConnected) close(); });
+  watchAnchor.observe(document.body, { childList: true, subtree: true });
   let listeners: (() => void) | null = null;
-  let artwork: EmojiArtworkRun | null = null;
+  let surface: (() => void) | null = null;
   const close = (): void => {
+    watchAnchor.disconnect();
+    anchor.setAttribute('aria-expanded', 'false');
     listeners?.();
     listeners = null;
-    artwork?.stop();
-    artwork = null;
+    surface?.();
+    surface = null;
+    const restoreFocus = pop.contains(document.activeElement);
     pop.remove();
+    if (restoreFocus && anchor.isConnected) anchor.focus({ preventScroll: true });
     if (current?.close === close) current = null;
   };
   current = { close };
 
-  await (options.defineElement ?? defineEmojiPicker)();
-  // Either end can be gone already: the component load is a network round trip,
-  // and in that time the popover can have been closed or the sidebar can have
-  // rebuilt the cell out from under us (every structural table edit does).
-  if (!pop.isConnected) return pop;
-  if (!anchor.isConnected) { close(); return pop; }
-
-  const picker: HTMLElement = document.createElement('unicode-emoji-picker');
-  picker.setAttribute('version', EMOJI_VERSION);
-  picker.addEventListener('emoji-pick', (event) => {
-    const emoji = (event as CustomEvent<{ emoji?: unknown }>).detail?.emoji;
-    if (typeof emoji === 'string') onPick(emoji);
-    close();
-  });
-  pop.append(picker);
-  // After the mount, because the component builds its grid on connect. Not
-  // awaited: a pack that is not on the device yet is a download, and the popover
-  // opens now.
-  if (options.emoji) artwork = drawPackArtwork(picker, options.emoji);
-
-  position(pop, anchor);
+  // Dismissal is armed before either catalog or component download starts.
   listeners = arm(pop, anchor, close);
-  // Focus the first EMOJI, never the search box: a dialog should take focus, but
-  // focusing a text input on a phone raises the keyboard over the grid the user
-  // just asked to see. Search is one tap away for anyone who wants it.
-  (picker as { focusContent?: (skipSearchInput?: boolean) => void }).focusContent?.(true);
+  const stop = await mountEmojiChoice(pop, options.selection, async (body) => {
+    await (options.defineElement ?? defineEmojiPicker)();
+    if (!pop.isConnected || !anchor.isConnected) return () => {};
+    const picker = document.createElement('unicode-emoji-picker');
+    picker.setAttribute('version', EMOJI_VERSION);
+    picker.addEventListener('emoji-pick', (event) => {
+      const emoji = (event as CustomEvent<{ emoji?: unknown }>).detail?.emoji;
+      close();
+      if (typeof emoji === 'string' && anchor.isConnected) onPick(emoji);
+    });
+    body.append(picker);
+    const artwork = options.emoji ? drawPackArtwork(picker, options.emoji) : null;
+    (picker as { focusContent?: (skipSearchInput?: boolean) => void }).focusContent?.(true);
+    return () => { artwork?.stop(); picker.remove(); };
+  }, () => position(pop, anchor), close);
+  if (!pop.isConnected || !anchor.isConnected) { stop(); close(); }
+  else surface = stop;
   return pop;
 }
 
@@ -454,12 +458,18 @@ export async function mountEmojiBrowser(
   onPick: (emoji: string) => void,
   options: EmojiPopoverOptions = {},
 ): Promise<() => void> {
-  await (options.defineElement ?? defineEmojiPicker)();
-  const picker = document.createElement('unicode-emoji-picker'); picker.setAttribute('version', EMOJI_VERSION);
-  const pick = (event: Event): void => { const emoji = (event as CustomEvent<{ emoji?: unknown }>).detail?.emoji; if (typeof emoji === 'string') onPick(emoji); };
-  picker.classList.add('emoji-browser');
-  picker.addEventListener('emoji-pick', pick); container.replaceChildren(picker);
-  picker.selectTab('search');
-  const artwork = options.emoji ? drawPackArtwork(picker, options.emoji) : null;
-  return () => { artwork?.stop(); picker.removeEventListener('emoji-pick', pick); picker.remove(); };
+  return mountEmojiChoice(container, options.selection, async (body) => {
+    await (options.defineElement ?? defineEmojiPicker)();
+    const picker = document.createElement('unicode-emoji-picker');
+    picker.setAttribute('version', EMOJI_VERSION);
+    const pick = (event: Event): void => {
+      const emoji = (event as CustomEvent<{ emoji?: unknown }>).detail?.emoji;
+      if (typeof emoji === 'string') onPick(emoji);
+    };
+    picker.classList.add('emoji-browser');
+    picker.addEventListener('emoji-pick', pick); body.append(picker);
+    picker.selectTab('search');
+    const artwork = options.emoji ? drawPackArtwork(picker, options.emoji) : null;
+    return () => { artwork?.stop(); picker.removeEventListener('emoji-pick', pick); picker.remove(); };
+  });
 }

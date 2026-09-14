@@ -1,4 +1,12 @@
 {
   "name": "মূল্য",
-  "description": "প্ল্যান কলামে, ফিচার সারিতে, টিক ও ক্রস চিহ্ন সহ, এবং একটি প্ল্যান প্রস্তাবিত হিসেবে হাইলাইট করা।"
+  "description": "প্ল্যান কলামে, ফিচার সারিতে, টিক ও ক্রস চিহ্ন সহ, এবং একটি প্ল্যান প্রস্তাবিত হিসেবে হাইলাইট করা।",
+  "inputs.heading.section": "টেক্সট",
+  "inputs.subheading.section": "টেক্সট",
+  "inputs.cta.section": "টেক্সট",
+  "inputs.highlight.section": "হাইলাইট",
+  "inputs.highlightLabel.section": "হাইলাইট",
+  "inputs.background.section": "লুক",
+  "inputs.accent.section": "লুক",
+  "inputs.layout.section": "লুক"
 }

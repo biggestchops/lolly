@@ -1,4 +1,12 @@
 {
   "name": "التسعير",
-  "description": "الخطط في أعمدة، والميزات في صفوف، مع علامات صح وخطأ، وخطة واحدة مميّزة بوصفها الموصى بها."
+  "description": "الخطط في أعمدة، والميزات في صفوف، مع علامات صح وخطأ، وخطة واحدة مميّزة بوصفها الموصى بها.",
+  "inputs.heading.section": "النص",
+  "inputs.subheading.section": "النص",
+  "inputs.cta.section": "النص",
+  "inputs.highlight.section": "إبراز",
+  "inputs.highlightLabel.section": "إبراز",
+  "inputs.background.section": "المظهر",
+  "inputs.accent.section": "المظهر",
+  "inputs.layout.section": "المظهر"
 }

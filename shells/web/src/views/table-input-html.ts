@@ -52,18 +52,7 @@ export function tableInputHtml(input: InputModelItem): string {
   // while every cell is empty, so an untouched placeholder never reaches the
   // value or the share link. No delete button - there is nothing to remove.
   const ghost = wantsGhostRow(t.rows)
-    ? `<tr data-table-ghost>${t.columns
-        .map((_c, ci) =>
-          tableBodyCellHtml(
-            '',
-            t.rows.length,
-            ci,
-            t.columns,
-            tableColumnEditor(input.columnEditors, ci),
-            `${input.id}:t:${t.rows.length}:${ci}`
-          )
-        )
-        .join('')}<td class="table-rowctl"></td></tr>`
+    ? `<tr data-table-ghost>${tableGhostCells(input.id, t.rows.length, t.columns, input.columnEditors)}</tr>`
     : '';
   // Past the threshold, a big table renders the virtualized data-grid (mounted in
   // the wiring pass below) instead of a full <table> of live cells - same
@@ -94,4 +83,11 @@ export function tableInputHtml(input: InputModelItem): string {
         </div>
         ${t.rows.length ? `<p class="table-count">${t.rows.length} row${t.rows.length === 1 ? '' : 's'} &middot; ${t.columns.length} column${t.columns.length === 1 ? '' : 's'}</p>` : ''}
       </div>`;
+}
+
+/** Initial and promoted placeholders use the same cell editors and field identities. */
+export function tableGhostCells(id: string, row: number, columns: string[], editors?: readonly string[]): string {
+  return columns.map((_column, column) => tableBodyCellHtml(
+    '', row, column, columns, tableColumnEditor(editors, column), `${id}:t:${row}:${column}`,
+  )).join('') + '<td class="table-rowctl"></td>';
 }

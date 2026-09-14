@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Rámeček okna",
   "inputs.blinkCursor.label": "Blikající kurzor",
   "inputs.blinkCursor.help": "Blikající kurzor v terminálovém stylu za kódem, na obrazovce. Když ho vypneš, exportovaný snímek zůstane čistý.",
-  "inputs.scale.label": "Velikost"
+  "inputs.scale.label": "Velikost",
+  "inputs.scale.section": "Text",
+  "inputs.lineHeight.section": "Text",
+  "inputs.lineNumbers.section": "Text",
+  "inputs.blinkCursor.section": "Text",
+  "inputs.fileName.section": "Záhlaví okna",
+  "inputs.titleScale.section": "Záhlaví okna",
+  "inputs.titleIcon.section": "Záhlaví okna",
+  "inputs.iconScale.section": "Záhlaví okna",
+  "inputs.windowStyle.section": "Záhlaví okna",
+  "inputs.showWindow.section": "Záhlaví okna",
+  "inputs.theme.section": "Vzhled",
+  "inputs.shadow.section": "Vzhled",
+  "inputs.calloutMode.section": "Popisky",
+  "inputs.calloutPrefix.section": "Popisky",
+  "inputs.calloutFont.section": "Popisky"
 }

@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Vensterkader",
   "inputs.blinkCursor.label": "Knipperende cursor",
   "inputs.blinkCursor.help": "Een knipperende cursor in terminalstijl na de code, op het scherm. Uit houdt de geëxporteerde afbeelding netjes schoon.",
-  "inputs.scale.label": "Grootte"
+  "inputs.scale.label": "Grootte",
+  "inputs.scale.section": "Tekst",
+  "inputs.lineHeight.section": "Tekst",
+  "inputs.lineNumbers.section": "Tekst",
+  "inputs.blinkCursor.section": "Tekst",
+  "inputs.fileName.section": "Titelbalk",
+  "inputs.titleScale.section": "Titelbalk",
+  "inputs.titleIcon.section": "Titelbalk",
+  "inputs.iconScale.section": "Titelbalk",
+  "inputs.windowStyle.section": "Titelbalk",
+  "inputs.showWindow.section": "Titelbalk",
+  "inputs.theme.section": "Uiterlijk",
+  "inputs.shadow.section": "Uiterlijk",
+  "inputs.calloutMode.section": "Toelichtingen",
+  "inputs.calloutPrefix.section": "Toelichtingen",
+  "inputs.calloutFont.section": "Toelichtingen"
 }

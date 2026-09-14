@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "窗口外观",
   "inputs.blinkCursor.label": "闪烁光标",
   "inputs.blinkCursor.help": "在代码后方显示终端风格的闪烁光标（仅显示于屏幕）。关闭可保持导出图片的整洁。",
-  "inputs.scale.label": "大小"
+  "inputs.scale.label": "大小",
+  "inputs.scale.section": "文本",
+  "inputs.lineHeight.section": "文本",
+  "inputs.lineNumbers.section": "文本",
+  "inputs.blinkCursor.section": "文本",
+  "inputs.fileName.section": "标题栏",
+  "inputs.titleScale.section": "标题栏",
+  "inputs.titleIcon.section": "标题栏",
+  "inputs.iconScale.section": "标题栏",
+  "inputs.windowStyle.section": "标题栏",
+  "inputs.showWindow.section": "标题栏",
+  "inputs.theme.section": "外观",
+  "inputs.shadow.section": "外观",
+  "inputs.calloutMode.section": "注释",
+  "inputs.calloutPrefix.section": "注释",
+  "inputs.calloutFont.section": "注释"
 }

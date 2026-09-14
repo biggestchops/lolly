@@ -60,5 +60,18 @@
   "inputs.distance.help": "色點偏離設定位置的程度。100% 為預設軌道大小,設為 0% 則會固定在原位。",
   "inputs.speed.label": "漂移速度",
   "inputs.speed.section": "紋理與動效",
-  "inputs.speed.help": "每次漂移循環的秒數--數值越高,速度越慢。影片匯出會在畫格數允許的範圍內擷取一個完整循環(較長的循環會以 60fps 縮短)。"
+  "inputs.speed.help": "每次漂移循環的秒數--數值越高,速度越慢。影片匯出會在畫格數允許的範圍內擷取一個完整循環(較長的循環會以 60fps 縮短)。",
+  "inputs.count.section": "色彩",
+  "inputs.color1.section": "色彩",
+  "inputs.pos1.section": "色彩",
+  "inputs.color2.section": "色彩",
+  "inputs.pos2.section": "色彩",
+  "inputs.color3.section": "色彩",
+  "inputs.pos3.section": "色彩",
+  "inputs.color4.section": "色彩",
+  "inputs.pos4.section": "色彩",
+  "inputs.color5.section": "色彩",
+  "inputs.pos5.section": "色彩",
+  "inputs.color6.section": "色彩",
+  "inputs.pos6.section": "色彩"
 }

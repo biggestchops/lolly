@@ -1,4 +1,13 @@
 {
   "name": "ورقة الطباعة",
-  "description": "رتّب تصميمًا واحدًا بعدة نسخ على الورقة (n-up) بمقاس A4 أو Letter أو A3، مع علامات قص في الهامش."
+  "description": "رتّب تصميمًا واحدًا بعدة نسخ على الورقة (n-up) بمقاس A4 أو Letter أو A3، مع علامات قص في الهامش.",
+  "inputs.fill.section": "ورقة",
+  "inputs.pages.section": "ورقة",
+  "inputs.sheet.section": "ورقة",
+  "inputs.rows.section": "التخطيط",
+  "inputs.cols.section": "التخطيط",
+  "inputs.gap.section": "التخطيط",
+  "inputs.margin.section": "التخطيط",
+  "inputs.ticks.section": "الإخراج",
+  "inputs.tickShape.section": "الإخراج"
 }

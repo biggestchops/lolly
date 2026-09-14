@@ -3249,6 +3249,7 @@ var init_semver_range = __esm({
 
 // engine/src/loader.ts
 function applyManifestI18n(manifest, overlay) {
+  const sections = new Map(manifest.inputs.map((input) => [input.id, input.section]));
   for (const [key, value] of Object.entries(overlay)) {
     if (typeof value !== "string" || !value) continue;
     if (key === "name") {
@@ -3300,6 +3301,19 @@ function applyManifestI18n(manifest, overlay) {
         const fieldOpt = field2.options?.find((o) => o.value === fieldOptMatch[1]);
         if (fieldOpt) fieldOpt.label = value;
       }
+    }
+  }
+  const render2 = manifest.render;
+  const icons = { ...render2?.sectionIcons };
+  const dense = new Set(render2?.denseSections ?? []);
+  for (const input of manifest.inputs) {
+    const original = sections.get(input.id);
+    if (!original || !input.section || original === input.section) continue;
+    if (icons[original] && render2?.sectionIcons) {
+      render2.sectionIcons[input.section] = icons[original];
+    }
+    if (dense.has(original) && render2?.denseSections && !render2.denseSections.includes(input.section)) {
+      render2.denseSections.push(input.section);
     }
   }
 }
@@ -42286,7 +42300,6 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     applyEmojiToDom: (node, opts2) => queueEmoji(() => runEmojiPass(node, opts2)),
     revertEmojiDom: (node) => queueEmoji(async () => {
       if (!node || typeof node !== "object") return 0;
-      emojiNode = node;
       const { revertEmojiDom: revertEmojiDom2 } = await Promise.resolve().then(() => (init_emoji_dom(), emoji_dom_exports));
       return revertEmojiDom2(node);
     }),

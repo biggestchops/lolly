@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Bingkai Tetingkap",
   "inputs.blinkCursor.label": "Kursor berkelip",
   "inputs.blinkCursor.help": "Kursor berkelip bergaya terminal selepas kod, pada skrin. Dimatikan mengekalkan hasil eksport tetap kemas.",
-  "inputs.scale.label": "Saiz"
+  "inputs.scale.label": "Saiz",
+  "inputs.scale.section": "Teks",
+  "inputs.lineHeight.section": "Teks",
+  "inputs.lineNumbers.section": "Teks",
+  "inputs.blinkCursor.section": "Teks",
+  "inputs.fileName.section": "Bar tajuk",
+  "inputs.titleScale.section": "Bar tajuk",
+  "inputs.titleIcon.section": "Bar tajuk",
+  "inputs.iconScale.section": "Bar tajuk",
+  "inputs.windowStyle.section": "Bar tajuk",
+  "inputs.showWindow.section": "Bar tajuk",
+  "inputs.theme.section": "Gaya",
+  "inputs.shadow.section": "Gaya",
+  "inputs.calloutMode.section": "Anotasi",
+  "inputs.calloutPrefix.section": "Anotasi",
+  "inputs.calloutFont.section": "Anotasi"
 }

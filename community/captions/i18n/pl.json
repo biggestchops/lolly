@@ -1,4 +1,13 @@
 {
   "name": "Napisy",
-  "description": "Napisy dla klipu - transkrybuj go na urządzeniu albo wgraj plik SRT/VTT, dostosuj wygląd napisów i eksportuj klatki z wypalonymi napisami oraz czyste, towarzyszące pliki .srt i .vtt."
+  "description": "Napisy dla klipu - transkrybuj go na urządzeniu albo wgraj plik SRT/VTT, dostosuj wygląd napisów i eksportuj klatki z wypalonymi napisami oraz czyste, towarzyszące pliki .srt i .vtt.",
+  "inputs.style.section": "Napisy",
+  "inputs.position.section": "Napisy",
+  "inputs.fontSize.section": "Napisy",
+  "inputs.color.section": "Napisy",
+  "inputs.background.section": "Napisy",
+  "inputs.maxLines.section": "Napisy",
+  "inputs.showTimecodes.section": "Napisy",
+  "inputs.burnIn.section": "Wyjście",
+  "inputs.time.section": "Czas"
 }

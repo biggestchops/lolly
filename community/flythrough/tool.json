@@ -1,7 +1,7 @@
 {
   "id": "flythrough",
   "name": "Flythrough",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "engineVersion": "^1.0.0",
   "status": "official",
   "singleInstance": true,
@@ -10,6 +10,11 @@
   "a11yLabel": "3D camera flythrough of a screenshot",
   "tags": ["3d", "flythrough", "screenshot", "camera", "parallax", "video", "depth", "exploded", "extrude"],
   "render": {
+    "sectionIcons": {
+      "Scene": "box",
+      "Poses": "keyframe",
+      "Advanced": "sliders"
+    },
     "width": 1280,
     "height": 720,
     "formats": ["png", "jpg", "webp", "webm", "mp4", "gif", "avif", "tiff", "webp-anim"],

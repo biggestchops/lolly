@@ -3,12 +3,15 @@
   "name": "Lottie Ad",
   "description": "Build animated ads from layered scenes, each carrying a Lottie motion asset, for any standard size.",
   "a11yLabel": "Animated Lottie ad with {{sceneCount}} scenes",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "engineVersion": "^1.0.0",
   "status": "community",
   "category": "designer",
   "tags": ["ad", "advertising", "banner", "animation", "lottie", "motion", "video", "social", "scenes", "gif", "apng"],
   "render": {
+    "sectionIcons": {
+      "Animation": "animate"
+    },
     "width": 1080,
     "height": 1080,
     "formats": ["mp4", "gif", "webm", "apng", "png", "svg", "penpot", "svg-anim", "webp", "webp-anim"],

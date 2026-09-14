@@ -1,4 +1,12 @@
 {
   "name": "Prețuri",
-  "description": "Planuri pe coloane, funcții pe rânduri, bife și X-uri, iar un plan este scos în evidență ca recomandat."
+  "description": "Planuri pe coloane, funcții pe rânduri, bife și X-uri, iar un plan este scos în evidență ca recomandat.",
+  "inputs.heading.section": "Text",
+  "inputs.subheading.section": "Text",
+  "inputs.cta.section": "Text",
+  "inputs.highlight.section": "Evidențiere",
+  "inputs.highlightLabel.section": "Evidențiere",
+  "inputs.background.section": "Aspect",
+  "inputs.accent.section": "Aspect",
+  "inputs.layout.section": "Aspect"
 }

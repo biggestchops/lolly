@@ -1,4 +1,13 @@
 {
   "name": "Tiskový arch",
-  "description": "Rozmísti jeden grafický návrh víckrát na arch A4, Letter nebo A3, s ořezovými značkami na okraji."
+  "description": "Rozmísti jeden grafický návrh víckrát na arch A4, Letter nebo A3, s ořezovými značkami na okraji.",
+  "inputs.fill.section": "List",
+  "inputs.pages.section": "List",
+  "inputs.sheet.section": "List",
+  "inputs.rows.section": "Rozvržení",
+  "inputs.cols.section": "Rozvržení",
+  "inputs.gap.section": "Rozvržení",
+  "inputs.margin.section": "Rozvržení",
+  "inputs.ticks.section": "Výstup",
+  "inputs.tickShape.section": "Výstup"
 }

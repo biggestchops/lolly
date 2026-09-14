@@ -60,5 +60,18 @@
   "inputs.distance.section": "Tekstura i ruch",
   "inputs.speed.label": "Prędkość unoszenia",
   "inputs.speed.help": "Liczba sekund na pętlę dryfu - wyższa wartość oznacza wolniej. Eksport wideo przechwytuje jedną pętlę, o ile pozwala na to budżet klatek (długie pętle są skracane przy 60 fps).",
-  "inputs.speed.section": "Tekstura i ruch"
+  "inputs.speed.section": "Tekstura i ruch",
+  "inputs.count.section": "Kolor",
+  "inputs.color1.section": "Kolor",
+  "inputs.pos1.section": "Kolor",
+  "inputs.color2.section": "Kolor",
+  "inputs.pos2.section": "Kolor",
+  "inputs.color3.section": "Kolor",
+  "inputs.pos3.section": "Kolor",
+  "inputs.color4.section": "Kolor",
+  "inputs.pos4.section": "Kolor",
+  "inputs.color5.section": "Kolor",
+  "inputs.pos5.section": "Kolor",
+  "inputs.color6.section": "Kolor",
+  "inputs.pos6.section": "Kolor"
 }

@@ -3,7 +3,7 @@
   "name": "Certificate",
   "description": "Completion and award certificates from the active design system - one name at a time, or a whole roster from a CSV in Bulk from rows.",
   "a11yLabel": "{{default titleText \"Certificate\"}} for {{default recipientName \"a recipient\"}}",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "engineVersion": "^1.0.0",
   "status": "community",
   "category": "everyone",
@@ -65,6 +65,11 @@
     }
   ],
   "render": {
+    "sectionIcons": {
+      "Signature": "pen",
+      "Issuer": "badgeCheck",
+      "Colour": "palette"
+    },
     "width": 1123,
     "height": 794,
     "formats": ["pdf", "pdf-cmyk", "svg", "penpot", "png", "jpg", "webp", "tiff", "cmyk-tiff"],

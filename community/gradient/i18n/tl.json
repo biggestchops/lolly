@@ -60,5 +60,18 @@
   "inputs.distance.help": "Gaano kalayo gumagalaw ang mga color point mula sa itinakdang posisyon nila. 100% ang default na laki ng orbit; sa 0%, nakapirmi sila sa kinaroroonan.",
   "inputs.speed.label": "Bilis ng paglutang",
   "inputs.speed.section": "Tekstura at Galaw",
-  "inputs.speed.help": "Segundo bawat drift loop - mas mataas, mas mabagal. Kinukunan ng video export ang isang loop kung kaya ng frame budget (ang mahahabang loop ay pinapaikli sa 60 fps)."
+  "inputs.speed.help": "Segundo bawat drift loop - mas mataas, mas mabagal. Kinukunan ng video export ang isang loop kung kaya ng frame budget (ang mahahabang loop ay pinapaikli sa 60 fps).",
+  "inputs.count.section": "Kulay",
+  "inputs.color1.section": "Kulay",
+  "inputs.pos1.section": "Kulay",
+  "inputs.color2.section": "Kulay",
+  "inputs.pos2.section": "Kulay",
+  "inputs.color3.section": "Kulay",
+  "inputs.pos3.section": "Kulay",
+  "inputs.color4.section": "Kulay",
+  "inputs.pos4.section": "Kulay",
+  "inputs.color5.section": "Kulay",
+  "inputs.pos5.section": "Kulay",
+  "inputs.color6.section": "Kulay",
+  "inputs.pos6.section": "Kulay"
 }

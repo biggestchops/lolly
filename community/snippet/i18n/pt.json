@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Moldura da janela",
   "inputs.blinkCursor.label": "Cursor piscando",
   "inputs.blinkCursor.help": "Um cursor piscante estilo terminal após o código, na tela. Desativado mantém a exportação limpa.",
-  "inputs.scale.label": "Tamanho"
+  "inputs.scale.label": "Tamanho",
+  "inputs.scale.section": "Texto",
+  "inputs.lineHeight.section": "Texto",
+  "inputs.lineNumbers.section": "Texto",
+  "inputs.blinkCursor.section": "Texto",
+  "inputs.fileName.section": "Barra de título",
+  "inputs.titleScale.section": "Barra de título",
+  "inputs.titleIcon.section": "Barra de título",
+  "inputs.iconScale.section": "Barra de título",
+  "inputs.windowStyle.section": "Barra de título",
+  "inputs.showWindow.section": "Barra de título",
+  "inputs.theme.section": "Aparência",
+  "inputs.shadow.section": "Aparência",
+  "inputs.calloutMode.section": "Anotações",
+  "inputs.calloutPrefix.section": "Anotações",
+  "inputs.calloutFont.section": "Anotações"
 }

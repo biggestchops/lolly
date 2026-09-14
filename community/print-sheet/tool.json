@@ -3,7 +3,7 @@
   "name": "Print Sheet",
   "description": "Lay one design - or a whole pile of them - out n-up on A4, Letter or A3, across as many pages as it takes, with crop marks in the margin.",
   "a11yLabel": "Print sheet, {{default rowsOut rows}} rows by {{default colsOut cols}} columns",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "engineVersion": "^1.0.0",
   "status": "community",
   "category": "everyone",
@@ -30,6 +30,11 @@
     }
   ],
   "render": {
+    "sectionIcons": {
+      "Sheet": "document",
+      "Layout": "grid",
+      "Output": "download"
+    },
     "width": 794,
     "height": 1123,
     "formats": ["pdf", "pdf-cmyk", "svg", "penpot", "png", "cmyk-tiff"],
@@ -65,7 +70,8 @@
       "options": [
         { "value": "repeat", "label": "Repeat to fill" },
         { "value": "once", "label": "Each once" }
-      ]
+      ],
+      "section": "Sheet"
     },
     {
       "id": "pages",
@@ -77,7 +83,8 @@
       "max": 20,
       "step": 1,
       "showIf": { "fill": ["repeat"] },
-      "help": "How many sheets to print. Each is the same grid; the designs keep cycling across them so neighbouring pages stay varied. Each once sets its own page count."
+      "help": "How many sheets to print. Each is the same grid; the designs keep cycling across them so neighbouring pages stay varied. Each once sets its own page count.",
+      "section": "Sheet"
     },
     {
       "id": "sheet",
@@ -90,7 +97,8 @@
         { "value": "a4l", "label": "A4 landscape · 297 × 210 mm", "width": 297, "height": 210, "unit": "mm" },
         { "value": "letter", "label": "US Letter · 216 × 279 mm", "width": 215.9, "height": 279.4, "unit": "mm" },
         { "value": "a3", "label": "A3 portrait · 297 × 420 mm", "width": 297, "height": 420, "unit": "mm" }
-      ]
+      ],
+      "section": "Sheet"
     },
     {
       "id": "rows",
@@ -101,7 +109,8 @@
       "min": 1,
       "max": 10,
       "step": 1,
-      "help": "Cells down each sheet. Rows times columns is capped at 40 cells a sheet."
+      "help": "Cells down each sheet. Rows times columns is capped at 40 cells a sheet.",
+      "section": "Layout"
     },
     {
       "id": "cols",
@@ -112,7 +121,8 @@
       "min": 1,
       "max": 10,
       "step": 1,
-      "help": "Cells across each sheet."
+      "help": "Cells across each sheet.",
+      "section": "Layout"
     },
     {
       "id": "gap",
@@ -123,7 +133,8 @@
       "min": 0,
       "max": 30,
       "step": 1,
-      "help": "Space between cells, in millimetres. Zero butts them edge to edge for a single cut between neighbours."
+      "help": "Space between cells, in millimetres. Zero butts them edge to edge for a single cut between neighbours.",
+      "section": "Layout"
     },
     {
       "id": "margin",
@@ -134,14 +145,16 @@
       "min": 0,
       "max": 30,
       "step": 1,
-      "help": "Unprinted border, in millimetres. The crop marks live here, and most desktop printers cannot print closer than about 5 mm to the paper edge."
+      "help": "Unprinted border, in millimetres. The crop marks live here, and most desktop printers cannot print closer than about 5 mm to the paper edge.",
+      "section": "Layout"
     },
     {
       "id": "ticks",
       "label": "Crop marks",
       "type": "boolean",
       "default": true,
-      "help": "Short lines in the margin off every cell edge, to line a guillotine or a knife up on."
+      "help": "Short lines in the margin off every cell edge, to line a guillotine or a knife up on.",
+      "section": "Output"
     },
     {
       "id": "tickShape",
@@ -152,7 +165,8 @@
       "options": [
         { "value": "rect", "label": "Straight cut" },
         { "value": "round-rect", "label": "Rounded corners (stickers)" }
-      ]
+      ],
+      "section": "Output"
     }
   ]
 }

@@ -3,7 +3,7 @@
   "name": "Finishes",
   "description": "Preview foil, spot UV, emboss and soft-touch finishes on your artwork - then export the printer-ready spot plate. The on-screen sheen is presentation only; the plate is the real deliverable your print house needs.",
   "a11yLabel": "Artwork with a simulated print finish, or the printer-ready finish plate in plate view",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "engineVersion": "^1.0.0",
   "status": "official",
   "category": "designer",
@@ -19,6 +19,12 @@
     { "label": "The plate itself", "values": { "finish": "spot-uv-gloss", "maskSource": "light", "threshold": 62, "plateView": true } }
   ],
   "render": {
+    "sectionIcons": {
+      "Finish": "sparkle",
+      "Mask": "shapes",
+      "Output": "download",
+      "Plate": "layers"
+    },
     "width": 1000,
     "height": 1000,
     "formats": ["svg", "penpot", "pdf", "pdf-cmyk", "png", "jpg", "webp", "avif", "tiff", "cmyk-tiff", "gif", "apng", "webp-anim", "webm", "mp4"],

@@ -1,4 +1,12 @@
 {
   "name": "Prising",
-  "description": "Planer som kolonner, funksjoner som rader, haker og kryss, og én plan fremhevet som den anbefalte."
+  "description": "Planer som kolonner, funksjoner som rader, haker og kryss, og én plan fremhevet som den anbefalte.",
+  "inputs.heading.section": "Tekst",
+  "inputs.subheading.section": "Tekst",
+  "inputs.cta.section": "Tekst",
+  "inputs.highlight.section": "Fremheving",
+  "inputs.highlightLabel.section": "Fremheving",
+  "inputs.background.section": "Utseende",
+  "inputs.accent.section": "Utseende",
+  "inputs.layout.section": "Utseende"
 }

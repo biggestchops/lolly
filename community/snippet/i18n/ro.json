@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "Decorația ferestrei",
   "inputs.blinkCursor.label": "Cursor intermitent",
   "inputs.blinkCursor.help": "Un cursor intermitent stil terminal după cod, pe ecran. Dezactivează-l pentru un export static curat.",
-  "inputs.scale.label": "Dimensiune"
+  "inputs.scale.label": "Dimensiune",
+  "inputs.scale.section": "Text",
+  "inputs.lineHeight.section": "Text",
+  "inputs.lineNumbers.section": "Text",
+  "inputs.blinkCursor.section": "Text",
+  "inputs.fileName.section": "Bară de titlu",
+  "inputs.titleScale.section": "Bară de titlu",
+  "inputs.titleIcon.section": "Bară de titlu",
+  "inputs.iconScale.section": "Bară de titlu",
+  "inputs.windowStyle.section": "Bară de titlu",
+  "inputs.showWindow.section": "Bară de titlu",
+  "inputs.theme.section": "Aspect",
+  "inputs.shadow.section": "Aspect",
+  "inputs.calloutMode.section": "Adnotări",
+  "inputs.calloutPrefix.section": "Adnotări",
+  "inputs.calloutFont.section": "Adnotări"
 }

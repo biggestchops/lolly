@@ -1,4 +1,12 @@
 {
   "name": "Cennik",
-  "description": "Plany jako kolumny, funkcje jako wiersze, ptaszki i krzyżyki, i jeden plan wyróżniony jako polecany."
+  "description": "Plany jako kolumny, funkcje jako wiersze, ptaszki i krzyżyki, i jeden plan wyróżniony jako polecany.",
+  "inputs.heading.section": "Tekst",
+  "inputs.subheading.section": "Tekst",
+  "inputs.cta.section": "Tekst",
+  "inputs.highlight.section": "Wyróżnienie",
+  "inputs.highlightLabel.section": "Wyróżnienie",
+  "inputs.background.section": "Wygląd",
+  "inputs.accent.section": "Wygląd",
+  "inputs.layout.section": "Wygląd"
 }

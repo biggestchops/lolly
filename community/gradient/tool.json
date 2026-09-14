@@ -3,7 +3,7 @@
   "name": "Gradient",
   "description": "Five ways to build a gradient from the design system swatches: soft radial Blend, a real Coons-patch mesh as crisp SVG (Subdivide) or a smooth raster (Mesh), freeform Warp points and the animated Flow waves. Drag everything right on the canvas; export stills or join-free video loops.",
   "a11yLabel": "Mesh gradient blending {{count}} colours",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "engineVersion": "^1.0.0",
   "status": "official",
   "category": "everyone",
@@ -137,6 +137,12 @@
     }
   ],
   "render": {
+    "sectionIcons": {
+      "Colour": "palette",
+      "Mesh grid": "grid",
+      "Texture & motion": "animate",
+      "Waves": "waves"
+    },
     "width": 1600,
     "height": 900,
     "formats": ["svg", "penpot", "png", "jpg", "webp", "avif", "webm", "mp4", "gif", "pdf", "tiff", "webp-anim"],
@@ -282,13 +288,15 @@
       "default": 5,
       "min": 2,
       "max": 6,
-      "step": 1
+      "step": 1,
+      "section": "Colour"
     },
     {
       "id": "color1",
       "label": "Colour 1 (base)",
       "type": "color",
-      "default": "{color.semantic.primary}"
+      "default": "{color.semantic.primary}",
+      "section": "Colour"
     },
     {
       "id": "pos1",
@@ -318,13 +326,15 @@
           "step": 1,
           "default": 20
         }
-      ]
+      ],
+      "section": "Colour"
     },
     {
       "id": "color2",
       "label": "Colour 2",
       "type": "color",
-      "default": "{color.semantic.secondary}"
+      "default": "{color.semantic.secondary}",
+      "section": "Colour"
     },
     {
       "id": "pos2",
@@ -353,7 +363,8 @@
           "step": 1,
           "default": 18
         }
-      ]
+      ],
+      "section": "Colour"
     },
     {
       "id": "color3",
@@ -367,7 +378,8 @@
           5,
           6
         ]
-      }
+      },
+      "section": "Colour"
     },
     {
       "id": "pos3",
@@ -402,7 +414,8 @@
           "step": 1,
           "default": 82
         }
-      ]
+      ],
+      "section": "Colour"
     },
     {
       "id": "color4",
@@ -415,7 +428,8 @@
           5,
           6
         ]
-      }
+      },
+      "section": "Colour"
     },
     {
       "id": "pos4",
@@ -449,7 +463,8 @@
           "step": 1,
           "default": 78
         }
-      ]
+      ],
+      "section": "Colour"
     },
     {
       "id": "color5",
@@ -461,7 +476,8 @@
           5,
           6
         ]
-      }
+      },
+      "section": "Colour"
     },
     {
       "id": "pos5",
@@ -494,7 +510,8 @@
           "step": 1,
           "default": 10
         }
-      ]
+      ],
+      "section": "Colour"
     },
     {
       "id": "color6",
@@ -505,7 +522,8 @@
         "count": [
           6
         ]
-      }
+      },
+      "section": "Colour"
     },
     {
       "id": "pos6",
@@ -537,7 +555,8 @@
           "step": 1,
           "default": 88
         }
-      ]
+      ],
+      "section": "Colour"
     },
     {
       "id": "rows",

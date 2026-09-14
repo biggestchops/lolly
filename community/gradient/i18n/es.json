@@ -60,5 +60,18 @@
   "inputs.distance.help": "Hasta dónde se alejan los puntos de color de su posición fijada. 100% es el tamaño de órbita predeterminado; 0% los inmoviliza en su sitio.",
   "inputs.speed.label": "Velocidad de deriva",
   "inputs.speed.section": "Textura y movimiento",
-  "inputs.speed.help": "Segundos por ciclo de deriva: cuanto más alto, más lento. Las exportaciones de vídeo capturan un ciclo completo cuando el presupuesto de fotogramas lo permite (los ciclos largos se acortan a 60 fps)."
+  "inputs.speed.help": "Segundos por ciclo de deriva: cuanto más alto, más lento. Las exportaciones de vídeo capturan un ciclo completo cuando el presupuesto de fotogramas lo permite (los ciclos largos se acortan a 60 fps).",
+  "inputs.count.section": "Color",
+  "inputs.color1.section": "Color",
+  "inputs.pos1.section": "Color",
+  "inputs.color2.section": "Color",
+  "inputs.pos2.section": "Color",
+  "inputs.color3.section": "Color",
+  "inputs.pos3.section": "Color",
+  "inputs.color4.section": "Color",
+  "inputs.pos4.section": "Color",
+  "inputs.color5.section": "Color",
+  "inputs.pos5.section": "Color",
+  "inputs.color6.section": "Color",
+  "inputs.pos6.section": "Color"
 }

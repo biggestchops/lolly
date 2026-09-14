@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "विंडो क्रोम",
   "inputs.blinkCursor.label": "ब्लिंकिंग कर्सर",
   "inputs.blinkCursor.help": "स्क्रीन पर कोड के बाद टर्मिनल-शैली का ब्लिंक करता कैरेट। बंद रखने पर एक्सपोर्ट की गई स्थिर इमेज साफ़ रहती है।",
-  "inputs.scale.label": "आकार"
+  "inputs.scale.label": "आकार",
+  "inputs.scale.section": "टेक्स्ट",
+  "inputs.lineHeight.section": "टेक्स्ट",
+  "inputs.lineNumbers.section": "टेक्स्ट",
+  "inputs.blinkCursor.section": "टेक्स्ट",
+  "inputs.fileName.section": "शीर्षक पट्टी",
+  "inputs.titleScale.section": "शीर्षक पट्टी",
+  "inputs.titleIcon.section": "शीर्षक पट्टी",
+  "inputs.iconScale.section": "शीर्षक पट्टी",
+  "inputs.windowStyle.section": "शीर्षक पट्टी",
+  "inputs.showWindow.section": "शीर्षक पट्टी",
+  "inputs.theme.section": "लुक",
+  "inputs.shadow.section": "लुक",
+  "inputs.calloutMode.section": "टिप्पणियाँ",
+  "inputs.calloutPrefix.section": "टिप्पणियाँ",
+  "inputs.calloutFont.section": "टिप्पणियाँ"
 }

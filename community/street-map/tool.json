@@ -3,7 +3,7 @@
   "name": "Street Map",
   "description": "Clean vector street-block maps of any city. Works offline.",
   "a11yLabel": "Street map centered on {{city}}",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "engineVersion": "^1.0.0",
   "status": "official",
   "category": "designer",
@@ -16,6 +16,10 @@
     { "label": "Nuremberg morning run", "values": { "city": "nuremberg", "theme": "light", "roadColor": "#cfc7ba", "waterColor": "#bcd6e8", "background": "#faf7f2", "routeColor": "{color.semantic.primary}", "routeWidth": 4, "route": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"Lolly\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n <trk><name>Altstadt loop</name><trkseg>\n  <trkpt lat=\"49.4530\" lon=\"11.0740\"/>\n  <trkpt lat=\"49.4538\" lon=\"11.0752\"/>\n  <trkpt lat=\"49.4547\" lon=\"11.0764\"/>\n  <trkpt lat=\"49.4553\" lon=\"11.0781\"/>\n  <trkpt lat=\"49.4547\" lon=\"11.0796\"/>\n  <trkpt lat=\"49.4536\" lon=\"11.0798\"/>\n  <trkpt lat=\"49.4527\" lon=\"11.0779\"/>\n  <trkpt lat=\"49.4529\" lon=\"11.0745\"/>\n </trkseg></trk>\n</gpx>" } }
   ],
   "render": {
+    "sectionIcons": {
+      "Roads & water": "globe",
+      "Route": "mapPin"
+    },
     "width": 900,
     "height": 900,
     "formats": ["svg", "penpot", "emf", "dxf", "pdf", "pdf-cmyk", "png", "jpg", "webp", "avif", "tiff", "eps"],

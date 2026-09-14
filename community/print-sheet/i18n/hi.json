@@ -1,4 +1,13 @@
 {
   "name": "प्रिंट शीट",
-  "description": "एक आर्टवर्क को A4, Letter या A3 शीट पर कई प्रतियों में लगाएँ, मार्जिन में क्रॉप मार्क के साथ।"
+  "description": "एक आर्टवर्क को A4, Letter या A3 शीट पर कई प्रतियों में लगाएँ, मार्जिन में क्रॉप मार्क के साथ।",
+  "inputs.fill.section": "शीट",
+  "inputs.pages.section": "शीट",
+  "inputs.sheet.section": "शीट",
+  "inputs.rows.section": "लेआउट",
+  "inputs.cols.section": "लेआउट",
+  "inputs.gap.section": "लेआउट",
+  "inputs.margin.section": "लेआउट",
+  "inputs.ticks.section": "आउटपुट",
+  "inputs.tickShape.section": "आउटपुट"
 }

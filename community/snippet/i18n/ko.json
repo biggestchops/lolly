@@ -29,5 +29,20 @@
   "inputs.showWindow.label": "창 테두리",
   "inputs.blinkCursor.label": "커서 깜박임",
   "inputs.blinkCursor.help": "화면에서 코드 뒤에 표시되는 터미널 스타일의 깜박이는 캐럿입니다. 꺼두면 내보낸 이미지가 깔끔하게 유지됩니다.",
-  "inputs.scale.label": "크기"
+  "inputs.scale.label": "크기",
+  "inputs.scale.section": "텍스트",
+  "inputs.lineHeight.section": "텍스트",
+  "inputs.lineNumbers.section": "텍스트",
+  "inputs.blinkCursor.section": "텍스트",
+  "inputs.fileName.section": "제목 표시줄",
+  "inputs.titleScale.section": "제목 표시줄",
+  "inputs.titleIcon.section": "제목 표시줄",
+  "inputs.iconScale.section": "제목 표시줄",
+  "inputs.windowStyle.section": "제목 표시줄",
+  "inputs.showWindow.section": "제목 표시줄",
+  "inputs.theme.section": "룩",
+  "inputs.shadow.section": "룩",
+  "inputs.calloutMode.section": "주석",
+  "inputs.calloutPrefix.section": "주석",
+  "inputs.calloutFont.section": "주석"
 }

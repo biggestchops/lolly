@@ -1,4 +1,13 @@
 {
   "name": "Planche d'impression",
-  "description": "Répète un visuel plusieurs fois sur une page A4, Letter ou A3, avec des repères de coupe dans la marge."
+  "description": "Répète un visuel plusieurs fois sur une page A4, Letter ou A3, avec des repères de coupe dans la marge.",
+  "inputs.fill.section": "Feuille",
+  "inputs.pages.section": "Feuille",
+  "inputs.sheet.section": "Feuille",
+  "inputs.rows.section": "Disposition",
+  "inputs.cols.section": "Disposition",
+  "inputs.gap.section": "Disposition",
+  "inputs.margin.section": "Disposition",
+  "inputs.ticks.section": "Sortie",
+  "inputs.tickShape.section": "Sortie"
 }
