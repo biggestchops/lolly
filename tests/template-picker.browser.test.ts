@@ -36,7 +36,11 @@ test('the Projects template picker renders previews and adds independent creatio
     await page.locator('.asset-picker-search').fill('Company QR');
     await preview.waitFor({ state: 'visible' });
     await page.locator(`[data-quickadd-template="user:${id}"]`).click();
-    await page.locator('.asset-picker-added').filter({ hasText: 'Added' }).waitFor();
+    await page.waitForFunction(async () => {
+      const path = '/src/bridge/index.ts';
+      const host = await (await import(path)).createBridge();
+      return (await host.state.list()).filter((row: { toolId?: string }) => row.toolId === 'qr-code').length === 1;
+    }, undefined, { polling: 250 });
     assert.equal(await page.locator('.asset-picker-panel').isVisible(), true);
     await page.locator(`[data-quickadd-template="user:${id}"]`).click();
     await page.waitForFunction(async () => {
