@@ -1492,7 +1492,10 @@ async function fetchAndCache(meta: AssetMetaRecord, format: AssetFormat, blobKey
   if (!resp.ok) throw new Error(`Failed to fetch asset: ${resp.status}`);
   const blob = await resp.blob();
   await verifyAssetChecksum(blob, format);
-  await db.put('asset-blob', blob, blobKey);
+  // Downloaded catalog bytes remain usable when the browser refuses its cache
+  // (for example, WebKit cannot persist a Blob). User uploads still require a save.
+  try { await db.put('asset-blob', blob, blobKey); }
+  catch (error) { console.warn('Asset cache write failed; using verified downloaded bytes', meta.id, error); }
   return blob;
 }
 

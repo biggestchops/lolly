@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MPL-2.0 */
-.input-emoji-field { display: flex; align-items: stretch; gap: 4px; min-width: 0; width: 100%; }
+.input-emoji-field { position: relative; display: flex; align-items: stretch; gap: 4px; min-width: 0; width: 100%; }
 .input-emoji-field > :first-child { flex: 1; min-width: 0; width: 0; }
 .input-emoji-trigger {
   display: grid; place-items: center; align-self: center; flex: 0 0 auto;
@@ -8,3 +8,6 @@
 }
 .input-emoji-trigger:hover { color: hsl(var(--foreground)); background: hsl(var(--muted)); }
 .input-emoji-trigger:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.input-emoji-display { position: absolute; overflow: hidden; pointer-events: none; user-select: none; -webkit-text-fill-color: currentColor; }
+.input-emoji-display[hidden] { display: none; }
+.input-emoji-display-text { position: absolute; display: block; margin: 0; border: 0; }
