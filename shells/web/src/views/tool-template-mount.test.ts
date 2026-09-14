@@ -76,8 +76,12 @@ function bodyAfter(src: string, head: string): string {
 
 // tool.ts is an orchestrator plus feature modules under tool/ (2026-09-09 split)
 // context.ts only declares the shape; the alias and publish lines are the split's plumbing, not code
+// A co-located `*.test.ts` under tool/ is not mount code either, and a sibling suite that
+// quotes `await createRuntime(` to make its own point would otherwise be read as the
+// mount's first call and move every offset this file compares.
+const featureFile = (n: string): boolean => n.endsWith('.ts') && !n.endsWith('.test.ts') && n !== 'context.ts';
 const PLUMBING = /^\s*const \{[^}]*\} = tview;\s*$|\btview\.(\w+) = \1(?: as [^;]+)?;/gm;
-const CODE = stripComments([readFileSync(join(HERE, 'tool.ts'), 'utf8'), ...readdirSync(join(HERE, 'tool')).filter((n) => n.endsWith('.ts') && n !== 'context.ts').sort().map((n) => readFileSync(join(HERE, 'tool', n), 'utf8'))].join('\n')).replace(PLUMBING, '');
+const CODE = stripComments([readFileSync(join(HERE, 'tool.ts'), 'utf8'), ...readdirSync(join(HERE, 'tool')).filter(featureFile).sort().map((n) => readFileSync(join(HERE, 'tool', n), 'utf8'))].join('\n')).replace(PLUMBING, '');
 // The inspector's dock/float controller (plans/208): the column requests live here now.
 const INSPECTOR_FLOAT = stripComments(readFileSync(join(HERE, 'design-inspector-float.ts'), 'utf8'));
 const CHOOSER = stripComments(readFileSync(join(HERE, 'template-chooser.ts'), 'utf8'));

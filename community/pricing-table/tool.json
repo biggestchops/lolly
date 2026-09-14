@@ -119,7 +119,7 @@
       "label": "Plans and features",
       "type": "table",
       "urlKey": "t",
-      "help": "The first column holds feature names, every other column is a plan. The FIRST row is the price line for each plan. Name a row Tagline (a one-line subtitle per plan), Button (each plan's own button text - put a price there for a buy button like $9/mo, or leave a cell empty for no button under that plan), or Link (each plan's destination, so its button becomes a real link) and it drops out of the feature list. Every other row is a feature. In a cell: yes, y, true, check, tick or a check mark draws a tick; no, n, false, x, cross, - or a cross mark draws a cross; a leading >, <, ^ or v becomes an arrow; anything else prints as text. Paste a table straight from your spreadsheet to replace the whole grid.",
+      "help": "The first column holds feature names, every other column is a plan. The first row is the price line for each plan. Name a row Tagline (a one-line subtitle per plan), Button (each plan's own button text - put a price there for a buy button like $9/mo, or leave a cell empty for no button under that plan), or Link (each plan's destination, so its button becomes a real link) and it drops out of the feature list. Every other row is a feature. In a cell: yes, y, true, check, tick or a check mark draws a tick; no, n, false, x, cross, - or a cross mark draws a cross; a leading >, <, ^ or v becomes an arrow; anything else prints as text. Paste a table straight from your spreadsheet to replace the whole grid.",
       "default": {
         "columns": ["Feature", "Starter", "Team", "Enterprise"],
         "rows": [
@@ -190,6 +190,7 @@
     },
     {
       "id": "layout",
+      "display": "segmented",
       "label": "Layout",
       "type": "select",
       "default": "cards",

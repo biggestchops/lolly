@@ -1,7 +1,7 @@
 {
   "id": "filter",
   "name": "Filter",
-  "description": "One tool for photo effects: pick halftone, scanline, posterize, voronoi, dither or ASCII art (vector) or duotone, pixel-stretch, imperfections or glitch (raster). Brand overlays, live camera, and exports to as many formats as each effect supports.",
+  "description": "One tool for photo effects: pick halftone, scanline, posterize, voronoi, dither or ASCII art (vector) or duotone, pixel-stretch, misprint or glitch (raster). Design system overlays, live camera and exports to as many formats as each effect supports.",
   "a11yLabel": "{{effect}} filter of the chosen image",
   "version": "1.4.0",
   "engineVersion": "^1.0.0",
@@ -29,6 +29,7 @@
     "blurb": "Ten photo effects, vector or raster, in one tool"
   },
   "render": {
+    "sectionIcons": {"Pattern": "grid", "Ink": "droplet", "Position": "move", "Treatment": "paintbrush", "Fine-tune": "sliders", "Paper": "document", "Pixel sort": "sortDir", "Channel offset": "layersStack", "Block corruption": "noise", "Colour": "palette", "Overlay": "layers", "Output": "download"},
     "width": 1080,
     "height": 1080,
     "formats": [
@@ -125,7 +126,7 @@
         },
         {
           "value": "voronoi",
-          "label": "Voronoi cells",
+          "label": "Voronoi",
           "badge": "vector",
           "formats": [
             "png",
@@ -141,7 +142,7 @@
         },
         {
           "value": "duotone",
-          "label": "Colour treatment",
+          "label": "Duotone",
           "badge": "raster",
           "formats": [
             "png",
@@ -157,7 +158,7 @@
         },
         {
           "value": "pixel-stretch",
-          "label": "Pixel stretch",
+          "label": "Stretch",
           "badge": "raster",
           "formats": [
             "png",
@@ -173,7 +174,7 @@
         },
         {
           "value": "imperfections",
-          "label": "Imperfections",
+          "label": "Misprint",
           "badge": "raster",
           "formats": [
             "svg",
@@ -879,7 +880,7 @@
       "max": 10,
       "step": 0.2,
       "default": 0,
-      "help": "Mortar between cells. 0 = a seamless colour mesh; higher draws a gap in the edge colour for a stained-glass look.",
+      "help": "Mortar between cells. 0 = a continuous colour mesh; higher draws a gap in the edge colour for a stained-glass look.",
       "showIf": {
         "effect": "voronoi"
       }
@@ -931,7 +932,7 @@
         { "value": "gradient", "label": "Gradient map (3 stops)" },
         { "value": "split", "label": "Split tone" }
       ],
-      "help": "Recolour the photo through your brand palette in OKLab. Leave the colours below empty to auto-pick from the brand's tokens; set them to override.",
+      "help": "Recolour the photo through the design system palette in OKLab. Leave the colours below empty to auto-pick from its tokens; set them to override.",
       "showIf": {
         "effect": "duotone"
       }
@@ -958,7 +959,7 @@
       "section": "Treatment",
       "type": "color",
       "default": "",
-      "help": "Empty = auto: the darkest colour in your brand palette.",
+      "help": "Empty = auto: the darkest colour in the design system palette.",
       "showIf": {
         "effect": "duotone",
         "du_treatment": ["tint", "duotone", "gradient", "split"]
@@ -970,7 +971,7 @@
       "section": "Treatment",
       "type": "color",
       "default": "",
-      "help": "Empty = auto: the most colourful swatch in your brand palette.",
+      "help": "Empty = auto: the most colourful swatch in the design system palette.",
       "showIf": {
         "effect": "duotone",
         "du_treatment": ["gradient"]
@@ -982,7 +983,7 @@
       "section": "Treatment",
       "type": "color",
       "default": "",
-      "help": "Empty = auto: the lightest colour in your brand palette.",
+      "help": "Empty = auto: the lightest colour in the design system palette.",
       "showIf": {
         "effect": "duotone",
         "du_treatment": ["duotone", "gradient", "split"]
@@ -990,10 +991,10 @@
     },
     {
       "id": "du_imageFraming",
-      "label": "Zoom & Position",
+      "label": "Zoom & position",
       "section": "Position",
       "framingFor": "image",
-      "help": "Drag the photo on the canvas to move it, scroll to zoom, and hold Alt while dragging to correct converging verticals. Or drag a label / type a value here.",
+      "help": "Drag the photo on the canvas to move it, scroll to zoom and hold Alt while dragging to correct converging verticals. Or drag a label / type a value here.",
       "type": "vector",
       "fields": [
         {
@@ -1125,10 +1126,10 @@
     },
     {
       "id": "px_imageFraming",
-      "label": "Zoom & Position",
+      "label": "Zoom & position",
       "section": "Position",
       "framingFor": "image",
-      "help": "Drag the photo on the canvas to move it, scroll to zoom, and hold Alt while dragging to correct converging verticals. Or drag a label / type a value here.",
+      "help": "Drag the photo on the canvas to move it, scroll to zoom and hold Alt while dragging to correct converging verticals. Or drag a label / type a value here.",
       "type": "vector",
       "fields": [
         {
@@ -1253,7 +1254,7 @@
       "section": "Ink",
       "type": "color",
       "default": "{color.semantic.primary}",
-      "help": "First ink for the two-ink looks (the Risograph preset, or Custom with Two inks). Defaults to the brand's primary.",
+      "help": "First ink for the two-ink looks (the Risograph preset, or Custom with Two inks). Defaults to the design system primary.",
       "showIf": {
         "effect": "imperfections"
       }
@@ -1264,7 +1265,7 @@
       "section": "Ink",
       "type": "color",
       "default": "{color.semantic.secondary}",
-      "help": "Second ink for the two-ink looks. Defaults to the brand's secondary.",
+      "help": "Second ink for the two-ink looks. Defaults to the design system secondary.",
       "showIf": {
         "effect": "imperfections"
       }
@@ -1449,11 +1450,11 @@
         { "value": "handheld4", "label": "Handheld 4-tone" },
         { "value": "retro16", "label": "16-colour retro" },
         { "value": "retro54", "label": "54-colour retro console" },
-        { "value": "gray4", "label": "Grayscale (4)" },
-        { "value": "gray8", "label": "Grayscale (8)" },
-        { "value": "brand", "label": "Brand palette" }
+        { "value": "gray4", "label": "Greyscale (4)" },
+        { "value": "gray8", "label": "Greyscale (8)" },
+        { "value": "brand", "label": "Design system palette" }
       ],
-      "help": "The fixed set of colours every pixel snaps to. Brand palette quantizes through your active brand's colour tokens.",
+      "help": "The fixed set of colours every pixel snaps to. Design system palette uses the colour tokens of the active design system.",
       "showIf": {
         "effect": "dither"
       }
@@ -1469,7 +1470,7 @@
       "min": 2,
       "max": 16,
       "step": 1,
-      "help": "How many brand swatches to quantize to.",
+      "help": "How many design system swatches to quantize to.",
       "showIf": {
         "effect": "dither",
         "di_palette": "brand"
@@ -1628,7 +1629,7 @@
     },
     {
       "id": "gl_sortThreshold",
-      "label": "Pixel sort threshold",
+      "label": "Threshold",
       "section": "Pixel sort",
       "urlKey": "gst",
       "type": "number",
@@ -1720,7 +1721,7 @@
     },
     {
       "id": "gl_blockAmount",
-      "label": "Block corruption",
+      "label": "Amount",
       "section": "Block corruption",
       "urlKey": "gba",
       "type": "number",
@@ -1843,7 +1844,7 @@
     },
     {
       "id": "treatmentColor",
-      "label": "Colour treatment",
+      "label": "Tint colour",
       "section": "Colour",
       "type": "color",
       "default": "",
@@ -1945,11 +1946,11 @@
     },
     {
       "id": "showLogo",
-      "label": "Brand logo overlay",
+      "label": "Logo overlay",
       "section": "Overlay",
       "type": "boolean",
       "default": false,
-      "help": "Overlay the brand logo on the result. Off by default."
+      "help": "Overlay the design system logo on the result."
     },
     {
       "id": "logoPosition",
@@ -2011,14 +2012,14 @@
         },
         {
           "value": "green",
-          "label": "Green"
+          "label": "Accent"
         },
         {
           "value": "black",
           "label": "Black"
         }
       ],
-      "help": "White and green read on dark or busy footage; black suits light backgrounds."
+      "help": "White and the accent colour read on dark or busy footage; black suits light backgrounds."
     },
     {
       "id": "logoScale",
@@ -2055,7 +2056,7 @@
       "options": [
         {
           "value": "bar",
-          "label": "Brand bar"
+          "label": "Design system bar"
         },
         {
           "value": "minimal",
@@ -2137,7 +2138,7 @@
       "showIf": {
         "lowerThird": true
       },
-      "help": "Font weight of the name line (100 Thin → 900 Black)."
+      "help": "Font weight of the name line (100 Thin to 900 Black)."
     },
     {
       "id": "subtitleWeight",
@@ -2152,7 +2153,7 @@
       "showIf": {
         "lowerThird": true
       },
-      "help": "Font weight of the role / subtitle line (100 Thin → 900 Black)."
+      "help": "Font weight of the role / subtitle line (100 Thin to 900 Black)."
     },
     {
       "id": "ltHeadshot",
@@ -2235,7 +2236,7 @@
       }
     },
     {
-      "label": "Print imperfections",
+      "label": "Misprint",
       "values": {
         "effect": "imperfections"
       }

@@ -860,7 +860,7 @@ export function decodeToken(text: string, skin: TokenSkin): CodecResult<Uint8Arr
  * Which skin a pasted token is in. A base64url token of real payload bytes is
  * essentially never all-[A-Z2-7] (a single lowercase letter, `-`, `_`, `0`, `1`,
  * `8` or `9` settles it, and one appears with probability ~1 within a few chars),
- * so the charset is a safe tell. Callers that KNOW the skin should still say so - 
+ * so the charset is a safe tell. Callers that KNOW the skin should still state it - 
  * a link param is always `'link'`, a scan is always `'qr'`.
  */
 export function sniffSkin(text: string): TokenSkin {

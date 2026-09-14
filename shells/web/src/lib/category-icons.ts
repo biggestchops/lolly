@@ -48,6 +48,8 @@ const CATEGORY_ICON: Record<string, string> = {
   // Fonts (type) - a serifed "T".
   fonts: g('font'),
   type: g('font'),
+  // Emoji sets - a smiling face (the packs a set is chosen from).
+  'emoji-sets': g('smile'),
   // Your uploads - an image with an up-arrow.
   uploads: g('uploadImage'),
   // More / other - a four-square grid (the catch-all).

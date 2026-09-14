@@ -21,7 +21,8 @@ import { fileURLToPath } from 'node:url';
 // serverless bundle, same as render.ts's node-shell imports.
 import { repoRoot } from '@lolly-tools/node-shell/repo-root';
 import {
-  catalogFile, contentRoots, contentUrlFile, readToolText, type ContentRoots,
+  catalogFile, contentRoots, contentUrlFile, readAssetIndex, readToolText,
+  type AssetIndexFile, type ContentRoots,
 } from '@lolly-tools/node-shell/content-roots';
 
 // The root holding the content packs comes from the ONE shared resolver
@@ -46,9 +47,17 @@ export function catalogIndexPath(): string {
   return catalogFile('tools/index.json', content());
 }
 
-/** The generated asset registry of the active profile. */
-export function assetIndexPath(): string {
-  return catalogFile('assets/index.json', content());
+/**
+ * The asset registry of the active profile, already merged: the brand catalog's
+ * entries plus every shared asset root's (plan 252). There is no single file to point
+ * at any more, so this returns the parsed listing rather than a path - a pack mounted
+ * once outside the brands is served by whichever profile this process resolved.
+ */
+export function assetIndex<T = AssetIndexFile>(): T {
+  // One cast, in the one place, exactly as loose as the `JSON.parse(...) as
+  // AssetIndex` it replaces: the resolver knows the file shape, a caller knows the
+  // fields it reads.
+  return readAssetIndex(content()) as unknown as T;
 }
 
 /** Catalog fonts, for the resvg raster path (render.ts). */

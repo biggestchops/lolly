@@ -1,7 +1,7 @@
 {
   "id": "stationery",
   "name": "Stationery",
-  "description": "Business cards, letterhead and compliments slips from your brand - each piece sized to its real print trim, ready as a print PDF.",
+  "description": "Business cards, letterhead and compliments slips from the design system, each piece sized to its real print trim, ready as a print PDF.",
   "version": "1.0.1",
   "engineVersion": "^1.0.0",
   "status": "community",
@@ -107,14 +107,16 @@
     },
     {
       "id": "company",
+      "section": "Organisation",
       "label": "Company",
       "type": "text",
       "group": "Organisation",
       "default": "Northline Studio",
-      "help": "Also the wordmark on every piece when your brand has no logo asset to place."
+      "help": "Also the wordmark on every piece when the design system has no logo asset to place."
     },
     {
       "id": "url",
+      "section": "Organisation",
       "label": "Website",
       "type": "url",
       "group": "Organisation",
@@ -122,6 +124,7 @@
     },
     {
       "id": "address",
+      "section": "Organisation",
       "label": "Address",
       "type": "text",
       "group": "Organisation",
@@ -130,6 +133,7 @@
     },
     {
       "id": "tagline",
+      "section": "Organisation",
       "label": "Tagline",
       "type": "text",
       "group": "Organisation",
@@ -138,6 +142,7 @@
     },
     {
       "id": "body",
+      "section": "Organisation",
       "label": "Letter",
       "type": "longtext",
       "group": "Organisation",
@@ -147,6 +152,7 @@
     },
     {
       "id": "color",
+      "section": "Look",
       "label": "Ink",
       "type": "color",
       "group": "Look",
@@ -154,6 +160,7 @@
     },
     {
       "id": "background",
+      "section": "Look",
       "label": "Paper",
       "type": "color",
       "group": "Look",
@@ -161,6 +168,7 @@
     },
     {
       "id": "accent",
+      "section": "Look",
       "label": "Accent",
       "type": "color",
       "group": "Look",

@@ -30,15 +30,23 @@ const SHEET_SRC = readFileSync(resolve(import.meta.dirname, '../lib/mobile-sheet
 /** The real return expression of shouldOpenSection, as a callable. */
 const expr = SRC.match(/export function shouldOpenSection[\s\S]*?return ([^;]+);/)?.[1];
 assert.ok(expr, 'shouldOpenSection returns one expression this test can exercise');
-const decide = new Function('index', 'wasOpen', 'firstRender', 'sheetMode', `return ${expr};`) as
-  (index: number, wasOpen: boolean, firstRender: boolean, sheetMode: boolean) => boolean;
+const decide = new Function('index', 'wasOpen', 'firstRender', 'sheetMode', 'allFolded', `return ${expr};`) as
+  (index: number, wasOpen: boolean, firstRender: boolean, sheetMode: boolean, allFolded?: boolean) => boolean;
 
 test('the phone sheet opens the first section only, and the desktop sidebar none', () => {
-  assert.equal(decide(0, false, true, true), true, 'sheet, fresh mount: the first section is open');
-  assert.equal(decide(1, false, true, true), false, 'every later section stays folded');
-  assert.equal(decide(7, false, true, true), false);
-  assert.equal(decide(0, false, true, false), false,
+  assert.equal(decide(0, false, true, true, false), true, 'sheet, fresh mount: the first section is open');
+  assert.equal(decide(1, false, true, true, false), false, 'every later section stays folded');
+  assert.equal(decide(7, false, true, true, false), false);
+  assert.equal(decide(0, false, true, false, false), false,
     'desktop is unchanged - its first render folds every section, as it always did');
+});
+
+test('a tool with no flat row opens its first section on the desktop too', () => {
+  // Every input inside a section: without this the first render is a column of
+  // folded headers and not one control on screen.
+  assert.equal(decide(0, false, true, false, true), true, 'all folded: the first section opens');
+  assert.equal(decide(1, false, true, false, true), false, 'only the first');
+  assert.equal(decide(0, false, false, false, true), false, 're-renders still take the live fold state');
 });
 
 test('a section the user opened stays open, whatever the default says', () => {

@@ -1,0 +1,80 @@
+{
+  "name": "cc0-courtesy",
+  "title": "A CC0 1.0 photograph: no required credit, a courtesy credit offered",
+  "citations": [
+    "CC0 1.0, sections 2 and 3: the waiver and the fallback licence carry no conditions.",
+    "CC FAQ on crediting CC0 material: a credit is welcome and is not required."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/public-domain-photo",
+        "title": "Public Domain Photo",
+        "creators": [
+          {
+            "name": "Example Photographer",
+            "role": "creator"
+          }
+        ],
+        "sourceUrl": "https://example.org/photo.jpg",
+        "sourceHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "rights": [
+          {
+            "declaration": "CC0-1.0",
+            "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/public-domain-photo",
+        "role": "incorporated",
+        "operations": [
+          "placed"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/public-domain-photo",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "CC0-1.0",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [],
+    "optional": [
+      {
+        "work": "example/public-domain-photo",
+        "credit": "\"Public Domain Photo\" by Example Photographer, CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/, source https://example.org/photo.jpg.",
+        "changes": "unchanged"
+      }
+    ],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [],
+    "unresolved": []
+  }
+}

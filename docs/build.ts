@@ -155,6 +155,10 @@ interface Page {
   // header, nav, footer and theme every other page wears, without the pathway rail
   // it does not belong to. Built in build()'s per-locale loop, never in pages[].
   generated?: boolean;
+  // A brand-experience page (What we stand for): full-bleed bands under the site
+  // nav, no docs rail, no masthead, no jump nav - the landing's shape, for a page
+  // that is still one markdown source with a twin. `render` supplies the bands.
+  immersive?: boolean;
 }
 
 // Where docs/formats.md wants the composed three-zone table dropped in. An HTML
@@ -195,9 +199,13 @@ const pages: Page[] = [
   { slug: 'operators',        title: 'Lolly for Operators', src: 'operators.md', pathway: 'operators', isHub: true, description: "Roll Lolly out across an organisation: governance, deployment, configuration and the trust properties your security review will ask about." },
   { slug: 'trust',            title: 'Trust',               src: 'trust.md',     pathway: 'trust',     isHub: true, description: "Where your content comes from, how to check it yourself, and what happens to your data. The claims on this site with the mechanism that enforces each one." },
   { slug: 'status-quo',       title: 'The trade we never agreed to', src: 'status-quo.md', pathway: 'trust', description: "Uploading a logo to a stranger to resize it. Artwork locked behind a lapsed plan. The frictions we all learned to accept, and what replaces them." },
+  { slug: 'tenets',           title: 'What we stand for', src: 'tenets.md', pathway: 'trust', description: "The foundational page: the vision, three values, the mission and the mantra Lolly holds itself to, each in its own words.", render: renderTenetsPage, immersive: true },
   { slug: 'input-not-impersonation', title: 'Input, not impersonation', src: 'input-not-impersonation.md', pathway: 'trust', description: "An AI agent may fill in the inputs and may not claim to be you. Where the line sits, how it is enforced, and what a rogue agent still cannot do." },
+  { slug: 'creative-rights', title: 'Creative rights and credits', src: 'creative-rights.md', pathway: 'trust', description: "How Lolly records a source licence, works out what it asks of the use you are making, writes the credit into the file, and names the part only you can do." },
 
   // ── Creators pathway ─────────────────────────────────────────────────────
+  { slug: 'training-creators', title: 'Training courses', src: 'training-creators.md', pathway: 'creators', description: 'Assemble project content into courses, check their content and size, and export versions for a website or LMS.' },
+  { slug: 'learning-integration', title: 'Learning integration', src: 'learning-integration.md', pathway: 'builders', description: 'Portable course delivery and the versioned browser progress event contract.' },
   { slug: 'using',            title: 'Using Lolly',       src: 'using.md',        pathway: 'creators' },
   { slug: 'templates',        title: 'Templates',         src: 'templates.md',    pathway: 'creators', description: "Saved starting points for a tool: how to keep one, how to open a tool on it every time, and how yours sit beside the ones a tool ships with." },
   { slug: 'brand-studio',     title: 'The Brand Studio',  src: 'brand-studio.md', pathway: 'creators' },
@@ -384,6 +392,8 @@ const MASTHEADS: Record<string, string> = {
   'server-surface': 'server-surface',       // negative space, one minimal footprint (Sonnet 5)
   'parser-inventory': 'parser-inventory',   // chaotic bytes tamed into ordered rows (Fable 5)
   'beatrice-warde': 'beatrice-warde',       // the Crystal Goblet - clarity through glass (Sonnet 5)
+  // What we stand for: shares the Crystal Goblet until its own masthead is banked.
+  'tenets': 'beatrice-warde',
   'mcp': 'mcp',                             // one port, bidirectional call-and-return (Fable 5)
 };
 
@@ -458,6 +468,7 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
       // mental model. Record has no page of its own - Using Lolly carries it.
       { label: 'Make', items: [
         { slug: 'using',           label: 'Using Lolly' },
+        { slug: 'training-creators', label: 'Training courses' },
         { slug: 'templates',       label: 'Templates' },
         { slug: 'brand-studio',    label: 'The Brand Studio' },
         { slug: 'design-import',   label: 'Import a design' },
@@ -519,6 +530,7 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'tui',       label: 'Terminal (TUI)' },
         { slug: 'mcp',       label: 'MCP Server' },
         { slug: 'ai-agents', label: 'AI Agents' },
+        { slug: 'learning-integration', label: 'Learning integration' },
         { slug: 'extension', label: 'Browser Extension' } ] },
       { label: 'Ship & operate', items: [
         { slug: 'contributing-setup', label: 'Contributing setup' },
@@ -573,11 +585,13 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
     groups: [
       { label: 'Trust', items: [
         { slug: 'trust',            label: 'Overview' },
+        { slug: 'tenets',           label: 'What we stand for' },
         { slug: 'status-quo',       label: 'Why this differs' },
         { slug: 'inclusive-design', label: 'Inclusive Design' } ] },
       { label: 'Where content comes from', items: [
         { slug: 'input-not-impersonation',      label: 'Input, not impersonation' },
         { slug: 'content-credentials-identity', label: 'Content Credentials' },
+        { slug: 'creative-rights',              label: 'Creative rights and credits' },
         { slug: 'ai-stance',                    label: 'Our AI Stance' },
         { slug: 'ai-features',                  label: 'AI features' },
         { slug: 'eu-ai-act',                    label: 'The EU AI Act' },
@@ -995,6 +1009,20 @@ interface SearchRecord { p: string; t: string; h: string; a: string; x: string; 
 /** Longest section body kept per record. The lead of a section carries almost all
  *  of its search signal, and an uncapped index is ~4x the size for the tail. */
 const SEARCH_SNIPPET_MAX = 240;
+/** The same budget in UTF-8 bytes. A script that spends three bytes on a
+ *  character (Bengali, Hindi, Japanese, Chinese) would otherwise carry an index
+ *  three times the size of the English one for the same reading, and the
+ *  per-locale ceiling tests/docs-search-index.test.ts holds is in bytes. */
+const SEARCH_SNIPPET_MAX_BYTES = 220;
+const utf8 = new TextEncoder();
+
+/** A section body cut to the character budget, then to the byte budget on a
+ *  code-point boundary, so no snippet ends in half a character. */
+function clipSnippet(text: string): string {
+  const chars = Array.from(text.slice(0, SEARCH_SNIPPET_MAX));
+  while (chars.length && utf8.encode(chars.join('')).length > SEARCH_SNIPPET_MAX_BYTES) chars.pop();
+  return chars.join('');
+}
 
 const HTML_ENTITIES: Record<string, string> = {
   '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ',
@@ -1020,7 +1048,7 @@ function indexSections(html: string, slug: string, title: string): SearchRecord[
   const i = SIDEBAR_ICON[slug] ?? '';
   const heading = /<h([2-4])\s+id="([^"]*)"[^>]*>([\s\S]*?)<\/h\1>/g;
   const push = (h: string, a: string, body: string) => {
-    const x = htmlToText(body).slice(0, SEARCH_SNIPPET_MAX);
+    const x = clipSnippet(htmlToText(body));
     // A heading with no prose under it is still worth finding - it is a place in
     // the document. One with neither heading nor body is not.
     if (h || x) records.push({ p: slug, t: title, h, a, x, i });
@@ -1758,6 +1786,84 @@ ${FAQ_JS}`;
 /** /info/start/make-something.html opens with the three worked scenes - they moved
  *  here from the landing (plans/177 disposition; the covers carry the show-me job
  *  on the door now). NAMED function for check-docs-nav's brace-free match. */
+// ── What we stand for (docs/tenets.md) ────────────────────────────────────────
+// The foundational page, kept short on purpose: Vision (the hero), Values (three
+// words in three columns), Mission and Mantra - Andy's brand-tenet taxonomy, the parts
+// of it the project has settled. The words stay in markdown (twin, search, translation
+// and the vernacular gate all read the .md); this renderer only turns each `## `
+// section into a band, in document order, stamped with the tenet's meaning. Section
+// splits are fence-aware: a `## ` inside a `::: cols` fence stays in its band.
+const TENET_ORDER = ['values', 'mission', 'mantra'] as const;
+type TenetKey = typeof TENET_ORDER[number];
+// Tenet name + its meaning, in the project's own voice (Andy's taxonomy, first person).
+const TENET_KICKER: Record<TenetKey | 'vision', [string, string]> = {
+  vision:  ['Vision',  'The future we want to create'],
+  values:  ['Values',  'The attitudes that drive our work'],
+  mission: ['Mission', 'The role we play'],
+  mantra:  ['Mantra',  'What has to be part of everything we do'],
+};
+const TENET_DARK = new Set<TenetKey>(['mantra']);
+// Icons over the three Values columns, by column order: Anyone, Easy, Honest.
+const VALUE_ICONS = ['people', 'star', 'seal'];
+// Banked masthead art behind the hero (docs/mastheads/<id>). Decorative: aria-hidden,
+// credentialed like a masthead, never a substitute for the words.
+const TENET_HERO_ART = 'trust-mesh';
+function tenetArt(id: string): string {
+  const art = resolveDocsArt('mastheads', id, { dir: __dirname, lang: activeLang });
+  if (!art) { console.warn(`⚠  tenets: art '${id}' is not in docs/mastheads/`); return ''; }
+  const inlined = inlineDocsArt(art);
+  if ('error' in inlined) { console.warn(`⚠  tenets art ${id}: ${inlined.error}`); return ''; }
+  const cred = shotCredential(art.file, 'shot-cred--mast', { path: art.path, src: art.src, art: true });
+  if (!cred) console.warn(`⚠  tenets art ${art.file}: no readable Content Credential - run 'node scripts/sign-docs-art.ts'`);
+  return `<div class="tn-art" aria-hidden="true">${inlined.html}</div>${cred}`;
+}
+// `withName` false when the band's own h2 already says the tenet's name (the usual
+// case): the kicker then carries only the meaning, so the word is not set twice.
+function tenetKicker(key: TenetKey | 'vision', withName = true): string {
+  const k = TENET_KICKER[key];
+  return `<p class="tn-kicker">${withName ? `<span class="tn-kicker-name">${esc(t(k[0]))}</span>` : ''}<span class="tn-kicker-desc">${esc(t(k[1]))}</span></p>`;
+}
+function renderTenetsPage(md: string, lang: Lang): string {
+  const lines = md.split('\n');
+  const parts: string[][] = [[]];
+  let depth = 0;
+  for (const line of lines) {
+    const t = line.trim();
+    if (t.startsWith(':::')) depth += t.length > 3 ? 1 : -1;
+    if (depth === 0 && line.startsWith('## ')) parts.push([]);
+    parts[parts.length - 1]!.push(line);
+  }
+  const head = parts.shift()!.join('\n');
+  const headHtml = mdToHtml(head);
+  const h1 = /<h1[^>]*>[\s\S]*?<\/h1>/.exec(headHtml)?.[0] ?? '';
+  const afterH1 = headHtml.replace(h1, '');
+  const visionM = /<p>([\s\S]*?)<\/p>/.exec(afterH1);
+  const vision = visionM?.[1] ?? '';
+  const afterVision = afterH1.replace(visionM?.[0] ?? '', '');
+  const gloss = /<p>([\s\S]*?)<\/p>/.exec(afterVision)?.[1] ?? '';
+
+  const hero = `<section class="tn-band tn-band--dark tn-hero">${tenetArt(TENET_HERO_ART)}<div class="tn-inner">
+  ${h1.replace('<h1', '<h1 class="tn-eyebrow"')}
+  ${tenetKicker('vision')}
+  <p class="tn-vision">${vision}</p>
+  ${gloss ? `<p class="tn-gloss">${gloss}</p>` : ''}
+</div></section>`;
+
+  const bands = parts.map((block, i) => {
+    const key: TenetKey = TENET_ORDER[i] ?? 'mantra';
+    let html = mdToHtml(block.join('\n'));
+    if (key === 'values') {
+      let col = 0;
+      html = html.replace(/<div class="md-col"><h2/g, () => `<div class="md-col"><span class="tn-col-icon" aria-hidden="true">${docIcon(VALUE_ICONS[col++] ?? 'star')}</span><h2`);
+    }
+    const h2Text = (/<h2[^>]*>([\s\S]*?)<\/h2>/.exec(html)?.[1] ?? '').replace(/<[^>]+>/g, '').trim();
+    const nameInHeading = h2Text.toLowerCase() === t(TENET_KICKER[key][0]).toLowerCase();
+    return `<section class="tn-band tn-${key}${TENET_DARK.has(key) ? ' tn-band--dark' : ''}" id="tenet-${key}"><div class="tn-inner tn-prose reveal">${tenetKicker(key, !nameInHeading)}${html}</div></section>`;
+  });
+  void lang;
+  return [hero, ...bands].join('\n');
+}
+
 function renderMakeSomethingPage(md: string, lang: Lang): string {
   return `${makeSomethingBlock(lang)}\n${mdToHtml(md)}`;
 }
@@ -3342,6 +3448,62 @@ footer .founded-badge{margin-top:.5rem}
 .page-beatrice-warde .docs-content pre{font-family:'Cinzel',Georgia,serif;font-size:1.0625rem;line-height:2.05;letter-spacing:.055em;text-align:center;background:linear-gradient(#fbfaf7,#f4f2ec);color:#25313a;padding:2.5rem 1.5rem;border-radius:10px;box-shadow:inset 0 0 0 1px #0000000f,0 1px 2px #0000000a;white-space:pre-wrap;text-wrap:balance}
 .page-beatrice-warde .docs-content pre code{font-family:inherit;font-size:inherit;background:none;padding:0}
 [data-theme="dark"] .page-beatrice-warde .docs-content pre,[data-theme="brand"] .page-beatrice-warde .docs-content pre{background:linear-gradient(#12271d,#0d2016);color:#e8f0ea;box-shadow:inset 0 0 0 1px #ffffff14}
+/* ── What we stand for (docs/tenets.md, renderTenetsPage) ──────────────────────
+   Four full-bleed bands under the site nav: a dark hero carrying the vision over
+   banked art, Values as three words in three columns, Mission, and the Mantra in
+   Cinzel on a dark band. Each band opens with a kicker: the tenet's meaning. Motion is
+   the shared .reveal fade plus the art's own guarded loop; both stop under reduced motion. */
+.docs-immersive{padding:0;margin:0}
+.page-tenets .tn-band{position:relative;isolation:isolate;overflow:hidden;padding:clamp(3.5rem,9vw,7.5rem) 1.5rem;background:var(--page);color:var(--text)}
+.page-tenets .tn-band--dark{background:hsl(var(--band-dark));color:hsl(var(--on-band-dark))}
+.page-tenets .tn-band--dark a{color:hsl(var(--band-accent))}
+.page-tenets .tn-band--dark h2,.page-tenets .tn-band--dark strong{color:hsl(var(--on-band-dark))}
+.page-tenets .tn-inner{position:relative;z-index:2;max-width:1100px;margin:0 auto}
+.page-tenets .tn-prose>p{max-width:46rem}
+.page-tenets .tn-prose p{font-size:1.125rem;line-height:1.65;margin:0 0 1.25rem}
+.page-tenets .tn-prose h2{font-size:clamp(1.9rem,3.4vw,2.7rem);font-weight:800;letter-spacing:-.02em;line-height:1.12;margin:0 0 1.25rem;border:0;padding:0;text-transform:none;color:inherit}
+.page-tenets .tn-art{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:.55}
+.page-tenets .tn-art>svg{display:block;width:100%;height:100%}
+.page-tenets .tn-band .shot-cred--mast{position:absolute;inset-block-end:.8rem;inset-inline-end:1.2rem;z-index:3}
+/* The kicker: the tenet's meaning (and its name, where no heading says it) */
+.page-tenets .tn-kicker{display:flex;flex-wrap:wrap;align-items:baseline;gap:.35rem 1rem;margin:0 0 .6rem;font-size:.9375rem;line-height:1.3}
+.page-tenets .tn-kicker-name{font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--green)}
+.page-tenets .tn-band--dark .tn-kicker-name{color:hsl(var(--band-accent))}
+.page-tenets .tn-kicker-desc{color:var(--muted);font-weight:500}
+.page-tenets .tn-band--dark .tn-kicker-desc{color:hsl(var(--on-band-dark)/.62)}
+/* Hero: the eyebrow is the page's h1 (search, seal, listen all key on it); the vision is the show. */
+.page-tenets .tn-hero{min-height:min(88vh,52rem);display:flex;align-items:flex-end;padding-top:clamp(7rem,16vw,11rem)}
+.page-tenets .tn-hero::after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,hsl(var(--band-dark)/.15) 0%,hsl(var(--band-dark)/.55) 55%,hsl(var(--band-dark)) 100%)}
+.page-tenets .tn-eyebrow{font-size:.8125rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:hsl(var(--on-band-dark)/.55);margin:0 0 2rem;padding:0;border:0;line-height:1}
+.page-tenets .tn-hero .tn-kicker{margin-bottom:1.25rem}
+.page-tenets .tn-vision{font-size:clamp(2.4rem,6vw,5.2rem);font-weight:800;line-height:1.02;letter-spacing:-.03em;text-wrap:balance;max-width:16ch;margin:0;color:hsl(var(--on-band-dark))}
+.page-tenets .tn-gloss{font-size:clamp(1.1rem,1.8vw,1.5rem);font-weight:400;line-height:1.4;color:hsl(var(--on-band-dark)/.82);margin:1.75rem 0 0;max-width:38ch;text-wrap:balance}
+/* Values: three words, three columns, an icon over each */
+.page-tenets .tn-values .md-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2.5rem;margin:1.5rem 0 0}
+.page-tenets .tn-values .md-col{padding-top:1.1rem;border-top:2px solid var(--green)}
+.page-tenets .tn-col-icon{display:inline-flex;width:2.4rem;height:2.4rem;border-radius:.8em;align-items:center;justify-content:center;background:hsl(var(--primary)/.12);color:var(--green);margin:0 0 .9rem}
+.page-tenets .tn-col-icon svg{width:1.25rem;height:1.25rem}
+.page-tenets .tn-values .md-col h2{font-size:clamp(1.6rem,2.6vw,2.2rem);font-weight:800;letter-spacing:-.02em;margin:0 0 .6rem;color:var(--dark)}
+.page-tenets .tn-values .md-col p{font-size:1.0625rem;line-height:1.55;margin:0}
+.page-tenets .tn-values .md-col p strong{color:var(--dark)}
+/* Mission: the line, then the reason */
+.page-tenets .tn-mission .tn-prose>h2+p{font-size:clamp(1.5rem,3vw,2.4rem);font-weight:800;line-height:1.15;letter-spacing:-.02em;text-wrap:balance;margin:0 0 1.25rem;color:var(--dark)}
+/* Mantra: one line, large, Cinzel */
+.page-tenets .tn-mantra .tn-prose{text-align:center;margin:0 auto;max-width:52rem}
+.page-tenets .tn-mantra .tn-prose>p{max-width:none}
+.page-tenets .tn-mantra .tn-kicker{justify-content:center}
+.page-tenets .tn-mantra blockquote{margin:1rem auto 1.5rem;transform:none;padding:0;background:none;box-shadow:none;font-family:'Cinzel',Georgia,serif;font-size:clamp(1.6rem,3.6vw,3rem);letter-spacing:.04em;line-height:1.25;color:hsl(var(--on-band-dark));max-width:none;text-wrap:balance}
+.page-tenets .tn-mantra p{color:hsl(var(--on-band-dark)/.8)}
+/* Reveal, and the a11y contract */
+.page-tenets .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.16,.84,.3,1),transform .7s cubic-bezier(.16,.84,.3,1)}
+.page-tenets .reveal.visible{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.page-tenets .reveal{opacity:1;transform:none;transition:none}}
+html[data-a11y-motion="reduce"] .page-tenets .reveal{opacity:1;transform:none;transition:none}
+@media (max-width:760px){
+  .page-tenets .tn-band{padding-inline:1.1rem}
+  .page-tenets .tn-hero{min-height:0;padding-top:6rem}
+  .page-tenets .tn-values .md-cols{grid-template-columns:1fr;gap:1.5rem}
+}
 .doc-audio{margin:0 0 .5rem;padding:0}
 .doc-audio audio{width:100%;height:40px;display:block}
 /* An audiogram MP4 is square (1080²) and would swamp the column at full width -
@@ -4574,8 +4736,8 @@ const PATHWAY_HUB: Record<Pathway, string> = {
  * way" means search / favourites / profile then meets a fourth page under it down
  * here and has to work out which grouping is the real one.
  *
- * Builders and Trust cannot be held to that, and the reason is structural rather
- * than sloppy: a sidebar deliberately REPEATS a page across pathways (Security sits
+ * Builders and Trust use a different grouping: a sidebar deliberately REPEATS
+ * a page across pathways (Security sits
  * in three rails; Data Transfer in two), while the footer lists every page exactly
  * once. So their columns are the rail clusters with the borrowed pages settled onto
  * one owner - cli-signing to Operators, data-transfer and about to Builders, privacy
@@ -4605,7 +4767,7 @@ const FOOTER_SECTIONS: SitemapSection[] = [
   // kind of thing - who-you-are doors - so they read as one group, with each pathway's
   // sub-columns following after the trio. Membership is unchanged, order only.
   { hub: 'creators', label: 'For Creators', slugs: [
-    'using', 'templates', 'brand-studio', 'design-import', 'sequence-editor', 'animating', 'utilities', 'extension'] },
+    'using', 'training-creators', 'templates', 'brand-studio', 'design-import', 'sequence-editor', 'animating', 'utilities', 'extension'] },
   { hub: 'builders', label: 'For Builders', slugs: [
     'overview', 'design-tokens', 'glossary', 'authoring-tools', 'authoring-assets', 'host-api', 'url-mode'] },
   { hub: 'operators', label: 'For Operators', slugs: [
@@ -4618,13 +4780,13 @@ const FOOTER_SECTIONS: SitemapSection[] = [
   { hub: 'builders', label: 'Concepts', slugs: [
     'constraints', 'determinism', 'reproducibility'] },
   { hub: 'builders', label: 'Run & integrate', slugs: [
-    'cli', 'tui', 'mcp', 'ai-agents', 'data-transfer'] },
+    'cli', 'tui', 'mcp', 'ai-agents', 'data-transfer', 'learning-integration'] },
   { hub: 'builders', label: 'Ship & operate', slugs: [
     'contributing-setup', 'ios-build', 'about'] },
   { hub: 'trust', label: 'Trust', slugs: [
-    'status-quo', 'input-not-impersonation', 'content-credentials-identity',
-    'content-credentials-engineering', 'ai-stance', 'ai-features', 'eu-ai-act', 'beatrice-warde',
-    'shoulders-of-giants'] },
+    'tenets', 'status-quo', 'input-not-impersonation', 'content-credentials-identity',
+    'content-credentials-engineering', 'creative-rights', 'ai-stance', 'ai-features', 'eu-ai-act',
+    'beatrice-warde', 'shoulders-of-giants'] },
   { hub: 'trust', label: 'Check it yourself', slugs: [
     'verify-yourself', 'security', 'threat-model', 'parser-inventory', 'server-surface'] },
   { hub: 'trust', label: 'Your data', slugs: ['privacy', 'inclusive-design'] },
@@ -4721,7 +4883,7 @@ const SIDEBAR_ICON: Record<string, string> = {
   quickstart: 'star', creators: 'palette', builders: 'wrench', operators: 'checklist', trust: 'shieldcheck',
   'status-quo': 'convert', 'input-not-impersonation': 'usercheck',
   // Creators
-  using: 'pentool', templates: 'folder', 'brand-studio': 'palette', profile: 'usercheck', 'design-import': 'upload',
+  'learning-integration': 'convert', 'training-creators': 'folder', using: 'pentool', templates: 'folder', 'brand-studio': 'palette', profile: 'usercheck', 'design-import': 'upload',
   'sequence-editor': 'clock', animating: 'layers', exporting: 'download', formats: 'convert', positioning: 'sliders', compare: 'checklist',
   'compare-canva': 'checklist', 'compare-adobe': 'checklist', 'compare-figma': 'checklist', 'compare-render-apis': 'checklist', 'compare-converters': 'checklist',
   'compare-penpot': 'checklist', 'compare-brand-portals': 'checklist',
@@ -4743,7 +4905,9 @@ const SIDEBAR_ICON: Record<string, string> = {
   // Operators
   'adoption-governance': 'people',
   // Trust - where content comes from
+  tenets: 'star',
   'content-credentials-identity': 'seal', 'content-credentials-engineering': 'cpu', 'ai-stance': 'sparkle',
+  'creative-rights': 'people',
   'ai-features': 'sparkle', 'eu-ai-act': 'document',
   'beatrice-warde': 'font',
   'shoulders-of-giants': 'people',
@@ -5199,7 +5363,7 @@ function wrapPage(lang: Lang, page: Page, content: string, ogSlugs: Set<string>,
   // Docs pages only: the landing page already carries its own sticky quicknav, and
   // a second on-page nav in the corner would be two answers to one question. A
   // generated side-door page has no sidebar to mirror, so it skips the jump nav too.
-  const jump = (isLanding || page.generated) ? '' : pageJumpNav(content);
+  const jump = (isLanding || page.generated || page.immersive) ? '' : pageJumpNav(content);
 
   // The masthead band, and the article body with its h1 lifted out of it. The Listen
   // button keeps its place ABOVE the h1 (it was always the first thing in <main>),
@@ -5216,6 +5380,7 @@ function wrapPage(lang: Lang, page: Page, content: string, ogSlugs: Set<string>,
   // to .docs-content sit at (0,1,1) and would out-specify every band rule at (0,1,0),
   // restyling all of the landing headings.
   const body = isLanding ? `<main class="docs-landing page-${slugClass}">${listen}${content}</main>`
+    : page.immersive ? `<main class="docs-landing docs-immersive page-${slugClass}">${listen}${content}</main>`
     : page.generated ? `
 <div class="docs-wrap">
   ${buildSidebar(lang, page, activeHref)}
@@ -5900,7 +6065,7 @@ if (process.argv.includes('--watch') && process.env.LOLLY_DOCS_RELOAD !== '1') {
     try {
       await import(`${import.meta.url}?reload=${Date.now()}`);
     } catch (err) {
-      // A syntax error in a half-saved file is the common case: say so and keep
+      // A syntax error in a half-saved file is the common case: report it and keep
       // watching, so the next save recovers rather than leaving a dead watcher.
       console.error('✗  Reload failed:', (err as Error).message);
     } finally {

@@ -40,16 +40,16 @@
         { "value": "push-in", "label": "Push in" },
         { "value": "still", "label": "Still (hold first pose)" }
       ],
-      "help": "A preset flight, or Custom to drive the camera (distance + height) from the poses. Depth, opacity, extrusion, tilt, rotate and scale animate across the poses under ANY flight - except Still, which holds the FIRST pose static so you can configure a single pose without matching Start and End."
+      "help": "A preset flight, or Custom to drive the camera distance and height from the poses. Every pose property animates under any flight, except Still, which holds the first pose so you can set up a single pose on its own."
     },
-    { "id": "iso", "urlKey": "iso", "label": "Isometric (no perspective)", "section": "Scene", "type": "boolean", "default": false, "help": "Switch to a real orthographic camera - parallel projection, no perspective convergence. Combine with Tilt + Rotate for a true isometric. Perspective (FOV) is disabled while this is on." },
+    { "id": "iso", "urlKey": "iso", "label": "Isometric (no perspective)", "section": "Scene", "type": "boolean", "default": false, "help": "Switches to a parallel projection, with no perspective convergence. Combine it with the pose Tilt sliders for a true isometric; Perspective is ignored while this is on." },
     { "id": "duration", "urlKey": "sec", "label": "Seconds", "section": "Scene", "type": "number", "display": "slider", "default": 6, "min": 1, "max": 30, "step": 0.5, "help": "Length of the move. Match the export Duration for a clean loop." },
-    { "id": "loop", "urlKey": "lp", "label": "Loop home", "section": "Scene", "type": "boolean", "default": true, "help": "On: eases out to End then reverses home (seamless loop). Off: plays once, Start → End." },
+    { "id": "loop", "urlKey": "lp", "label": "Loop home", "section": "Scene", "type": "boolean", "default": true, "help": "On: eases out to End then reverses home (a continuous loop). Off: plays once, from Start to End." },
     { "id": "reverse", "urlKey": "rev", "label": "Reverse poses", "section": "Scene", "type": "boolean", "default": false, "help": "Play the poses back to front - a one-click fix when you built the move backwards. The pose list stays as-is; only the play direction flips." },
     { "id": "light", "urlKey": "lt", "label": "Light", "section": "Scene", "type": "number", "display": "slider", "default": 1, "min": 0, "max": 2.5, "step": 0.05, "help": "How hard the key light rakes across the extruded side walls - higher gives the solids more form and contrast." },
     { "id": "shadow", "urlKey": "sd", "label": "Shadow", "section": "Scene", "type": "number", "display": "slider", "default": 0.35, "min": 0, "max": 1, "step": 0.05, "help": "Strength of the soft shadow each layer casts on the one behind it." },
     { "id": "floor", "urlKey": "fl", "label": "Studio floor", "section": "Scene", "type": "number", "display": "slider", "default": 0, "min": 0, "max": 1, "step": 0.05, "help": "A soft showroom floor shadow pooled under the base - wider than the subject and receding along the floor. 0 is off." },
-    { "id": "floorViewport", "urlKey": "flv", "label": "Floor: anchor to viewport", "section": "Scene", "type": "boolean", "default": false, "help": "Off: the floor is anchored to the subject and tilts with it (a diorama the camera flies around). On: the floor stays a fixed horizontal ground in the viewport while the subject tilts above it." },
+    { "id": "floorViewport", "urlKey": "flv", "label": "Anchor floor to viewport", "section": "Scene", "type": "boolean", "default": false, "help": "Off: the floor is anchored to the subject and tilts with it (a diorama the camera flies around). On: the floor stays a fixed horizontal ground in the viewport while the subject tilts above it." },
 
     {
       "id": "poses", "urlKey": "ps", "label": "Poses", "section": "Poses", "type": "blocks", "labelledFields": true, "rowActions": true,

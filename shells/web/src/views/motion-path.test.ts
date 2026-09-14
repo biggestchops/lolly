@@ -13,7 +13,7 @@
  *       REMOVES it from the DOM even if an export node were ever widened to the stage;
  *   (c) the module never writes a class or an inline style to a `.lolly-box`. Here
  *       that is STRUCTURAL - it is handed no canvas element at all - and a source scan
- *       plus a byte-identity probe both say so.
+ *       plus a byte-identity probe both show it.
  *
  * Plus the two claims that make the overlay honest rather than decorative:
  *   • the points are the ENGINE's, mapped through the same `nativeToStage` the

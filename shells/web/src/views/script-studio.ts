@@ -192,7 +192,7 @@ export async function mountScriptStudio(viewEl: HTMLElement, host: ScriptAudioHo
   document.title = tRaw('{name} - Lolly', { name: t('Script audio') });
   const speech = host.speech;
 
-  // A deep link onto a shell without the speech bridge: say so, plainly.
+  // A deep link onto a shell without the speech bridge: report it, plainly.
   if (!speech?.isAvailable()) {
     viewEl.innerHTML = `
       ${backHomeHtml()}

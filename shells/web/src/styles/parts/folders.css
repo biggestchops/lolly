@@ -73,12 +73,8 @@
   color: var(--ui-color-text-muted); overflow: hidden;
 }
 
-.folder-tile {
-  position: relative; border: 0;
-  border-radius: var(--ui-radius-card); background: var(--ui-color-surface-raised);
-  overflow: hidden; box-shadow: var(--shadow-1);
-}
-.folder-tile:hover { border-color: color-mix(in srgb, var(--ui-color-action-primary) 60%, transparent); box-shadow: var(--ui-elevation-control); }
+/* Card appearance and selection controls are shared in object-tiles.css. */
+.folder-tile { container-type: inline-size; }
 .tile-primary {
   display: flex; flex-direction: column; width: 100%; padding: 0; box-sizing: border-box;
   border: 0; background: none; color: inherit; cursor: pointer; text-align: left;
@@ -86,7 +82,7 @@
 }
 .tile-cover, .folder-mosaic {
   display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
-  background: var(--ui-color-surface-muted); border-bottom: 1px solid var(--ui-color-border-default);
+  background: var(--ui-color-surface-muted);
 }
 .tile-cover--batch, .tile-cover--empty {
   display: flex; align-items: center; justify-content: center;
@@ -112,11 +108,6 @@
 .folder-tile--folder .tile-cover,
 .tile-cover--create { aspect-ratio: auto; height: 90px; }
 .tile-cover--batch svg { width: calc(30px * var(--a11y-fs)); height: calc(30px * var(--a11y-fs)); }
-.tile-meta { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px 10px; min-width: 0; }
-.tile-title {
-  font-size: calc(12.5px * var(--a11y-fs)); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.tile-sub { font-size: var(--fs-xs); color: var(--ui-color-text-muted); }
 .tile-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .tile-badge {
   font-size: var(--fs-2xs); font-weight: 600; line-height: 1; padding: 3px 5px;
@@ -143,34 +134,11 @@
 .tile-menu-btn:hover { background: var(--ui-color-surface-muted); }
 .tile-menu-btn svg { width: calc(15px * var(--a11y-fs)); height: calc(15px * var(--a11y-fs)); }
 
-/* Multi-select toggle - a SIBLING of .tile-primary (never nested; Space would double-
-   fire the open action). Mirrors .tile-menu-btn but pinned top-LEFT. Hover-revealed on
-   fine pointers, filled primary when selected, and always visible on touch / when the
-   tile is selected. */
-.tile-check {
-  /* Box on the icon scale with its tick, as .tile-menu-btn above. */
-  position: absolute; top: 6px; left: 6px; z-index: 2; width: calc(22px * var(--a11y-fs)); height: calc(22px * var(--a11y-fs));
-  display: inline-flex; align-items: center; justify-content: center; padding: 0;
-  border: 2px solid var(--ui-color-border-default); border-radius: var(--ui-radius-choice-round);
-  background: color-mix(in srgb, var(--ui-color-surface-canvas) 85%, transparent); color: var(--ui-color-action-on-primary);
-  cursor: pointer; opacity: 0; transition: opacity var(--ui-motion-feedback), background var(--ui-motion-feedback), border-color var(--ui-motion-feedback);
-}
-.folder-tile:hover .tile-check, .tile-check:focus-visible,
-.folder-tile.is-selected .tile-check { opacity: 1; }
-.tile-check svg { width: var(--fs-md); height: var(--fs-md); opacity: 0; }
-.tile-check[aria-pressed="true"] {
-  background: var(--ui-color-action-primary); border-color: var(--ui-color-action-primary); opacity: 1;
-}
-.tile-check[aria-pressed="true"] svg { opacity: 1; }
-.folder-tile.is-selected { border-color: 0; box-shadow: var(--shadow-2), var(--ui-effect-selected); }
-/* Touch devices have no hover - keep the toggle visible so selection is discoverable. */
-@media (pointer: coarse) {
-  .tile-check { opacity: 1; }
-  /* Hit area only, via ::after - the visible circle stays 22px everywhere this
-     shared class renders (gallery included); Projects grows the real box further
-     still (projects.css), and the two floors simply compose. */
-  .tile-check::after { content: ''; position: absolute; inset: calc((28px - 100%) / -2); }
-}
+/* The selection button remains a sibling of the open target. */
+.folder-tile .tile-check { top: calc(75cqw - var(--object-check-size) - 6px); }
+.folder-tile--folder .tile-check { top: calc(83px - var(--object-check-size) - 6px); }
+.tile-figure { display: block; width: 100%; }
+.tile-figure .tile-cover { background: transparent; }
 
 /* Per-tile action popover (move / rename / delete) - mountBodyPopover-mounted (see
    components/body-popover.ts). Appended to <body> (projects.ts) and z-indexed ABOVE

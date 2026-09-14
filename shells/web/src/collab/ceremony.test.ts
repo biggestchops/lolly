@@ -322,7 +322,7 @@ test('a MAJOR tool-version gap refuses; a minor one connects with a note', async
   assert.equal(refused.state.phase, 'failed');
   assert.equal(refused.state.cause, 'version-major-mismatch');
 
-  // Minor skew is the PWA-staleness case (section 11.19): connect, and say so.
+  // Minor skew is the PWA-staleness case (section 11.19): connect, and report it.
   const minor = new TestClock();
   const soft = createCeremony({
     role: 'acceptor',

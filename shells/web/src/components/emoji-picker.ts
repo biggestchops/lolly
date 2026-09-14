@@ -26,6 +26,14 @@
  * those, the same conclusion components/color-field.ts reached - which is also
  * where fixedContainingBlockOrigin comes from, for the rare page whose <body>
  * itself traps `fixed`.
+ *
+ * ## The grid draws the chosen set (plan 252)
+ *
+ * A caller that hands in `options.emoji` gets a grid painted from the emoji set
+ * the document chose, not from whatever face the machine has: the runtime's own
+ * pass walks the component's shadow root and swaps each cluster for the pack's
+ * artwork. See drawPackArtwork below for what is drawn, when, and why a device
+ * with no chosen set keeps the grid it already had.
  */
 import './emoji-picker.css';
 import { fixedContainingBlockOrigin } from './color-field.ts';
@@ -42,11 +50,33 @@ export const EMOJI_VERSION = '17.0';
 /** Margin kept between the popover and every viewport edge. */
 const MARGIN = 8;
 
+/**
+ * The emoji pass, in the one member the picker calls. `runtime.applyEmojiToDom`
+ * fits it as it is, and nothing here imports an engine emoji module: the caller
+ * hands the pass in, so this chunk stays what it always was.
+ */
+export interface EmojiArtworkPass {
+  apply(node: unknown): Promise<unknown>;
+  /**
+   * Put the characters back. The pass is idempotent by design, so a cell that is
+   * already drawn is left alone: without a revert, a set chosen while the grid is
+   * open would leave every drawn cell showing the set before it.
+   * `runtime.revertEmojiDom` fits this as it is.
+   */
+  revert?(node: unknown): Promise<unknown>;
+  /** Say when the chosen set or treatment changes. Returns the unsubscribe. Only
+   *  a surface that outlives a choice needs it - the popover closes on the pick. */
+  onSetChange?(fn: () => void): () => void;
+}
+
 export interface EmojiPopoverOptions {
   /** Define the `<unicode-emoji-picker>` element. Swappable so a jsdom test can
    *  drive the popover against a stand-in element instead of loading the real
    *  web component (which wants a browser). */
   defineElement?: () => Promise<void>;
+  /** Draw every cell from the chosen emoji set. Left out, the grid stays exactly
+   *  as the component drew it. */
+  emoji?: EmojiArtworkPass;
 }
 
 /** A rectangle, in the members the placement maths actually reads. */
@@ -90,6 +120,230 @@ function defineEmojiPicker(): Promise<void> {
   return defined;
 }
 
+/** The class the engine's pass puts on every placement it makes. A string, not an
+ *  import: this chunk must not pull an engine emoji module onto the page. */
+const DRAWN_CLASS = 'lolly-emoji';
+
+/**
+ * The cells the component is showing right now. A cell it has scrolled past
+ * carries `lazy-load`, a cell from another category carries `hidden`, and the
+ * variation cells of a base cell are drawn with their parent rather than on their
+ * own, which is why only a direct child of the grid matches.
+ */
+const VISIBLE_CELLS = '.emojis > .emoji:not(.hidden):not(.lazy-load)';
+
+/** The counts the runtime's pass reports, when it is the runtime's pass talking. */
+function drawnCounts(result: unknown): { replaced: number; unresolved: number } | null {
+  if (!result || typeof result !== 'object') return null;
+  const counts = result as { replaced?: unknown; unresolved?: unknown };
+  if (typeof counts.replaced !== 'number' || typeof counts.unresolved !== 'number') return null;
+  return { replaced: counts.replaced, unresolved: counts.unresolved };
+}
+
+/**
+ * Give one cell's artwork local ids nobody else can claim.
+ *
+ * The engine names the ids inside a placement after the work item's place in the
+ * tree it was handed, so two separate calls both start counting at the beginning
+ * and two cells can mint the same gradient id. Inside one shadow root the first
+ * one then wins for everybody, which paints one cell's gradient or clip path on
+ * every later cell that named it. So each cell gets a tag of its own, written
+ * onto the ids it owns and onto the references that name them. Running it twice
+ * changes nothing, so a redraw after a set change is safe.
+ */
+export function scopeArtworkIds(cell: Element, tag: string): void {
+  const renamed = new Map<string, string>();
+  for (const owner of cell.querySelectorAll('[id]')) {
+    const id = owner.getAttribute('id') ?? '';
+    if (!id || id.startsWith(`${tag}-`)) continue;
+    const next = `${tag}-${id}`;
+    owner.setAttribute('id', next);
+    renamed.set(id, next);
+  }
+  if (!renamed.size) return;
+  for (const node of cell.querySelectorAll('*')) {
+    for (const attribute of Array.from(node.attributes)) {
+      const value = attribute.value;
+      if (value.startsWith('url(#') && value.endsWith(')')) {
+        const named = renamed.get(value.slice(5, -1));
+        if (named) node.setAttribute(attribute.name, `url(#${named})`);
+      } else if (value.startsWith('#')) {
+        const named = renamed.get(value.slice(1));
+        if (named) node.setAttribute(attribute.name, `#${named}`);
+      }
+    }
+  }
+}
+
+/** What drawPackArtwork hands back: when the first pass is done, and how to stop. */
+export interface EmojiArtworkRun {
+  /** Settles once the first pass over the mounted grid has finished. */
+  ready: Promise<void>;
+  /** Draw the grid again from scratch, for a set chosen while it is open: the
+   *  characters go back first, so the cells that are already drawn are redrawn
+   *  rather than kept. A pass with no `revert` cannot do this and does nothing. */
+  redraw(): void;
+  /** Stop watching and draw nothing more. Safe to call twice. */
+  stop(): void;
+}
+
+/**
+ * Draw the grid from the chosen emoji set.
+ *
+ * The component attaches an OPEN shadow root, so the runtime's pass can walk it:
+ * each cell's text node becomes the pack's artwork, with the characters kept in
+ * the clipped span the engine writes, and the placement is styled inline, so no
+ * stylesheet has to reach inside the shadow boundary. The component keeps its own
+ * data, so search, keyboard focus and what a pick reports are all untouched.
+ *
+ * Three decisions a reader should know about.
+ *
+ * The whole grid is not drawn at once. Every cell of every category is in the DOM
+ * from the moment the component mounts, and one pass over all of them measured
+ * 2,982 ms in jsdom on a 2026 laptop: 3,953 cells, one distinct glyph each, from
+ * the full Twemoji Color pack. A second pass over the same drawn grid is 163 ms,
+ * so it is the first one that has to be kept small. Only the cells the component
+ * is showing are drawn (about 99 ms for the 60 of a first screen), and each burst
+ * (the grid being built, a category switch, a search, cells losing `lazy-load` as
+ * they scroll into view) draws whatever became visible, coalesced through one
+ * frame. A drawn cell is left alone, which the engine's own idempotence makes
+ * cheap anyway.
+ *
+ * With no set drawing, the grid is left exactly as the component made it. A probe
+ * over a detached copy of the tab strip says whether any artwork comes back: a
+ * device with no packs, a document with no set chosen, or a host with no emoji
+ * API at all gives nothing, and a grid of several thousand identical placeholders
+ * is not a picker. The canvas is where a missing choice is reported, and the
+ * Emoji section is where it is made.
+ *
+ * A set chosen while the grid is open redraws it. The engine's pass is idempotent,
+ * so a cell that is already drawn would otherwise keep the set it was drawn with
+ * for as long as the surface lives. A pass that also carries `revert` gets
+ * `redraw()`: the characters go back, the probe runs again, and the visible cells
+ * are drawn from the new set. Only a surface that outlives a choice needs it - the
+ * popover closes on the pick - so the character browser wires `onSetChange` and the
+ * popover does not.
+ */
+export function drawPackArtwork(picker: HTMLElement, pass: EmojiArtworkPass): EmojiArtworkRun {
+  const root = picker.shadowRoot;
+  // Two ways to stop. `halt` puts the watch down, which is what a probe reporting
+  // no artwork does: nothing more is drawn, but the surface is still alive and a
+  // set chosen later can start it again. `stop` retires the whole run and is the
+  // teardown every exit calls.
+  let stopped = false, retired = false;
+  let pending: { handle: number; frames: boolean } | null = null;
+  let running: Promise<void> | null = null;
+  let queued = false, probed = false, scopes = 0, stale = false;
+  let observer: MutationObserver | null = null;
+  let unsubscribe: (() => void) | null = null;
+
+  const halt = (): void => {
+    stopped = true;
+    observer?.disconnect();
+    observer = null;
+    if (pending?.frames) cancelAnimationFrame(pending.handle);
+    else if (pending) clearTimeout(pending.handle);
+    pending = null;
+  };
+  const stop = (): void => {
+    retired = true;
+    unsubscribe?.();
+    unsubscribe = null;
+    halt();
+  };
+  if (!root) return { ready: Promise.resolve(), redraw: () => {}, stop };
+
+  const tags = new WeakMap<Element, string>();
+  const tagFor = (cell: Element): string => {
+    let tag = tags.get(cell);
+    if (!tag) { tag = `c${scopes++}`; tags.set(cell, tag); }
+    return tag;
+  };
+
+  const run = async (): Promise<void> => {
+    if (stopped) return;
+    // A set was chosen while the grid was open: the characters go back, so the
+    // cells already drawn are drawn again from the new set rather than skipped as
+    // finished, and the probe runs again so a choice that draws nothing hands the
+    // component's own grid back rather than a wall of placeholders.
+    if (stale && pass.revert) {
+      stale = false;
+      await pass.revert(root);
+      if (stopped) return;
+    }
+    if (!probed) {
+      const sample = (root.querySelector('.tabs') ?? root.querySelector('.emoji'))?.cloneNode(true);
+      // Nothing is mounted yet. The next burst, which is the grid arriving, tries again.
+      if (!sample) return;
+      probed = true;
+      const counts = drawnCounts(await pass.apply(sample));
+      // Nothing draws: keep the grid the component made, and stop asking. Not a
+      // teardown - a set chosen later reaches redraw() and starts this again.
+      if (counts && counts.replaced === 0) { halt(); return; }
+    }
+    const targets: Element[] = [];
+    // Each tab on its own, not the strip as a whole: a set that carries some tab
+    // glyphs and not others would otherwise leave the rest showing the machine's
+    // font for as long as the picker is open, because one drawn glyph made the
+    // whole strip look finished.
+    for (const tab of root.querySelectorAll('.tabs > *')) {
+      if (!tab.querySelector(`.${DRAWN_CLASS}`)) targets.push(tab);
+    }
+    for (const cell of root.querySelectorAll(VISIBLE_CELLS)) {
+      if (!cell.querySelector(`.${DRAWN_CLASS}`)) targets.push(cell);
+    }
+    for (const target of targets) {
+      if (stopped) return;
+      await pass.apply(target);
+      scopeArtworkIds(target, tagFor(target));
+    }
+  };
+
+  const kick = (): Promise<void> => {
+    if (running) { queued = true; return running; }
+    running = run()
+      // A picker that cannot draw artwork is still a picker. Log it once, keep
+      // the grid the component made and stop asking.
+      .catch((e: unknown) => { console.warn(`emoji picker artwork: ${(e as Error)?.message ?? e}`); stop(); })
+      .then(() => {
+        running = null;
+        if (queued && !stopped) { queued = false; void kick(); }
+      });
+    return running;
+  };
+
+  // One frame per burst: the grid rewrites itself on every category switch and
+  // every keystroke in search, and each cell we draw is itself a change.
+  const schedule = (): void => {
+    if (stopped || pending) return;
+    const fire = (): void => { pending = null; void kick(); };
+    pending = typeof requestAnimationFrame === 'function'
+      ? { handle: requestAnimationFrame(fire), frames: true }
+      : { handle: setTimeout(fire, 16) as unknown as number, frames: false };
+  };
+
+  // Cells arrive and are replaced as childList changes; visibility is a class.
+  const watch = (): void => {
+    observer = new MutationObserver(schedule);
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  };
+
+  const redraw = (): void => {
+    if (retired || !pass.revert) return;
+    // A run the probe put down starts again here, which is the first-run order: the
+    // browser is opened with no set chosen, so nothing drew, and the set is chosen
+    // after that.
+    if (stopped) { stopped = false; watch(); }
+    stale = true;
+    probed = false;
+    void kick();
+  };
+
+  watch();
+  unsubscribe = pass.onSetChange?.(redraw) ?? null;
+  return { ready: kick(), redraw, stop };
+}
+
 /**
  * Open the picker over `anchor`. `onPick` is called with the chosen emoji and the
  * popover closes itself; the caller only has to store the value.
@@ -111,9 +365,12 @@ export async function openEmojiPopover(
   document.body.append(pop);
 
   let listeners: (() => void) | null = null;
+  let artwork: EmojiArtworkRun | null = null;
   const close = (): void => {
     listeners?.();
     listeners = null;
+    artwork?.stop();
+    artwork = null;
     pop.remove();
     if (current?.close === close) current = null;
   };
@@ -134,6 +391,10 @@ export async function openEmojiPopover(
     close();
   });
   pop.append(picker);
+  // After the mount, because the component builds its grid on connect. Not
+  // awaited: a pack that is not on the device yet is a download, and the popover
+  // opens now.
+  if (options.emoji) artwork = drawPackArtwork(picker, options.emoji);
 
   position(pop, anchor);
   listeners = arm(pop, anchor, close);
@@ -188,12 +449,17 @@ function arm(pop: HTMLElement, anchor: HTMLElement, close: () => void): () => vo
 }
 
 /** The same picker as a persistent browsing surface. Picking does not dismiss it. */
-export async function mountEmojiBrowser(container: HTMLElement, onPick: (emoji: string) => void): Promise<() => void> {
-  await defineEmojiPicker();
+export async function mountEmojiBrowser(
+  container: HTMLElement,
+  onPick: (emoji: string) => void,
+  options: EmojiPopoverOptions = {},
+): Promise<() => void> {
+  await (options.defineElement ?? defineEmojiPicker)();
   const picker = document.createElement('unicode-emoji-picker'); picker.setAttribute('version', EMOJI_VERSION);
   const pick = (event: Event): void => { const emoji = (event as CustomEvent<{ emoji?: unknown }>).detail?.emoji; if (typeof emoji === 'string') onPick(emoji); };
   picker.classList.add('emoji-browser');
   picker.addEventListener('emoji-pick', pick); container.replaceChildren(picker);
   picker.selectTab('search');
-  return () => { picker.removeEventListener('emoji-pick', pick); picker.remove(); };
+  const artwork = options.emoji ? drawPackArtwork(picker, options.emoji) : null;
+  return () => { artwork?.stop(); picker.removeEventListener('emoji-pick', pick); picker.remove(); };
 }

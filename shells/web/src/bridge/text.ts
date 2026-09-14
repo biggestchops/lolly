@@ -169,8 +169,8 @@ export function createTextAPI(): TextAPI {
      * comparable between them. Shaping per segment means no kerning across a
      * face boundary, exactly as in a browser.
      */
-    async toPath({ text, fontUrl, fontSize, features, letterSpacing = 0, variations, fallbackFonts, clusters: wantClusters }) {
-      if (!text || !text.trim()) {
+    async toPath({ text, fontUrl, fontSize, features, letterSpacing = 0, variations, fallbackFonts, clusters: wantClusters, preserveWhitespaceAdvance = false }) {
+      if (!text || (!preserveWhitespaceAdvance && !text.trim())) {
         return { d: '', advanceWidth: 0, bbox: null, notdef: 0, ...(wantClusters ? { clusters: [] } : {}) };
       }
 
@@ -241,7 +241,7 @@ export function createTextAPI(): TextAPI {
 
           // Bbox from glyph extents (cheaper than parsing the transformed path).
           const ext = font.glyphExtents(glyphId);
-          if (ext) {
+          if (ext && (!preserveWhitespaceAdvance || glyphD)) {
             const bx1 = (ox + ext.xBearing) * scale;
             const bx2 = (ox + ext.xBearing + ext.width) * scale;
             // HarfBuzz Y-up: yBearing > 0 above baseline; height < 0 going down.

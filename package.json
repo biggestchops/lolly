@@ -70,6 +70,7 @@
     "check:docs-size": "node scripts/check-docs-size-budget.ts",
     "check:mcp": "node scripts/check-mcp-live.ts",
     "check:first-load": "node scripts/check-first-load.ts",
+    "check:ui-performance": "node scripts/check-ui-performance.ts",
     "gate": "node scripts/gate.ts",
     "ship": "node scripts/ship.ts",
     "check:blank-previews": "node scripts/check-blank-previews.ts",

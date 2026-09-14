@@ -26,7 +26,7 @@ globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
 
 const { attachWobble } = await import('./wobble.ts');
-const { setFlagMirror, WOBBLY_FLAG } = await import('../feature-flags.ts');
+const { setFlagMirror, applyPerfUi, WOBBLY_FLAG } = await import('../feature-flags.ts');
 
 /** Turn the flag on/off via the same localStorage mirror the app reads. */
 function setFlag(on: boolean): void {
@@ -60,6 +60,24 @@ function harness() {
 }
 
 const NEVER_REDUCED = (): boolean => false;
+
+test('performance mode cancels an active wobble and preserves the saved effect choice', () => {
+  setFlag(true);
+  const h = harness();
+  const w = attachWobble(h.el, { raf: h.raf, caf: h.caf, reduced: NEVER_REDUCED });
+  w.grab(20, 20); w.drag(30, 0); h.tick();
+  assert.ok(h.scheduled());
+  assert.ok(h.el.style.transform);
+  setFlagMirror('perf-ui', true); applyPerfUi(true);
+  assert.equal(h.scheduled(), false);
+  assert.equal(h.el.style.transform, '');
+  w.drag(30, 0); w.impulse(20, 0);
+  assert.equal(h.scheduled(), false);
+  setFlagMirror('perf-ui', false); applyPerfUi(false);
+  w.impulse(20, 0);
+  assert.equal(h.scheduled(), true);
+  w.dispose();
+});
 
 test('flag OFF: grab/drag/release write nothing and schedule no frame', () => {
   setFlag(false);

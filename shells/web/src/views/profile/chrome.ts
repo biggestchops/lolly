@@ -48,7 +48,7 @@ export function wireInstanceCard(pv: ProfileViewCtx): void {
   viewEl.querySelector('#instance-disconnect-btn')?.addEventListener('click', async () => {
     const { leaveInstance, countSessionsUsingInstanceTools } = await import('../../lib/instance-leave.ts');
     // Sessions saved here against a tool the instance installed stay (they are the
-    // person's) but go inert once the tool leaves - say so before, not after.
+    // person's) but go inert once the tool leaves - report it before, not after.
     const inert = await countSessionsUsingInstanceTools(host as unknown as Parameters<typeof countSessionsUsingInstanceTools>[0]).catch(() => 0);
     const ok = await confirmDialog({
       title: t('Leave this instance?'),

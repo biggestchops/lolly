@@ -86,7 +86,7 @@
       "dataSource": {
         "accept": ".srt,.vtt,.txt,text/plain,text/vtt"
       },
-      "help": "SRT or WebVTT cues. Add data drops an existing .srt or .vtt file straight in, so you never need the speech model. Transcribe fills this from the clip where on-device speech is available; the CLI has none, so this field is the CLI path.",
+      "help": "SRT or WebVTT cues. Add data drops an existing .srt or .vtt file straight in, so you never need the speech model. Transcribe fills this from the clip wherever on-device speech is available.",
       "placeholder": "1\n00:00:00,000 --> 00:00:02,000\nYour first line"
     },
     {
@@ -104,6 +104,7 @@
     },
     {
       "id": "position",
+      "display": "segmented",
       "label": "Position",
       "type": "select",
       "default": "bottom",
@@ -147,6 +148,7 @@
     },
     {
       "id": "showTimecodes",
+      "display": "pill",
       "label": "Show timecode",
       "type": "boolean",
       "default": false,
@@ -154,6 +156,7 @@
     },
     {
       "id": "burnIn",
+      "display": "pill",
       "label": "Burn captions in",
       "type": "boolean",
       "default": true,

@@ -45,7 +45,7 @@
     },
     {
       "id": "grayscale",
-      "label": "Convert images to grayscale",
+      "label": "Convert images to greyscale",
       "type": "boolean",
       "default": false,
       "help": "Drop colour from images for extra savings - useful for scanned text documents."

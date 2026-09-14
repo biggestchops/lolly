@@ -197,7 +197,7 @@ test('the frame budget shortens a long loop, and a typed duration wins', { skip:
   // 24 s at 60 fps is past the frame ceiling, so the clip is cut to what fits.
   const fast = await exportWith({ animate: true, speed: 24 }, 'webm', { fps: 60 });
   assert.equal(fast.opts.duration, Math.floor(595 / 60), 'a 60 fps clip is capped by the frame budget');
-  // A shortened loop pops at the seam, so the tool has to SAY so. host.log is a
+  // A shortened loop pops at the seam, so the tool has to report it. host.log is a
   // (level, msg) function; calling it as an object of level methods logs nothing.
   assert.match(fast.logs.join('\n'), /^warn: gradient: 24s loop shortened to 9s/m,
     'the seam warning must actually reach host.log');

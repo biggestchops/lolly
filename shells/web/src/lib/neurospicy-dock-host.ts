@@ -38,7 +38,7 @@ import { SOMAFM_HOME, radioAvailable } from './radio.ts';
 import { vizSupported } from './viz-support.ts';
 import { neuroDemoActive, DEMO_VIZ_PRESET_ID, demoVizWave, pumpVizDemoFrames } from './neuro-demo.ts';
 import { prefersReducedMotion } from './a11y-prefs.ts';
-import { perfUiOn } from '../feature-flags.ts';
+import { perfUiOn, subscribePerfUi } from '../feature-flags.ts';
 import { icon, hasIcon } from './icons.ts';
 import { mountViz, type VizHandle } from './butterchurn-viz.ts';
 import { VIZ_PRESETS, vizPresetById, defaultVizPresetId } from './viz-presets.ts';
@@ -141,6 +141,7 @@ class NeuroDockViz implements DockViz {
   /** Preset auto-cycle: seconds between changes (0 = off) + the timer. */
   private cycleSeconds = 0;
   private cycleTimer: ReturnType<typeof setInterval> | undefined;
+  private readonly unsubscribePerf: () => void;
 
   constructor(host: MusicHost) {
     this.host = host;
@@ -148,6 +149,7 @@ class NeuroDockViz implements DockViz {
     try { saved = localStorage.getItem(ENABLED_KEY) ?? '1'; } catch { /* private mode */ }
     this.vizEnabled = saved !== '0';
     this.cycleSeconds = loadCycleSeconds();
+    this.unsubscribePerf = subscribePerfUi(on => { if (on) this.unmount(); });
   }
 
   // ── support probe + live analyser (also feeds the shell's 2D backdrop fallback) ──
@@ -241,7 +243,7 @@ class NeuroDockViz implements DockViz {
 
   private async mountOnce(canvas: HTMLCanvasElement, analyser: AnalyserNode | null): Promise<void> {
     await this.ensureData();
-    if (this.destroyed || this.canvas !== canvas || this.handle) return;
+    if (this.destroyed || perfUiOn() || this.canvas !== canvas || this.handle) return;
     const palette = this.currentPalette();
     // The ?neuro=viz capture affordance (lib/neuro-demo.ts): the enlarged viz
     // lives in this dock now, so the deterministic demo contract the panel
@@ -268,7 +270,7 @@ class NeuroDockViz implements DockViz {
     }
     // Null only when WebGL2 is genuinely unavailable now (we always pass an analyser).
     if (!handle) return;
-    if (this.destroyed || this.canvas !== canvas || this.handle) { handle.destroy(); return; }
+    if (this.destroyed || perfUiOn() || this.canvas !== canvas || this.handle) { handle.destroy(); return; }
     this.handle = handle;
     this.mountedAnalyser = analyser;
     if (demo) {
@@ -338,9 +340,9 @@ class NeuroDockViz implements DockViz {
    *  each tick - the breadth is the point; skipped while the renderer isn't drawing. */
   private startCycle(): void {
     this.stopCycle();
-    if (this.cycleSeconds <= 0) return;
+    if (this.cycleSeconds <= 0 || perfUiOn() || !this.handle) return;
     this.cycleTimer = setInterval(() => {
-      if (!this.handle || !this.handle.running()) return;
+      if (!this.handle?.running()) return;
       const pool = [...VIZ_PRESETS.map((d) => d.id), ...this.stock.map((x) => x.id)];
       const others = pool.filter((id) => id !== this.presetId);
       const next = others[Math.floor(Math.random() * others.length)];
@@ -403,6 +405,7 @@ class NeuroDockViz implements DockViz {
 
   destroy(): void {
     this.destroyed = true;
+    this.unsubscribePerf();
     this.unmount();
     if (this.silentCtx) {
       void this.silentCtx.close().catch(() => { /* already closed */ });
@@ -424,6 +427,7 @@ class NeurospicyDockHost implements DockHost {
   private readonly changeListeners = new Set<() => void>();
   private readonly listListeners = new Set<() => void>();
   private readonly docListeners: Array<[string, EventListener]> = [];
+  private readonly unsubscribePerf: () => void;
   /** Cached track list - the source of truth for the now-playing title + current row.
    *  Kept in lockstep with listLoops (which owns the canonical playlist order). */
   private tracks: NeuroTrack[] = [];
@@ -431,6 +435,9 @@ class NeurospicyDockHost implements DockHost {
 
   constructor(nhost: MusicHost) {
     this.nhost = nhost;
+    // Reconcile the dock after its renderer has stopped; switching off can mount
+    // again through the dock's visibility/collapse checks without changing prefs.
+    this.unsubscribePerf = subscribePerfUi(() => this.emitChange());
 
     this.sources = {
       list: () => this.buildSources(),
@@ -647,6 +654,7 @@ class NeurospicyDockHost implements DockHost {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.unsubscribePerf();
     this.viz.destroy();
     if (typeof document !== 'undefined') {
       for (const [name, fn] of this.docListeners) document.removeEventListener(name, fn);

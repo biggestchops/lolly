@@ -369,7 +369,7 @@ function armPlan(plan: MountPlan): boolean {
   const off = plan.handle.events.subscribe((state) => {
     if (state !== 'closed' || plan.handleSpent) return;
     if (plan.watch) disarm(plan);
-    // Inside `subscribe` - there is no unsubscribe to call yet. Say so, and let the
+    // Inside `subscribe` - there is no unsubscribe to call yet. Report it, and let the
     // caller finish the teardown the moment it has one.
     else closedSynchronously = true;
   });

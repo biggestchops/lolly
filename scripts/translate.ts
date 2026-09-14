@@ -702,6 +702,8 @@ export const DOCS_PAGES: Array<{ slug: string; src: string }> = [
   { slug: 'verify-yourself', src: 'verify-yourself.md' },
   { slug: 'positioning', src: 'positioning.md' },
   { slug: 'ai-stance', src: 'ai-stance.md' },
+  { slug: 'tenets', src: 'tenets.md' },
+  { slug: 'creative-rights', src: 'creative-rights.md' },   // plan 253: what an export owes its sources
 ];
 
 interface DocBlock {

@@ -1,5 +1,5 @@
 {
-  "name": "Text",
-  "description": "Find, edit, understand and transform text.",
+  "name": "Teksto",
+  "description": "Hanapin, i-edit, unawain at baguhin ang text. Mag-browse ng mga character at emoji ng design system, magtrabaho gamit ang code at log, o gumawa ng ASCII lettering.",
   "a11yLabel": "Text - characters, editing, analysis and conversions"
 }

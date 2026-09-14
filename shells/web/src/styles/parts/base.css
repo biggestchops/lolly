@@ -79,6 +79,10 @@
      itself and jumps straight to sealed. It still hides the export "shake".
      This only has to stop the closed-flash from pulsing. */
   .export-shutter__flash.is-on { animation: none !important; }
+  /* The sidebar's press-scale (parts/notfound.css) is a movement; a pressed
+     control keeps its colour change and drops the shrink. */
+  .color-trigger:active, .asset-picker-trigger:active, .asset-clear:active,
+  .block-add:active, .block-remove:active, .color-swatch:active { transform: none !important; }
 }
 
 /* The app's own "Reduce motion" preference (profile → data-a11y-motion on
@@ -95,6 +99,9 @@ html[data-a11y-motion="reduce"] :not(.tool-canvas, .tool-canvas *, #tool-content
   scroll-behavior: auto !important;
 }
 html[data-a11y-motion="reduce"] .export-shutter__flash.is-on { animation: none !important; }
+html[data-a11y-motion="reduce"] .color-trigger:active, html[data-a11y-motion="reduce"] .asset-picker-trigger:active,
+html[data-a11y-motion="reduce"] .asset-clear:active, html[data-a11y-motion="reduce"] .block-add:active,
+html[data-a11y-motion="reduce"] .block-remove:active, html[data-a11y-motion="reduce"] .color-swatch:active { transform: none !important; }
 
 /* ─── Reset / base ──────────────────────────────────────────────────────── */
 
@@ -287,3 +294,46 @@ em, i, cite { font-family: var(--font-italic, var(--font-brand)); }
 }
 .pro-addrow .pro-btn{border-radius: 0em 0 1em 1em; padding: 1em 2em; }
 footer{text-align:right;}
+
+/* ═══ Touch affordances ══════════════════════════════════════════════════════
+   Polish for finger input. Desktop is untouched: the press feedback is :active
+   (a no-op on a mouse until you actually click), and hover-only affordances
+   never fire on touch, so these add the tactile cues a finger otherwise misses.
+   The reduced-motion blocks above cancel the press scale for the same
+   selectors, which is why this block lives in this sheet. */
+
+/* Kill the translucent grey/blue flash iOS & Android paint over tapped
+   controls - we provide our own :active feedback instead. */
+.btn,
+.color-trigger,
+.color-swatch,
+.asset-picker-trigger,
+.asset-clear,
+.block-add,
+.block-remove,
+.input-row--checkbox,
+.custom-slider,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Quick, springy press state. Transform-only so it composites on the GPU and
+   can't reflow the layout. */
+.color-trigger:active,
+.asset-picker-trigger:active,
+.asset-clear:active,
+.block-add:active,
+.block-remove:active {
+  transform: scale(0.97);
+}
+.color-swatch:active {
+  transform: scale(1.05);
+}
+/* The sidebar buttons' shared transition, one place for all five. */
+.color-trigger,
+.asset-picker-trigger,
+.asset-clear,
+.block-add,
+.block-remove {
+  transition: border-color var(--dur-1), background var(--dur-1), color var(--dur-1), box-shadow var(--dur-1), transform 0.08s ease;
+}

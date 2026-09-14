@@ -31,7 +31,11 @@ test('pack-core builds an installable, usable @lolly-tools/core', { skip: proces
   const staged = JSON.parse(readFileSync(join(OUT, 'pkg', 'package.json'), 'utf8'));
   // The published exports must point at the COMPILED files, not the source.
   for (const [subpath, target] of Object.entries(staged.exports as Record<string, unknown>)) {
-    if (subpath.startsWith('./schema/')) continue;
+    if (subpath.startsWith('./schema/')) {
+      assert.equal(typeof target, 'string', `${subpath} schema export`);
+      assert.ok(existsSync(join(OUT, 'pkg', target as string)), `${subpath} schema file exists`);
+      continue;
+    }
     const t = target as { types: string; default: string };
     assert.match(t.types, /\.d\.ts$/, `${subpath} types`);
     assert.match(t.default, /\.js$/, `${subpath} default`);

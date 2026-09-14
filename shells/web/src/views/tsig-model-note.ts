@@ -19,7 +19,7 @@
  *  - model absent (unstaged deploy): NOTHING interactive - the deterministic
  *    tiers are the whole story (the progressive-enhancement promise). The one
  *    exception is an honesty line on a band-none verdict over eligible prose:
- *    clean text proves nothing either way, and the panel should say so rather
+ *    clean text proves nothing either way, and the panel should report it rather
  *    than read as a clean bill of health.
  *  - text ineligible (short, or not mostly Latin-script): nothing at all. The
  *    detector is English-trained and documented to over-score non-native

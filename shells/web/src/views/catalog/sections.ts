@@ -23,12 +23,13 @@ import { mountAudioThumbs } from '../picker.ts';
 import type { PickerHost } from '../picker.ts';
 import { mountTextThumbs } from '../../lib/text-thumbs.ts';
 import { mountPdfThumbs } from '../../lib/pdf-thumbs.ts';
+import { mountEmojiSpecimens } from '../../lib/emoji-specimen.ts';
 import { groupPalette, swatch } from '../../lib/swatches.ts';
 import { prefersReducedMotion } from '../../lib/a11y-prefs.ts';
 import { FONT_LICENSE, WEIGHT_RAMP } from '../../lib/typefaces.ts';
 import { prepareAssetForVerify, setPendingVerify } from '../../lib/verify-handoff.ts';
 import type { AssetRef } from '@lolly-tools/core/host-v1';
-import { CAT_ICONS, DOWNLOAD_ICON } from './shared.ts';
+import { CAT_ICONS, DOWNLOAD_ICON, emojiPackMeta, emojiPackSource } from './shared.ts';
 import { bindOp, type CatCtx } from './context.ts';
 
 // Open on a favourite-swatch tile → reveal the Swatches reference panel below.
@@ -196,6 +197,7 @@ export function render(cat: CatCtx): void {
   mountTextThumbGrid(cat);
   mountMotionThumbs(cat);
   mountPdfThumbGrid(cat);
+  mountEmojiSpecimenGrid(cat);
   mountDropzone(cat);
   if (cat.firstPaint) { armViewEnter(viewEl, '.cat-assets, .cat-group--ref'); cat.firstPaint = false; }
 }
@@ -254,6 +256,19 @@ export function mountPdfThumbGrid(cat: CatCtx): void {
     ? mountPdfThumbs(body, (id) => cat.assetById.get(id), () => cat.mounted)
     : null;
 }
+// The emoji sibling (plans/252): fill each set's tile with five glyphs drawn from
+// that set's own artwork. Same lifecycle as the upgraders above. The five glyphs
+// ride in the catalog entry (scripts/emoji-pack-specimens.ts), so a tile draws them
+// without fetching anything; an entry with no bake falls back to loading the pack,
+// which is why the on-screen gate is still here.
+export function mountEmojiSpecimenGrid(cat: CatCtx): void {
+  const { host, viewEl } = cat;
+  cat.emojiSpecimens?.destroy();
+  const body = viewEl.querySelector<HTMLElement>('.catalog-body');
+  cat.emojiSpecimens = body
+    ? mountEmojiSpecimens(body, host, (id) => { const meta = emojiPackMeta(cat.assetById.get(id)); return meta ? emojiPackSource(meta) : null; }, () => cat.mounted)
+    : null;
+}
 // (Re)mount the shared upload dropzone into the uploads section's placeholder. Called
 // after every body (re)render - the innerHTML rebuild orphans the previous instance, so
 // tear it down first (a mid-ingest re-mount is safe: the component's single-flight
@@ -287,6 +302,7 @@ export function renderBody(cat: CatCtx): void {
   mountTextThumbGrid(cat);
   mountMotionThumbs(cat);
   mountPdfThumbGrid(cat);
+  mountEmojiSpecimenGrid(cat);
   mountDropzone(cat);
   fillStorageChip(cat);
 }
@@ -411,6 +427,7 @@ export function sectionsOps(cat: CatCtx) {
     mountMotionThumbs: bindOp(cat, mountMotionThumbs),
     mountTextThumbGrid: bindOp(cat, mountTextThumbGrid),
     mountPdfThumbGrid: bindOp(cat, mountPdfThumbGrid),
+    mountEmojiSpecimenGrid: bindOp(cat, mountEmojiSpecimenGrid),
     mountDropzone: bindOp(cat, mountDropzone),
     renderBody: bindOp(cat, renderBody),
     fillStorageChip: bindOp(cat, fillStorageChip),

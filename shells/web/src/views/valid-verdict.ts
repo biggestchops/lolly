@@ -11,6 +11,9 @@
  * assignable to it.
  */
 
+import { rightsReportFromC2pa } from '@lolly/engine';
+import type { C2paReport } from '@lolly/engine';
+import type { RightsReportV1 } from '@lolly-tools/core/rights-v1';
 import { t, tRaw } from '../i18n.ts';
 import { escape } from '../utils.ts';
 import type { IconName } from '../lib/icons.ts';
@@ -101,6 +104,79 @@ export interface VerifyReport {
   // claim_generator_info.specVersion - informational per section 10.2.3.1, so nothing
   // here (or in the engine) branches on it.
   specVersion?: string;
+  /**
+   * Every ingredient any manifest in the store recorded (the engine's
+   * `collectIngredientRecords`), with the rights record bound to each. A source
+   * with `credentialed: false` carries no Content Credential of its own - an
+   * upstream SVG, a CC BY illustration, an emoji pack's artwork - so what is
+   * shown for it is what the EXPORTER observed and recorded, never a signature
+   * from the source. The Sources panel says exactly that, because a reader has no
+   * other way to tell the two apart.
+   */
+  ingredients?: Array<{
+    title?: string;
+    format?: string;
+    relationship?: string;
+    credentialed: boolean;
+    description?: string;
+    informationalUri?: string;
+    data?: { url: string; alg?: string; hash?: string; format?: string; size?: number };
+    rights?: {
+      creator: string;
+      license: string;
+      licenseUrl: string;
+      attribution: string;
+      sourceUrl: string;
+      revision?: string;
+      modifications: string[];
+      sourceHash: string;
+      usedHash?: string;
+    };
+  }>;
+}
+
+/**
+ * The mirror as the engine's rights reader wants it (plan 253).
+ *
+ * `rightsReportFromC2pa` reads four things: whether a credential was found, how
+ * it verified, the composition's own rights line and the recorded ingredients.
+ * The mirror carries all four already; the engine's own report type also names
+ * the per-manifest bookkeeping (`manifest`, `label`) that this view never
+ * renders, so the two shapes are bridged here rather than by widening the
+ * mirror with fields nothing reads. Nothing is invented: a placeholder label is
+ * positional, and no rights statement is added, dropped or reworded.
+ *
+ * This view used to drop a non-http locator out of a stranger's credential on
+ * the way through. It no longer does, and that is the point: the engine applies
+ * `publicLocator` inside the credit line itself, so the CLI, the TUI, MCP and
+ * this panel all read one rule instead of each inventing its own (plan 253
+ * decision 10). The recorded fields stay exactly as the file recorded them,
+ * because what a file says is a fact about the file.
+ */
+export function rightsSourceReport(report: VerifyReport): C2paReport {
+  return {
+    found: report.found,
+    state: report.state,
+    trusted: report.trusted,
+    madeWithLolly: report.madeWithLolly,
+    likelyMadeWithLolly: report.likelyMadeWithLolly,
+    partsMadeWithLolly: report.partsMadeWithLolly,
+    delivered: report.delivered,
+    format: report.format as C2paReport['format'],
+    checks: [],
+    ...(report.rights ? { rights: report.rights } : {}),
+    ingredients: (report.ingredients ?? []).map((source, i) => ({
+      manifest: '',
+      label: `ingredient-${i + 1}`,
+      ...source,
+    })),
+  };
+}
+
+/** The file-level rights report the Verify surfaces read, or null when nothing was recorded. */
+export function rightsReportOf(report: VerifyReport): RightsReportV1 | null {
+  if (!report.ingredients?.length) return null;
+  return rightsReportFromC2pa(rightsSourceReport(report));
 }
 
 // The pixel-watermark detection result (engine detectWatermark), surfaced only
@@ -111,7 +187,7 @@ export interface Watermark {
   score: number;
   // Set when the mark was found INSIDE a container file's embedded raster
   // (a .pptx slide image, a PDF image XObject) rather than in the dropped file's
-  // own pixels - the note/pip wording changes to say so.
+  // own pixels - the note/pip wording changes to state it.
   embedded?: boolean;
 }
 

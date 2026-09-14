@@ -1,0 +1,78 @@
+{
+  "name": "licenseref-not-proprietary",
+  "title": "A LicenseRef points at a stored definition and is data, not a proprietary declaration",
+  "citations": [
+    "SPDX licence expressions: LicenseRef-* names a licence whose text is supplied with the document.",
+    "Plan 253 section 3.2: LicenseRef-* does not automatically mean proprietary."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/internal-artwork",
+        "title": "Internal Artwork",
+        "creators": [
+          {
+            "name": "Example Co",
+            "role": "creator"
+          }
+        ],
+        "sourceHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "rights": [
+          {
+            "declaration": "LicenseRef-acme-internal",
+            "assertedBy": "user",
+            "evidence": "user-declaration",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/internal-artwork",
+        "role": "incorporated",
+        "operations": [
+          "placed"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "unknown",
+    "issues": [
+      "licence.unknown"
+    ],
+    "uses": [
+      {
+        "work": "example/internal-artwork",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "LicenseRef-acme-internal",
+        "reviewed": false,
+        "issues": [
+          "licence.unknown"
+        ]
+      }
+    ],
+    "required": [],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [],
+    "unresolved": [
+      "example/internal-artwork: LicenseRef-acme-internal recorded, not yet interpreted"
+    ]
+  }
+}

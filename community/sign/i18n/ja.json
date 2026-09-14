@@ -1,4 +1,4 @@
 {
-  "name": "Sign",
-  "description": "Place your signature on a PDF, optionally add a Content Credential and lock the result."
+  "name": "サイン",
+  "description": "PDFに署名を配置し、必要に応じてContent Credentialを追加して、結果をロックします。"
 }

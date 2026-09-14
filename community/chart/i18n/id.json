@@ -1,7 +1,7 @@
 {
   "name": "Grafik",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "Grafik dari tempel pertama hingga visualisasi lanjutan - rekomendasi data yang dijelaskan, pemetaan bidang eksplisit, 35 keluarga vektor klasik termasuk Pareto, target bullet dan range bar, enam belas artikulasi statistik dan editorial, adegan 3D real-z, penerbangan sinematik, gerakan deterministik, deskripsi aksesibel dan gaya yang disusun dari sistem desain aktif.",
+  "featured.blurb": "Tempel tabel - Grafik membuatnya jelas, aksesibel dan pasti sesuai sistem desain Anda",
   "a11yLabel": "Grafik {{chartType}}{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "Jenis grafik",
   "inputs.chartType.options.bar": "Batang - vertikal",

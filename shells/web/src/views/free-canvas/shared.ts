@@ -317,6 +317,9 @@ export interface RuntimeApi {
   getModel(): ModelItem[];
   setInput(id: string, value: any): void;
   subscribe(fn: () => void): (() => void) | undefined;
+  /** Feature-detected (engine 1.196): the emoji pass, so a clone of the page (an artboard
+   *  thumbnail) draws the chosen set's artwork and never the machine's own emoji font. */
+  applyEmojiToDom?(node: unknown): Promise<unknown>;
 }
 export interface HostApi {
   assets?: { pick(opts: any): Promise<any> };

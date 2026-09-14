@@ -1,6 +1,6 @@
 {
   "name": "Screenshot webu",
-  "description": "Libovolná webová stránka, v libovolné hloubce scrollování, s vlastním CSS.",
+  "description": "Jakákoli webová stránka, v jakékoli hloubce scrollování, s vlastním CSS.",
   "a11yLabel": "Snímek obrazovky {{default url \"(žádná adresa URL)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Stránka k zachycení. Snímek se pořizuje při exportu v reálném prohlížeči.",

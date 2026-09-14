@@ -281,7 +281,7 @@ export function seedIntakeQueue(bedit: BrandEditorCtx): void {
     void bedit.logoIntake.addLogoFiles(arrived).then(() => {
       if (!root.isConnected) return;
       // What actually reached the queue, not what was handed over: the type,
-      // size and room gates above can turn some of it away, and they say so
+      // size and room gates above can turn some of it away, and they state it
       // themselves in the error line. Counting the chips keeps this sentence
       // from claiming marks the room refused.
       const n = bedit.intake.filter(c => arrived.includes(c.file)).length;

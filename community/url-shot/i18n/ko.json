@@ -1,6 +1,6 @@
 {
   "name": "URL 스크린샷",
-  "description": "어떤 웹페이지든, 원하는 스크롤 위치에서, 커스텀 CSS까지 적용해 캡처해요",
+  "description": "어떤 웹페이지든, 원하는 스크롤 위치에서, 커스텀 CSS를 적용해 캡처해요.",
   "a11yLabel": "{{default url \"(no URL set)\"}}의 스크린샷",
   "inputs.url.label": "URL",
   "inputs.url.help": "캡처할 페이지예요. 내보낼 때 실제 브라우저 엔진에서 촬영돼요.",

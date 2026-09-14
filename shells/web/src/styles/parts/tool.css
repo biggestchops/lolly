@@ -50,8 +50,14 @@
   cursor: pointer;
   transition: background-color var(--ui-motion-feedback) var(--ui-motion-standard), color var(--ui-motion-feedback) var(--ui-motion-standard);
 }
-.render-pill-btn:hover { background: rgba(255, 255, 255, 0.14); }
-.render-pill-btn:active { background: rgba(0, 0, 0, 0.12); }
+/* The hover/divider/just-saved washes are ON the primary fill, so they are the
+   fill's own ink at low alpha - not white. That matters in the high-contrast
+   themes, where the CTA lifts to a light green and --primary-foreground is
+   black: a white wash there would wash nothing out. The :active press deepens
+   the same ink, so it always goes further than hover whichever ink the theme
+   picked. */
+.render-pill-btn:hover { background: hsl(var(--primary-foreground) / 0.14); }
+.render-pill-btn:active { background: hsl(var(--primary-foreground) / 0.28); }
 .render-pill-btn:focus-visible { outline: 2px solid var(--ui-color-action-on-primary); outline-offset: -4px; border-radius: var(--ui-radius-pill); }
 /* The arrow/check rides the same multiplier as the "Export"/"Save" word beside
    it - an icon paired with a growing label has to grow with it, or the pill
@@ -63,7 +69,7 @@
   width: 1px;
   align-self: stretch;
   margin: 9px 0;
-  background: rgba(255, 255, 255, 0.3);
+  background: hsl(var(--primary-foreground) / 0.3);
   flex-shrink: 0;
 }
 
@@ -94,7 +100,7 @@
   100% { background: var(--brand-warn, #b28727); }
 }
 /* Brief confirmation after a save completes. */
-.render-pill-save.is-just-saved { background: rgba(255, 255, 255, 0.16); }
+.render-pill-save.is-just-saved { background: hsl(var(--primary-foreground) / 0.16); }
 @media (prefers-reduced-motion: reduce) {
   .render-pill-save.is-unsaved { animation: none; }
   .render-pill-btn { transition: none; }
@@ -303,7 +309,10 @@
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     width: 100%;
-    box-shadow: inset 0 -1px #fff1, 0 .1em 2.7em #0001, 0 .1em .2em #0001
+    /* The signature ring-plus-drop at panel level (surfaces.css): the sticky
+       header keeps reading as a layer over the scrolling inputs, with the
+       top-light bevel instead of a hand-mixed pair of near-invisible drops. */
+    box-shadow: var(--ui-effect-bevel), var(--ui-elevation-panel)
 }
 
 /* Top row of the sidebar header: the Tools back pill (left) + undo/redo (right).
@@ -350,7 +359,7 @@
   height: 30px;
   padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: none;
   color: hsl(var(--foreground));
   cursor: pointer;
@@ -365,7 +374,7 @@
   width: 30px;
   height: 30px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: none;
   color: hsl(var(--foreground));
   -webkit-backdrop-filter: none;
@@ -552,7 +561,7 @@
   border-radius: var(--radius-pill);
   background: hsl(var(--primary));
   border: 1px solid #fff5;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--ui-elevation-control);
 }
 .tool-layout.is-sheet-dragging .sheet-grip { cursor: grabbing; }
 
@@ -589,7 +598,7 @@
   padding: 9px 16px; font: inherit; font-size: var(--fs-md); cursor: pointer;
   transition: background-color var(--dur-1), border-color var(--dur-1), color var(--dur-1);
 }
-.clear-inputs-confirm { border-color: hsl(var(--destructive)); color: #fff; background: hsl(var(--destructive)); font-weight: 600; }
+.clear-inputs-confirm { border-color: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); background: hsl(var(--destructive)); font-weight: 600; }
 .clear-inputs-confirm:hover { filter: brightness(0.94); }
 .clear-inputs-cancel { background: transparent; color: hsl(var(--muted-foreground)); }
 .clear-inputs-cancel:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
@@ -626,11 +635,11 @@
      fold - and its "keep content stable" adjustment is what turned a hover into a
      scroll nudge. Belt-and-suspenders with the clip-path fix on .input-section. */
   overflow-anchor: none;
-  padding: 14px;
+  padding: var(--sp-7);
   padding-top: 48px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--sp-7);
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
   transition: opacity var(--dur-1);
@@ -681,7 +690,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 20;
+  z-index: var(--z-chrome);
   width: 28px;
   height: 28px;
   padding: 0;
@@ -834,7 +843,7 @@
   color: hsl(var(--muted-foreground)); cursor: help;
   opacity: 0.55; transition: opacity var(--dur-1) ease, color var(--dur-1) ease;
 }
-.help-tip-btn:hover, .help-tip-btn:focus-visible { opacity: 1; color: var(--primary); }
+.help-tip-btn:hover, .help-tip-btn:focus-visible { opacity: 1; color: hsl(var(--primary)); }
 .help-tip-btn:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; border-radius: var(--radius-round); }
 /* Unified "Add data" affordance (plan 87) - a text/longtext input's dataSource button,
    styled like the help-tip button so it reads as label chrome, not a primary control. */
@@ -846,7 +855,7 @@
   color: hsl(var(--muted-foreground)); cursor: pointer;
   opacity: 0.55; transition: opacity var(--dur-1) ease, color var(--dur-1) ease;
 }
-.input-data-src:hover, .input-data-src:focus-visible { opacity: 1; color: var(--primary); }
+.input-data-src:hover, .input-data-src:focus-visible { opacity: 1; color: hsl(var(--primary)); }
 .input-data-src:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 /* 16px is a fingertip miss. Padding grows the box to a 32px target; the matching
    negative margin pulls it back to its original 16px footprint (and 4px gap from
@@ -857,6 +866,34 @@
     margin: -8px -8px -8px -4px;
   }
 }
+
+/* ── Managed-instance cues ───────────────────────────────────────────────────
+   The lock chip that rides a managed input's label, and the wrapper a locked
+   control renders inside (both were inline `style=` strings in tool-inputs.ts
+   until 2026-09-12). The chip is focusable and its accessible name is the only
+   answer to "why is this locked?", so it takes a 24px target around its 12px
+   glyph; the negative block margin hands that slack back to the line box, so no
+   label row changes height, and the leading margin keeps the glyph its original
+   0.35rem clear of the label text. */
+.input-lock-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: middle;
+  min-width: 24px; min-height: 24px;
+  margin-block: -6px;
+  margin-inline-start: calc(.35rem - 6px);
+  color: hsl(var(--muted-foreground));
+}
+/* A chip and a help button can share one label. On a coarse pointer the help
+   button pulls its padded target 4px back toward the label text, which would
+   put it under the chip's - drop that pull-in so the two targets meet instead. */
+@media (pointer: coarse) {
+  .input-lock-chip + .help-tip-btn { margin-left: 0; }
+}
+/* A locked control is dimmed and inert (the `inert` attribute plus
+   pointer-events, for controls that do not honour it). Cooperative only - the
+   server is the hard gate. */
+.input-locked { display: block; opacity: .6; pointer-events: none; }
+
 /* The focus ring sits a few px outside the 16px button. The floating-label rule
    clips .input-label (overflow:hidden, for long-label ellipsis), which crops that
    ring top/bottom - so un-clip the label when it hosts a help button (selectors
@@ -1069,67 +1106,31 @@
   color: hsl(var(--muted-foreground) / 0.4);
 }
 
-/* Shared control appearance.
+/* Shared control appearance: the box itself is fields.css's `.field-input` /
+   `.field-select`, which tool-inputs.ts puts on every text, textarea, date and
+   select control it emits - one embossed object for the whole column, with the
+   primitive's own hover lift, focus halo, disabled and :user-invalid states. This
+   view keeps ONE delta: the taller line box the floating label sits inside.
    `.vec-num` opts OUT: the vector scrubbers are a segmented pill (collapsed inner
    borders, square inner corners, compact height) and this rule - 4 classes/attrs
    to their 1 - would otherwise win the cascade and hand them the full-size
    floating-label box. See the .vec-num block below for their real styling. */
 .input-row input:not([type="checkbox"]):not([type="color"]):not([type="range"]):not(.vec-num):not(.table-cell),
 .input-row textarea:not(.table-cell) {
-  width: 100%;
-
-  background: hsl(var(--background) / .5);
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  font: inherit;
-  font-size: var(--fs-md);
-  transition: border-color var(--dur-1);
-  appearance: auto;
   padding: 16px 14px 16px;
+  /* A transparent hairline keeps the line box the floating-label offsets further
+     down were derived from (the primitive itself draws no border). */
+  border: 1px solid transparent;
 }
 
-/* The rule above forces appearance:auto on number fields (the vector scrubbers),
-   which re-shows Firefox's spin buttons - Chrome hides them via ::-webkit-*-spin-
-   button, which Firefox lacks. Restore appearance:textfield with matching
-   specificity so it wins the cascade and the spinners stay hidden everywhere. */
+/* Number fields (the vector scrubbers) keep appearance:textfield so Firefox's
+   spin buttons stay hidden - Chrome hides them via ::-webkit-*-spin-button, which
+   Firefox lacks. */
 .input-row input[type="number"]:not([type="checkbox"]):not([type="color"]):not([type="range"]) {
   appearance: textfield;
   -moz-appearance: textfield;
 }
 
-.input-row select {
-  width: 100%;
-  padding: 9px 32px 9px 10px;   /* right room for the custom chevron */
-  background-color: hsl(var(--background));
-  background-image: var(--field-chevron);   /* the ONE chevron - parts/fields.css */
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  /* The caret is part of the control's glyph set, not its frame: a fixed 14px
-     chevron beside 15.6px text reads as a shrunken select. It is a CSS-painted
-     mark, so the multiplier rides background-size. The 32px right padding still
-     clears it - 10px inset + 16.8px at the large-text factor. */
-  background-size: var(--fs-lg);
-  color: hsl(var(--foreground));
-  border: 0;
-  box-shadow: inset 0 1px #fff1, 0 .1rem .3rem #0002;
-  border-radius: var(--radius);
-  font: inherit;
-  font-size: var(--fs-md);
-  transition: border-color var(--dur-1);
-  /* appearance:none drops the native menulist widget. The old appearance:auto +
-     transition combo made Chrome re-lay-out the native control on every hover
-     frame, producing a ~1px baseline jitter. A plain box transitions cleanly. */
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
-
-.input-row input:not([type="checkbox"]):not([type="color"]):not([type="range"]):not(.vec-num):not(.table-cell):hover,
-.input-row textarea:not(.table-cell):hover,
-.input-row select:hover {
-  border-color: hsl(var(--ring) / 0.4);
-}
 .vec-num:hover { border-color: hsl(var(--ring) / 0.4); }
 
 /* :focus ring - the one shared recipe at the foot of this sheet. */
@@ -1159,27 +1160,29 @@
   flex-direction: row;
   align-items: center;
   gap: var(--sp-4);
-  padding: 7px 10px;
+  padding: var(--sp-4) var(--sp-5);
   border: 0;
   border-radius: var(--radius);
   background: hsl(var(--background));
   cursor: pointer;
-  transition: border-color var(--dur-1), background var(--dur-1);
-    box-shadow: inset 0 1px #fff1,inset 0 .06rem .3rem #0002;
+  transition: background var(--dur-1), box-shadow var(--dur-1);
+  /* The boxed-field recipe fields.css gives a text box or a select, so a boolean
+     row reads as the same material as the controls above and below it - and its
+     hover lifts the same way. */
+  box-shadow: var(--ui-effect-bevel), var(--ui-elevation-control);
   user-select: none;
 }
 
 .input-row--checkbox:hover {
-  border-color: hsl(var(--ring) / 0.4);
   background: hsl(var(--accent));
-  
-    box-shadow:  0 1px #fff2,inset 0 .06rem .3rem #0004;
+  box-shadow: var(--ui-effect-bevel), var(--ui-elevation-panel);
 }
 
+/* Checked is the same tint the pill and badge on-states use, so an unchecked
+   hover and a checked row are never the same wash. */
 .input-row--checkbox:has(input:checked),
 .input-row--checkbox:has(jelly-switch[checked]) {
-  border-color: hsl(var(--primary) / 0.5);
-  background: hsl(var(--primary) / 0.07);
+  background: hsl(var(--primary) / 0.14);
 }
 /* Jelly-mode boolean rows (lib/jelly.ts): the switch replaces the checkbox and
    must not grow the compact row - cap its geometry via the host-level tokens. */
@@ -1198,16 +1201,9 @@
   cursor: pointer;
 }
 
-.input-row input[type="checkbox"] {
-  flex-shrink: 0;
-  /* The tick is a glyph like any other, and it is the whole state readout of a
-     boolean row - a 15px box beside 15.6px type reads as a control that shrank.
-     The row has no fixed height, so it reflows around the taller box. */
-  width: calc(15px * var(--a11y-fs));
-  height: calc(15px * var(--a11y-fs));
-  cursor: pointer;
-  accent-color: hsl(var(--primary));
-}
+/* The tick is fields.css's `.field-check` (emitted by tool-inputs.ts): the one
+   drawn box every checkbox in the app shares, sized on the chrome icon scale so it
+   grows with the label under largeText. */
 
 /* ── Pill chip toggles (boolean display:'pill') ───────────────────────────────
    A run of pill booleans is wrapped by renderInputs in an .input-pillbar so the
@@ -1237,7 +1233,7 @@
    tints faintly - a pill wants a clearer on-state). */
 .input-row--pill:has(input:checked) {
   background: hsl(var(--primary) / 0.14);
-  border-color: hsl(var(--primary));
+  box-shadow: var(--ui-effect-bevel), var(--ui-elevation-control), var(--ui-effect-selected);
 }
 .input-row--pill:has(input:checked) .input-label {
   color: hsl(var(--primary));
@@ -1245,8 +1241,9 @@
 
 /* ── Badged select (select options carrying a `badge`) ────────────────────────
    A radiogroup of full-width option buttons, each a label plus a small pill (e.g.
-   vector / raster). Reuses the checked-pill on-state (tint + full primary border,
-   mirroring .input-row--pill:has(:checked)) so it reads consistently. */
+   vector / raster). The on-state is a tinted fill plus the inset selection ring;
+   the hairline stays neutral, since an accent border on a rounded shape is not
+   the house treatment. */
 .badge-select {
   display: flex;
   flex-direction: column;
@@ -1259,12 +1256,13 @@
   justify-content: space-between;
   gap: var(--sp-4);
   width: 100%;
-  padding: 8px 11px;
+  padding: var(--sp-4) var(--sp-5);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font: inherit;
+  transition: background var(--dur-1), border-color var(--dur-1), box-shadow var(--dur-1);
   font-size: var(--fs-md);
   cursor: pointer;
   text-align: start;
@@ -1273,8 +1271,13 @@
 .badge-select-opt:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 1px; }
 .badge-select-opt.is-on {
   background: hsl(var(--primary) / 0.14);
-  border-color: hsl(var(--primary));
+  box-shadow: var(--ui-effect-selected);
 }
+/* The selected option the current mode cannot honour (an option-level showIf
+   that stopped matching): still offered and still selected, so nothing changes
+   meaning under the user, but read as parked. */
+.badge-select-opt.is-na .badge-select-label { color: hsl(var(--muted-foreground)); }
+.badge-select-na { font-weight: 400; font-size: var(--fs-2xs); }
 .badge-select-opt.is-on .badge-select-label {
   color: hsl(var(--primary));
   font-weight: 600;
@@ -1319,12 +1322,18 @@
   gap: var(--sp-3);
 }
 .badge-select--compact .badge-select-opt {
-  min-width: 0;   /* grid item: let the label truncate instead of widening the cell */
+  min-width: 0;   /* grid item: never widen the cell */
+  /* Label above badge, not beside it: at the sidebar's 272px a two-up cell is
+     about 117px, and a badge on the same line left nine of Backdrop's sixteen
+     effect names as "Meta…" and "Silk flo…". Stacked, the name has the whole
+     cell and wraps to a second line when it must. */
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
 }
 .badge-select--compact .badge-select-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 /* Back to one column where two readable cells no longer fit - the same breakpoint
    and the same large-text opt-out the dense section grid below uses, since both
@@ -1340,11 +1349,14 @@ html[data-a11y-text="large"] .badge-select--compact {
    equal-width tabs for a small mode switch (e.g. Hue / Saturation / Luminance). */
 .badge-select--segmented {
   flex-direction: row;
+  /* Tabs that cannot share one row wrap to a second (four 7-letter options at the
+     sidebar's 272px) rather than truncating to "Rou…". */
+  flex-wrap: wrap;
   gap: var(--sp-2);
 }
 .badge-select--segmented .badge-select-opt {
   flex: 1 1 0;
-  min-width: 0;
+  min-width: fit-content;   /* never narrower than its own word: wrap instead */
   justify-content: center;
   padding: var(--sp-3) var(--sp-2);
   /* Slightly smaller than the 13px stacked pills so 2–4 full words (Saturation,
@@ -1379,20 +1391,11 @@ html[data-a11y-text="large"] .badge-select--compact {
   max-width: none;
 }
 
+/* The time field is fields.css's `.field-input` (tool-inputs.ts emits the class);
+   only the picker's own colour scheme is this view's. */
 .time-input-wrap input[type="time"] {
-  width: 100%;
-  padding: 7px 10px;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  font: inherit;
-  font-size: var(--fs-md);
-  transition: border-color var(--dur-1);
   color-scheme: light dark;
 }
-.time-input-wrap input[type="time"]:hover { border-color: hsl(var(--ring) / 0.4); }
-/* :focus ring - the one shared recipe at the foot of this sheet. */
 
 /* ─── Datetime-local input ──────────────────────────────────────────────── */
 
@@ -1417,7 +1420,7 @@ input.fp-datetime {
   border:        1px solid hsl(var(--border));
   border-radius: 0.75rem;
   box-shadow:    0 8px 32px hsl(var(--foreground) / 0.12);
-  font-family:   SUSE, ui-sans-serif, system-ui, sans-serif;
+  font-family:   var(--font-brand);
   font-size:     var(--fs-md);
   color:         hsl(var(--popover-foreground));
 }
@@ -1480,7 +1483,8 @@ span.flatpickr-weekday {
 }
 
 .flatpickr-day.today {
-  border-color: hsl(var(--primary));
+  border-color: transparent;
+  box-shadow: var(--ui-effect-accent-ring);
 }
 
 .flatpickr-day.today:not(.selected) {
@@ -1536,8 +1540,11 @@ span.flatpickr-weekday {
    rules rather than taking the literal `section-card` class. */
 
 .input-section {
-  border: 0; box-shadow: 0 .06rem .3rem #0001;
-  border-radius: var(--radius);
+  /* A container, not a control: the hairline ring alone draws its edge (the
+     section owns no border) and the corner is one step larger than the fields
+     inside it, so the group and its controls never read as the same object. */
+  border: 0; box-shadow: var(--ui-edge-faint);
+  border-radius: var(--ui-radius-card);
   /* Clip content to the rounded corners with `overflow: clip` - NOT clip-path and
      NOT overflow:hidden. `overflow: clip` clips only DESCENDANTS (never the element's
      own border/box-shadow), so the border stays solid + continuous in every state -
@@ -1562,18 +1569,26 @@ span.flatpickr-weekday {
      with the dropdowns in the input list - minus the section's 2px border. */
   min-height: 32px;
   font-size: var(--fs-xs);
-  font-weight: 600;
+  /* The section head is its own tier: same size as the field eyebrow, told apart
+     by weight and ink rather than size, so ten folded heads and five field labels
+     no longer read as one ladder (the Chart audit's first-time finding). */
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: var(--ui-type-tracking-label);
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--foreground) / .82);
   cursor: pointer;
   user-select: none;
   list-style: none;
 }
+/* An optional glyph before the head (manifest render.sectionIcons): on the chrome
+   icon scale like every other mark, muted like the word beside it. */
+.input-section-title { display: inline-flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.input-section-icon { display: inline-flex; flex: none; opacity: .8; }
+.input-section-icon svg { width: var(--fs-lg); height: var(--fs-lg); }
 
-.input-section-summary:hover{
-  color:var(--primary);
-background-color:hsl(var(--background) / 1);
+.input-section-summary:hover {
+  color: hsl(var(--primary));
+  background-color: hsl(var(--background) / 1);
 }
 
 /* Keyboard focus ring. The section's overflow:hidden would clip an outline or
@@ -1582,8 +1597,7 @@ background-color:hsl(var(--background) / 1);
    the same border + halo idiom as a focused <select> / text field. */
 .input-section-summary:focus-visible { outline: none; }
 .input-section:has(.input-section-summary:focus-visible) {
-  border-color: hsl(var(--ring));
-  box-shadow: var(--ring-focus);
+  box-shadow: var(--ui-edge-faint), var(--ui-effect-focus-halo);
 }
 
 .input-section-summary::-webkit-details-marker { display: none; }
@@ -1612,7 +1626,8 @@ background-color:hsl(var(--background) / 1);
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
-  padding: 18px 10px 10px;
+  /* On the scale, and on the summary's own 12px gutter above it. */
+  padding: var(--sp-7) var(--sp-6) var(--sp-6);
   border-top: 1px solid hsl(var(--border));
 }
 
@@ -1665,19 +1680,12 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   grid-row: 1;grid-column: 3;
 }
 .blocks-list .block-field{padding:4px  4px 4px  14px !important; }
+/* A block field is fields.css's compact boxed field (`.field-input--sm` /
+   `.field-select--sm`, emitted by tool-inputs.ts); the smaller type is the one
+   delta a block card keeps. */
 .block-field {
-  width: 100%;
-  padding: var(--sp-3) var(--sp-4);
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  font: inherit;
   font-size: var(--fs-sm);
-  transition: border-color var(--dur-1);
 }
-.block-field:hover { border-color: hsl(var(--ring) / 0.4); }
-/* :focus ring - the one shared recipe at the foot of this sheet. */
 
 .block-remove {
   width: 28px; height: 28px; flex-shrink: 0;   /* larger tap target (was 24) */
@@ -1693,7 +1701,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   align-self: flex-start;
   padding: 5px 10px;
   background: none;
-  border: 1px dashed hsl(var(--border));
+  border: 1px solid hsl(var(--border));   /* solid: a button, not a drop area */
   border-radius: var(--radius);
   color: hsl(var(--muted-foreground));
   font: inherit; font-size: var(--fs-sm); cursor: pointer;
@@ -1875,14 +1883,17 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 7px 14px;
   background: hsl(var(--primary) / 0.1);
-  border: 1px solid hsl(var(--primary) / 0.35);
+  /* The tinted fill carries the offer; the pill keeps a transparent hairline and
+     the inset selection ring rather than an accent border. */
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
   color: hsl(var(--primary));
   font: inherit; font-size: var(--fs-md); font-weight: 600; line-height: 1;
   cursor: pointer;
+  box-shadow: var(--ui-effect-accent-ring);
   transition: border-color var(--dur-1), color var(--dur-1), background var(--dur-1), box-shadow var(--dur-1);
 }
-.blocks-quick:hover { background: hsl(var(--primary) / 0.18); box-shadow: 0 1px 3px hsl(var(--primary) / 0.18); }
+.blocks-quick:hover { background: hsl(var(--primary) / 0.18); box-shadow: var(--ui-effect-accent-ring), 0 1px 3px hsl(var(--primary) / 0.18); }
 .blocks-quick-ic { font-size: 1.1em; opacity: 0.85; }
 .blocks-input--droppable.is-file-dragover .blocks-list,
 .blocks-input--droppable.is-file-dragover .blocks-drop-hint {
@@ -1897,6 +1908,10 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .blocks-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-3); margin-bottom: 6px; }
 .blocks-toolbar--quick { margin-bottom: 10px; }
 .blocks-collapse-all {
+  /* 24px floor on the tap target: the pill sits in a row of its own, so it can
+     grow into it instead of borrowing space from a neighbour. */
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 24px;
   padding: 3px 10px;
   background: hsl(var(--muted));
   border: 1px solid hsl(var(--border));
@@ -1907,7 +1922,9 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   transition: border-color var(--dur-1), color var(--dur-1), background var(--dur-1);
 }
 /* Paste / Upload flash states - the base look is .blocks-quick; these tint the clicked
-   button green (ok) / amber (nothing usable) briefly after a click. */
+   button green (ok) / amber (nothing usable) briefly after a click. The two hues and
+   their white ink stay literal: there is no status-colour token yet (same gap as the
+   --brand-warn pair at the top of this sheet). */
 .blocks-io.is-ok { background: hsl(140 60% 45% / 0.9); color: #fff; border-color: transparent; }
 .blocks-io.is-empty { background: hsl(38 92% 50% / 0.9); color: #fff; border-color: transparent; }
 
@@ -1922,7 +1939,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .block-item.is-typed {
   display: block;
   grid-template-columns: none;
-  padding: 9px 11px 11px;
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   background: hsl(var(--muted) / 0.35);
@@ -1974,13 +1991,15 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   outline: 2px solid hsl(var(--ring)); outline-offset: 1px;
   background: hsl(var(--ring) / 0.10);
 }
-/* Two-step delete confirm - the armed state reads unmistakably destructive. */
+/* Two-step delete confirm - the armed state reads unmistakably destructive. It is
+   the most consequential button in a block row, so it keeps the 24px floor even
+   though the armed pill is narrower than the resting 28px icon button. */
 .block-remove.is-confirming {
-  width: auto; height: 22px; padding: 0 9px;
-  background: hsl(var(--destructive, 0 72% 51%)); color: #fff;
+  width: auto; height: 28px; padding: 0 9px;   /* the resting button's height: arming must not shrink it */
+  background: hsl(var(--destructive, 0 72% 51%)); color: hsl(var(--destructive-foreground));
   font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase; letter-spacing: var(--ui-type-tracking-label);
 }
-.block-remove.is-confirming:hover { background: hsl(var(--destructive, 0 72% 51%)); color: #fff; }
+.block-remove.is-confirming:hover { background: hsl(var(--destructive, 0 72% 51%)); color: hsl(var(--destructive-foreground)); }
 .block-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 8px; align-items: end; }
 
 /* Compact untyped blocks (bare fields, no per-field labels, ≤3 fields) lay their
@@ -2044,7 +2063,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 }
 .block-control--ico > .block-control-ico > svg { width: 100%; height: auto; }
 .block-control--ico > .block-control-ico:hover,
-.block-control--ico > .block-control-ico:focus-visible { color: var(--primary); opacity: 1; }
+.block-control--ico > .block-control-ico:focus-visible { color: hsl(var(--primary)); opacity: 1; }
 .block-control--ico > .block-field,
 .block-control--ico > input[type="range"] { flex: 1 1 0; min-width: 0; }
 /* A grid of icon-labelled controls gets a wider column gutter so the two columns of
@@ -2126,7 +2145,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .block-asset-trigger {
   flex: 1; min-width: 0; height: 34px;
   padding: 0; overflow: hidden;
-  border: 1px dashed hsl(var(--border)); border-radius: var(--radius);
+  border: 1px solid hsl(var(--border)); border-radius: var(--radius);   /* a picker button, not a drop area */
   background: hsl(var(--background)); cursor: pointer;
   font: inherit; font-size: var(--fs-xs); color: hsl(var(--muted-foreground));
   transition: border-color var(--dur-1), color var(--dur-1);
@@ -2159,10 +2178,10 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .block-asset-edit--baked { color: hsl(var(--muted-foreground)); }
 .block-asset-edit--baked:hover { background: hsl(var(--muted-foreground) / 0.1); }
 /* Block image that's a live Lolly render - same is-lolly cue as the top-level slot
-   (the dashed empty-state border goes solid + brand-tinted). */
+   (a tinted fill plus the inset selection ring; the hairline stays neutral). */
 .block-asset.is-lolly .block-asset-trigger {
-  border-style: solid;
-  border-color: hsl(var(--primary) / 0.55);
+  background: hsl(var(--primary) / 0.05);
+  box-shadow: var(--ui-effect-accent-ring);
 }
 .block-asset.is-lolly .block-asset-trigger:hover { border-color: hsl(var(--primary)); }
 
@@ -2185,12 +2204,12 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   position: absolute; z-index: 6; top: calc(100% + 4px); left: 0; right: 0;
   display: flex; flex-direction: column; min-width: 150px; padding: var(--sp-2);
   background: hsl(var(--background)); border: 1px solid hsl(var(--border));
-  border-radius: var(--radius); box-shadow: 0 6px 20px rgb(0 0 0 / 0.14);
+  border-radius: var(--radius); box-shadow: var(--ui-elevation-floating);
 }
 .block-add-option {
   text-align: left; padding: 7px 9px; border: none; border-radius: calc(var(--radius) - 2px);
   background: none; cursor: pointer; font: inherit; font-size: var(--fs-sm);
-  color: hsl(var(--foreground)); transition: background 0.1s;
+  color: hsl(var(--foreground)); transition: background var(--dur-1);
 }
 .block-add-option:hover:not(:disabled) { background: hsl(var(--muted)); }
 .block-add-option:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -2204,12 +2223,11 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
    width/height fields. Only the outer corners round; internal borders collapse so
    the segments read as a single pill. */
 
-/* The row's own label is redundant for a vector control - the section header
-   names it (e.g. "Position") and the per-field scrub symbols + help text carry
-   the rest. Left visible it gets the floating-label treatment (the fields are
-   <input type=number>) and collides with the scrubbers, so hide it. Each field
-   keeps its own aria-label, so the accessible name is unaffected. */
-.input-row:has(.vector-input) .input-label { display: none; }
+/* The row's label is a static caption above the strip (isStaticLabel in
+   tool-inputs.ts adds .input-row--static-label for a vector), never the
+   floating treatment: the fields are <input type=number> and a floating label
+   would sit on the scrubbers. It used to be hidden outright, which left a row
+   of bare numbers with nothing saying what they were. */
 
 /* A sub-control belongs to the row above it (gradient: "Colour 3" then its X/Y
    - see isSubControl in tool-inputs.ts). The 16px .tool-inputs grid gap gives them
@@ -2220,6 +2238,20 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .vector-input {
   display: flex;
   margin-top: 2px;
+}
+/* Five or more fields (the six-field imageFraming) cannot each show a three-digit
+   value in a 272px sidebar strip: let them wrap into rows of three, each field
+   its own small box, rather than clip. Under five they stay one joined pill. */
+.vector-input:has(.vec-field:nth-child(5)) {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.vector-input:has(.vec-field:nth-child(5)) .vec-field { flex: 1 1 calc(33.333% - 4px); }
+.vector-input:has(.vec-field:nth-child(5)) .vec-num,
+.vector-input:has(.vec-field:nth-child(5)) .vec-field:first-child .vec-num,
+.vector-input:has(.vec-field:nth-child(5)) .vec-field:last-child .vec-num {
+  border-right-width: 1px;
+  border-radius: var(--radius);
 }
 .vec-field {
   position: relative;
@@ -2255,6 +2287,9 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 }
 .vec-field:hover .vec-scrub { color: hsl(var(--foreground)); }
 .vec-field:focus-within .vec-scrub { color: hsl(var(--ring)); }
+/* The scrubbers carry min/max, so :user-invalid can fire; the ring the primitive
+   gives a boxed field, on a control that opts out of that box. */
+.vec-num:user-invalid { box-shadow: 0 0 0 2px hsl(var(--destructive) / .45); }
 .vec-num {
   width: 100%;
   min-width: 0;
@@ -2340,13 +2375,14 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   background: hsl(var(--muted) / 0.5);
   color: hsl(var(--foreground));
   cursor: pointer;
-  transition: border-color var(--dur-1), background-color var(--dur-1), color var(--dur-1);
+  transition: border-color var(--dur-1), background-color var(--dur-1), color var(--dur-1), box-shadow var(--dur-1);
 }
 .asset-slot-tab svg { flex: none; width: calc(15px * var(--a11y-fs)); height: calc(15px * var(--a11y-fs)); }
 .asset-slot-tab-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .asset-slot-tab:hover { border-color: hsl(var(--primary) / 0.55); background: hsl(var(--primary) / 0.07); }
-/* The active source reads as a filled tab. */
-.asset-slot-tab.is-active { border-color: hsl(var(--primary) / 0.55); background: hsl(var(--primary) / 0.12); color: hsl(var(--primary)); }
+/* The active source reads as a filled tab: tinted fill plus the inset selection
+   ring, over the neutral hairline the resting tab already carries. */
+.asset-slot-tab.is-active { background: hsl(var(--primary) / 0.12); color: hsl(var(--primary)); box-shadow: var(--ui-effect-selected); }
 /* Empty slot: the pick tab is the primary call to action - a full-width dashed drop
    target (it accepts a dragged catalog tile), matching the app's drop-area language. */
 .asset-slot:not(.has-value) .asset-slot-tab { flex: 1 1 auto; justify-content: center; border-style: dashed; padding: var(--sp-6); }
@@ -2518,6 +2554,13 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .live-actions-standalone { margin: 0 0 12px; }
 .live-actions-standalone .slot-act.slot-live { flex: 1 1 auto; justify-content: center; }
 .slot-act {
+  /* An 11px chip at 4px padding was a 21px target. The actions row wraps and can
+     grow, so the 24px floor comes from the chip's own box - no borrowed space, and
+     no overlap with the chip beside it. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
   font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1;
@@ -2544,8 +2587,11 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .slot-act.slot-live .canvas-live-dot { width: 7px; height: 7px; }
 .slot-live-flip .canvas-live-dot, .slot-live-device .canvas-live-dot,
 .canvas-flip-toggle .canvas-live-dot, .canvas-device-toggle .canvas-live-dot { display: none; }
+/* Live: the tinted fill, the destructive ink and the pulsing dot carry the state,
+   so the hairline goes transparent rather than accent-coloured. (Not the primary
+   selection ring either - that would be the wrong hue for "recording".) */
 .slot-act.slot-live.is-live {
-  border-color: hsl(var(--destructive));
+  border-color: transparent;
   color: hsl(var(--destructive));
   background: hsl(var(--destructive) / 0.08);
 }
@@ -2574,18 +2620,35 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .asset-rebake-error { margin: 4px 0 0; font-size: var(--fs-xs); }
 
 /* A slot holding a live Lolly render (AssetRef carries meta.toolUrl) is marked
-   is-lolly: brand-tinted border + ✦ spark on the trigger, so "this is a live
-   render, not a static file" reads before clicking. The click itself then asks
-   edit-or-replace (askLollyIntent) instead of opening the picker directly. */
+   is-lolly: a tinted fill plus the inset selection ring and a ✦ spark on the
+   trigger (the hairline stays neutral, as on the block-level slot above), so
+   "this is a live render, not a static file" reads before clicking. The click
+   itself then asks edit-or-replace (askLollyIntent) instead of opening the
+   picker directly. */
 .asset-picker-row.is-lolly .asset-picker-trigger {
-  border-color: hsl(var(--primary) / 0.55);
+  /* The boxed-field recipe the trigger already wears, plus the ring - a state
+     must not quietly drop the control's own surface. */
+  box-shadow: var(--ui-effect-bevel), var(--ui-elevation-control), var(--ui-effect-accent-ring);
   background: hsl(var(--primary) / 0.05);
 }
-.asset-picker-row.is-lolly .asset-picker-trigger:hover { border-color: hsl(var(--primary)); }
-.asset-picker-row.is-lolly .asset-picker-thumb-inline { border-color: hsl(var(--primary) / 0.55); }
+.asset-picker-row.is-lolly .asset-picker-trigger:hover { box-shadow: var(--ui-effect-bevel), var(--ui-elevation-panel), var(--ui-effect-accent-ring); }
 .asset-lolly-spark { color: hsl(var(--primary)); }
+/* The asset trigger and its Edit chip wear the boxed-field recipe here, over the
+   legacy alias list in utilities.css, so the picker row is one material with the
+   fields around it and has a hover lift at all. */
+.asset-picker-trigger, .asset-edit {
+  border-radius: var(--ui-radius-panel);
+  box-shadow: var(--ui-effect-bevel), var(--ui-elevation-control);
+  transition: box-shadow var(--dur-1), background var(--dur-1), color var(--dur-1);
+}
+.asset-picker-trigger:hover, .asset-edit:hover { box-shadow: var(--ui-effect-bevel), var(--ui-elevation-panel); }
 .asset-edit {
   flex: none;
+  /* 24px floor: the provenance row it sits in is content-sized and can grow. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
   padding: 3px 10px;
   cursor: pointer;
   font-size: var(--fs-sm);
@@ -2600,6 +2663,8 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .embed-editor-overlay { position: fixed; inset: 0; z-index: 1100; }
 .embed-editor-backdrop {
   position: absolute; inset: 0;
+  /* A deliberate black scrim, not a themed one: it has to darken the page behind
+     it in every theme, and the theme ink goes near-white in the dark ones. */
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(2px);
 }
@@ -2615,7 +2680,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 }
 .embed-editor-head {
   display: flex; align-items: center; gap: var(--sp-5);
-  padding: 14px 20px;
+  padding: var(--sp-7) var(--sp-8);
   border-bottom: 1px solid hsl(var(--border));
 }
 .embed-editor-spark { color: hsl(var(--primary)); font-size: var(--fs-xl); flex: none; }
@@ -2636,7 +2701,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 }
 .embed-editor-form {
   overflow-y: auto;
-  padding: 18px 20px;
+  padding: var(--sp-7) var(--sp-8);
   border-right: 1px solid hsl(var(--border));
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
@@ -2644,7 +2709,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 .embed-editor-side {
   display: flex; flex-direction: column; gap: 14px;
   overflow-y: auto;
-  padding: 18px 20px;
+  padding: var(--sp-7) var(--sp-8);
 }
 .embed-editor-side .asset-picker-toolcard-preview { flex: 1; }
 .embed-editor-actions {
@@ -2755,8 +2820,11 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   gap: var(--sp-4);
   margin-bottom: 14px;
   padding: var(--sp-4) var(--sp-5);
-  border: 1px solid hsl(var(--primary) / 0.3);
+  /* Tinted fill plus the inset ring; the badge's hairline stays neutral rather
+     than brand-coloured, like every other rounded shape in the panel. */
+  border: 1px solid transparent;
   border-radius: var(--radius);
+  box-shadow: var(--ui-effect-accent-ring);
   background: hsl(var(--primary) / 0.06);
   color: hsl(var(--primary));
   font-size: var(--fs-sm);
@@ -3971,18 +4039,20 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
    the same hover-vs-focus outcome - see the note beside them. The export panel's
    card selects have moved to `.field-select`, which owns its own focus state
    (halo OVER the emboss), so they are excluded here rather than having this
-   recipe flatten the highlight back out.
+   recipe flatten the highlight back out. The sidebar's own text, textarea and
+   select controls carry `.field-input` / `.field-select` too and are excluded
+   the same way; what is left here is the stragglers (time, block fields).
 
    Untouched deliberately: the two partial variants that omit `outline: none`
    (.export-dims .dim-dpi:focus-within here's sibling in tool-chrome.css, and
    .input-section:has(.input-section-summary:focus-visible) above) - they ring a
    CONTAINER, not the focusable element, so they are not this recipe. And
    a11y.css's :focus-visible rings sit in a higher layer and keep winning. */
-.input-row input:focus,
-.input-row textarea:focus,
-.input-row select:focus,
+.input-row input:not(.field-input):focus,
+.input-row textarea:not(.field-input):focus,
+.input-row select:not(.field-select):focus,
 .time-input-wrap input[type="time"]:focus,
-.block-field:focus,
+.block-field:not(.field-input):not(.field-select):focus,
 .export-dims input[type="number"]:focus,    /* tool-chrome.css */
 .video-params input[type="number"]:focus,   /* tool-chrome.css */
 .export-filename:focus,                     /* tool-chrome.css */

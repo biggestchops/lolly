@@ -94,6 +94,11 @@
 .cl-kind--live::before { content: ''; width: 5px; height: 5px; border-radius: var(--ui-radius-pill); background: var(--ui-color-action-primary); }
 .cl-stage { position: relative; display: flex; align-items: center; justify-content: center; gap: var(--ui-space-control-inline); flex-wrap: wrap; min-width: 0; min-height: 220px; padding: var(--ui-space-panel); background: var(--ui-color-surface-muted); contain: layout paint; overflow: auto; }
 .cl-stage[data-cl-preview^="color"] { contain: none; overflow: visible; }
+.cl-stage[data-cl-preview="featuredRow"] { display: block; padding: 0; }
+.cl-featured-demo { width: 100%; min-width: 0; }
+.cl-featured-controls { display: flex; justify-content: center; padding: var(--ui-space-panel); }
+.cl-featured-controls .view-seg-btn { white-space: nowrap; }
+.cl-featured-demo .featured { --featured-top-space: 0px; }
 .cl-stage > * { max-width: 100%; }
 .cl-stage .cl-example-cover { object-fit: cover; }
 .cl-stage .cat-zoom-stage { min-height: 240px; }
@@ -112,6 +117,11 @@
 .cl-design-columns .fc-insp { height: auto; box-shadow: var(--ui-edge-default); }
 .cl-preview-context { width: 100%; min-width: 0; }
 .cl-project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: var(--ui-space-panel); }
+/* Only specimen layout: card appearance comes from the production sheets. */
+.cl-object-demo { width: 100%; min-width: 0; }
+.cl-object-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: var(--ui-space-panel); align-items: start; }
+.cl-object-context { width: 100%; min-width: 0; min-height: 0; padding: 0; }
+.cl-object-demo > output { display: block; margin-top: var(--ui-space-panel); }
 .cl-selection-demo { max-width: 100%; }
 .cl-stage .projects-bulkbar { width: 100%; flex-wrap: wrap; }
 .cl-stage .projects-bulkbar-actions { flex-wrap: wrap; }
@@ -188,7 +198,7 @@
 .cl-icon-cell { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 6px; }
 .cl-icon-cell span { font-size: var(--ui-type-caption); color: var(--ui-color-text-muted); text-align: center; overflow-wrap: anywhere; }
 .cl-zoomhud-demo { position: relative; width: 100%; max-width: 260px; height: 64px; }.cl-zoomhud-demo .stage-nav { opacity: 1; }
-.cl-popover-demo { position: fixed; z-index: 100000; min-width: 160px; padding: 6px; display: flex; flex-direction: column; gap: 2px; background: var(--ui-color-surface-overlay); border-radius: var(--ui-radius-panel); box-shadow: var(--ui-elevation-overlay); }
+.cl-popover-demo { position: fixed; z-index: var(--z-top); min-width: 160px; padding: 6px; display: flex; flex-direction: column; gap: 2px; background: var(--ui-color-surface-overlay); border-radius: var(--ui-radius-panel); box-shadow: var(--ui-elevation-overlay); }
 .cl-popover-demo-item { padding: 10px; border-radius: var(--ui-radius-control); font-size: var(--ui-type-body); cursor: pointer; }.cl-popover-demo-item:hover { background: var(--ui-color-surface-muted); }
 .cl-broken { font: var(--ui-type-caption)/1.6 var(--font-mono); color: hsl(var(--destructive)); }
 /* Explicit demo scaffolding for host-dependent design states. */

@@ -361,7 +361,7 @@ export async function openTranscribeConsent(
     onClose: () => { if (!enqueued) hooks.onDismiss?.(); },
   });
   const dlNote = modal.el.querySelector<HTMLElement>('[data-stt-dl]');
-  // The one-time download is the consent-worthy part, so say so up front - but
+  // The one-time download is the consent-worthy part, so report it up front - but
   // only when it is actually owed (the probe is async, the line arrives).
   void sp.transcribeCached?.().then((cached) => {
     if (cached || !dlNote) return;

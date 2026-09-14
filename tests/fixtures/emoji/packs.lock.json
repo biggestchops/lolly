@@ -1,0 +1,70 @@
+[
+  {
+    "directory": "openmoji",
+    "pin": {
+      "id": "community/emoji/openmoji/color",
+      "pin": {
+        "version": "17.0.0"
+      },
+      "checksum": "sha256:23081376f77830403a111a0a70a58a5c348e4bd31443b70a80990ccd571f5096"
+    },
+    "files": {
+      "1f600.svg": {
+        "url": "https://raw.githubusercontent.com/hfg-gmuend/openmoji/f9fc506a3f913be9897ab0181d611d4c910a4104/color/svg/1F600.svg",
+        "checksum": "sha256:8cc1ef3952c6405b178e191a74e4498312acef6cc56455fabf087471f0bc9812"
+      },
+      "LICENSE.txt": {
+        "url": "https://raw.githubusercontent.com/hfg-gmuend/openmoji/f9fc506a3f913be9897ab0181d611d4c910a4104/LICENSE.txt",
+        "checksum": "sha256:5e436ff8ffbb77d8607220e9bce20c8915d860010feeb6c1ebef5a85688e9b39"
+      }
+    }
+  },
+  {
+    "directory": "twemoji",
+    "pin": {
+      "id": "community/emoji/twemoji/color",
+      "pin": {
+        "version": "17.0.3"
+      },
+      "checksum": "sha256:05c0cd0f44a7e94b5ee3c86f20f873bdba7c3eae43445d442be50fbb1a1817d1"
+    },
+    "files": {
+      "1f600.svg": {
+        "url": "https://raw.githubusercontent.com/jdecked/twemoji/b6b55fef1e8636b540a6d016a4729ca8cdf2e60b/assets/svg/1f600.svg",
+        "checksum": "sha256:41478e547c5b6ad66bfcf91ead5350fa0bc247956c3ff912020327e3e9ad0d2b"
+      },
+      "LICENSE.txt": {
+        "url": "https://raw.githubusercontent.com/jdecked/twemoji/b6b55fef1e8636b540a6d016a4729ca8cdf2e60b/LICENSE-GRAPHICS",
+        "checksum": "sha256:8ae9438818c26e4873b91d8c6ad620526c011e27e125677f13031eda903f007c"
+      }
+    }
+  },
+  {
+    "directory": "noto",
+    "pin": {
+      "id": "community/emoji/noto/color",
+      "pin": {
+        "version": "2.051"
+      },
+      "checksum": "sha256:8ad4bc0032cfeb068eac15fddb8f5a1d90b714bc3a97b53dcc3b0a7e5ae8e360"
+    },
+    "files": {
+      "1f600.svg": {
+        "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/8998f5dd683424a73e2314a8c1f1e359c19e8742/svg/emoji_u1f600.svg",
+        "checksum": "sha256:3ad2cf9b2c32b722b593b0b71e6a2e171a24086da7a94b181532f3431e532e8e"
+      },
+      "LICENSE.txt": {
+        "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/8998f5dd683424a73e2314a8c1f1e359c19e8742/svg/LICENSE",
+        "checksum": "sha256:611ceab36dae96644ca84e8ace6873821790192bf6f73b0d0624a21b24b4b332"
+      },
+      "Apache-2.0.txt": {
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+        "checksum": "sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      "1f32a.svg": {
+        "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/8998f5dd683424a73e2314a8c1f1e359c19e8742/svg/emoji_u1f32a.svg",
+        "checksum": "sha256:26d20aa4187f33806f83fb72d57bfb4d4808fbcb8c29601333b49932623d7302"
+      }
+    }
+  }
+]

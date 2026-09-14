@@ -30,7 +30,7 @@
  * integrity map covers every part) against the SAME pinned key catalog
  * signing uses (VITE_CATALOG_PUBLIC_KEY_JWK). Key pinned ⇒ fail closed;
  * no key pinned ⇒ the result records 'unsigned'/'unverified' for the UI to
- * say so. The zip-level SHA-256 integrity map is enforced upstream by
+ * report it. The zip-level SHA-256 integrity map is enforced upstream by
  * brand-transfer's verifyIntegrity either way.
  *
  * Boot cost: initPackStore loads the meta record and the path SET only (no

@@ -1,6 +1,6 @@
 {
   "name": "URL-screenshot",
-  "description": "Elke webpagina, op elke scrolldiepte, met eigen CSS.",
+  "description": "Elke webpagina, op elke scrolldiepte, met aangepaste CSS.",
   "a11yLabel": "Screenshot van {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "De pagina die wordt vastgelegd. Wordt op het moment van exporteren vastgelegd in een echte browser-engine.",

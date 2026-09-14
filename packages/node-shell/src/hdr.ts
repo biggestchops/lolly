@@ -55,7 +55,7 @@ import {
 import type { HdrBoostOptions } from '@lolly/engine';
 // DEEP RELATIVE IMPORTS, not the `@lolly/engine` barrel: gainmap.ts,
 // gainmap-jpeg.ts and jpeg-segments.ts are deliberately engine-internal (their
-// own headers say so), and the web modules reach them the same way. Same
+// own headers state it), and the web modules reach them the same way. Same
 // precedent as exr.ts / radiance.ts in this package's raster.ts. Nothing was
 // added to the barrel for this feature.
 import { computeGainMap } from '../../../engine/src/gainmap.ts';

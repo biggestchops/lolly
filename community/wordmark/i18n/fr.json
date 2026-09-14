@@ -1,6 +1,6 @@
 {
   "name": "Logotype",
-  "description": "Tapez un mot, obtenez un logo-mot vectoriel en pur tracé dans la police de votre marque - les destinataires n'ont jamais besoin de la police installée.",
+  "description": "Tape un mot, obtiens un logotype vectoriel en tracés purs dans la police du système de design - les destinataires n'ont jamais besoin d'installer la police.",
   "a11yLabel": "Logotype affichant {{default text \"Wordmark\"}}",
   "inputs.text.label": "Texte",
   "inputs.font.label": "Police",

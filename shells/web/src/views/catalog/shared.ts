@@ -18,6 +18,9 @@ import type { RewordCandidate, RewordSpan, RewordSuggestion } from '@lolly/engin
 import type { RewordStatus } from '../../lib/reworder.ts';
 import type { DerivedSignInputs } from '../../lib/derived-asset.ts';
 import type { AssetRef, HostV1, Profile } from '@lolly-tools/core/host-v1';
+import type { EmojiPackPinV1 } from '@lolly-tools/core/emoji-v1';
+import type { EmojiSpecimenSource } from '../../lib/emoji-specimen.ts';
+import { VISUAL_TYPES } from '../../lib/asset-kinds.ts';
 import type { PhotoTreatment } from '../../../../../engine/src/photo-treatment.ts';
 import type { IconTheme } from '../../../../../engine/src/icon-theme.ts';
 
@@ -27,6 +30,171 @@ export const HEADSHOT_ID = 'user/headshot';
 // Only assets that thumbnail as an image belong in the grid; palette/tokens/font/
 // profile entries are engine data (Swatches + Fonts panels cover those below).
 // Shared with the folder overlays, which had no filter at all - see lib/asset-kinds.ts.
+
+/** One glyph a pack does not carry, with the reason recorded when the pack was built. */
+export interface EmojiPackAbsence {
+  key: string;
+  file: string;
+  reason: string;
+}
+
+/**
+ * The `meta.emoji` block a catalog emoji-pack entry carries, in the fields the
+ * catalog reads (plans/252). Emoji packs are `type: 'data'` like the tokens and
+ * palette docs, so ONLY this block opens the grid to one: a brand's data files
+ * stay out, exactly as they always did.
+ *
+ * The required fields are bridge/emoji.ts's own, deliberately. A tile is an offer
+ * to use a set, so the catalog must never offer one the host would refuse to load.
+ */
+export interface EmojiPackTileMeta {
+  id: string;
+  version: string;
+  checksum: string;
+  family: string;
+  style: string;
+  label: string;
+  glyphs: number;
+  coverageComplete: boolean;
+  license: string;
+  licenseUrl: string;
+  attribution: string;
+  missing: EmojiPackAbsence[];
+  withheld: EmojiPackAbsence[];
+  /**
+   * The set's five specimen glyphs, prepared at build time by
+   * scripts/emoji-pack-specimens.ts, keyed by glyph key. Present ONLY when the
+   * entry's `specimenOf` still names this pack's checksum: a specimen is artwork
+   * lifted out of a bundle, so one that no longer belongs to the bundle would draw
+   * a picture of a set this is not. Null means "load the pack instead", which is
+   * what every surface did before the bake.
+   */
+  specimen: Record<string, string> | null;
+}
+
+/** Plenty for a set with a handful of recorded gaps, and bounded because a record is data. */
+const ABSENCE_MAX = 64;
+
+/** The specimen is five glyphs; the ceilings are generous and exist only because an
+ *  index entry is data this shell was handed, not a promise it can check. */
+const SPECIMEN_MAX_GLYPHS = 16;
+const SPECIMEN_MAX_BYTES = 256 * 1024;
+
+/**
+ * The baked specimen an entry carries, or null. Refuses the lot rather than draw a
+ * mixture: a specimen is a set of glyphs prepared together from one pack.
+ */
+function readSpecimen(meta: Record<string, unknown>): Record<string, string> | null {
+  // A specimen prepared from a different release of the pack is not this set's
+  // artwork. The same rule scripts/check-emoji-packs.ts applies before it ships.
+  if (meta.specimenOf !== meta.checksum) return null;
+  const value = meta.specimen;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (!entries.length || entries.length > SPECIMEN_MAX_GLYPHS) return null;
+  const out: Record<string, string> = {};
+  for (const [key, markup] of entries) {
+    if (typeof markup !== 'string' || !markup.startsWith('<svg') || markup.length > SPECIMEN_MAX_BYTES) return null;
+    out[key] = markup;
+  }
+  return out;
+}
+
+/** The absences a pack records, read defensively: an entry with no key is dropped. */
+function readAbsences(value: unknown): EmojiPackAbsence[] {
+  if (!Array.isArray(value)) return [];
+  const out: EmojiPackAbsence[] = [];
+  for (const row of value.slice(0, ABSENCE_MAX)) {
+    if (!row || typeof row !== 'object') continue;
+    const entry = row as { key?: unknown; file?: unknown; reason?: unknown };
+    if (typeof entry.key !== 'string' || !entry.key) continue;
+    out.push({
+      key: entry.key,
+      file: typeof entry.file === 'string' ? entry.file : '',
+      reason: typeof entry.reason === 'string' ? entry.reason : '',
+    });
+  }
+  return out;
+}
+
+/** True for a key that names a Unicode sequence (lowercase hex scalars), rather than
+ *  a pack's own symbol, whose key is an asset id. */
+export const isCanonicalGlyphKey = (key: string): boolean => /^[0-9a-f]{4,6}(?:-[0-9a-f]{4,6})*$/.test(key);
+
+/**
+ * The pack block on an asset, or null for everything else. A half-written block is
+ * not a pack: every field the host needs to load the set has to be there, or the
+ * tile would be an offer nothing can honour.
+ */
+export function emojiPackMeta(ref: AssetRef | undefined): EmojiPackTileMeta | null {
+  if (ref?.type !== 'data') return null;
+  const value = (ref.meta as { emoji?: unknown } | undefined)?.emoji;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const meta = value as Record<string, unknown>;
+  const strings = ['id', 'version', 'checksum', 'family', 'style', 'label', 'license', 'licenseUrl', 'attribution'];
+  if (strings.some(name => typeof meta[name] !== 'string' || !(meta[name] as string))) return null;
+  if (typeof meta.glyphs !== 'number' || !Number.isInteger(meta.glyphs) || meta.glyphs < 1) return null;
+  if (!/^sha256:[0-9a-f]{64}$/.test(meta.checksum as string)) return null;
+  return {
+    id: meta.id as string,
+    version: meta.version as string,
+    checksum: meta.checksum as string,
+    family: meta.family as string,
+    style: meta.style as string,
+    label: meta.label as string,
+    glyphs: meta.glyphs,
+    coverageComplete: meta.coverageComplete === true,
+    license: meta.license as string,
+    licenseUrl: meta.licenseUrl as string,
+    attribution: meta.attribution as string,
+    missing: readAbsences(meta.missing),
+    withheld: readAbsences(meta.withheld),
+    specimen: readSpecimen(meta),
+  };
+}
+
+/** The pin naming this exact release, as every emoji surface spells it. */
+export const emojiPackPin = (meta: EmojiPackTileMeta): EmojiPackPinV1 =>
+  ({ id: meta.id, pin: { version: meta.version }, checksum: meta.checksum });
+
+/** One set as the specimen helper wants it: the release, and whatever artwork the
+ *  entry already carries for it. */
+export const emojiPackSource = (meta: EmojiPackTileMeta): EmojiSpecimenSource =>
+  ({ pin: emojiPackPin(meta), specimen: meta.specimen });
+
+/**
+ * Which assets the grid shows. Catalog first, then the user's uploads; only
+ * image-thumbnailable types from the catalog (palette/tokens/font catalog entries
+ * are engine data covered elsewhere), a user's OWN audio upload, AND catalog
+ * focus-music (audio tagged 'neurospicy' - the generated songs + lo-fi loops) so
+ * they can be auditioned. Other catalog audio (music beds) stays out. Each audio
+ * tile renders a player in the details modal.
+ */
+export function gridAdmits(a: AssetRef): boolean {
+  return VISUAL_TYPES.has(a.type)
+    || (a.type === 'audio' && (a.source === 'user' || (Array.isArray(a.meta?.tags) && (a.meta.tags as string[]).includes('neurospicy'))))
+    // A user's OWN text/code/markdown and data uploads are first-class here
+    // (¶/▦ stub tiles; preview + Copy/Analyse in the details modal). Catalog
+    // LIBRARY text/data entries stay out - those are engine data (tokens,
+    // palettes) covered by their own surfaces, and without this split every
+    // brand-pack data file would flood the grid.
+    || ((a.type === 'text' || a.type === 'data') && a.source === 'user')
+    // The one library data file that IS shown: an emoji pack. Its rights record,
+    // its licence and its coverage are things a person chooses a set on, and the
+    // grid was the only place they were unreachable.
+    || !!emojiPackMeta(a)
+    // A brand PALETTE asset is first-class: a swatch-mosaic tile that opens a
+    // "Colour Lab in a card" - every preset with its OKLCH and a freshly
+    // extrapolated OKLab tint→shade ramp (thumbHtml's `palette` branch). The
+    // raw `tokens` DTCG doc stays out (redundant with this, and brand-locked),
+    // and so do the functional `palette` assets that are engine config, not
+    // swatch lists - the icon-theme pairs and photo treatments consumed by
+    // _iconThemes()/_photoTreatments() (tagged as such; they'd otherwise each
+    // mirror the one live brand palette the modal paints from).
+    || (a.type === 'palette'
+      && !(Array.isArray(a.meta?.tags)
+        && (a.meta.tags as string[]).some(tg => tg === 'icon-themes' || tg === 'photo-treatments')));
+}
 
 /** A font as the catalogue renders it - a bundled spec or an on-device user font. */
 export interface CatFont {

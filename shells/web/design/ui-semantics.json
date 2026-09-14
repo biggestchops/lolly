@@ -335,6 +335,22 @@
               "css": "inset 0 0 0 1px hsl(var(--primary) / .20)"
             }
           }
+        },
+        "accent-ring": {
+          "$type": "shadow",
+          "$value": {
+            "color": "#0c322c33",
+            "offsetX": "0px",
+            "offsetY": "0px",
+            "blur": "0px",
+            "spread": "1px"
+          },
+          "$description": "The same inset brand hairline as `selected`, for a state that is not a selection: a live Lolly-sourced slot, today on a calendar, an owned role, a quick-add chip. Kept separate so the two can diverge without a sweep through the sheets.",
+          "$extensions": {
+            "tools.lolly": {
+              "css": "inset 0 0 0 1px hsl(var(--primary) / .20)"
+            }
+          }
         }
       },
       "type": {

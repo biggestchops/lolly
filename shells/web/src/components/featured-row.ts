@@ -31,7 +31,7 @@ import { featuredStartIndex, recordFeaturedActivity, type FeaturedCollection } f
 import type { PreviewQueue } from '../lib/preview-queue.ts';
 import { escape } from '../utils.ts';
 import { prefersReducedMotion } from '../lib/a11y-prefs.ts';
-import { perfUiOn } from '../feature-flags.ts';
+import { perfUiOn, subscribePerfUi } from '../feature-flags.ts';
 import { captureNeutralPinned } from '../lib/capture-neutral.ts';
 import { renderFeaturedVariant, renderMissingLook, isManifestLook, displayFormatOf } from '../lib/featured-render.ts';
 import { toolSeedHref } from '../lib/seed-url.ts';
@@ -233,8 +233,9 @@ export function mountFeaturedRow(
   // perf-ui folds in here so ONE flag both stills the drift loop (line ~888) AND skips the
   // progressive variant rasterisation (line ~913) - the tile falls back to its static
   // preview/icon, exactly as under reduced motion. Off by default ⇒ byte-identical.
-  const reduced = prefersReducedMotion() || captureNeutralPinned() || opts.staticStrip === true || perfUiOn();
-  let coverflow = opts.viewMode === 'coverflow';
+  let reduced = prefersReducedMotion() || captureNeutralPinned() || opts.staticStrip === true || perfUiOn();
+  let requestedViewMode = opts.viewMode;
+  let coverflow = !perfUiOn() && requestedViewMode === 'coverflow';
   const collection = opts.collection ?? 'tools';
   const initialIndex = featuredStartIndex(collection, entries.map(entry => entry.id), opts.favourites);
   let flow: CoverflowHandle | null = null;
@@ -395,7 +396,8 @@ export function mountFeaturedRow(
   }
 
   let fadeTimer: ReturnType<typeof setInterval> | undefined;
-  if (!reduced) {
+  function startFade(): void {
+    if (reduced || fadeTimer) return;
     fadeTimer = setInterval(() => {
       // Pause the auto cross-fade while the pointer is over the strip or a finger is on
       // it - a cross-fade firing mid-swipe animates two drop-shadowed images at once and
@@ -405,6 +407,7 @@ export function mountFeaturedRow(
       track.querySelectorAll('.ftile-stage').forEach((s) => advanceStage(s));
     }, FADE_INTERVAL_MS);
   }
+  startFade();
 
   // ── Motion model: ambient drift · flick/wheel inertia · pointer drag ─────────
   // The viewport is a native horizontal scroller (swipe / trackpad / keyboard all
@@ -918,7 +921,7 @@ export function mountFeaturedRow(
   // Initial layout can shift as the committed preview images decode (they change tile
   // heights only, but a late web-font / reflow can nudge widths); establish the loop
   // now and once more after a beat.
-  const startRaf = (): void => { if (!raf && !destroyed) raf = requestAnimationFrame(tick); };
+  const startRaf = (): void => { if (!raf && !destroyed && (coverflow || !reduced)) raf = requestAnimationFrame(tick); };
   setupLoop();
   const relayout = setTimeout(setupLoop, 600);
   // Gallery needs the loop for drift/inertia (skipped under reduced motion); Cover Flow
@@ -1035,7 +1038,7 @@ export function mountFeaturedRow(
         const cover = !firstByTool.has(job.id);
         firstByTool.add(job.id);
         opts.previewQueue.add({
-          priority: () => !visible ? null : cover ? (onScreen ? 0 : 1) : onScreen ? 2 : null,
+          priority: () => perfUiOn() || !visible ? null : cover ? (onScreen ? 0 : 1) : onScreen ? 2 : null,
           stale: () => destroyed,
           run: () => renderJob(job),
         });
@@ -1045,19 +1048,34 @@ export function mountFeaturedRow(
       // Other consumers keep their own queue, paused while their row is off-screen.
       let queueArmed = false;
       const pumpQueue = (): void => {
-        if (destroyed || !onScreen) return;
+        if (destroyed || !onScreen || perfUiOn()) return;
         const job = jobs.shift();
         if (!job) return;
         void renderJob(job).finally(() => {
-          if (!destroyed && onScreen && jobs.length) ricId = ric(pumpQueue);
+          if (!destroyed && onScreen && !perfUiOn() && jobs.length) ricId = ric(pumpQueue);
         });
       };
-      resumeQueue = (): void => { if (queueArmed && !destroyed && onScreen && jobs.length) ricId = ric(pumpQueue); };
+      resumeQueue = (): void => { if (queueArmed && !destroyed && onScreen && !perfUiOn() && jobs.length) ricId = ric(pumpQueue); };
       const armQueue = (): void => { if (queueArmed || destroyed || !jobs.length) return; queueArmed = true; ricId = ric(pumpQueue); };
       if (document.readyState === 'complete') ricId = ric(armQueue);
       else window.addEventListener('load', () => ric(armQueue), { once: true, signal });
     }
   }
+
+  const unsubscribePerf = subscribePerfUi(on => {
+    reduced = prefersReducedMotion() || captureNeutralPinned() || opts.staticStrip === true || on;
+    coverflow = !on && requestedViewMode === 'coverflow';
+    section.classList.toggle('featured--static', reduced);
+    section.classList.toggle('featured--coverflow', coverflow);
+    velocity = pendingDx = 0;
+    dragging = false;
+    cfMotion.reset(viewport.scrollLeft);
+    cancelAnimationFrame(raf); raf = 0;
+    if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = undefined; }
+    if (ricId) { cancelRic(ricId); ricId = 0; }
+    setupLoop();
+    if (!on) { startRaf(); startFade(); resumeQueue(); }
+  });
 
   return {
     setVisible(v: boolean) {
@@ -1068,7 +1086,8 @@ export function mountFeaturedRow(
       if (v) setupLoop();
     },
     setViewMode(mode: FeaturedViewMode) {
-      const next = mode === 'coverflow';
+      requestedViewMode = mode;
+      const next = !perfUiOn() && mode === 'coverflow';
       if (next === coverflow) return;
       coverflow = next;
       velocity = 0;
@@ -1082,6 +1101,7 @@ export function mountFeaturedRow(
     },
     destroy() {
       destroyed = true;
+      unsubscribePerf();
       ac.abort();
       vizObserver?.disconnect();
       flow?.destroy();

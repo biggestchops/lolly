@@ -34,7 +34,13 @@
   font-size: var(--fs-md);
   cursor: pointer;
   text-align: left;
-  box-shadow: 0 .2rem .3rem #0001;
+  /* The same object as the select and text field beside it (fields.css's boxed
+     field), stated here because a <button> cannot take .field-input without also
+     inheriting its line box. Hover lifts, exactly as the fields do. */
+  background-color: var(--ui-color-surface-canvas);
+  border: 0;
+  border-radius: var(--ui-radius-panel);
+  box-shadow: var(--ui-effect-bevel), var(--ui-elevation-control);
   /* No transition here: the named-property transition shared with the asset-picker
      trigger and the block add/remove buttons lives in notfound.css and wins on
      source order within the chrome layer, so a declaration here never applied. */
@@ -48,7 +54,7 @@
 }
 
 .color-trigger:hover {
-  border-color: hsl(var(--ring) / 0.4);
+  box-shadow: var(--ui-effect-bevel), var(--ui-elevation-panel);
 }
 
 .color-trigger-preview {
@@ -105,18 +111,27 @@
 .color-trigger:has(.color-trigger-name:empty) .color-trigger-preview {
   position: absolute; inset-inline-start: 50%; margin: 0; transform: translateX(-50%);
 }
+/* In a sidebar row the label owns the first 45% (above), so an unnamed colour's
+   dot sits at the trailing edge like a named colour's does, instead of centred
+   over a label that a long translation or a narrow sidebar runs under. */
+.input-row .color-trigger:has(.color-trigger-name:empty) .color-trigger-preview {
+  position: static; transform: none;
+}
 
 .color-popover {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: var(--z-max);
   padding: var(--sp-5);
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
-  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.15);
+  /* A popover, so the floating step of the ramp. The hairline stays the declared
+     border above rather than the ring half of surfaces.css's floating recipe: the
+     inline variant drops both, and the palette variant re-states the border. */
+  box-shadow: var(--ui-elevation-floating);
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
@@ -218,7 +233,7 @@
    on that line - the sublabels below make some of them two-line. */
 .color-mode-fam {
   display: flex; flex-wrap: wrap; align-items: stretch;
-  gap: 3px 4px; min-width: 0;
+  gap: var(--sp-2); min-width: 0;
 }
 .color-mode-fam-label {
   flex: 0 0 100%;
@@ -252,10 +267,10 @@
    read as the same widget, which equal-share pills of different widths per row
    would not. Everything else is today's pill recipe unchanged. */
 .color-mode-tab {
-  flex: 0 0 auto; min-width: 0; padding: 5px 8px; border: 0; cursor: pointer;
+  flex: 0 0 auto; min-width: 0; padding: var(--sp-3) var(--sp-4); border: 0; cursor: pointer;
   background: transparent; color: hsl(var(--muted-foreground));
   font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: .04em;
-  border-radius: var(--radius-pill); transition: background var(--dur-1), color var(--dur-1);
+  border-radius: var(--radius-pill); transition: background var(--dur-1), color var(--dur-1), box-shadow var(--dur-1);
   /* A column so a sublabel stacks under the glyph, centred so a one-line pill
      sits level with a two-line neighbour instead of riding up against its top. */
   display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -268,7 +283,7 @@
    never aria-pressed; see lib/tabs.ts and lib/seg.ts). */
 .color-mode-tab[aria-selected="true"] {
   background: hsl(var(--card)); color: hsl(var(--foreground)); font-weight: 700;
-  box-shadow: 0 1px 2px hsl(0 0% 0% / .12);
+  box-shadow: var(--ui-elevation-control);
 }
 .color-mode-tab:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
 .color-mode-tab-label { display: block; }
@@ -310,7 +325,7 @@
    focus treatment as the pills. */
 .color-mode-tab--wide {
   flex: 1 1 100%;
-  padding: 5px 10px;
+  padding: var(--sp-3) var(--sp-5);
   align-items: flex-start;
   text-align: left;
   border-radius: calc(var(--radius) * 1.1);
@@ -541,7 +556,7 @@
   height: 3.25em;
   border: 0;
   border-radius: var(--radius-round);
-  box-shadow: 0 0 0 0px hsl(var(--border)), 0 1px 3px hsl(0 0% 0% / 0.18);
+  box-shadow: var(--ui-elevation-control);
 }
 .color-dial {
   padding: 0;
@@ -557,6 +572,8 @@
   pointer-events: none;
   transition: transform 0.08s linear;
 }
+/* White notch, dark halo, both theme-invariant: the notch lies on the ring's own
+   conic sweep, so a mark that followed the theme would disappear over part of it. */
 .color-dial-needle::before {
   content: '';
   position: absolute;
@@ -631,7 +648,6 @@
   height: 46%;
   border-radius: var(--radius-round);
   background: hsl(var(--card));
-  box-shadow: 0 0 0 0px hsl(var(--border));
   font-size: var(--fs-2xs);
   font-weight: 700;
   line-height: 1;
@@ -717,8 +733,12 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  margin: 4px 6px 0;
-  padding: 3px 8px;
+  margin: var(--sp-2) var(--sp-3) 0;
+  padding: var(--sp-2) var(--sp-4);
+  /* A 22px line box is under the 24px floor, and this row can grow: the snap hint
+     sits on its own in the popover column, so a taller box pushes the swatch grid
+     down instead of reaching into the slider above it. */
+  min-height: 24px;
   /* Solid and quiet: it is a button offering a snap, not a drop target. */
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
@@ -726,17 +746,18 @@
   color: hsl(var(--muted-foreground));
   font-size: var(--fs-xs);
   cursor: pointer;
-  transition: color 0.1s, border-color 0.1s;
+  transition: color var(--dur-1), border-color var(--dur-1);
 }
 .color-nearest:hover {
   color: hsl(var(--foreground));
-  border-style: solid;
 }
 .color-nearest-chip {
   width: 1em;
   height: 1em;
   border-radius: var(--radius-round);
   flex-shrink: 0;
+  /* A mark on an arbitrary palette colour: a fixed dark hairline, not a theme
+     edge that would flip light on the dark themes. */
   box-shadow: inset 0 0 0 1px #0003;
 }
 /* Geometry is ONE recipe under two names (see parts/fields.css:302) - keep both
@@ -808,6 +829,9 @@
 .color-lch-row:has(.color-lch-val.is-clamped) > .color-mode-slider {
   box-shadow: inset 0 0 0 1.5px #d97706;
 }
+/* The thumb's white ring and its black haloes are theme-invariant on purpose: the
+   thumb sits on the axis gradient, an arbitrary colour at any position, so a ring
+   that followed the theme would vanish against half of every track. */
 .color-lch-slider::-webkit-slider-thumb,
 .color-mode-slider::-webkit-slider-thumb,
 .color-alpha-slider::-webkit-slider-thumb {
@@ -874,13 +898,14 @@
 .color-field--inline .color-popover { position: relative; }
 .color-swatch-menu {
   position: absolute;
-  z-index: 20;
+  z-index: var(--z-chrome);
   width: max-content;
   max-width: min(320px, 92%);
   background: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
-  box-shadow: 0 10px 28px hsl(var(--foreground) / .18);
+  /* Floating, like the popover above: the hairline is the declared border. */
+  box-shadow: var(--ui-elevation-floating);
 }
 .color-swatch-menu[hidden] { display: none; }
 .color-swatch-menu .color-swatches { max-height: 216px; }
@@ -895,14 +920,15 @@
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
-  transition: transform 0.1s, border-color 0.1s;
-  box-shadow: inset 0 0 0 .1rem #fff0, inset 0 .1rem  .25rem #fff4, 0 .1rem .2rem -.05rem #0004;
+  transition: transform var(--dur-1), box-shadow var(--dur-1);
+  /* A swatch shows an arbitrary colour, so its gloss is a fixed inner white
+     highlight (the elevation ramp has no inner-glow step) over the control drop. */
+  box-shadow: inset 0 .1rem .25rem #fff4, var(--ui-elevation-control);
 }
 [pseudo="-webkit-color-swatch"]{border-radius: var(--radius)}
 .color-swatch:hover {
   transform: scale(1.18);
-  border-color: hsl(var(--foreground) / 0.5);
-  box-shadow:  0 .1em .5em #0003;
+  box-shadow: inset 0 .1rem .25rem #fff4, var(--ui-elevation-panel);
 }
 
 .color-swatch:focus-visible {
@@ -910,6 +936,8 @@
   outline-offset: 2px;
 }
 
+/* The checkerboard is a texture, not a colour: tokens.css says a transparency
+   indicator stays literal, so these greys do not follow the theme. */
 .color-swatch--transparent {
   background-image:
     linear-gradient(45deg, #ccc 25%, transparent 25%),
@@ -923,8 +951,8 @@
 
 /* ─── Touch ──────────────────────────────────────────────────────────────── */
 
-/* The space tabs are the picker's densest control - 30 pills at 29×23 on a tablet,
-   with a 3px gap between rows. The sliders in this picker already have their own
+/* The space tabs are the picker's densest control - 30 pills at 29×25 on a tablet,
+   with a 4px gap between rows. The sliders in this picker already have their own
    coarse-pointer treatment (parts/fields.css does it for `.field-range`, and the
    painted tracks do it themselves); the tab strip was the one component in here
    outside that. Padding and gap only: the type stays 10.5px, because a pill row
@@ -934,6 +962,10 @@
   .color-mode-tab--wide { padding: var(--sp-6) var(--sp-5); }
   .color-mode-fam { gap: var(--sp-3); }
   .color-eyedropper { width: 36px; height: 36px; }
+  /* The snap hint takes the full target height where there is room for it, the way
+     the palette picker's fine-tune toggle does at the foot of this file. It grows
+     the layout rather than reaching outward, so it cannot overlap the slider row. */
+  .color-nearest { min-height: var(--ui-size-target); }
   /* The 18px/12px thumbs are a fingertip miss - grow them to the same ~22px floor
      parts/fields.css's native `.field-range` recipe uses, so a JS slider and a plain
      range input match. No margin-top correction needed here (unlike that recipe):

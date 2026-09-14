@@ -1,6 +1,6 @@
 {
   "name": "Screenshot URL",
-  "description": "Qualsiasi pagina web, a qualsiasi profondità di scroll, con CSS personalizzato",
+  "description": "Qualsiasi pagina web, a qualsiasi profondità di scroll, con CSS personalizzato.",
   "a11yLabel": "Screenshot di {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "La pagina da catturare. Catturata al momento dell'esportazione in un vero motore browser.",

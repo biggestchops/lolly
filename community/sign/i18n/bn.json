@@ -1,4 +1,4 @@
 {
-  "name": "Sign",
-  "description": "Place your signature on a PDF, optionally add a Content Credential and lock the result."
+  "name": "সই",
+  "description": "PDF-এ আপনার স্বাক্ষর বসান, ঐচ্ছিকভাবে একটি Content Credential যোগ করুন এবং ফলাফলটি লক করুন।"
 }

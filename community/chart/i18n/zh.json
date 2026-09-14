@@ -1,8 +1,8 @@
 {
   "name": "图表",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
+  "description": "图表从粘贴表格到高级可视化一应俱全 - 有解释清楚的数据建议、明确的字段映射、35 种经典矢量图表类型（含帕累托图、子弹图和区间条形图）、十六种统计与编辑类图表、真正的三维场景、电影感镜头飞行、确定性动画、无障碍描述，以及从当前设计系统编译而成的样式。",
   "a11yLabel": "{{chartType}} 图表{{#if heading}} - {{heading}}{{/if}}",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "featured.blurb": "粘贴一张表格 - 图表会让它清晰、无障碍，并且一眼就能看出这是你的品牌",
   "inputs.chartType.label": "图表类型",
   "inputs.chartType.options.bar": "柱状图（竖向）",
   "inputs.chartType.options.bar-horizontal": "条形图（横向）",

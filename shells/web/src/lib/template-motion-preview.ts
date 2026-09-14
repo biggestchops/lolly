@@ -3,6 +3,7 @@
 import './template-motion-preview.css';
 import { captureNeutralPinned } from './capture-neutral.ts';
 import { prefersReducedMotion } from './a11y-prefs.ts';
+import { perfUiOn, subscribePerfUi } from '../feature-flags.ts';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import type { InputValue } from '../../../../engine/src/inputs.ts';
 import type { TemplateMotion } from './template-motion.ts';
@@ -27,7 +28,7 @@ export function armTemplateMotion(root: HTMLElement, opts: {
   let visible: IntersectionObserver | undefined;
   let brandSignature = '';
   const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
-  const autoAllowed = () => !motionPreference.matches && !prefersReducedMotion() && !document.hidden && !captureNeutralPinned();
+  const autoAllowed = () => !perfUiOn() && !motionPreference.matches && !prefersReducedMotion() && !document.hidden && !captureNeutralPinned();
   const stop = (): void => {
     epoch++;
     cancelAnimationFrame(frame);
@@ -105,9 +106,10 @@ export function armTemplateMotion(root: HTMLElement, opts: {
     if (!(event.target as Element).closest('[data-motion-play]')) return;
     event.preventDefault(); event.stopPropagation();
     const card = cardOf(event);
-    if (card) { if (card === selected && player) stop(); else if (card !== selected) void start(card, true); }
+    if (card) { if (card === selected) stop(); else void start(card, true); }
   };
   const visibility = () => { if (document.hidden) stop(); };
+  const unsubscribePerf = subscribePerfUi(on => { if (on) stop(); });
   root.addEventListener('pointerover', over);
   root.addEventListener('focusin', over);
   root.addEventListener('pointerout', leave);
@@ -128,6 +130,7 @@ export function armTemplateMotion(root: HTMLElement, opts: {
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   const destroy = () => {
     disposed = true; stop(); observer.disconnect(); brandObserver.disconnect();
+    unsubscribePerf();
     root.removeEventListener('pointerover', over); root.removeEventListener('focusin', over);
     root.removeEventListener('pointerout', leave); root.removeEventListener('focusout', leave);
     root.removeEventListener('click', click, true);

@@ -343,7 +343,7 @@ mkdirSync(addonsDir, { recursive: true });
 if (addonSource) {
   copyFileSync(addonSource, join(addonsDir, 'resvgjs.node'));
 } else if (crossBuilding) {
-  // A cross build cannot take the host's binding. Say so rather than shipping the wrong
+  // A cross build cannot take the host's binding. Report it rather than shipping the wrong
   // architecture, which would fail at dlopen time in the user's app.
   throw new Error(
     `${bindingPkg} is not installed here, and ${TARGET} is not this machine. ` +

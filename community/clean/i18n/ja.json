@@ -1,4 +1,4 @@
 {
-  "name": "Clean",
-  "description": "Clean a voice recording, trim edge silence and set its loudness on your device."
+  "name": "音声クリーンアップ",
+  "description": "音声を、デバイス上でクリーンアップ - 前後の無音をカットし、音量レベルを整えます。"
 }

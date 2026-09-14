@@ -1,6 +1,6 @@
 {
   "name": "Chụp Ảnh Màn Hình URL",
-  "description": "Bất kỳ trang web nào, ở bất kỳ độ cuộn nào, với CSS tùy chỉnh",
+  "description": "Bất kỳ trang web nào, ở bất kỳ độ sâu cuộn nào, với CSS tùy chỉnh.",
   "a11yLabel": "Ảnh chụp màn hình của {{default url \"(chưa đặt URL)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Trang cần chụp. Được chụp vào thời điểm xuất, bằng một trình duyệt thực sự.",

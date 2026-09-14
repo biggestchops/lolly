@@ -37,14 +37,22 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-interface Profile { label?: string; tools: string[]; catalog: string }
+interface Profile { label?: string; tools: string[]; catalog: string; assets?: string[] }
 interface ProfilesFile { default: string; profiles: Record<string, Profile> }
 
-/** The per-profile catalog pipeline, exactly what `pnpm run build:catalog` runs. */
-const BUILD = ['build-catalog-index.ts', 'checksum-assets.ts', 'build-preview-bundle.ts'];
+/** The per-profile catalog pipeline, exactly what `pnpm run build:catalog` runs.
+ *  checksum-assets is told to skip the shared asset roots here, because those files
+ *  are not per-brand: SHARED below stamps them once for every profile. */
+const BUILD = ['build-catalog-index.ts', 'checksum-assets.ts --skip-shared', 'build-preview-bundle.ts'];
 
-function run(script: string, profile: string): string {
-  return execFileSync('node', [join(ROOT, 'scripts', script), `--profile=${profile}`], {
+/** The shared half, run once before the per-profile loop. */
+const SHARED = 'checksum-assets.ts --shared-only';
+
+function run(step: string, profile?: string): string {
+  const [script, ...flags] = step.split(' ');
+  const args = [join(ROOT, 'scripts', script!), ...flags];
+  if (profile) args.push(`--profile=${profile}`);
+  return execFileSync('node', args, {
     cwd: ROOT,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'inherit'],
@@ -57,6 +65,9 @@ function main(): void {
   const validate = checkOnly || process.argv.includes('--validate');
 
   const names = Object.keys(cfg.profiles);
+  // `assets` roots are deliberately not part of this: a shared root is additive, so
+  // a profile whose emoji pack is absent still has a catalog to build, with one
+  // fewer entry in it. content-roots.ts isComplete draws the line the same way.
   const runnable = names.filter((n) => {
     const p = cfg.profiles[n]!;
     return [...p.tools, p.catalog].every((r) => existsSync(join(ROOT, r)));
@@ -70,6 +81,7 @@ function main(): void {
   }
 
   const failures: string[] = [];
+  if (!checkOnly) process.stdout.write(run(SHARED));
   for (const name of runnable) {
     console.log(`\n── ${name} ${cfg.profiles[name]!.label ? `(${cfg.profiles[name]!.label})` : ''}`);
     if (!checkOnly) for (const s of BUILD) process.stdout.write(run(s, name));

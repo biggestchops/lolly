@@ -29,7 +29,7 @@
 import './type-demo.css';
 import { escapeHtml } from './html.ts';
 import { prefersReducedMotion } from './a11y-prefs.ts';
-import { perfUiOn } from '../feature-flags.ts';
+import { perfUiOn, subscribePerfUi } from '../feature-flags.ts';
 
 const TYPED = 'lolly qr-code --url=lolly.tools';
 const ITALIC = '// vector, exact, instant';
@@ -217,7 +217,7 @@ interface FaceCtl {
 export function wireTypeDemo(root: HTMLElement): () => void {
   const demo = root.querySelector<HTMLElement>('[data-type-demo]');
   if (!demo) return () => {};
-  const reduce = prefersReducedMotion() || perfUiOn();
+  let reduce = prefersReducedMotion() || perfUiOn();
 
   // ── Weight controls (both faces) ──────────────────────────────────────────
   const faces: FaceCtl[] = [];
@@ -275,7 +275,7 @@ export function wireTypeDemo(root: HTMLElement): () => void {
     // off-screen dashboard doesn't keep forcing a style recalc every frame by writing
     // font-variation-settings. When the tab is hidden the browser pauses rAF for us, so we
     // stay scheduled and just skip the work.
-    if (!onScreen) { raf = 0; return; }
+    if (!onScreen || reduce) { raf = 0; return; }
     raf = requestAnimationFrame(tick);
     if (document.hidden) return;
     for (const f of faces) {
@@ -291,7 +291,7 @@ export function wireTypeDemo(root: HTMLElement): () => void {
   // Pause the sweep while the specimen is off-screen and resume on re-entry - matches the
   // gallery / featured-row tickers. rootMargin keeps it running through small scroll jitters.
   let vizObserver: IntersectionObserver | undefined;
-  if (!reduce && typeof IntersectionObserver === 'function') {
+  if (typeof IntersectionObserver === 'function') {
     vizObserver = new IntersectionObserver((entries) => {
       const nowOn = entries[entries.length - 1]!.isIntersecting;
       if (nowOn === onScreen) return;
@@ -322,41 +322,49 @@ export function wireTypeDemo(root: HTMLElement): () => void {
   };
   // Mark a field edited so a later re-focus won't reset it to the default command.
   term?.addEventListener('focusin', freezeTerminal);
-  [typed, italic].forEach((el) => el?.addEventListener('input', () => { el.dataset.edited = '1'; }));
+  [typed, italic].forEach((el) => { el?.addEventListener('input', () => { el.dataset.edited = '1'; }); });
 
-  if (reduce) {
+  const settleTerminal = (): void => {
     if (typed) typed.textContent = TYPED;
     if (caret) caret.style.display = 'none';
     italic?.classList.add('is-shown');
-  } else {
-    const run = (): void => {
-      if (!typed || frozen) return;
-      typed.textContent = '';
-      italic?.classList.remove('is-shown');
-      demo.classList.remove('is-typed');
-      let i = 0;
-      const step = (): void => {
-        if (frozen) return;
-        typed.textContent = TYPED.slice(0, i);
-        i += 1;
-        if (i <= TYPED.length) {
-          typeTimer = window.setTimeout(step, 34 + Math.random() * 46); // human-ish cadence
-        } else {
-          demo.classList.add('is-typed');
-          window.setTimeout(() => { if (!frozen) italic?.classList.add('is-shown'); }, 260);
-          typeTimer = window.setTimeout(run, 4200);                     // hold, then retype
-        }
-      };
-      step();
+  };
+  const run = (): void => {
+    if (!typed || frozen || reduce) return;
+    if (caret) caret.style.display = '';
+    typed.textContent = '';
+    italic?.classList.remove('is-shown');
+    demo.classList.remove('is-typed');
+    let i = 0;
+    const step = (): void => {
+      if (frozen || reduce) return;
+      typed.textContent = TYPED.slice(0, i);
+      i += 1;
+      if (i <= TYPED.length) {
+        typeTimer = window.setTimeout(step, 34 + Math.random() * 46); // human-ish cadence
+      } else {
+        demo.classList.add('is-typed');
+        window.setTimeout(() => { if (!frozen && !reduce) italic?.classList.add('is-shown'); }, 260);
+        typeTimer = window.setTimeout(run, 4200);                     // hold, then retype
+      }
     };
-    run();
-  }
+    step();
+  };
+  if (reduce) settleTerminal(); else run();
+  const unsubscribePerf = subscribePerfUi(on => {
+    reduce = prefersReducedMotion() || on;
+    cancelAnimationFrame(raf); raf = 0;
+    window.clearTimeout(typeTimer);
+    if (reduce) { if (!frozen) settleTerminal(); }
+    else { if (onScreen) startRaf(); run(); }
+  });
 
   // Teardown is driven by the dashboard's `view._cleanup` chain (mountDashboard calls it
   // before the next view's innerHTML swap). This replaces an app-wide MutationObserver on
   // document.body whose callback fired on EVERY DOM mutation just to notice this node's
   // own removal.
   return (): void => {
+    unsubscribePerf();
     onScreen = false;
     cancelAnimationFrame(raf);
     raf = 0;

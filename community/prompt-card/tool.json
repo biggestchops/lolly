@@ -83,6 +83,7 @@
     },
     {
       "id": "columns",
+      "display": "segmented",
       "label": "Columns",
       "type": "select",
       "default": "auto",
@@ -119,6 +120,7 @@
     },
     {
       "id": "lineHeight",
+      "display": "slider",
       "label": "Line height",
       "type": "number",
       "default": 1.35,
@@ -129,6 +131,7 @@
     },
     {
       "id": "paraGap",
+      "display": "slider",
       "label": "Paragraph gap",
       "type": "number",
       "default": 1,
@@ -139,6 +142,7 @@
     },
     {
       "id": "padding",
+      "display": "slider",
       "label": "Margin",
       "type": "number",
       "default": 32,

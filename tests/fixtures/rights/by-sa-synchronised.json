@@ -1,0 +1,62 @@
+{
+  "name": "by-sa-synchronised",
+  "title": "A CC BY-SA recording synched to a moving image is adapted material, unedited bytes and all",
+  "citations": [
+    "CC BY 4.0 legal code section 1(a), repeated in CC BY-SA 4.0: where the Licensed Material is a musical work, performance or sound recording, Adapted Material is always produced where the Licensed Material is synched in timed relation with a moving image.",
+    "CC BY-SA 4.0 legal code section 3(b)(1): a shared adaptation carries a compatible licence.",
+    "Plan 253 section 3.3: audiogram, slides with moving visuals and video tools must not classify this as simple unchanged inclusion."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/field-recording",
+        "title": "Field Recording",
+        "creators": [{ "name": "Example Musician", "role": "creator" }],
+        "sourceUrl": "https://example.org/field-recording.wav",
+        "sourceHash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "rights": [
+          {
+            "declaration": "CC BY-SA 4.0",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      { "work": "example/field-recording", "role": "incorporated", "operations": ["placed", "synchronised"] }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": { "format": "mp4", "route": "file-with-c2pa", "canCarryCredential": true, "canCarryReadableCredit": true },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "actions-required",
+    "issues": ["licence.adaptation-choice"],
+    "uses": [
+      {
+        "work": "example/field-recording",
+        "classification": "adaptation",
+        "rule": "adaptation-operations-v1",
+        "licence": "CC-BY-SA-4.0",
+        "reviewed": true,
+        "issues": ["licence.adaptation-choice"]
+      }
+    ],
+    "required": [
+      {
+        "work": "example/field-recording",
+        "credit": "\"Field Recording\" by Example Musician, CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/, source https://example.org/field-recording.wav, changes: synchronised.",
+        "changes": "synchronised"
+      }
+    ],
+    "optional": [],
+    "channels": ["c2pa-ingredients", "readable-details"],
+    "changes": ["synchronised"],
+    "unresolved": []
+  }
+}

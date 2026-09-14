@@ -1,7 +1,7 @@
 {
   "id": "frame",
   "name": "Frame",
-  "description": "Drop in a screenshot and get it framed, padded and shadowed on a brand backdrop.",
+  "description": "Drop in a screenshot and get it framed, padded and shadowed on a design system backdrop.",
   "a11yLabel": "Screenshot in a {{default frame \"browser\"}} frame on a {{default backdrop \"gradient\"}} backdrop",
   "version": "1.1.1",
   "engineVersion": "^1.0.0",
@@ -117,9 +117,9 @@
     },
     {
       "id": "imageFraming",
-      "label": "Zoom & Position",
+      "label": "Zoom & position",
       "framingFor": "image",
-      "help": "Drag the image on the canvas to move it, scroll to zoom, and hold Alt while dragging to correct converging verticals. Or set the numbers here.",
+      "help": "Drag the image on the canvas to move it, scroll to zoom and hold Alt while dragging to correct converging verticals. Or set the numbers here.",
       "type": "vector",
       "fields": [
         {
@@ -204,7 +204,7 @@
       "showIf": {
         "frame": "browser"
       },
-      "help": "Window chrome look. Nuremberg = GNOME Adwaita, Cupertino = macOS, Redmond = Windows.",
+      "help": "Which desktop the buttons imitate. Nuremberg is GNOME Adwaita, Cupertino is macOS and Redmond is Windows.",
       "options": [
         {
           "value": "cupertino",
@@ -239,7 +239,8 @@
     },
     {
       "id": "backdrop",
-      "label": "Backdrop",
+      "section": "Backdrop",
+      "label": "Style",
       "type": "select",
       "default": "gradient",
       "options": [
@@ -259,12 +260,17 @@
     },
     {
       "id": "background",
-      "label": "Backdrop colour",
+      "section": "Backdrop",
+      "label": "Colour",
       "type": "color",
-      "default": "{color.semantic.primary}"
+      "default": "{color.semantic.primary}",
+      "showIf": {
+        "backdrop": ["gradient", "solid"]
+      }
     },
     {
       "id": "color2",
+      "section": "Backdrop",
       "label": "Second colour",
       "type": "color",
       "default": "{color.semantic.secondary}",
@@ -274,6 +280,7 @@
     },
     {
       "id": "padding",
+      "section": "Layout",
       "label": "Padding",
       "type": "number",
       "display": "slider",
@@ -284,6 +291,7 @@
     },
     {
       "id": "scale",
+      "section": "Layout",
       "label": "Frame size",
       "type": "number",
       "display": "slider",
@@ -295,6 +303,7 @@
     },
     {
       "id": "radius",
+      "section": "Layout",
       "label": "Corner radius",
       "type": "number",
       "display": "slider",
@@ -305,6 +314,7 @@
     },
     {
       "id": "shadow",
+      "section": "Layout",
       "label": "Shadow",
       "type": "number",
       "display": "slider",
@@ -315,6 +325,7 @@
     },
     {
       "id": "dark",
+      "section": "Layout",
       "label": "Dark frame",
       "type": "boolean",
       "default": false

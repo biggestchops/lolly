@@ -26,7 +26,7 @@ import './text/text.css';
  *
  * Category navigation and search make the inventory browsable. Downloads are
  * local .penpot archives with reusable components and applied design tokens.
- * The library never mutates app or brand state.
+ * Specimen controls keep their settings local; tool links open the app.
  *
  * Specimens are styled by the real part sheets, imported below so each looks
  * exactly as it does in situ.
@@ -60,7 +60,8 @@ import { t } from '../i18n.ts';
 import { escape } from '../utils.ts';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import { COMPONENT_SECTIONS as AUDIT_SECTIONS, COMPONENT_ARTWORK, type Specimen } from './components-data.ts';
-import { audioDockExample, contextMenuExample, editableWheelExample, exportFieldsExample, projectTilesExample, selectionBarExample } from './components-examples.ts';
+import { audioDockExample, catalogTileExample, contextMenuExample, editableWheelExample, exportFieldsExample, objectCardsExample, projectTilesExample, selectionBarExample, wireObjectCardsExample } from './components-examples.ts';
+import { featuredRowExample, wireFeaturedRowExample } from './components-featured.ts';
 import { SVG as canvasIcons, icon as canvasIcon } from './free-canvas-icons.ts';
 
 import { designSystemCardHtml } from '../lib/design-system/design-systems-card.ts';
@@ -123,7 +124,10 @@ function triggerButton(label: string, onClick: () => void): HTMLElement {
 const previewDisposers: Array<() => void> = [];
 const previewPopovers = new Set<BodyPopoverHandle>();
 
-const LIVE: Record<string, { render: () => string | HTMLElement; wire?: (stage: HTMLElement) => void }> = {
+const LIVE: Record<string, { render: () => string | HTMLElement; wire?: (stage: HTMLElement, host: HostV1) => void }> = {
+  featuredRow: { render: featuredRowExample, wire: (stage, host) => {
+    previewDisposers.push(wireFeaturedRowExample(stage, host));
+  } },
   codeEditor: { render: () => '<div data-code-specimen style="width:100%;height:20rem"></div>', wire: stage => {
     const editor = mountCodeEditor(stage.querySelector<HTMLElement>('[data-code-specimen]')!, { text: 'const greeting = "Hello";\n// Type here or select text.\nconsole.log(greeting);', language: 'javascript', label: 'Example code editor' });
     previewDisposers.push(() => editor.destroy());
@@ -133,6 +137,8 @@ const LIVE: Record<string, { render: () => string | HTMLElement; wire?: (stage: 
     grid.set([{ value: 'Æ', label: 'Latin capital ligature AE' }, { value: 'Ω', label: 'Greek capital letter omega' }, { value: '→', label: 'Rightwards arrow' }], 'var(--font-brand)');
     previewDisposers.push(() => grid.destroy());
   } },
+  objectCards: { render: objectCardsExample, wire: wireObjectCardsExample },
+  catalogTile: { render: catalogTileExample, wire: wireObjectCardsExample },
   projectTiles: { render: projectTilesExample },
   contextMenu: { render: contextMenuExample },
   selectionBar: { render: selectionBarExample },
@@ -374,7 +380,7 @@ function useCaseLink(title: string): string {
 
 function specimenShell(s: Specimen, idx: number): string {
   const mode = renderMode(s);
-  const wide = ['designSystems', 'colorAdvanced', 'designColumns', 'timelineBar', 'footerNav', 'icons', 'viewTopbar', 'sessionRow'].includes(s.live || '');
+  const wide = ['designSystems', 'colorAdvanced', 'designColumns', 'timelineBar', 'footerNav', 'icons', 'viewTopbar', 'sessionRow', 'objectCards', 'featuredRow'].includes(s.live || '');
   const summary = s.description?.split(/(?<=\.)\s/)[0] || 'A shared part of the Lolly interface.';
   return `<article class="cl-card${wide ? ' cl-card--wide' : ''}" data-cl-card="${idx}" aria-labelledby="cl-name-${idx}">
     <div class="cl-card-top"><h3 class="cl-name" id="cl-name-${idx}">${escape(displayName(s))}</h3><span class="cl-kind cl-kind--${mode}">${MODE_LABEL[mode]}</span></div>
@@ -420,6 +426,7 @@ function auditHtml(): string {
       <article><span class="cl-audit-state cl-audit-state--open">Browser checked</span><h3>Interaction & accessibility</h3><p>Library actions have visible focus, labelled controls, keyboard navigation and announced download results. Interactive samples and static fixtures are labelled separately. Desktop and phone layouts have been visually checked in light, dark and brand themes. Native Penpot structure is tested; live Penpot import remains a separate check.</p></article>
     </div>
     <div class="cl-audit-grid">
+      <article><span class="cl-audit-state">Unified</span><h3>Object cards across four views</h3><p>Catalog, Tools, Utilities and Projects share their card surfaces, captions, preview backgrounds and selection controls. The Object cards specimen demonstrates the catalog tint and image treatment, with selection you can change by mouse or keyboard.</p></article>
       <article><span class="cl-audit-state">Unified</span><h3>One colour control, four views</h3><p>Named rows, centred compact swatches, a scrollable palette and fine-tuning now share the colour field. HSL is the default; OKLCH is one tab away. The advanced editor keeps the full colour-space registry.</p></article>
       <article><span class="cl-audit-state cl-audit-state--open">Next to consolidate</span><h3>Triggers, tabs & popovers</h3><p>Move the remaining legacy buttons to the shared button primitive, share segment styling while preserving tab and radio semantics, and bring Projects view-options onto the shared popover lifecycle. Swatch cards and editable tiles should share colour data but retain their distinct jobs.</p></article>
     </div>
@@ -514,7 +521,7 @@ export async function mountComponents(viewEl: HTMLElement, host: HostV1, _params
         const out = spec.render();
         if (typeof out === 'string') stage.innerHTML = out;
         else stage.appendChild(out);
-        spec.wire?.(stage);
+        spec.wire?.(stage, host);
       } else if (item.markup || componentFixture(item)) {
         stage.innerHTML = neutralizeMarkup(item.markup || componentFixture(item)!);
       } else if (item.code) {

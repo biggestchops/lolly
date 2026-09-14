@@ -1,5 +1,5 @@
 {
-  "name": "Compress",
+  "name": "Komprese",
   "description": "Zmenši PDF překomprimováním jeho obrázků - na tvém zařízení.",
   "a11yLabel": "Kompresor PDF pro {{fileName}}",
   "inputs.source.label": "PDF",

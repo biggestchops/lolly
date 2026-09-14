@@ -27,7 +27,6 @@ const FIXTURES: Array<[string, () => string]> = [
   ['Asset picker (', () => panel('Choose an asset', '<input class="field-input" placeholder="Search your assets" aria-label="Search demo assets">' + tiles())],
   ['Music player', () => panel('A little focus.', '<p>Neurospicy · Ambient</p><div class="cl-fixture-wave">▂ ▄ ▆ ▃ ▇ ▅ ▂ ▄ ▆ ▃ ▅ ▇ ▂</div>' + row(button('Previous'), button('Play', true), button('Next')))],
   ['Page filmstrip', () => row(...[1, 2, 3].map(n => `<div class="cl-fixture-page">${n}</div>`))],
-  ['Featured row', tiles],
   ['Upload dropzone', () => '<div class="cl-fixture-drop"><strong>Drop something good here.</strong><p>Images, fonts or brand tokens</p>' + button('Choose files') + '</div>'],
   ['Confetti burst', () => '<div class="cl-fixture-confetti" aria-label="Celebration keyframe"><span>✦</span><span>●</span><strong>Made it.</strong><span>◆</span><span>✦</span></div>'],
   ['Fonts manager', () => panel('Your type collection', '<div class="cl-fixture-type">SUSE Aa</div><p>Regular · Medium · Bold</p>' + button('Add a font'))],

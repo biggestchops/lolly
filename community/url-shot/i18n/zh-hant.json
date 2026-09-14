@@ -1,6 +1,6 @@
 {
   "name": "網址截圖",
-  "description": "擷取任何網頁在任意捲動深度的畫面，並可套用自訂 CSS",
+  "description": "任何網頁，任何捲動深度，還能自訂 CSS。",
   "a11yLabel": "{{default url \"(no URL set)\"}} 的截圖",
   "inputs.url.label": "網址",
   "inputs.url.help": "要擷取的頁面。會在匯出時以真實瀏覽器引擎擷取。",

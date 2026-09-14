@@ -11,7 +11,9 @@
 import { collectAssetRefs } from './asset-dependencies.ts';
 import { indexSavedWork } from './history-index.ts';
 export { collectAssetRefs } from './asset-dependencies.ts';
-import { sessionVersionStamp, migrateSessionRecord } from '../../../../engine/src/session-record.ts';
+import { sessionEmojiStamp, sessionRightsDecisions, sessionVersionStamp, migrateSessionRecord } from '../../../../engine/src/session-record.ts';
+import type { SessionEmojiStamp } from '../../../../engine/src/session-record.ts';
+import type { RightsDecisionV1 } from '@lolly-tools/core/rights-v1';
 import type { StateAPI, StateEntry } from '@lolly-tools/core/host-v1';
 import type { RevisionHistoryAPI, RevisionStore } from './revision-history.ts';
 
@@ -49,6 +51,38 @@ export interface StateRecord {
    *  active record's id and label at save time. Optional: rows written before
    *  this existed, and devices with no registry, have none. */
   designSystem?: { id: string; label: string };
+  /** Which emoji set and brand treatment the session's text was drawn with
+   *  (plans/252), as the two reserved params verbatim. Optional: a session saved
+   *  before this existed, or with no set chosen, carries none and reopens on the
+   *  person's own preference. */
+  emoji?: SessionEmojiStamp;
+  /** The licence choices and recorded permissions a person made about this
+   *  document's sources (plan 253). Optional: a session with nothing to decide,
+   *  and every session saved before this existed, carries none. */
+  rightsDecisions?: RightsDecisionV1[];
+}
+
+/**
+ * The emoji stamp the next save writes. One mounted tool at a time, so one
+ * holder, set by the tool view when the chosen set changes and cleared on
+ * unmount. A registration rather than a database read (the design-system stamp's
+ * shape) because this is DOCUMENT state: only the view that is editing the
+ * document knows what it chose.
+ */
+let emojiStampSource: SessionEmojiStamp | null = null;
+
+/** Record the set the current document is drawn with, or clear it with null. */
+export function setSessionEmojiStamp(stamp: SessionEmojiStamp | null): void {
+  emojiStampSource = stamp?.emoji ? { emoji: stamp.emoji, emojifx: stamp.emojifx ?? '' } : null;
+}
+
+/** The licence decisions the next save writes, registered the same way and for
+ *  the same reason: only the view editing the document knows what was chosen. */
+let rightsDecisionSource: RightsDecisionV1[] | null = null;
+
+/** Record the decisions made about this document's sources, or clear them with null. */
+export function setSessionRightsDecisions(decisions: readonly RightsDecisionV1[] | null): void {
+  rightsDecisionSource = decisions?.length ? decisions.map((decision) => ({ ...decision })) : null;
 }
 
 /** Where migrateSessionRecord reports a record from a newer app build. */
@@ -77,9 +111,16 @@ export interface WebStateAPI extends StateAPI {
   list(): Promise<(StateEntry & { filename: string | null; thumb: string | null; createdAt?: string })[]>;
   /** Bytes used per slot (rough: the JSON-serialised record size). */
   sizes(): Promise<Record<string, number>>;
-  /** Blob keys (id:format:version) referenced across all saved sessions - 
+  /** Blob keys (id:format:version) referenced across all saved sessions -
    *  used by sync to avoid evicting on-demand blobs a session still needs. */
   _getAssetRefs(): Promise<Set<string>>;
+  /** The emoji set a saved session was made with (plans/252), or null when it
+   *  names none. Optional on the surface so a shell whose state lives elsewhere
+   *  (the Tauri filesystem bridge) is not forced to grow one before it can. */
+  emojiStamp?(slot: string): Promise<SessionEmojiStamp | null>;
+  /** The licence decisions a saved session recorded (plan 253), or null when it
+   *  recorded none. Optional on the surface for the same reason as the stamp above. */
+  rightsDecisions?(slot: string): Promise<RightsDecisionV1[] | null>;
 }
 
 /**
@@ -104,7 +145,16 @@ export function createStateAPI(db: StateDb, revisions?: RevisionStore): WebState
     const now = new Date().toISOString();
     return { slot, toolId: data.__toolId, toolVersion: data.__toolVersion, label: data.__label,
       data, thumb, updatedAt: now, createdAt: prior?.createdAt ?? now, openedAt: prior?.openedAt,
-      ...sessionVersionStamp(), ...(await activeDesignSystemStamp(db)) };
+      ...sessionVersionStamp(), ...(await activeDesignSystemStamp(db)),
+      // Carried from the prior record when nothing is mounted (a save from the
+      // Projects view re-writes a session this tab never opened), so re-saving
+      // never quietly strips the set the work was drawn with.
+      ...(emojiStampSource ? { emoji: emojiStampSource } : prior?.emoji ? { emoji: prior.emoji } : {}),
+      // Carried from the prior record for the same reason as the stamp above: a
+      // re-save from a view that is not editing this document must not quietly
+      // drop the licence choice someone made in it.
+      ...(rightsDecisionSource ? { rightsDecisions: rightsDecisionSource }
+        : prior?.rightsDecisions ? { rightsDecisions: prior.rightsDecisions } : {}) };
   };
   return {
     ...(revisions ? { history: {
@@ -140,6 +190,20 @@ export function createStateAPI(db: StateDb, revisions?: RevisionStore): WebState
         ...(r.createdAt ? { createdAt: r.createdAt } : {}),
         ...(r.designSystem ? { designSystem: r.designSystem } : {}),
       }));
+    },
+
+    async emojiStamp(slot) {
+      // Read off the RECORD, not the saved data: the stamp is bookkeeping about
+      // the document, not one of its values, so it never rides in the model.
+      const record = await db.get('state', slot).catch(() => undefined);
+      return sessionEmojiStamp(record);
+    },
+
+    async rightsDecisions(slot) {
+      // Off the RECORD, like the stamp above: a decision is bookkeeping about
+      // the document's sources, not one of the document's values.
+      const record = await db.get('state', slot).catch(() => undefined);
+      return sessionRightsDecisions(record);
     },
 
     async delete(slot) {

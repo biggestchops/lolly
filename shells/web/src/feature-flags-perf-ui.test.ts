@@ -7,7 +7,7 @@
  *      a real jsdom document; and
  *   2. the WIRING + the gated stylesheet, by source scan - every CSS rule sits behind the
  *      html[data-perf-ui] gate (so OFF is byte-identical), the strip never reaches the tool
- *      canvas, box-shadow focus rings survive, the import is unlayered, and the profile
+ *      canvas, box-shadow focus rings survive, the import uses the first layer, and the profile
  *      toggle + boot + pre-paint script all reflect the flag.
  *
  * Run directly:  node --test shells/web/src/feature-flags-perf-ui.test.ts
@@ -28,7 +28,7 @@ globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
 
 // Dynamic import AFTER the globals are live, so applyPerfUi's document reference resolves.
-const { PERFORMANCE_UI_FLAG, applyPerfUi, perfUiOn, isFlagOnSync, setFlagMirror } = await import('./feature-flags.ts');
+const { PERFORMANCE_UI_FLAG, applyPerfUi, perfUiOn, isFlagOnSync, setFlagMirror, subscribePerfUi } = await import('./feature-flags.ts');
 
 const read = (rel: string) => readFileSync(join(HERE, rel), 'utf8');
 const CSS = read('styles/parts/perf-ui.css');
@@ -40,6 +40,18 @@ const PROFILE = [read('views/profile.ts'),
   ...readdirSync(join(HERE, 'views', 'profile')).filter((n) => n.endsWith('.ts')).sort().map((n) => read(`views/profile/${n}`))].join('\n');
 const MAIN = read('main.ts');
 const HTML = readFileSync(join(HERE, '..', 'index.html'), 'utf8');
+
+test('live subscribers see the applied DOM policy and unsubscribe cleanly', () => {
+  const observed: boolean[] = [];
+  const unsubscribe = subscribePerfUi(on => {
+    assert.equal(document.documentElement.hasAttribute('data-perf-ui'), on);
+    observed.push(on);
+  });
+  applyPerfUi(true); applyPerfUi(false);
+  unsubscribe(); applyPerfUi(true);
+  assert.deepEqual(observed, [true, false]);
+  applyPerfUi(false);
+});
 // JS gate sites (items 1-3): the decorative loops / live-render / Cover Flow.
 const FEATURED = read('components/featured-row.ts');
 const GALLERY = read('views/gallery.ts');
@@ -101,15 +113,17 @@ test('box-shadow focus rings survive the strip (:focus-visible exempted)', () =>
   assert.match(CSS, /:not\(:focus-visible\)/, 'a keyboard focus indicator is never a perf casualty');
 });
 
-test('decorative preview animation idles off-hover and runs on hover', () => {
+test('decorative panning stays paused on hover as well as at rest', () => {
   assert.match(CSS, /\.ftile-img \{ animation-play-state: paused/);
-  assert.match(CSS, /\.ftile:hover \.ftile-img/);
+  assert.doesNotMatch(CSS, /animation-play-state: running/);
 });
 
-test('app.css imports perf-ui.css UNLAYERED so its !important outranks every layer', () => {
+test('app.css reserves the first layer for the important Performance UI policy', () => {
+  const declarations = APP_CSS.replace(/\/\*[\s\S]*?\*\//g, '').trimStart();
+  assert.match(declarations, /^@layer perf, vendor, base, primitives, chrome, views, overrides, a11y;/);
   const line = APP_CSS.split('\n').find(l => l.includes('perf-ui.css'));
   assert.ok(line, 'app.css imports perf-ui.css');
-  assert.doesNotMatch(line!, /layer\(/, 'no layer() - unlayered');
+  assert.match(line, /layer\(perf\)/, 'important layer priority is reversed; the first layer wins');
 });
 
 test('the profile view offers the toggle and applies it live', () => {
@@ -124,7 +138,7 @@ test('item 1: decorative rAF loops fold perf-ui into their reduce-motion guard',
   assert.match(FEATURED, /prefersReducedMotion\(\) \|\| captureNeutralPinned\(\) \|\| opts\.staticStrip === true \|\| perfUiOn\(\)/,
     'the featured strip drift + variant queue idle under perf-ui');
   assert.match(PARTICLES, /if \(prefersReducedMotion\(\) \|\| perfUiOn\(\)\) return;/, 'no confetti burst under perf-ui');
-  assert.match(TYPEDEMO, /const reduce = prefersReducedMotion\(\) \|\| perfUiOn\(\);/, 'the font showcase idles');
+  assert.match(TYPEDEMO, /let reduce = prefersReducedMotion\(\) \|\| perfUiOn\(\);/, 'the font showcase idles');
   // The ambient MilkDrop backdrop is gated at its call site, the dock host, NOT in the
   // butterchurn-viz engine wrapper (that wrapper also serves user-invoked rendering like
   // the catalog audio-asset preview, which must still paint under perf-ui).

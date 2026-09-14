@@ -626,7 +626,7 @@ export interface RefRewriteResult<T> {
  *     rides along) and loses its `url`. A sender's `blob:` URL is meaningless here,
  *     and the runtime re-resolves any ref that carries an id anyway.
  *   - a `user` ref with no replacement is left untouched and REPORTED, so the caller
- *     can say so instead of the render silently losing an image.
+ *     can report it instead of the render silently losing an image.
  *   - `library` refs and baked refs are never touched. The receiver resolves the
  *     first from its own catalog and the second from its own bytes.
  */

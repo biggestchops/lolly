@@ -24,6 +24,8 @@ import { note, warn } from './output.ts';
 interface Runtime {
   getHydrated(): string;
   getModel(): unknown;
+  /** Draw every emoji in a freshly hydrated tree from the chosen set. */
+  applyEmojiToDom(node: unknown): Promise<unknown>;
   export(node: unknown, format: string, opts?: object): Promise<Blob>;
 }
 interface Manifest { id: string; render?: { width?: number; height?: number } }
@@ -81,6 +83,9 @@ export function wantsNativeHdrStill(
  */
 export async function renderRaster(opts: {
   runtime: Runtime; dom: JSDOM; manifest: Manifest; format: string; dims: RenderDims & HdrStillRequest;
+  /** The reserved emoji params this run was given, forwarded into the Tier-B URL
+   *  so the browser tier draws the same set from the same pins. */
+  emoji?: { emoji?: string | null; emojiFx?: string | null };
 }): Promise<RasterResult> {
   const { runtime, dom, manifest, dims } = opts;
   const fmt = opts.format.toLowerCase();
@@ -127,7 +132,10 @@ export async function renderRaster(opts: {
 
   // Tier B - drive the built web shell in the scoped Chromium; capture the exact bytes
   // its own export path downloads (one render path, no drift vs web/desktop).
-  const query = serializeUrlState(runtime.getModel() as never);
+  // The emoji set and its treatment travel in the URL, exactly as they do in a share
+  // link: Tier B is the web shell rendering the same address, so it has to be told
+  // which set to draw from or it would fall back to the browser's own emoji font.
+  const query = serializeUrlState(runtime.getModel() as never, { emoji: opts.emoji?.emoji, emojiFx: opts.emoji?.emojiFx });
   const MOTION = ['gif', 'apng', 'webm', 'mp4'];
   // PROTOTYPE opt-in: real Playwright screenshots instead of dom-to-image for the
   // frame-by-frame capture (see renderVideoViaScreenshot's doc comment). Motion
@@ -157,6 +165,9 @@ async function tryRenderSvg(runtime: Runtime, dom: JSDOM, slide?: string | null)
   if (!canvas) return null;
   try {
     canvas.innerHTML = runtime.getHydrated();
+    // This tier re-hydrates a canvas of its own, so it runs the emoji pass of its
+    // own too - before the slide filter picks one page out of the document.
+    await runtime.applyEmojiToDom(canvas);
   } catch {
     return null;                      // as before: no SVG here, escalate to the browser tier
   }

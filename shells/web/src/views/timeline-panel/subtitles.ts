@@ -262,7 +262,7 @@ export function openTranscribeSheet(tp: TpCtx,
   });
   const dlNote = modal.el.querySelector<HTMLElement>('[data-stt-dl]');
   const goBtn = modal.el.querySelector<HTMLButtonElement>('[data-act="go"]');
-  // The one-time download is the consent-worthy part, so say so up front -
+  // The one-time download is the consent-worthy part, so report it up front -
   // but only when it is actually owed (the probe is async, the line arrives).
   void sp
     .transcribeCached?.()

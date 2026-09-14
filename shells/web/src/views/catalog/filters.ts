@@ -16,12 +16,13 @@ import { assetBaseId } from '../../lib/asset-favourites.ts';
 import { icon } from '../../lib/icons.ts';
 import { isModuleFormat } from '../../lib/mod-render.ts';
 import { isTransparent } from '../../lib/swatches.ts';
+import { fold } from '../../lib/search/match.ts';
 import { hexToOklch, parseHex } from '../../../../../engine/src/brand-derive.ts';
 import { rgbToCmyk } from '../../../../../engine/src/color.ts';
 import { categoryGlyph } from '../../lib/category-icons.ts';
 import type { PaletteEntry } from '../../palette.ts';
 import type { AssetRef } from '@lolly-tools/core/host-v1';
-import { CAT_ICONS, CHEVRON, TYPE_FILTERS, isThemable } from './shared.ts';
+import { CAT_ICONS, CHEVRON, TYPE_FILTERS, emojiPackMeta, isThemable } from './shared.ts';
 import { bindOp, type CatCtx } from './context.ts';
 
 // The rules below live in ./catalog-filter.ts - pure, DOM-free and unit-tested
@@ -37,7 +38,17 @@ export const playableHere = (cat: CatCtx, a: AssetRef): boolean => cat.modulesPl
 // user who never types in the box would be pure waste.
 export function haystack(cat: CatCtx): ReadonlyMap<string, string> {
   if (!cat.searchHaystack) {
-    cat.searchHaystack = buildSearchHaystack(cat.allAssets, x => categoryLabel(libCategory(x, cat.overrides)));
+    const index = buildSearchHaystack(cat.allAssets, x => categoryLabel(libCategory(x, cat.overrides)));
+    // An emoji set is looked for by the things a person knows about it: the family
+    // and style ("openmoji black"), its display name, and the licence it carries
+    // ("cc-by-sa"). None of those is the asset's name or a tag, so none of them
+    // was findable. Folded the same way the rest of the row is.
+    for (const a of cat.allAssets) {
+      const pack = emojiPackMeta(a);
+      if (!pack) continue;
+      index.set(a.id, `${index.get(a.id) ?? ''} ${fold(`${pack.family} ${pack.style} ${pack.label} ${pack.license}`)}`);
+    }
+    cat.searchHaystack = index;
   }
   return cat.searchHaystack;
 }
@@ -135,7 +146,12 @@ export function assetsSectionHtml(cat: CatCtx): string {
   // of the category groups into one "Your uploads" section they manage in one place.
   // Catalog assets keep their category bucketing below.
   const userItems = sortAssets(visible.filter(a => a.source === 'user'), cat.catSort);
-  const catalogItems = visible.filter(a => a.source !== 'user');
+  // The emoji sets get their own section rather than a category bucket: a set is
+  // chosen on its licence, its coverage and how its artwork looks, which is a
+  // different question from where a picture belongs in the library.
+  const isPack = (a: AssetRef): boolean => a.source !== 'user' && !!emojiPackMeta(a);
+  const packItems = sortAssets(visible.filter(isPack), cat.catSort);
+  const catalogItems = visible.filter(a => a.source !== 'user' && !isPack(a));
 
   // Bucket the catalog assets by (override-aware) category, in LIB_GROUPS order.
   const buckets = new Map<string, AssetRef[]>();
@@ -165,6 +181,9 @@ export function assetsSectionHtml(cat: CatCtx): string {
         ? `<div class="cat-dl-section cat-group-colours"><span class="cat-dl-label">${t('Colour')}</span>${cat.thumbs.treatmentSwatchRow(cat.catPhotoTreatment)}</div>`
         : '';
     parts.push(cat.tiles.groupSection(g.key, g.label, items.length, colourRow + `<div class="cat-grid">${items.map(cat.thumbs.assetTile).join('')}</div>`));
+  }
+  if (packItems.length) {
+    parts.push(cat.tiles.sectionHtml('emoji-sets', 'Emoji sets', packItems.length, packItems.map(cat.thumbs.assetTile).join('')));
   }
   // Hidden assets never match a search (they're not in `visible`); keep them under a
   // dedicated group only in the normal (non-search) view.
@@ -196,6 +215,7 @@ export function assetsSectionHtml(cat: CatCtx): string {
   const renderedKeys = [
     ...(showUploads ? ['your-uploads'] : []),
     ...LIB_GROUPS.filter(g => buckets.get(g.key)?.length).map(g => g.key),
+    ...(packItems.length ? ['emoji-sets'] : []),
     ...(cat.showHidden && hiddenItems.length ? ['hidden'] : []),
     'swatches', 'fonts',
   ];

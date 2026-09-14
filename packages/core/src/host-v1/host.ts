@@ -16,6 +16,8 @@ import type { CodecAPI } from './codec.ts';
 
 import type { ColorAPI } from './color.ts';
 
+import type { EmojiAPI } from './emoji.ts';
+
 import type { ComposeAPI } from './compose.ts';
 
 import type { ConnectorsAPI } from './connectors.ts';
@@ -89,6 +91,18 @@ import type { VizAPI } from './viz.ts';
 export interface HostV1 {
   /** Portable text transformations and inspection (v1.191). */
   textTools?: TextToolsAPI;
+
+  /**
+   * Pinned vector emoji packs (v1.196), so no owned surface ever draws an
+   * operating-system emoji glyph. The host supplies storage and transport
+   * only: the sets its catalog mounts, the exact manifest and glyph bytes for
+   * an exact pin, and a non-networked XML parser. Every decision about what to
+   * draw stays in the engine, which is what makes one text run look the same on
+   * web, desktop and the CLI. Optional/additive and NOT gated by a
+   * `capabilities` flag: a shell without a pack mount omits it and the surface
+   * draws the engine's neutral placeholder, never the system font.
+   */
+  emoji?: EmojiAPI;
   readonly version: '1';
   readonly shell: 'web' | 'tauri-desktop' | 'tauri-mobile' | 'cli';
 

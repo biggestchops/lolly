@@ -23,7 +23,28 @@ import type { ShareFidelity } from '../../lib/url-budget.ts';
 import type { ToolManifest, ToolRenderSpec } from '../../../../../engine/src/loader.js';
 import type { Runtime } from '../../../../../engine/src/runtime.js';
 import { isTextEditingTarget } from '../../lib/typing-target.ts';
+import type { EmojiParamPair } from '../../lib/emoji-prefs.ts';
 import { isCmykFmt, isPrintFmt, printEnabled, readBleed, readMarks } from '../tool-actions.ts';
+
+// ── The chosen emoji set, for every writer of this tool's URL ────────────────
+//
+// One mounted tool at a time, so one holder. The Emoji section writes it, and
+// both readers of a tool's URL state read it: `syncUrl` (the address bar) and
+// `collectExportParams` (the copied link and the budget gauge). Kept here rather
+// than on the view context because those two live in different modules and must
+// never answer differently - a link that disagrees with the bar the person is
+// looking at is exactly the drift share-parity.test.ts exists to catch.
+let emojiParams: EmojiParamPair | null = null;
+
+/** Set the params the next URL write carries, or clear them with null. */
+export function setToolEmojiParams(next: EmojiParamPair | null): void {
+  emojiParams = next?.emoji ? { emoji: next.emoji, emojifx: next.emojifx ?? '' } : null;
+}
+
+/** The chosen set as the two reserved params, or null while none is chosen. */
+export function toolEmojiParams(): EmojiParamPair | null {
+  return emojiParams;
+}
 
 // ── Shell-side type aliases (all erased at build; no runtime effect) ──────────
 
@@ -593,6 +614,16 @@ export function wireUpCopyUrl(
 // share-parity guard scans THIS function for those literal pushes.
 export function collectExportParams(exportScope: HTMLElement | null): string[] {
   const parts: string[] = [];
+  // The chosen emoji set and its brand treatment (plans/252). Not an export
+  // setting and not read off the panel: it is DOCUMENT state, held here because
+  // this is the one reader both the copied link and the URL-budget gauge share.
+  // A link that dropped it would open with different artwork from the one the
+  // sender is looking at, which is the whole reason the params are reserved.
+  const emoji = toolEmojiParams();
+  if (emoji) {
+    parts.push(`emoji=${encodeURIComponent(emoji.emoji)}`);
+    if (emoji.emojifx) parts.push(`emojifx=${encodeURIComponent(emoji.emojifx)}`);
+  }
   const fmtEl = exportScope?.querySelector<HTMLSelectElement>('[data-action="format"]');
   if (fmtEl?.value) parts.push(`format=${encodeURIComponent(fmtEl.value)}`);
   const fname = exportScope

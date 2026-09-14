@@ -780,8 +780,13 @@ export function openFramesPanel(fc: FcCtx, _anchor: HTMLElement): void {
   // The thumbnail is `frameThumb` from ./free-canvas-fields.ts now - the SAME clone the
   // navigator column's rows use, so the strip and the column can never drift on how a
   // page is scaled, frozen or made pointer-inert. This is only its strip-sized binding.
-  const makeThumb = (fb: Box): HTMLElement =>
-    frameThumb(canvasEl, fb, cfg, { maxW: THUMB_MAX_W, maxH: THUMB_MAX_H });
+  const makeThumb = (fb: Box): HTMLElement => {
+    const thumb = frameThumb(canvasEl, fb, cfg, { maxW: THUMB_MAX_W, maxH: THUMB_MAX_H });
+    // Same reason as the navigator column: the clone predates the asynchronous emoji
+    // pass over the live page, so it gets its own, and never shows the machine's font.
+    void fc.runtime.applyEmojiToDom?.(thumb)?.catch(() => undefined);
+    return thumb;
+  };
 
   function goTo(i: number, frames: Box[]): void {
     active = Math.max(0, Math.min(i, frames.length - 1));

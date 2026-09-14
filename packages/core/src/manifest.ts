@@ -38,6 +38,10 @@ export type InputType =
 export interface SelectOption {
   value: string;
   label?: string;
+  /** Offer this option only while the model matches: one map of input id to an
+   *  accepted value (or list of values), every pair required, or a list of such
+   *  maps, any one sufficient. The selected option always stays offered. */
+  showIf?: Record<string, unknown> | Array<Record<string, unknown>>;
   /** Short pill shown beside the option (e.g. 'vector'/'raster'). Any option with a
    *  badge switches the select to a badged picker in the web shell. */
   badge?: string;
@@ -70,8 +74,10 @@ export interface InputSpec {
   /** Collapsible sidebar section this control renders under. */
   section?: string;
   group?: string;
-  /** Show this input only while the named inputs hold the given values. */
-  showIf?: Record<string, unknown>;
+  /** Show this input only while the named inputs hold the given values: one map
+   *  (every pair required; a value may be a list of accepted values) or a list of
+   *  maps (any one sufficient). */
+  showIf?: Record<string, unknown> | Array<Record<string, unknown>>;
   // text / longtext
   maxLength?: number;
   minLength?: number;

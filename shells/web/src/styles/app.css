@@ -18,18 +18,22 @@
  * priority order for the whole app. A sheet's weight now comes from its LAYER,
  * not from when it happens to load, so adding/reordering an @import (or a lazy
  * view chunk injecting its own `@layer views {}` at runtime) can no longer flip
- * which rule wins. Priority low → high:
+ * which rule wins. Normal declaration priority low → high:
+ *   perf       - reserved for the gated !important Performance UI policy
  *   vendor     - third-party stylesheets (flatpickr…) so app CSS always overrides
  *   base       - element resets/defaults + low-priority helpers (base, utilities)
  *   primitives - shared .btn/.chip/.card/.section-card bases meant to be extended
  *   chrome     - the render-blocking landing/chrome sheets below
  *   views      - every lazy per-view chunk (each wraps itself in `@layer views`)
  *   overrides  - rare cross-cutting rules that must beat any view (overrides.css)
- *   a11y       - focus rings + RTL correctness; accessibility wins over everything
+ *   a11y       - focus rings + RTL correctness; highest normal layered priority
+ * !important reverses this order: perf comes FIRST so its important declarations
+ * beat other layers and unlayered important styles. It explicitly exempts focus
+ * indicators and tool/export surfaces. Keep normal styles out of that layer.
  * fonts.css + tokens.css stay UNLAYERED on purpose: @font-face + the design-token
  * variables are consumed everywhere and never competed over, and unlayered
- * declarations outrank every layer - exactly what tokens want. */
-@layer vendor, base, primitives, chrome, views, overrides, a11y;
+ * normal declarations outrank every layer - exactly what tokens want. */
+@layer perf, vendor, base, primitives, chrome, views, overrides, a11y;
 
 @import './fonts.css';
 @import './tokens.css';
@@ -42,6 +46,7 @@
 @import './parts/disclosure.css'   layer(primitives); /* .section-card fold primitive (rec 7) */
 @import './parts/tooltip.css'      layer(primitives); /* [data-tip] - the ONE styled tooltip */
 @import './parts/surfaces.css'     layer(primitives); /* .surface elevation levels + .u-focus-ring (plans/172 P3) - the composable form of the edge+shadow token recipes */
+@import './parts/object-tiles.css' layer(chrome); /* shared object cards and selection */
 @import './parts/gallery.css'      layer(chrome);
 @import './parts/spotlight.css'    layer(chrome); /* the search overlay above the footer bar (plans/99 M2) - chrome, like the bar it docks to */
 @import './parts/featured.css'     layer(chrome);
@@ -63,4 +68,4 @@
 @import './parts/overrides.css'    layer(overrides); /* cross-cutting overrides (top-right FAB/profile cluster) */
 @import './parts/a11y.css'         layer(a11y);
 @import './parts/rtl.css'          layer(a11y); /* RTL correctness rules (Arabic) - accessibility layer, wins over views */
-@import './parts/perf-ui.css'; /* Performance UI (perf-ui flag) - UNLAYERED on purpose, so its !important strip of blur/shadow/blend outranks every layer. Gated on html[data-perf-ui]: absent by default ⇒ no-op. */
+@import './parts/perf-ui.css'      layer(perf); /* First layer wins for !important. Gated on html[data-perf-ui]: absent by default ⇒ no-op. */

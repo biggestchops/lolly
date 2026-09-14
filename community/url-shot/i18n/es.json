@@ -1,6 +1,6 @@
 {
   "name": "Captura de pantalla de URL",
-  "description": "Cualquier página web, a cualquier profundidad de desplazamiento, con CSS personalizado",
+  "description": "Cualquier página web, a cualquier profundidad de scroll, con CSS personalizado.",
   "a11yLabel": "Captura de pantalla de {{default url \"(sin URL configurada)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "La página a capturar. Se captura en el momento de exportar, en un motor de navegador real.",

@@ -124,7 +124,7 @@ function usableDecimals(dp: number | undefined): number {
  * `GeomLimitError` is the only one the kernel raises deliberately, and it means
  * exactly one thing: the answer exists and this engine declines to guess at it. Every
  * other throw is either a declared-but-unimplemented feature (the spline lowerings
- * say so in their message) or a defect, and the two are kept apart because a caller
+ * state it in their message) or a defect, and the two are kept apart because a caller
  * does different things about them - pick another spline kind, versus file a bug.
  */
 function attempt(run: () => GeomPathResult): GeomPathResult {

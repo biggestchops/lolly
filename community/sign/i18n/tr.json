@@ -1,4 +1,4 @@
 {
-  "name": "Sign",
-  "description": "Place your signature on a PDF, optionally add a Content Credential and lock the result."
+  "name": "İmzalama",
+  "description": "İmzanı bir PDF'e yerleştir, istersen bir Content Credential ekle ve sonucu kilitle."
 }

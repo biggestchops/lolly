@@ -55,7 +55,7 @@ const json = (body: unknown, extra: Record<string, string> = {}, status = 200): 
 const { initOrg, orgConfig, orgSession, orgAdminHref, orgFlagGovernance, applyOrgToolPolicies, _resetOrgForTests } = await import('./index.ts');
 const { flagHidden, isFlagOn, flagEnabled, hydrateFeatureFlags, NEUROSPICY_FLAG, JELLY_FLAG, STRIP_UPLOAD_META_FLAG } = await import('../feature-flags.ts');
 const { getFieldPolicy, _clearFieldPoliciesForTests } = await import('../lib/field-policy.ts');
-const { getInputPolicy, _clearInputPoliciesForTests } = await import('../lib/input-policy.ts');
+const { getInputPolicy, notifyToolInputMount, _clearInputPoliciesForTests } = await import('../lib/input-policy.ts');
 const ORG_CONFIG_KEY = 'lolly:org-config:same-origin';
 const { getExportPolicy, exportAffordance, _clearExportPolicyForTests } = await import('../lib/export-policy.ts');
 const { aiAllowed } = await import('../lib/ai-policy.ts');
@@ -255,19 +255,21 @@ test('applyOrgToolPolicies maps the per-tool contract onto the input-policy regi
   });
   await initOrg();
 
-  // Dormant until a tool mounts and asks for its policy.
+  // Dormant until a tool mounts and the installer runs.
   assert.equal(getInputPolicy('event-badge', 'logo'), undefined);
-  applyOrgToolPolicies('event-badge');
+  applyOrgToolPolicies();
 
   assert.deepEqual(getInputPolicy('event-badge', 'logo'), { mode: 'locked', note: 'Managed by Acme', value: 'acme/logo' });
   assert.equal(getInputPolicy('event-badge', 'accent')?.mode, 'choice');
   assert.deepEqual(getInputPolicy('event-badge', 'accent')?.allow, ['#0c322c', '#30ba78']);
   assert.equal(getInputPolicy('event-badge', 'discount')?.mode, 'hidden', 'hidden id wins');
   assert.equal(getInputPolicy('event-badge', 'headline'), undefined, 'unpolicied input untouched');
+  assert.equal(getInputPolicy('qr-code', 'logo'), undefined, 'a tool the config does not govern has nothing');
 
-  // Mounting a tool with no declaration clears the previous tool's policy.
-  applyOrgToolPolicies('qr-code');
-  assert.equal(getInputPolicy('event-badge', 'logo'), undefined, 'previous tool policy cleared on mount');
+  // A second run (the next mount) is the same set again: every governed tool
+  // stays installed, so a surface hosting several tools reads them all.
+  applyOrgToolPolicies();
+  assert.equal(getInputPolicy('event-badge', 'logo')?.mode, 'locked', 'still installed after another mount');
 });
 
 test('applyOrgToolPolicies carries the policy attribution through to the registry', async () => {
@@ -290,7 +292,7 @@ test('applyOrgToolPolicies carries the policy attribution through to the registr
     },
   });
   await initOrg();
-  applyOrgToolPolicies('event-badge');
+  applyOrgToolPolicies();
 
   // WHICH policy locked it, and why, is what turns a dead control into an answer.
   assert.equal(getInputPolicy('event-badge', 'logo')?.by, 'Brand guardrails');
@@ -309,7 +311,50 @@ test('applyOrgToolPolicies carries the policy attribution through to the registr
 test('applyOrgToolPolicies is a dormant no-op with no control plane', async () => {
   reset();
   await initOrg(); // dormant
-  applyOrgToolPolicies('event-badge');
+  applyOrgToolPolicies();
+  assert.equal(getInputPolicy('event-badge', 'logo'), undefined);
+});
+
+test('a member boot installs the tool-mount hook: a mount governs the sidebar with no view importing org/', async () => {
+  reset();
+  controlPlane({
+    mode: 'open',
+    session: 'member',
+    orgConfig: {
+      instance: { name: 'Acme' },
+      inboxUnread: 0,
+      tools: {
+        'event-badge': {
+          inputs: [{ id: 'logo', access: { level: 'locked', value: 'acme/logo' } }],
+          hidden: ['discount'],
+        },
+      },
+    },
+  });
+  await initOrg();
+  // The tool view's mount announcement (lib/input-policy.ts) is the whole wire.
+  notifyToolInputMount('event-badge');
+  assert.equal(getInputPolicy('event-badge', 'logo')?.mode, 'locked');
+  assert.equal(getInputPolicy('event-badge', 'discount')?.mode, 'hidden');
+  notifyToolInputMount('qr-code');
+  assert.equal(getInputPolicy('event-badge', 'logo')?.mode, 'locked', 'the next mount keeps every governed tool installed');
+
+  // A tool already open when the member branch runs is governed at once.
+  reset();
+  notifyToolInputMount('event-badge');
+  assert.equal(getInputPolicy('event-badge', 'logo'), undefined, 'dormant until the org module registers');
+  controlPlane({
+    mode: 'open',
+    session: 'member',
+    orgConfig: { instance: { name: 'Acme' }, inboxUnread: 0, tools: { 'event-badge': { inputs: [{ id: 'logo', access: { level: 'locked', value: 'acme/logo' } }] } } },
+  });
+  await initOrg();
+  assert.equal(getInputPolicy('event-badge', 'logo')?.mode, 'locked', 'late registration replays the open tool');
+
+  // A dormant boot registers nothing: a mount installs nothing.
+  reset();
+  await initOrg();
+  notifyToolInputMount('event-badge');
   assert.equal(getInputPolicy('event-badge', 'logo'), undefined);
 });
 

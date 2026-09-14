@@ -82,6 +82,7 @@ export function armSessionReturn(returnTo: string): void {
  * isBatchSlot) so this module stays a leaf.
  */
 export function sessionOpenHref(entry: { slot: string; toolId: string }, isBatch: boolean): string {
+  if (entry.slot.startsWith('__learning__:')) return `#/learning?slot=${encodeURIComponent(entry.slot)}`;
   return isBatch
     ? `#/batch?session=${encodeURIComponent(entry.slot)}`
     : `#/tool/${entry.toolId || ''}?slot=${encodeURIComponent(entry.slot)}`;

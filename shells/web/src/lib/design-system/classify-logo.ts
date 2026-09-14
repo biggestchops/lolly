@@ -222,7 +222,7 @@ export function classifyLogoSvg(svgText: string): LogoClassification | null {
  *
  * `transparentShare` is the share of the image that is transparent; a mark with
  * almost none has its background baked in, so the polarity read is measuring
- * that background as much as the ink and the confidence is scaled down to say so.
+ * that background as much as the ink and the confidence is scaled down to reflect it.
  */
 export function classifyLogoRasterStats(stats: {
   width: number;

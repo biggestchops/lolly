@@ -43,7 +43,7 @@ Câmpul de nume de fișier și selectorul de format stau în partea de sus a pan
 | Vector pentru tipar / aplicații de design | **EPS**, sau **EPS (CMYK)** | Vector PostScript pentru Illustrator / fluxuri de tipar |
 | Vector pentru mașini de tăiat / CAD | **DXF** | Aparate de tăiat cu laser, plottere de vinil, CNC - trasee de contur în milimetri |
 | Un set de diapozitive editabil | **PowerPoint** (PPTX) | Text nativ editabil + forme, cu imagini și vectori care rămân extractibili |
-| Un curs pe care un LMS îl poate importa | **SCORM** (LMS) | O arhivă zip cu manifestul, o pagină de lansare, diapozitivele și filmul narat cu subtitrări - dintr-un set de diapozitive Design |
+| Un curs de instruire portabil | **Export course** | Revizuiește conținutul proiectului și construiește un pachet Website, SCORM sau xAPI experimental, cu versionare |
 | Un document text editabil | **Word** (DOCX) sau **OpenDocument** (ODT) | Paragrafe și titluri reale pe care un procesor de texte le poate continua să le editeze (Doc Studio) |
 | O fotografie sau o imagine de uz general | **PNG** (fără pierderi) sau **JPG** (mai mic) | Raster universal |
 | Imagini moderne mai mici | **WebP** / **AVIF** | Compresie mai bună, alpha |
@@ -150,16 +150,18 @@ Ca să îl deschizi, pornește Penpot, alege un proiect și selectează **Import
 
 ## SCORM (pachete de curs)
 
-Un set de diapozitive Design poate pleca ca **pachet SCORM** - arhiva zip pe care o importă un sistem de management al învățării, fie că este Moodle, Canvas, Blackboard sau un LMS corporativ. Alege **SCORM (LMS)** în selectorul de format, iar exportul scrie:
+Alege **Export course** dintr-un tool compatibil, un folder de proiect sau o selecție. În Design, alegerea **SCORM (LMS)** și Download deschide de asemenea acest flux de lucru pentru curs. Lolly salvează creația, îți permite să revizuiești conținutul și ordinea cursului, apoi deschide modulul și dialogul lui de export.
 
-- <!--i:layout--> **Diapozitivele**, o imagine per planșă, ca vector acolo unde planșa permite și ca pixeli doar unde nu permite.
-- <!--i:play--> **Filmul narat**, cu pista lui de subtitrări - notițele vorbitorului citite de o voce pe dispozitiv, exact așa cum le redă [Presenting](/info/create/using.html#presenting).
-- <!--i:file--> **O pagină de lansare** care parcurge diapozitivele, redă filmul și raportează finalizarea înapoi la LMS prin mediul de execuție SCORM 1.2, versiunea pe care o acceptă orice LMS.
-- <!--i:font--> Fonturile folosite de setul de diapozitive, astfel încât pagina de lansare se randează la fel offline.
+- <!--i:layout--> Alege varianta disponibilă pentru fiecare sursă: pagini statice, mișcare ca video, audio sau o resursă descărcabilă. Adaugă text de lecție nativ și alternative de citire în modul.
+- <!--i:play--> Previzualizează playerul cursantului și revizuiește descrierile și subtitrările. Mișcarea este inclusă ca video, inclusiv animație mută. Exportă o înregistrare finalizată mai întâi atunci când un tool nu o poate recrea din datele salvate.
+- <!--i:file--> Selectează Website, SCORM 1.2, SCORM 2004 4th Edition, sau o țintă xAPI experimentală. Verifică conținutul real și dimensiunea ZIP-ului, apoi salvează și descarcă versiunea verificată.
+- <!--i:check--> Finalizarea necesită confirmarea fiecărei lecții obligatorii și selectarea Finish. Playerul site-ului web salvează progresul în browser; un pachet LMS se conectează la LMS-ul care îl primește.
 
 ![Panoul de export pe un set de diapozitive Design cu SCORM (LMS) selectat](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Nimic din pachet nu comunică spre exterior: sunt fișiere într-o arhivă zip, iar acesta rulează în interiorul LMS-ului fără bundler, fără CDN și fără cont. Aplicațiile web și desktop îl construiesc; CLI-ul nu, pentru că fotografierea planșelor și codarea filmului au nevoie de browser.
+Pachetul include conținutul său finalizat și nu necesită un cont Lolly. Extrage un ZIP Website pe o gazdă HTTP(S); importă un ZIP LMS fără să îi modifici conținutul. Testează destinația dorită înainte de a distribui cursul.
+
+Pentru un curs asamblat din mai multe creații salvate, materiale media importate și resurse, folosește [Creează un curs de instruire](/info/create/training-creators.html). Modulul de învățare are propriul contur ordonat, confirmări explicite de lecție, previzualizare pentru cursant și istoric de pachete cu versionare. Traseul lui prin CLI poate împacheta materiale media pe care le-ai exportat deja.
 
 ## DXF (fișiere de tăiere)
 
@@ -309,6 +311,10 @@ Exporturile pot purta **Content Credentials** - un manifest [C2PA](https://c2pa.
 - **Verificarea unui fișier.** Lolly își verifică și propriile acreditări: plasează orice fișier pe [/verify](/verify) (sau rulează `lolly validate <file>` în CLI) pentru un raport pe dispozitiv - având ca titlu dacă fișierul a fost cu adevărat creat cu Lolly și nemodificat de atunci. Vizualizarea web Verify citește mult dincolo de acreditare: semnalează **conținut generat de AI**, detectează **Lolly Imprint**, verifică semnăturile **SEAL** și (opțional) filigranele de pixeli ale terților și scoate la iveală **date ascunse** - totul pe dispozitiv, fără nimic încărcat. Vezi [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Confidențialitate.** Totul se întâmplă pe dispozitivul tău: cheia de semnare este creată pentru export și nu părăsește niciodată browserul, nimic nu este încărcat, iar afirmația conține doar ceea ce metadatele de proveniență poartă deja. Utilitarele de confidențialitate (transformări pe dispozitiv ale *propriilor tale* fișiere) nu adaugă niciodată acreditări, iar *Strip Hidden Data* va elimina un manifest C2PA la fel ca orice alte metadate încorporate.
 - **Interacțiuni.** Pentru PDF-uri, Content Credentials și **protecția prin parolă** (oricare dintre niveluri - vezi mai sus) se exclud reciproc (un PDF criptat nu poate primi atașamentul de acreditare). Acreditarea este adăugată ca pas final peste octeții finali - după ștampilarea DPI/EXIF/profil de culoare, metadatele PDF/X și marcajele de tipar.
+
+### Source credits (credite de sursă)
+
+Un export care plasează lucrarea altcuiva înregistrează și acea sursă în acreditare. Un emoji preluat dintr-un set fixat este cazul de zi cu zi: lucrarea, creatorul ei, licența, de unde au venit exact byte-ii și ce s-a schimbat, toate călătoresc cu fișierul. Rândul **Source credits** din panoul de export spune ce cer sursele de la livrare înainte să descarci, iar după descărcare recitește byte-ii livrați înainte să spună că creditele sunt în fișier. O licență care îți cere să alegi, cum ar fi o glifă CC BY-SA recolorată pe care ești pe cale să o partajezi, primește un card cu variantele de ieșire; descărcarea nu este niciodată blocată. [Drepturi creative și credite](/info/creative-rights.html) are cuvintele, licențele revizuite și ce rămâne al tău.
 
 ## Pe telefon
 

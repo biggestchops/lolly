@@ -675,8 +675,11 @@ function offerLicensedChoice(
   if (!licensedEl) { void run(built.blob, built.filename); return; }   // nowhere to ask ⇒ safe default
   licensedEl.hidden = false;
   const verb = labels.verb;
+  // "Held back" rather than "licensed": since plan 253 the hold-back also covers a
+  // catalog work whose licence was never recorded, which is not the same as a brand
+  // asset under known terms. CREDITS.txt inside the file names each one and why.
   licensedEl.innerHTML = `
-    <p class="share-file-warn">⚠️ This design uses ${n} licensed brand ${n === 1 ? 'asset' : 'assets'}. The file leaves ${it} out. Including ${it} shares the actual ${n === 1 ? 'file' : 'files'} with whoever opens the .lolly.</p>
+    <p class="share-file-warn">⚠️ This design uses ${n} catalog ${n === 1 ? 'work' : 'works'} whose bytes are held back. The file leaves ${it} out and CREDITS.txt says why. Including ${it} shares the actual ${n === 1 ? 'file' : 'files'} with whoever opens the .lolly.</p>
     <div class="share-file-actions">
       <button type="button" class="btn" data-lolly-without>${verb} without ${it}</button>
       <button type="button" class="btn" data-lolly-include>Include and ${verb.toLowerCase()}</button>

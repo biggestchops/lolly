@@ -1,6 +1,6 @@
 {
   "name": "لقطة شاشة URL",
-  "description": "أي صفحة ويب، عند أي عمق تمرير، مع CSS مخصص",
+  "description": "أي صفحة ويب، عند أي عمق تمرير، بتنسيق CSS مخصص.",
   "a11yLabel": "لقطة شاشة لـ {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "الصفحة المراد التقاطها. تلتقط عند التصدير في محرك متصفح حقيقي.",

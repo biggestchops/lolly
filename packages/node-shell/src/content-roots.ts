@@ -7,6 +7,7 @@
  * mounted packs and nowhere else:
  *
  *   community/            brand-agnostic tools
+ *   community/emoji-packs/  a SHARED asset root, mounted by every profile
  *   brands/suse/          PRIVATE brand pack (tools + catalog)
  *   brands/lolly-start/   the blank starter brand
  *
@@ -16,6 +17,15 @@
  * and "where is the catalog" (catalogFile). The one copy that survives is
  * materializeInto, which writes a real tools/ + catalog/ tree for a dist/ build,
  * an RPM payload or a Docker image, because those serve the two paths over HTTP.
+ *
+ * A profile's optional `assets` list mounts SHARED asset roots: a directory holding
+ * its own index.json plus its files, whose entries every profile serves. That is how
+ * one emoji pack lives in one place and still appears in the asset index of the suse
+ * brand and of lolly-start alike, with no file copied into either. Their urls are the
+ * profile-independent /catalog/packs/<rootName>/<file>, still under /catalog/ so the
+ * service worker, the static export and every script that strips a catalog url keep
+ * working unchanged. readAssetIndex() is the merged index a Node reader wants;
+ * materializeInto writes the same merge into dist.
  *
  * The overlay rules are ported from use-profile.ts unchanged: a brand tool.json may
  * declare `"extends": "community"` and carry only the files that differ. The tool is
@@ -57,6 +67,17 @@ const BASE_PACK = 'community';
  *  with no profiles.json to name a profile). See materializedRoots. */
 const MATERIALIZED = 'materialized';
 
+/** The catalog-relative directory a shared asset root is served under. */
+const PACKS_DIR = 'packs';
+
+/** One shared asset root: a directory of files plus its own index.json, mounted by
+ *  every profile that lists it. `name` is the root's last path segment, and it names
+ *  the url namespace: /catalog/packs/<name>/<file>. */
+export interface SharedAssetRoot {
+  name: string;
+  dir: string;
+}
+
 export interface ContentRoots {
   /** Resolved profile name, e.g. 'suse' or 'lolly-start'. */
   profile: string;
@@ -64,11 +85,21 @@ export interface ContentRoots {
   toolRoots: string[];
   /** Absolute catalog root for this profile. */
   catalogRoot: string;
+  /** Shared asset roots this profile mounts, in profiles.json order. */
+  assetRoots: SharedAssetRoot[];
   /** Tool ids this profile drops (profiles.json `exclude`). */
   exclude: ReadonlySet<string>;
 }
 
-interface Profile { label?: string; tools: string[]; catalog: string; exclude?: string[] }
+/** The asset index as it is read: every brand key preserved, `assets` merged. */
+export interface AssetIndexFile {
+  assets: { id: string }[];
+  [key: string]: unknown;
+}
+
+interface Profile {
+  label?: string; tools: string[]; catalog: string; assets?: string[]; exclude?: string[];
+}
 interface ProfilesFile { default: string; profiles: Record<string, Profile> }
 
 function loadProfiles(root: string): ProfilesFile {
@@ -79,9 +110,26 @@ function loadProfiles(root: string): ProfilesFile {
   return JSON.parse(readFileSync(path, 'utf8')) as ProfilesFile;
 }
 
-/** All of a profile's content roots exist on disk (a private pack may not). */
+/**
+ * Every root a profile REQUIRES, in one list: the packs completeness is judged on
+ * and the paths a "missing pack" error names.
+ *
+ * A shared asset root is deliberately not one of them. It is additive - it adds
+ * entries to an index that is already complete without it - and a deployment may
+ * legitimately leave one out: the MCP serverless function excludes the emoji pack
+ * bundle from its trace because the function is near its size limit. Judging
+ * completeness on it would turn that choice into a throw on every content request
+ * rather than a listing with one fewer pack in it. An absent root is skipped by
+ * sharedRoots below, and readAssetIndex and assetIndexFiles already skip a root
+ * with no index.json, so nothing else changes.
+ */
+function declaredRoots(p: Profile): string[] {
+  return [...p.tools, p.catalog];
+}
+
+/** All of a profile's required content roots exist on disk (a private pack may not). */
 function isComplete(root: string, p: Profile): boolean {
-  return [...p.tools, p.catalog].every((r) => existsSync(join(root, r)));
+  return declaredRoots(p).every((r) => existsSync(join(root, r)));
 }
 
 /** The sticky local choice written by the old profile switcher, if any. */
@@ -132,6 +180,55 @@ function resolveProfileName(root: string, cfg: ProfilesFile, explicit?: string):
   return complete;
 }
 
+/**
+ * A profile's `assets` list as mounted roots. The url namespace is the root's last
+ * path segment, so two roots with the same segment would serve each other's files
+ * from one prefix and the merged index could not say which file an entry meant. That
+ * is refused here rather than resolved by order, whether or not both are on disk:
+ * a profile that names two roots by one name is a configuration error either way.
+ *
+ * A root that is not on disk is skipped rather than mounted. These are additive, so
+ * an absent one means one fewer pack in the index, which is what a deployment that
+ * left it out of its bundle asked for.
+ */
+function sharedRoots(root: string, declared: string[], profile: string): SharedAssetRoot[] {
+  const out: SharedAssetRoot[] = [];
+  const seen = new Map<string, string>();
+  for (const rel of declared) {
+    const name = basename(rel);
+    const dir = join(root, rel);
+    const clash = seen.get(name);
+    if (clash) {
+      throw new Error(
+        `content-roots: profile "${profile}" mounts two shared asset roots named "${name}" ` +
+        `(${clash} and ${dir}) - one url namespace cannot serve both`,
+      );
+    }
+    seen.set(name, dir);
+    if (existsSync(dir)) out.push({ name, dir });
+  }
+  return out;
+}
+
+/**
+ * Every shared asset root ANY profile mounts, deduped by directory. The per-profile
+ * answer is `contentRoots().assetRoots`; this is for the build scripts that maintain
+ * the roots themselves (checksums, added dates), because those files are shared and
+ * a per-profile loop would rewrite the same bytes once per brand.
+ */
+export function allAssetRoots(opts?: { root?: string }): SharedAssetRoot[] {
+  const root = resolve(opts?.root ?? repoRoot());
+  if (!existsSync(join(root, 'profiles.json'))) return [];
+  const cfg = loadProfiles(root);
+  const out: SharedAssetRoot[] = [];
+  for (const [name, profile] of Object.entries(cfg.profiles)) {
+    for (const mounted of sharedRoots(root, profile.assets ?? [], name)) {
+      if (!out.some((a) => a.dir === mounted.dir)) out.push(mounted);
+    }
+  }
+  return out;
+}
+
 const cache = new Map<string, ContentRoots>();
 
 /**
@@ -147,6 +244,11 @@ function materializedRoots(root: string): ContentRoots {
     profile: MATERIALIZED,
     toolRoots: [join(root, 'tools')],
     catalogRoot: join(root, 'catalog'),
+    // A materialized tree carries each shared root as real bytes under
+    // catalog/packs/<name>/ and an already-merged assets/index.json, so there is
+    // nothing left to mount: catalogFile('packs/<name>/<rel>') finds those files by
+    // the plain join below.
+    assetRoots: [],
     exclude: new Set<string>(),
   };
 }
@@ -177,17 +279,21 @@ export function contentRoots(opts?: { profile?: string; root?: string }): Conten
     );
   }
   if (!isComplete(root, profile)) {
-    const missing = [...profile.tools, profile.catalog].filter((r) => !existsSync(join(root, r)));
-    throw new Error(
-      `content-roots: profile "${name}" is missing: ${missing.join(', ')}` +
-      ` (a private pack needs: git submodule update --init --checkout ${missing[0]})`,
-    );
+    const missing = declaredRoots(profile).filter((r) => !existsSync(join(root, r)));
+    // Only brands/ holds a submodule, so only a missing brand gets the checkout
+    // command. Naming it for a plain directory sends the reader after a submodule
+    // that does not exist, and git answers with a pathspec error.
+    const hint = missing[0]!.startsWith('brands/')
+      ? ` (a private pack needs: git submodule update --init --checkout ${missing[0]})`
+      : ' (that directory is not in this checkout)';
+    throw new Error(`content-roots: profile "${name}" is missing: ${missing.join(', ')}${hint}`);
   }
 
   const resolved: ContentRoots = {
     profile: name,
     toolRoots: profile.tools.map((r) => join(root, r)),
     catalogRoot: join(root, profile.catalog),
+    assetRoots: sharedRoots(root, profile.assets ?? [], name),
     exclude: new Set(profile.exclude ?? []),
   };
   rootOf.set(resolved, root);
@@ -222,6 +328,13 @@ export function toolDirs(r?: ContentRoots): Map<string, { dir: string; base?: st
 function buildPlan(roots: ContentRoots): Map<string, { dir: string; base?: string }> {
   const plan = new Map<string, { dir: string; base?: string }>();
   const root = rootFor(roots);
+  // A shared asset root can sit inside a tool pack (community/emoji-packs does), and
+  // it is not a tool. Every profile's roots count, not just this one's, so the same
+  // directory is never a tool under one profile and a pack under another.
+  const sharedDirs = new Set([
+    ...roots.assetRoots.map((a) => a.dir),
+    ...allAssetRoots({ root }).map((a) => a.dir),
+  ]);
   for (const rootAbs of roots.toolRoots) {
     const packRel = relative(root, rootAbs);
     const isBasePack = packRel === BASE_PACK;
@@ -232,6 +345,7 @@ function buildPlan(roots: ContentRoots): Map<string, { dir: string; base?: strin
       // copies into tool hooks.js.
       if (entry.startsWith('_')) continue;
       const dir = join(rootAbs, entry);
+      if (sharedDirs.has(dir)) continue;
       if (!statSync(dir).isDirectory()) continue; // NOTICE.md, README.md, ...
       const extendsTarget = readExtends(join(dir, 'tool.json'));
       if (!extendsTarget) { plan.set(entry, { dir }); continue; }
@@ -467,10 +581,81 @@ export function readToolManifest(id: string, r?: ContentRoots): unknown {
   return JSON.parse(readToolManifestText(id, r));
 }
 
-/** Absolute path inside the active catalog: catalogFile('tools/index.json'). */
+/** Path segments that stay inside the root they are joined onto. A `..` is refused
+ *  rather than resolved, so a catalog url can never name a file outside the catalog. */
+function contained(rel: string): string[] {
+  const segs = rel.split(/[\\/]/).filter((s) => s && s !== '.');
+  if (segs.includes('..')) {
+    throw new Error(`content-roots: "${rel}" leaves the content root it is resolved against`);
+  }
+  return segs;
+}
+
+/**
+ * Absolute path inside the active catalog: catalogFile('tools/index.json').
+ *
+ * `packs/<name>/<rel>` is the one namespace that does not live under the brand
+ * catalog: it resolves to <rel> inside the shared asset root called <name>, which is
+ * how one file serves every profile. A name no profile mounts falls through to the
+ * plain join, which is what a materialized root needs: there the packs really are
+ * directories under catalog/.
+ */
 export function catalogFile(rel: string, r?: ContentRoots): string {
   const roots = r ?? contentRoots();
-  return join(roots.catalogRoot, ...rel.split(/[\\/]/).filter(Boolean));
+  const segs = contained(rel);
+  if (segs[0] === PACKS_DIR && segs.length >= 2) {
+    const shared = roots.assetRoots.find((a) => a.name === segs[1]);
+    if (shared) return join(shared.dir, ...segs.slice(2));
+  }
+  return join(roots.catalogRoot, ...segs);
+}
+
+/** The files the merged asset index is read from: the brand's, then each mounted
+ *  shared root's. A caller that has to answer "has this changed" (a conditional
+ *  fetch) stats these rather than guessing. */
+export function assetIndexFiles(r?: ContentRoots): string[] {
+  const roots = r ?? contentRoots();
+  const out = [catalogFile('assets/index.json', roots)];
+  for (const shared of roots.assetRoots) {
+    const path = join(shared.dir, 'index.json');
+    if (existsSync(path)) out.push(path);
+  }
+  return out;
+}
+
+/**
+ * The asset index every Node reader should use: the brand's entries, then each
+ * mounted shared root's, in root order.
+ *
+ * An id in two places is an error, not a precedence question. The web shell's own
+ * instance merge lets a pack lay an entry over the base by id, but that is a device
+ * choosing what it installed; a repository shipping one id twice means two different
+ * files answer to the same permanent contract, and which one a reader got would
+ * depend on the profile it happened to resolve.
+ */
+export function readAssetIndex(r?: ContentRoots): AssetIndexFile {
+  const roots = r ?? contentRoots();
+  const brandPath = catalogFile('assets/index.json', roots);
+  const index = JSON.parse(readFileSync(brandPath, 'utf8')) as AssetIndexFile;
+  const assets = Array.isArray(index.assets) ? [...index.assets] : [];
+  const from = new Map<string, string>(assets.map((a) => [a.id, brandPath]));
+  for (const shared of roots.assetRoots) {
+    const path = join(shared.dir, 'index.json');
+    if (!existsSync(path)) continue;
+    const mounted = JSON.parse(readFileSync(path, 'utf8')) as AssetIndexFile;
+    for (const asset of mounted.assets ?? []) {
+      const prior = from.get(asset.id);
+      if (prior) {
+        throw new Error(
+          `content-roots: asset id "${asset.id}" is declared in both ${prior} and ${path} - ` +
+          'an asset id is a permanent contract, so a shared root may not redefine one',
+        );
+      }
+      from.set(asset.id, path);
+      assets.push(asset);
+    }
+  }
+  return { ...index, assets };
 }
 
 /**
@@ -518,6 +703,18 @@ export function materializeInto(dest: string, r?: ContentRoots): void {
   rmSync(catalogOut, { recursive: true, force: true });
   mkdirSync(toolsOut, { recursive: true });
   copyTree(roots.catalogRoot, catalogOut);
+
+  // Shared asset roots become real files under catalog/packs/<name>/, which is the
+  // url their entries already carry, and the index the tree serves is the merged one.
+  // The brand's own committed index is never touched: the merge exists in dist only.
+  for (const shared of roots.assetRoots) {
+    copyTree(shared.dir, join(catalogOut, PACKS_DIR, shared.name));
+  }
+  if (roots.assetRoots.length && existsSync(catalogFile('assets/index.json', roots))) {
+    const merged = join(catalogOut, 'assets', 'index.json');
+    mkdirSync(join(merged, '..'), { recursive: true });
+    writeFileSync(merged, JSON.stringify(readAssetIndex(roots), null, 2) + '\n');
+  }
 
   for (const [id, { dir, base }] of plan) {
     const out = join(toolsOut, id);

@@ -28,19 +28,20 @@
       "type": "file",
       "accept": ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "application/pdf", ".jpg", ".jpeg", ".png", ".webp", ".svg", ".pdf"],
       "maxSize": 52428800,
-      "help": "A JPEG, PNG, WebP, SVG or PDF. It's read in your browser and never leaves your device. You can also drop it straight onto the canvas."
+      "help": "A JPEG, PNG, WebP, SVG or PDF. You can also drop it straight onto the canvas."
     },
     {
       "id": "style",
+      "display": "segmented",
       "label": "Redaction style",
       "type": "select",
       "default": "branded",
       "options": [
         { "value": "solid", "label": "Solid" },
-        { "value": "branded", "label": "Branded" },
+        { "value": "branded", "label": "Tinted" },
         { "value": "stamped", "label": "Stamped" }
       ],
-      "help": "How the mark looks. Solid is a square near-black bar. Branded takes a dark tone from the loaded brand and rounds the corners slightly. Stamped adds a small label on top of the bar. Every style is 100% opaque, so all three destroy exactly the same pixels; the rounded shape is grown by its own corner radius so the area you marked stays completely covered."
+      "help": "How the mark looks. Solid is a square near-black bar. Tinted takes a dark tone from the loaded design system and rounds the corners slightly. Stamped adds a small label on top of the bar. Every style is 100% opaque, so all three destroy exactly the same pixels; the rounded shape is grown by its own corner radius so the area you marked stays completely covered."
     },
     {
       "id": "stampLabel",
@@ -60,10 +61,10 @@
     },
     {
       "id": "grayscale",
-      "label": "Scanned page",
+      "label": "Remove all colour",
       "type": "boolean",
       "default": false,
-      "help": "Drops all colour from the page. For scans of printed pages this removes the yellow channel that colour laser tracking dots live in. The redaction marks keep their own colour."
+      "help": "For scans of printed pages this also removes the yellow channel that colour laser tracking dots live in. The redaction marks keep their own colour."
     },
     {
       "id": "svgVector",

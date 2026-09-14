@@ -104,7 +104,9 @@ function E(n, t, e, i, s, r) {
   return [n + l * r, l];
 }
 const ut = typeof matchMedia == "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+let performanceMode = false;
 function F() {
+  if (performanceMode) return true;
   const n = typeof document < "u" ? document.documentElement.getAttribute("data-jelly-motion") : null;
   return n === "reduce" ? !0 : n === "no-preference" ? !1 : ut ? ut.matches : !1;
 }
@@ -485,6 +487,14 @@ class D {
    * slow frames, low-Hz displays and after background-tab pauses.
    */
   update(t) {
+    if (performanceMode) {
+      for (const point of this.membrane) point.d = point.v = point.z = point.zv = 0;
+      for (const key of Object.keys(this.state)) {
+        this.state[key] = typeof this.state[key] === "boolean" ? false : 0;
+      }
+      this.lean = this.leanAmount = 0;
+      return;
+    }
     const e = Math.max(1, Math.ceil(t / Ht)), i = t / e;
     for (let s = 0; s < e; s++)
       this.updateGlobal(i), this.updateMembrane(i);
@@ -525,11 +535,12 @@ class D {
 }
 class qt {
   constructor() {
+    this.rafId = 0;
     this.active = /* @__PURE__ */ new Set(), this.running = !1, this.lastTime = 0, this.loop = this.loop.bind(this);
   }
   // Add a component to the loop and start it if it was parked
   wake(t) {
-    this.active.add(t), this.running || (this.running = !0, this.lastTime = performance.now(), requestAnimationFrame(this.loop));
+    this.active.add(t), this.running || (this.running = !0, this.lastTime = performance.now(), this.rafId = requestAnimationFrame(this.loop));
   }
   // Remove a component from the loop (used on disconnect)
   drop(t) {
@@ -538,6 +549,7 @@ class qt {
   // One shared animation frame: step every live component, park when idle.
   // The delta is capped so a background-tab pause never becomes one giant step.
   loop(t) {
+    this.rafId = 0;
     const e = m((t - this.lastTime) / 1e3, 0, 0.033);
     this.lastTime = t;
     for (const i of this.active) {
@@ -548,12 +560,22 @@ class qt {
       } catch (r) {
         console.error("Jelly UI frame error", r);
       }
-      !s && !i.colorEasing && this.active.delete(i);
+      (performanceMode || !s && !i.colorEasing) && this.active.delete(i);
     }
-    this.active.size > 0 ? requestAnimationFrame(this.loop) : this.running = !1;
+    this.active.size > 0 ? this.rafId = requestAnimationFrame(this.loop) : this.running = !1;
   }
 }
 const yt = new qt(), P = 8;
+// Lolly: existing controls paint on input, but never keep a physics loop alive.
+// Keep their DOM and form state intact when the shell switches performance mode.
+export function setPerformanceMode(on) {
+  performanceMode = on;
+  if (on && yt.running) {
+    cancelAnimationFrame(yt.rafId);
+    yt.loop(performance.now());
+  }
+  window.dispatchEvent(new Event("jelly-motion-change"));
+}
 function Xt(n, t) {
   if (n !== "start" && n !== "end")
     return n;

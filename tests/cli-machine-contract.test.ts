@@ -64,7 +64,7 @@ await writeFile(join(root, 'catalog', 'tools', 'index.json'), JSON.stringify({
 const TOOLS: Array<[string, string, string]> = [
   ['vec-tool', SVG, manifest('vec-tool')],
   // Gated on capabilities this shell cannot provide: `run` must exit 3, and `list --json`
-  // must say so BEFORE anyone tries.
+  // must report it BEFORE anyone tries.
   ['mic-tool', SVG, manifest('mic-tool', { capabilities: ['microphone', 'screen'] })],
   // An input whose id collides with a reserved export flag - the case where reading the
   // bare id off the manifest would set the export size instead of the input.

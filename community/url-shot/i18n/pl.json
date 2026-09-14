@@ -1,6 +1,6 @@
 {
   "name": "Zrzut ekranu URL",
-  "description": "Każda strona internetowa, na dowolnej głębokości przewijania, z własnym CSS",
+  "description": "Dowolna strona internetowa, na dowolnej głębokości przewijania, z niestandardowym CSS.",
   "a11yLabel": "Zrzut ekranu {{default url \"(brak ustawionego URL)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Strona do przechwycenia. Przechwytywana przy eksporcie w prawdziwym silniku przeglądarki.",

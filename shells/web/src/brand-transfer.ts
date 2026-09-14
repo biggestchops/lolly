@@ -864,7 +864,7 @@ export async function importBrandPack(
       );
     } else {
       // No head on either side: the versions are real assets belonging to a
-      // design system that does not exist here, so say so rather than claim them.
+      // design system that does not exist here, so report it rather than claim them.
       host.log?.('warn', 'Imported design-system versions have no design system to belong to', { versions: added.length });
       summary.versionsSkipped += added.length;
       summary.versions -= added.length;

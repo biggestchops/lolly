@@ -38,28 +38,28 @@ Ang filename at ang format picker ay nasa itaas ng panel bilang isang `name.form
 
 | Gusto mo… | Gamitin | Bakit |
 |---|---|---|
-| Malinaw na logo / artwork na nag-iiba ang laki | **SVG** | Vector - walang limitasyong scale, maliit, at nae-edit |
-| Vector para sa Office / Windows apps | **EMF** | Naipapaste bilang nae-edit na vector sa PowerPoint / Word; nananatiling live at nae-edit ang text, at binubuksan ito ng Google Drive sa Google Drawings para sa Slides |
-| Vector para sa print / design apps | **EPS**, o **EPS (CMYK)** | PostScript vector para sa Illustrator / press workflows |
-| Vector para sa cutting / CAD machines | **DXF** | Laser cutters, vinyl plotters, CNC - outline paths sa millimeters |
-| Nae-edit na slide deck | **PowerPoint** (PPTX) | Native na nae-edit na text + shapes, kasama ang mga imahe at vector na mananatiling ma-extract |
-| Kursong maiimport ng isang LMS | **SCORM** (LMS) | Isang zip na may manifest, launch page, ang mga slide, at ang narrated na pelikula na may captions - mula sa isang Design deck |
-| Nae-edit na text document | **Word** (DOCX) o **OpenDocument** (ODT) | Tunay na mga paragraph at heading na patuloy na maaaring i-edit ng isang word processor (Doc Studio) |
-| Larawan o pangkalahatang imahe | **PNG** (lossless) o **JPG** (mas maliit) | Universal na raster |
+| Malinaw na logo / artwork na sumusukat | **SVG** | Vector - walang katapusang sinusukat, maliit, nae-edit |
+| Vector para sa Office / Windows apps | **EMF** | Nagpa-paste bilang nae-edit na vector sa PowerPoint / Word; nananatiling live at nae-edit ang text, at binubuksan ito ng Google Drive sa Google Drawings para sa Slides |
+| Vector para sa print / design apps | **EPS**, o **EPS (CMYK)** | PostScript vector para sa Illustrator / press workflow |
+| Vector para sa cutting / CAD machine | **DXF** | Laser cutter, vinyl plotter, CNC - outline path sa millimetre |
+| Isang nae-edit na slide deck | **PowerPoint** (PPTX) | Native na nae-edit na text + shape, na nananatiling extractable ang mga imahe at vector |
+| Isang portable na training course | **Export course** | I-review ang content ng project at bumuo ng naka-version na Website, SCORM o eksperimental na xAPI package |
+| Isang nae-edit na text document | **Word** (DOCX) o **OpenDocument** (ODT) | Tunay na paragraph at heading na kayang patuloy na i-edit ng isang word processor (Doc Studio) |
+| Isang litrato o pangkalahatang imahe | **PNG** (lossless) o **JPG** (mas maliit) | Universal na raster |
 | Mas maliit na modernong imahe | **WebP** / **AVIF** | Mas magandang compression, may alpha |
 | Print | **PDF**, o **Print PDF** (CMYK) | Tunay na page size; CMYK para sa press |
-| Print raster para sa press | **Print TIFF** (CMYK) | DeviceCMYK pixels para sa RIP |
+| Print raster para sa isang press | **Print TIFF** (CMYK) | DeviceCMYK pixel para sa isang RIP |
 | Animated para sa web | **GIF** | Gumagana kahit saan, mas malalaking file |
-| Animated na may buong kulay + tunay na alpha | **APNG** | Animated PNG - walang limitasyon sa palette, tunay na transparency |
-| Animated, pinakamaliit na file | **Animated WebP** | Buong kulay + alpha, mas maganda ang compression kaysa GIF o APNG |
-| Animated na vector na nag-iiba ang laki | **Animated SVG** | Self-contained; nag-lo-loop sa browser o `<img>`, walang codec, kahit anong laki |
-| Video para sa social media / pagbabahagi | **MP4** o **WebM** | Pinakamahusay na quality-per-byte (tingnan sa ibaba) |
-| Rich text / email signature | **HTML** | Naipapaste nang naka-format sa mga mail client |
-| Plain na content | **MD** / **TXT** | Text lamang |
-| Kaganapan sa kalendaryo | **ICS** | Maiimport sa kahit anong calendar app |
-| Contact card | **VCF** | Maiimport sa Contacts / address books |
-| Structured data na muling maii-import | **JSON** / **CSV** | Round-trips ang content ng tool |
-| Favicon | **ICO** | Multi-size na icon ng site (nagbu-bundle ang **ZIP** ng ilang format) |
+| Animated na may full colour + tunay na alpha | **APNG** | Animated PNG - walang palette limit, tunay na transparency |
+| Animated, pinakamaliit na file | **Animated WebP** | Full colour + alpha, mas magandang compression kaysa sa GIF o APNG |
+| Animated vector na sumusukat | **Animated SVG** | Self-contained; nag-loloop sa isang browser o `<img>`, walang codec, kahit anong size |
+| Video para sa social / sharing | **MP4** o **WebM** | Pinakamagandang quality-per-byte (tingnan sa ibaba) |
+| Rich text / email signature | **HTML** | Nagpa-paste na naka-format sa mail client |
+| Plain na content | **MD** / **TXT** | Text lang |
+| Isang calendar event | **ICS** | Nag-i-import sa kahit anong calendar app |
+| Isang contact card | **VCF** | Nag-i-import sa Contacts / address book |
+| Structured data na i-re-import | **JSON** / **CSV** | Round-trip ang content ng tool |
+| Isang favicon | **ICO** | Multi-size na site icon (**ZIP** nagbu-bundle ng ilang format) |
 
 Ang unang row ang karaniwang kaso. Ang isang wordmark na naka-set sa iyong brand face ay nag-e-export bilang SVG, kung saan ang bawat titik ay outlined path sa halip na pixel, kaya nananatili itong malinaw sa laki ng business-card at sa laki ng building-wrap mula sa parehong file.
 
@@ -150,16 +150,18 @@ Para buksan ito, simulan ang Penpot, pumili ng project at piliin ang **Import**.
 
 ## SCORM (mga course package)
 
-Maaaring umalis ang isang Design deck bilang isang **SCORM package** - ang zip na iniimport ng isang learning management system, maging ito man ay Moodle, Canvas, Blackboard, o isang corporate LMS. Piliin ang **SCORM (LMS)** sa format picker at isusulat ng export ang:
+Piliin ang **Export course** mula sa isang suportadong tool, isang project folder o isang selection. Sa Design, ang pagpili ng **SCORM (LMS)** at Download ay nagbubukas din ng course workflow na ito. Sine-save ni Lolly ang creation, hinahayaan kang i-review ang content at order ng course, pagkatapos ay binubuksan ang module at ang export dialog nito.
 
-- <!--i:layout--> **Ang mga slide**, isang imahe bawat artboard, bilang vector kung saan ito pinapayagan ng artboard, at bilang pixels lamang kung saan hindi.
-- <!--i:play--> **Ang narrated na pelikula** kasama ang caption track nito - ang mga speaker note na binabasa ng isang on-device na boses, eksakto kung paano ito pinapatugtog ng [Presenting](/info/create/using.html#presenting).
-- <!--i:file--> **Isang launch page** na dumadaan sa mga slide, nagpapatugtog ng pelikula, at nag-uulat ng pagkumpleto pabalik sa LMS sa pamamagitan ng SCORM 1.2 runtime, ang bersyong tinatanggap ng bawat LMS.
-- <!--i:font--> Ang mga font na ginagamit ng deck, para mag-render nang pareho ang launch page kahit offline.
+- <!--i:layout--> Piliin ang available na rendition para sa bawat source: still page, motion bilang video, audio o isang downloadable na resource. Magdagdag ng native na lesson text at reading alternative sa module.
+- <!--i:play--> I-preview ang learner player at i-review ang mga description at caption. Kasama ang motion bilang video, kasama na ang silent animation. Mag-export muna ng natapos na recording kapag hindi kayang i-recreate ito ng isang tool mula sa mga naka-save na input.
+- <!--i:file--> Piliin ang Website, SCORM 1.2, SCORM 2004 4th Edition o isang eksperimental na xAPI target. Suriin ang aktwal na content at ZIP size, pagkatapos ay i-save at i-download ang na-check na version.
+- <!--i:check--> Kailangan ng completion na kilalanin ang bawat kinakailangang lesson at piliin ang Finish. Iniimbak ng website player ang progreso sa browser; kumokonekta ang isang LMS package sa tumatanggap nitong LMS.
 
 ![Ang export panel sa isang Design deck na napili ang SCORM (LMS)](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Walang anuman sa package ang tumatawag pabalik sa server: mga file lang ito sa isang zip, at tumatakbo ito sa loob ng LMS nang walang bundler, walang CDN, at walang account. Binubuo ito ng web at desktop apps; hindi ito ginagawa ng CLI, dahil ang pagkuha ng larawan ng mga artboard at pag-encode ng pelikula ay nangangailangan ng browser.
+Kasama sa package ang natapos nitong content at hindi ito nangangailangan ng Lolly account. I-extract ang isang Website ZIP sa isang HTTP(S) host; i-import ang isang LMS ZIP nang hindi binabago ang laman nito. Subukan ang inilaang destination bago ipamahagi ang course.
+
+Para sa isang course na binuo mula sa ilang naka-save na creation, na-import na media at resource, gamitin ang [Gumawa ng training course](/info/create/training-creators.html). May sarili itong nakaayos na outline, tahasang lesson acknowledgement, learner preview at naka-version na package history. Kaya ng CLI path nito na i-package ang media na na-export mo na.
 
 ## DXF (cut files)
 
@@ -309,6 +311,10 @@ Maaaring magdala ang mga export ng **Content Credentials** - isang naka-sign na 
 - **Pagsuri sa isang file.** Vine-verify rin ng Lolly ang sarili nitong mga credential: i-drop ang anumang file sa [/verify](/verify) (o patakbuhin ang `lolly validate <file>` sa CLI) para sa isang on-device na report - na nangunguna sa kung tunay bang ginawa ang file gamit ang Lolly at hindi nabago mula noon. Ang web Verify view ay nagbabasa nang lampas pa sa credential: nagfa-flag ito ng **AI-generated content**, nagde-detect ng **Lolly Imprint**, sumusuri ng **SEAL** signatures at (opt-in) third-party pixel watermark at nagpapakita ng **hidden data** - lahat on-device, walang ina-upload. Tingnan ang [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Privacy.** Nangyayari ang lahat sa iyong device: nililikha ang signing key para sa export at hindi ito kailanman umaalis sa browser, walang ina-upload at ang claim ay naglalaman lang ng taglay na ng provenance metadata. Hindi kailanman nagdaragdag ng credential ang mga privacy utility (on-device na mga transformation ng *sarili mong* mga file), at aalisin ng *Strip Hidden Data* ang isang C2PA manifest tulad ng anumang ibang naka-embed na metadata.
 - **Mga Interaksyon.** Para sa mga PDF, ang Content Credentials at ang **password protection** (alinmang tier - tingnan sa itaas) ay mutually exclusive (hindi maaaring magkaroon ng credential attachment ang isang naka-encrypt na PDF). Idinaragdag ang credential bilang huling hakbang sa mga natapos na byte - pagkatapos ng DPI/EXIF/colour-profile stamping, PDF/X metadata at print marks.
+
+### Source credits
+
+Ang isang export na naglalagay ng gawa ng ibang tao ay itinatala rin ang source na iyon sa credential. Ang isang emoji na kinuha mula sa isang naka-pin na set ang pangkaraniwang kaso: ang gawa, ang creator nito, ang lisensya, kung saan galing ang eksaktong bytes at kung ano ang nabago ay lahat naglalakbay kasama ng file. Sinasabi ng row na **Source credits** ng export panel kung ano ang hinihingi ng mga source sa delivery bago ka mag-download, at pagkatapos mag-download, babasahin nito pabalik ang na-deliver na bytes bago sabihin nitong nasa file na ang credits. Ang isang lisensyang humihiling sa iyong pumili, gaya ng isang na-recolor na CC BY-SA glyph na ishe-share mo, ay nakakakuha ng isang card na may mga paraan palabas; hindi kailanman naha-block ang download. May mga salita, mga sinuring lisensya at kung ano ang mananatiling sa iyo ang [Mga karapatang malikhain at credit](/info/creative-rights.html).
 
 ## Sa telepono
 

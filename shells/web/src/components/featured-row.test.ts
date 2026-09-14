@@ -4,6 +4,7 @@ import { test, type TestContext } from 'node:test';
 import { JSDOM } from 'jsdom';
 import { mountFeaturedRow } from './featured-row.ts';
 import { mountCoverFlow } from '../lib/covers-flow.ts';
+import { applyPerfUi, setFlagMirror } from '../feature-flags.ts';
 
 // Drive the mounted component's real event handlers and animation loop. jsdom
 // supplies the DOM; these layout measurements model a 390px phone with 260px
@@ -79,7 +80,7 @@ function fixture(t: TestContext, viewMode: 'coverflow' | 'gallery' = 'coverflow'
   };
   frame();
   t.after(() => { handle.destroy(); win.close(); });
-  return { mount, viewport, scroll, opened, pointer, frame, settle, handle,
+  return { mount, viewport, scroll, opened, pointer, frame, settle, handle, frames,
     loadStyles() { stylesReady = true; handle.setVisible(true); },
     mountDocs() {
       Object.assign(globalThis, {
@@ -109,6 +110,20 @@ function monotonic(positions: number[], direction: number): void {
     assert.ok((positions[i]! - positions[i - 1]!) * direction >= 0, `swipe reversed at frame ${i}: ${positions}`);
   }
 }
+
+test('a live performance toggle flattens Cover Flow and stops its frame loop', t => {
+  const f = fixture(t);
+  assert.ok(f.frames.size > 0);
+  setFlagMirror('perf-ui', true); applyPerfUi(true);
+  f.frame();
+  assert.equal(f.frames.size, 0);
+  assert.equal(f.mount.querySelector('.featured--coverflow'), null);
+  f.handle.setViewMode('coverflow');
+  assert.equal(f.frames.size, 0, 'view controls cannot restart an effect while performance mode is on');
+  setFlagMirror('perf-ui', false); applyPerfUi(false);
+  assert.ok(f.mount.querySelector('.featured--coverflow'));
+  assert.ok(f.frames.size > 0);
+});
 
 for (const fps of [30, 60, 120]) {
   test(`short flicks advance in both directions and settle without reversing at ${fps}Hz`, t => {

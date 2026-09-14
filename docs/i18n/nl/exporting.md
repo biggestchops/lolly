@@ -43,7 +43,7 @@ De bestandsnaam en de formaatkiezer staan bovenaan het paneel als één paar `na
 | Vector voor print / ontwerpapps | **EPS**, of **EPS (CMYK)** | PostScript-vector voor Illustrator / drukwerkflows |
 | Vector voor snij- / CAD-machines | **DXF** | Lasersnijders, vinylplotters, CNC - contourpaden in millimeters |
 | Een bewerkbare presentatie | **PowerPoint** (PPTX) | Native bewerkbare tekst + vormen, met afbeeldingen en vectoren die extraheerbaar blijven |
-| Een cursus die een LMS kan importeren | **SCORM** (LMS) | Een zip met het manifest, een startpagina, de slides en de ingesproken film met ondertitels - van een Design-presentatie |
+| Een draagbare cursus | **Cursus exporteren** | Bekijk de projectinhoud en bouw een geversioneerd Website-, SCORM- of experimenteel xAPI-pakket |
 | Een bewerkbaar tekstdocument | **Word** (DOCX) of **OpenDocument** (ODT) | Echte alinea's en koppen die een tekstverwerker kan blijven bewerken (Doc Studio) |
 | Een foto of algemene afbeelding | **PNG** (verliesvrij) of **JPG** (kleiner) | Universele raster |
 | Kleinere moderne afbeeldingen | **WebP** / **AVIF** | Betere compressie, alpha |
@@ -150,16 +150,18 @@ Om het te openen, start je Penpot, kies je een project en kies je **Import**. In
 
 ## SCORM (cursuspakketten)
 
-Een Design-presentatie kan het pand verlaten als een **SCORM-pakket** - de zip die een learning management system importeert, of dat nu Moodle, Canvas, Blackboard of een bedrijfs-LMS is. Kies **SCORM (LMS)** in de formaatkiezer en de export schrijft:
+Kies **Cursus exporteren** vanuit een ondersteunde tool, een projectmap of een selectie. In Design opent het kiezen van **SCORM (LMS)** en Downloaden ook deze cursusworkflow. Lolly slaat de creatie op, laat je de inhoud en volgorde van de cursus controleren, en opent dan de module en de bijbehorende exportdialoog.
 
-- <!--i:layout--> **De slides**, één afbeelding per artboard, als vector waar het artboard dat toelaat en als pixels alleen waar dat niet zo is.
-- <!--i:play--> **De ingesproken film** met zijn ondertitelspoor - de sprekersnotities voorgelezen door een on-device stem, precies zoals [Presenting](/info/create/using.html#presenting) ze afspeelt.
-- <!--i:file--> **Een startpagina** die door de slides stapt, de film afspeelt en de voltooiing terugmeldt aan het LMS via de SCORM 1.2-runtime, de versie die elk LMS accepteert.
-- <!--i:font--> De lettertypen die de presentatie gebruikt, zodat de startpagina offline hetzelfde weergeeft.
+- <!--i:layout--> Kies de beschikbare weergave voor elke bron: stilstaande pagina's, beweging als video, audio of een downloadbare bron. Voeg native lestekst en leesalternatieven toe in de module.
+- <!--i:play--> Bekijk de leerlingspeler vooraf en controleer beschrijvingen en ondertitels. Beweging wordt opgenomen als video, inclusief stille animatie. Exporteer eerst een afgewerkte opname wanneer een tool die niet vanuit opgeslagen invoer kan herscheppen.
+- <!--i:file--> Selecteer Website, SCORM 1.2, SCORM 2004 4th Edition, of een experimenteel xAPI-doel. Controleer de daadwerkelijke inhoud en ZIP-grootte, sla dan de gecontroleerde versie op en download hem.
+- <!--i:check--> Voltooiing vereist het bevestigen van elke verplichte les en het selecteren van Finish. De websitespeler bewaart voortgang in de browser; een LMS-pakket verbindt met het ontvangende LMS.
 
 ![Het exportpaneel op een Design-presentatie met SCORM (LMS) gekozen](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Niets in het pakket belt naar huis: het zijn bestanden in een zip, en het draait binnen het LMS zonder bundler, zonder CDN en zonder account. De web- en desktopapps bouwen het; de CLI niet, omdat het fotograferen van de artboards en het coderen van de film de browser nodig hebben.
+Het pakket bevat zijn afgewerkte inhoud en vereist geen Lolly-account. Pak een Website-ZIP uit op een HTTP(S)-host; importeer een LMS-ZIP zonder de inhoud ervan te wijzigen. Test de beoogde bestemming voordat je de cursus verspreidt.
+
+Gebruik voor een cursus die is samengesteld uit meerdere opgeslagen creaties, geïmporteerde media en bronnen [Een cursus maken](/info/create/training-creators.html). De leermodule heeft zijn eigen geordende outline, expliciete lesbevestigingen, leerlingpreview en geversioneerde pakketgeschiedenis. Het CLI-pad ervan kan media verpakken die je al hebt geëxporteerd.
 
 ## DXF (snijbestanden)
 
@@ -309,6 +311,10 @@ Exports kunnen **Content Credentials** dragen - een ondertekend [C2PA](https://c
 - **Een bestand controleren.** Lolly verifieert ook zijn eigen credentials: zet een bestand op [/verify](/verify) (of voer `lolly validate <file>` uit in de CLI) voor een on-device rapport - vooraan of het bestand echt met Lolly is gemaakt en sindsdien ongewijzigd is. De webweergave Verify leest veel verder dan de credential: het markeert **AI-gegenereerde content**, detecteert de **Lolly Imprint**, controleert **SEAL**-handtekeningen en (opt-in) watermerken van derden en toont **verborgen data** - alles on-device, niets geüpload. Zie [Content Credentials Identity → Voorbij de credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Privacy.** Alles gebeurt op je apparaat: de ondertekeningssleutel wordt aangemaakt voor de export en verlaat de browser nooit, er wordt niets geüpload en de claim bevat alleen wat de herkomstmetadata al draagt. Privacyhulpmiddelen (on-device transformaties van *je eigen* bestanden) voegen nooit credentials toe, en *Verborgen data verwijderen* verwijdert een C2PA-manifest net als elke andere ingesloten metadata.
 - **Interacties.** Voor PDF's sluiten Content Credentials en **wachtwoordbeveiliging** (beide niveaus - zie hierboven) elkaar wederzijds uit (een versleutelde PDF kan de credential-bijlage niet dragen). De credential wordt toegevoegd als laatste stap over de afgeronde bytes - na DPI/EXIF/kleurprofielstempeling, PDF/X-metadata en drukmarkeringen.
+
+### Bronvermelding
+
+Een export die het werk van iemand anders plaatst, legt die bron ook vast in de credential. Een emoji uit een vastgepinde set is het dagelijkse geval: het werk, de maker ervan, de licentie, waar de exacte bytes vandaan kwamen en wat er is veranderd reizen allemaal mee met het bestand. De rij **Bronvermelding** in het exportpaneel zegt wat de bronnen van de aflevering vragen voordat je downloadt, en na de download leest ze de afgeleverde bytes terug voordat ze zegt dat de naamsvermeldingen in het bestand staan. Een licentie die je om een keuze vraagt, zoals een herkleurde CC BY-SA-glyph die je op het punt staat te delen, krijgt een kaart met de uitwegen; de download wordt nooit geblokkeerd. [Creatieve rechten en naamsvermeldingen](/info/creative-rights.html) bevat de woorden, de beoordeelde licenties en wat van jou blijft.
 
 ## Op een telefoon
 

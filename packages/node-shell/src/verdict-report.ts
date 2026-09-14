@@ -30,6 +30,7 @@
  */
 
 import type { C2paReport, C2paVerdict } from '@lolly/engine';
+import { rightsReportFromC2pa } from '@lolly/engine';
 import { VERDICT_SLUGS } from './verdict-slugs.ts';
 
 /**
@@ -141,4 +142,50 @@ export function verdictChecks(report: C2paReport): VerdictCheck[] {
     code: cleanControlChars(chk.code),
     explanation: cleanControlChars(chk.explanation),
   }));
+}
+
+/** One recorded creative source, scrubbed, as every Node surface prints it. */
+export interface VerdictSource {
+  title: string;
+  creator: string;
+  licence: string;
+  /** 'signed by the source' or 'recorded by the exporter'. Never the same sentence. */
+  asserted: string;
+  /** The credit line the engine assembled, ready to paste. */
+  credit: string;
+}
+
+/** The Sources section: the computed summary, one row per source, and the stated limits. */
+export interface VerdictSources {
+  summary: string;
+  sources: VerdictSource[];
+  /** What this reading did not establish. Never trimmed away to make a tidy report. */
+  limits: string[];
+}
+
+/**
+ * What a file records about the creative work inside it (plan 253, section 9.2),
+ * scrubbed like every other row here because each string is bytes from the file
+ * under inspection. Null when nothing was recorded, so a surface prints no
+ * heading rather than an empty one.
+ *
+ * The wording is the engine's own, from `rightsReportFromC2pa`, so this terminal
+ * output, the web Verify panel and the MCP result cannot say different things
+ * about the same bytes. A source that carries no credential of its own reads as
+ * recorded by the exporter, which is a different claim from a signature.
+ */
+export function verdictSources(report: C2paReport): VerdictSources | null {
+  if (!report.ingredients?.length) return null;
+  const rights = rightsReportFromC2pa(report);
+  return {
+    summary: cleanControlChars(rights.summary),
+    sources: rights.recorded.map(source => ({
+      title: cleanControlChars(source.title ?? 'Untitled source'),
+      creator: cleanControlChars(source.creator ?? ''),
+      licence: cleanControlChars(source.licence ?? ''),
+      asserted: source.assertedBy === 'source' ? 'signed by the source' : 'recorded by the exporter',
+      credit: cleanControlChars(source.credit),
+    })),
+    limits: rights.carried.limits.map(cleanControlChars),
+  };
 }

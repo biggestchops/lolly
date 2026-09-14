@@ -364,7 +364,7 @@ test('roleReadouts: text falls back to white when there is no surface role', () 
 
 test('roleReadouts: a hand-assigned primary is reported as it is, not corrected', () => {
   // A deliberately terrible pairing: primary set to the same near-white as
-  // on-primary. The readout must SAY so rather than quietly re-picking a slot.
+  // on-primary. The readout must Report it rather than quietly re-picking a slot.
   const doc = imported();
   (doc.color as Rec).semantic = { 'on-primary': { $value: '#ffffff' } };
   ((doc.color as Rec).brand as Rec).pale = { $value: '#fafafa', $description: 'Pale' };

@@ -18,6 +18,7 @@
     "exhibition"
   ],
   "render": {
+    "sectionIcons": {"Booth frame": "box", "Panels": "panelTop", "Behind the stand": "image", "Look": "sparkle", "Camera": "camera"},
     "width": 1600,
     "height": 1000,
     "formats": ["png", "jpg", "webp", "webm", "mp4", "gif", "avif", "tiff", "webp-anim"],
@@ -41,33 +42,32 @@
     {
       "id": "design",
       "label": "Booth design",
-      "section": "Booth",
       "type": "select",
       "default": "corner",
-      "help": "The stand shape. Your panel artwork carries across designs - a back wall stays a back wall.",
+      "help": "The stand shape. Panel artwork carries across designs - a back wall stays a back wall.",
       "options": [
         {
           "value": "inline",
-          "label": "Inline 3×3 - back wall + counter"
+          "label": "Inline 3×3 (back wall and counter)"
         },
         {
           "value": "corner",
-          "label": "Corner L - two open sides"
+          "label": "Corner L (two open sides)"
         },
         {
           "value": "island",
-          "label": "Island - three walls, overhead header + tower"
+          "label": "Island (three walls, header and tower)"
         },
         {
           "value": "kiosk",
-          "label": "Kiosk - totem + counter"
+          "label": "Kiosk (totem and counter)"
         }
       ]
     },
     {
       "id": "structure",
       "label": "Frame finish",
-      "section": "Booth",
+      "section": "Booth frame",
       "type": "color",
       "default": "#7d858e",
       "help": "The extrusion and counter body colour."
@@ -75,7 +75,7 @@
     {
       "id": "panelBase",
       "label": "Empty panel colour",
-      "section": "Booth",
+      "section": "Booth frame",
       "type": "color",
       "default": "{color.semantic.muted}",
       "help": "Shown on panels with no artwork, and as the letterbox behind artwork set to Fit whole."
@@ -130,7 +130,7 @@
       "section": "Panels",
       "framingFor": "backWall",
       "showIf": {"design": ["inline", "corner", "island"]},
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -185,7 +185,7 @@
       "section": "Panels",
       "framingFor": "leftWing",
       "showIf": {"design": ["corner", "island"]},
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -238,7 +238,7 @@
       "section": "Panels",
       "framingFor": "rightWing",
       "showIf": {"design": ["island"]},
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -296,7 +296,7 @@
       "section": "Panels",
       "framingFor": "header",
       "showIf": {"design": ["inline", "corner", "island"]},
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -338,7 +338,7 @@
       "label": "Counter front position",
       "section": "Panels",
       "framingFor": "counter",
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -393,7 +393,7 @@
       "section": "Panels",
       "framingFor": "tower",
       "showIf": {"design": ["island", "kiosk"]},
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -451,7 +451,7 @@
       "section": "Panels",
       "framingFor": "screen",
       "showIf": {"design": ["inline", "corner", "island"]},
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -508,7 +508,7 @@
       "section": "Panels",
       "framingFor": "floor",
       "showIf": {"design": ["inline", "corner", "island"]},
-      "help": "Move and zoom the artwork inside this panel. Same numbers, same ranges, as every other image slot.",
+      "help": "Move and zoom the artwork inside this panel.",
       "type": "vector",
       "fields": [
         { "id": "zoom", "label": "Zoom", "symbol": "+", "min": 100, "max": 400, "step": 1, "default": 100 },
@@ -531,7 +531,7 @@
     {
       "id": "bgImage",
       "label": "Background content",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "asset",
       "assetType": "any",
       "allowUpload": true,
@@ -540,7 +540,7 @@
     {
       "id": "bgImageFit",
       "label": "Background fit",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "select",
       "default": "cover",
       "attachTo": "bgImage",
@@ -561,7 +561,7 @@
     {
       "id": "bgBlur",
       "label": "Bokeh blur",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "number",
       "display": "slider",
       "default": 12,
@@ -573,7 +573,8 @@
     {
       "id": "bgOpacity",
       "label": "Opacity",
-      "section": "Background",
+      "help": "How strongly the background content shows through.",
+      "section": "Behind the stand",
       "type": "number",
       "display": "slider",
       "default": 0.7,
@@ -584,7 +585,7 @@
     {
       "id": "bgBlend",
       "label": "Blend mode",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "select",
       "default": "source-over",
       "help": "How the content mixes with the backdrop colour below it.",
@@ -634,7 +635,7 @@
     {
       "id": "bgPosition",
       "label": "Position",
-      "section": "Background",
+      "section": "Behind the stand",
       "framingFor": "bgImage",
       "help": "Which part of the backdrop stays in frame, how far in it is zoomed, and whether it is straightened. Drag it on the canvas, or set the numbers here.",
       "type": "vector",
@@ -648,29 +649,29 @@
     {
       "id": "gradientBg",
       "label": "Gradient background",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "boolean",
       "default": true
     },
     {
       "id": "bgColor2",
       "label": "Gradient top",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "color",
       "default": "#cfd6dc"
     },
     {
       "id": "background",
       "label": "Background",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "color",
       "default": "#eef1f4",
-      "help": "The bottom of the backdrop. Deliberately neutral - the brand colour belongs on the panels, and a brand-coloured hall behind brand-coloured panels reads as mud."
+      "help": "The bottom of the backdrop. Keep it neutral so the panels carry the colour."
     },
     {
       "id": "transparentBg",
       "label": "Transparent background",
-      "section": "Background",
+      "section": "Behind the stand",
       "type": "boolean",
       "default": true,
       "help": "Render on transparency (PNG/WebP keep the alpha). Overrides the background colour."
@@ -724,11 +725,11 @@
       "section": "Look",
       "type": "boolean",
       "default": true,
-      "help": "A 1.76 m silhouette beside the stand - it sells how big the stand actually is."
+      "help": "A 1.76 m silhouette beside the stand, so the size reads at a glance."
     },
     {
       "id": "camera",
-      "label": "Camera",
+      "label": "Camera pose",
       "section": "Camera",
       "type": "vector",
       "help": "The base shot. A camera move (below) animates from here.",
@@ -772,7 +773,7 @@
         {
           "id": "pan",
           "label": "Pan",
-          "symbol": "",
+          "symbol": "↔",
           "min": -1,
           "max": 1,
           "step": 0.05,
@@ -783,7 +784,7 @@
     {
       "id": "cameraMove",
       "label": "Camera move",
-      "section": "Animation",
+      "section": "Camera",
       "type": "select",
       "default": "static",
       "help": "Applies to video and animated exports. Stills always render the base pose.",
@@ -813,7 +814,7 @@
     {
       "id": "duration",
       "label": "Loop seconds",
-      "section": "Animation",
+      "section": "Camera",
       "type": "number",
       "display": "slider",
       "default": 6,
@@ -833,7 +834,7 @@
     {
       "id": "easing",
       "label": "Easing",
-      "section": "Animation",
+      "section": "Camera",
       "type": "select",
       "default": "ease-in-out",
       "showIf": {

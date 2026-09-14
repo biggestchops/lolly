@@ -377,7 +377,7 @@ happened before you withdrew it.
 Here is the honest position on exercising them against us. Since we no longer
 keep an issuance log, **we hold no personal data about you that we can look up,
 correct, export or delete.** If you write and ask what we have on you, the
-truthful answer is nothing, and we will say so. The one category that exists at
+truthful answer is nothing, and we will state it. The one category that exists at
 all is hosting access logs keyed to an IP address, held by our hosting provider
 under their retention defaults. We have no facility to search or selectively
 delete those, and we will tell you that rather than pretend otherwise. Everything

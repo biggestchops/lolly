@@ -43,7 +43,7 @@
 | 用于印刷 / 设计软件的矢量图 | **EPS**,或 **EPS (CMYK)** | 供 Illustrator / 印前工作流使用的 PostScript 矢量图 |
 | 用于切割 / CAD 设备的矢量图 | **DXF** | 激光切割机、乙烯基绘图仪、CNC - 以毫米为单位的轮廓路径 |
 | 可编辑的幻灯片文档 | **PowerPoint**(PPTX) | 原生可编辑文字与形状,图片和矢量图保持可提取 |
-| 可供 LMS 导入的课程 | **SCORM**(LMS) | 一个包含清单文件、启动页、幻灯片以及带字幕的配音影片的压缩包 - 来自 Design 幻灯片 |
+| 可移植的培训课程 | **导出课程** | 检查项目内容,生成带版本记录的网站、SCORM 或实验性的 xAPI 包 |
 | 可编辑的文字文档 | **Word**(DOCX)或 **OpenDocument**(ODT) | 文字处理软件可继续编辑的真实段落与标题(Doc Studio) |
 | 照片或通用图片 | **PNG**(无损)或 **JPG**(更小) | 通用位图 |
 | 更小的现代图片格式 | **WebP** / **AVIF** | 压缩率更好,支持 alpha 通道 |
@@ -150,16 +150,18 @@ PowerPoint 也是一条**导入**通道。把 `.pptx` 拖放到任意上传区�
 
 ## SCORM(课程包)
 
-一份 Design 演示文稿可以导出为 **SCORM 包** - 供学习管理系统导入的压缩包,无论是 Moodle、Canvas、Blackboard 还是企业自有的 LMS。在格式选择器中选择 **SCORM (LMS)**,导出会生成:
+从受支持的工具、项目文件夹或所选内容中选择**导出课程**。在 Design 中，选择**SCORM (LMS)**并下载，同样会打开这个课程工作流程。Lolly 会保存这份创作，让你检查课程内容与顺序，然后打开该模块及其导出对话框。
 
-- <!--i:layout--> **幻灯片**,每个画板一张图片,画板允许时采用矢量格式,仅在不允许时才使用位图。
-- <!--i:play--> **配音影片**及其字幕轨 - 由设备本地语音朗读的演讲者备注,与 [演示](/info/create/using.html#presenting) 播放的效果完全一致。
-- <!--i:file--> **一个启动页**,逐张播放幻灯片、播放影片,并通过每个 LMS 都支持的 SCORM 1.2 运行时,向 LMS 回报完成状态。
-- <!--i:font--> 演示文稿所用的字体,使启动页在离线状态下也能渲染一致。
+- <!--i:layout--> 为每个来源选择可用的呈现形式：静态页面、以视频形式呈现的动态内容、音频，或可下载的资源。在模块中添加原生课程文字与替代阅读内容。
+- <!--i:play--> 预览学习者播放器，检查描述文字与字幕。动态内容（包括无声动画）都会以视频形式包含在内。当某个工具无法从已保存的输入重新生成一段录制内容时，请先导出成品录制内容。
+- <!--i:file--> 选择网站、SCORM 1.2、SCORM 2004 第 4 版，或实验性的 xAPI 目标。检查实际内容与 ZIP 大小，然后保存并下载已检查过的版本。
+- <!--i:check--> 要完成课程，需要确认每一课必修内容并选择“完成”。网站播放器会把进度保存在浏览器中；LMS 包则会连接到接收它的 LMS。
 
 ![Design 演示文稿的导出面板,已选中 SCORM (LMS)](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-这个包内没有任何东西会联网:它就是压缩包里的一堆文件,在 LMS 内运行,不需要打包器、不需要 CDN、也不需要账号。网页版和桌面版应用能生成它;CLI 不能,因为为画板拍照并编码影片都需要浏览器。
+这个包包含它的成品内容，不需要 Lolly 账户。把网站版 ZIP 解压到某个 HTTP(S) 主机上；导入 LMS 版 ZIP 时不要改动其中的内容。在正式分发课程之前，请先测试预定的投放目的地。
+
+如果课程是由多个已保存的创作、导入的媒体与资源组合而成，请使用[创建培训课程](/info/create/training-creators.html)。该学习模块拥有自己的有序大纲、明确的课程确认机制、学习者预览，以及带版本记录的包历史。它的命令行路径可以把你已经导出的媒体打包起来。
 
 ## DXF(切割文件)
 
@@ -309,6 +311,10 @@ GIF 在任何地方都能用(适合聊天/邮件;比视频体积更大、色彩�
 - **检查文件。** Lolly 也会验证自己的凭证:将任意文件拖放到 [/verify](/verify)(或在 CLI 中运行 `lolly validate <file>`)即可获得一份设备本地报告 - 首先说明该文件是否确实由 Lolly 制作且此后未被更改。网页版 Verify 视图查看的内容远不止凭证本身:它会标记**AI 生成内容**、检测 **Lolly Imprint**、检查 **SEAL** 签名和(可选)第三方像素水印,并揭示**隐藏数据** - 全部在设备本地完成,不上传任何内容。参见 [Content Credentials Identity → 凭证之外](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows)。
 - **隐私。** 一切都在你的设备上完成:签名密钥为本次导出而创建,绝不离开浏览器,不会上传任何内容,且声明中只包含来源元数据已经携带的信息。隐私工具(对*你自己*文件的设备本地转换)绝不会添加凭证,*清除隐藏数据*会像清除其他嵌入元数据一样清除 C2PA 清单。
 - **相互影响。** 对于 PDF,Content Credentials 与**密码保护**(任一级别 - 见上文)互斥(加密的 PDF 无法附带凭证附件)。凭证作为最后一步添加到最终字节上 - 在 DPI/EXIF/色彩配置文件标记、PDF/X 元数据和印刷标记之后。
+
+### 来源署名
+
+一次放置了他人作品的导出，也会把该来源记录进凭证之中。从某个固定的表情符号集中选用的表情符号就是最常见的情形：作品本身、其创作者、许可证、确切字节的出处，以及有过哪些改动，都会随文件一起传递。导出面板中的**来源署名**一行，会在下载之前告诉你这些来源对本次交付提出了什么要求；下载完成之后，它会先回读交付的字节，然后才会说署名已经写入文件。像一个即将分享的、经过重新上色的 CC BY-SA 字形这样需要你做出选择的许可证，会得到一张列出各种解决方式的卡片；下载本身绝不会被阻止。[创作权益与署名](/info/creative-rights.html)一文列出了具体措辞、已审核的许可证，以及始终归你所有的部分。
 
 ## 在手机上
 

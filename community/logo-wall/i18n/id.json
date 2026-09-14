@@ -1,5 +1,5 @@
 {
-  "name": "Logo Wall",
+  "name": "Dinding Logo",
   "description": "Susun setumpuk logo menjadi grid sponsor yang rapi dan merata - dinding “NASCAR”.",
   "a11yLabel": "Grid berisi {{logos.length}} logo",
   "inputs.columns.label": "Kolom",

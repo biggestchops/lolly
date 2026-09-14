@@ -1,6 +1,6 @@
 {
   "name": "Wordmark",
-  "description": "Digita una parola, ottieni un wordmark vettoriale a percorso puro nel font del tuo brand - i destinatari non hanno mai bisogno del font installato.",
+  "description": "Digita una parola e ottieni un wordmark vettoriale pure-path nel font del sistema di design - chi lo riceve non ha mai bisogno di installare il font.",
   "a11yLabel": "Wordmark con testo {{default text \"Wordmark\"}}",
   "inputs.text.label": "Testo",
   "inputs.font.label": "Carattere",

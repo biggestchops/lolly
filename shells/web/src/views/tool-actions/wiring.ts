@@ -266,6 +266,7 @@ export function wireFormatChange(ta: ActionsCtx): void {
       ta.refresh.refreshPrintUi(); // owns [data-pdf-only] (password) visibility - see below
       ta.refresh.refreshDepthFact();
       ta.preflight.refreshPreflight(); // the format is the single biggest input to every check
+      ta.rights.refreshRights(); // the format decides the route, and the route decides what can carry a credit
       onUrlSync?.('format');
       onUrlSync?.('marks'); // bars may have flipped with the format
     });
@@ -496,6 +497,12 @@ export function wireC2pa(ta: ActionsCtx): void {
   wireHelpTips(el);
   wirePreflight(el); // the "Before you export" control opens its details modal
   linkHelpDescriptions(el);
+  // The rights row (plan 253). Mounted after the C2PA control exists, because the
+  // credential toggle is half of the delivery it evaluates: turning it off changes
+  // what this export can carry, and the row has to reflect that rather than keep
+  // promising an ingredient nothing is going to write.
+  ta.rights.wireRights();
+  c2paEl?.addEventListener('change', () => ta.rights.refreshRights());
 
   // Credential lifetime: the 7/30/90/365 select only makes sense for the
   // ephemeral per-export cert. With an enrolled identity (host.identity) the
@@ -592,6 +599,12 @@ export function wireApprovalAndActions(ta: ActionsCtx): void {
       btn.setAttribute('aria-busy', 'true');
 
       const fmt = formatEl?.value ?? formats[0]!;
+      if (fmt === 'scorm') {
+        btn.toggleAttribute('disabled', false);
+        btn.removeAttribute('aria-busy');
+        try { await ta.learning.open(); } catch (error) { announce(error instanceof Error ? error.message : 'The course could not be opened.', { assertive: true }); }
+        return;
+      }
       if (fmt === 'lolly') {
         // Portable delivery owns its packaging/options; never ask the render
         // engine to rasterise a .lolly document, including programmatic clicks.
@@ -1637,7 +1650,7 @@ export function wireApprovalAndActions(ta: ActionsCtx): void {
         })();
       } catch (err) {
         revokeTrackUrls();
-        // Cancelled, not broken: nothing was downloaded or saved, so say so quietly and
+        // Cancelled, not broken: nothing was downloaded or saved, so report it quietly and
         // put the button back. The shutter was already restored by exportUnscaled's own
         // finally. 'AbortError' is the one shape every path arrives in - the sequence
         // compositor maps its SEQ_ABORTED onto it.
@@ -1689,6 +1702,11 @@ export function wireApprovalAndActions(ta: ActionsCtx): void {
         degradeNote.hidden = false;
       }
       ta.saving.exportCompleted();
+      // The host has now read the delivered bytes back, so the row can stop
+      // promising and start reporting: `Credits included in this file's metadata.`
+      // only once a receipt confirms them, and a failed credential shows its retry
+      // rather than letting a raw file pass as a finished delivery.
+      ta.rights.refreshRights();
       void ta.notes.offerDetailsAsk()
         .then((shown) => {
           if (!shown) ta.notes.offerReopenNote();

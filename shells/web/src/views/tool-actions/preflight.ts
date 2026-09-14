@@ -306,6 +306,9 @@ export function disposeActions(ta: ActionsCtx): void {
     console.error(e);
   }
   ta.costSlotDispose = undefined;
+  // The rights row listens on the runtime's emoji changes; drop it with the panel.
+  ta.rightsRow?.destroy();
+  ta.rightsRow = undefined;
 }
 export async function refreshCost(ta: ActionsCtx): Promise<void> {
   const { PRICEABLE_KINDS, el, host, reachedViaLink } = ta;

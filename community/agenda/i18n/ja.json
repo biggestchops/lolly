@@ -1,6 +1,6 @@
 {
-  "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "name": "アジェンダ",
+  "description": "1つの表から作るカンファレンスプログラムです - 時系列のリスト、マルチトラックのタイムテーブル、入り口用の「現在・次」画面のいずれかで表示でき、全セッションの本物の.icsファイルも書き出せます。",
   "a11yLabel": "{{default headingText \"アジェンダ\"}} - {{sessionCount}} セッション、{{trackCount}} トラック",
   "inputs.title.label": "イベント",
   "inputs.title.placeholder": "例 Northwind Summit 2026",

@@ -59,6 +59,8 @@ import type { Runtime } from '../../../../engine/src/runtime.js';
 import type { Unit } from '../../../../engine/src/units.js';
 import type { SavedStateData, WebStateAPI } from '../bridge/state.ts';
 import { backPillHtml, mountBackPill } from '../components/back-pill.ts';
+import { mountEmoji } from './emoji-mount.ts';
+import { notifyToolInputMount } from '../lib/input-policy.ts';
 
 interface ViewElement extends HTMLElement { _cleanup?: () => void; }
 
@@ -199,6 +201,14 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
       needsPaint: false,
     });
   }
+  // Announce the mount to the generic input-policy seam, as the tool view does:
+  // a governed instance installs every tool's policy on that signal, so each
+  // card's sidebar (and the shared panel, when every card is one tool) reads it.
+  if (members[0]) notifyToolInputMount(members[0].tool.manifest.id);
+  // The shared panel edits every card at once, so it is governed only when the
+  // cards are all one tool; a mixed selection keeps the shared panel ungoverned
+  // and each card's own panel governed by its own tool.
+  const sharedToolId = new Set(members.map((m) => m.tool.manifest.id)).size === 1 ? members[0]?.tool.manifest.id : undefined;
 
   // ── Shared inputs: same id + same type + same constraints on 2+ sessions ───
   // The /pro grid's column-merge rule (pro/model.deriveColumns), recomputed per
@@ -408,6 +418,10 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
       // its ids would break a script that re-queries by id in a pointer handler.
       if (dupToolIds.has(m.tool.manifest.id) && !m.tool.manifest.singleInstance) namespaceInlinedSvgIds(m.canvasEl, `mc${i}`);
       void hydrateEmbeds(m.canvasEl, { host, isCurrent: () => gen === m.renderGen });
+      // Emoji from the chosen set, exactly as the single-tool canvas draws them, so
+      // a cell of this grid is not the one place a system glyph could appear.
+      void mountEmoji(m.canvasEl, { isCurrent: () => gen === m.renderGen, runtime: rt })
+        .catch((err) => console.warn('multi-edit emoji mount failed:', err));
       m.fit();   // re-fit to the freshly-rendered aspect (width/height may have changed)
       m.lastPainted = hydrated;
       m.thumbEl?.remove();
@@ -625,7 +639,7 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
   function syncSidebar(): void {
     sidebarRaf = 0;
     if (sharedPanel && shared.length) {
-      syncGuarded(() => { sharedModelPrev = syncInputs(sharedPanel, sharedModel(), sharedModelPrev, fanRuntime, host, () => { /* dirty set in fan-out */ }); });
+      syncGuarded(() => { sharedModelPrev = syncInputs(sharedPanel, sharedModel(), sharedModelPrev, fanRuntime, host, () => { /* dirty set in fan-out */ }, sharedToolId); });
     }
     members.forEach((m, i) => {
       const card = viewEl.querySelector<HTMLDetailsElement>(`details[data-me-card="${i}"]`);
@@ -635,7 +649,7 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
       const rt = m.runtime;
       if (!rt) { void ensureRuntime(m, i); return; }
       const model = rt.getModel();
-      syncGuarded(() => { m.panelModel = syncInputs(m.panelEl, model, m.panelModel, rt, host, () => { m.dirty = true; }); });
+      syncGuarded(() => { m.panelModel = syncInputs(m.panelEl, model, m.panelModel, rt, host, () => { m.dirty = true; }, m.tool.manifest.id); });
     });
   }
   function scheduleSidebar(): void { if (!sidebarRaf) sidebarRaf = requestAnimationFrame(syncSidebar); }

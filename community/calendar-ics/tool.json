@@ -31,6 +31,7 @@
     },
     {
       "id": "month",
+      "section": "Calendar",
       "label": "Month",
       "type": "text",
       "default": "",
@@ -42,6 +43,7 @@
     },
     {
       "id": "weekStart",
+      "section": "Calendar",
       "label": "Week starts",
       "type": "select",
       "default": "monday",
@@ -54,6 +56,7 @@
     },
     {
       "id": "showWeekNumbers",
+      "section": "Calendar",
       "label": "Week numbers",
       "type": "boolean",
       "default": false,
@@ -73,7 +76,7 @@
       "label": "Starts",
       "type": "datetime-local",
       "default": "",
-      "help": "Local start date and time. Leave blank to default to today. Shared with Meeting Planner so a batch sheet's date column drives both."
+      "help": "Local start date and time. Leave blank to default to today."
     },
     {
       "id": "meetingEndTime",
@@ -95,7 +98,7 @@
       "type": "text",
       "default": "",
       "placeholder": "e.g. Nuremberg, or a meeting link",
-      "help": "Where it happens - a place or a URL. Shared id with Meeting Planner (city)."
+      "help": "Where it happens. A place, or a link to join."
     },
     {
       "id": "description",
@@ -110,7 +113,7 @@
       "label": "Event URL",
       "type": "url",
       "default": "",
-      "placeholder": "https://…",
+      "placeholder": "https://example.com/tickets",
       "help": "Optional link attached to the event."
     },
     {
@@ -139,7 +142,7 @@
       "fields": [
         { "id": "date", "label": "Date", "placeholder": "2026-09-14", "help": "YYYY-MM-DD." },
         { "id": "time", "label": "Time", "placeholder": "09:30", "help": "Optional, 24-hour. Blank means all day." },
-        { "id": "title", "label": "What", "placeholder": "e.g. Release review" }
+        { "id": "title", "label": "Name", "placeholder": "e.g. Release review" }
       ]
     }
   ]

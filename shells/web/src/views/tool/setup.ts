@@ -14,6 +14,7 @@ import { createInteractiveToolRuntime as createRuntime } from '../../lib/mount-r
 import { attachCollabPlumbing } from '../../lib/collab-plumbing.ts';
 import { getCollabSessionSource } from '../../lib/collab-session-source.ts';
 import { takeCarriedMountState, takeEphemeralState } from '../../lib/collab-live-mount.ts';
+import { captureNeutralPinned } from '../../lib/capture-neutral.ts';
 import { migrateBlockRowIds } from '../../lib/row-id.ts';
 import { installDocumentSurface } from '../../lib/document-surface.ts';
 import { prepareToolDesignSystemContext } from '../tool-design-system-context.ts';
@@ -40,17 +41,24 @@ import { historyParticipation, localHistorySlot, mountCollabActionHistory, track
 import { asRow } from '../tool-types.ts';
 import { openToolSession } from '../tool-session-open.ts';
 import { _sliderDragging, fileToRef, fmtBytes, makeBlocksDropper, syncInputs } from '../tool-inputs.ts';
+import { notifyToolInputMount, policyValuesFor } from '../../lib/input-policy.ts';
 import { createLiveControls, mountSidebarLiveControls, registerLiveControls } from '../live-controls.ts';
 import { mountCaptureSignin } from '../capture-signin.ts';
 import { captureThumbnail, renderActions } from '../tool-actions.ts';
 import { setupCanvasBlocksDrop, setupCanvasFileDrop } from '../tool-canvas-drop.ts';
-import { collectExportParams, decryptEncryptedLink, showShareDialog } from './shared.ts';
+import { collectExportParams, decryptEncryptedLink, setToolEmojiParams, showShareDialog } from './shared.ts';
+import { setSessionEmojiStamp } from '../../bridge/state.ts';
 import type { PanelEl, ToolRuntime } from './shared.ts';
 import { bindOp, type ToolViewCtx } from './context.ts';
 
 /** Network allowlist notice, initial values and the first render pass. */
 export async function guardNetworkAndSeed(tview: ToolViewCtx): Promise<void> {
   const { toolId, viewEl } = tview;
+  // Announce the mount to the generic input-policy seam before anything renders:
+  // a governed instance swaps this tool's locked, hidden and choice set in on
+  // that signal, so the first sidebar render already honours it. Dormant when
+  // nothing listens.
+  notifyToolInputMount(toolId);
   // A manifest `network.allowlist` gives THIS mount a host clone whose `net`
   // enforces exactly that list - the boot-time shared host keeps its fail-closed
   // empty allowlist and is never mutated (bridge methods are closures, not
@@ -349,7 +357,11 @@ export async function templatePick(tview: ToolViewCtx): Promise<void> {
   // direct link, a share, or an OFFSCREEN export remount (the blank-PDF/MP4 bug:
   // scene and export renders re-parse the URL in a context with no index and no
   // inline manifest fallback) would silently drop the seed and render empty.
-  if (templateParam && !slot && !tview.seededDirect && Object.keys(values).length === 0) {
+  if (captureNeutralPinned()) {
+    // A pinned docs capture (lib/capture-neutral.ts) is a headless open with nobody
+    // there to dismiss a modal: it takes the tool's own default composition, so
+    // neither the named seed nor the chooser ladder below runs.
+  } else if (templateParam && !slot && !tview.seededDirect && Object.keys(values).length === 0) {
     // `?template=` names a REF now (plans/226): a bare `<tid>` is this tool's shipped
     // template, exactly as every existing link has it, and `user:<id>` is one the person
     // saved - the Projects tiles and the Templates collection link that way.
@@ -574,6 +586,15 @@ export async function templatePick(tview: ToolViewCtx): Promise<void> {
   } = await prepareToolDesignSystemContext(tview.host, urlDesignSystem, slot); tview.dsRegistry = dsRegistry; tview.mountedSystemId = mountedSystemId; tview.madeWith = madeWith;
 
   const runtime: ToolRuntime = await createRuntime(tview.tool, tview.host, tview.initialValues); tview.runtime = runtime;
+  // A locked policy value (and a choice whose current value is outside the
+  // allowed set) goes into the runtime, not only onto the sidebar: the canvas,
+  // the saved session and any link then carry the value the control shows.
+  // Empty on an ungoverned instance, so nothing here runs for it.
+  const policyValues = policyValuesFor(toolId, runtime.getModel());
+  if (Object.keys(policyValues).length) {
+    await runtime.applyPatch(policyValues);
+    await runtime.resolveRefs();
+  }
 }
 
 export function documentSurface(tview: ToolViewCtx): void {
@@ -1016,7 +1037,9 @@ export async function mountLiveControls(tview: ToolViewCtx): Promise<void> {
     // Sidebar sync is cheap and must stay responsive, so it runs synchronously on
     // every emit; only the expensive canvas rebuild is deferred to the next frame.
     if (inputsEl && !_sliderDragging) {
-      tview.prevInputsModel = syncInputs(inputsEl, model, tview.prevInputsModel, runtime, tview.host, tview.session.markUserDirty);
+      // The tool id is what lets the renderer consult the input-policy registry
+      // (keyed per tool); without it every policy lookup answers "none".
+      tview.prevInputsModel = syncInputs(inputsEl, model, tview.prevInputsModel, runtime, tview.host, tview.session.markUserDirty, tview.toolId);
     }
     // Reflect a source swap in the live controls (auto-play a fresh animated pick,
     // stop playback whose source was swapped away). Cheap: no-op unless the source
@@ -1278,6 +1301,43 @@ export async function mountLiveControls(tview: ToolViewCtx): Promise<void> {
   }
 }
 
+/**
+ * The sidebar's Emoji section (plans/252). The decisions live in
+ * ./emoji-section.ts, which a test can load; this is the mount: hand it the
+ * view, the link's params and the session's stamp, and write back whatever it
+ * settles on.
+ */
+export async function wireEmojiSection(tview: ToolViewCtx): Promise<void> {
+  const { contentEl, host, runtime, urlFlags, viewEl } = tview;
+  const { mountEmojiSection } = await import('./emoji-section.ts');
+  const section = await mountEmojiSection({
+    root: viewEl,
+    host,
+    runtime,
+    url: { emoji: urlFlags.get('emoji') ?? '', emojifx: urlFlags.get('emojifx') ?? '' },
+    session: tview.openedSession.emoji ?? null,
+    canvas: () => contentEl ?? null,
+    onStyle: (_style, params) => {
+      // Three writers, one value: the address bar (syncUrl), the copied link
+      // (collectExportParams) and the next save's session stamp. Marking both
+      // params dirty in one go keeps the bar to a single write per change.
+      setToolEmojiParams(params);
+      setSessionEmojiStamp(params);
+      tview.dirtyParams.add('emojifx');
+      tview.session.syncUrl('emoji');
+    },
+  });
+  const prevCleanup = viewEl._cleanup;
+  viewEl._cleanup = () => {
+    section.destroy();
+    // The holders are module-level (one mounted tool at a time), so leaving a
+    // retired tool's set standing would stamp it onto the next tool's links.
+    setToolEmojiParams(null);
+    setSessionEmojiStamp(null);
+    prevCleanup?.();
+  };
+}
+
 export function setupOps(tview: ToolViewCtx) {
   return {
     guardNetworkAndSeed: bindOp(tview, guardNetworkAndSeed),
@@ -1291,5 +1351,6 @@ export function setupOps(tview: ToolViewCtx) {
     wireBulkRows: bindOp(tview, wireBulkRows),
     wireBackPill: bindOp(tview, wireBackPill),
     mountLiveControls: bindOp(tview, mountLiveControls),
+    wireEmojiSection: bindOp(tview, wireEmojiSection),
   };
 }

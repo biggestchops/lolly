@@ -422,7 +422,7 @@ const EMBEDDING_VALUES = new Set(['installable', 'restricted', 'preview-print', 
  * The chips shown beside a face that came out of a document rather than out of
  * a font shop.
  *
- * NO CALLER YET, and that is a seam rather than an oversight - say so plainly so
+ * NO CALLER YET, and that is a seam rather than an oversight - report it plainly so
  * the next reader does not take it for live code. It reads `{subset, embedding}`,
  * which is precisely what `views/pdf-import.ts`'s `EmbeddedFont` already carries
  * off a real document; what does not exist yet is the route from there into the

@@ -96,7 +96,7 @@ export function setupScreenCaptureControl({
   render();
 
   // A denial is the normal, expected answer to a screen-share prompt - the user changed
-  // their mind at the picker. Say so plainly and leave the tool exactly as it was.
+  // their mind at the picker. Report it plainly and leave the tool exactly as it was.
   const reportFailure = (e: unknown, what: string): void => {
     if (disposed) return;
     const name = (e as { name?: string })?.name;
@@ -402,7 +402,7 @@ export function setupScreenCaptureControl({
       busy = false; render();
       timerRaf = requestAnimationFrame(tick);
       // If the user asked to narrate but the mic was blocked, the take records silently.
-      // Say so NOW, at the start - otherwise they narrate a whole take that has no voice.
+      // Report it NOW, at the start - otherwise they narrate a whole take that has no voice.
       if (wantMic && res.micActive === false) {
         announce('Recording started, but your microphone is blocked, so there’s no narration. Allow mic access and record again for a voiceover.', { assertive: true });
       } else {

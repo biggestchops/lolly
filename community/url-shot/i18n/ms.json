@@ -1,6 +1,6 @@
 {
   "name": "Tangkapan Skrin URL",
-  "description": "Sebarang halaman web, pada sebarang kedalaman tatal, dengan CSS tersuai",
+  "description": "Mana-mana halaman web, pada sebarang kedalaman tatal, dengan CSS tersuai.",
   "a11yLabel": "Tangkapan skrin bagi {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Halaman yang ditangkap. Ditangkap semasa eksport menggunakan enjin pelayar sebenar.",

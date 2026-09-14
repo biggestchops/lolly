@@ -16,6 +16,7 @@ import { loadTool, createRuntime, annotateTemplate, parseUrlState, serializeUrlS
 import { createHash } from 'node:crypto';
 import type { Lang } from '@lolly/engine';
 import type { InputValue } from '../../../engine/src/inputs.ts';
+import type { Runtime } from '../../../engine/src/runtime.ts';
 // NODE_FORMATS: the DOM-free/raster format split, shared with the TUI. Everything not
 // in it - raster, pdf, video - is produced by raster.ts (resvg fast path, else the
 // scoped Chromium).
@@ -25,7 +26,7 @@ import { buildExportC2paOpts } from '@lolly-tools/node-shell/c2pa-opts';
 // The enrolled signing identity (key + x5chain) - type only here; the module itself is
 // imported lazily in the render path so a run without --sign-key never loads it.
 import type { SigningIdentity } from '@lolly-tools/node-shell/signing-identity';
-import { catalogFile, readToolManifest, readToolText } from '@lolly-tools/node-shell/content-roots';
+import { catalogFile, readAssetIndex, readToolManifest, readToolText } from '@lolly-tools/node-shell/content-roots';
 // Fail loud: never write a degenerate file + exit 0 when the render silently failed.
 import { assertRenderOk } from '@lolly-tools/node-shell/render-integrity';
 // Fail loud, part two: refuse bytes that are demonstrably not the requested container
@@ -39,10 +40,10 @@ import { createCliBridge, applyBrandVars, CLI_CAPABILITIES } from './bridge.ts';
 // The `s=` still-export frame filter (plan 112 section 10) - the engine resolves the
 // address, this reads the rendered pages. Same meaning as the web shell's fan-out.
 import { pickFramePage } from './frame-page.ts';
-import { isOn } from './args.ts';
-import type { Profile, ExportOpts } from '@lolly-tools/core/host-v1';
+import { isOn, rightsMode } from './args.ts';
+import type { HostV1, Profile, ExportOpts } from '@lolly-tools/core/host-v1';
 import { note, warn, writeOut, isStrict } from './output.ts';
-import { usageError, unavailableHere, refused, authError } from './exit-codes.ts';
+import { EXIT, usageError, unavailableHere, refused, authError } from './exit-codes.ts';
 
 /**
  * LOLLY_HOOK_WORKER=1 runs every tool's hooks.js in a `worker_threads` Worker
@@ -243,7 +244,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
   // change the physical artefact, warn about the rest (contract B6).
   checkReservedParams(params);
   // A reserved flag that shadows one of THIS tool's declared inputs never reaches the
-  // input - say so, and name the escape hatch (contract B7).
+  // input - report it, and name the escape hatch (contract B7).
   warnShadowedInputs(params, tool.manifest);
 
   // --user-profile=path.json pre-fills bindToProfile inputs from the user's profile
@@ -292,7 +293,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
   // different transport, so a packed share link must run identically here
   // (`lolly design --z=1eJ…`). A no-op for ordinary readable params.
   const query = await expandQuery(rawQuery);
-  const { values, format: paramFormat, width, height, unit, dpi, password, c2pa, bleed, imprint, durable, depth, hdr, filename, cuts, profile: pressProfileParam, designVersion: designvParam, slide, video } = parseUrlState(
+  const { values, format: paramFormat, width, height, unit, dpi, password, c2pa, bleed, imprint, durable, depth, hdr, filename, cuts, profile: pressProfileParam, designVersion: designvParam, slide, video, emoji: emojiParam, emojiFx: emojiFxParam } = parseUrlState(
     query,
     tool.manifest,
   );
@@ -352,7 +353,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
   if (outputPath === '-') outputPath = undefined;
   // `--filename=<name>` names the output file, written into the working directory, when
   // --output is absent (contract B6: it used to be accepted, ignored, and produce
-  // byte-identical output with nothing to say so). A BARE `--filename` is a usage error,
+  // byte-identical output with nothing to report it). A BARE `--filename` is a usage error,
   // rejected by the entry point with every other value-taking flag (contract B5).
   const filenameFlag = filename ?? null;
   if (filenameFlag && outputPath) {
@@ -659,6 +660,14 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
   // The runtime resolves asset refs (catalog ids → AssetRefs with a `format`), which
   // the matchExportFormat default below reads - so it's created before format resolution.
   const runtime = await createRuntime(tool, host, values, hookExecutorOpts());
+  // `--emoji` / `--emojifx`: the set this render draws its emoji from and the brand
+  // treatment applied to that artwork. Set before anything hydrates, so the first
+  // pass over the canvas already has the packs it needs.
+  await applyEmojiParams(runtime, host, { emoji: emojiParam, emojiFx: emojiFxParam });
+  // `--rights=private`: this render is not being delivered to anyone, so the
+  // conditions that apply on sharing do not apply to it. Parsed here, beside the
+  // other render params, and never anything but an explicit statement of the use.
+  const rights = rightsMode(params.rights);
 
   // Format resolution mirrors URL mode: an explicit flag wins (--export= arrives
   // as `format`, --format= as `paramFormat`); otherwise infer it from the
@@ -842,6 +851,11 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     const canvas = dom.window.document.getElementById('canvas')!;
     await applyBrandVars(canvas, host);
     canvas.innerHTML = runtime.getHydrated();
+    // Draw every emoji from the chosen set BEFORE the slide filter picks a page:
+    // the filter exports one node out of the canvas, and runtime.export would then
+    // only walk that page, leaving the rest of the document undrawn for anything
+    // else that reads the canvas (the SVG serialiser's font scan, a later tier).
+    await runtime.applyEmojiToDom(canvas);
 
     // Pass through requested output dimensions. A physical unit (mm/cm/in/pt)
     // qualifies the value so the engine converts it for the format; px is the
@@ -929,7 +943,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     if (text) {
       exportOpts.text = text;
       // WMF/EPS/DXF have no live-text representation at all - those emitters write
-      // outlines or nothing. Say so rather than accept a flag that cannot apply.
+      // outlines or nothing. Report it rather than accept a flag that cannot apply.
       if (text === 'live' && ['wmf', 'eps', 'eps-cmyk', 'dxf'].includes(targetFormat.toLowerCase())) {
         warn('TEXT_LIVE_IGNORED', `--text=live cannot apply to "${targetFormat}": the format carries no text, only geometry. Text was outlined.`);
       }
@@ -984,7 +998,10 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     };
     const viaRaster = async (): Promise<Buffer> => {
       const { renderRaster } = await import('./raster.ts');
-      const res = await renderRaster({ runtime, dom, manifest: tool.manifest, format: targetFormat, dims });
+      const res = await renderRaster({
+        runtime, dom, manifest: tool.manifest, format: targetFormat, dims,
+        emoji: { emoji: emojiParam, emojiFx: emojiFxParam },
+      });
       const bytes = Buffer.from(res.bytes);
       usedBrowser = res.usedBrowser;
       // Tier B == the web shell; it owns c2pa for that path - UNLESS an identity is
@@ -1123,7 +1140,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     // through a URL, where there is no reserved param for it (see RESERVED in
     // engine/src/url-mode.ts). A run that escalated therefore came back outlined while
     // the caller had asked for editable <text>, byte-identical to a run without the flag.
-    // Say so rather than let the flag look honoured. The browser tier follows the
+    // Report it rather than let the flag look honoured. The browser tier follows the
     // WEB defaults and `--text` does not travel to it: svg comes back outlined
     // (so an explicit `live` did not apply), and emf comes back LIVE since engine
     // 1.128 (so an explicit `outline` did not apply). Warn on exactly the
@@ -1193,6 +1210,11 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
         const stamped = await embedC2pa(new Uint8Array(buf), finalFormat, buildExportC2paOpts({
           surface: 'cli', manifest: tool.manifest, model: runtime.getModel(),
           format: finalFormat, dims: { width, height, unit, dpi }, days: c2pa?.days, profile,
+          // The emoji artwork this render placed, one source ingredient per glyph,
+          // carrying the set's own licence and creator. host.export.render ignores
+          // opts.ingredients on this shell (the CLI stamps here, as the last byte
+          // operation), so the runtime's record has to be handed over explicitly.
+          ingredients: runtime.emojiIngredients(),
           // Absent = the ephemeral self-signed signer, unchanged. Present, the
           // credential carries the identity's x5chain and its certificate window.
           ...(identity ? { signer: identity.signer, signerValidity: { notBefore: identity.notBefore, notAfter: identity.notAfter } } : {}),
@@ -1220,6 +1242,11 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     if (imprint === true) warn('IMPRINT_SKIPPED', msg); else note(`Note: ${msg}`);
   }
 
+  // What the sources this render placed ask of whoever delivers it (plan 253).
+  // Reported from the FINISHED bytes, after the stamp above, so "credits
+  // included" is a reading of the file and not a claim about the intention.
+  await reportRights(runtime, buf, finalFormat, rights, wantC2pa && C2PA_FORMATS.includes(finalFormat));
+
   // `--filename=<name>` names the file when no --output was given (contract B6). It is
   // resolved against the working directory, never against the tool or the catalog.
   const destPath = outputPath ?? (filenameFlag ? resolve(process.cwd(), filenameFlag) : null);
@@ -1236,6 +1263,75 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
   // single-shot, so tear them down (the bin's explicit exit() would kill them anyway;
   // this keeps a programmatic caller from leaking a browser + open port).
   if (usedBrowser) await teardownTierB();
+}
+
+/**
+ * The `Rights:` block a render prints, and the exit code a remaining action earns.
+ *
+ * Three separate facts, in the order plan 253 asks for them. What the sources
+ * ask (the evaluation's status and each issue code with its summary). What the
+ * delivered FILE carries, read back out of the finished bytes rather than
+ * assumed from the stamp having been attempted. And the readable credit, so a
+ * person piping this into a post has the text to paste.
+ *
+ * `--rights=private` states that the render is not being delivered to anyone, so
+ * a condition that applies on sharing raises nothing and the run records no
+ * delivery claim. It is not an ignore flag: the block still prints, the credit
+ * is still there to copy, and a licence whose conditions were never interpreted
+ * still says so.
+ *
+ * The exit code is REFUSED, the same code `--strict` gives a protective check
+ * that softened its answer. It is deliberately not UNAVAILABLE_HERE: that code
+ * means "retry on another runner", and a licence decision will be waiting on
+ * every runner there is.
+ */
+async function reportRights(
+  runtime: Runtime,
+  bytes: Uint8Array,
+  format: string,
+  mode: 'private' | undefined,
+  stamped: boolean,
+): Promise<void> {
+  const evaluation = runtime.rights({
+    audience: mode === 'private' ? 'private' : 'unknown',
+    delivery: { format, canCarryCredential: stamped },
+  });
+  if (!evaluation.plan.required.length && !evaluation.issues.length) return;
+
+  note(`Rights: ${evaluation.status}${mode === 'private' ? ' (private use; no delivery claim recorded)' : ''}`);
+  for (const issue of evaluation.issues) note(`  ${issue.code} - ${cleanControlChars(issue.summary)}`);
+
+  // What the bytes actually carry. A stamp that failed ships the file anyway, so
+  // only reading the finished file back can answer this honestly.
+  if (evaluation.plan.required.length) {
+    const { checkAttributionReadback, rightsReportFromC2pa, verifyC2pa } = await import('@lolly/engine');
+    try {
+      const report = await verifyC2pa(bytes);
+      const receipt = checkAttributionReadback(evaluation.plan, report);
+      note(`  ${rightsReportFromC2pa(report).summary}`);
+      note(receipt.state === 'readback-confirmed'
+        ? "  Credits included in this file's metadata."
+        : '  Credits are NOT in this file. Add the credit below where the work is shared.');
+    } catch (e) {
+      note(`  The delivered file could not be read back (${(e as Error).message}); treat the credit below as not delivered.`);
+    }
+    for (const notice of evaluation.plan.required) note(`  ${cleanControlChars(notice.credit)}`);
+  }
+
+  // `use-not-covered` is the strongest answer the evaluator has: a reviewed rule
+  // says the licence does not cover this use. It stops a pipeline for the same
+  // reason a remaining decision does, and louder, so it is never the quiet one.
+  if (evaluation.status === 'use-not-covered' && mode !== 'private') {
+    warn('RIGHTS_USE_NOT_COVERED',
+      'a reviewed licence rule does not cover this use - see the Rights block above. '
+      + 'Record separate permission, use a different work, or change the use.', 'gate');
+    if (!process.exitCode) process.exitCode = EXIT.REFUSED;
+  } else if (evaluation.status === 'actions-required' && mode !== 'private') {
+    warn('RIGHTS_ACTIONS_REQUIRED',
+      'a source in this render needs a decision before the file is shared - see the Rights block above. '
+      + 'Run with --rights=private if this render is not being delivered to anyone.', 'gate');
+    if (!process.exitCode) process.exitCode = EXIT.REFUSED;
+  }
 }
 
 /**
@@ -1318,6 +1414,9 @@ export const CLI_FLAGS = new Set([
   // log and writes them beside the output when a Tier-B render fails. Listed here so it
   // is never reported as "not an input of <tool>".
   'tier-b-debug',
+  // `--rights=private` states that this render is not being delivered to anyone
+  // (plan 253). Listed here so it is never reported as "not an input of <tool>".
+  'rights',
   // Global flags (contract section 1.2), consumed by the entry point but still present in the
   // params object a programmatic caller passes through.
   'quiet', 'verbose', 'strict', 'json',
@@ -1327,7 +1426,7 @@ export const CLI_FLAGS = new Set([
  * Reserved params URL mode defines but this shell does not implement.
  *
  * They were accepted, ignored, and produced byte-identical output with no message
- * (contract B6). Each one now says so; `--strict` turns the whole run into an exit 2,
+ * (contract B6). Each one prints a warning; `--strict` turns the whole run into an exit 2,
  * which is the pipeline author's opt-in rather than everyone's problem.
  *
  * Not in this list because they ARE handled: format/export/output/filename/width/height/
@@ -1345,6 +1444,53 @@ const UNSUPPORTED_RESERVED: Record<string, string> = {
   // companion, IS honoured here - as the still-export slide filter - so it is not listed.
   present: 'there is no fullscreen to present into; `--s=<slide>` still selects one slide of a render',
 };
+
+/**
+ * `--emoji=<id>@<version>` and `--emojifx=<treatment>` onto a mounted runtime.
+ *
+ * Both are reserved params, so this IS url mode under the argv transport: the
+ * same two strings a share link carries, read by the same engine parser, giving
+ * the same artwork. The URL never carries a set's checksum or a brand's colours
+ * - the pin comes from this device's own catalog listing and the palette from
+ * the brand in force - so a link can name what to draw and can never describe
+ * the bytes it is drawn from.
+ *
+ * A no-op when neither flag was given, so an ordinary render pays nothing.
+ */
+export async function applyEmojiParams(
+  runtime: Awaited<ReturnType<typeof createRuntime>>,
+  host: HostV1,
+  params: { emoji?: string | null; emojiFx?: string | null },
+): Promise<void> {
+  const named = params.emoji?.trim();
+  const fx = params.emojiFx?.trim();
+  if (!named && !fx) return;
+  if (!host.emoji) {
+    warn('EMOJI_UNAVAILABLE', 'this shell cannot load emoji sets, so --emoji had no effect.');
+    return;
+  }
+  const { parseEmojiParams } = await import('../../../engine/src/emoji-style.ts');
+  const sets = await host.emoji.sets();
+  // The brand in force supplies the treatment's colours, and the style pins them,
+  // so the export carries the palette it was actually drawn with.
+  const swatches = host.tokens ? await host.tokens.colors() : [];
+  const palette = swatches.map(swatch => ({ id: swatch.ref, hex: swatch.value }));
+  const parsed = parseEmojiParams({ emoji: named, emojifx: fx }, sets, palette);
+  for (const issue of parsed.issues) warn('EMOJI_PARAM', issue.message);
+  if (!parsed.pin) {
+    if (fx && !named) {
+      warn('EMOJI_PARAM', `--emojifx=${fx} names a treatment but no set, so there is no artwork to treat. Add --emoji=<id>@<version>.`);
+    }
+    return;
+  }
+  await runtime.setEmojiStyle({
+    schemaVersion: 1,
+    primary: parsed.pin,
+    fallbacks: [],
+    metricsPolicy: 'inline-em-v1',
+    treatment: parsed.treatment ?? { mode: 'original', strengthBps: 0 },
+  });
+}
 
 export function unsupportedReservedParams(params: Record<string, string>): string[] {
   return Object.keys(params).filter(k => k in UNSUPPORTED_RESERVED);
@@ -1769,8 +1915,10 @@ export async function listToolsCli(opts: { json?: boolean } = {}): Promise<void>
  * `--type=` filter (raster/vector/lottie/palette/tokens/font/audio/video).
  */
 export async function listAssetsCli(query?: string, opts: { type?: string; json?: boolean } = {}): Promise<void> {
-  const indexPath = catalogFile('assets/index.json');
-  const index = JSON.parse(await readFile(indexPath, 'utf8')) as {
+  // The MERGED listing: the brand catalog's assets plus every shared asset root's, so
+  // a pack mounted once outside the brands (an emoji pack, plan 252) is discoverable
+  // whichever profile is active.
+  const index = readAssetIndex() as {
     assets: Array<{ id: string; name?: string; type: string; tags?: string[] }>;
   };
   const q = (query ?? '').trim().toLowerCase();

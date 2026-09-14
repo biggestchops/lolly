@@ -1,5 +1,5 @@
 {
-  "name": "Text",
-  "description": "Find, edit, understand and transform text.",
+  "name": "Tekst",
+  "description": "Zoek, bewerk, doorgrond en transformeer tekst. Blader door merktekens en emoji, werk met code en logs, of maak ASCII-belettering.",
   "a11yLabel": "Text - characters, editing, analysis and conversions"
 }

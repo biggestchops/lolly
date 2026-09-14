@@ -28,6 +28,8 @@ import type { preflightOps } from './preflight.ts';
 import type { videoOps } from './video.ts';
 import type { copyingOps } from './copying.ts';
 import type { markupOps } from './markup.ts';
+import type { learningOps } from './learning.ts';
+import type { rightsOps, RightsRowHandle } from './rights-row.ts';
 import type { wiringOps } from './wiring.ts';
 
 export interface ActionsCtx {
@@ -241,6 +243,8 @@ export interface ActionsCtx {
   sendTargetsReady: Promise<void>;
   multiBtn: HTMLButtonElement;
   previewing: boolean;
+  /** The mounted rights row (plan 253), or undefined on a runtime without it. */
+  rightsRow: RightsRowHandle | undefined;
   // ---- operations, one namespace per module ----
   saving: ReturnType<typeof savingOps>;
   formatRules: ReturnType<typeof formatRulesOps>;
@@ -253,7 +257,9 @@ export interface ActionsCtx {
   video: ReturnType<typeof videoOps>;
   copying: ReturnType<typeof copyingOps>;
   markup: ReturnType<typeof markupOps>;
+  rights: ReturnType<typeof rightsOps>;
   wiring: ReturnType<typeof wiringOps>;
+  learning: ReturnType<typeof learningOps>;
 }
 
 /** A module function minus its leading context parameter. */

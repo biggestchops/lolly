@@ -91,7 +91,7 @@ export interface ProfilesPanelOpts {
   host: ColorProfilesHost;
   /** The profile+intent currently charted against, so its button reads pressed. */
   active?: { digest: string; intent: RenderingIntent } | null;
-  /** A link asked for a profile this device does not have - say so, once. */
+  /** A link asked for a profile this device does not have - report it, once. */
   absent?: boolean;
   /**
    * Chart against this profile under this intent. Returns whether it took.

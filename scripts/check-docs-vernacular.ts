@@ -98,6 +98,7 @@ export const BANNED_PHRASES: { what: string; re: RegExp }[] = [
   { what: '"deep dive"', re: /deep[ -]dive/i },
   { what: 'prose "smoke test"', re: /smoke[ -]test/i },
   { what: '"it deserves"', re: /\bit deserves\b/i },
+  { what: '"say so"', re: /\bsay so\b/i },
   { what: 'abstract "shape of"', re: /\bshape of\b/i },
   { what: '"where X sits/fits/stands" framing', re: /\bwhere (?:\S+ ){1,3}?(?:sits|fits|stands)\b/i },
   { what: '"in (X) terms" framing', re: /\bin \S+ terms\b/i },
@@ -118,6 +119,7 @@ export const BANNED_PHRASES: { what: string; re: RegExp }[] = [
   { what: '"transcribe" family as prose (say quote/copy; the speech feature and API names carry ALLOW entries)', re: /\btranscri\w*/i },
   { what: '"worth knowing"', re: /\bworth knowing\b/i },
   { what: '"worth naming"', re: /\bworth naming\b/i },
+  { what: '"now says so"', re: /\bnow says so\b/i },
   { what: '"what X is worth" framing', re: /\bwhat\s+\S[^.?!\n]{0,60}?\bis worth\b/i },
   // DOCS-ONLY: carried in CODE_EXEMPT (check-code-comment-vernacular.ts) because
   // "survivable" is genuine fault-tolerance vocabulary in the collab/parse code

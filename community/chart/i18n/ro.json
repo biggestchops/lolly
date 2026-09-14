@@ -1,7 +1,7 @@
 {
   "name": "Grafic",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "Grafice de la prima lipire până la vizualizări avansate - recomandări de date explicate, mapare explicită a câmpurilor, 35 de familii clasice de grafice vectoriale, inclusiv Pareto, ținte bullet chart și bare de interval, șaisprezece forme statistice și editoriale, scene 3D cu adâncime reală, survoluri cinematografice, mișcare deterministă, descrieri accesibile și stiluri compilate din sistemul de design activ.",
+  "featured.blurb": "Lipește un tabel - Grafic îl face clar, accesibil și evident aliniat brandului",
   "a11yLabel": "Grafic {{chartType}}{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "Tip grafic",
   "inputs.chartType.options.bar": "Bare - vertical",

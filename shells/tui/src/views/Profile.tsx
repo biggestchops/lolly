@@ -13,7 +13,7 @@ import { homedir } from 'node:os';
 import { verifyC2pa, resolveVerdict } from '@lolly/engine';
 import { getProfile, setProfile, backupData, listSessions } from '../store.ts';
 import { loadTrustAnchors, describeAnchors } from '../trust-anchors.ts';
-import { cleanControlChars, verdictHeadline, verdictFacts, verdictChecks } from '@lolly-tools/node-shell/verdict-report';
+import { cleanControlChars, verdictHeadline, verdictFacts, verdictChecks, verdictSources } from '@lolly-tools/node-shell/verdict-report';
 import { exportSessions } from '../batch-export.ts';
 import { loadFavourites, loadHidden } from '../lib/asset-favourites.ts';
 import { loadToolFavourites } from '../lib/tool-favourites.ts';
@@ -175,6 +175,20 @@ export function Profile({ bridge, onNav, onQuit }: { bridge: TuiBridge; onNav: (
           const tone = chk.mark === 'ok' ? 'good' : chk.mark === 'info' ? 'dim' : 'bad';
           const mark = chk.mark === 'ok' ? '✓' : chk.mark === 'info' ? 'ℹ' : '✕';
           push(`  ${mark} ${chk.code} - ${chk.explanation}`, tone);
+        }
+        // What the file records about the creative work inside it, kept apart from
+        // the verdict (plan 253, section 9.2) and worded by the same shared renderer
+        // the CLI prints from. A rights fact never borrows the verdict's tone.
+        const sources = verdictSources(report);
+        if (sources) {
+          push('  Sources', 'dim');
+          push(`    ${sources.summary}`, 'fg');
+          for (const src of sources.sources) {
+            const facts = [src.creator, src.licence].filter(Boolean).join(' - ');
+            push(`    - ${src.title}${facts ? ` (${facts})` : ''} - ${src.asserted}`, 'fg');
+            push(`      ${src.credit}`, 'dim');
+          }
+          for (const limit of sources.limits) push(`    ${limit}`, 'dim');
         }
         // Which anchor set produced that trust line. Without this a user cannot tell an
         // untrusted-by-design verdict from a mis-pinned root.

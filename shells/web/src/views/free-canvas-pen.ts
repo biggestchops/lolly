@@ -655,7 +655,7 @@ export function deleteNodes(p: AuthoredPath, indices: Iterable<number>): Authore
  *     over would pin every tangent on the path and turn the global curvature solve into a
  *     chain of independent single-segment runs - the exact opposite of what switching to
  *     hyperbezier is for. Once dropped, the lengths cannot be recovered, which is why the
- *     UI has to say so BEFORE it happens.
+ *     UI has to report it BEFORE it happens.
  *
  * So `hyperbezier → cubic → hyperbezier` returns the original path: the bake adds handles,
  * the drop removes them, and the nodes and continuities never moved.

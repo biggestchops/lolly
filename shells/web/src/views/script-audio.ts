@@ -424,7 +424,7 @@ export async function generateSpeechAsJob(
   const controller = new AbortController();
   const job = startJob({ title: t('Generating speech'), cancel: () => controller.abort() });
   // A heavy job behind another heavy job waits its turn, and a silent panel
-  // would read as a stall - say so before awaiting.
+  // would read as a stall - report it before awaiting.
   if (jobsSnapshot().some(j => j.id === job.id && j.status === 'queued')) surface.onQueued?.();
   await job.started;
   if (job.cancelled) return null;

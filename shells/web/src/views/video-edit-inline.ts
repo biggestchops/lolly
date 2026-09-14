@@ -636,7 +636,7 @@ export async function mountInlineVideoEdit(host: VideoJobHost, env: VideoEditInl
       }
       ctx.putImageData(img, 0, 0);
     } catch (e) {
-      // A cross-origin frame taints the canvas: getImageData throws. Say so
+      // A cross-origin frame taints the canvas: getImageData throws. Report it
       // once and stand the preview down - the job itself is unaffected.
       previewBlocked = true;
       canvas.hidden = true;

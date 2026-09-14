@@ -1,6 +1,6 @@
 {
-  "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "name": "일정",
+  "description": "하나의 표에서 만드는 컨퍼런스 프로그램이에요 - 시간순 목록, 멀티트랙 시간표, 입구용 지금·다음 화면 중에서 고를 수 있고, 모든 세션의 진짜 .ics 파일도 함께 만들어져요.",
   "a11yLabel": "{{default headingText \"일정\"}} - 세션 {{sessionCount}}개, 트랙 {{trackCount}}개",
   "inputs.title.label": "행사",
   "inputs.title.placeholder": "예: Northwind Summit 2026",

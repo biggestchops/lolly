@@ -21,6 +21,8 @@
  */
 
 import { instanceFetch, instancePath } from '../lib/instance.ts';
+import { governedParamKeys } from '../lib/input-policy.ts';
+import { getTool } from '../bridge/tool-loader.ts';
 import type { ShareSectionContext } from '../lib/share-sections.ts';
 import type { OrgConfig } from './index.ts';
 import { t, tRaw } from '../i18n.ts';
@@ -73,6 +75,23 @@ interface MintBody {
   password?: string;
 }
 interface MintResult { id: string; url: string; expiresAt?: string }
+
+/** The target minus the params this caller's policy locks or hides (by input id
+ *  or urlKey alias). The manifest names the aliases; when it cannot be read the
+ *  target passes unchanged, and the instance's own refusal still stands. */
+export async function withoutGovernedParams(target: MintTarget): Promise<MintTarget> {
+  if (!target.params) return target;
+  let inputs: ReadonlyArray<{ id: string; urlKey?: string }> = [];
+  try {
+    inputs = (await getTool(target.toolId)).manifest.inputs ?? [];
+  } catch {
+    return target;
+  }
+  const drop = governedParamKeys(target.toolId, inputs);
+  if (!drop.size) return target;
+  const params = Object.fromEntries(Object.entries(target.params).filter(([key]) => !drop.has(key)));
+  return { ...target, params };
+}
 
 async function mintLink(body: MintBody): Promise<MintResult> {
   const res = await instanceFetch(instancePath('/api/v1/links'), {
@@ -174,7 +193,9 @@ export function buildInstanceShareSection(ctx: ShareSectionContext, config: OrgC
       const label = btn.textContent;
       btn.textContent = t('Creating…');
       try {
-        const { url } = await mintLink({ kind: 'embed', target });
+        // The instance refuses any supplied locked or hidden param and bakes
+        // locked values itself, so the mint carries only what the caller may set.
+        const { url } = await mintLink({ kind: 'embed', target: await withoutGovernedParams(target) });
         result.show(url);
       } catch {
         err.set(t('Could not create the link. Try again.'));

@@ -442,7 +442,7 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
 
   // A READ-ONLY design system (plans/186 section 3.5, the material lock): a hosted
   // or packaged system whose material is the host's. The rooms would refuse every
-  // write, so say so once, and offer the two honest moves - an editable copy, or
+  // write, so report it once, and offer the two honest moves - an editable copy, or
   // a switch. The BUILD lock above is the other lock and keeps its own page.
   {
     const active = await activeDesignSystemRecord(host);
@@ -1441,7 +1441,7 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
     trayUi?.open(); // fires onOpenChange → the rail toggle and the sheet resync
     syncTrayToggle(); // …and again for the count, which the open didn't change
     // A rescan of the same source adds nothing, because the tray dedupes on
-    // type+value - say so rather than reporting "0 kept". Which "already" it is
+    // type+value - report it rather than reporting "0 kept". Which "already" it is
     // matters: a candidate still pending is IN the tray, one already added is in
     // the design system and will never come back to the tray, and telling
     // someone to look in a tray that is empty (and whose toggle is hidden) is

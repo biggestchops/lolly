@@ -1,6 +1,6 @@
 {
   "name": "网页截图",
-  "description": "截取任意网页在任意滚动位置的画面，支持自定义 CSS",
+  "description": "任意网页，任意滚动深度，还能自定义 CSS。",
   "a11yLabel": "{{default url \"(未设置 URL)\"}} 的截图",
   "inputs.url.label": "URL",
   "inputs.url.help": "要截取的页面。在导出时由真实浏览器引擎捕获。",

@@ -1425,7 +1425,7 @@ background-image:
 .be-ui-group-count { margin-inline-start: auto; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); text-transform: none; }
 .be-ui-role-list { display: grid; gap: .45rem; padding: 0 .55rem .55rem; }
 .be-ui-role { display: grid; grid-template-columns: minmax(10rem, 1fr) minmax(12rem, 1.2fr) auto; gap: .45rem .7rem; align-items: center; padding: .6rem; border-radius: calc(var(--radius) * .5); background: hsl(var(--muted) / .36); }
-.be-ui-role.is-owned { background: hsl(var(--primary) / .10); box-shadow: var(--ui-effect-selected); }
+.be-ui-role.is-owned { background: hsl(var(--primary) / .10); box-shadow: var(--ui-effect-accent-ring); }
 .be-ui-role-meta, .be-ui-role-state { display: grid; gap: .16rem; min-width: 0; }
 .be-ui-role-name { font-size: var(--fs-sm); font-weight: 700; text-transform: capitalize; }
 .be-ui-role-path, .be-ui-role-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-2xs); color: hsl(var(--muted-foreground)); }

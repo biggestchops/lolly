@@ -112,7 +112,7 @@ export function spanContains(tp: TpCtx, b: Box, at: number, total = tp.rows.dura
  *      cuts through all of it in one press, and one undo takes the whole thing back;
  *   2. failing that, the seq clip under the playhead - the "I just want to cut here"
  *      case, which must not require selecting anything first;
- *   3. failing that, say so and write nothing.
+ *   3. failing that, report it and write nothing.
  *
  * `everything: true` is the Shift+S variant: every timed clip the playhead is inside,
  * on every lane, IGNORING the selection.

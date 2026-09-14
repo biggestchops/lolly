@@ -27,6 +27,8 @@ import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://lolly.tools/' });
 globalThis.window = dom.window as unknown as typeof globalThis.window;
 globalThis.document = dom.window.document;
+globalThis.localStorage = dom.window.localStorage;
+const { setFlagMirror, applyPerfUi } = await import('../feature-flags.ts');
 
 // Controllable pointer/motion media queries. `hover: hover` decides which half of the
 // policy arms, so every arm test states which device it is describing.
@@ -74,6 +76,7 @@ const WEBM = '/tools/flythrough/card.webm';
 const APNG = '/tools/pose-geeko/card.png';
 
 function reset(): void {
+  localStorage.clear();
   played.length = 0;
   observers.length = 0;
   osReduceMotion = false;
@@ -82,6 +85,40 @@ function reset(): void {
   delete document.documentElement.dataset.a11yPreviews;
   document.body.innerHTML = '';
 }
+
+test('performance mode stops live media; pointer and touch previews require the explicit button', () => {
+  reset(); hoverCapable = false;
+  const root = document.createElement('section');
+  root.innerHTML = `<button class="card">${previewMedia(POSTER, 'preview', undefined, false, WEBM)}</button>`;
+  document.body.append(root);
+  const original = root.firstElementChild;
+  const img = root.querySelector<HTMLElement>('img')!;
+  const arm = armMotionPreviews(root);
+  playMotionPreview(img);
+  assert.equal(played.length, 1);
+  setFlagMirror('perf-ui', true); applyPerfUi(true);
+  assert.equal(root.querySelector('video'), null);
+  assert.equal(img.hidden, false);
+  playMotionPreview(img);
+  const observer = observers[0]!;
+  observer.cb([...observer.targets].map(target => ({ target, isIntersecting: true })));
+  assert.equal(played.length, 1, 'neither hover entry points nor centered touch autoplay');
+  const button = root.querySelector<HTMLButtonElement>('[data-motion-preview-control]')!;
+  assert.ok(button);
+  assert.equal(button.parentElement?.closest('button, a'), null, 'no nested interactive control');
+  let navigations = 0;
+  root.addEventListener('click', () => { navigations++; });
+  button.click();
+  assert.equal(played.length, 2);
+  assert.equal(navigations, 0);
+  assert.equal(button.getAttribute('aria-pressed'), 'true');
+  button.click();
+  assert.equal(root.querySelector('video'), null);
+  setFlagMirror('perf-ui', false); applyPerfUi(false);
+  assert.equal(root.firstElementChild, original, 'restores the same card, with its handlers intact');
+  assert.equal(root.querySelector('[data-motion-preview-control]'), null);
+  arm.destroy();
+});
 
 /** One tile: a card wrapper holding exactly one preview element, which is the shape the
  *  hover/focus walk-up looks for on every surface. */

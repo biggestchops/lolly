@@ -12,7 +12,7 @@
  * Two things that are new at GA and cannot be added later without breaking someone:
  *   • `--` - without it a longtext value beginning with `--` can never be passed.
  *   • the bare-value-flag refusal - `--output` (no `=`) parsed to "1" and wrote a file
- *     literally named `1`. Every value-taking flag now says so instead.
+ *     literally named `1`. Every value-taking flag refuses the bare form with a message instead.
  */
 
 import { usageError } from './exit-codes.ts';
@@ -63,17 +63,25 @@ export const VALUE_FLAGS = new Set([
   // `rebuild` takes the path of the `.lolly` session to re-render. A bare form parsing
   // to "1" would report an unreadable session file literally named "1".
   'rebuild',
+  // The emoji pair. `--emoji` names a set as `id@version` and `--emojifx` a treatment;
+  // a bare form parsing to "1" names neither, so the render would quietly draw a
+  // placeholder for every emoji and say only that a param was ignored.
+  'emoji', 'emojifx',
   // The signing identity. Both take a PATH, and a bare form must never parse to the
   // string "1" and then be reported as an unreadable file called "1". There is
   // deliberately no flag that takes the KEY or its passphrase: argv is visible in `ps`
   // to every user on the machine, kept in shell history, and echoed into CI logs.
   'sign-key', 'sign-cert', 'recipe', 'rules', 'review-file', 'choices', 'save-recipe', 'report',
+  // `--rights=private` states that this render is not being delivered to anyone.
+  // A bare form parsing to "1" would be a value the reader refuses anyway, but
+  // refusing it here names the one spelling instead of reporting an odd value.
+  'rights',
 ]);
 
 /** Subcommand words a tool id may never take (contract section 1.1). `completion` is reserved
  *  now so the deferred `lolly completion <shell>` can land additively later. */
 export const RESERVED_SUBCOMMANDS = [
-  'prepare', 'files', 'start', 'system', 'list', 'describe', 'run', 'compile', 'schema', 'inspect', 'diff', 'measure', 'optimize', 'package', 'assets', 'batch', 'smoke', 'validate', 'preflight',
+  'learning', 'prepare', 'files', 'start', 'system', 'list', 'describe', 'run', 'compile', 'schema', 'inspect', 'diff', 'measure', 'optimize', 'package', 'assets', 'batch', 'smoke', 'validate', 'preflight',
   'install-browser', 'completion', 'help', 'version',
   // The on-device model surface (plans/183): `models` owns the one command that
   // downloads a model, `speak` and `transcribe` are host.speech's two directions.
@@ -178,6 +186,27 @@ export function textMode(v: string | undefined): 'outline' | 'live' | undefined 
   if (s === 'outline' || s === '1') return 'outline';
   if (s === 'live') return 'live';
   throw usageError(`--text must be "outline" or "live" (got "${v}").`, 'BAD_FLAG_VALUE');
+}
+
+/**
+ * `--rights=private` (plan 253): this render is for the person running the
+ * command and is not being delivered to anyone, so no condition that applies on
+ * sharing applies here and the run records no delivery claim.
+ *
+ * It is NOT an ignore flag and there is deliberately no spelling for one. A
+ * licence condition is not a lint rule to switch off; saying "private" is a
+ * statement about the use, which the evaluator then answers for. Anything else
+ * is a usage error rather than a silent "carry on".
+ */
+export function rightsMode(v: string | undefined): 'private' | undefined {
+  if (v === undefined) return undefined;
+  const s = v.trim().toLowerCase();
+  if (s === 'private') return 'private';
+  throw usageError(
+    `--rights only takes "private" (got "${v}"), which states that this render is not being delivered to anyone. `
+    + 'There is no flag for ignoring a licence condition.',
+    'BAD_FLAG_VALUE',
+  );
 }
 
 /**

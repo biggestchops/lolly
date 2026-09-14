@@ -13,7 +13,7 @@
  * through the studio's installer rather than round the side of it. Stubbing
  * versions-io out would have tested the panel against a fiction of itself.
  *
- * The other half is the copy. A version is permanent, so the panel has to say so
+ * The other half is the copy. A version is permanent, so the panel has to report it
  * before the press, name a removal as breaking, and never print a user's own
  * label or note as markup - all three are asserted rather than left to review.
  */

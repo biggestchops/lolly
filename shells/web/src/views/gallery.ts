@@ -1236,6 +1236,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   // Register every cover up front. Visible covers run first, then off-screen
   // covers, then additional templates near the viewport. Filters park their jobs.
   function previewPriority(gcar: HTMLElement, cover: boolean): number | null {
+    if (perfUiOn()) return null;
     // Measure the tile: content-visibility may skip its off-screen descendants.
     const rect = (gcar.closest('.gtile') ?? gcar).getBoundingClientRect();
     // A tile with no box is display:none - filtered out by a search, or a whole grid
@@ -1548,6 +1549,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
     masonry.append(noResults);
     masonry.append(hiddenBox);
     tileById.clear();
+    tileOrderDirty = true;
     for (const el of masonry.querySelectorAll<HTMLElement>('.gtile')) {
       const id = el.dataset.toolId;
       if (id) tileById.set(id, el);
@@ -1584,6 +1586,9 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   // the existing tile nodes (append keeps them live, preserving hydrated <img src> and
   // IntersectionObserver registrations) and toggles a hide class on non-matching ones;
   // it never touches innerHTML, so nothing re-decodes and no observer is recreated.
+  let tileOrderDirty = true;
+  let sortedOrderKey = '';
+  let orderedTools: GalleryTool[] = [];
   function applyView(): void {
     if (!masonry) return;
     renderPills();
@@ -1596,11 +1601,19 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
     // Reorder: append the tiles in sorted order (moves live nodes, no re-render) - 
     // hidden tools trail the visible set so a reveal reads as "the hidden ones, at
     // the end" - then keep the empty-state + Show-hidden nodes last.
-    const ordered = [...allTools].sort(sortCompare);
-    for (const t of ordered) { if (hiddenTools.has(t.id)) continue; const el = tileById.get(t.id); if (el) masonry.append(el); }
-    for (const t of ordered) { if (!hiddenTools.has(t.id)) continue; const el = tileById.get(t.id); if (el) masonry.append(el); }
-    masonry.append(noResults);
-    masonry.append(hiddenBox);
+    const orderKey = `${sortKey}:${sortDir}`;
+    if (orderKey !== sortedOrderKey) {
+      orderedTools = [...allTools].sort(sortCompare);
+      sortedOrderKey = orderKey;
+      tileOrderDirty = true;
+    }
+    if (tileOrderDirty) {
+      for (const t of orderedTools) { if (hiddenTools.has(t.id)) continue; const el = tileById.get(t.id); if (el) masonry.append(el); }
+      for (const t of orderedTools) { if (!hiddenTools.has(t.id)) continue; const el = tileById.get(t.id); if (el) masonry.append(el); }
+      masonry.append(noResults);
+      masonry.append(hiddenBox);
+      tileOrderDirty = false;
+    }
     // Hide-show: filtered-out tiles get .is-filtered (display:none); count the shown.
     // A hidden tool only ever shows while the reveal is on, and then dimmed
     // (.is-hidden-tool) - search and the Favourites pill skip it otherwise.
@@ -1849,6 +1862,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
     const unhide = allSelectedHidden();
     const n = selected.size;
     for (const ref of selected) { if (unhide) hiddenTools.delete(ref); else hiddenTools.add(ref); }
+    tileOrderDirty = true;
     await saveHiddenTools(host, profile, hiddenTools);
     dropSelection();
     refreshFeatured();   // a hidden tool leaves the hero strip
@@ -1860,6 +1874,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   async function hideOne(ref: string): Promise<void> {
     const unhide = hiddenTools.has(ref);
     if (unhide) hiddenTools.delete(ref); else hiddenTools.add(ref);
+    tileOrderDirty = true;
     await saveHiddenTools(host, profile, hiddenTools);
     if (selected.delete(ref)) paintSelection();
     refreshFeatured();

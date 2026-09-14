@@ -1,6 +1,6 @@
 {
   "name": "Captura de Tela de URL",
-  "description": "Qualquer página da web, em qualquer profundidade de rolagem, com CSS personalizado",
+  "description": "Qualquer página da web, em qualquer profundidade de rolagem, com CSS personalizado.",
   "a11yLabel": "Captura de tela de {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "A página a ser capturada. Capturada no momento da exportação, em um mecanismo de navegador real.",

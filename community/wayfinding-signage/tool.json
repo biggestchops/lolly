@@ -33,14 +33,14 @@
       "display": "slider",
       "min": 100, "max": 900, "step": 100,
       "default": 600,
-      "help": "Stroke weight of the heading, labels and arrows. Needs a variable brand font to show every step."
+      "help": "Stroke weight of the heading, labels and arrows. Needs a variable design system font to show every step."
     },
     {
       "id": "size",
       "label": "Sign size",
       "type": "select",
       "default": "a3",
-      "help": "Sets the sign proportions and the export print size. Fine-tune exact dimensions in the export bar if needed.",
+      "help": "Sets the sign proportions and the export print size. Fine-tune exact dimensions in the export bar.",
       "options": [
         { "value": "a4", "label": "A4 portrait · 210 × 297 mm", "width": 210, "height": 297, "unit": "mm" },
         { "value": "a3", "label": "A3 portrait · 297 × 420 mm", "width": 297, "height": 420, "unit": "mm" },
@@ -58,7 +58,7 @@
       "type": "asset",
       "assetType": "any",
       "allowUpload": true,
-      "help": "Your event's logo. Optional - leave empty for no logo."
+      "help": "Sits at the top of the sign. Leave empty for no logo."
     },
     {
       "id": "eventName",
@@ -74,7 +74,7 @@
       "type": "text",
       "default": "",
       "maxLength": 48,
-      "help": "Big title above the directions - e.g. a level, hall or 'Welcome'. Clear to hide."
+      "help": "Big title above the directions - e.g. a level, hall or 'Welcome'. Leave empty to hide it."
     },
     {
       "id": "directions",
@@ -83,7 +83,7 @@
       "help": "Each row is a destination with an arrow. Pick the arrow direction and whether it sits to the left or right of the label.",
       "fields": [
         { "id": "label", "label": "Destination", "type": "text", "placeholder": "e.g. Registration" },
-        { "id": "image", "label": "Image (instead of text)", "type": "asset", "assetType": "any", "allowUpload": true, "help": "Optional - show a logo or sponsor branding in place of the destination text. The text above is used as the image's alt text and as the fallback when no image is set." },
+        { "id": "image", "label": "Image (instead of text)", "type": "asset", "assetType": "any", "allowUpload": true, "help": "Shows a logo or sponsor mark in place of the destination text. The text above is used as the image's alt text and as the fallback when no image is set." },
         {
           "id": "arrow",
           "label": "Arrow",

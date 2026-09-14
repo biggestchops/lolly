@@ -263,7 +263,7 @@ async function packMembersToZip(
 
 /**
  * When a render fails for a reason HTML can still satisfy, the batch falls back rather
- * than skipping the row - but must SAY so. Returns the per-row note (surfaced in the
+ * than skipping the row - but must Report it. Returns the per-row note (surfaced in the
  * progress log and the zip's lolly.txt), or null when the failure is real and the row
  * should skip. Two honest cases: the format needs the browser tier and it isn't
  * installed, or the tool is HTML-layout with no <svg> for a vector format.
@@ -295,7 +295,7 @@ async function renderSessionTo(
     const { runtime, manifest } = await mountTool(session.toolId, host, session.query, session.data);
     const avail = exportableFormats(manifest);
     const fmt = avail.includes(want) ? want : (avail[0] ?? 'html');
-    // A batch-wide format won't exist on every tool - substitute, but say so per-row.
+    // A batch-wide format won't exist on every tool - substitute, but report it per-row.
     const substituted = fmt !== want ? `${want} not offered by this tool - rendered ${fmt}` : undefined;
     const zipPath = `${relNoExt}.${fmt}`;
     try {

@@ -362,7 +362,31 @@ export async function mountTextWorkspace(options: {
             void mode('text', true, true);
             editor.replace(char);
           },
-          { recents, save: (items) => write('characterRecents', JSON.stringify(items)) }
+          { recents, save: (items) => write('characterRecents', JSON.stringify(items)) },
+          // The emoji grid draws from the set this document chose, the same pass
+          // the canvas runs, so a person picks the glyph they will actually get.
+          // `track: false` because a picker cell is chrome, not the render: a
+          // tracked walk would leave the runtime describing one cell and redrawing
+          // it on the next set change instead of the canvas. This panel stays open
+          // across a choice, so it also gets the revert and a set-change signal and
+          // redraws itself rather than showing the set before.
+          {
+            emoji: {
+              apply: (node) => runtime.applyEmojiToDom(node, { track: false, idScope: 'p' }),
+              revert: (node) => runtime.revertEmojiDom(node),
+              onSetChange: (fn) => {
+                // Every pass notifies, so compare the style itself: redrawing a few
+                // thousand cells on each keystroke in the editor is not the ask.
+                let last = JSON.stringify(runtime.emoji.style ?? null);
+                return runtime.onEmojiChange((state) => {
+                  const next = JSON.stringify(state.style ?? null);
+                  if (next === last) return;
+                  last = next;
+                  fn();
+                });
+              },
+            },
+          }
         );
         if (abort.signal.aborted) cleanupCharacters();
       } catch (error) {

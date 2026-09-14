@@ -228,6 +228,15 @@ export async function mountDocs(
   // front door. The landing is kept out of `.docs-content` on purpose (see
   // lib/docs-landing.ts); everything below treats the two the same way.
   const fragment = doc.querySelector('.docs-content, .docs-landing');
+  // An immersive page (What we stand for) is built in the landing's shape - full-bleed
+  // bands, no rail - and marks its <main> `.docs-landing.docs-immersive`. It is not the
+  // front door, so it keeps its own title and link handling, but it takes the landing
+  // shell: one full-width column, no table of contents, the scoped band stylesheet.
+  const isImmersive = !!fragment?.classList.contains('docs-immersive');
+  if (isImmersive) {
+    viewEl.querySelector('[data-reader]')?.classList.add('docs-reader--landing');
+    ensureLandingStyles();
+  }
   if (!fragment) {
     showStatus(
       t('That documentation page could not be displayed.'),
@@ -360,7 +369,7 @@ export async function mountDocs(
   // bands (hidden in landing mode), and the bands are sections of a front door rather
   // than headings of an article. Its pathways + sitemap slots fill as on any page; it
   // ships no `.docs-sidebar`, so that slot stays hidden on its own.
-  const toc = isLanding ? null : buildToc(node);
+  const toc = (isLanding || isImmersive) ? null : buildToc(node);
   let stopSpy: (() => void) | null = null;
   if (toc) {
     const tocSlot = viewEl.querySelector<HTMLElement>('[data-toc]');

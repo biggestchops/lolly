@@ -14,9 +14,39 @@ import { t } from '../../i18n.ts';
 import { colorFieldHtml, wireColorField } from '../../components/color-field.ts';
 import { allBulleted, allNumbered, charsFromDom, clearFormatting, htmlFromChars, markdownFromChars, rangeHasFlag, rangeWeight, setColor, setFlag, setWeight, toggleBullets, toggleNumbers, wordRangeAt } from '../rich-text.ts';
 import { SVG, icon } from '../free-canvas-icons.ts';
+import { mountEmoji, revertEmojiIn } from '../emoji-mount.ts';
+import type { EmojiRuntime } from '../emoji-mount.ts';
 import { FC_CLIP_PREFIX, H_JUSTIFY, V_ALIGN, boolOf, featureSettings } from './shared.ts';
 import type { EditingState, FmtBar, FmtRefs } from './shared.ts';
 import { bindOp, type FcCtx } from './context.ts';
+
+/**
+ * The runtime's emoji pass, when this host has one (plan 252).
+ *
+ * Read by shape rather than by type: the overlay's `RuntimeApi` is the narrow slice it
+ * needs from the engine runtime, and a host without the pass - an older bridge, a test
+ * double - must simply do nothing rather than fail an edit.
+ */
+function emojiRuntime(fc: FcCtx): EmojiRuntime | null {
+  const rt = fc.runtime as unknown as Partial<EmojiRuntime>;
+  return typeof rt.applyEmojiToDom === 'function' ? (rt as EmojiRuntime) : null;
+}
+/**
+ * Draw the emoji in a text element again after an edit ends.
+ *
+ * A commit re-hydrates the whole canvas and the post-paint pass covers it, but the
+ * repaint is a frame or more away and a cancel repaints nothing at all, so the element
+ * would sit there showing whatever emoji font the machine has. The pass is idempotent
+ * and the runtime serialises its passes, so calling it here and letting the repaint call
+ * it again costs a walk and changes nothing.
+ */
+export function reapplyEmoji(fc: FcCtx, el: HTMLElement): void {
+  const runtime = emojiRuntime(fc);
+  if (!runtime) return;
+  void mountEmoji(el, { isCurrent: () => !fc.disposed && el.isConnected, runtime }).catch((e) => {
+    console.warn(`emoji redraw after edit: ${(e as Error)?.message ?? e}`);
+  });
+}
 
 export function sourceFromPastedHtml(_fc: FcCtx, html: string): string {
   try {
@@ -161,6 +191,13 @@ export function startTextEdit(fc: FcCtx, id: string, opts: { selectAll?: boolean
   );
   if (!el) return;
   const boxEl = el.closest<HTMLElement>('.lolly-box');
+  // Emoji are drawn as pack artwork over the characters (plan 252), and a caret cannot
+  // sit inside an <svg>. Put the characters back FIRST - before prevHtml is captured and
+  // before the element becomes editable - so the caret, the selection, the char model and
+  // the cancel restore all work on plain text. The artwork is drawn again when the edit
+  // ends. Typing an emoji mid-edit shows the machine's own glyph until then, which is the
+  // one moment composition is out of Lolly's hands.
+  revertEmojiIn(el);
   // WYSIWYG: edit the RENDERED rich text in place (the element already holds
   // hooks.js richText output - <strong>/<em> runs, \n line breaks, "•  "
   // bullets). Formatting ops round-trip through the rich-text.js char model,
@@ -309,14 +346,18 @@ export function finishEdit(fc: FcCtx): EditingState | null {
   done.el.classList.remove('fc-editing');
   done.boxEl?.classList.remove('fc-box-editing');
   stageEl.classList.remove('is-text-editing');
+  reapplyEmoji(fc, done.el); // the element is plain text again, whatever happens next
   return done;
 }
 // Restore the pre-edit rendered view + inline styles (drops any pending-field
 // live previews the format bar applied during the edit).
-export function restoreEditView(_fc: FcCtx, done: EditingState): void {
+export function restoreEditView(fc: FcCtx, done: EditingState): void {
   done.el.innerHTML = done.prevHtml;
   done.el.style.cssText = done.prevStyle;
   if (done.boxEl) done.boxEl.style.cssText = done.prevBoxStyle;
+  // prevHtml was captured with the artwork already reverted, so the restored view is
+  // plain characters and needs the pass again. Queued behind the one finishEdit started.
+  reapplyEmoji(fc, done.el);
 }
 export function commitTextEdit(fc: FcCtx): void {
   const { cfg } = fc;

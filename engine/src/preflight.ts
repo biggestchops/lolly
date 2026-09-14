@@ -890,7 +890,7 @@ const physicalTrim = (c: Ctx): { w: Dimension; h: Dimension } | null => {
 //    (the raster is rendered at toPixels(dim, dpi)). Measurable, needs nothing.
 //  • A single placed image's effective DPI (the "logo is 96 DPI here" case) needs
 //    the mounted DOM: the image's intrinsic pixels vs. how big it prints. When the
-//    stage is absent (headless) we say so (checkImageDpiNeedsStage), never guess.
+//    stage is absent (headless) we report it (checkImageDpiNeedsStage), never guess.
 //
 // Thresholds vary by INTENT, derived from the trim's long edge, not a new control:
 // offset/sheet-fed wants 300 (250-300 acceptable, <150 a hard fault); large-format

@@ -1,7 +1,7 @@
 {
   "name": "چارٹ",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "پہلی پیسٹ سے لے کر جدید ویژوئلائزیشن تک چارٹس - وضاحت شدہ ڈیٹا تجاویز، واضح فیلڈ میپنگ، Pareto، بلٹ ٹارگٹس اور رینج بارز سمیت 35 کلاسیک ویکٹر فیملیز، سولہ شماریاتی اور ادارتی اسلوب، حقیقی-z 3-D مناظر، سنیمائی پروازیں، ڈیٹرمنسٹک حرکت، قابلِ رسائی تفصیلات، اور فعال ڈیزائن سسٹم سے مرتب کردہ اسٹائلز۔",
+  "featured.blurb": "کوئی ٹیبل پیسٹ کریں - چارٹ اسے واضح، قابلِ رسائی اور بلاشبہ برانڈ کے عین مطابق بنا دیتا ہے",
   "a11yLabel": "{{chartType}} چارٹ{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "چارٹ کی قسم",
   "inputs.chartType.options.bar": "بار - عمودی",

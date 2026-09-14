@@ -113,6 +113,13 @@ const DIALOG_CREATE_ALLOWED: Record<string, number> = {
   // element; the zoom also fills the viewport with its own dim ground (no ::backdrop box to
   // hit-test) and re-renders the QR at full size. Documented at openQrZoom.
   'components/collab-ceremony.ts': 1,
+  // The learner preview: a full-bleed dialog holding ONE sandboxed iframe that runs the
+  // compiled course exactly as a learner's browser would. mountModal is a centred
+  // content-box whose teardown revokes nothing, and this panel owns a set of blob URLs it
+  // must revoke on close, so its lifecycle is the revoke. It keeps the two things the rule
+  // is actually protecting: `cancel` is handled (Escape closes) and focus returns to the
+  // Preview button. Documented at openPreview.
+  'views/learning/publishing.ts': 1,
 };
 const SHOW_MODAL_ALLOWED: Record<string, number> = {
   'components/modal.ts': 1,  // the primitive itself
@@ -127,6 +134,9 @@ const SHOW_MODAL_ALLOWED: Record<string, number> = {
   // The collab QR-zoom opens the nested full-screen dialog it mints (see DIALOG_CREATE_ALLOWED):
   // mountModal cannot own a nested dialog's Escape, so this one lifecycle is deliberate + local.
   'components/collab-ceremony.ts': 1,
+  // Opens the learner-preview dialog it mints (see DIALOG_CREATE_ALLOWED): one lifecycle,
+  // because closing it has to revoke the preview's blob URLs.
+  'views/learning/publishing.ts': 1,
 };
 
 test('R1 (rec 4): the <dialog> lifecycle is minted only by components/modal.ts (mountModal)', () => {
@@ -612,7 +622,7 @@ test('R9: lib/icons.ts glyph bodies are well-formed (balanced quotes and tags)',
   }
 
   // Named explicitly, because these four are the ones the old regex silently dropped - 
-  // if a future refactor takes them back out of range the count floor alone would not say so.
+  // if a future refactor takes them back out of range the count floor alone would not show it.
   for (const must of ['MAGNIFIER', 'zoomIn', 'zoomOut', 'search']) {
     assert.ok(seen.has(must), `R9 no longer scans "${must}" - the glyph regex has rotted again.`);
   }
@@ -1444,7 +1454,7 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // +1 2026-08-21 (plans/136 W2b): the signed report card's OFFSCREEN node fill
   // - every interpolated value passes through escape() (heroName/verdict/lamp
   // labels read back from OUR rendered DOM, then re-escaped anyway).
-  'views/valid.ts': 27,  // +1 2026-08-18 (plans/125): readImageText's [data-ocr-result].innerHTML = textSignalsHtml(...) - that helper escape()s every interpolated value (band/kind titles, the highlighted extract via escape()d segments, guess, summary), no user text reaches markup; +1 2026-08-19 (plans/126): readDocumentText's same [data-ocr-result] sink for the PDF text-layer read - textSignalsHtml again, plus a page-cap note whose only interpolations are escape()d t() output and two numbers
+  'views/valid.ts': 29,  // +2 2026-09-13 (plans/253): the Sources panel's [data-reuse-out] sink, filled by reuseAnswerHtml (every issue code and summary through escape()), and the strip note's, filled by stripCreditNoteHtml (t() escapes its one number, escape() the credit into the button attribute); +1 2026-08-18 (plans/125): readImageText's [data-ocr-result].innerHTML = textSignalsHtml(...) - that helper escape()s every interpolated value (band/kind titles, the highlighted extract via escape()d segments, guess, summary), no user text reaches markup; +1 2026-08-19 (plans/126): readDocumentText's same [data-ocr-result] sink for the PDF text-layer read - textSignalsHtml again, plus a page-cap note whose only interpolations are escape()d t() output and two numbers
   // 1 as of 2026-08-21 (plans/126 WP-A): the model-tier re-render, host.outerHTML
   // = render(panel), where render is the OWNING view's own panel builder
   // (textSignalsHtml / catTextSignalsHtml), the exact escaped-template family the
@@ -1536,6 +1546,25 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // and its current string value); the remaining interpolations are t() UI literals and
   // the field id, an identifier drawn from the kit definition's own field list.
   'pro/kit-panel.ts': 1,
+  // 2 as of 2026-09-13 (new file: the shared emoji control, plans/252). One sink is
+  // the control's own markup - every interpolation is escape()d (the set key, its
+  // label built from the host listing, each treatment id and its t() label) or a
+  // fixed class/attribute string. The other is the specimen row, filled with
+  // markup the ENGINE produced: the runtime's DOM pass over five constant
+  // characters, drawn from an admitted pack through the static SVG subset, which
+  // is the only thing that may reach it. The pack's own bytes were checksummed
+  // before they were parsed, so nothing here comes from a document.
+  'components/emoji-style-control.ts': 2,
+  // 2026-09-14, the learning module's four author-facing panels. Each is one
+  // innerHTML pass over a record the author is editing, and every value that came
+  // from a person goes through the shared escape helper: the course title, each
+  // candidate title, the lesson text, the destination name, the summary language and
+  // completion lines, and each check finding. The rest is fixed markup, engine
+  // constants (the delivery targets and their descriptions) and numbers. Nothing
+  // here reads a document or a network response.
+  'lib/learning-entry.ts': 1,
+  'views/learning/delivery.ts': 1,
+  'views/learning/ui.ts': 2,
   // Text surfaces: code uses the engine's escaping highlighter; action/font labels
   // use escapeHtml. Markdown uses the shared safe renderer. Other markup is static.
   'components/code-editor.ts': 1,
@@ -1766,7 +1795,14 @@ const R12_RATCHETS: Array<{ what: string; pin: number; count: (text: string) => 
     // 323 → 322: the component library now consumes the shared floating elevation.
     // 322 → 321: the workspace-chrome specimens took theirs from the part sheets too.
     // 321 → 319: Design panel/thumbnail shadows use semantic elevations.
-    pin: 319,
+    // 319 → 317: the sidebar select moved onto .field-select and the colour trigger
+    // took the boxed-field recipe (2026-09-12 chrome-craft pass).
+    // 317 → 302: the four sidebar sheets took the elevation ramp, the block fields
+    // and time input joined .field-input, and the section card became edge-only.
+    // 302 to 301: object cards share their shadow recipe.
+    // 301 to 300: the utilities.css boxed-field alias went; the field primitive
+    // owns the profile and export inputs by class now.
+    pin: 300,
     count: (t) => [...t.matchAll(/box-shadow:\s*([^;}]+)/g)]
       .map(m => m[1]!.trim())
       .filter(v => v !== 'none' && !/var\(--(?:ui-(?:edge|elevation|effect)|shadow|edge|ring-focus|bevel)/.test(v)).length,
@@ -1780,7 +1816,8 @@ const R12_RATCHETS: Array<{ what: string; pin: number; count: (text: string) => 
     // derived --radius-sm/--radius-md roles instead of new 8px/12px literals.
     // 101 → 100: the library uses semantic radii throughout.
     // 100 → 98: Design panel and thumbnail-cell radii use semantic tokens.
-    pin: 96,
+    // 96 → 94: the sidebar's history and language buttons took --radius-sm.
+    pin: 94,
     count: (t) => (t.match(/border-radius:\s*\d+(?:\.\d+)?px\s*[;}!]/g) ?? []).length,
     fix: 'use var(--radius-xs|sm|md|lg) (derived from --radius) or var(--radius) for the base panel size',
   },
@@ -1796,7 +1833,8 @@ const R12_RATCHETS: Array<{ what: string; pin: number; count: (text: string) => 
     // 443 → 442 on 2026-09-05: the convert workbench, template chooser, profile,
     // gallery, editor and inspector sheets moved onto var(--fs-2xs..xl).
     // 442 → 426: the component library uses the semantic type hierarchy.
-    pin: 426,
+    // 426 to 425: project titles use the shared object title scale.
+    pin: 425,
     count: (t) => (t.match(/font-size:\s*calc\(\s*[\d.]+(?:px|rem)\s*\*\s*var\(--a11y-fs\)\s*\)/g) ?? []).length,
     fix: 'use var(--fs-2xs..xl) - the multiplier is inside the token, so the largeText contract holds by construction',
   },
@@ -1835,9 +1873,13 @@ test('R12 (plans/188): app navigation reads semantic Lolly UI roles', () => {
 
 test('R13 (plans/188): reusable content patterns read semantic Lolly UI roles', () => {
   const required: Array<[string, string[]]> = [
+    ['styles/parts/object-tiles.css', [
+      '--ui-color-surface-raised', '--ui-color-selection-border', '--ui-color-selection-surface',
+      '--ui-radius-choice-round', '--ui-color-focus-ring', '--ui-motion-feedback',
+    ]],
     ['styles/parts/folders.css', [
       '--ui-color-surface-raised', '--ui-color-border-default', '--ui-color-selection-surface',
-      '--ui-radius-card', '--ui-radius-choice-round', '--ui-elevation-control', '--ui-motion-feedback',
+      '--ui-radius-choice-round', '--ui-elevation-control', '--ui-motion-feedback',
     ]],
     ['styles/parts/saved-list.css', [
       '--ui-color-surface-canvas', '--ui-color-surface-muted', '--ui-color-selection-surface',

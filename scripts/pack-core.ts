@@ -118,6 +118,11 @@ const exportsMap: Record<string, unknown> = {};
 for (const [subpath, target] of Object.entries(srcPkg.exports as Record<string, string>)) {
   if (target.endsWith('.json')) {
     exportsMap[subpath] = target;
+    // TypeScript copies imported JSON only. Public schema exports must ship even
+    // when no runtime module imports them, as with the portable emoji contracts.
+    const destination = join(PKG, target);
+    mkdirSync(dirname(destination), { recursive: true });
+    copyFileSync(join(CORE, target), destination);
   } else {
     const base = target.replace(/\.ts$/, '');
     exportsMap[subpath] = { types: `${base}.d.ts`, default: `${base}.js` };
@@ -185,12 +190,16 @@ writeFileSync(
 import { createMockHost, validateTool, CONTRACT_VERSION } from '@lolly-tools/core';
 import { KNOWN_FINISH_KINDS } from '@lolly-tools/core/host-v1';
 import toolSchema from '@lolly-tools/core/schema/tool.schema.json' with { type: 'json' };
+import emojiPackSchema from '@lolly-tools/core/schema/emoji-pack-v1.schema.json' with { type: 'json' };
+import emojiStyleSchema from '@lolly-tools/core/schema/emoji-style-v1.schema.json' with { type: 'json' };
 
 assert.equal(typeof createMockHost, 'function');
 assert.equal(typeof createMockHost().log, 'function');
 assert.equal(CONTRACT_VERSION, '1');
 assert.ok(Array.isArray(KNOWN_FINISH_KINDS) && KNOWN_FINISH_KINDS.length > 0);
 assert.equal(typeof toolSchema.$schema, 'string');
+assert.equal(emojiPackSchema.properties.schemaVersion.const, 1);
+assert.equal(emojiStyleSchema.properties.metricsPolicy.const, 'inline-em-v1');
 assert.equal(validateTool({}).valid, false);
 assert.equal(validateTool(${example.trim()}).valid, true);
 console.log('smoke: runtime ok');
@@ -210,6 +219,8 @@ import type { CanvasOp } from '@lolly-tools/core/canvas-op-v1';
 import { mulberry32 } from '@lolly-tools/core/canvas-op-testkit';
 import type { Finding } from '@lolly-tools/core/preflight';
 import type { Extension } from '@lolly-tools/core/extension-v1';
+import type { EmojiPackManifestV1, EmojiStyleV1 } from '@lolly-tools/core/emoji-v1';
+import type { EmojiResolutionV1 } from '@lolly-tools/core';
 
 const host: HostV1 = createMockHost();
 const manifest: ToolManifest = defineTool({
@@ -218,7 +229,7 @@ const manifest: ToolManifest = defineTool({
   inputs: [{ id: 'name', type: 'text', label: 'Name' }],
 });
 export const ok: boolean = validateTool(manifest).valid && typeof host.log === 'function';
-export type Used = Capability | CanvasOp | Finding | Extension;
+export type Used = Capability | CanvasOp | Finding | Extension | EmojiPackManifestV1 | EmojiStyleV1 | EmojiResolutionV1;
 `,
 );
 run(

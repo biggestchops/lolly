@@ -1,5 +1,5 @@
 {
-  "name": "Snippet",
+  "name": "Fragment kodu",
   "description": "Zmień fragmenty kodu w czyste obrazy z podświetloną składnią, gotowe do udostępnienia.",
   "inputs.code.label": "Kod",
   "inputs.code.placeholder": "Wklej swój kod tutaj…",

@@ -259,7 +259,7 @@ describe('blur lanes: mip vs ctx.filter (browser tier)', { skip: gate ?? false, 
 
   test('the two lanes agree within the stated tolerance', () => {
     if (!report.filterSupported) {
-      // Not a silent pass: say so, so a run on WebKit reads as "unmeasurable here"
+      // Not a silent pass: report it, so a run on WebKit reads as "unmeasurable here"
       // rather than as "measured and fine".
       console.log('[blur lanes] ctx.filter absent on this engine - the comparison is not measurable here');
       return;

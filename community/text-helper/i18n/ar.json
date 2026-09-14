@@ -1,5 +1,5 @@
 {
-  "name": "Text",
-  "description": "Find, edit, understand and transform text.",
+  "name": "النص",
+  "description": "ابحث في النص، وحرّره، وافهمه، وحوّله. تصفح أحرف علامتك التجارية والإيموجي، أو تعامل مع الكود والسجلات، أو أنشئ كتابة بأحرف ASCII.",
   "a11yLabel": "Text - characters, editing, analysis and conversions"
 }

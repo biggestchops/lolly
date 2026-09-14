@@ -1,5 +1,5 @@
 {
-  "name": "Logo Wall",
+  "name": "ロゴウォール",
   "description": "大量のロゴをきれいに揃ったスポンサーグリッドに配置 - いわゆる「NASCAR」ウォール。",
   "a11yLabel": "{{logos.length}}個のロゴのグリッド",
   "inputs.columns.label": "列数",

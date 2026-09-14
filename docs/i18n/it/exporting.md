@@ -43,7 +43,7 @@ Il campo del nome file e il selettore di formato si trovano in cima al pannello 
 | Vettoriale per stampa / app di design | **EPS**, oppure **EPS (CMYK)** | Vettoriale PostScript per Illustrator / flussi di lavoro tipografici |
 | Vettoriale per taglio / macchine CAD | **DXF** | Taglierine laser, plotter da taglio, CNC - tracciati in millimetri |
 | Una presentazione modificabile | **PowerPoint** (PPTX) | Testo e forme native modificabili, con immagini e vettori estraibili |
-| Un corso importabile da un LMS | **SCORM** (LMS) | Uno zip con il manifest, una pagina di avvio, le diapositive e il filmato narrato con sottotitoli - da una presentazione Design |
+| Un corso di formazione portatile | **Export course** | Rivedi il contenuto del progetto e costruisci un pacchetto Website, SCORM o xAPI sperimentale con versioni |
 | Un documento di testo modificabile | **Word** (DOCX) o **OpenDocument** (ODT) | Paragrafi e titoli reali che un elaboratore di testo può continuare a modificare (Doc Studio) |
 | Una foto o un'immagine generica | **PNG** (senza perdita) o **JPG** (più leggero) | Raster universale |
 | Immagini moderne più leggere | **WebP** / **AVIF** | Compressione migliore, alpha |
@@ -150,16 +150,18 @@ Per aprirlo, avvia Penpot, scegli un progetto e seleziona **Import**. Se hai eff
 
 ## SCORM (pacchetti corso)
 
-Una presentazione Design può uscire come **pacchetto SCORM** - lo zip che un learning management system importa, sia esso Moodle, Canvas, Blackboard o un LMS aziendale. Scegli **SCORM (LMS)** nel selettore di formato e l'esportazione scrive:
+Scegli **Export course** da uno strumento supportato, una cartella di progetto o una selezione. In Design, scegliere **SCORM (LMS)** e Download apre anch'esso questo flusso di lavoro del corso. Lolly salva la creazione, ti lascia rivedere il contenuto e l'ordine del corso, poi apre il modulo e la sua finestra di esportazione.
 
-- <!--i:layout--> **Le diapositive**, un'immagine per tavola, in vettoriale dove la tavola lo consente e in pixel solo dove non lo consente.
-- <!--i:play--> **Il filmato narrato** con la sua traccia di sottotitoli - le note del relatore lette da una voce on-device, esattamente come le riproduce [Presenting](/info/create/using.html#presenting).
-- <!--i:file--> **Una pagina di avvio** che scorre le diapositive, riproduce il filmato e riporta il completamento all'LMS tramite il runtime SCORM 1.2, la versione accettata da ogni LMS.
-- <!--i:font--> I font usati dalla presentazione, così la pagina di avvio si presenta uguale offline.
+- <!--i:layout--> Scegli la resa disponibile per ogni fonte: pagine statiche, movimento come video, audio o una risorsa scaricabile. Aggiungi il testo nativo della lezione e le alternative di lettura nel modulo.
+- <!--i:play--> Visualizza in anteprima il player per l'apprendente e rivedi descrizioni e sottotitoli. Il movimento è incluso come video, comprese le animazioni mute. Esporta prima una registrazione finita quando uno strumento non può ricrearla dagli input salvati.
+- <!--i:file--> Seleziona Website, SCORM 1.2, SCORM 2004 4th Edition, oppure un target xAPI sperimentale. Controlla il contenuto effettivo e la dimensione dello ZIP, poi salva e scarica la versione verificata.
+- <!--i:check--> Il completamento richiede di confermare ogni lezione obbligatoria e selezionare Finish. Il player del sito web memorizza l'avanzamento nel browser; un pacchetto LMS si collega al suo LMS ricevente.
 
 ![Il pannello di esportazione su una presentazione Design con SCORM (LMS) selezionato](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Niente nel pacchetto contatta l'esterno: sono file in uno zip, e gira dentro l'LMS senza bundler, senza CDN e senza account. Le app web e desktop lo costruiscono; la CLI no, perché fotografare le tavole e codificare il filmato richiedono il browser.
+Il pacchetto include il proprio contenuto finito e non richiede un account Lolly. Estrai uno ZIP Website su un host HTTP(S); importa uno ZIP LMS senza modificarne il contenuto. Testa la destinazione prevista prima di distribuire il corso.
+
+Per un corso assemblato da più creazioni salvate, media importati e risorse, usa [Crea un corso di formazione](/info/create/training-creators.html). Il modulo di apprendimento ha una propria struttura ordinata, conferme esplicite delle lezioni, anteprima per l'apprendente e una cronologia dei pacchetti con versioni. Il suo percorso CLI può impacchettare media che hai già esportato.
 
 ## DXF (file di taglio)
 
@@ -309,6 +311,10 @@ Le esportazioni possono portare **Content Credentials** - un manifest [C2PA](htt
 - **Verificare un file.** Lolly verifica anche le proprie credenziali: trascina un qualsiasi file su [/verify](/verify) (oppure esegui `lolly validate <file>` nella CLI) per un rapporto sul dispositivo - che indica in primo luogo se il file è stato effettivamente creato con Lolly e non modificato da allora. La vista Verify sul web va ben oltre la credenziale: segnala i **contenuti generati dall'IA**, rileva l'**Imprint di Lolly**, controlla le firme **SEAL** e (opzionale) i watermark a pixel di terze parti e mostra i **dati nascosti** - tutto sul dispositivo, nulla viene caricato. Vedi [Content Credentials Identity → Oltre la credenziale](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Privacy.** Tutto avviene sul tuo dispositivo: la chiave di firma viene creata per l'esportazione e non lascia mai il browser, nulla viene caricato e l'asserzione contiene solo ciò che i metadati di provenienza già trasportano. Le utility per la privacy (trasformazioni sul dispositivo dei *tuoi* file) non aggiungono mai credenziali, e *Rimuovi dati nascosti* rimuoverà un manifest C2PA come qualsiasi altro metadato incorporato.
 - **Interazioni.** Per i PDF, Content Credentials e la **protezione con password** (a entrambi i livelli - vedi sopra) sono reciprocamente esclusive (un PDF crittografato non può ricevere l'allegato della credenziale). La credenziale viene aggiunta come passo finale sui byte completati - dopo la marcatura DPI/EXIF/profilo colore, i metadati PDF/X e i marchi di stampa.
+
+### Source credits
+
+Un'esportazione che inserisce l'opera di qualcun altro registra quella fonte anche nella credenziale. Un'emoji presa da un set fissato (pinned) è il caso quotidiano: l'opera, il suo creatore, la licenza, da dove provengono esattamente i byte e cosa è cambiato viaggiano tutti con il file. La riga **Source credits** del pannello di esportazione dice cosa chiedono le fonti alla consegna prima che tu scarichi, e dopo il download rilegge i byte consegnati prima di dichiarare che i crediti sono nel file. Una licenza che ti chiede di scegliere, come un glifo CC BY-SA ricolorato che stai per condividere, riceve una card con le vie d'uscita; il download non viene mai bloccato. [Diritti creativi e crediti](/info/creative-rights.html) contiene i termini, le licenze esaminate e cosa resta tuo.
 
 ## Su telefono
 

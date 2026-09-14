@@ -1,0 +1,61 @@
+{
+  "name": "mit-no-notice",
+  "title": "MIT artwork with neither a copyright line nor the permission notice recorded",
+  "citations": [
+    "MIT License: the above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.",
+    "Plan 253 section 4.3: report credits included only when the necessary source fields are available."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/widget-art",
+        "title": "Widget Art",
+        "creators": [{ "name": "Example Dev", "role": "creator" }],
+        "sourceUrl": "https://example.org/widget.svg",
+        "sourceHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+        "rights": [
+          {
+            "declaration": "MIT",
+            "url": "https://opensource.org/license/mit",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      { "work": "example/widget-art", "role": "incorporated", "operations": ["placed"] }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": { "format": "png", "route": "file-with-c2pa", "canCarryCredential": true, "canCarryReadableCredit": true },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "unknown",
+    "issues": ["attribution.source-missing"],
+    "uses": [
+      {
+        "work": "example/widget-art",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "MIT",
+        "reviewed": true,
+        "issues": ["attribution.source-missing"]
+      }
+    ],
+    "required": [
+      {
+        "work": "example/widget-art",
+        "credit": "Example Dev, MIT License https://opensource.org/license/mit.",
+        "changes": "unchanged"
+      }
+    ],
+    "optional": [],
+    "channels": ["c2pa-ingredients", "readable-details"],
+    "changes": [],
+    "unresolved": ["example/widget-art: notice text not recorded"]
+  }
+}

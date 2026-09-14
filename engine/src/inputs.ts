@@ -66,10 +66,36 @@ export type InputValue =
   | InputValue[]
   | { [key: string]: InputValue | undefined };
 
+/**
+ * A visibility condition on an input or a select option. A map is every pair
+ * required: the named input's current value must be the value, or one of the
+ * listed values. A list of maps is any one map sufficient (an OR of ANDs).
+ */
+export type ShowIf = Record<string, InputValue> | Array<Record<string, InputValue>>;
+
+/**
+ * Whether a condition holds against the current model values. Undefined holds
+ * (nothing declared, always shown); an empty map holds; an empty list does not.
+ * A visibility overlay only: it never decides what a value may be.
+ */
+export function matchesShowIf(showIf: ShowIf | undefined, values: Record<string, unknown>): boolean {
+  if (!showIf) return true;
+  const matchesMap = (map: Record<string, InputValue>): boolean =>
+    Object.entries(map).every(([k, v]) =>
+      Array.isArray(v) ? (v as unknown[]).includes(values[k]) : values[k] === v
+    );
+  return Array.isArray(showIf) ? showIf.some(matchesMap) : matchesMap(showIf);
+}
+
 /** One `select` option (may carry an export size the shell applies). */
 export interface SelectOption {
   value: string;
   label?: string;
+  /** Offer this option only while the model matches (same shape and semantics as
+   *  an input's showIf). A visibility overlay: the option that is currently
+   *  selected stays offered whatever this says, so a saved session or a link never
+   *  changes meaning, and validation still runs against the whole option set. */
+  showIf?: ShowIf;
   width?: number;
   height?: number;
   unit?: string;
@@ -202,7 +228,10 @@ export interface InputSpec {
    *  shell's renderActions; see the claim tool. */
   matchExportFormat?: boolean;
   group?: string;
-  showIf?: Record<string, InputValue>;
+  /** Render only while the model matches: one map of input id to an accepted
+   *  value (or list of values), every pair required; or a list of such maps, any
+   *  one sufficient. See matchesShowIf. */
+  showIf?: ShowIf;
   // text / longtext
   maxLength?: number;
   minLength?: number;

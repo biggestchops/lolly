@@ -519,7 +519,7 @@ async function capabilitiesSection(): Promise<string> {
       </div>
       <p class="dash-cap-count" id="dash-cap-results" data-cap-count role="status" aria-live="polite" hidden></p>`;
   // Shown only when a query matches nothing - an accordion of collapsed, empty
-  // sections reads as "broken", so say so in words.
+  // sections reads as "broken", so report it in words.
   const empty = `
       <p class="dash-cap-empty" data-cap-empty hidden>${escape(t('Nothing matches that. Try a format (“svg”, “pptx”), a task (“print”, “share”) or a tool name.'))}</p>`;
   // The dialog is two-pane on a wide screen: the screenshot carries the left

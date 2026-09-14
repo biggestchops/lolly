@@ -209,6 +209,7 @@
   display: grid; grid-template-columns: var(--list-chip) minmax(0, 1fr) var(--list-cols);
   align-items: center; column-gap: 14px; padding: 5px var(--list-gutter) 5px 12px; box-sizing: border-box;
 }
+.projects-list .tile-figure { width: var(--list-chip); border-radius: var(--ui-radius-control); }
 .projects-list .tile-cols { display: contents; }
 .projects-list .tile-col { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11.5px * var(--a11y-fs)); color: var(--ui-color-text-muted); }
 /* The 52×40 cover chip - sessions, images, create/batch/trash glyph boxes. */
@@ -544,7 +545,6 @@ button.projects-result-path:hover { background: var(--ui-color-surface-muted); c
    needs no attribute gate. */
 @media (pointer: coarse) {
   .tile-menu-btn { opacity: 1; width: calc(40px * var(--a11y-fs)); height: calc(40px * var(--a11y-fs)); }
-  .tile-check { width: calc(28px * var(--a11y-fs)); height: calc(28px * var(--a11y-fs)); }
   /* List view pins BOTH controls to the right gutter (menu right:10, check right:42);
      with the enlarged coarse sizes they'd overlap (~8px), so push the check clear of
      the 40px menu. In grid view they sit in opposite corners, so no change needed. */
@@ -675,7 +675,6 @@ button.projects-result-path:hover { background: var(--ui-color-surface-muted); c
 .tpl-sec--hidden .tpl-tile:hover { opacity: 1; }
 .tpl-cover {
   display: grid; place-items: center;
-  background: var(--preview-checker), var(--preview-surface);
 }
 .tpl-cover > * { grid-area: 1 / 1; }
 .tpl-cover-glyph { display: flex; color: var(--ui-color-text-muted); opacity: 0.55; }

@@ -39,7 +39,7 @@
       "label": "Seed colour",
       "type": "color",
       "default": "{color.semantic.primary}",
-      "help": "The colour the whole palette grows from - defaults to your brand primary."
+      "help": "The colour the whole palette grows from - defaults to the design system primary."
     },
     {
       "id": "harmony",
@@ -98,6 +98,7 @@
     },
     {
       "id": "mode",
+      "section": "Contrast",
       "urlKey": "m",
       "label": "Ramp mode",
       "type": "select",
@@ -116,14 +117,16 @@
     },
     {
       "id": "bg",
+      "section": "Contrast",
       "urlKey": "b",
       "label": "Background",
       "type": "color",
       "default": "{color.semantic.surface}",
-      "help": "The surface the palette sits on. In Contrast mode every step is solved for readability against it - defaults to your brand surface (white in a neutral brand)."
+      "help": "The surface the palette sits on. In Contrast mode every step is solved for readability against it - defaults to the design system surface (white in a neutral one)."
     },
     {
       "id": "contrastCurve",
+      "section": "Contrast",
       "urlKey": "cc",
       "label": "Contrast curve",
       "type": "select",
@@ -146,6 +149,7 @@
     },
     {
       "id": "lcTargets",
+      "section": "Contrast",
       "urlKey": "lc",
       "label": "Custom Lc targets",
       "type": "text",
@@ -154,6 +158,7 @@
     },
     {
       "id": "cssStyle",
+      "section": "Output",
       "urlKey": "cs",
       "label": "CSS export style",
       "type": "select",
@@ -172,11 +177,12 @@
     },
     {
       "id": "vision",
+      "section": "Output",
       "urlKey": "v",
       "label": "Colour vision",
       "type": "select",
       "default": "normal",
-      "help": "Repaints the whole sheet as another viewer sees it. Every label keeps the real hex, and the reported ratios still describe your actual palette.",
+      "help": "Repaints the whole sheet as another viewer sees it. Every label keeps the real hex, and the reported ratios still describe the actual palette.",
       "options": [
         {
           "value": "normal",
@@ -202,6 +208,7 @@
     },
     {
       "id": "grid",
+      "section": "Output",
       "urlKey": "g",
       "label": "Contrast grid",
       "type": "boolean",

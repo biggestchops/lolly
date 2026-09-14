@@ -1,7 +1,7 @@
 {
   "name": "Diagram",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "Diagram från första inklistring till avancerad visualisering - förklarade datarekommendationer, tydlig fältmappning, 35 klassiska vektorfamiljer inklusive Pareto, bullet targets och range bars, sexton statistiska och redaktionella uttrycksformer, riktiga 3D-scener med z-djup, filmiska flygningar, deterministisk rörelse, tillgängliga beskrivningar och stilar sammanställda från det aktiva designsystemet.",
+  "featured.blurb": "Klistra in en tabell - Chart gör den tydlig, tillgänglig och omisskännligt i linje med designsystemet",
   "a11yLabel": "{{chartType}}-diagram{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "Diagramtyp",
   "inputs.chartType.options.bar": "Stapel - vertikal",

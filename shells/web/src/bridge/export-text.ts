@@ -216,6 +216,11 @@ export async function emitInlineTextSvg(
     } else if (node.nodeType === 1) {
       const element = node as Element;
       if (element.tagName.toLowerCase() === 'br') return;
+      // The clipped span an emoji placement keeps its characters in (see the same
+      // skip in export-svg-walker.ts). Absolute positioning already blockifies it,
+      // so the display gate below catches it today; saying it outright means a
+      // later change to that gate cannot put the raw characters back in the file.
+      if (element.classList.contains('lolly-emoji-text')) return;
       const s = window.getComputedStyle(element);
       if (s.display === 'none') return;
       // Non-replaced `display: inline` only. Anything with a box of its own - 

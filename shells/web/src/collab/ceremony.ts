@@ -189,7 +189,7 @@ export type CeremonyEndCause =
   /**
    * ICE reported `failed`, or never got anywhere before the connect watchdog expired,
    * having NEVER connected. On a LAN that is overwhelmingly Wi-Fi client isolation or
-   * blocked mDNS (section 11.1, section 11.2) - the copy should say so and suggest a hotspot or wire,
+   * blocked mDNS (section 11.1, section 11.2) - the copy should report it and suggest a hotspot or wire,
    * not blame the invite.
    */
   | 'ice-failed-isolation-suspected'

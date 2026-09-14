@@ -1,6 +1,6 @@
 {
   "name": "Tangkapan Layar URL",
-  "description": "Halaman web apa pun, pada kedalaman gulir mana pun, dengan CSS kustom",
+  "description": "Halaman web apa pun, pada kedalaman scroll berapa pun, dengan CSS khusus.",
   "a11yLabel": "Tangkapan layar dari {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Halaman yang akan ditangkap. Ditangkap saat ekspor, menggunakan mesin browser sungguhan.",

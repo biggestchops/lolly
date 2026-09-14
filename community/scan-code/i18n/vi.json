@@ -1,5 +1,5 @@
 {
-  "name": "Scan",
-  "description": "Read QR codes and barcodes on-device, with nothing sent to any cloud. A reader, not an opener: it decodes, classifies and explains what a code carries - links, Wi-Fi, contacts, product codes - and lets you act deliberately. Copy is always the first action; opening, joining or adding is an explicit, informed tap.",
-  "featured.blurb": "Read any code, safely and offline"
+  "name": "Quét",
+  "description": "Đọc mã QR và mã vạch ngay trên thiết bị, không gửi gì lên đám mây. Đây là một trình đọc, không phải trình mở: nó giải mã, phân loại và giải thích những gì mã chứa - liên kết, Wi-Fi, danh bạ, mã sản phẩm - và để bạn chủ động quyết định hành động. Sao chép luôn là hành động đầu tiên; mở, tham gia hoặc thêm vào là một thao tác chạm rõ ràng, có hiểu biết.",
+  "featured.blurb": "Đọc mọi mã, an toàn và không cần mạng"
 }

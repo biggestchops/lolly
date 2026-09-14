@@ -1,0 +1,88 @@
+{
+  "name": "by-recoloured",
+  "title": "A CC BY 4.0 illustration recoloured, then placed",
+  "citations": [
+    "CC BY 4.0 legal code, section 3(a)(1)(B): indicate that the material was modified.",
+    "CC BY 4.0 legal code, section 2(a)(1)(B): adapted material is permitted, with no ShareAlike condition."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/river-illustration",
+        "title": "River Illustration",
+        "creators": [
+          {
+            "name": "Example Artist",
+            "role": "creator"
+          },
+          {
+            "name": "Example Catalogue",
+            "role": "publisher"
+          }
+        ],
+        "sourceUrl": "https://example.org/river.svg",
+        "revision": "2024-05-01",
+        "sourceHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "rights": [
+          {
+            "declaration": "cc-by-4.0",
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/river-illustration",
+        "role": "incorporated",
+        "operations": [
+          "placed",
+          "recoloured"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/river-illustration",
+        "classification": "adaptation",
+        "rule": "adaptation-operations-v1",
+        "licence": "CC-BY-4.0",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [
+      {
+        "work": "example/river-illustration",
+        "credit": "\"River Illustration\" by Example Artist (Example Catalogue), CC BY 4.0 https://creativecommons.org/licenses/by/4.0/, source https://example.org/river.svg, changes: recoloured.",
+        "changes": "recoloured"
+      }
+    ],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [
+      "recoloured"
+    ],
+    "unresolved": []
+  }
+}

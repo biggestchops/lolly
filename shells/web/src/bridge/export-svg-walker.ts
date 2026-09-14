@@ -861,6 +861,15 @@ async function renderHtmlSvg(node: Element, opts: ExportOpts, textContext: Inlin
     }
     const tag = el.tagName.toLowerCase();
     if (tag === 'style' || tag === 'script') return;
+    // The clipped span an emoji placement keeps its characters in, for copy,
+    // find-in-page and screen readers (EMOJI_TEXT_CLASS in engine/src/emoji-dom.ts).
+    // It is never painted, and its characters are already drawn beside it as
+    // artwork, so emitting it here would put the machine's own emoji font back
+    // into the file the pass exists to keep it out of. The class is spelled
+    // rather than imported: the engine's emoji modules are half a megabyte of
+    // pinned tables, and this chunk must not pull them in. See
+    // export-emoji-skip.test.ts, which fails if the two spellings drift.
+    if (el.classList.contains('lolly-emoji-text')) return;
 
     const style = window.getComputedStyle(el);
     if (style.display === 'none' || style.visibility === 'hidden') return;
@@ -1030,7 +1039,7 @@ async function renderHtmlSvg(node: Element, opts: ExportOpts, textContext: Inlin
         gT.appendChild(img);
         return;
       }
-      // Capture refused (a corner behind the eye, dom-to-image failed). Say so, then
+      // Capture refused (a corner behind the eye, dom-to-image failed). Report it, then
       // fall through - an AABB rectangle is wrong, but it is what this walker did
       // before section 12 Q2 and it is better than a hole.
       _host?.log?.('warn', `svg: tilted <${tag}> could not be captured; falling back to its bounding box`);
@@ -1403,7 +1412,7 @@ async function renderHtmlSvg(node: Element, opts: ExportOpts, textContext: Inlin
         _host?.log?.('warn', `svg: backdrop-filter blur skipped on <${tag}> - ${backdropNodes} nodes behind it; the panel rasterises instead`);
       }
     } else if (bfRaw && bfRaw !== 'none') {
-      // Rotated panel, an empty root, or a filter chain we refuse to fake. Say so at
+      // Rotated panel, an empty root, or a filter chain we refuse to fake. Report it at
       // warn level: this is a fidelity loss the user can act on, not a debug note.
       _host?.log?.('warn', `svg: backdrop-filter not reconstructed on <${tag}> (${bfTransformed ? 'rotated' : bfPx === null ? 'not a plain blur()' : 'nothing behind it'}); the panel rasterises instead`);
     }

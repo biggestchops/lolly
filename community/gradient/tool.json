@@ -1,7 +1,7 @@
 {
   "id": "gradient",
   "name": "Gradient",
-  "description": "Five ways to build a gradient from your brand swatches: soft radial Blend, a real Coons-patch mesh as crisp SVG (Subdivide) or a smooth raster (Mesh), freeform Warp points, and the animated Flow waves. Drag everything right on the canvas; export stills or join-free video loops.",
+  "description": "Five ways to build a gradient from the design system swatches: soft radial Blend, a real Coons-patch mesh as crisp SVG (Subdivide) or a smooth raster (Mesh), freeform Warp points and the animated Flow waves. Drag everything right on the canvas; export stills or join-free video loops.",
   "a11yLabel": "Mesh gradient blending {{count}} colours",
   "version": "1.2.1",
   "engineVersion": "^1.0.0",
@@ -625,7 +625,7 @@
     {
       "id": "spread",
       "label": "Spread",
-      "section": "Texture & Motion",
+      "section": "Texture & motion",
       "type": "number",
       "display": "slider",
       "default": 75,
@@ -643,7 +643,7 @@
     {
       "id": "blur",
       "label": "Extra blur",
-      "section": "Texture & Motion",
+      "section": "Texture & motion",
       "type": "number",
       "display": "slider",
       "default": 6,
@@ -661,7 +661,7 @@
     {
       "id": "grain",
       "label": "Grain",
-      "section": "Texture & Motion",
+      "section": "Texture & motion",
       "type": "number",
       "display": "slider",
       "default": 50,
@@ -678,7 +678,7 @@
     {
       "id": "grainBlend",
       "label": "Grain blend",
-      "section": "Texture & Motion",
+      "section": "Texture & motion",
       "type": "select",
       "default": "soft-light",
       "showIf": {
@@ -705,7 +705,7 @@
     {
       "id": "animate",
       "label": "Drift",
-      "section": "Texture & Motion",
+      "section": "Texture & motion",
       "type": "boolean",
       "default": false,
       "showIf": {
@@ -719,7 +719,7 @@
     {
       "id": "distance",
       "label": "Float distance",
-      "section": "Texture & Motion",
+      "section": "Texture & motion",
       "type": "number",
       "display": "slider",
       "default": 100,
@@ -738,7 +738,7 @@
     {
       "id": "speed",
       "label": "Float speed",
-      "section": "Texture & Motion",
+      "section": "Texture & motion",
       "type": "number",
       "display": "slider",
       "default": 12,
@@ -771,7 +771,7 @@
     },
     {
       "id": "waveScale",
-      "label": "Wave scale",
+      "label": "Scale",
       "section": "Waves",
       "type": "number",
       "display": "slider",
@@ -786,7 +786,7 @@
     },
     {
       "id": "waveAmp",
-      "label": "Wave motion",
+      "label": "Motion",
       "section": "Waves",
       "type": "number",
       "display": "slider",
@@ -815,7 +815,7 @@
     },
     {
       "id": "seed",
-      "label": "Wave seed",
+      "label": "Seed",
       "section": "Waves",
       "type": "number",
       "default": 7,

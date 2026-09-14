@@ -25,6 +25,7 @@ import {
   readXlsx,
 } from '@lolly/engine';
 import type { TableValue } from '@lolly/engine';
+import { matchesShowIf } from '@lolly/engine';
 import { tableBodyCellHtml, tableColumnEditor } from './table-cells.ts';
 import { tableInputHtml } from './table-input-html.ts';
 import { readTableCells, wireTableEnter, wireTableRowMoves } from './table-input-dom.ts';
@@ -87,6 +88,14 @@ import { peaksFingerprint } from '../lib/audio-peaks.ts';
 import { mountAudioThumbs } from './picker.ts';
 import { asRow, type BlockRow } from './tool-types.ts';
 import type { WebToolHost, PanelEl, EmbedDescribe, FlatpickrHost } from './tool.ts';
+
+// The id scope for one emoji table's artwork, so no two roots walked into this
+// document mint the same placement id. The canvas keeps the default scope `e`;
+// every table gets `s<n>_`, and the trailing underscore is what makes the scopes
+// unambiguous - a placement id is the scope with the item number written straight
+// after it, so `s1` + item 23 and `s12` + item 3 would otherwise be the same id.
+let emojiCellScopes = 0;
+const emojiCellScope = (): string => `s${emojiCellScopes++}_`;
 
 // ── Per-slot media affordances (opt-in fit/match/preview) ────────────────────
 // Write the export-size channel the export bar owns - the same [data-action]
@@ -558,6 +567,9 @@ const inSheetMode = (): boolean =>
  * sidebar folds them all, and the phone sheet - half a viewport tall, with a soft
  * keyboard about to take the bottom of it - leaves only the FIRST one open, so the
  * sheet opens on the tool's primary controls instead of every input at once.
+ * One exception on the desktop: a tool whose EVERY input sits inside a section
+ * (`allFolded`) would open on nothing but headers, not a single control on screen,
+ * so that shape opens its first section too. Any flat row keeps the desktop default.
  * Pure - exported for tests.
  */
 export function shouldOpenSection({
@@ -565,13 +577,15 @@ export function shouldOpenSection({
   wasOpen,
   firstRender,
   sheetMode,
+  allFolded = false,
 }: {
   index: number;
   wasOpen: boolean;
   firstRender: boolean;
   sheetMode: boolean;
+  allFolded?: boolean;
 }): boolean {
-  return wasOpen || (firstRender && sheetMode && index === 0);
+  return wasOpen || (firstRender && index === 0 && (sheetMode || allFolded));
 }
 
 /**
@@ -608,12 +622,9 @@ function renderInputs(
     // A control-plane "hidden" input drops from the sidebar entirely (never
     // rendered). This is a rendering overlay - the model still carries the input.
     if (policyFor(i.id)?.mode === 'hidden') return false;
-    if (!i.showIf) return true;
-    // A showIf value may be a single value or an array of accepted values
-    // (render if the current value is any of them).
-    return Object.entries(i.showIf).every(([k, v]) =>
-      Array.isArray(v) ? v.includes(modelValues[k] as InputValue) : modelValues[k] === v
-    );
+    // One map (every pair required, a value may be a list of accepted values) or
+    // a list of maps (any one sufficient): the engine owns the predicate.
+    return matchesShowIf(i.showIf, modelValues);
   });
 
   // The block-row handlers below build the value they commit from the input's
@@ -709,10 +720,18 @@ function renderInputs(
     // floating-label :has() chain (tool.css), which paints the label OVER the trigger.
     // A notice row is static too: the notice sits between label and field, which
     // the floating-label offset math (tool.css) cannot account for.
+    // Blocks and time rows are static too: their captions sit above a composite or a
+    // native time widget, and the floating-label rule out-specifies the static rule
+    // tool.css keeps for them, so the class is what actually decides it.
     const isStaticLabel =
       input.control === 'datetime-local-input' ||
       input.control === 'table' ||
       input.control === 'file-picker' ||
+      input.control === 'blocks' ||
+      input.control === 'time-input' ||
+      // A vector's fields are a numeric strip with their own scrub glyphs; a
+      // floating label would sit on top of them, so its name is a static caption.
+      input.control === 'vector' ||
       isJellyField ||
       Boolean(input.notice) ||
       Boolean(policyNote);
@@ -755,7 +774,7 @@ function renderInputs(
     const chipLabel = [escape(pol?.note ?? ''), policyNote].filter(Boolean).join('. ');
     const lockChip =
       managed && pol?.note
-        ? `<span class="input-lock-chip" data-tip="${escape(pol.note)}" aria-label="${chipLabel}" tabindex="0" style="display:inline-flex;align-items:center;margin-inline-start:.35rem;vertical-align:middle;color:hsl(var(--muted-foreground))">${icon('lock', { size: 12, strokeWidth: 2 })}</span>`
+        ? `<span class="input-lock-chip" data-tip="${escape(pol.note)}" aria-label="${chipLabel}" tabindex="0">${icon('lock', { size: 12, strokeWidth: 2 })}</span>`
         : '';
     const labelText = `<span class="input-label-text"${isComposite ? ` id="${labelId}"` : ''}>${escape(input.label ?? input.id)}${valueTag}</span>`;
     // Unified "Add data" affordance (plan 87): a text/longtext input that declares
@@ -799,10 +818,11 @@ function renderInputs(
           ? `<div class="input-attached">${lead}${controlHtml(renderInput, modelValues, pol)}</div>`
           : controlHtml(renderInput, modelValues, pol);
     // A locked control renders inert + dimmed: `inert` drops it from focus + events,
-    // `pointer-events:none` covers pointer input for controls that don't honour
-    // inert. Cooperative only - the server is the hard gate (locked values 422).
+    // and .input-locked (tool.css) adds the dim plus a pointer-events guard for
+    // controls that don't honour inert. Cooperative only - the server is the hard
+    // gate (locked values 422).
     const control = locks
-      ? `<span class="input-locked" inert aria-disabled="true" style="display:block;opacity:.6;pointer-events:none">${rawControl}</span>`
+      ? `<span class="input-locked" inert aria-disabled="true">${rawControl}</span>`
       : rawControl;
     const help = ht ? ht.pop : '';
     if (isCheckbox) return `<label class="${cls}">${control}${label}${notice}${help}</label>`;
@@ -833,6 +853,9 @@ function renderInputs(
   const firstRender = !el.dataset.blocksDefaulted;
   el.dataset.blocksDefaulted = '1';
   const sheetMode = inSheetMode();
+  // Every visible row inside a section: see shouldOpenSection - the desktop opens
+  // the first section rather than a column of folded headers.
+  const allFolded = rowModel.length > 0 && rowModel.every((i) => i.section != null);
 
   const parts: string[] = [];
   let openSection: string | null = null;
@@ -848,6 +871,10 @@ function renderInputs(
     // sharing an input). renderInputs must tolerate a manifest-less runtime.
     (runtime.manifest?.render as { denseSections?: string[] } | undefined)?.denseSections ?? []
   );
+  // Same hint family: a glyph before a section head, so a long stack of folded
+  // sections (chart, filter, darkroom) scans by shape as well as by word.
+  const sectionIcons: Record<string, string> =
+    (runtime.manifest?.render as { sectionIcons?: Record<string, string> } | undefined)?.sectionIcons ?? {};
   let pillbarOpen = false; // a run of consecutive `display:'pill'` booleans, wrapped
   const isPillInput = (i: InputModelItem): boolean =>
     i.control === 'checkbox' && i.display === 'pill';
@@ -869,10 +896,15 @@ function renderInputs(
           wasOpen: openSections.has(sec),
           firstRender,
           sheetMode,
+          allFolded,
         });
         const dense = denseSections.has(sec) ? ' input-section--dense' : '';
+        const glyph = sectionIcons[sec];
+        const head = glyph && hasIcon(glyph)
+          ? `<span class="input-section-title"><span class="input-section-icon" aria-hidden="true">${icon(glyph as IconName, { size: 14 })}</span>${escape(sec)}</span>`
+          : escape(sec);
         parts.push(
-          `<details class="input-section${dense}"${open ? ' open' : ''}><summary class="input-section-summary">${escape(sec)}</summary><div class="input-section-body">`
+          `<details class="input-section${dense}"${open ? ' open' : ''}><summary class="input-section-summary">${head}</summary><div class="input-section-body">`
         );
       }
       openSection = sec;
@@ -1599,6 +1631,26 @@ function renderInputs(
         )
           promote(tr);
       };
+      // The cell buttons carry the glyph as text, so the sidebar would show the
+      // machine's own emoji beside a canvas drawn from the chosen set. One pass
+      // over the whole table draws them all: one call, so each cell's artwork
+      // gets local ids of its own, and the textareas beside them are left alone
+      // (the pass skips a form control). The `<input>` fields that hold text stay
+      // native, as plan 252 allows.
+      //
+      // Two things this pass must NOT be. It is not the render, so `track: false`
+      // keeps it out of the runtime's snapshot: a tracked walk of a sidebar table
+      // would report the counts of that table and hide the Emoji section over a
+      // canvas full of emoji, and it would make the table the tree a later set
+      // change redraws. And it shares the document with the canvas, so it takes an
+      // id scope of its own: both roots start numbering placements at the
+      // beginning, and without this one table's gradient or clip path would paint
+      // a glyph on the canvas.
+      const idScope = emojiCellScope();
+      const drawEmojiCells = (): void => {
+        if (!wrap.querySelector('[data-emoji-cell]')) return;
+        void runtime.applyEmojiToDom?.(wrap, { track: false, idScope })?.catch(() => undefined);
+      };
       const wireCells = (root: ParentNode): void => {
         root.querySelectorAll<HTMLInputElement>('.table-cell').forEach((cell) => {
           if (fixed) wireTableEnter(cell, wrap, tid);
@@ -1624,12 +1676,14 @@ function renderInputs(
                 maybePromote(btn);
                 btn.focus();
                 commit(read());
-              })
+                drawEmojiCells();
+              }, { emoji: { apply: (node) => runtime.applyEmojiToDom(node, { track: false, idScope: 'p' }) } })
             );
           });
         });
       };
       wireCells(wrap);
+      drawEmojiCells();
     }
 
     // Structural edits commit a mutated read(); the pressed button isn't a
@@ -2757,7 +2811,7 @@ function controlHtml(
       // attribute, so it rides on data-maxlength and is applied there.
       if (jellyActive())
         return `<jelly-textarea data-input-id="${id}" size="sm" rows="${input.rows ?? 3}" value="${val}" placeholder="${escape(input.placeholder ?? '')}"${input.maxLength ? ` data-maxlength="${input.maxLength}"` : ''}></jelly-textarea>`;
-      return `<textarea data-input-id="${id}" rows="${input.rows ?? 3}" maxlength="${input.maxLength ?? ''}" placeholder="${escape(input.placeholder ?? ' ')}">${val}</textarea>`;
+      return `<textarea class="field-input" data-input-id="${id}" rows="${input.rows ?? 3}" maxlength="${input.maxLength ?? ''}" placeholder="${escape(input.placeholder ?? ' ')}">${val}</textarea>`;
     case 'slider': {
       // rangeWhen lets a slider's bounds depend on another input (e.g. per-pose
       // limits): the first entry whose `when` matches the current model wins,
@@ -2803,16 +2857,24 @@ function controlHtml(
       // brandFonts: append every font the user added to their brand as extra options
       // (de-duped against the manifest's own), so a font picker lists the whole brand
       // type kit - mirrors the same flag on a `blocks` select sub-field.
-      let selOpts = (input.options ?? []).map((o) => ({
-        value: String(o.value),
-        label: String(o.label ?? o.value),
-        badge: (o as { badge?: string }).badge ? String((o as { badge?: string }).badge) : '',
-      }));
+      // An option's own showIf (engine matchesShowIf, the same predicate as a
+      // row's) drops a choice the current mode cannot honour. The selected option
+      // always stays, marked not applicable, so a saved session or a link never
+      // changes meaning; validation still runs against the whole set.
+      const curValue = String(input.value ?? '');
+      let selOpts = (input.options ?? [])
+        .map((o) => ({
+          value: String(o.value),
+          label: String(o.label ?? o.value),
+          badge: (o as { badge?: string }).badge ? String((o as { badge?: string }).badge) : '',
+          na: !matchesShowIf(o.showIf, modelValues),
+        }))
+        .filter((o) => !o.na || o.value === curValue);
       if (input.brandFonts) {
         const seen = new Set(selOpts.map((o) => o.value));
         for (const fam of brandFontFamilies())
           if (!seen.has(fam)) {
-            selOpts.push({ value: fam, label: fam, badge: '' });
+            selOpts.push({ value: fam, label: fam, badge: '', na: false });
             seen.add(fam);
           }
       }
@@ -2854,10 +2916,10 @@ function controlHtml(
                 ? `<span class="badge-select-pill badge-select-pill--icon" data-badge="${escape(o.badge)}" role="img" aria-label="${escape(o.badge)}" title="${escape(o.badge)}">${icon(glyph, { size: 12 })}</span>`
                 : `<span class="badge-select-pill" data-badge="${escape(o.badge)}">${escape(o.badge)}</span>`;
             return (
-              `<button type="button" role="radio" class="badge-select-opt${on ? ' is-on' : ''}"` +
+              `<button type="button" role="radio" class="badge-select-opt${on ? ' is-on' : ''}${o.na ? ' is-na' : ''}"` +
               ` data-badge-value="${escape(o.value)}" aria-checked="${on ? 'true' : 'false'}"` +
-              ` tabindex="${on ? '0' : '-1'}"${on ? ` data-input-id="${id}"` : ''}>` +
-              `<span class="badge-select-label">${escape(o.label)}</span>` +
+              ` tabindex="${on ? '0' : '-1'}"${on ? ` data-input-id="${id}"` : ''}${o.na ? ` title="${escape(t('Not applicable in this mode'))}"` : ''}>` +
+              `<span class="badge-select-label">${escape(o.label)}${o.na ? ` <span class="badge-select-na">(${escape(t('not applicable'))})</span>` : ''}</span>` +
               pill +
               `</button>`
             );
@@ -2873,10 +2935,10 @@ function controlHtml(
             : '';
         return `<div class="badge-select${variant}" role="radiogroup" data-badge-select="${id}" aria-label="${escape(input.label ?? id)}">${btns}</div>`;
       }
-      return `<select data-input-id="${id}">${selOpts
+      return `<select class="field-select" data-input-id="${id}">${selOpts
         .map(
           (o) =>
-            `<option value="${escape(o.value)}" ${o.value === String(input.value ?? '') ? 'selected' : ''}>${escape(o.label)}</option>`
+            `<option value="${escape(o.value)}" ${o.value === curValue ? 'selected' : ''}>${escape(o.label)}${o.na ? ` (${escape(t('not applicable'))})` : ''}</option>`
         )
         .join('')}</select>`;
     }
@@ -2887,13 +2949,13 @@ function controlHtml(
       // separate markup below and stay native too.
       return jellyActive() && input.display !== 'pill'
         ? `<jelly-switch data-input-id="${id}" size="sm" label="${escape(input.label || id)}"${input.value ? ' checked' : ''}></jelly-switch>`
-        : `<input type="checkbox" data-input-id="${id}" ${input.value ? 'checked' : ''}>`;
+        : `<input type="checkbox" class="field-check" data-input-id="${id}" ${input.value ? 'checked' : ''}>`;
     case 'color-picker':
       // Shared SUSE colour picker (see components/color-field.js).
       // `swatchesOnly` makes it a palette-restricted picker (no hex/native/alpha).
       return colorFieldHtml(id, input.value, { swatchesOnly: input.swatchesOnly === true });
     case 'palette-picker':
-      return `<input type="text" data-input-id="${id}" value="${val}" placeholder="(palette picker: stub)">`;
+      return `<input type="text" class="field-input" data-input-id="${id}" value="${val}" placeholder="(palette picker: stub)">`;
     case 'asset-picker': {
       const v = input.value as AssetRef | null;
       const currentLabel =
@@ -3075,9 +3137,9 @@ function controlHtml(
       </div>`;
     }
     case 'time-input':
-      return `<div class="time-input-wrap"><input type="time" data-input-id="${id}" value="${val}"></div>`;
+      return `<div class="time-input-wrap"><input type="time" class="field-input" data-input-id="${id}" value="${val}"></div>`;
     case 'datetime-local-input':
-      return `<input type="text" class="fp-datetime" data-input-id="${id}" data-fp-value="${val}" placeholder="Live - current time" readonly>`;
+      return `<input type="text" class="fp-datetime field-input" data-input-id="${id}" data-fp-value="${val}" placeholder="Live - current time" readonly>`;
     case 'table': return tableInputHtml(input);
     case 'blocks': {
       const items = Array.isArray(input.value) ? input.value : [];
@@ -3163,7 +3225,7 @@ function controlHtml(
               .join('');
             return labelled(
               f,
-              `<input class="block-field block-field--ref" list="${listId}" data-field-id="${fieldId}"
+              `<input class="block-field block-field--ref field-input field-input--sm" list="${listId}" data-field-id="${fieldId}"
               value="${escape(cur)}" placeholder="${escape(f.placeholder ?? emptyLabel ?? '- none -')}"
               aria-label="${escape(f.label ?? f.id)}"><datalist id="${listId}">${dlOpts}</datalist>`
             );
@@ -3185,7 +3247,7 @@ function controlHtml(
             .join('');
           return labelled(
             f,
-            `<select class="block-field block-field--ref" data-field-id="${fieldId}" aria-label="${escape(f.label ?? f.id)}">${empty}${unknown}${opts}</select>`
+            `<select class="block-field block-field--ref field-select field-select--sm" data-field-id="${fieldId}" aria-label="${escape(f.label ?? f.id)}">${empty}${unknown}${opts}</select>`
           );
         }
 
@@ -3201,7 +3263,7 @@ function controlHtml(
           // native caret restoration, which a shadow-DOM jelly field can't offer.
           const ctl = jellyActive()
             ? `<jelly-switch class="block-field" size="sm" data-field-id="${fieldId}" label="${escape(f.label ?? f.id)}"${on ? ' checked' : ''}></jelly-switch>`
-            : `<input type="checkbox" class="block-field block-field--checkbox" data-field-id="${fieldId}"${on ? ' checked' : ''}>`;
+            : `<input type="checkbox" class="block-field block-field--checkbox field-check" data-field-id="${fieldId}"${on ? ' checked' : ''}>`;
           return `<label class="block-control block-control--checkbox block-control--full">
             ${ctl}
             <span class="block-control-label">${escape(f.label ?? f.id)}${ht ? ht.button : ''}</span>
@@ -3245,7 +3307,7 @@ function controlHtml(
             .join('');
           return labelled(
             f,
-            `<select class="block-field" data-field-id="${fieldId}" aria-label="${escape(f.label ?? f.id)}">${opts}</select>`
+            `<select class="block-field field-select field-select--sm" data-field-id="${fieldId}" aria-label="${escape(f.label ?? f.id)}">${opts}</select>`
           );
         }
 
@@ -3266,7 +3328,7 @@ function controlHtml(
           }
           return labelled(
             f,
-            `<input type="number" class="block-field block-number-input" data-field-id="${fieldId}"
+            `<input type="number" class="block-field block-number-input field-input field-input--sm" data-field-id="${fieldId}"
             min="${min}" max="${max}" step="${step}" value="${escape(cur)}" inputmode="decimal" aria-label="${escape(f.label ?? f.id)}">`
           );
         }
@@ -3316,12 +3378,12 @@ function controlHtml(
         // input. Both carry data-field-id, so the generic commit + focus-restore
         // handlers below treat them identically.
         if (Array.isArray(f.multilineFor) && f.multilineFor.includes(typeVal as string)) {
-          return `<textarea class="block-field block-field--textarea${addMenu ? ' block-field--full' : ''}"
+          return `<textarea class="block-field block-field--textarea field-input field-input--sm${addMenu ? ' block-field--full' : ''}"
             data-field-id="${fieldId}" rows="${f.rows ?? 3}"
             placeholder="${escape(f.placeholder ?? f.label ?? f.id)}"
             aria-label="${escape(f.label ?? f.id)}">${escape(String(item[f.id] ?? ''))}</textarea>`;
         }
-        return `<input class="block-field${addMenu ? ' block-field--full' : ''}"
+        return `<input class="block-field field-input field-input--sm${addMenu ? ' block-field--full' : ''}"
           data-field-id="${fieldId}"
           placeholder="${escape(f.placeholder ?? f.label ?? f.id)}"
           value="${escape(String(item[f.id] ?? ''))}"
@@ -3536,7 +3598,10 @@ function controlHtml(
       // textarea above (maxlength via data-maxlength, wired in the loop).
       if (jellyActive())
         return `<jelly-input data-input-id="${id}" size="sm" value="${val}" placeholder="${escape(input.placeholder ?? '')}"${input.maxLength ? ` data-maxlength="${input.maxLength}"` : ''}></jelly-input>`;
-      return `<input type="text" data-input-id="${id}" value="${val}" maxlength="${input.maxLength ?? ''}" placeholder="${escape(input.placeholder ?? ' ')}">`;
+      // A plain number input (no slider) stays type="text" - the panel's caret-restore
+      // and the half-typed "1." case both rely on it - but asks the phone for the
+      // numeric keypad, which is the whole difference on a touch screen.
+      return `<input type="text" class="field-input" data-input-id="${id}" value="${val}" maxlength="${input.maxLength ?? ''}" placeholder="${escape(input.placeholder ?? ' ')}"${input.type === 'number' ? ' inputmode="decimal"' : ''}>`;
   }
 }
 
@@ -3716,8 +3781,10 @@ async function openEmbedEditor(
     // renderInputs/syncInputs path as the main sidebar). subscribe fires once
     // immediately (initial render + first preview) and on every later change.
     child.subscribe(({ model }) => {
+      // The child's own tool id, so a governed instance's policy for the source
+      // tool reaches this panel too (the registry is keyed per tool).
       if (!_sliderDragging)
-        prevModel = syncInputs(inputsEl, model, prevModel, child, host, () => {});
+        prevModel = syncInputs(inputsEl, model, prevModel, child, host, () => {}, child.manifest.id);
       schedulePreview();
     });
 

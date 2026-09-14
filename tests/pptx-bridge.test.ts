@@ -200,7 +200,7 @@ test('inspect with brand swatches + fonts suggests replacements and a theme', as
 // A slide that is ONE full-bleed picture and nothing else - what "export the
 // deck to PDF, import the pages back" produces. There is no literal colour and
 // no typeface on it, so a rebrand cannot change a pixel; `content` is the
-// signal a tool uses to say so before the user spends a download.
+// signal a tool uses to report it before the user spends a download.
 const SLIDE_PIC = `${XML_DECL}
 <p:sld xmlns:a="${NS_A}" xmlns:r="${NS_R}" xmlns:p="${NS_P}">
   <p:cSld>

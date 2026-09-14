@@ -54,7 +54,7 @@
       "label": "Apply brand theme",
       "type": "boolean",
       "default": true,
-      "help": "Swap the deck's theme palette and fonts to your brand - every theme-linked colour follows automatically."
+      "help": "Swap the deck's theme palette and fonts to the active brand - every theme-linked colour follows automatically."
     },
     {
       "id": "colorMap",

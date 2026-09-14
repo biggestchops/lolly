@@ -24,7 +24,7 @@
       "label": "Table",
       "type": "table",
       "urlKey": "t",
-      "help": "One card per row. The first column is each card's title; the other column headings become its field labels. Cells take markdown - **bold**, *italic*, # headings, - bullet and 1. numbered lists, [links](url) and ![images](url). Paste a table copied from a spreadsheet, Notion, Slack, or Markdown - or click any text on the card to edit it in place (it bakes back to markdown here). An optional Icon column puts a small image on each card: click the top-right corner of a card to pick one from the catalog. The Copy button hands the finished table back to your spreadsheet."
+      "help": "One card per row. The first column is each card's title; the other column headings become its field labels. Cells take markdown - **bold**, *italic*, # headings, - bullet and 1. numbered lists, [links](url) and ![images](url). Paste a table copied from a spreadsheet, Notion, Slack or Markdown - or click any text on the card to edit it in place (it bakes back to markdown here). An optional Icon column puts a small image on each card: click the top-right corner of a card to pick one from the catalog. The Copy button hands the finished table back to your spreadsheet."
     },
     {
       "id": "title",
@@ -35,6 +35,7 @@
     },
     {
       "id": "orientation",
+      "display": "segmented",
       "label": "Orientation",
       "type": "select",
       "default": "landscape",
@@ -58,7 +59,7 @@
     },
     {
       "id": "ink",
-      "label": "Text",
+      "label": "Text colour",
       "type": "color",
       "default": "{color.semantic.text}"
     },

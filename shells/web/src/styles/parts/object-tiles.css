@@ -1,0 +1,111 @@
+/* Shared object cards for Catalog, Tools, Utilities and Projects.
+   The existing class names are the view adapters. Keep appearance and selection
+   here; each view owns its layout, preview content and action placement. */
+.gtile,
+.folder-tile,
+:where(.catalog) .cat-tile {
+  --object-radius: calc(var(--radius) * 1.1);
+  --object-shadow: 0 .1rem .4rem #0002;
+  --object-shadow-hover: 0 .3rem .9rem #00000026;
+  /* Flatten the 30% tint over the card so isolated tool previews blend against
+     the same opaque backing as catalog images. */
+  --object-selection-preview: color-mix(in srgb, var(--ui-color-action-primary) 30%, var(--ui-color-surface-raised));
+  --object-selection-filter: brightness(.9) contrast(.9);
+  --object-check-size: calc(26px * var(--a11y-fs));
+  position: relative;
+  border: 0;
+  border-radius: var(--object-radius);
+  background: var(--ui-color-surface-raised);
+  color: var(--ui-color-text-default);
+  overflow: hidden;
+  box-shadow: var(--object-shadow);
+  transition: box-shadow var(--ui-motion-feedback), opacity var(--ui-motion-feedback);
+}
+.gtile:hover,
+.folder-tile:hover,
+:where(.catalog) .cat-tile:hover { box-shadow: var(--object-shadow-hover); }
+
+.gtile.is-selected,
+.folder-tile.is-selected,
+:where(.catalog) .cat-tile.is-selected {
+  box-shadow: 0 0 0 2px var(--ui-color-selection-border), var(--object-shadow-hover);
+}
+
+/* Every preview uses the Catalog's transparency backing. */
+.cat-tile-fig,
+.gtile-hero,
+.gcar,
+.tile-figure,
+.tpl-cover {
+  background: repeating-conic-gradient(hsl(var(--muted) / .5) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+}
+
+/* Tint the preview backing and blend only the artwork into it. Text and controls
+   keep their own colours. This is the Catalog's selection treatment. */
+.gtile.is-selected :is(.gtile-hero, .gcar, .gtile-tile),
+.folder-tile.is-selected :is(.tile-figure, .tpl-cover, .folder-mosaic),
+.cat-tile.is-selected .cat-tile-fig {
+  background-color: var(--object-selection-preview);
+}
+.gtile.is-selected :is(.gtile-hero-img, .gcar-img, .gcar-deck),
+.folder-tile.is-selected :is(img.tile-cover, .tpl-cover-img, img.folder-cell),
+.cat-tile.is-selected .cat-thumb {
+  mix-blend-mode: luminosity;
+  filter: var(--object-selection-filter);
+}
+/* Utilities have an icon and caption in place of a separate preview. */
+.gtile--utility.is-selected { background-color: var(--ui-color-selection-surface); }
+
+.cat-tile-cap,
+.tile-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cat-tile-cap,
+.tile-meta,
+.gtile-cap { padding: 10px 12px 12px; }
+.cat-tile-name,
+.tile-title,
+.gtile-name {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ui-color-text-default);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cat-tile-sub,
+.tile-sub { font-size: var(--fs-sm); color: var(--ui-color-text-muted); }
+
+/* Selection is a sibling button, above the card's open target. All views reveal
+   it on hover, keyboard focus, touch, or while a selection is active. */
+.tile-check,
+.cat-check {
+  position: absolute; left: 6px; z-index: 3;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--object-check-size); height: var(--object-check-size); padding: 0;
+  border: 2px solid #fff; border-radius: var(--ui-radius-choice-round);
+  cursor: pointer; color: transparent; background: #0006;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity var(--ui-motion-feedback), background var(--ui-motion-feedback), color var(--ui-motion-feedback);
+}
+:is(.tile-check, .cat-check) svg {
+  display: block; width: var(--fs-md); height: var(--fs-md);
+}
+:is(.gtile, .folder-tile, .cat-tile):is(:hover, :focus-within, .is-selected) :is(.tile-check, .cat-check),
+:is(.gallery, .projects, .catalog).has-selection :is(.tile-check, .cat-check) { opacity: 1; }
+:is(.tile-check, .cat-check)[aria-pressed="true"] {
+  opacity: 1; background: var(--ui-color-action-primary);
+  border-color: var(--ui-color-action-primary); color: #fff;
+}
+:is(.tile-check, .cat-check):focus-visible {
+  outline: 2px solid var(--ui-color-focus-ring); outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .tile-check, .cat-check {
+    opacity: 1; background: #0009;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  :is(.tile-check, .cat-check)::after {
+    content: ''; position: absolute; inset: calc((28px - 100%) / -2);
+  }
+}

@@ -1,7 +1,7 @@
 {
   "name": "チャート",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "データを貼り付けるだけの手軽さから高度な可視化まで対応するチャートです - データの説明付きおすすめ、明示的なフィールドマッピング、パレート図やブレットターゲット、レンジバーを含む35種の定番ベクターチャート、16種の統計・エディトリアル表現、本物のZ軸を持つ3Dシーン、シネマティックなカメラフライト、決定論的なモーション、アクセシブルな説明文、そしてアクティブなデザインシステムから生成されるスタイルまで揃っています。",
+  "featured.blurb": "表を貼り付けるだけで、Chartがわかりやすく、アクセシブルで、ブランドらしい一枚に仕上げます",
   "a11yLabel": "{{chartType}} チャート{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "チャートの種類",
   "inputs.chartType.options.bar": "棒グラフ - 縦",

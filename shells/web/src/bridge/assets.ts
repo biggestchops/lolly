@@ -59,6 +59,9 @@ interface AssetFormat {
   checksum?: string;
   width?: number;
   height?: number;
+  /** Byte length, stamped into the index by scripts/build-catalog-index.ts. The
+   *  only size anything can read BEFORE the file is fetched. */
+  size?: number;
   /** Playback length in ms for a video/audio/lottie entry (asset.schema.json). */
   durationMs?: number;
 }
@@ -91,6 +94,12 @@ interface AssetMetaRecord {
   /** Human-readable credit for a licensed asset that requires attribution (a CC-BY
    *  work, e.g. the SUSE7 LUT). Rides through; surfaces on AssetRef.meta.attribution. */
   attribution?: string;
+  /** The structured rights record (plan 253, CreativeWorkRecordV1) when the catalog
+   *  entry carries one: creators, source, revision and every rights statement about
+   *  the work, beside the two legacy display strings above rather than instead of
+   *  them. Rides the index entry through _syncFromIndex; surfaces on
+   *  AssetRef.meta.rights. Absent means not recorded, never permission. */
+  rights?: unknown;
   checksum?: string;
   width?: number;
   height?: number;
@@ -213,6 +222,25 @@ let duplicateSeq = 0;
  * from, and leads with the wall clock + a padded counter so copies sort
  * newest-first (id descending, as _listUserAssets orders) without ever clashing.
  */
+/**
+ * Keys a catalog entry's free-form `meta` blob may never answer. `name`, `tags`
+ * and the rights keys are validated top-level fields of the entry, and the blob
+ * beside them is validated no further than "is an object", so a blob that
+ * carried its own `license` could state a licence nothing checked and disagree
+ * with the same asset's resolved ref. Every one of these is written from the
+ * entry's own field, after this.
+ */
+const RESERVED_META_KEYS: ReadonlySet<string> = new Set(['name', 'tags', 'license', 'attribution', 'rights', 'brandLock']);
+
+export function withoutReservedMeta(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (!RESERVED_META_KEYS.has(key)) out[key] = entry;
+  }
+  return out;
+}
+
 function mintDuplicateId(srcId: string): string {
   const kind = srcId.split('/')[1] || 'upload';
   const seq = String(duplicateSeq++).padStart(4, '0');
@@ -374,8 +402,15 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
         // the `.lolly` share file, plans/114) can tell a freely-shareable
         // catalog asset from proprietary/brand-locked content that must not
         // travel by default.
+        //
+        // All three ride, not just the licence (plan 253). A resolved ref used
+        // to carry `license` alone, so a work whose licence asks for a credit
+        // arrived at the export and pack paths with the credit already gone -
+        // the one field those paths need to deliver it.
         ...(meta.brandLock ? { brandLock: true } : {}),
         ...((meta as { license?: string }).license ? { license: (meta as { license?: string }).license } : {}),
+        ...((meta as { attribution?: string }).attribution ? { attribution: (meta as { attribution?: string }).attribution } : {}),
+        ...((meta as { rights?: unknown }).rights ? { rights: (meta as { rights?: unknown }).rights } : {}),
         ...(durationMs != null ? { durationMs } : {}),
       };
 
@@ -552,7 +587,22 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
           url: directUrl,
           version: m.version,
           meta: {
+            // The entry's own `meta` block (schemas/asset.schema.json): the
+            // type-specific facts a shell needs BEFORE it downloads the bytes,
+            // such as an emoji pack's pin and glyph count. It rides first so the
+            // computed keys below always win a name collision, and the keys that
+            // decide identity or rights are stripped out of it first - the schema
+            // states outright that this blob is "not validated beyond being an
+            // object", so an entry could otherwise answer a question about its
+            // own licence that nothing checked, and answer it differently here
+            // than on the resolved-ref path below.
+            ...withoutReservedMeta(m.meta),
             name: m.name, tags: m.tags, _placeholder: !directUrl,
+            // The primary format's byte length, straight off the index. A shell
+            // that must refuse a file BEFORE downloading it (an emoji pack has a
+            // 32 MiB ceiling) has nothing else to read: `bytes()` materialises
+            // the whole thing before anyone can check its size.
+            ...(typeof primary?.size === 'number' ? { size: primary.size } : {}),
             ...(posterUrl ? { posterUrl } : {}),
             ...(animated ? { animated: true } : {}),
             ...(thumbUrl ? { thumbUrl } : {}),
@@ -561,6 +611,7 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
             ...(m.added ? { added: m.added } : {}),
             ...(m.license ? { license: m.license } : {}),
             ...(m.attribution ? { attribution: m.attribution } : {}),
+            ...(m.rights ? { rights: m.rights } : {}),
           },
         };
       });

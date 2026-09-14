@@ -11,7 +11,18 @@ export async function mountCharacters(
   container: HTMLElement,
   host: HostV1,
   onInsert: (value: string) => void,
-  saved: { recents: string[]; save: (values: string[]) => void }
+  saved: { recents: string[]; save: (values: string[]) => void },
+  /** The runtime's emoji pass, so the Emoji tab's grid draws the chosen set
+   *  rather than the machine's own face. Left out, the grid is unchanged. The
+   *  browser outlives a choice, unlike the popover, so it is handed the revert and
+   *  the set-change subscription too and redraws itself when the set changes. */
+  options: {
+    emoji?: {
+      apply(node: unknown): Promise<unknown>;
+      revert?(node: unknown): Promise<unknown>;
+      onSetChange?(fn: () => void): () => void;
+    };
+  } = {}
 ): Promise<() => void> {
   const abort = new AbortController();
   let generation = 0,
@@ -247,9 +258,13 @@ export async function mountCharacters(
         void import('../../components/emoji-picker.ts')
           .then(async ({ mountEmojiBrowser }) => {
             if (abort.signal.aborted) return;
-            emojiCleanup = await mountEmojiBrowser(q('[data-emoji]'), (value) => {
-              void pick(value);
-            });
+            emojiCleanup = await mountEmojiBrowser(
+              q('[data-emoji]'),
+              (value) => {
+                void pick(value);
+              },
+              options.emoji ? { emoji: options.emoji } : {}
+            );
             if (abort.signal.aborted) emojiCleanup();
           })
           .catch(() => {

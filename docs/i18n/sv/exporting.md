@@ -38,28 +38,28 @@ Filnamnet och formatväljaren sitter högst upp i panelen som ett `name.format`-
 
 | Du vill ha… | Använd | Varför |
 |---|---|---|
-| Skarpa logotyper/grafik som skalar | **SVG** | Vektor - oändligt skalbar, liten, redigerbar |
-| Vektor för Office/Windows-appar | **EMF** | Klistras in som redigerbar vektor i PowerPoint/Word; text förblir levande och redigerbar, och Google Drive öppnar den i Google Drawings för Slides |
-| Vektor för print/designappar | **EPS**, eller **EPS (CMYK)** | PostScript-vektor för Illustrator/tryckeriflöden |
-| Vektor för skärning/CAD-maskiner | **DXF** | Laserskärare, vinylplottrar, CNC - konturbanor i millimeter |
-| Ett redigerbart presentationsbygge | **PowerPoint** (PPTX) | Inbyggd redigerbar text + former, med bilder och vektorer som förblir extraherbara |
-| En kurs som ett LMS kan importera | **SCORM** (LMS) | En zip med manifest, en startsida, bilderna och den berättade filmen med undertexter - från ett Design-bygge |
+| Skarpa logotyper/konstverk som skalar | **SVG** | Vektor - oändligt skalbar, liten, redigerbar |
+| Vektor för Office-/Windows-appar | **EMF** | Klistras in som redigerbar vektor i PowerPoint/Word; texten förblir levande och redigerbar, och Google Drive öppnar den i Google Drawings för Slides |
+| Vektor för tryck-/designappar | **EPS**, eller **EPS (CMYK)** | PostScript-vektor för Illustrator-/tryckeriarbetsflöden |
+| Vektor för skär-/CAD-maskiner | **DXF** | Laserskärare, vinylplottrar, CNC - konturbanor i millimeter |
+| Ett redigerbart bildspel | **PowerPoint** (PPTX) | Nativt redigerbar text + former, med bilder och vektorer som förblir extraherbara |
+| En portabel utbildningskurs | **Export course** | Granska projektets innehåll och bygg ett versionerat Website-, SCORM- eller experimentellt xAPI-paket |
 | Ett redigerbart textdokument | **Word** (DOCX) eller **OpenDocument** (ODT) | Riktiga stycken och rubriker som ett ordbehandlingsprogram kan fortsätta redigera (Doc Studio) |
-| Ett foto eller en generell bild | **PNG** (förlustfri) eller **JPG** (mindre) | Universell rasterbild |
-| Mindre moderna bilder | **WebP** / **AVIF** | Bättre komprimering, alfa |
-| Print | **PDF**, eller **Print PDF** (CMYK) | Verklig sidstorlek; CMYK för tryckeri |
-| Rasterbild för tryckeri | **Print TIFF** (CMYK) | DeviceCMYK-pixlar för en RIP |
-| Animerad för webben | **GIF** | Fungerar överallt, större filer |
-| Animerad med fullfärg + riktig alfa | **APNG** | Animerad PNG - ingen paletbegränsning, äkta transparens |
-| Animerad, minsta filen | **Animerad WebP** | Fullfärg + alfa, bättre komprimerad än GIF eller APNG |
-| Animerad vektor som skalar | **Animerad SVG** | Fristående; loopar i en webbläsare eller `<img>`, ingen kodek, valfri storlek |
+| Ett foto eller en generell bild | **PNG** (förlustfri) eller **JPG** (mindre) | Universell raster |
+| Mindre moderna bilder | **WebP**/**AVIF** | Bättre komprimering, alfa |
+| Tryck | **PDF**, eller **Print PDF** (CMYK) | Verklig sidstorlek; CMYK för tryckeri |
+| Utskriftsraster för ett tryckeri | **Print TIFF** (CMYK) | DeviceCMYK-pixlar för en RIP |
+| Animerat för webben | **GIF** | Fungerar överallt, större filer |
+| Animerat med fullfärg + riktig alfa | **APNG** | Animerad PNG - ingen palettbegränsning, äkta transparens |
+| Animerat, minsta fil | **Animerad WebP** | Fullfärg + alfa, bättre komprimerad än GIF eller APNG |
+| Animerad vektor som skalar | **Animerad SVG** | Självständig; loopar i en webbläsare eller `<img>`, ingen codec, valfri storlek |
 | Video för sociala medier/delning | **MP4** eller **WebM** | Bäst kvalitet per byte (se nedan) |
-| Rik text/e-postsignatur | **HTML** | Klistras in formaterat i e-postklienter |
-| Vanligt innehåll | **MD** / **TXT** | Endast text |
+| Rik text/e-postsignatur | **HTML** | Klistras in formaterad i e-postklienter |
+| Enkelt innehåll | **MD**/**TXT** | Endast text |
 | En kalenderhändelse | **ICS** | Importeras i vilken kalenderapp som helst |
 | Ett kontaktkort | **VCF** | Importeras i Kontakter/adressböcker |
-| Strukturerad data att återimportera | **JSON** / **CSV** | Rundtrippar verktygets innehåll |
-| En favikon | **ICO** | Webbplatsikon i flera storlekar (**ZIP** samlar flera format) |
+| Strukturerad data att återimportera | **JSON**/**CSV** | Går tur och retur med verktygets innehåll |
+| En favikon | **ICO** | Webbplatsikon i flera storlekar (**ZIP** buntar ihop flera format) |
 
 Den första raden är det vanliga fallet. Ett ordmärke satt i ditt varumärkes typsnitt exporteras som SVG, där varje bokstav är en konturerad bana snarare än en pixel, så den förblir skarp i visitkortsstorlek och i byggnadsinslagningsstorlek från samma fil.
 
@@ -150,16 +150,18 @@ För att öppna den, starta Penpot, välj ett projekt och välj **Import**. Inlo
 
 ## SCORM (kurspaket)
 
-Ett Design-bygge kan lämna som ett **SCORM-paket** - zipen ett lärandehanteringssystem importerar, oavsett om det är Moodle, Canvas, Blackboard eller ett företags-LMS. Välj **SCORM (LMS)** i formatväljaren så skriver exporten:
+Välj **Export course** från ett verktyg som stöds, en projektmapp eller ett urval. I Design öppnar även valet av **SCORM (LMS)** och Download det här kursarbetsflödet. Lolly sparar skapelsen, låter dig granska kursens innehåll och ordning, och öppnar sedan modulen och dess exportdialog.
 
-- <!--i:layout--> **Bilderna**, en bild per rityta, som vektor där rityta tillåter det och som pixlar endast där den inte gör det.
-- <!--i:play--> **Den berättade filmen** med sitt textningsspår - talarnoterna lästa av en röst på enheten, precis som [Presentation](/info/create/using.html#presenting) spelar upp dem.
-- <!--i:file--> **En startsida** som steppar igenom bilderna, spelar upp filmen och rapporterar färdigställande tillbaka till LMS:et via SCORM 1.2-runtimen, versionen alla LMS accepterar.
-- <!--i:font--> Typsnitten bygget använder, så att startsidan renderar likadant offline.
+- <!--i:layout--> Välj den tillgängliga återgivningen för varje källa: stillbildssidor, rörelse som video, ljud eller en nedladdningsbar resurs. Lägg till nativ lektionstext och läsalternativ i modulen.
+- <!--i:play--> Förhandsgranska elevspelaren och granska beskrivningar och undertexter. Rörelse ingår som video, inklusive tyst animation. Exportera en färdig inspelning först när ett verktyg inte kan återskapa den från sparade indata.
+- <!--i:file--> Välj Website, SCORM 1.2, SCORM 2004 4th Edition eller ett experimentellt xAPI-mål. Kontrollera det faktiska innehållet och ZIP-storleken, spara sedan och ladda ner den kontrollerade versionen.
+- <!--i:check--> Slutförande kräver att man bekräftar varje obligatorisk lektion och väljer Finish. Webbplatsspelaren lagrar framsteg i webbläsaren; ett LMS-paket ansluter till sitt mottagande LMS.
 
 ![Exportpanelen på ett Design-bygge med SCORM (LMS) valt](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Inget i paketet ringer hem: det är filer i en zip, och det körs inuti LMS:et utan bundlare, utan CDN och utan konto. Webb- och skrivbordsapparna bygger det; CLI:t gör det inte, eftersom att fotografera ritytorna och koda filmen kräver webbläsaren.
+Paketet innehåller sitt färdiga innehåll och kräver inget Lolly-konto. Packa upp en Website-ZIP på en HTTP(S)-värd; importera en LMS-ZIP utan att ändra dess innehåll. Testa den avsedda destinationen innan du distribuerar kursen.
+
+För en kurs sammansatt av flera sparade skapelser, importerad media och resurser, använd [Skapa en utbildningskurs](/info/create/training-creators.html). Lärandemodulen har sin egen ordnade disposition, uttryckliga lektionsbekräftelser, elevförhandsgranskning och versionerad pakethistorik. Dess CLI-väg kan paketera media du redan har exporterat.
 
 ## DXF (skärfiler)
 
@@ -309,6 +311,10 @@ Exporter kan bära **Content Credentials** - ett signerat [C2PA](https://c2pa.or
 - **Kontrollera en fil.** Lolly verifierar även sina egna autentiseringsuppgifter: släpp valfri fil på [/verify](/verify) (eller kör `lolly validate <file>` i CLI:t) för en rapport på enheten - med rubriken om filen verkligen skapades med Lolly och är oförändrad sedan dess. Webbvyn Verify läser långt utöver autentiseringsuppgiften: den flaggar **AI-genererat innehåll**, upptäcker **Lolly Imprint**, kontrollerar **SEAL**-signaturer och (valbart) pixelvattenstämplar från tredje part samt visar **dold data** - allt på enheten, inget laddas upp. Se [Content Credentials Identity → Bortom autentiseringsuppgiften](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Integritet.** Allt sker på din enhet: signeringsnyckeln skapas för exporten och lämnar aldrig webbläsaren, inget laddas upp och påståendet innehåller bara det som proveniensmetadatan redan bär. Integritetsverktyg (transformationer på enheten av *dina egna* filer) lägger aldrig till autentiseringsuppgifter, och *Strip Hidden Data* tar bort ett C2PA-manifest precis som annan inbäddad metadata.
 - **Interaktioner.** För PDF:er är Content Credentials och **lösenordsskydd** (oavsett nivå - se ovan) ömsesidigt uteslutande (en krypterad PDF kan inte ta emot bilagan med autentiseringsuppgiften). Autentiseringsuppgiften läggs till som sista steg över de färdiga byten - efter DPI/EXIF/färgprofilstämpling, PDF/X-metadata och tryckmärken.
+
+### Källkrediter
+
+En export som placerar någon annans verk registrerar den källan i autentiseringsuppgiften också. En emoji hämtad från en fastnålad uppsättning är vardagsfallet: verket, dess upphovsperson, licensen, var de exakta byten kom ifrån och vad som ändrats färdas alla med filen. Exportpanelens rad **Source credits** säger vad källorna kräver av leveransen innan du laddar ner, och efter nedladdningen läser den tillbaka de levererade byten innan den säger att krediterna finns i filen. En licens som ber dig välja, som en omfärgad CC BY-SA-glyf du är på väg att dela, får ett kort med utvägarna; nedladdningen blockeras aldrig. [Kreativa rättigheter och krediter](/info/creative-rights.html) har orden, de granskade licenserna och vad som förblir ditt.
 
 ## På en telefon
 

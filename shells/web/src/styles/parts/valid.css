@@ -997,6 +997,48 @@
 .valid-panel-disclosure[open] > summary .valid-disclosure-chev { transform: rotate(180deg); }
 .valid-panel-body { display: grid; gap: 0.7rem; min-width: 0; }
 
+/* ── Sources - what went INTO this file, as its credential records it. One row
+   per recorded ingredient, read-only. The credit line is the one that matters:
+   a source with no credential of its own was recorded by the exporter, which is
+   not the same as the source signing for itself, and the panel must never let
+   the two look alike. It is set in the muted colour of a caption, not the tone
+   of a verdict, because it is neither a pass nor a failure. */
+.valid-sources-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.valid-source { display: grid; gap: 0.25rem; min-width: 0; }
+.valid-source + .valid-source { border-top: 1px solid hsl(var(--border)); padding-top: 0.7rem; }
+.valid-source-title { margin: 0; font-weight: 600; }
+.valid-source-format {
+  margin-inline-start: 0.35rem; font-weight: 500; font-size: 0.8em;
+  color: hsl(var(--muted-foreground)); text-transform: uppercase; letter-spacing: .04em;
+}
+.valid-source-credit, .valid-source-changes, .valid-source-link {
+  margin: 0; font-size: 0.9em; color: hsl(var(--muted-foreground));
+}
+.valid-source-link a { color: inherit; }
+
+/* The rights layer over the same panel (plan 253). The summary and the limits
+   read as caption prose, not as a verdict: what a file records about its sources
+   is a separate question from whether its credential verified, and neither one
+   may borrow the other's colour. The per-row actions are quiet - a credit to
+   paste and a link to the bytes - because the panel is still read-only. */
+.valid-sources-summary { margin: 0 0 0.35rem; font-size: 0.95em; }
+.valid-sources-limit { margin: 0 0 0.25rem; font-size: 0.85em; color: hsl(var(--muted-foreground)); }
+.valid-source-actions { margin: 0.35rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.valid-source-act { font-size: 0.85em; padding: 0.2rem 0.55rem; text-decoration: none; }
+.valid-sources-reuse { margin-top: 0.8rem; display: grid; gap: 0.35rem; }
+.valid-sources-reuse-label { font-size: 0.9em; font-weight: 600; }
+.valid-sources-reuse-out:empty { display: none; }
+.valid-reuse-head { margin: 0.4rem 0 0.2rem; font-size: 0.9em; }
+.valid-reuse-issues { margin: 0; padding-inline-start: 1.1rem; display: grid; gap: 0.25rem; font-size: 0.85em; }
+.valid-reuse-code {
+  font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.9em;
+  color: hsl(var(--muted-foreground));
+}
+/* The note after a strip: what the clean file no longer carries. Stated, not
+   alarmed - the removal is what the person asked for, and the thing that needs
+   saying is the credit that left with it. */
+.valid-clean-note { margin: 0.5rem 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+
 /* ── Change history - the credential's recorded actions as a timeline. Each row
    is anchored by a colour-coded MAKER pill on the left: Lolly reads bold green
    (our own edits, marked up prominently), an AI-sourced step reads violet, any

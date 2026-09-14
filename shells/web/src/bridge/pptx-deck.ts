@@ -398,7 +398,7 @@ export function deckAnim(v: unknown, notes?: DeckNoteSink): PptxAnim | undefined
  * the direction that reads the same way Lolly's does: the new slide arrives from the
  * right and everything moves leftwards.
  *
- * `morph` and `flight` do not exist here, so they fall back to a fade and SAY so. This
+ * `morph` and `flight` do not exist here, so they fall back to a fade and Report it. This
  * writer emits no PowerPoint Morph: a real Morph needs matched shape ids across two
  * slides, which the deck model has no way to declare, and a wrong match animates the
  * wrong object rather than failing visibly. A flight is a camera move over the canvas

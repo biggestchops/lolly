@@ -1,0 +1,77 @@
+{
+  "name": "work-grant-resolves-conflict",
+  "title": "A grant recorded on the work resolves which of two declarations applies",
+  "citations": [
+    "Plan 253 section 5.1: PermissionGrantV1 records the public licence or specific permission that actually applies, with its evidence and whether it was asserted.",
+    "Plan 253 section 4.1: conflicting evidence lets an authorised person resolve the applicable grant.",
+    "CC BY 4.0 legal code section 3(a)(1): the attribution condition follows the grant that was chosen."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/disputed-illustration",
+        "title": "Disputed Illustration",
+        "creators": [{ "name": "Example Artist", "role": "creator" }],
+        "sourceUrl": "https://example.org/disputed.svg",
+        "sourceHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+        "rights": [
+          {
+            "declaration": "cc-by-4.0",
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          },
+          {
+            "declaration": "CC BY-SA 4.0",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "assertedBy": "source",
+            "evidence": "native-metadata",
+            "status": "parsed"
+          }
+        ],
+        "grants": [
+          {
+            "kind": "public-licence",
+            "licence": "CC-BY-4.0",
+            "scope": "the artist confirmed the CC BY grant in writing for this render",
+            "asserted": true
+          }
+        ]
+      }
+    ],
+    "uses": [
+      { "work": "example/disputed-illustration", "role": "incorporated", "operations": ["placed"] }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": { "format": "png", "route": "file-with-c2pa", "canCarryCredential": true, "canCarryReadableCredit": true },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/disputed-illustration",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "CC-BY-4.0",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [
+      {
+        "work": "example/disputed-illustration",
+        "credit": "\"Disputed Illustration\" by Example Artist, CC BY 4.0 https://creativecommons.org/licenses/by/4.0/, source https://example.org/disputed.svg, unchanged.",
+        "changes": "unchanged"
+      }
+    ],
+    "optional": [],
+    "channels": ["c2pa-ingredients", "readable-details"],
+    "changes": [],
+    "unresolved": []
+  }
+}

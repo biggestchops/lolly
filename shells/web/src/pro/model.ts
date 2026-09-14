@@ -101,6 +101,9 @@ const RESERVED_KEYS = new Set<string>([
   // NB: the signage flag `loop` is intentionally absent - it is a real input id in
   // several tools (slides/deck-builder/3d/…) and must keep its own grid column.
   'present', 's',
+  // the emoji set and its brand treatment - shell-owned state, edited in the Emoji
+  // section, never a batch column.
+  'emoji', 'emojifx',
 ]);
 
 /**

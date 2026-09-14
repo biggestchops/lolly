@@ -9,7 +9,7 @@
  *  1. An override keyed to a profile that is NOT currently mounted survives.
  *     Unplugging a profile must not delete a brand's authored build for it, and
  *     the failure mode is silent - a save after an unmount would write the loss
- *     to disk with nothing on screen to say so.
+ *     to disk with nothing on screen to show it.
  *  2. `set` stays distinguishable from `auto`. A re-derive is allowed to
  *     recompute everything computed and must not touch anything chosen; collapse
  *     that distinction and a re-derive quietly overwrites the brand.

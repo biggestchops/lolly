@@ -1,5 +1,5 @@
 {
-  "name": "Snippet",
+  "name": "Schnipsel",
   "description": "Verwandeln Sie Codeschnipsel in klare, syntaxhervorgehobene, teilbare Bilder.",
   "inputs.code.label": "Code",
   "inputs.code.placeholder": "Fügen Sie Ihren Code hier ein…",

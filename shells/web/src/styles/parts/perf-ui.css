@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: MPL-2.0
  *
  * Performance UI - the gated stylesheet for the opt-in `perf-ui` feature flag
- * (src/feature-flags.ts). Imported UNLAYERED by app.css (no `layer()`), so its !important
- * strip outranks every cascade layer.
+ * (src/feature-flags.ts). Imported into app.css's FIRST layer, perf: !important reverses
+ * layer order, so this policy beats other author stylesheet layers and unlayered rules.
  *
  * The whole sheet is scoped to `html[data-perf-ui]`, an attribute that is ABSENT unless the
  * flag is on. So with the flag OFF - the default - NOTHING here matches and the chrome is
@@ -11,8 +11,8 @@
  * script set/clear the attribute.
  *
  * WHAT IT STRIPS when ON: the GPU-expensive chrome compositing - backdrop blur (the glass
- * panels), box-shadows, and blend modes - and it idles the decorative featured preview pan
- * until hovered. A cheaper frame to paint on a lower-powered device.
+ * panels), box-shadows, and blend modes - and it idles the decorative featured preview pan.
+ * A cheaper frame to paint on a lower-powered device.
  *
  * CHROME-ONLY, deliberately: every strip rule excludes the tool-canvas roots
  * (#tool-canvas / .tool-canvas / #tool-content / .pro-export-canvas) AND their subtrees, so a
@@ -23,21 +23,18 @@
  */
 
 html[data-perf-ui] *:not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas)):not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas) *):not(:focus-visible):not(:focus-visible *),
-html[data-perf-ui] *:not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas)):not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas) *):not(:focus-visible *)::before,
-html[data-perf-ui] *:not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas)):not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas) *):not(:focus-visible *)::after {
-  backdrop-filter: none !important;
+html[data-perf-ui] *:not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas)):not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas) *):not(:focus-visible):not(:focus-visible *)::before,
+html[data-perf-ui] *:not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas)):not(:is(#tool-canvas, .tool-canvas, #tool-content, .pro-export-canvas) *):not(:focus-visible):not(:focus-visible *)::after {
+  /* Prefix first: the minifier must retain the standard declaration for Chromium. */
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   box-shadow: none !important;
   mix-blend-mode: normal !important;
   background-blend-mode: normal !important;
 }
 
-/* Decorative previews animate only while hovered. The featured tile's Ken Burns pan
-   (.ftile-img, a 12s infinite loop) idles until the pointer is on - or keyboard focus is
-   within - its tile, so nothing pans in the background eating frames. */
+/* Decorative panning stays still. Actual media playback has an explicit control. */
 html[data-perf-ui] .ftile-img { animation-play-state: paused !important; }
-html[data-perf-ui] .ftile:hover .ftile-img,
-html[data-perf-ui] .ftile:focus-within .ftile-img { animation-play-state: running !important; }
 
 /* will-change forces a STANDING GPU compositor layer (idle memory). Release the decorative
    chrome hints back to auto - the browser promotes on demand instead. EXCLUDES the

@@ -1,6 +1,6 @@
 {
   "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "description": "Isang conference programme mula sa iisang table - isang chronological na listahan, isang multi-track na iskedyul, o isang now-and-next na screen para sa pinto - at tunay na .ics ng bawat session.",
   "a11yLabel": "{{default headingText \"Agenda\"}} - {{sessionCount}} sesyon, {{trackCount}} track",
   "inputs.title.label": "Kaganapan",
   "inputs.title.placeholder": "hal. Northwind Summit 2026",

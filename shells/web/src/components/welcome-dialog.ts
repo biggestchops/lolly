@@ -271,7 +271,7 @@ export function showWelcomeDialog(profileApi?: WebProfileAPI, uploadHost?: Picke
 
       // "Got it" on the privacy page: the only thing that acknowledges the
       // standalone privacy notice (views/privacy-notice.ts) - reading page 2 is
-      // not enough, the user has to say so. Agreeing COMPLETES the dialog
+      // not enough, the user has to report it. Agreeing COMPLETES the dialog
       // (audit 167 F-A4): it used to bounce back to page 1, and "the button
       // that agrees returns you to the start" read as a loop. Anyone who still
       // wants the doors has the gallery underneath.

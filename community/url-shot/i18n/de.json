@@ -1,6 +1,6 @@
 {
   "name": "URL-Screenshot",
-  "description": "Jede Webseite, in jeder Scroll-Tiefe, mit individuellem CSS",
+  "description": "Jede Webseite, in jeder Scrolltiefe, mit eigenem CSS.",
   "a11yLabel": "Screenshot von {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Die zu erfassende Seite. Wird beim Export in einer echten Browser-Engine aufgenommen.",

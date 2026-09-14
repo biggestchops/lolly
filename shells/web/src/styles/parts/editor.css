@@ -896,7 +896,7 @@ html[data-a11y-motion="reduce"] .fc-btn-lolly:focus-visible svg .lolly-mark__spi
    happens to be clickable. The row itself needs nothing - a `.fc-row-act { display:
    block }` used to sit here and never applied, because `.fc-row` below is the same
    specificity and comes later in the same layer, so flex won every time. The whole
-   look is the button's, which is where it now says so. */
+   look is the button's, and the button rule below is where it is declared. */
 .fc-mp-lift, .fc-mp-choreo { width: 100%; justify-content: flex-start; gap: 7px; }
 
 /* ── Choreograph (plans/104 P4) ───────────────────────────────────────────────────────

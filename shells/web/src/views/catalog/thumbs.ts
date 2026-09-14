@@ -32,7 +32,7 @@ import { tsigFactsHtml } from '../tsig-facts.ts';
 import { aiModelSlot } from '../tsig-model-note.ts';
 import type { AssetRef } from '@lolly-tools/core/host-v1';
 import type { PhotoTreatment } from '../../../../../engine/src/photo-treatment.ts';
-import { CHECK_ICON } from './shared.ts';
+import { CHECK_ICON, emojiPackMeta } from './shared.ts';
 import type { AiSignalsNote, RewordUiState } from './shared.ts';
 import { bindOp, type CatCtx } from './context.ts';
 
@@ -173,6 +173,19 @@ export function thumbHtml(cat: CatCtx, ref: AssetRef, asSpan = false, full = fal
     return `<${tag} class="cat-thumb cat-thumb-motion cat-thumb-audio" data-audio-thumb="${escapeText(ref.id)}" data-audio-fp="${escapeText(peaksFingerprint(ref))}">`
       + audioThumbPlaceholder({ label: String(ref.meta?.name ?? ref.id) })
       + `</${tag}>`;
+  }
+  // An emoji pack (plans/252). The tile shows the SET, drawn with its own artwork:
+  // five glyphs filled in after mount by lib/emoji-specimen.ts, which loads the
+  // pinned pack through host.emoji and runs the engine's own pass. The slot starts
+  // EMPTY and the family/style line carries the tile until it is drawn - a bundle is
+  // 15 to 20 MB, and characters sitting in the live page in the meantime would be
+  // painted by this machine's emoji font, which is the thing choosing a set prevents.
+  const pack = emojiPackMeta(ref);
+  if (pack) {
+    const names = `${pack.family} - ${pack.style}`;
+    return `<${tag} class="cat-thumb cat-thumb-emoji${full ? ' cat-thumb-emoji--lg' : ''}" data-emoji-thumb="${escapeText(ref.id)}">`
+      + `<${tag} class="cat-emoji-specimen" data-emoji-specimen role="img" aria-label="${escapeText(tRaw('How {set} draws five emoji', { set: pack.label }))}"></${tag}>`
+      + `<${tag} class="cat-emoji-names">${escapeText(names)}</${tag}></${tag}>`;
   }
   // A text asset (.txt/.md, plans/125): the bytes ARE the text, so an <img src=text>
   // is a broken image. The modal (full) shows a real reading preview filled after mount

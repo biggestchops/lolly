@@ -145,7 +145,7 @@ test('ink coverage is in channels, not normalised - and null for additive light'
     const ink = src.inkCoverage!(0.35, 0.05, 250);
     assert.ok(ink !== null && ink > 0 && ink <= 4, `four-ink coverage must be 0–4 (400% TAC), got ${ink}`);
     // Same colour asked of a display gamut: the question does not apply, and the
-    // answer must say so rather than read as "needs no ink".
+    // answer must report it rather than read as "needs no ink".
     assert.equal(inGamut(0.35, 0.05, 250, 'srgb'), true, 'sanity: the probe colour is displayable');
   });
 });

@@ -1,7 +1,7 @@
 {
   "id": "work-avatar",
   "name": "Work Avatar",
-  "description": "A round profile photo with a treatment and a ring of text - the campaign badge for LinkedIn and every other place your face goes, in your brand's colours and face.",
+  "description": "A round profile photo with a treatment and a ring of text - the campaign badge for LinkedIn and every other place your face goes, in your design system's colours and type.",
   "a11yLabel": "Round profile photo in a ring reading {{default text \"nothing\"}}",
   "version": "1.2.0",
   "engineVersion": "^1.159.0",
@@ -107,15 +107,13 @@
       "type": "asset",
       "assetType": "image",
       "allowUpload": true,
-      "section": "Photo",
-      "help": "Your headshot. Drag it on the canvas to reframe, scroll to zoom. Without one a placeholder silhouette stands in."
+      "help": "The headshot. Without one a placeholder silhouette stands in."
     },
     {
       "id": "imageFraming",
-      "label": "Zoom & Position",
+      "label": "Zoom & position",
       "type": "vector",
       "framingFor": "photo",
-      "section": "Photo",
       "help": "Drag the photo on the canvas to move it, scroll to zoom, or set the numbers here.",
       "fields": [
         {
@@ -183,13 +181,13 @@
         },
         {
           "value": "none",
-          "label": "Nothing"
+          "label": "None"
         }
       ]
     },
     {
       "id": "photoBg",
-      "label": "Backdrop colour",
+      "label": "Disc colour",
       "type": "color",
       "default": "{color.semantic.surface}",
       "section": "Photo"
@@ -249,6 +247,7 @@
     {
       "id": "treatmentAmount",
       "label": "Amount",
+      "help": "How strongly the treatment is applied.",
       "type": "number",
       "display": "slider",
       "default": 100,
@@ -290,7 +289,7 @@
     },
     {
       "id": "ringStyle",
-      "label": "Ring",
+      "label": "Style",
       "type": "select",
       "default": "arc",
       "section": "Ring",
@@ -409,7 +408,7 @@
       "maxLength": 60,
       "placeholder": "#HASHTAG or a short line",
       "section": "Text",
-      "help": "Runs along the ring in your brand face, as real outlines. A ♥ is drawn even when the font has no heart."
+      "help": "Runs along the ring in the design system's face, as real outlines. A ♥ is drawn even when the font has no heart."
     },
     {
       "id": "uppercase",
@@ -440,18 +439,18 @@
     },
     {
       "id": "textFont",
-      "label": "Face",
+      "label": "Font",
       "type": "select",
       "default": "brand",
       "section": "Text",
       "options": [
         {
           "value": "brand",
-          "label": "Brand face"
+          "label": "Design system face"
         },
         {
           "value": "mono",
-          "label": "Brand mono"
+          "label": "Design system mono"
         }
       ]
     },

@@ -681,7 +681,7 @@ test('a padded PLATE is drawn back at its own origin, on both paths', async () =
   const { done } = useScratches();
   try {
     // The plate was captured with a 12px margin, so its origin is (-12,-12) in box
-    // space and it is 24px bigger on each axis. Every draw of it has to say so.
+    // space and it is 24px bigger on each axis. Every draw of it has to report it.
     const clean = opCtx();
     await drawItem(clean, planOne(layer()), RES({ platePad: 12 }), 2);
     assert.deepEqual(clean.ops[2]?.args, [-100 - 24, -100 - 24, 200 + 48, 200 + 48],

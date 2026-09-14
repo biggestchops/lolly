@@ -203,7 +203,7 @@ const HTTP_SCHEME_RE = /^https?:\/\//i;
 /** An interior space or control character - what a line-wrapped paste and a
  *  smuggling attempt both look like. A scan rather than a character class: a
  *  control character inside a regex literal is unreadable, and the linter is
- *  right to say so. */
+ *  right to state it. */
 function hasControlOrSpace(s: string): boolean {
   for (let i = 0; i < s.length; i++) {
     const code = s.charCodeAt(i);

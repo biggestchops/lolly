@@ -1,6 +1,6 @@
 {
-  "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "name": "جدول الأعمال",
+  "description": "برنامج مؤتمر من جدول واحد - قائمة زمنية، أو جدول بعدة مسارات، أو شاشة الآن والتالي عند الباب - وملف .ics حقيقي لكل جلسة.",
   "a11yLabel": "{{default headingText \"جدول الأعمال\"}} - {{sessionCount}} جلسة، {{trackCount}} مسار",
   "inputs.title.label": "الفعالية",
   "inputs.title.placeholder": "مثال Northwind Summit 2026",

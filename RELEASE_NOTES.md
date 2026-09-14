@@ -1,6 +1,6 @@
 # Lolly 1.0.7
 
-_Current release: **1.0.7** (2026-09-09). First public release was 1.0.1 (2026-08-30). Free
+_Current release: **1.0.7** (2026-09-14). First public release was 1.0.1 (2026-08-30). Free
 software under the **Mozilla Public License 2.0**; the content below is brand-agnostic and
 reflects the current platform._
 
@@ -35,6 +35,39 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   redact, verify) under the same rules as the app.
 
 ### New in 1.0.7
+
+- **Emoji are drawn from a set you choose, not from the device.** Pick an emoji set once
+  and every tool draws the same artwork, so a heading looks the same on a Mac, a phone and
+  a server render, and an export carries the picture rather than a system glyph. Three sets
+  ship: Twemoji Color, OpenMoji Color and OpenMoji Black, all complete. A brand treatment
+  can pull the artwork toward your palette (subtle, strong, full, mono or duotone) with skin
+  tones and flags kept as they are, and the same input always produces the same bytes. A
+  black set follows the surrounding text colour, the way the same artwork behaves as a font.
+  The set and the treatment travel in the link, the CLI and the agent tools.
+
+- **Source credits, and the licence that asks for them.** When a render places someone
+  else's work, the export panel says what that work asks of the delivery before you
+  download, and reads the delivered file back afterwards rather than assuming. Credits ride
+  in the file's Content Credentials, one per source, bound to the original bytes. A licence
+  that needs a decision, such as a recoloured ShareAlike set you are about to share, asks
+  once and never blocks the download. Verify gained a Sources panel with a copyable credit
+  and a plain statement of what it could not check, the catalog shows a work's creator and
+  licence, an editable `.lolly` file carries only what a reviewed licence permits and lists
+  the rest in a credits file, and removing metadata tells you which credits go with it. The
+  rules are seven reviewed licences, each cited to its own legal text; NonCommercial and
+  NoDerivatives are recorded and deliberately not interpreted. Lolly never says copyright is
+  verified, because no program can check that.
+
+- **Training courses.** A project folder becomes a learning module: ordered lessons with
+  text, images, slides, video, audio and downloadable resources, checked for size and
+  accessibility, then exported as a versioned package for a website or an LMS. Learner
+  progress stays in the learner's browser for a website package, and the LMS records
+  completion for an LMS package. No account is needed to build one.
+
+- **Projects, templates and recovering a download.** The Projects root gained a templates
+  tile and a toolbar, saving your own template is a first-class action, and a download that
+  fails is offered again rather than lost. The Prepare view was rebuilt around the same
+  panels as the rest of the app.
 
 - **On-device PDF and document utilities.** New brand-agnostic tools join the on-device
   set: split, merge, reorder and rotate pages; trim a file to a range; sign a PDF; clean a
@@ -82,13 +115,16 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
 - **Repeating inputs as a table.** Flat block inputs can present as a compact table editor;
   the same data still edits as blocks on shells without it, and URL encoding is unchanged.
 
-- **Under the hood.** The six largest web views were restructured into feature modules and
-  the shared engine trimmed, with layering and type-safety checks added. No tool behaviour or
-  export changed - every tool that ran on 1.0.6 runs unchanged.
+- **Under the hood.** The largest web views were restructured into feature modules and the
+  shared engine trimmed, with layering and type-safety checks added. The project is now one
+  repository instead of eleven, so a checkout builds and tests everything in one step. No
+  tool behaviour or export changed - every tool that ran on 1.0.6 runs unchanged.
 
-- **Engine 1.172 to 1.186.** Shared file operations, PDF organise/stamp, `.penpot` token
+- **Engine 1.172 to 1.197.** Shared file operations, PDF organise/stamp, `.penpot` token
   bindings and components, pinned asset versions, table-column inputs, direct asset-byte reads
-  for hooks and declared tool `requires`. All additive.
+  for hooks, declared tool `requires`, portable text operations, visual comparison, chosen
+  emoji sets with their deterministic treatments, and the creative-rights rules an export
+  answers to. All additive.
 
 ### New in 1.0.6
 

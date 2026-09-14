@@ -49,7 +49,7 @@ The route's parameters, refusals and headers are described in OpenAPI 3.1 at [`/
 
 ## The parameter contract is the URL
 
-Every tool input and every export control an agent can set is a URL query parameter, and the one table that defines them is [URL mode](/info/url-mode.html): inputs by id (or `urlKey`), and the reserved export names - `format`, `width`/`height`/`unit`/`dpi`, `profile`, `password`, `bleed`/`marks`, `c2pa`/`imprint`/`durable`/`meta`, `hdr`/`depth`, `cuts`, `s`, `lang`, and for the motion formats `fps`, `seconds`, `wait`, `codec` and `vq`. The MCP `query` argument, a share link, the CLI's `--flag=value` pairs and the hot-linkable render URL are that one contract under four transports, so an agent that has learnt the table has learnt all four; `lolly_list_tools` and `lolly_describe_tool` return each tool's inputs in the same vocabulary. Nothing here is a second API to memorise.
+Every tool input and every export control an agent can set is a URL query parameter, and the one table that defines them is [URL mode](/info/url-mode.html): inputs by id (or `urlKey`), and the reserved export names - `format`, `width`/`height`/`unit`/`dpi`, `profile`, `password`, `bleed`/`marks`, `c2pa`/`imprint`/`durable`/`meta`, `hdr`/`depth`, `cuts`, `s`, `lang`, `emoji`/`emojifx`, and for the motion formats `fps`, `seconds`, `wait`, `codec` and `vq`. The MCP `query` argument, a share link, the CLI's `--flag=value` pairs and the hot-linkable render URL are that one contract under four transports, so an agent that has learnt the table has learnt all four; `lolly_list_tools` and `lolly_describe_tool` return each tool's inputs in the same vocabulary. Nothing here is a second API to memorise.
 
 ## The thirteen tools
 
@@ -58,7 +58,7 @@ Every tool input and every export control an agent can set is a URL query parame
 | Tool | Does |
 |---|---|
 | `lolly_list_tools` | List / search the catalogue (by text, status, category, format, capability). |
-| `lolly_describe_tool` | One tool's full input JSON Schema, supported formats, canvas size and examples. |
+| `lolly_describe_tool` | One tool's full input JSON Schema, supported formats, canvas size, examples - and `emojiSets`, the emoji sets this deployment registers. |
 
 **Validate and inspect a document before you spend a render:**
 
@@ -108,6 +108,25 @@ The same rule governs when a call escalates to the browser tier: one predicate, 
 - **Documents & data** - `pptx` (PowerPoint), `html`, `md`, `txt`, `json`, `csv`, `ics`, `vcf`, `zip`
 
 Formats are **per-tool** - you can only request one a tool declares (`lolly_describe_tool` lists them). Ask a QR tool for `svg` and you get vector; ask an animated-ad tool for `mp4` and you get video - the call shape is identical either way. Animation, print PDF and HTML-layout raster require the **full** endpoint.
+
+## Emoji: name the set you want drawn
+
+Emoji in a render are drawn from a set somebody chose, never from the machine the server happens to run on. `lolly_render` and `lolly_build_url` both take two optional arguments for that choice, and read them the same way, so a link and the file it renders agree:
+
+| Argument | Takes |
+|---|---|
+| `emoji` | The set: `<id>@<version>` (`community/emoji/twemoji/color@17.0.3`), its last two segments (`twemoji/color@17.0.3`), or a bare id when exactly one version is registered. |
+| `emojifx` | The brand treatment for that artwork: `original`, `snap`, `mono`, `duotone` or `influence:<1-9999>` basis points, with an optional `,unprotected` to treat skin tones, flags and custom symbols too. Colours come from the brand in force, so they are never written into the link. |
+
+Both are the reserved URL params of the same name, so the identical two strings work in a share link, as `lolly --emoji=… --emojifx=…` on the CLI and here. They travel in the link either call returns, which means a person who opens it sees the artwork the agent rendered.
+
+Call `lolly_describe_tool` first and read **`emojiSets`** - one row per registered set with its `id@version`, label, glyph count and licence. Choosing a set is choosing a licence, which is why the licence is in the list. A set nobody registers comes back as a usage error naming the ones that are, rather than a picture that quietly arrives without the artwork you asked for.
+
+Three things follow from how the drawing works:
+
+- **With no `emoji` argument, every emoji draws as a neutral placeholder.** Nothing falls back to the operating system's emoji font, on any surface.
+- **A tool whose template root is an `<svg>` keeps the machine's glyph**, because SVG cannot place a picture inside a text run. `emojifx` with no `emoji` names a treatment with no artwork to treat, and is reported as a warning.
+- **The sources are recorded.** A render that placed pack artwork reports the pack's credit and licence in its `Rights:` line, and writes one Content Credential source per distinct glyph where the format can carry one. A browser-tier render establishes the same census server-side, so a PDF or an MP4 records its sources too.
 
 ## Resources - brand context without a render
 

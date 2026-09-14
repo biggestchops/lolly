@@ -108,7 +108,7 @@
       "section": "Animation",
       "help": "How many times the sequence plays. Display ad networks usually cap at 3 plays.",
       "options": [
-        { "value": "loop",  "label": "Loop forever" },
+        { "value": "loop",  "label": "Forever" },
         { "value": "play3", "label": "Play 3 times" },
         { "value": "once",  "label": "Play once" }
       ]
@@ -137,7 +137,7 @@
           ]
         },
         {
-          "id": "hold", "label": "Hold (seconds)", "type": "number",
+          "id": "hold", "label": "Hold (seconds)", "type": "number", "display": "slider",
           "min": 0.5, "max": 8, "step": 0.1, "default": 2.5
         },
         {

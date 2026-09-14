@@ -43,7 +43,7 @@ Filnavnet og formatvelgeren ligger øverst i panelet som ett `navn.format`-par, 
 | Vektor for trykk / designapper | **EPS**, eller **EPS (CMYK)** | PostScript-vektor for Illustrator / trykkeriarbeidsflyt |
 | Vektor for kutte- / CAD-maskiner | **DXF** | Laserkuttere, vinylplottere, CNC - konturbaner i millimeter |
 | Et redigerbart presentasjonssett | **PowerPoint** (PPTX) | Nativ redigerbar tekst + former, med bilder og vektorer som forblir uttrekkbare |
-| Et kurs som et LMS kan importere | **SCORM** (LMS) | En zip med manifestet, en oppstartsside, lysbildene og filmen med fortellerstemme og teksting - fra et Design-sett |
+| Et bærbart opplæringskurs | **Export course** | Gjennomgå prosjektinnholdet og bygg en versjonert Website-, SCORM- eller eksperimentell xAPI-pakke |
 | Et redigerbart tekstdokument | **Word** (DOCX) eller **OpenDocument** (ODT) | Ekte avsnitt og overskrifter som et tekstbehandlingsprogram kan fortsette å redigere (Doc Studio) |
 | Et foto eller bilde til generell bruk | **PNG** (tapsfritt) eller **JPG** (mindre) | Universelt rasterformat |
 | Mindre moderne bilder | **WebP** / **AVIF** | Bedre komprimering, alfa |
@@ -150,16 +150,18 @@ For å åpne den, start Penpot, velg et prosjekt og velg **Import**. Når du er 
 
 ## SCORM (kurspakker)
 
-Et Design-sett kan forlate appen som en **SCORM-pakke** - zip-filen et læringsstyringssystem importerer, enten det er Moodle, Canvas, Blackboard eller et bedrifts-LMS. Velg **SCORM (LMS)** i formatvelgeren, så skriver eksporten:
+Velg **Export course** fra et støttet verktøy, en prosjektmappe eller et utvalg. I Design åpner det å velge **SCORM (LMS)** og Last ned også denne kursarbeidsflyten. Lolly lagrer kreasjonen, lar deg gjennomgå kursinnholdet og rekkefølgen, og åpner deretter modulen og eksportdialogen dens.
 
-- <!--i:layout--> **Lysbildene**, ett bilde per tegnebrett, som vektor der tegnebrettet tillater det og som piksler bare der det ikke gjør det.
-- <!--i:play--> **Filmen med fortellerstemme** og tekstingssporet - talenotatene lest av en stemme på enheten, akkurat slik [Presenting](/info/create/using.html#presenting) spiller dem av.
-- <!--i:file--> **En oppstartsside** som går gjennom lysbildene, spiller av filmen og rapporterer fullføring tilbake til LMS-et gjennom SCORM 1.2-kjøretiden, versjonen alle LMS-er godtar.
-- <!--i:font--> Skriftene settet bruker, slik at oppstartssiden gjengis likt offline.
+- <!--i:layout--> Velg den tilgjengelige gjengivelsen for hver kilde: stillsider, bevegelse som video, lyd eller en nedlastbar ressurs. Legg til nativ leksjonstekst og lesealternativer i modulen.
+- <!--i:play--> Forhåndsvis elevspilleren og gjennomgå beskrivelser og teksting. Bevegelse inkluderes som video, inkludert stille animasjon. Eksporter et ferdig opptak først når et verktøy ikke kan gjenskape det fra lagrede inndata.
+- <!--i:file--> Velg Website, SCORM 1.2, SCORM 2004 4th Edition, eller et eksperimentelt xAPI-mål. Sjekk det faktiske innholdet og ZIP-størrelsen, lagre deretter og last ned den sjekkede versjonen.
+- <!--i:check--> Fullføring krever at hver påkrevde leksjon anerkjennes og at Fullfør velges. Nettstedspilleren lagrer fremdrift i nettleseren; en LMS-pakke kobler til sin mottakende LMS.
 
 ![Eksportpanelet på et Design-sett med SCORM (LMS) valgt](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Ingenting i pakken ringer hjem: det er filer i en zip, og den kjører inne i LMS-et uten bundler, uten CDN og uten konto. Web- og skrivebordsappene bygger den; CLI-en gjør det ikke, fordi det å fotografere tegnebrettene og kode filmen krever nettleseren.
+Pakken inneholder sitt ferdige innhold og krever ingen Lolly-konto. Pakk ut en Website-ZIP på en HTTP(S)-vert; importer en LMS-ZIP uten å endre innholdet dens. Test den tiltenkte destinasjonen før du distribuerer kurset.
+
+For et kurs satt sammen av flere lagrede kreasjoner, importert media og ressurser, bruk [Lag et opplæringskurs](/info/create/training-creators.html). Læringsmodulen har sin egen ordnede disposisjon, eksplisitte leksjonsanerkjennelser, elevforhåndsvisning og versjonert pakkehistorikk. CLI-stien dens kan pakke media du allerede har eksportert.
 
 ## DXF (kuttfiler)
 
@@ -309,6 +311,10 @@ Eksporter kan bære **Content Credentials** - en signert [C2PA](https://c2pa.org
 - **Sjekke en fil.** Lolly verifiserer også sine egne credentials: slipp en fil på [/verify](/verify) (eller kjør `lolly validate <file>` i CLI-en) for en on-device-rapport - med overskriften om filen genuint ble laget med Lolly og er uendret siden. Web Verify-visningen leser langt utover credentialen: den flagger **AI-generert innhold**, oppdager **Lolly Imprint**, sjekker **SEAL**-signaturer og (opt-in) tredjeparts pikselvannmerker, og avdekker **skjulte data** - alt on-device, ingenting lastes opp. Se [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Personvern.** Alt skjer på enheten din: signeringsnøkkelen lages for eksporten og forlater aldri nettleseren, ingenting lastes opp, og påstanden inneholder kun det opprinnelsesmetadataen allerede bærer. Personvernverktøy (on-device-transformasjoner av *dine egne* filer) legger aldri til credentials, og *Strip Hidden Data* fjerner en C2PA-manifest som all annen innebygd metadata.
 - **Samspill.** For PDF-er er Content Credentials og **passordbeskyttelse** (begge nivåer - se ovenfor) gjensidig utelukkende (en kryptert PDF kan ikke få credential-vedlegget). Credentialen legges til som siste steg over de ferdige bytene - etter DPI-/EXIF-/fargeprofilstempling, PDF/X-metadata og trykkmerker.
+
+### Source credits
+
+En eksport som plasserer noen andres verk, registrerer den kilden i legitimasjonen også. En emoji hentet fra et fastsatt sett er hverdagstilfellet: verket, opphavspersonen, lisensen, hvor de eksakte bytene kom fra og hva som ble endret, følger alle med filen. Eksportpanelets **Source credits**-rad sier hva kildene ber om av leveringen før du laster ned, og etter nedlastingen leser den de leverte bytene tilbake før den sier at krediteringen er i filen. En lisens som ber deg velge, som en omfarget CC BY-SA-glyf du er i ferd med å dele, får et kort med utveiene; nedlastingen blokkeres aldri. [Kreative rettigheter og kreditering](/info/creative-rights.html) har ordene, de gjennomgåtte lisensene og det som forblir ditt.
 
 ## På en telefon
 

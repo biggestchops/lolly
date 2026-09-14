@@ -1,0 +1,91 @@
+{
+  "name": "by-sa-recoloured-shared",
+  "title": "A CC BY-SA 4.0 illustration recoloured and shared, with no licence chosen for the adaptation",
+  "citations": [
+    "CC BY-SA 4.0 legal code, section 3(b)(1): the adapter licence must be a CC licence with the same elements, this version or later, or a BY-SA compatible licence."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/harbour-illustration",
+        "title": "Harbour Illustration",
+        "creators": [
+          {
+            "name": "Example Artist",
+            "role": "creator"
+          },
+          {
+            "name": "Example Catalogue",
+            "role": "publisher"
+          }
+        ],
+        "sourceUrl": "https://example.org/harbour.svg",
+        "revision": "2024-05-01",
+        "sourceHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "rights": [
+          {
+            "declaration": "CC BY-SA 4.0",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/harbour-illustration",
+        "role": "incorporated",
+        "operations": [
+          "placed",
+          "recoloured"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "actions-required",
+    "issues": [
+      "licence.adaptation-choice"
+    ],
+    "uses": [
+      {
+        "work": "example/harbour-illustration",
+        "classification": "adaptation",
+        "rule": "adaptation-operations-v1",
+        "licence": "CC-BY-SA-4.0",
+        "reviewed": true,
+        "issues": [
+          "licence.adaptation-choice"
+        ]
+      }
+    ],
+    "required": [
+      {
+        "work": "example/harbour-illustration",
+        "credit": "\"Harbour Illustration\" by Example Artist (Example Catalogue), CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/, source https://example.org/harbour.svg, changes: recoloured.",
+        "changes": "recoloured"
+      }
+    ],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [
+      "recoloured"
+    ],
+    "unresolved": []
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "description": "Ett konferensprogram från en enda tabell - en kronologisk lista, ett flerspårigt schema eller en nu-och-nästa-skärm vid dörren - och en riktig .ics-fil för varje pass.",
   "a11yLabel": "{{default headingText \"Program\"}} - {{sessionCount}} pass, {{trackCount}} spår",
   "inputs.title.label": "Evenemang",
   "inputs.title.placeholder": "t.ex. Northwind Summit 2026",

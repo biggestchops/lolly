@@ -1,4 +1,4 @@
 {
-  "name": "Sign",
-  "description": "Place your signature on a PDF, optionally add a Content Credential and lock the result."
+  "name": "Подписване на PDF",
+  "description": "Постави подписа си върху PDF, по избор добави Content Credential и заключи резултата."
 }

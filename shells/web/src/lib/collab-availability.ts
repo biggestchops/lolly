@@ -72,7 +72,7 @@ interface CollabTargetBase {
    * `false` when this shell cannot mount the target (a tool whose declared
    * capabilities this host does not satisfy - `capabilities.ts`'s `'unavailable'`).
    * ABSENT MEANS YES, because the common caller is a live mount, which has already
-   * proved it: only a browse surface listing tools it cannot open has to say so.
+   * proved it: only a browse surface listing tools it cannot open has to report it.
    */
   mountable?: boolean;
 }

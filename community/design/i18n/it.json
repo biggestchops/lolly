@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "In basso a sinistra",
   "inputs.boxes.fields.imgpos.options.center bottom": "In basso",
   "inputs.boxes.fields.imgpos.options.right bottom": "In basso a destra",
-  "description": "Un canvas aperto per la disposizione libera - testo, immagini, forme e render live dagli altri strumenti Lolly, tutto fedele al tuo brand."
+  "description": "Un canvas aperto per la disposizione libera - testo, immagini, forme e render live dagli altri strumenti Lolly, tutto conforme al tuo sistema di design."
 }

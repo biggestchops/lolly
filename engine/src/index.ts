@@ -41,6 +41,13 @@ export type {
   HookWorkerPort, HookWorkerCoreOpts,
 } from './hook-worker-core.ts';
 export type { HookExecutor, Hooks } from './runtime.ts';
+// Emoji (1.196): the runtime draws every emoji in a rendered tree from the
+// chosen pinned pack. TYPES ONLY here on purpose - the pinned Unicode tables are
+// half a megabyte, so the modules themselves stay behind the runtime's dynamic
+// imports and a render with no emoji never loads them. A shell that needs the
+// DOM pass calls runtime.applyEmojiToDom / runtime.revertEmojiDom.
+export type { RuntimeEmojiPassOpts, RuntimeEmojiResult, RuntimeEmojiState } from './runtime.ts';
+export type { EmojiDomNode, EmojiDomResult } from './emoji-dom.ts';
 export { hydrate, annotateTemplate, resolvePaintBindings } from './template.ts';
 export { sniffAnimatedRaster, sniffVideoContainer, sniffLayeredRaster, sniffContainer } from './media-sniff.ts';
 // Layered bitmap import/export (1.102): PSD/PSB + XCF readers, PSD writer.
@@ -53,8 +60,8 @@ export {
   PSD_BLEND_TO_CSS, CSS_TO_PSD_BLEND, XCF_MODE_TO_CSS, psdBlendToCss, xcfModeToCss,
 } from './raster-layers.ts';
 export type { CssBlendMode, RasterLayer, LayeredRasterDoc, InflateFn } from './raster-layers.ts';
-export { buildInputModel, summarizeInputs, normalizeTableValue, deriveExportFilename, DEFAULT_FILE_MAX_BYTES } from './inputs.ts';
-export type { TableValue, TableColumnEditor } from './inputs.ts';
+export { buildInputModel, summarizeInputs, normalizeTableValue, deriveExportFilename, matchesShowIf, DEFAULT_FILE_MAX_BYTES } from './inputs.ts';
+export type { TableValue, TableColumnEditor, ShowIf } from './inputs.ts';
 export { parseUrlState, serializeUrlState, serializeHdr, encodeBlocksCompact, encodeTableCompact, decodeTableCompact, RESERVED, HDR_DEFAULTS, VIDEO_CODEC_STRINGS, parseVideoParams, hasVideoParams } from './url-mode.ts';
 // The `s=` state address + the still-export frame filter both shells apply (plan 112).
 export { parseFrameAddress, selectFramePage, frameFilterApplies } from './frame-address.ts';
@@ -485,14 +492,27 @@ export type {
   PdfXOutputIntentOptions, PdfXOutputIntentSpec, PdfXProfileFacts, PdfXXmpOptions,
 } from './pdfx.ts';
 export { buildC2paManifest, embedC2paInPdf, embedC2pa, attachC2paStore, exportActionSteps, collectAiIngredientDeclarations, C2PA_FORMATS, DIGITAL_SOURCE_TYPE, CAPTURE_SOURCE_TYPE, SCREEN_SOURCE_TYPE, GENERATED_SOURCE_TYPE, COMPOSITE_SOURCE_TYPE } from './c2pa.ts';
-export type { C2paActionInput } from './c2pa.ts';
-export { verifyC2pa, extractC2paFromPdf, prepareC2paIngredient, prepareC2paIngredientFromStore, collectIngredients, extractC2paStore, parseCertificate, signedBy } from './c2pa-verify.ts';
-export type { C2paReport, C2paCheck, ParsedCertificate } from './c2pa-verify.ts';
+export type { C2paActionInput, C2paCredentialedIngredient, C2paSourceIngredient, C2paRightsRecord, C2paIngredientInput } from './c2pa.ts';
+export { LOLLY_RIGHTS_ASSERTION } from './c2pa.ts';
+export { verifyC2pa, extractC2paFromPdf, prepareC2paIngredient, prepareC2paIngredientFromStore, collectIngredients, collectIngredientRecords, extractC2paStore, parseCertificate, signedBy } from './c2pa-verify.ts';
+export type { C2paReport, C2paCheck, ParsedCertificate, C2paIngredientRecord } from './c2pa-verify.ts';
 export type { Signer as C2paSigner } from './c2pa.ts';
 export { C2PA_CHECK, isExpiredOnly, resolveVerdict, defaultTrustAnchors } from './c2pa-verdict.ts';
 export type { C2paVerdict, C2paVerdictInput, C2paVerdictState } from './c2pa-verdict.ts';
 export { c2paTrustAnchors, LOLLY_CA_ROOT_PEM } from './c2pa-trust.ts';
 export { c2paDefaultOn, imprintDefaultOn, isImprintFormat, IMPRINT_FORMATS } from './provenance-defaults.ts';
+// Creative rights (plan 253): the reviewed licence profiles, the deterministic
+// evaluator, attribution delivery and the file-level rights report. Pure data
+// and arithmetic - no clock, no network, no filesystem. The runtime imports
+// them at export time, not at mount, so a render with no recorded source never
+// loads them.
+export { RIGHTS_RULES_VERSION, licenceDisplayName, licenceProfile, licenceProfiles, normaliseLicence, publicLocator, readLicenceExpression, roleObligation } from './rights-profiles.ts';
+export type { AttributionPartsV1, CompatibleOutputLicenceV1, LicenceExpressionV1, LicenceLimitV1, LicenceOperatorV1, LicenceProfileV1, NormalisedLicenceV1, RoleObligationV1 } from './rights-profiles.ts';
+export { evaluateCreativeUses } from './rights-evaluate.ts';
+export type { RightsEvaluationInputV1 } from './rights-evaluate.ts';
+export { attributionCompanion, attributionCredits, checkAttributionReadback, sourceIngredientsFor } from './rights-attribution.ts';
+export type { AttributionCompanionV1, SourceDetailV1 } from './rights-attribution.ts';
+export { evaluateReuse, rightsReportFromC2pa } from './rights-report.ts';
 export {
   verifySeal, parseSealRecord, parseSealRecords, computeSealDigest, assembleSealMessage,
   resolveRanges, verifySealSignature, importSealKey,
@@ -837,3 +857,14 @@ export { highlightCode, detectCodeLanguage, SYNTAX_LANGUAGES } from './text-synt
 export { TEXT_OPERATIONS } from './text-operations.ts';
 export { parseTextLogs, filterTextLogs, groupTextLogs } from './text-logs.ts';
 export type { TextLogEvent, TextLogReport } from './text-logs.ts';
+
+// Learning documents and compilation remain independent of an LMS or a shell.
+export { newLearningModule, parseLearningModule, checkLearningModule, learningPath, LEARNING_LIMITS } from './learning/module.ts';
+export { learningProgress, encodeLearningAttempt, decodeLearningAttempt } from './learning/progress.ts';
+export { compileLearningModule } from './learning/compile.ts';
+export type { LearningBytes, CompiledLearning } from './learning/compile.ts';
+
+export { LEARNING_TARGETS, learningRenditions, learningSummary } from './learning/delivery.ts';
+export type { LearningRenderable, LearningRendition } from './learning/delivery.ts';
+export { learningExportKey, checkLearningExportSize, learningHandoff } from './learning/preflight.ts';
+export type { LearningExportSettings } from './learning/preflight.ts';

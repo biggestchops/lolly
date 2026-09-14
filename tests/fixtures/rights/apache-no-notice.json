@@ -1,0 +1,63 @@
+{
+  "name": "apache-no-notice",
+  "title": "Apache 2.0 artwork whose NOTICE text was never recorded: a gap, not a delivery",
+  "citations": [
+    "Apache License 2.0 section 4(4): the derivative work must carry the attribution notices in the NOTICE text distributed with the work.",
+    "Plan 253 section 4.3: report credits included only when the necessary source fields are available.",
+    "Plan 253 section 4.1: information missing is its own state and never labels the work infringing."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/icon-set",
+        "title": "Example Icon",
+        "creators": [{ "name": "Example Org", "role": "creator" }],
+        "sourceUrl": "https://example.org/icon.svg",
+        "sourceHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "rights": [
+          {
+            "declaration": "Apache-2.0",
+            "url": "https://www.apache.org/licenses/LICENSE-2.0",
+            "copyright": "Copyright 2023 Example Org",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      { "work": "example/icon-set", "role": "incorporated", "operations": ["placed"] }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": { "format": "png", "route": "file-with-c2pa", "canCarryCredential": true, "canCarryReadableCredit": true },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "unknown",
+    "issues": ["attribution.source-missing"],
+    "uses": [
+      {
+        "work": "example/icon-set",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "Apache-2.0",
+        "reviewed": true,
+        "issues": ["attribution.source-missing"]
+      }
+    ],
+    "required": [
+      {
+        "work": "example/icon-set",
+        "credit": "\"Example Icon\" by Example Org, Copyright 2023 Example Org, Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0, source https://example.org/icon.svg, unchanged.",
+        "changes": "unchanged"
+      }
+    ],
+    "optional": [],
+    "channels": ["c2pa-ingredients", "readable-details"],
+    "changes": [],
+    "unresolved": ["example/icon-set: notice text not recorded"]
+  }
+}

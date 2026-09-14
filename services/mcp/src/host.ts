@@ -19,7 +19,9 @@
 import { createCliBridge } from '../../../shells/cli/src/bridge.ts';
 import type { HostV1, Profile } from '@lolly-tools/core/host-v1';
 
-type Jsdom = { window: Window & typeof globalThis };
+/** The DOM one render runs in. Exported so a helper that takes both halves of a
+ *  `withHost` call (the render path's shared hydrate-and-draw) can name it. */
+export type Jsdom = { window: Window & typeof globalThis };
 
 // Serialize renders: each mutates globalThis.{window,document,Element}.
 let chain: Promise<unknown> = Promise.resolve();

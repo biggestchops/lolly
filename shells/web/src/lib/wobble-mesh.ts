@@ -23,7 +23,7 @@
  * export. One shared GL context + overlay is reused across gestures; only one runs at once.
  */
 
-import { isFlagOnSync, WOBBLY_FLAG, WOBBLY_MESH_FLAG } from '../feature-flags.ts';
+import { isFlagOnSync, perfUiOn, WOBBLY_FLAG, WOBBLY_MESH_FLAG } from '../feature-flags.ts';
 
 // Grid + spring tunables. GRID = cells per side (so (GRID+1)^2 vertices). K_MESH is the
 // membrane (neighbour-averaging) spring that keeps the warp smooth and propagates the wave;
@@ -71,7 +71,7 @@ export function meshWobbleCapable(): boolean {
 
 /** Both flags on AND capable. attachWobble uses this to pick the mesh path over the skew. */
 export function meshWobbleActive(): boolean {
-  return isFlagOnSync(WOBBLY_FLAG) && isFlagOnSync(WOBBLY_MESH_FLAG) && meshWobbleCapable();
+  return !perfUiOn() && isFlagOnSync(WOBBLY_FLAG) && isFlagOnSync(WOBBLY_MESH_FLAG) && meshWobbleCapable();
 }
 
 // ── shared GL overlay (created once, reused) ─────────────────────────────────────

@@ -237,7 +237,11 @@ test('sign → verify → re-run: the second pass keeps the sidecar byte-identic
   // nothing to claim - an ingredient with no manifest would be an assertion
   // about a file we cannot show anyone).
   assert.deepEqual(recordedComponentLabels(bytesOf(sidecar)), [prepareC2paIngredient(bytesOf(join(dir, 'shots', 'signed.svg')))!.activeLabel]);
-  assert.equal(report.history?.some((s) => s.action === 'c2pa.opened'), true);
+  // A shot is a componentOf ingredient, and since 1.194 the writer pairs that
+  // relationship with `c2pa.placed` (an asset placed INTO this one); `c2pa.opened`
+  // is reserved for a parentOf ingredient, which a page never has.
+  assert.equal(report.history?.some((s) => s.action === 'c2pa.placed'), true);
+  assert.equal(report.history?.some((s) => s.action === 'c2pa.opened'), false);
 
   const before = readFileSync(sidecar);
   const second = await sealPages({ outDir: dir, targets: targets(dir), ...quiet });

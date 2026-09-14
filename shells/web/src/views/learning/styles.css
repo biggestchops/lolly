@@ -1,0 +1,119 @@
+.learning-author {
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px;
+  color: var(--text);
+}
+.learning-header,
+.learning-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.learning-header h1 {
+  flex: 1;
+}
+.learning-author label {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+}
+.learning-author input:not([type="checkbox"]),
+.learning-author textarea,
+.learning-author select {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: var(--surface, Canvas);
+  border: 1px solid var(--border, #888);
+  border-radius: 6px;
+  padding: 10px;
+}
+.learning-author textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.learning-author label:has([type="checkbox"]) {
+  display: flex;
+}
+.learning-editor {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 24px;
+  margin: 24px 0;
+}
+.learning-editor nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: start;
+}
+.learning-editor nav button {
+  text-align: left;
+  white-space: normal;
+}
+.learning-editor [aria-current="true"] {
+  outline: 2px solid var(--accent, Highlight);
+}
+.learning-author fieldset,
+.learning-settings,
+.learning-publish {
+  min-width: 0;
+  padding: 20px;
+  margin: 16px 0;
+  border: 1px solid var(--border, #888);
+  border-radius: 10px;
+}
+.learning-author code {
+  overflow-wrap: anywhere;
+}
+.learning-author button:focus-visible,
+.learning-author a:focus-visible {
+  outline: 3px solid var(--accent, Highlight);
+  outline-offset: 3px;
+}
+.learning-preview {
+  position: fixed;
+  inset: 20px;
+  margin: 0;
+  width: calc(100% - 40px);
+  height: calc(100% - 40px);
+  max-width: none;
+  max-height: none;
+  color: var(--text);
+  border: none;
+  background: var(--surface, Canvas);
+  z-index: 500;
+  padding: 16px;
+  box-shadow: 0 0 0 30px #0009;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.learning-preview iframe {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--border, #888);
+  background: Canvas;
+}
+.learning-preview > button {
+  align-self: end;
+}
+.learning-preview::backdrop {
+  background: #0009;
+}
+.learning-file {
+  max-width: 230px;
+}
+@media (max-width: 700px) {
+  .learning-author {
+    padding: 16px;
+  }
+  .learning-editor {
+    grid-template-columns: 1fr;
+  }
+  .learning-preview {
+    inset: 8px;
+  }
+}

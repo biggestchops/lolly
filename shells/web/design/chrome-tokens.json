@@ -393,6 +393,11 @@
     "max": {
       "$type": "number",
       "$value": 100
+    },
+    "top": {
+      "$type": "number",
+      "$value": 100000,
+      "$description": "The layer of the view-fade snapshot (view-fade.ts) and of what must never sit under it during a route change: the filter popover, the catalog view options, a fixed demo popover. Was a bare 100000 in four places."
     }
   }
 }

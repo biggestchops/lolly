@@ -227,6 +227,13 @@
           },
           "description": "Section labels (input.section values) whose controls render in a denser 2-column grid instead of one control per row. A chrome-only presentation hint for input-dense pro tools; it never changes the input model, URL encoding, or determinism, and collapses back to one column on narrow panels/large-text. Wide controls (vector, blocks, textarea, asset, colour) still span the full width."
         },
+        "sectionIcons": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Section label (input.section value) to the name of a shell icon drawn before it on the folded section head, so a tool with many sections can be scanned by glyph as well as by word. A chrome-only presentation hint like denseSections: an unknown icon name draws nothing, and the CLI and TUI ignore it."
+        },
         "actions": {
           "type": "array",
           "items": {
@@ -591,7 +598,8 @@
           "raster",
           "geom",
           "connectors",
-          "c2pa"
+          "c2pa",
+          "emoji"
         ]
       },
       "description": "Optional HostV1 APIs (`host.text`, `host.pdf`, …) this tool calls WITHOUT feature-detecting them. The runtime refuses to mount the tool on a shell that lacks one, before any hook runs, and the gallery greys it out there. An API the hooks guard (`if (host.text)`, `host.text?.`) is NOT required and must not be listed. `scripts/tool-requires.ts` computes this from hooks.js and can rewrite it (`--write`); `validate:catalog` warns when the two disagree. Distinct from `capabilities`, which names device abilities (camera, microphone, screen, …) rather than bridge APIs."
@@ -841,9 +849,21 @@
           "description": "Optional grouping tag. The reserved value 'export' moves an input out of the sidebar into the export panel; the engine injects its own export-group toggles (transparentBg, convertPaths). Any other value is a free-form label for related controls."
         },
         "showIf": {
-          "type": "object",
-          "description": "Conditional visibility: the input renders in the sidebar only while every { otherInputId: value } pair here matches the current model (e.g. { \"vectorize\": true }).",
-          "additionalProperties": true
+          "description": "Conditional visibility: the input renders in the sidebar only while the current model matches. One object is every { otherInputId: value } pair required, where a value may be a list of accepted values (e.g. { \"vectorize\": true } or { \"chartType\": [\"bar\", \"line\"] }); an array of such objects renders when ANY of them matches, for conditions an ANDed map cannot say (\"vector bar, or a 3-D bar scene\"). A visibility overlay only: URL params, hooks and validation see the input either way.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": true
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          ]
         },
         "attachTo": {
           "type": "string",
@@ -1049,6 +1069,23 @@
                     },
                     "label": {
                       "type": "string"
+                    },
+                    "showIf": {
+                      "description": "Offer this option only while the current model matches, with exactly the shape and semantics of an input's showIf (one object, every pair required, or an array of objects, any one sufficient). A visibility overlay: the option that is currently selected stays offered and marked not applicable, so a saved session or a link never changes meaning, and validation still runs against the whole option set.",
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        }
+                      ]
                     },
                     "icon": {
                       "type": "string",

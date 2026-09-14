@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Linksonder",
   "inputs.boxes.fields.imgpos.options.center bottom": "Onder",
   "inputs.boxes.fields.imgpos.options.right bottom": "Rechtsonder",
-  "description": "Een open canvas voor vrije indeling - tekst, afbeeldingen, vormen en live renders uit je andere Lolly-tools, allemaal binnen je merk."
+  "description": "Een open canvas voor vrije indeling - tekst, afbeeldingen, vormen en live renders van je andere Lolly-tools, allemaal gebonden aan je huisstijl."
 }

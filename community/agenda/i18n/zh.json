@@ -1,6 +1,6 @@
 {
-  "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "name": "议程",
+  "description": "把一张表格变成会议日程 - 按时间排列的列表、多轨道时间表，或门口用的“现在/接下来”提示屏 - 并为每个环节生成真实的 .ics 文件。",
   "a11yLabel": "{{default headingText \"议程\"}} - {{sessionCount}} 个环节，{{trackCount}} 个轨道",
   "inputs.title.label": "活动",
   "inputs.title.placeholder": "例如 Northwind Summit 2026",

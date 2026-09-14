@@ -252,10 +252,11 @@
       "type": "boolean",
       "default": true,
       "showIf": { "payload": ["ean13", "ean8", "upca", "upce", "code128", "code39", "codabar", "itf14", "isbn", "databar", "gs1"] },
-      "help": "The human-readable line under the bars. EAN-13, EAN-8, UPC-A and Code 128 set it in your brand's monospace face; the logistics symbologies print the specs' own OCR-B, drawn as outlines so no font is needed."
+      "help": "The human-readable line under the bars. EAN-13, EAN-8, UPC-A and Code 128 set it in the design system's monospace face; the logistics symbologies print the specs' own OCR-B, drawn as outlines so no font is needed."
     },
     {
       "id": "moduleWidth",
+      "section": "Bars",
       "label": "Bar width",
       "type": "number",
       "display": "slider",
@@ -268,6 +269,7 @@
     },
     {
       "id": "barHeight",
+      "section": "Bars",
       "label": "Bar height",
       "type": "number",
       "display": "slider",
@@ -280,6 +282,7 @@
     },
     {
       "id": "quiet",
+      "section": "Bars",
       "label": "Quiet zone",
       "type": "number",
       "display": "slider",
@@ -292,7 +295,7 @@
     },
     {
       "id": "color",
-      "label": "Module color",
+      "label": "Module colour",
       "type": "color",
       "default": "{color.semantic.text}"
     },
@@ -304,6 +307,7 @@
     },
     {
       "id": "ecl",
+      "section": "Modules",
       "label": "Error correction",
       "type": "select",
       "default": "M",
@@ -318,6 +322,7 @@
     },
     {
       "id": "padding",
+      "section": "Modules",
       "label": "Quiet zone",
       "type": "number",
       "display": "slider",
@@ -326,10 +331,12 @@
       "max": 10,
       "step": 1,
       "showIf": { "payload": ["url", "text", "vcard", "wifi", "event", "geo"] },
-      "help": "Modules of white space around the code. Minimum 4 recommended."
+      "help": "Modules of clear space around the code. Keep at least 4."
     },
     {
       "id": "moduleShape",
+      "display": "segmented",
+      "section": "Modules",
       "label": "Module shape",
       "type": "select",
       "default": "square",
@@ -344,6 +351,7 @@
     },
     {
       "id": "join",
+      "section": "Modules",
       "label": "Joined modules",
       "type": "boolean",
       "default": true,
@@ -352,6 +360,8 @@
     },
     {
       "id": "eyeShape",
+      "display": "segmented",
+      "section": "Modules",
       "label": "Finder eyes",
       "type": "select",
       "default": "square",
@@ -366,7 +376,8 @@
     },
     {
       "id": "eyeColor",
-      "label": "Eye color",
+      "section": "Modules",
+      "label": "Eye colour",
       "type": "color",
       "default": "",
       "showIf": { "payload": ["url", "text", "vcard", "wifi", "event", "geo"], "symbology": "qr" },
@@ -374,6 +385,8 @@
     },
     {
       "id": "fill",
+      "display": "segmented",
+      "section": "Modules",
       "label": "Fill",
       "type": "select",
       "default": "solid",
@@ -386,7 +399,8 @@
     },
     {
       "id": "color2",
-      "label": "Gradient end color",
+      "section": "Modules",
+      "label": "Gradient end colour",
       "type": "color",
       "default": "{color.semantic.primary}",
       "showIf": { "payload": ["url", "text", "vcard", "wifi", "event", "geo"], "symbology": "qr", "fill": "gradient" },
@@ -394,6 +408,7 @@
     },
     {
       "id": "gradientType",
+      "section": "Modules",
       "label": "Gradient type",
       "type": "select",
       "default": "linear",
@@ -405,6 +420,7 @@
     },
     {
       "id": "angle",
+      "section": "Modules",
       "label": "Gradient angle",
       "type": "number",
       "display": "slider",
@@ -417,13 +433,15 @@
     },
     {
       "id": "logo",
-      "label": "Center logo",
+      "section": "Logo",
+      "label": "Centre logo",
       "type": "asset",
       "showIf": { "payload": ["url", "text", "vcard", "wifi", "event", "geo"], "symbology": "qr" },
-      "help": "A brand mark placed in the middle of the code - a catalog id or a pasted lolly.tools link. Error correction is raised to High automatically so the covered modules stay recoverable; keep the logo small enough (the scannability check flags it if not)."
+      "help": "A logo placed in the middle of the code - a catalog id or a pasted lolly.tools link. Error correction is raised to High automatically so the covered modules stay recoverable; keep the logo small enough (the scannability check flags it if not)."
     },
     {
       "id": "logoScale",
+      "section": "Logo",
       "label": "Logo size",
       "type": "number",
       "display": "slider",
@@ -436,6 +454,7 @@
     },
     {
       "id": "logoPad",
+      "section": "Logo",
       "label": "Logo padding",
       "type": "number",
       "display": "slider",
@@ -448,6 +467,7 @@
     },
     {
       "id": "logoShape",
+      "section": "Logo",
       "label": "Logo backing",
       "type": "select",
       "default": "rounded",
@@ -460,6 +480,7 @@
     },
     {
       "id": "frame",
+      "section": "Call to action",
       "label": "Frame",
       "type": "select",
       "default": "none",
@@ -474,6 +495,7 @@
     },
     {
       "id": "frameText",
+      "section": "Call to action",
       "label": "Frame text",
       "type": "text",
       "default": "Scan me",

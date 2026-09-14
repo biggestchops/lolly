@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Kiri bawah",
   "inputs.boxes.fields.imgpos.options.center bottom": "Bawah",
   "inputs.boxes.fields.imgpos.options.right bottom": "Kanan bawah",
-  "description": "Kanvas terbuka untuk penataan bebas - teks, gambar, bentuk dan render langsung dari alat Lolly lainnya, semuanya mengikuti brand Anda."
+  "description": "Kanvas terbuka untuk penataan bebas - teks, gambar, bentuk dan render langsung dari alat Lolly Anda yang lain, semuanya berpegang pada sistem desain Anda."
 }

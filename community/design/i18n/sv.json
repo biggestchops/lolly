@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Nere till vänster",
   "inputs.boxes.fields.imgpos.options.center bottom": "Nederkant, centrerad",
   "inputs.boxes.fields.imgpos.options.right bottom": "Nere till höger",
-  "description": "En öppen canvas för fri komposition - text, bilder, former och live-renderingar från dina andra Lolly-verktyg, allt anpassat efter ditt varumärke."
+  "description": "En öppen canvas för fri komposition - text, bilder, former och liverenderingar från dina andra Lolly-verktyg, allt i linje med ditt designsystem."
 }

@@ -280,7 +280,7 @@ export function neurospicySignalState(): NeuroSignalState {
   // not unanalysable - keep the UI on "connecting" rather than flashing "can't visualise".
   if (vizEl) return 'connecting';
   // An untapped element on a radio selection with no viz tap can never produce samples,
-  // however well it's playing - say so rather than leaving the UI on "connecting" forever.
+  // however well it's playing - report it rather than leaving the UI on "connecting" forever.
   if (isNeurospicyRadio() && radioEl && !radioSource) return 'unanalysable';
   return 'connecting';
 }

@@ -246,6 +246,10 @@ export async function mountProfile(viewEl: HTMLElement, host: ProfileHost, param
 
   pv.prefs.wireRenderSaveRows();
 
+  // Emoji (plans/252): the set new work starts from. Lazy - the shared control
+  // is its own chunk - so this is not awaited and the card fills itself in.
+  void pv.prefs.wireEmojiPref();
+
   pv.shell.wireFocusTarget();
 
   pv.prefs.wireThemePick();

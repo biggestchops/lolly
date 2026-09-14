@@ -340,7 +340,7 @@ test('ocr: the real PP-OCRv5 pair reads text back out of a rendered image', {
   const png = new Resvg(svg, { font: { loadSystemFonts: true }, fitTo: { mode: 'original' } }).render().asPng();
   const frame = await decodeRgba(png);
   // A machine with no usable sans-serif draws nothing; that is a fixture
-  // problem, not an OCR result, so say so rather than assert on a blank page.
+  // problem, not an OCR result, so report it rather than assert on a blank page.
   let dark = 0;
   for (let i = 0; i < frame.data.length; i += 4) if ((frame.data[i] as number) < 100) dark++;
   if (dark < 200) {

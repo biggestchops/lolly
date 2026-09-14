@@ -99,9 +99,115 @@ export function clearInputPolicies(): void {
   registry.clear();
 }
 
-/** TEST-ONLY convenience: empty the registry (and lift any fail-closed overlay) back
- *  to the dormant default. */
+// ── Tool mount hook ──────────────────────────────────────────────────────────
+// The registry is swapped per mounted tool by whoever populates it, and that
+// party has to hear about a mount BEFORE the sidebar's first render. The tool
+// view announces its mount here and a policy source registers a hook, so the
+// view never learns who governs it. Empty by default: with nothing registered a
+// mount costs one Set walk over nothing.
+
+type ToolMountHook = (toolId: string) => void;
+const mountHooks = new Set<ToolMountHook>();
+/** The tool most recently announced as mounted, so a hook registered after the
+ *  mount (a policy source that finished loading late) is replayed it at once. */
+let mountedToolId: string | null = null;
+
+/** One hook's failure never reaches the mount path or the other hooks. */
+function runMountHook(hook: ToolMountHook, toolId: string): void {
+  try {
+    hook(toolId);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/**
+ * Register a hook to run with each mounted tool's id. If a tool is already mounted
+ * the hook runs for it at once, so a late registration still governs the open tool
+ * (the sidebar picks the policy up on its next sync). Returns the unregister.
+ */
+export function onToolInputMount(hook: ToolMountHook): () => void {
+  mountHooks.add(hook);
+  if (mountedToolId !== null) runMountHook(hook, mountedToolId);
+  return () => {
+    mountHooks.delete(hook);
+  };
+}
+
+/** Announce a tool mount. The tool view calls this before its first sidebar render. */
+export function notifyToolInputMount(toolId: string): void {
+  mountedToolId = toolId;
+  for (const hook of mountHooks) runMountHook(hook, toolId);
+}
+
+/** Structural equality for the small values an input holds (primitives, and the
+ *  vectors / framing objects a locked value may be). */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The values a tool's policies want the MODEL to hold, given the model's current
+ * values: a `locked` policy's value where the model differs, and for a `choice`
+ * whose current value is outside the allowed set, the policy's value when that is
+ * allowed, else the first allowed option. Empty when nothing needs applying.
+ *
+ * The registry is a rendering overlay, but a locked value that only the sidebar
+ * knows leaves the canvas, the saved session and any link carrying the value the
+ * control says it is not. The host applies this to the runtime once after mount
+ * so all four agree. `hidden` never reaches here: a hidden input keeps its value.
+ */
+export function policyValuesFor(
+  toolId: string | undefined,
+  inputs: ReadonlyArray<{ id: string; value?: unknown }>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!toolId) return out;
+  for (const { id, value } of inputs) {
+    const policy = getInputPolicy(toolId, id);
+    if (!policy) continue;
+    if (policy.mode === 'locked') {
+      if (policy.value !== undefined && !sameValue(value, policy.value)) out[id] = policy.value;
+    } else if (policy.mode === 'choice' && policy.allow?.length && !policy.allow.some((a) => sameValue(a, value))) {
+      const preferred = policy.value !== undefined && policy.allow.some((a) => sameValue(a, policy.value)) ? policy.value : policy.allow[0];
+      out[id] = preferred;
+    }
+  }
+  return out;
+}
+
+/**
+ * The URL param keys (input id and its urlKey alias) of this tool's inputs that a
+ * policy locks or hides, for a caller building a server-bound request: an
+ * instance refuses a supplied locked or hidden param and bakes locked values
+ * itself, so those keys are the caller's to leave out. Empty when ungoverned.
+ */
+export function governedParamKeys(
+  toolId: string | undefined,
+  inputs: ReadonlyArray<{ id: string; urlKey?: string }>,
+): Set<string> {
+  const out = new Set<string>();
+  if (!toolId) return out;
+  for (const { id, urlKey } of inputs) {
+    const mode = getInputPolicy(toolId, id)?.mode;
+    if (mode !== 'locked' && mode !== 'hidden') continue;
+    out.add(id);
+    if (urlKey) out.add(urlKey);
+  }
+  return out;
+}
+
+/** TEST-ONLY convenience: empty the registry (and lift any fail-closed overlay, drop
+ *  every mount hook and forget the mounted tool) back to the dormant default. */
 export function _clearInputPoliciesForTests(): void {
   registry.clear();
   failClosed = null;
+  mountHooks.clear();
+  mountedToolId = null;
 }

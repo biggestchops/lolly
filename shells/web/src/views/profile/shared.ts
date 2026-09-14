@@ -169,6 +169,10 @@ export const NAV_SECTIONS: ReadonlyArray<ProfileNavSection> = [
   // renders with, so it sits with "how the app dresses" rather than the plumbing.
   { id: 'design-systems-section', icon: 'tokens', label: 'Design systems', keywords: 'design system brand tokens colours fonts logos switch hosted instance' },
   { id: 'appearance-section', icon: 'palette', label: 'Appearance', keywords: 'theme dark light mode colour color sound look' },
+  // The set new work starts from (plans/252). Beside Appearance because both are
+  // "what my things look like", but its own card: this one reaches the documents
+  // and the exports, not the app chrome.
+  { id: 'emoji-pref-section', icon: 'smile', label: 'Emoji', keywords: 'emoji set pack twemoji openmoji noto glyph artwork palette treatment mono duotone skin tones flags' },
   { id: 'a11y-section', icon: 'eye', label: 'Accessibility', keywords: 'motion contrast large text previews comfort a11y reduce sound mute focus music neurospicy atmosphere' },
   // Sync across devices lives INSIDE this card (its own titled sub-block), so its
   // search keywords ride here - a query for "passphrase" or "icloud" must still land.

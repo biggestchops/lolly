@@ -121,24 +121,17 @@ test('the film bytes reach the package verbatim, with its caption sidecar', asyn
   assert.equal(pkg.hasFilm, true);
 });
 
-test('a still that will not render is dropped, and never reaches the manifest', async () => {
-  const pkg = await buildScormPackage({
-    title: 'Partly broken',
-    slides: [slide('a'), slide('b'), slide('c')],
-    renderStill: async (_el, i) => {
-      if (i === 1) throw new Error('render failed');
-      return svgStill(i);
-    },
-  });
-  const files = await unzip(pkg);
-  const manifest = dec.decode(files['imsmanifest.xml']!);
-  const html = dec.decode(files['index.html']!);
+test('a failed still rejects the package instead of dropping required content', async () => {
+  await assert.rejects(buildScormPackage({
+    title: 'Partly broken', slides: [slide('a'), slide('b'), slide('c')],
+    renderStill: async (_el, i) => { if (i === 1) throw new Error('render failed'); return svgStill(i); },
+  }), /Slide 2 could not be rendered/);
+});
 
-  assert.equal(pkg.slideCount, 2);
-  assert.ok(!files['slides/slide-2.svg'], 'the failed slide must not be packaged');
-  assert.ok(!manifest.includes('slides/slide-2.svg'), 'the manifest must not name a file that is not there');
-  assert.ok(!html.includes('slides/slide-2.svg'));
-  assert.ok(files['slides/slide-1.svg'] && files['slides/slide-3.svg']);
+test('a failed video rejects the package', async () => {
+  await assert.rejects(buildScormPackage({ title: 'Broken video', slides: [slide('a')],
+    renderStill: async () => svgStill(0), renderFilm: async () => { throw new Error('encoder failed'); },
+  }), /video could not be rendered/);
 });
 
 test('a silent deck carries no media and makes no claim about a voice', async () => {

@@ -1,5 +1,5 @@
 {
-  "name": "Text",
-  "description": "Find, edit, understand and transform text.",
+  "name": "Texte",
+  "description": "Trouve, modifie, comprends et transforme du texte. Parcours les caractères de marque et les emojis, travaille avec du code et des journaux, ou crée un lettrage ASCII.",
   "a11yLabel": "Text - characters, editing, analysis and conversions"
 }

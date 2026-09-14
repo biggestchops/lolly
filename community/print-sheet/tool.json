@@ -49,7 +49,7 @@
       "type": "blocks",
       "labelledFields": true,
       "dropToAdd": { "field": "art", "accept": "image/*" },
-      "help": "Drop in one design or a whole pile - each becomes a cell you can cut apart. Paste a LOLLY TOOL LINK (a share link from any tool - a name badge, a QR code, a card) and that tool renders live into its cell and re-renders whenever the sheet is opened. One design fills the whole sheet; several cycle across the cells. Tap any cell on the sheet to swap what is in it, and Batch or Multi-edit can send a whole run straight here.",
+      "help": "Drop in one design or a whole pile - each becomes a cell you can cut apart. Paste a Lolly tool link (a share link from any tool - a name badge, a QR code, a card) and that tool renders live into its cell and re-renders whenever the sheet is opened. One design fills the whole sheet; several cycle across the cells. Tap any cell on the sheet to swap what is in it, and Batch or Multi-edit can send a whole run straight here.",
       "fields": [
         { "id": "art", "label": "Image or tool link", "type": "asset", "assetType": "image", "allowUpload": true }
       ],
@@ -61,7 +61,7 @@
       "type": "select",
       "default": "repeat",
       "display": "segmented",
-      "help": "Repeat cycles your designs to fill every cell of every page - one design makes a full sheet of the same thing, several make a mixed sheet. Each once places every design a single time and adds pages until they all fit - a proof sheet.",
+      "help": "Repeat cycles the designs to fill every cell of every page - one design makes a full sheet of the same thing, several make a mixed sheet. Each once places every design a single time and adds pages until they all fit - a proof sheet.",
       "options": [
         { "value": "repeat", "label": "Repeat to fill" },
         { "value": "once", "label": "Each once" }
@@ -86,10 +86,10 @@
       "default": "a4",
       "help": "Paper size. Picking one also sets the export page size, so the PDF comes out at true scale.",
       "options": [
-        { "value": "a4", "label": "A4 portrait - 210 x 297 mm", "width": 210, "height": 297, "unit": "mm" },
-        { "value": "a4l", "label": "A4 landscape - 297 x 210 mm", "width": 297, "height": 210, "unit": "mm" },
-        { "value": "letter", "label": "US Letter - 8.5 x 11 in", "width": 215.9, "height": 279.4, "unit": "mm" },
-        { "value": "a3", "label": "A3 portrait - 297 x 420 mm", "width": 297, "height": 420, "unit": "mm" }
+        { "value": "a4", "label": "A4 portrait · 210 × 297 mm", "width": 210, "height": 297, "unit": "mm" },
+        { "value": "a4l", "label": "A4 landscape · 297 × 210 mm", "width": 297, "height": 210, "unit": "mm" },
+        { "value": "letter", "label": "US Letter · 216 × 279 mm", "width": 215.9, "height": 279.4, "unit": "mm" },
+        { "value": "a3", "label": "A3 portrait · 297 × 420 mm", "width": 297, "height": 420, "unit": "mm" }
       ]
     },
     {

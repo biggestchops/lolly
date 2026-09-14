@@ -28,11 +28,10 @@
     {
       "id": "photo",
       "label": "Photo",
-      "section": "Photo",
       "type": "asset",
       "assetType": "image",
       "allowUpload": true,
-      "help": "Pick a photo or upload your own. Depth is read on your device - the pixels never leave the browser. The export is a fixed 1280 by 720 frame, whatever the picture's own size."
+      "help": "Pick a photo or upload one. Depth is read on your device, so the pixels never leave the browser. The export is always a 1280 by 720 frame."
     },
 
     {
@@ -89,8 +88,8 @@
       "type": "vector",
       "help": "Click the canvas to focus there. Everything at that distance stays sharp; the rest falls away.",
       "fields": [
-        { "id": "x", "label": "X", "symbol": "", "min": 0, "max": 1, "step": 0.01, "default": 0.5 },
-        { "id": "y", "label": "Y", "symbol": "", "min": 0, "max": 1, "step": 0.01, "default": 0.5 }
+        { "id": "x", "label": "X", "symbol": "↔", "min": 0, "max": 1, "step": 0.01, "default": 0.5 },
+        { "id": "y", "label": "Y", "symbol": "↕", "min": 0, "max": 1, "step": 0.01, "default": 0.5 }
       ]
     },
     {
@@ -108,15 +107,15 @@
 
     {
       "id": "fog",
-      "label": "Atmosphere",
+      "label": "Haze colour",
       "section": "Atmosphere",
       "type": "color",
       "default": "{color.semantic.secondary}",
-      "help": "The colour distance washes toward - a brand haze on the far field rather than a generic grey."
+      "help": "The colour the far distance washes toward, instead of a generic grey."
     },
     {
       "id": "fogAmount",
-      "label": "Atmosphere strength",
+      "label": "Haze strength",
       "section": "Atmosphere",
       "type": "number",
       "display": "slider",
@@ -135,7 +134,7 @@
       "min": 0.2,
       "max": 3,
       "step": 0.05,
-      "help": "Stretches or flattens the relief the model read. Above 1 exaggerates near and far; below 1 calms a picture the model read too eagerly."
+      "help": "Stretches or flattens the depth read from the photo. Above 1 exaggerates near and far; below 1 calms an over-eager read."
     }
   ]
 }

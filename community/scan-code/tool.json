@@ -25,14 +25,15 @@
   "inputs": [
     {
       "id": "mode",
+      "display": "segmented",
       "label": "Source",
       "type": "select",
       "default": "camera",
       "help": "Point the camera at a code, scan a saved image, or paste a code's text to inspect it. Whatever the source, the code is read on this device - nothing is uploaded.",
       "options": [
         { "value": "camera", "label": "Camera" },
-        { "value": "image", "label": "From image" },
-        { "value": "paste", "label": "Paste text" }
+        { "value": "image", "label": "Image" },
+        { "value": "paste", "label": "Text" }
       ]
     },
     {

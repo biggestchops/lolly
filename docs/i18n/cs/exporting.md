@@ -36,29 +36,29 @@ Název souboru a picker formátu sedí navrchu panelu jako jedna dvojice `name.f
 
 ![Pole s názvem souboru srostlé s pickerem formátu, takže export čte jako jedna dvojice name.format](/t/url-shot?url=%2F%23%2Ftool%2Fqr-code%3Furl%3Dhttps%3A%2F%2Flolly.tools%26options&width=1440&height=900&dpi=192&waitMs=2000&format=svg&cropSelector=.filename-extension&walker=1&dark=1&filename=exp-format-picker)
 
-| Co chceš… | Použij | Proč |
+| Chceš… | Použij | Proč |
 |---|---|---|
 | Ostrá loga / grafiku, která se škáluje | **SVG** | Vektor - nekonečně škálovatelný, malý, editovatelný |
-| Vektor pro Office / Windows aplikace | **EMF** | Vloží se jako editovatelný vektor do PowerPointu / Wordu; text zůstává živý a editovatelný a Google Disk ho otevře v Google Kresbách pro Prezentace |
-| Vektor pro tisk / návrhářské aplikace | **EPS**, nebo **EPS (CMYK)** | PostScriptový vektor pro Illustrator / tiskové workflow |
+| Vektor pro Office / Windows aplikace | **EMF** | Vloží se jako editovatelný vektor do PowerPointu / Wordu; text zůstává živý a editovatelný a Google Disk ho otevře v Google Drawings pro Slides |
+| Vektor pro tisk / designové aplikace | **EPS**, nebo **EPS (CMYK)** | PostScriptový vektor pro Illustrator / tiskové procesy |
 | Vektor pro řezací / CAD stroje | **DXF** | Laserové řezačky, vinylové plotry, CNC - obrysové cesty v milimetrech |
 | Editovatelnou prezentaci | **PowerPoint** (PPTX) | Nativní editovatelný text + tvary, obrázky a vektory zůstávají extrahovatelné |
-| Kurz, který dokáže importovat LMS | **SCORM** (LMS) | ZIP s manifestem, spouštěcí stránkou, snímky a namluveným filmem s titulky - z prezentace Design |
-| Editovatelný textový dokument | **Word** (DOCX) nebo **OpenDocument** (ODT) | Skutečné odstavce a nadpisy, které textový editor dokáže dál editovat (Doc Studio) |
-| Fotku nebo obecný obrázek | **PNG** (bezeztrátový) nebo **JPG** (menší) | Univerzální rastr |
-| Menší moderní obrázky | **WebP** / **AVIF** | Lepší komprese, alfa kanál |
+| Přenosný školicí kurz | **Export course** | Prohlédni si obsah projektu a sestav verzovaný balíček Website, SCORM nebo experimentální xAPI |
+| Editovatelný textový dokument | **Word** (DOCX) nebo **OpenDocument** (ODT) | Skutečné odstavce a nadpisy, které textový editor může dál editovat (Doc Studio) |
+| Fotku nebo obrázek pro obecné použití | **PNG** (bezeztrátové) nebo **JPG** (menší) | Univerzální rastr |
+| Menší moderní obrázky | **WebP** / **AVIF** | Lepší komprese, alfa |
 | Tisk | **PDF**, nebo **Print PDF** (CMYK) | Skutečná velikost stránky; CMYK pro tiskárnu |
 | Tiskový rastr pro tiskárnu | **Print TIFF** (CMYK) | Pixely DeviceCMYK pro RIP |
-| Animaci pro web | **GIF** | Funguje všude, větší soubory |
-| Animaci s plnou barevností + skutečnou alfou | **APNG** | Animovaný PNG - bez omezení palety, skutečná průhlednost |
-| Animaci s nejmenším souborem | **Animated WebP** | Plná barevnost + alfa, lépe komprimovaný než GIF nebo APNG |
-| Animovaný vektor, který se škáluje | **Animated SVG** | Samostatný; smyčkuje v prohlížeči nebo `<img>`, bez kodeku, libovolná velikost |
-| Video pro sociální sítě / sdílení | **MP4** nebo **WebM** | Nejlepší poměr kvality k velikosti (viz níže) |
+| Animované pro web | **GIF** | Funguje všude, větší soubory |
+| Animované s plnou barvou + skutečnou alfou | **APNG** | Animované PNG - žádný limit palety, skutečná průhlednost |
+| Animované, nejmenší soubor | **Animated WebP** | Plná barva + alfa, lépe komprimované než GIF nebo APNG |
+| Animovaný vektor, který se škáluje | **Animated SVG** | Samostatný; smyčkuje v prohlížeči nebo v `<img>`, žádný kodek, jakákoli velikost |
+| Video pro sociální sítě / sdílení | **MP4** nebo **WebM** | Nejlepší kvalita na bajt (viz níže) |
 | Formátovaný text / e-mailový podpis | **HTML** | Vloží se naformátovaný do e-mailových klientů |
-| Prostý obsah | **MD** / **TXT** | Pouze text |
-| Událost do kalendáře | **ICS** | Importuje se do libovolné kalendářové aplikace |
-| Kontaktní kartu | **VCF** | Importuje se do Kontaktů / adresářů |
-| Strukturovaná data pro opětovný import | **JSON** / **CSV** | Zachová obsah nástroje beze změny při zpětném importu |
+| Prostý obsah | **MD** / **TXT** | Jen text |
+| Kalendářní událost | **ICS** | Naimportuje se do jakékoli kalendářové aplikace |
+| Kontaktní kartu | **VCF** | Naimportuje se do Kontaktů / adresářů |
+| Strukturovaná data pro zpětný import | **JSON** / **CSV** | Obsah nástroje se dá vrátit zpět |
 | Favicon | **ICO** | Ikona webu ve více velikostech (**ZIP** sdružuje několik formátů) |
 
 První řádek je běžný případ. Wordmark sázený tvým brandovým písmem se exportuje jako SVG, kde je každé písmeno obrysovou cestou místo pixelu, takže zůstává ostrý ve velikosti vizitky i ve velikosti polepu na budově ze stejného souboru.
@@ -150,16 +150,18 @@ Chceš-li ho otevřít, spusť Penpot, vyber projekt a zvol **Import**. Když js
 
 ## SCORM (balíčky kurzů)
 
-Prezentace Design může odejít jako **balíček SCORM** - zip, který importuje systém pro řízení výuky (LMS), ať už je to Moodle, Canvas, Blackboard nebo firemní LMS. Zvol **SCORM (LMS)** ve výběru formátu a export zapíše:
+Zvol **Export course** z podporovaného nástroje, složky projektu nebo výběru. V Designu otevře tento pracovní postup kurzu i volba **SCORM (LMS)** a Download. Lolly uloží výtvor, nechá tě prohlédnout obsah a pořadí kurzu, pak otevře modul a jeho exportní dialog.
 
-- <!--i:layout--> **Snímky**, jeden obrázek na artboard, jako vektor tam, kde to artboard umožňuje, a jako pixely jen tam, kde ne.
-- <!--i:play--> **Namluvený film** se stopou titulků - poznámky řečníka přečtené hlasem na zařízení, přesně tak, jak je přehrává [Prezentování](/info/create/using.html#presenting).
-- <!--i:file--> **Spouštěcí stránka**, která prochází snímky, přehrává film a hlásí dokončení zpět do LMS přes runtime SCORM 1.2, verzi, kterou přijímá každý LMS.
-- <!--i:font--> Fonty, které prezentace používá, aby se spouštěcí stránka vykreslila stejně i offline.
+- <!--i:layout--> Zvol dostupné provedení pro každý zdroj: statické stránky, pohyb jako video, zvuk nebo soubor ke stažení. V modulu přidej nativní text lekce a alternativy pro čtení.
+- <!--i:play--> Prohlédni si přehrávač pro studenta a zkontroluj popisy a titulky. Pohyb je zahrnutý jako video, včetně tiché animace. Když ho nástroj nedokáže znovu vytvořit z uložených vstupů, nejdřív exportuj hotovou nahrávku.
+- <!--i:file--> Vyber Website, SCORM 1.2, SCORM 2004 4th Edition, nebo experimentální cíl xAPI. Zkontroluj skutečný obsah a velikost ZIP, pak zkontrolovanou verzi ulož a stáhni.
+- <!--i:check--> Dokončení vyžaduje potvrzení každé povinné lekce a výběr Finish. Webový přehrávač ukládá postup v prohlížeči; balíček LMS se připojí ke svému přijímajícímu LMS.
 
 ![Panel exportu na prezentaci Design s vybraným SCORM (LMS)](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Nic v balíčku nikam nevolá domů: jsou to soubory v zipu a běží uvnitř LMS bez bundleru, bez CDN a bez účtu. Vytváří ho webová a desktopová aplikace; CLI ne, protože fotografování artboardů a kódování filmu potřebuje prohlížeč.
+Balíček obsahuje svůj hotový obsah a nevyžaduje účet Lolly. Website ZIP rozbal na hostiteli HTTP(S); LMS ZIP naimportuj beze změny jeho obsahu. Než kurz distribuuješ, otestuj zamýšlený cíl.
+
+Pro kurz sestavený z několika uložených výtvorů, importovaných médií a zdrojů použij [Vytvoření školicího kurzu](/info/create/training-creators.html). Výukový modul má vlastní seřazenou osnovu, výslovná potvrzení lekcí, náhled pro studenta a verzovanou historii balíčků. Jeho cesta přes CLI umí zabalit média, která jsi už exportoval.
 
 ## DXF (řezací soubory)
 
@@ -309,6 +311,10 @@ Exporty mohou nést **Content Credentials** - podepsaný manifest [C2PA](https:/
 - **Kontrola souboru.** Lolly ověřuje i svá vlastní pověření: přetáhni jakýkoli soubor na [/verify](/verify) (nebo v CLI spusť `lolly validate <file>`) pro zprávu vytvořenou na zařízení - v čele s tím, zda soubor skutečně vznikl v Lolly a od té doby se nezměnil. Webové zobrazení Verify jde daleko za samotné pověření: označí **obsah generovaný AI**, detekuje **Lolly Imprint**, kontroluje podpisy **SEAL** a (volitelně) vodoznaky pixelů třetích stran a odhalí **skrytá data** - vše na zařízení, nic se nenahrává. Viz [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Soukromí.** Vše se odehrává na tvém zařízení: podepisovací klíč se vytvoří pro daný export a nikdy neopustí prohlížeč, nic se nenahrává a tvrzení obsahuje jen to, co už nesou metadata o původu. Nástroje pro soukromí (transformace *tvých vlastních* souborů na zařízení) pověření nikdy nepřidávají a *Strip Hidden Data* odstraní manifest C2PA stejně jako jakákoli jiná vložená metadata.
 - **Souvislosti.** U PDF se Content Credentials a **ochrana heslem** (kterákoli úroveň - viz výše) vzájemně vylučují (zašifrované PDF nemůže nést přílohu s pověřením). Pověření se přidává jako poslední krok nad hotovými bajty - po otisknutí DPI/EXIF/barevného profilu, metadat PDF/X a tiskových značek.
+
+### Kredity zdrojů
+
+Export, který umístí cizí práci, zaznamená ten zdroj i do pověření. Emoji z připnuté sady je ten každodenní případ: dílo, jeho tvůrce, licence, odkud přesně pocházejí bajty a co se změnilo - to všechno cestuje se souborem. Řádek **Kredity zdrojů** v exportním panelu řekne, co si zdroje žádají od doručení, než si soubor stáhneš, a po stažení zpětně přečte doručené bajty, než řekne, že kredity jsou v souboru. Licence, která tě žádá o výběr, třeba přebarvený glyf CC BY-SA, který se chystáš sdílet, dostane kartu s možnostmi, jak z toho ven; stahování se nikdy neblokuje. [Tvůrčí práva a kredity](/info/creative-rights.html) obsahuje slova, prověřené licence a to, co zůstává tvoje.
 
 ## Na telefonu
 

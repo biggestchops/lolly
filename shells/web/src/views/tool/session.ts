@@ -31,7 +31,31 @@ import { sessionName } from '../tool-session-name.ts';
 import { encodeBlocksCompact } from '../../lib/blocks-url.ts';
 import { fmtBytes, openEmbedEditor } from '../tool-inputs.ts';
 import { isCmykFmt, isPrintFmt, marksToCsv } from '../tool-actions.ts';
-import { collectExportParams, isTextEditing, shareDialogOptions, showShareDialog, showUnsavedDialog, shrinkUrl, wireUpCopyUrl } from './shared.ts';
+import { collectExportParams, isTextEditing, shareDialogOptions, showShareDialog, showUnsavedDialog, shrinkUrl, toolEmojiParams, wireUpCopyUrl } from './shared.ts';
+import { writeEmojiParams } from '../../lib/emoji-prefs.ts';
+import { emojiDocumentStyle, onEmojiDocumentChange, setEmojiDocumentStyle } from './emoji-doc.ts';
+import type { EmojiControlMount, InspectorEmojiPort } from '../design-inspector.ts';
+
+/**
+ * The shared emoji control, mounted for the design dock without pulling it (and
+ * its stylesheet) into this chunk. The dock's port is synchronous, so this hands
+ * back a handle immediately and fills it in when the chunk arrives; a row taken
+ * down before then never mounts anything.
+ */
+const lazyEmojiControl: EmojiControlMount = (container, opts) => {
+  let inner: { update(value: typeof opts.value): void; destroy(): void } | null = null;
+  let dropped = false;
+  void import('../../components/emoji-style-control.ts')
+    .then(({ mountEmojiStyleControl }) => {
+      if (dropped) return;
+      inner = mountEmojiStyleControl(container, opts);
+    })
+    .catch((e: unknown) => console.error('[design] emoji control failed to load:', e));
+  return {
+    update(value) { inner?.update(value); },
+    destroy() { dropped = true; inner?.destroy(); inner = null; },
+  };
+};
 import type { MotionCaptureOpts } from './shared.ts';
 import { bindOp, type ToolViewCtx } from './context.ts';
 
@@ -263,6 +287,13 @@ export function syncUrl(tview: ToolViewCtx, dirtyId?: string): void {
     const fmt = actionsEl?.querySelector<HTMLSelectElement>('[data-action="format"]')?.value;
     const on = actionsEl?.querySelector<HTMLInputElement>('[data-action="full-page"]')?.checked;
     if (fmt === 'html' && on) params.set('nostage', '');
+  }
+  if (dirtyParams.has('emoji') || dirtyParams.has('emojifx')) {
+    // The chosen emoji set and its brand treatment (plans/252). Document state,
+    // not an export setting: a refresh, a copied link and `lolly --emoji=` must
+    // all draw the same artwork, so both params go in whenever a set is chosen
+    // and come out together when the choice is cleared.
+    writeEmojiParams(params, toolEmojiParams());
   }
   if (dirtyParams.has('imprint')) {
     // Pixel watermark - on by default like c2pa (see url-mode serializeUrlState):
@@ -1130,6 +1161,10 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
       // getHydrated() reflects the current committed model as the template renders it.
       const presentSource = document.createElement('div');
       presentSource.innerHTML = runtime.getHydrated();
+      // Presentation mode paints this tree, not the editor canvas, so it runs the
+      // emoji pass itself. A slide shown to a room must draw the set the document
+      // chose, not whatever emoji font the presenting machine carries.
+      await runtime.applyEmojiToDom(presentSource);
       const transitionVal = String(
         runtime.getModel().find((i) => i.id === 'transition')?.value ?? 'slide'
       );
@@ -1219,6 +1254,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
     let designNav: import('../design-navigator.ts').DesignNavigatorHandle | null = null;
     let designInspector: import('../design-inspector.ts').DesignInspectorHandle | null = null;
     let designInspectorFloat: import('../design-inspector-float.ts').DesignInspectorFloatHandle | null = null;
+    let offEmojiDoc: (() => void) | null = null;
 
     /**
      * Column open state is a DEVICE preference, not document data: it must never dirty the
@@ -1690,8 +1726,25 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             // it in the one right-hand column, which is also what takes it back out. Its own
             // header close button comes back here through `onClose` for the same reason - so
             // the panel and the bar's toggle can never disagree about where it is.
+            // The emoji row in the Document section. It has to be here: the editor
+            // layouts render no sidebar (history.ts marks them chromeless), so the
+            // dock is the ONLY place a person can choose a set in Design or Doc
+            // Studio, and without this option the row drew as an empty string.
+            // The control is imported lazily, exactly as the sidebar does it, so
+            // opening Design never pulls its stylesheet chunk in by itself.
+            const emojiPort: InspectorEmojiPort | undefined = tview.host.emoji ? {
+              host: tview.host,
+              mount: lazyEmojiControl,
+              // Live reads, both of them: the sidebar section registers the holder
+              // AFTER this dock is built (it seeds last, once the link and the
+              // session are settled), and a choice made in either surface has to be
+              // the one the other shows.
+              value: emojiDocumentStyle,
+              onChange: setEmojiDocumentStyle,
+            } : undefined;
             designInspector = initDesignInspector({
               stageEl,
+              ...(emojiPort ? { emoji: emojiPort } : {}),
               canvasEl,
               model: design.model,
               selection: design.selection,
@@ -1724,6 +1777,9 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
                 designTopbar?.focusInspectorToggle();
               },
             });
+            // A value settled elsewhere (the seed, or the sidebar on a layout that
+            // has one) rebuilds the dock's row, so the two surfaces cannot disagree.
+            offEmojiDoc = onEmojiDocumentChange(() => designInspector?.sync());
             designInspectorFloat = wireDesignInspectorFloat({
               inspector: designInspector,
               head: designInspector.el.querySelector<HTMLElement>('.fc-insp-headbar')!,
@@ -1775,6 +1831,8 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
                 console.error(e);
               }
               designInspectorFloat = null;
+              offEmojiDoc?.();
+              offEmojiDoc = null;
               for (const part of [designInspector, designNav, designTopbar]) {
                 try {
                   part?.destroy();

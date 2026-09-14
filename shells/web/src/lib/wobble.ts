@@ -21,7 +21,7 @@
  * chrome must not move an exported pixel.
  */
 
-import { isFlagOnSync, WOBBLY_FLAG } from '../feature-flags.ts';
+import { isFlagOnSync, perfUiOn, subscribePerfUi, WOBBLY_FLAG } from '../feature-flags.ts';
 import { prefersReducedMotion } from './a11y-prefs.ts';
 import { startMeshWobble, type MeshSession } from './wobble-mesh.ts';
 import { clamp } from '@lolly/engine';
@@ -32,7 +32,7 @@ import { clamp } from '@lolly/engine';
  * is no bundle to load (unlike jelly), so this flag read is the whole gate.
  */
 export function wobblyActive(): boolean {
-  return isFlagOnSync(WOBBLY_FLAG);
+  return !perfUiOn() && isFlagOnSync(WOBBLY_FLAG);
 }
 
 // Tunables - one object so the feel is tuned in a single edit (plan 150 section 3.1).
@@ -166,6 +166,13 @@ export function attachWobble(el: HTMLElement, opts: WobbleOpts = {}): WobbleHand
     clearStyles();
   }
 
+  const stop = (): void => {
+    meshSession?.dispose();
+    meshSession = null;
+    stopAffineForMesh();
+  };
+  const unsubscribePerf = subscribePerfUi(on => { if (on) stop(); });
+
   return {
     grab(clientX: number, clientY: number): void {
       if (!live()) return;
@@ -201,14 +208,8 @@ export function attachWobble(el: HTMLElement, opts: WobbleOpts = {}): WobbleHand
       kick(0, W.MAX_LAG * 0.55);
     },
     dispose(): void {
-      meshSession?.dispose();
-      meshSession = null;
-      if (rafId) caf(rafId);
-      rafId = 0;
-      lx = ly = vx = vy = 0;
-      dragging = false;
-      lastT = 0;
-      clearStyles();
+      unsubscribePerf();
+      stop();
     },
   };
 }

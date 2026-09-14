@@ -234,6 +234,7 @@ export async function mountCatalog(viewEl: HTMLElement, hostIn: HostV1, params =
   cat.textThumbs = null;     // on-screen-gated text-excerpt upgrader
   cat.motionThumbs = null;   // intent gate for every video thumbnail
   cat.pdfThumbs = null;      // on-screen-gated PDF first-page upgrader
+  cat.emojiSpecimens = null; // on-screen-gated emoji-set specimen drawer
   cat.viewOptsOpen = false;
   cat.closeViewOpts = () => {};              // set in wire(); called on teardown
   // Section sort (plans/132 WP-A) - applied per section, persisted per device.
@@ -266,7 +267,7 @@ export async function mountCatalog(viewEl: HTMLElement, hostIn: HostV1, params =
   // reference material (swatches/fonts) folded. Once the user touches any fold
   // the stored set is the whole truth, exactly as before.
   const COLLAPSE_KEY = 'lolly-catalog-collapsed'; cat.COLLAPSE_KEY = COLLAPSE_KEY;
-  const ALL_SECTION_KEYS = ['your-uploads', ...LIB_GROUPS.map(g => g.key), 'hidden', 'swatches', 'fonts']; cat.ALL_SECTION_KEYS = ALL_SECTION_KEYS;
+  const ALL_SECTION_KEYS = ['your-uploads', ...LIB_GROUPS.map(g => g.key), 'emoji-sets', 'hidden', 'swatches', 'fonts']; cat.ALL_SECTION_KEYS = ALL_SECTION_KEYS;
   const FIRST_VISIT_COLLAPSED = ['swatches', 'fonts']; cat.FIRST_VISIT_COLLAPSED = FIRST_VISIT_COLLAPSED;
   try {
     const stored = localStorage.getItem(COLLAPSE_KEY);
@@ -410,6 +411,10 @@ export async function mountCatalog(viewEl: HTMLElement, hostIn: HostV1, params =
     cat.textThumbs = null;
     cat.motionThumbs?.destroy();
     cat.motionThumbs = null;
+    // …and stop drawing emoji specimens: a pack that finishes loading after the
+    // view is gone must not paint into a grid nobody is looking at.
+    cat.emojiSpecimens?.destroy();
+    cat.emojiSpecimens = null;
     cat.closeViewOpts();
     cat.sections.closeDetails();
     cat.downloads.closeDownloadDialog();
@@ -459,7 +464,7 @@ export async function mountCatalog(viewEl: HTMLElement, hostIn: HostV1, params =
     if (ref) cat.details.openDetails(ref, theme, treatment);
     else {
       // The deep-linked asset isn't in this user's catalogue (never synced, a deleted upload,
-      // or an unknown id) - say so instead of a silent no-op: announce() for assistive tech,
+      // or an unknown id) - report it instead of a silent no-op: announce() for assistive tech,
       // plus a brief self-clearing line at the top of the grid so a sighted user sees it too.
       announce(t('That asset isn’t in your catalogue'));
       const bodyEl = viewEl.querySelector<HTMLElement>('.catalog-body');

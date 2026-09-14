@@ -1,5 +1,5 @@
 {
-  "name": "Text",
-  "description": "Find, edit, understand and transform text.",
+  "name": "文字",
+  "description": "查找、编辑、理解并转换文本。浏览品牌专属字符和表情符号，处理代码与日志，或创作 ASCII 字体图案。",
   "a11yLabel": "Text - characters, editing, analysis and conversions"
 }

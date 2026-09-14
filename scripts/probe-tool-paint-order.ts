@@ -111,7 +111,7 @@ async function probeTool(page: Page, base: string, id: string, bundles: string[]
     r.canvas = true;
 
     // An SVG-ROOTED canvas never enters this walker at all (renderFormat takes
-    // the renderSvg fast path), so it cannot be affected either way. Say so
+    // the renderSvg fast path), so it cannot be affected either way. Report it
     // rather than silently reporting "same".
     const svgRooted = await page.evaluate(() => {
       const n = document.getElementById('tool-canvas');

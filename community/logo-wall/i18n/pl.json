@@ -1,5 +1,5 @@
 {
-  "name": "Logo Wall",
+  "name": "Ściana logo",
   "description": "Ułóż stos logo w czystą, równą siatkę sponsorów - ścianę „NASCAR”.",
   "a11yLabel": "Siatka {{logos.length}} logo",
   "inputs.columns.label": "Kolumny",

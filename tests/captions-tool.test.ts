@@ -193,7 +193,7 @@ test('a file that is out of order, overlapping or backwards is reported, not rew
 
 test('text that cannot become a cue is counted, never dropped in silence', { skip: SKIP }, async () => {
   // A loose paragraph between two good cues has no timing line. It is words the
-  // captions will never carry, so the count has to say so.
+  // captions will never carry, so the count has to report it.
   const stray = [
     '1', '00:00:00,000 --> 00:00:02,000', 'Good',
     '', 'A paragraph somebody left in the file.',

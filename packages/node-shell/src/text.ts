@@ -301,8 +301,8 @@ function clustersFrom(
 export function createNodeTextAPI({ repoRoot }: { repoRoot: string }): TextAPI {
   return {
     async characters(fontUrl) { return [...(await loadFace(fontUrl, repoRoot)).unicodes].sort((a, b) => a - b); },
-    async toPath({ text, fontUrl, fontSize, features, letterSpacing = 0, variations, fallbackFonts, clusters: wantClusters }) {
-      if (!text || !text.trim()) {
+    async toPath({ text, fontUrl, fontSize, features, letterSpacing = 0, variations, fallbackFonts, clusters: wantClusters, preserveWhitespaceAdvance = false }) {
+      if (!text || (!preserveWhitespaceAdvance && !text.trim())) {
         return { d: '', advanceWidth: 0, bbox: null, notdef: 0, ...(wantClusters ? { clusters: [] } : {}) };
       }
 
@@ -362,7 +362,7 @@ export function createNodeTextAPI({ repoRoot }: { repoRoot: string }): TextAPI {
           }
 
           const ext = font.glyphExtents(glyphId);
-          if (ext) {
+          if (ext && (!preserveWhitespaceAdvance || glyphD)) {
             const bx1 = (ox + ext.xBearing) * scale;
             const bx2 = (ox + ext.xBearing + ext.width) * scale;
             const by1 = -(oy + ext.yBearing) * scale;

@@ -90,7 +90,9 @@ import { t, tRaw } from '../i18n.ts';
 import { escape } from '../utils.ts';
 import { parseVoiceBlend, KOKORO_DEFAULT_VOICE } from '../../../../engine/src/speech-text.ts';
 import { inspectDesignV1 } from '@lolly-tools/core';
-import type { SpeechVoiceInfo } from '@lolly-tools/core/host-v1';
+import type { HostV1, SpeechVoiceInfo } from '@lolly-tools/core/host-v1';
+import type { EmojiStyleV1 } from '@lolly-tools/core/emoji-v1';
+import type { EmojiStyleControl, EmojiStyleControlOpts } from '../components/emoji-style-control.ts';
 import { icon } from '../lib/icons.ts';
 import type { IconName } from '../lib/icons.ts';
 import { colorFieldHtml, wireColorField, resolveColorVar, colorVarLabel } from '../components/color-field.ts';
@@ -159,6 +161,40 @@ export interface InspectorFonts {
   weights(font: string): Array<[string, string]>;
 }
 
+/** What the shared emoji control is given and hands back. */
+export type { EmojiControlValue } from '../components/emoji-style-control.ts';
+
+/**
+ * The shared emoji control's mount signature. Typed from the control itself, so the two
+ * cannot drift, but as a TYPE only: the control is mounted by the host that already has
+ * it, and this column pulls no view into its own chunk.
+ */
+export type EmojiControlMount = (
+  container: HTMLElement,
+  opts: EmojiStyleControlOpts,
+) => EmojiStyleControl;
+
+/**
+ * The emoji set and brand treatment the DOCUMENT draws with (plan 252).
+ *
+ * The same state the tool sidebar's Emoji section edits, handed in as a port like
+ * every other outside thing this column touches, so the dock row and the sidebar
+ * show one value and one change goes to one place. The control itself arrives as
+ * `mount` for the same reason the model does: this column is mounted and tested on a
+ * bare jsdom stage against fakes, and it imports no view of its own.
+ */
+export interface InspectorEmojiPort {
+  /** The bridge the control reads its sets and the brand palette through. */
+  host: HostV1;
+  /** `mountEmojiStyleControl` from `components/emoji-style-control.ts`. */
+  mount: EmojiControlMount;
+  /** The document's style now, or null while no set is chosen. Read on every
+   *  rebuild, so a change made in the sidebar reaches this row through `sync()`. */
+  value(): EmojiStyleV1 | null;
+  /** A new choice. The host writes it to the runtime and to the tool's URL state. */
+  onChange(next: EmojiStyleV1 | null): void;
+}
+
 export interface DesignInspectorOpts {
   /**
    * The tool stage. Kept because the host has it and hands it to every Design chrome
@@ -186,6 +222,9 @@ export interface DesignInspectorOpts {
    *  "the voice should be a select like in the utility and Script audio"). Absent on a
    *  host with no speech bridge; the picker then holds only the current value. */
   voices?: () => Promise<SpeechVoiceInfo[]>;
+  /** The document's emoji set and treatment. Absent on a host with no `host.emoji`,
+   *  and the Document section then shows no Emoji row. */
+  emoji?: InspectorEmojiPort;
   fonts?: InspectorFonts;
   /** Resolve a rendered run through the vector-export font registry. This is
    * async because user/discovered webfonts may need their bytes checked. */
@@ -485,6 +524,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   /** The number cells built for the CURRENT markup, and the sliders they mirror. */
   let numSpecs: NumSpec[] = [];
   let numMounted: NumFieldHandle[] = [];
+  /** The shared emoji control, while the Document section is showing it. */
+  let emojiMounted: EmojiStyleControl | null = null;
   const numByPair = new Map<string, NumFieldHandle>();
   let lastSig: string | null = null;   // null, so the very first sync always paints
   let lastWidth = -1;
@@ -949,8 +990,39 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
         },
       })
       + `<div class="fc-row"><span>${t('Background')}</span><span class="fc-cfield">${colorField('fc-insp-bg', model.getInput('background'), t('Background'))}</span></div>`
+      + emojiDocRows()
       + narrationDocRows()
       + `<p class="fc-insp-hint">${t('Select something to edit its properties.')}</p>`;
+  }
+
+  /**
+   * The emoji set this document draws with, and the brand treatment over it (plan 252).
+   *
+   * A sub-heading and an empty slot, filled after the rebuild by `mountEmojiControl`.
+   * The control is the one the tool sidebar mounts, over the same value, so a set chosen
+   * in either place is the set both show. Document-level rather than per box, because
+   * the artwork belongs to the document: every text box, every artboard and every export
+   * draws from the one set.
+   */
+  function emojiDocRows(): string {
+    if (!opts.emoji) return '';
+    return `<p class="fc-insp-hint">${t('Emoji')}</p><div data-emoji-slot></div>`;
+  }
+
+  /** Put the shared control in the slot the Document section left for it. */
+  function mountEmojiControl(): void {
+    const port = opts.emoji;
+    const slot = scroll.querySelector<HTMLElement>('[data-emoji-slot]');
+    if (!port || !slot) return;
+    emojiMounted = port.mount(slot, {
+      host: port.host,
+      mode: 'document',
+      value: port.value(),
+      // This column is denser than the sidebar: an inline label beside a small
+      // select, the shape every other row here already has.
+      compact: true,
+      onChange: (next) => port.onChange((next ?? null) as EmojiStyleV1 | null),
+    });
   }
 
   /**
@@ -1423,6 +1495,10 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     for (const h of numMounted) h.destroy();
     numMounted = [];
     numSpecs = [];
+    // Same reason for the emoji control: its listeners are on the nodes this write
+    // replaces, and it is mounted again below when the Document section is showing.
+    emojiMounted?.destroy();
+    emojiMounted = null;
     // The column head says WHAT is selected; a multi-selection has no one section that
     // could carry the count now that the paint groups stand on their own.
     colTitle.textContent = g.kind === 'multi' ? t('{n} selected', { n: g.ids.length }) : t('Inspector');
@@ -1436,6 +1512,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
         + '</section>';
     }).join('') || `<p class="fc-insp-hint">${t('Nothing selected')}</p>`;
     mountNums();
+    mountEmojiControl();
     wire();
     if (g.secs.includes('document')) scheduleMountedAudit();
     // Put the user back on the control they were operating. `preventScroll` because a
@@ -1482,7 +1559,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     }
     if (!field || !renderedIds.length) return;
     // A hand-set Enter or Exit on an ARTBOARD is the author overriding the deck, and it
-    // has to say so in the same commit - exactly as the timeline's copy of these two
+    // has to report it in the same commit - exactly as the timeline's copy of these two
     // selects does (`frameTrans` there). Without the stamp `slideTransition` stayed '',
     // so the next "Place in order" counted the frame as unauthored and derived the deck's
     // pair straight over a hand-set Cut, and the navigator chip and its "Reset to the
@@ -1958,6 +2035,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
       returnFocus = null;
       for (const h of numMounted) h.destroy();
       numMounted = [];
+      emojiMounted?.destroy();
+      emojiMounted = null;
       el.removeEventListener('focusout', settle);
       el.removeEventListener('keydown', onRootKey);
       scroll.removeEventListener('pointerdown', onRangeDown);

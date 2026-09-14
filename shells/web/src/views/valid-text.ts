@@ -71,7 +71,7 @@ export function pastedFileName(format: string | null | undefined): string {
 export const TEXT_SNIPPET_MAX = 2048;
 /** The first ~2 KB of a text payload, for the escaped <pre> that replaces the
  *  image preview. Cuts on a character boundary and reports how much was left
- *  out, so the panel can say so instead of implying the file ends there. */
+ *  out, so the panel can report it instead of implying the file ends there. */
 export function textSnippet(text: string, cap = TEXT_SNIPPET_MAX): { body: string; omitted: number } {
   if (text.length <= cap) return { body: text, omitted: 0 };
   // Never split a surrogate pair: half an astral character renders as U+FFFD,
@@ -113,7 +113,7 @@ export type UrlGate =
    *  `//host/x`, userinfo smuggled into a same-origin URL, or a same-origin URL
    *  whose path normalises back to `//host`. Every one of these is an ABSOLUTE
    *  reference the engine was willing to hand up - the refusal is this page's,
-   *  and the copy has to say so rather than blame the reference for being
+   *  and the copy has to report it rather than blame the reference for being
    *  relative, which it is not. */
   | { kind: 'unresolvable' }
   /** A genuinely RELATIVE reference (`doc.c2pa`, `../c/doc.c2pa`) with no base

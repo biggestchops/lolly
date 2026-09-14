@@ -1750,7 +1750,7 @@ export async function runVideoJob(
   }
 
   // A range composes with any op (the reader's decode window), so a windowed
-  // crop/grade/matte/upscale performed TWO edits and the credential must say so:
+  // crop/grade/matte/upscale performed TWO edits and the credential must report it:
   // the op's own action above, plus the trim. The trim op itself already stamps it.
   if (req.range && req.op !== 'trim') {
     prov.actions.push({ action: 'c2pa.edited', description: 'Trimmed to a shorter clip' });

@@ -80,6 +80,7 @@ export interface CatCtx {
   textThumbs: { destroy(): void } | null;
   motionThumbs: { destroy(): void } | null;
   pdfThumbs: { destroy(): void } | null;
+  emojiSpecimens: { destroy(): void } | null;
   viewOptsOpen: boolean;
   closeViewOpts: () => void;
   SORT_PREF_KEY: "lolly-catalog-sort";

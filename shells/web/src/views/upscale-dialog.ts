@@ -307,7 +307,7 @@ export function openUpscaleDialog(host: UpscaleHost, opts: UpscaleDialogOpts = {
     };
 
     // A face restorer (GFPGAN) can synthesise detail that was never in the source,
-    // so the shell must SAY SO - visibly, not behind a hover tooltip (invisible on
+    // so the shell must REPORT IT - visibly, not behind a hover tooltip (invisible on
     // touch and clipped by the dialog's rounded overflow). When a warned model is
     // selected, its warning shows as an inline banner with a ⚠ glyph; the (i) icon
     // sits inside it for recognisability.

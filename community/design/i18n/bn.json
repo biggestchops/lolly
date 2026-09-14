@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "নিচে বামে",
   "inputs.boxes.fields.imgpos.options.center bottom": "নিচে",
   "inputs.boxes.fields.imgpos.options.right bottom": "নিচে ডানে",
-  "description": "মুক্ত বিন্যাসের জন্য একটি খোলা ক্যানভাস - টেক্সট, ছবি, শেপ এবং আপনার অন্যান্য Lolly টুল থেকে লাইভ রেন্ডার, সবই আপনার ব্র্যান্ড অনুযায়ী।"
+  "description": "মুক্ত বিন্যাসের জন্য একটি খোলা ক্যানভাস - টেক্সট, ছবি, শেপ এবং আপনার অন্যান্য Lolly টুল থেকে লাইভ রেন্ডার, সবই আপনার ডিজাইন সিস্টেম অনুযায়ী।"
 }

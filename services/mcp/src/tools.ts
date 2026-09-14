@@ -14,12 +14,12 @@ import { inspectDesignV1 } from '@lolly-tools/core';
 // Relative import (not `@lolly-tools/node-shell/...`): this file is inlined into the
 // serverless bundle, same as render.ts's node-shell imports.
 import { VERDICT_SLUGS } from '@lolly-tools/node-shell/verdict-slugs';
-import { cleanControlChars, verdictFacts, verdictChecks } from '@lolly-tools/node-shell/verdict-report';
+import { cleanControlChars, verdictFacts, verdictChecks, verdictSources } from '@lolly-tools/node-shell/verdict-report';
 import type { ToolManifest } from '../../../engine/src/loader.ts';
 import type { ContentBlock, ToolCallResult } from './protocol.ts';
 import { listTools, loadToolCached, loadIndex, listToolTemplates, loadTemplateSeed } from './catalog.ts';
 import { toolInputSchema, fileInputId } from './schema.ts';
-import { render, transform, isTextFormat, normFormat } from './render.ts';
+import { render, transform, isTextFormat, normFormat, emojiSets, emojiSetName, resolveEmojiSetName } from './render.ts';
 import { withHost } from './host.ts';
 import type { RenderOpts } from './render.ts';
 
@@ -184,9 +184,47 @@ const EXPORT_ARGS = {
   durable: { type: 'boolean', description: 'Embed the durable Content Credential that survives re-encoding (opt-in, off by default).' },
 };
 
+/**
+ * The emoji a render draws, as the two reserved params. They are arguments
+ * rather than inputs because they belong to the whole picture, not to one
+ * field, and they ride the link for the same reason every other export control
+ * does: a person who opens it must see the artwork the agent rendered.
+ */
+const EMOJI_ARGS = {
+  emoji: {
+    type: 'string',
+    description: 'Draw emoji from this set: "<id>@<version>" (e.g. community/emoji/twemoji/color@17.0.3), '
+      + 'its last two segments (twemoji/color@17.0.3), or a bare id when one version is registered. '
+      + 'lolly_describe_tool lists the registered sets under emojiSets. Without it, emoji draw as a neutral placeholder.',
+  },
+  emojifx: {
+    type: 'string',
+    description: 'Brand treatment for that artwork: original, snap, mono, duotone or influence:<1-9999> basis points, '
+      + "with an optional ',unprotected' to treat skin tones, flags and custom symbols too. "
+      + 'Colours come from the brand in force. Needs emoji: a treatment with no set has no artwork to treat.',
+  },
+};
+
 type BuildLinkOpts = {
   format?: string; width?: number; height?: number; unit?: string; dpi?: number;
+  /** The `emoji` / `emojifx` params, already resolved to a registered set. */
+  emoji?: string; emojiFx?: string;
 } & ReturnType<typeof exportSettings>;
+
+/**
+ * The emoji half of a render or a link request, with the set resolved to the
+ * exact pin this deployment registers. A name nobody registers is a usage error
+ * rather than a picture, or a link, that quietly comes back without the artwork
+ * it was asked for. One reader, so a link and the file it renders agree.
+ */
+async function emojiSettings(args: Record<string, unknown>): Promise<{ emoji?: string; emojiFx?: string } | { error: string }> {
+  const named = typeof args.emoji === 'string' ? args.emoji.trim() : '';
+  const emojiFx = typeof args.emojifx === 'string' ? args.emojifx.trim() : '';
+  if (!named) return emojiFx ? { emojiFx } : {};
+  const resolved = resolveEmojiSetName(named, await emojiSets());
+  if ('error' in resolved) return { error: resolved.error };
+  return { emoji: resolved.set, ...(emojiFx ? { emojiFx } : {}) };
+}
 
 /** The reserved-param half of a render request, in the shape serializeUrlState
  *  and RenderOpts both want. One reader, so the link and the file agree. */
@@ -284,7 +322,7 @@ export const TOOL_DEFS: McpToolDef[] = [
     description: 'Build a shareable, editable lolly.tools link (and a raw render URL) for a tool + inputs, without rendering.',
     inputSchema: {
       type: 'object',
-      properties: { toolId: RENDER_ARGS.toolId, inputs: RENDER_ARGS.inputs, ...TEMPLATE_ARGS, layerOperations: DESIGN_OPERATION_ARG, layerPatches: DESIGN_PATCH_ARG, format: RENDER_ARGS.format, width: RENDER_ARGS.width, height: RENDER_ARGS.height, unit: RENDER_ARGS.unit, dpi: RENDER_ARGS.dpi, ...EXPORT_ARGS },
+      properties: { toolId: RENDER_ARGS.toolId, inputs: RENDER_ARGS.inputs, ...TEMPLATE_ARGS, layerOperations: DESIGN_OPERATION_ARG, layerPatches: DESIGN_PATCH_ARG, format: RENDER_ARGS.format, width: RENDER_ARGS.width, height: RENDER_ARGS.height, unit: RENDER_ARGS.unit, dpi: RENDER_ARGS.dpi, ...EXPORT_ARGS, ...EMOJI_ARGS },
       required: ['toolId'],
       additionalProperties: false,
     },
@@ -300,6 +338,7 @@ export const TOOL_DEFS: McpToolDef[] = [
         layerOperations: DESIGN_OPERATION_ARG,
         layerPatches: DESIGN_PATCH_ARG,
         ...EXPORT_ARGS,
+        ...EMOJI_ARGS,
         transparentBg: { type: 'boolean', description: 'Remove the background fill (alpha formats).' },
         convertPaths: { type: 'boolean', description: 'Outline text to vector paths in SVG/PDF (default on).' },
         background: { type: 'string', description: 'Override background colour.' },
@@ -368,7 +407,7 @@ export const TOOL_DEFS: McpToolDef[] = [
   },
   {
     name: 'lolly_verify',
-    description: "Verify a file's Content Credentials (C2PA) on-device: was it genuinely made with Lolly, who signed it, and has it changed since export. Returns the verdict, signer identity, edit history, and embedded file metadata (EXIF/XMP) as text + JSON. Bytes in, verdict out - nothing leaves the server.",
+    description: "Verify a file's Content Credentials (C2PA) on-device: was it genuinely made with Lolly, who signed it, and has it changed since export. Returns the verdict, signer identity, edit history, embedded file metadata (EXIF/XMP) and, when the file records creative sources, a `rights` block naming each source, its licence and whether the source signed for itself or the exporter recorded it. Text + JSON. Bytes in, verdict out - nothing leaves the server.",
     inputSchema: {
       type: 'object',
       properties: { file: FILE_ARG },
@@ -817,6 +856,11 @@ function buildLinks(manifest: ToolManifest, inputs: Record<string, unknown>, o: 
     hdr: o.hdr ? '1' : null,
     imprint: o.imprint,
     durable: o.durable,
+    // The set and its treatment travel too: a link whose emoji did not would
+    // draw placeholders for whoever opens it, and the browser tier reads its
+    // artwork from this same query.
+    emoji: o.emoji ?? null,
+    emojiFx: o.emojiFx ?? null,
   });
   const editUrl = query ? `${WEB_BASE}/#/tool/${manifest.id}?${query}` : `${WEB_BASE}/#/tool/${manifest.id}`;
   const renderUrl = buildEmbedUrl({ toolId: manifest.id, format: o.format ?? manifest.render.formats[0], query });
@@ -904,6 +948,18 @@ function verifyText(name: string, report: VerifyReport, headline: string): strin
     const mark = chk.mark === 'ok' ? '✓' : chk.mark === 'info' ? 'ℹ' : '✕';
     lines.push(`  ${mark} ${chk.code} - ${chk.explanation}`);
   }
+  // What the file records about the creative work inside it - a separate question
+  // from whether the credential verifies, and printed as one (plan 253).
+  const sources = verdictSources(report);
+  if (sources) {
+    lines.push('Sources:', `  ${sources.summary}`);
+    for (const s of sources.sources) {
+      const facts = [s.creator, s.licence].filter(Boolean).join(' - ');
+      lines.push(`  - ${s.title}${facts ? ` (${facts})` : ''} - ${s.asserted}`);
+      lines.push(`    ${s.credit}`);
+    }
+    for (const limit of sources.limits) lines.push(`  ${limit}`);
+  }
   return lines.join('\n');
 }
 
@@ -990,6 +1046,12 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
           inputSchema: schema,
           examples,
           templates,
+          // What `emoji` may name on this deployment. An agent that has to guess
+          // a set id renders placeholders; this is the list it chooses from, and
+          // the licence is here because choosing a set is choosing a licence.
+          emojiSets: (await emojiSets()).map((set) => ({
+            id: emojiSetName(set), label: set.label, glyphs: set.glyphs, license: set.license,
+          })),
           workflow: templates.length
             ? 'Prefer templateId + optional presetId. For Design, inspect once, use layerOperations to add/duplicate/remove/reparent/reorder and layerPatches for stable-id field edits; validate before render.'
             : 'Validate inputs before render.',
@@ -1008,7 +1070,10 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
         const validation = validateToolInputs(tool.manifest, inputs);
         if (!validation.ok) return invalidInputs(validation);
         // Read through the same door lolly_render uses, so a link built here
-        // and a file rendered there from the same arguments agree.
+        // and a file rendered there from the same arguments agree - the chosen
+        // emoji set included, which is why it is resolved here too.
+        const emoji = await emojiSettings(args);
+        if ('error' in emoji) return errorResult(emoji.error);
         const links = buildLinks(tool.manifest, inputs, {
           format: args.format as string | undefined,
           width: args.width as number | undefined,
@@ -1016,6 +1081,7 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
           unit: args.unit as string | undefined,
           dpi: args.dpi as number | undefined,
           ...exportSettings(args),
+          ...emoji,
         });
         const check = validation.design && validation.warnings.length
           ? `\n\nDesign check: ${validation.warnings.length} warning(s). Call lolly_validate for details.`
@@ -1047,7 +1113,11 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
           c2pa: c2paSetting(args.c2pa),
           ...exportSettings(args),
         };
-        const links = buildLinks(tool.manifest, inputs, opts);
+        // The set is resolved before anything renders, so an unknown name is
+        // answered as a usage error rather than drawn as a placeholder.
+        const emoji = await emojiSettings(args);
+        if ('error' in emoji) return errorResult(emoji.error);
+        const links = buildLinks(tool.manifest, inputs, { ...opts, ...emoji });
         const result = await render(toolId, links.query, opts);
 
         const provenance = [
@@ -1056,10 +1126,22 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
           validation.design && validation.warnings.length ? `design check: ${validation.warnings.length} warning(s)` : '',
         ].filter(Boolean).join(' · ');
 
+        // What the sources in this render ask of whoever delivers it (plan 253).
+        // Printed beside the provenance line, because an agent that hands the file
+        // on is the deliverer and the credit has to reach it.
+        const rights = result.rights && (result.rights.credits || result.rights.issues.length)
+          ? `\nRights: ${result.rights.status}`
+            + result.rights.issues.map((issue) => `\n  ${issue.code} - ${issue.summary}`).join('')
+            + (result.rights.credits
+              ? `\n  ${result.rights.creditsInFile ? "Credits included in this file's metadata." : 'Credits are NOT in this file; include the text below where it is shared.'}`
+                + `\n  ${result.rights.credits.split('\n').join('\n  ')}`
+              : '')
+          : '';
+
         const header = [
           `Rendered ${toolId} → ${result.format} (${result.bytes.length} bytes, tier ${result.tier}).`,
           args.link === false ? '' : `Edit: ${links.editUrl}`,
-          `Provenance: ${provenance}`,
+          `Provenance: ${provenance}${rights}`,
         ].filter(Boolean).join('\n');
 
         const content: ContentBlock[] = [{ type: 'text', text: header }];
@@ -1149,13 +1231,18 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
         let metadata: ReturnType<typeof extractFileMetadata> | null = null;
         try { metadata = extractFileMetadata(bytes); } catch { /* best-effort - the verdict stands alone */ }
         const { verdict, headline, resolved } = verifyVerdict(report);
+        const rights = verdictSources(report);
         return {
           content: [
             { type: 'text', text: verifyText(file.name ?? 'file', report, headline) },
             // `verdict` (legacy slug) and `report` are the compatibility surface.
             // Shapes unchanged; `resolved` is ADDITIVE: the engine's semantic
             // verdict (state/tone + the flags that drove it) from resolveVerdict.
-            { type: 'text', text: JSON.stringify({ verdict, resolved, report, metadata }, null, 2) },
+            // `rights` is ADDITIVE and separate from every credential field: what
+            // the file records about its creative sources, in the engine's own
+            // wording, with stable per-source facts an agent can act on. Absent
+            // when the file records no sources.
+            { type: 'text', text: JSON.stringify({ verdict, resolved, report, metadata, ...(rights ? { rights } : {}) }, null, 2) },
           ],
         };
       }

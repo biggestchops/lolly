@@ -8,3 +8,6 @@ export declare function setThemeMode(mode?: 'light' | 'dark' | 'auto'): void;
 
 /** Dispatch the window 'jelly-theme-change' event that repaints settled canvases. */
 export declare function notifyThemeChange(): void;
+
+/** Lolly: settle active physics and paint existing controls only on input. */
+export declare function setPerformanceMode(on: boolean): void;

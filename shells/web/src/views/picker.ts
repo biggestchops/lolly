@@ -2407,7 +2407,7 @@ async function render(
     host.state.list()
       .then(list => {
         sessions = (list ?? [])
-          .filter(e => e.slot && !e.slot.startsWith('__batch__:') && !isHiddenSlot(e.slot)) // single-tool, not trashed
+          .filter(e => e.slot && !e.slot.startsWith('__batch__:') && !e.slot.startsWith('__learning__:') && !isHiddenSlot(e.slot)) // single-tool, not trashed
           // Collect mode files the SESSION itself (kept editable), so any single-tool
           // session whose tool still ships qualifies - it needn't render to an image.
           .filter(e => e.toolId && (collect ? toolById.has(e.toolId) : isEmbeddable(toolById.get(e.toolId), needsSvg)))
@@ -3665,6 +3665,13 @@ export async function storeUserUpload(
     const isHuge = file.size > HUGE_UPLOAD_BYTES || longest > MAX_LONGEST_EDGE * 2;
     // Keep the exact bytes - but honour the privacy flag: strip-on png/jpeg drops EXIF/XMP/GPS
     // IN PLACE (no quality loss, C2PA store preserved so a credential still verifies).
+    //
+    // What the strip also drops is a third party's IPTC Credit, Source and
+    // Copyright, and the stored bytes are what an export later carries. Nothing
+    // is written back in afterwards - the promise was byte removal, and a strip
+    // that quietly restored a credit would not be one (plan 253, section 10.2).
+    // So a stripped upload of someone else's work needs its credit recorded on the
+    // asset, and the flag's own copy says the credit goes with the metadata.
     const keepBytes = async (): Promise<void> => {
       let out: Uint8Array = raw;
       if (stripMeta && (format === 'png' || format === 'jpeg')) {

@@ -82,7 +82,7 @@ export const buildReplacement = (bedit: BrandEditorCtx): { next: Record<string, 
 
   // Colour carry - what makes "added colours kept" true. STUDIO_GROUPS does not
   // cover `color`, so before this every custom swatch was silently dropped and
-  // the old flow needed a confirm dialog to say so.
+  // the old flow needed a confirm dialog to report it.
   let kept = 0;
   {
     const srcColor = isRec(srcBase.color) ? srcBase.color as Record<string, unknown> : null;

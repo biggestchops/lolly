@@ -1,5 +1,5 @@
 {
-  "name": "Snippet",
+  "name": "Đoạn mã",
   "description": "Biến đoạn mã thành hình ảnh gọn gàng, có tô sáng cú pháp và dễ chia sẻ.",
   "inputs.code.label": "Mã",
   "inputs.code.placeholder": "Dán mã của bạn vào đây…",

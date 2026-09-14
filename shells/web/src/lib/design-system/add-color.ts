@@ -363,7 +363,7 @@ export function mountAddColor(el: HTMLElement, opts: AddColorOpts): () => void {
    *  - one colour        → add it
    *  - several           → hand the keyboard to the group buttons, which is
    *                        where the decision now is
-   *  - text that is not a colour → say so, and open the picker
+   *  - text that is not a colour → report it, and open the picker
    *  - nothing typed     → open the picker
    */
   const pressAdd = (): void => {

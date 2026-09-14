@@ -1,5 +1,5 @@
 {
-  "name": "Scan",
-  "description": "Read QR codes and barcodes on-device, with nothing sent to any cloud. A reader, not an opener: it decodes, classifies and explains what a code carries - links, Wi-Fi, contacts, product codes - and lets you act deliberately. Copy is always the first action; opening, joining or adding is an explicit, informed tap.",
-  "featured.blurb": "Read any code, safely and offline"
+  "name": "اسکین",
+  "description": "QR کوڈز اور بارکوڈز کو اپنے آلے پر پڑھیں، کچھ بھی کلاؤڈ پر نہیں بھیجا جاتا۔ یہ ایک ریڈر ہے، اوپنر نہیں: یہ کوڈ میں موجود چیز کو ڈی کوڈ، درجہ بندی اور واضح کرتا ہے - لنکس، Wi-Fi، رابطے، پروڈکٹ کوڈز - اور آپ کو باشعور طریقے سے عمل کرنے دیتا ہے۔ کاپی ہمیشہ پہلا عمل ہوتا ہے؛ کھولنا، جوائن کرنا یا شامل کرنا ایک واضح، باخبر ٹیپ ہے۔",
+  "featured.blurb": "کوئی بھی کوڈ محفوظ طریقے سے اور آف لائن پڑھیں"
 }

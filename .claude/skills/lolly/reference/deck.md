@@ -87,13 +87,13 @@ Generated from `community/deck-studio/tool.json`.
 <!-- GEN:deck-inputs -->
 | ID | Alias | Type | Default | Section | What it does |
 |---|---|---|---|---|---|
-| `size` | - | select | `wide` | - | Deck size |
-| `pageNumbers` | - | boolean | true | - | Slide numbers |
-| `brandLogo` | - | boolean | true | - | Brand logo |
-| `footerText` | - | text | `""` | - | Footer text |
-| `sourceAuthor` | - | text | `""` | - | Original author |
 | `mode` | - | select | `deck` | - | Mode |
-| `spec` | - | longtext | `""` | Advanced | Paste a deck - Markdown or JSON |
+| `size` | - | select | `wide` | Deck setup | Deck size |
+| `pageNumbers` | - | boolean | true | Deck setup | Slide numbers |
+| `brandLogo` | - | boolean | true | Deck setup | Logo |
+| `footerText` | - | text | `""` | Deck setup | Footer text |
+| `sourceAuthor` | - | text | `""` | Deck setup | Original author |
+| `spec` | - | longtext | `""` | Advanced | Paste a deck |
 <!-- /GEN:deck-inputs -->
 
 ## The `deck` block fields
@@ -107,7 +107,7 @@ One block per slide. Generated from the `deck` block.
 | `heading` | - | text | `""` | Title |
 | `subtitle` | - | text | `""` | Subtitle |
 | `body` | - | text | `""` | Body |
-| `visual` | - | asset | - | Visual - a Lolly tool link or image |
+| `visual` | - | asset | - | Visual |
 | `data` | - | text | `""` | Table data |
 | `accent` | - | color | `""` | Accent |
 | `logo` | - | select | `auto` | Logo on this slide |

@@ -39,7 +39,7 @@ import { setFieldPolicies } from '../lib/field-policy.ts';
 import { beginAiProbe, finishAiProbe, knownManagedAi, startAiPolicyPolling, stopAiPolicyPolling } from './ai-policy.ts';
 import type { AiPolicy } from '../lib/ai-policy.ts';
 import type { FieldPolicy } from '../lib/field-policy.ts';
-import { setToolInputPolicies, clearInputPolicies, setInputPolicyFailClosed } from '../lib/input-policy.ts';
+import { setToolInputPolicies, clearInputPolicies, setInputPolicyFailClosed, onToolInputMount } from '../lib/input-policy.ts';
 import type { InputPolicy } from '../lib/input-policy.ts';
 import { registerShareSection } from '../lib/share-sections.ts';
 import { setExportPolicy } from '../lib/export-policy.ts';
@@ -225,6 +225,11 @@ let unregisterCollabShareSection: (() => void) | null = null;
  *  thing that makes the Share row above render at all, since the row is gated on an
  *  opener existing. Same last-wins reasoning as the handles above. */
 let unregisterCollabOpener: (() => void) | null = null;
+/** Unregister for the input-policy tool-mount hook (applyOrgToolPolicies), so a
+ *  re-init replaces rather than stacks it. Null on a dormant instance: the hook is
+ *  registered only on the member branch, so an ungoverned shell's mount path never
+ *  runs anything from here. */
+let unregisterToolMount: (() => void) | null = null;
 
 /** How long a successfully-fetched org-config may stand in for a live one when the
  *  (present) control plane can't be reached on a later boot - a bounded freshness
@@ -413,47 +418,56 @@ function applyInputFailClosed(on: boolean): void {
 // ── Tool input policy: map the contract's per-tool spec onto the generic registry ─
 
 /**
- * Populate the generic src/lib/input-policy.ts registry for one tool from the
- * control plane's per-tool declaration, translating it into neutral InputPolicy
- * entries. A locked/choice input gets the localised "Managed by <instance>" note
- * here (the registry itself stays product-neutral); `hidden` ids win over any
- * access rule for the same input.
+ * Populate the generic src/lib/input-policy.ts registry from the control plane's
+ * per-tool declarations, translating them into neutral InputPolicy entries. A
+ * locked/choice input gets the localised "Managed by <instance>" note here (the
+ * registry itself stays product-neutral); `hidden` ids win over any access rule
+ * for the same input.
  *
- * Always clears the registry first, so this both installs the mounted tool's policy
- * and drops any previous tool's. A dormant no-op when there is no control plane or
- * no declaration for this tool - the sidebar then renders exactly as today. Called
- * by the tool view when a tool mounts.
+ * Replaces the whole registry with the current org-config's set, so a re-run
+ * after a fresh config drops what the config no longer says. A dormant no-op when
+ * there is no control plane - the sidebar then renders exactly as today. Reaches
+ * the tool view through the generic input-policy tool-mount hook, which the member
+ * branch of initOrgWithAuth registers: the view announces each mount and never
+ * imports this module. (From 2026-07-21 to 2026-09-12 nothing called this at all,
+ * so a lock the control plane declared never reached a sidebar.)
  */
-export function applyOrgToolPolicies(toolId: string): void {
+export function applyOrgToolPolicies(): void {
   clearInputPolicies();
-  const spec = orgConfigState?.tools?.[toolId];
-  if (!spec) return;
+  const tools = orgConfigState?.tools;
+  if (!tools) return;
   const instanceName = orgConfigState!.instance?.name || '';
   const managedNote = instanceName
     ? tRaw('Managed by {name}', { name: instanceName })
     : t('Managed by your organisation');
-  const out: Record<string, InputPolicy> = {};
-  for (const inp of spec.inputs ?? []) {
-    const access = inp?.access;
-    if (!inp?.id || !access) continue;
-    // `by`/`reason` are pass-through DATA, not a sentence composed here: the
-    // sidebar owns the wording, so a policy source that is not this control plane
-    // can attribute itself the same way. Spread rather than assigned, so an
-    // instance that names no policy produces the exact object shape it always
-    // did - the key absent, not present and undefined, which is what the JSON
-    // the resilient cache round-trips depends on.
-    const by = typeof access.by === 'string' && access.by ? access.by : undefined;
-    const reason = by && typeof access.reason === 'string' && access.reason ? access.reason : undefined;
-    const why = { ...(by ? { by } : {}), ...(reason ? { reason } : {}) };
-    if (access.level === 'locked') {
-      out[inp.id] = { mode: 'locked', note: managedNote, value: access.value, ...why };
-    } else if (access.level === 'choice') {
-      out[inp.id] = { mode: 'choice', note: managedNote, value: access.value, allow: access.allow, ...why };
+  // Every governed tool at once, not only the one that mounted: the registry is
+  // keyed per tool, so nothing bleeds, and a surface that hosts several tools
+  // (bulk editing, the embed child editor) is governed the same as a single one.
+  for (const [toolId, spec] of Object.entries(tools)) {
+    if (!spec) continue;
+    const out: Record<string, InputPolicy> = {};
+    for (const inp of spec.inputs ?? []) {
+      const access = inp?.access;
+      if (!inp?.id || !access) continue;
+      // `by`/`reason` are pass-through DATA, not a sentence composed here: the
+      // sidebar owns the wording, so a policy source that is not this control plane
+      // can attribute itself the same way. Spread rather than assigned, so an
+      // instance that names no policy produces the exact object shape it always
+      // did - the key absent, not present and undefined, which is what the JSON
+      // the resilient cache round-trips depends on.
+      const by = typeof access.by === 'string' && access.by ? access.by : undefined;
+      const reason = by && typeof access.reason === 'string' && access.reason ? access.reason : undefined;
+      const why = { ...(by ? { by } : {}), ...(reason ? { reason } : {}) };
+      if (access.level === 'locked') {
+        out[inp.id] = { mode: 'locked', note: managedNote, value: access.value, ...why };
+      } else if (access.level === 'choice') {
+        out[inp.id] = { mode: 'choice', note: managedNote, value: access.value, allow: access.allow, ...why };
+      }
     }
+    // `hidden` (must-not-see) wins over any access rule for the same input.
+    for (const id of spec.hidden ?? []) out[id] = { mode: 'hidden' };
+    setToolInputPolicies(toolId, out);
   }
-  // `hidden` (must-not-see) wins over any access rule for the same input.
-  for (const id of spec.hidden ?? []) out[id] = { mode: 'hidden' };
-  setToolInputPolicies(toolId, out);
 }
 
 /**
@@ -741,6 +755,12 @@ export async function initOrgWithAuth(auth: AuthConfig): Promise<OrgState | null
         orgConfigState?.destinations,
         orgConfigState?.instance?.name || t('your organisation'),
       );
+      // Install the mounted tool's input policy on each mount, through the generic
+      // lib/input-policy.ts mount hook. If a tool is already open the hook runs
+      // for it at once, so a member whose org-config arrived after the tool view
+      // is governed too.
+      unregisterToolMount?.();
+      unregisterToolMount = onToolInputMount(() => applyOrgToolPolicies());
       unregisterApprovalOpener?.();
       unregisterApprovalOpener = registerApprovalOpener((rctx) => {
         import('./approval-dialog.ts')
@@ -928,6 +948,8 @@ export function _resetOrgForTests(): void {
   unregisterCollabShareSection = null;
   unregisterCollabOpener?.();
   unregisterCollabOpener = null;
+  unregisterToolMount?.();
+  unregisterToolMount = null;
   clearOrgDeliveryTargets();
   clearInputPolicies();
   setInputPolicyFailClosed(null);

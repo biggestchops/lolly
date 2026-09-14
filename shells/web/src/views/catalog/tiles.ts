@@ -14,7 +14,6 @@ import { viewTopbarHtml } from '../../components/view-topbar.ts';
 import { themeSegmentHtml } from '../../components/theme-toggle.ts';
 import { soundSegmentHtml } from '../../components/sound-toggle.ts';
 import { segHtml } from '../../lib/seg.ts';
-import { VISUAL_TYPES } from '../../lib/asset-kinds.ts';
 import { loadAssetCategories } from '../../lib/asset-category.ts';
 import { assetBaseId, loadFavouriteAssets, loadHiddenAssets } from '../../lib/asset-favourites.ts';
 import { icon } from '../../lib/icons.ts';
@@ -30,7 +29,7 @@ import { familyFromTokenValue, listUserFonts } from '../../user-fonts.ts';
 import type { AssetRef } from '@lolly-tools/core/host-v1';
 import type { PhotoTreatment } from '../../../../../engine/src/photo-treatment.ts';
 import type { IconTheme } from '../../../../../engine/src/icon-theme.ts';
-import { CHEVRON, HEADSHOT_ID, SLIDERS_ICON, isThemable } from './shared.ts';
+import { CHEVRON, HEADSHOT_ID, SLIDERS_ICON, gridAdmits, isThemable } from './shared.ts';
 import type { CatFont } from './shared.ts';
 import { bindOp, type CatCtx } from './context.ts';
 
@@ -207,31 +206,9 @@ export async function reload(cat: CatCtx): Promise<void> {
     ? (await host.assets.get(prof.headshot.id).catch(() => null))?.url || ''
     : '';
   const userVisual = user.filter(a => a.id !== HEADSHOT_ID);
-  // Catalog first, then user uploads. Only image-thumbnailable types from the catalog
-  // (palette/tokens/font catalog entries are engine data covered elsewhere), a user's OWN
-  // audio upload, AND catalog focus-music (audio tagged 'neurospicy' - the generated
-  // songs + lo-fi loops) so they can be auditioned here. Other catalog audio (music beds)
-  // stays out. Each audio tile renders a player in the details modal.
-  cat.allAssets = [...catalog, ...userVisual]
-    .filter(a => VISUAL_TYPES.has(a.type)
-      || (a.type === 'audio' && (a.source === 'user' || (Array.isArray(a.meta?.tags) && (a.meta.tags as string[]).includes('neurospicy'))))
-      // A user's OWN text/code/markdown and data uploads are first-class here
-      // (¶/▦ stub tiles; preview + Copy/Analyse in the details modal). Catalog
-      // LIBRARY text/data entries stay out - those are engine data (tokens,
-      // palettes) covered by their own surfaces, and without this split every
-      // brand-pack data file would flood the grid.
-      || ((a.type === 'text' || a.type === 'data') && a.source === 'user')
-      // A brand PALETTE asset is first-class: a swatch-mosaic tile that opens a
-      // "Colour Lab in a card" - every preset with its OKLCH and a freshly
-      // extrapolated OKLab tint→shade ramp (thumbHtml's `palette` branch). The
-      // raw `tokens` DTCG doc stays out (redundant with this, and brand-locked),
-      // and so do the functional `palette` assets that are engine config, not
-      // swatch lists - the icon-theme pairs and photo treatments consumed by
-      // _iconThemes()/_photoTreatments() (tagged as such; they'd otherwise each
-      // mirror the one live brand palette the modal paints from).
-      || (a.type === 'palette'
-        && !(Array.isArray(a.meta?.tags)
-          && (a.meta.tags as string[]).some(tg => tg === 'icon-themes' || tg === 'photo-treatments'))));
+  // Catalog first, then user uploads; the rule itself is gridAdmits in shared.ts,
+  // so a test can ask what the grid shows without mounting the view.
+  cat.allAssets = [...catalog, ...userVisual].filter(gridAdmits);
   if (pendingDeletes.size) cat.allAssets = cat.allAssets.filter(a => !pendingDeletes.has(a.id));
   cat.assetById = new Map(cat.allAssets.map(a => [a.id, a]));
   cat.searchHaystack = null; // asset set changed - drop the stale search index

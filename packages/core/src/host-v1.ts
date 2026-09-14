@@ -13,6 +13,7 @@ export * from './host-v1/codec.ts';
 export * from './host-v1/color.ts';
 export * from './host-v1/compose.ts';
 export * from './host-v1/connectors.ts';
+export * from './host-v1/emoji.ts';
 export * from './host-v1/export.ts';
 export * from './host-v1/geom.ts';
 export * from './host-v1/host.ts';

@@ -60,7 +60,7 @@
   "inputs": [
     {
       "id": "files",
-      "label": "Your files",
+      "label": "Files",
       "type": "file",
       "multiple": true,
       "accept": [
@@ -87,7 +87,7 @@
       "type": "text",
       "section": "Credentials",
       "bindToMeta": "author",
-      "help": "Your name - embedded as the file's author/creator (dc:creator in the Content Credential; EXIF Artist / XMP where the format carries it)."
+      "help": "The author's name - embedded as the file's author/creator (dc:creator in the Content Credential; EXIF Artist / XMP where the format carries it)."
     },
     {
       "id": "copyright",
@@ -104,7 +104,7 @@
       "section": "Credentials",
       "bindToMeta": "license",
       "default": "All rights reserved",
-      "help": "How others may use your work. Proprietary keeps every right; the Creative Commons options grant specific permissions and embed a link to the licence deed.",
+      "help": "How others may use the work. Proprietary keeps every right; the Creative Commons options grant specific permissions and embed a link to the licence deed.",
       "options": [
         {
           "value": "All rights reserved",
@@ -140,7 +140,7 @@
         },
         {
           "value": "Public Domain Mark 1.0 · https://creativecommons.org/publicdomain/mark/1.0/",
-          "label": "Public Domain Mark - already in the public domain"
+          "label": "Public Domain Mark - Already in the public domain"
         }
       ]
     },
@@ -148,7 +148,7 @@
       "id": "contact",
       "label": "Contact",
       "type": "text",
-      "section": "Credentials",
+      "section": "Optional details",
       "bindToMeta": "contact",
       "help": "Optional - how to reach you for licensing (email or site), embedded alongside the author."
     },
@@ -156,15 +156,15 @@
       "id": "title",
       "label": "Title / description",
       "type": "text",
-      "section": "Credentials",
+      "section": "Optional details",
       "bindToMeta": "description",
       "help": "Optional - a short title or description of the work."
     },
     {
       "id": "durableMark",
-      "label": "Add a durable invisible watermark",
+      "label": "Durable invisible watermark",
       "type": "boolean",
-      "section": "Marks",
+      "section": "Optional details",
       "default": false,
       "help": "Raster images only (JPEG/PNG/WebP). Embeds an imperceptible neural watermark that survives screenshotting and re-encoding - what strips the Content Credential. Ignored for PDF, video and audio."
     }

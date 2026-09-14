@@ -75,12 +75,12 @@ export function beginViewFade(view: HTMLElement): ViewFade | null {
   // z-index sits above the in-view chrome - notably the mobile top bar at 99999,
   // re-rendered per view - so a top-left element that DIFFERS between views (the tab
   // bar vs the dashboard/verify back pill) cross-fades uniformly instead of
-  // snapping in on top. The 100000+ layers (filter popover, profile menu, dialogs)
+  // snapping in on top. The --z-top layers (filter popover, profile menu, dialogs)
   // are always closed during a route change, and the overlay is pointer-events:none,
   // so covering the viewport for the fade is purely visual and never swallows a click.
   overlay.style.cssText =
     `position:fixed;top:0;left:${rect.left}px;width:${rect.width}px;` +
-    `height:100vh;height:100dvh;overflow:hidden;z-index:100000;` +
+    `height:100vh;height:100dvh;overflow:hidden;z-index:var(--z-top);` +
     `background:hsl(var(--background));pointer-events:none;margin:0;will-change:opacity;`;
 
   // Move (not clone) the live nodes - exact pixels, zero re-decode - leaving #view

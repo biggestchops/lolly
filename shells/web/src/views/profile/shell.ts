@@ -155,6 +155,19 @@ export function renderShell(pv: ProfileViewCtx): void {
         </div>
       </details>
 
+      ${/* Emoji (plans/252). Its own card rather than a row inside Appearance:
+           this is not how the APP dresses, it is what new work starts with - the
+           set every emoji in your text is drawn from, and the licence that travels
+           with anything you export. The body mounts lazily (the shared control is
+           its own chunk), so the summary is filled in by wireEmojiPref. */''}
+      <details class="profile-card profile-collapse" id="emoji-pref-section"${pv.rows.startOpen('emoji-pref-section')}>
+        ${summaryRow('emoji-pref-section', t('Emoji'))}
+        <div class="profile-collapse-body section-card-body">
+        <p class="profile-appearance-sub">${t('The set your emoji are drawn from when you start something new. Work you have already made keeps the set it was made with.')}</p>
+        <div id="emoji-pref-body">${skeletonRow()}</div>
+        </div>
+      </details>
+
       <details class="profile-card profile-collapse profile-card--a11y" id="a11y-section"${pv.rows.startOpen('a11y-section')}>
         ${summaryRow('a11y-section', t('Accessibility'), pv.summaries.a11ySummary())}
         <div class="profile-collapse-body section-card-body">

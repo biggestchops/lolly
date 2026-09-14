@@ -21,6 +21,11 @@
  * Assets whose files moved into their pack during the 2026-07 repository split
  * floor at the split date; the history before it lives in the archived repos.
  *
+ * Shared asset roots (a profile's `assets` list, e.g. community/emoji-packs) are
+ * walked too: their entries reach every brand's index, so they need the same dates.
+ * A file with no history yet is simply undated, so a pack that is still uncommitted
+ * carries no `added` field rather than a date that would change on commit.
+ *
  * Usage: node scripts/gen-asset-added-dates.ts   # then pnpm run build:catalog:all
  */
 
@@ -28,6 +33,8 @@ import { readdirSync, realpathSync, writeFileSync, mkdirSync, existsSync, readFi
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
+
+import { allAssetRoots } from '../packages/node-shell/src/content-roots.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'scripts/data/asset-added-dates.json');
@@ -64,17 +71,39 @@ function firstAddedDate(file: string): string | null {
 
 interface AssetEntry { id: string; formats?: Array<{ url: string }> }
 
+/** One index and the rule for turning its urls into files. A brand index is
+ *  catalog-root absolute ("/catalog/assets/…"); a shared root's entries carry the
+ *  profile-independent "/catalog/packs/<name>/…", which is that root's own directory. */
+interface IndexSource { indexPath: string; fileFor: (url: string) => string }
+
+function indexSources(): IndexSource[] {
+  const out: IndexSource[] = [];
+  for (const catalog of catalogDirs()) {
+    out.push({
+      indexPath: join(catalog, 'assets/index.json'),
+      fileFor: (url) => join(catalog, url.replace(/^\/catalog\//, '')),
+    });
+  }
+  for (const shared of allAssetRoots({ root: ROOT })) {
+    const prefix = `/catalog/packs/${shared.name}/`;
+    out.push({
+      indexPath: join(shared.dir, 'index.json'),
+      fileFor: (url) => join(shared.dir, url.startsWith(prefix) ? url.slice(prefix.length) : url),
+    });
+  }
+  return out.filter((source) => existsSync(source.indexPath));
+}
+
 async function main(): Promise<void> {
   const dates: Record<string, string> = {};
   let undated = 0;
-  for (const catalog of catalogDirs()) {
-    const index = JSON.parse(readFileSync(join(catalog, 'assets/index.json'), 'utf8')) as { assets: AssetEntry[] };
+  for (const source of indexSources()) {
+    const index = JSON.parse(readFileSync(source.indexPath, 'utf8')) as { assets: AssetEntry[] };
     for (const asset of index.assets) {
       const url = asset.formats?.[0]?.url;
       if (!url) continue;
-      // Index urls are catalog-root absolute ("/catalog/assets/…"); resolve them
-      // against THIS pack's catalog, never the repo-root view.
-      const file = join(catalog, url.replace(/^\/catalog\//, ''));
+      // Resolve against the pack the entry came from, never the repo-root view.
+      const file = source.fileFor(url);
       if (!existsSync(file)) continue;
       const date = firstAddedDate(file);
       if (!date) { undated++; continue; }

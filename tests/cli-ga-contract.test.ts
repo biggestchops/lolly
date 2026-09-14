@@ -273,7 +273,7 @@ test('every value-taking reserved flag is in VALUE_FLAGS (so none of them can pa
   // sign-key/sign-cert matter most of the whole list: a bare `--sign-key` parsing to "1"
   // would report an unreadable key file literally named "1", which reads as "your key is
   // broken" when the real problem is a typo (contract section 1.3).
-  for (const f of ['output', 'export', 'filename', 'width', 'height', 'unit', 'dpi', 'user-profile', 'press-profile', 'text', 'sign-key', 'sign-cert']) {
+  for (const f of ['output', 'export', 'filename', 'width', 'height', 'unit', 'dpi', 'user-profile', 'press-profile', 'text', 'sign-key', 'sign-cert', 'emoji', 'emojifx']) {
     assert.ok(VALUE_FLAGS.has(f), `${f} must reject its bare form`);
   }
 });

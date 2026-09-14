@@ -1,5 +1,5 @@
 {
-  "name": "Logo Wall",
+  "name": "Стена от лога",
   "description": "Подреди купчина лога в чиста, равномерна спонсорска мрежа - стената тип „NASCAR“.",
   "a11yLabel": "Мрежа от {{logos.length}} лога",
   "inputs.columns.label": "Колони",

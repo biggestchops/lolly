@@ -210,7 +210,7 @@ export function validateArtMeta(raw: unknown): { meta: ArtMeta } | { problems: s
   }
   // section 18.28.3: digitalCreation means no trained model was invoked, and the disclosure
   // is not attached. Naming a model beside it is a contradiction only the author can
-  // resolve - either the artifact came out of a model (say so in `source`) or it did
+  // resolve - either the artifact came out of a model (report it in `source`) or it did
   // not (drop the model). Guessing would falsify one half of the record.
   if (src === 'digitalCreation') {
     if (model !== undefined) problems.push('source "digitalCreation" declares that no trained model was invoked (section 18.28.3) - remove `model`, or set source to trainedAlgorithmicMedia / compositeWithTrainedAlgorithmicMedia');

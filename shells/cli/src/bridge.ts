@@ -65,7 +65,7 @@ import { repoRoot } from '@lolly-tools/node-shell/repo-root';
 // Where the active profile's tools and catalog are - the resolver that replaced the
 // repo-root tools/ and catalog/ views.
 import {
-  catalogFile, contentUrlFile, readToolText,
+  contentUrlFile, readAssetIndex, readToolText,
 } from '@lolly-tools/node-shell/content-roots';
 // host.text (HarfBuzz text-to-path). RELATIVE for the same reason as repo-root above - 
 // this file is inlined into the Vercel MCP function, where a bare @lolly-tools/node-shell
@@ -267,9 +267,10 @@ export async function createCliBridge(
   { profile = {}, dom, networkAllowlist, designVersion, capturePublicOnly = false, aiEnabled = true }: CliBridgeOpts = {} as CliBridgeOpts,
 ): Promise<HostV1> {
   const w = dom.window;
-  // Pre-load the asset catalog so query/get can be synchronous-ish.
-  const assetCatalogPath = catalogFile('assets/index.json');
-  const assetIndex = JSON.parse(await readFile(assetCatalogPath, 'utf8')) as { assets: CatalogAsset[] };
+  // Pre-load the asset catalog so query/get can be synchronous-ish. Merged, not the
+  // brand file alone: a shared asset root (an emoji pack, plan 252) is mounted outside
+  // every brand catalog and belongs in the listing of every profile.
+  const assetIndex = readAssetIndex() as { assets: CatalogAsset[] };
   const assetById = new Map<string, CatalogAsset>(assetIndex.assets.map((a): [string, CatalogAsset] => [a.id, a]));
 
   /** An asset format's site-absolute url (`/catalog/assets/...`) onto disk. Assets
@@ -539,6 +540,16 @@ export async function createCliBridge(
   host.prepare = (await import('@lolly/engine')).createPrepareAPI();
   host.compare = (await import('@lolly/engine')).createCompareAPI();
   host.textTools = (await import('@lolly-tools/node-shell/text-tools')).createNodeTextTools();
+
+  // host.emoji (v1.196) - the pinned emoji packs this profile's catalog mounts,
+  // read straight off disk. The runtime draws every emoji in a render from the
+  // chosen set, so a CLI export and a browser export place the same bytes. The
+  // jsdom window this bridge already owns supplies the XML parser, so nothing
+  // here builds a second DOM implementation. Cheap to attach: the catalog index
+  // is not read until a render actually asks for a set.
+  host.emoji = await (await import('@lolly-tools/node-shell/emoji')).createNodeEmojiAPI({
+    parseXml: (source: string) => new w.DOMParser().parseFromString(source, 'image/svg+xml'),
+  });
 
   // host.net - allowlisted fetch for tools that declared the 'network' capability,
   // built per-invocation from the loaded manifest's network.allowlist (callers thread
@@ -918,7 +929,7 @@ function rootSvgOf(node: Element | null): Element | null {
           // Nothing Penpot has a construct for: keep the SVG whole as one picture on
           // one board, so a lowering that declines never costs fidelity.
           //
-          // AND SAY SO. The lowering's own `notes` ride the result it declined to
+          // AND REPORT IT. The lowering's own `notes` ride the result it declined to
           // return, so this branch is the only place the flatten can be reported at
           // all - without this line, `--export=penpot` on a render carrying one
           // `<filter>` exits 0, prints nothing, and hands back an uneditable picture
@@ -1215,6 +1226,13 @@ function rootSvgOf(node: Element | null): Element | null {
       const childRuntime = await createRuntime(childTool, host, inputs as Parameters<typeof createRuntime>[2], { composeStack: _stack });
       const el = w.document.createElement('div');
       el.innerHTML = childRuntime.getHydrated();
+      // A composed child is exported through host.export.render directly, never
+      // through childRuntime.export, so the emoji pass has to be called here or
+      // the child would be the one surface that still drew a system glyph. The
+      // child carries no emoji style of its own yet (ComposeSpec has no field for
+      // one), so its emoji come out as the neutral placeholder rather than as the
+      // parent's chosen set.
+      await childRuntime.applyEmojiToDom(el);
       // Compose children get the same brand vars as the top-level canvas
       // (plans/archive/brand-token-contract.md section 3 injection rules). For html-format
       // children the wrapper div (with its inline vars) is what's serialised;

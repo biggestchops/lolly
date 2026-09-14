@@ -39,21 +39,21 @@
 | 원하는 것… | 사용 | 이유 |
 |---|---|---|
 | 선명하게 확대되는 로고/아트워크 | **SVG** | 벡터 - 무한히 확대 가능하고, 용량이 작고, 편집 가능 |
-| Office/Windows 앱용 벡터 | **EMF** | PowerPoint/Word에 편집 가능한 벡터로 붙여넣어지며, 텍스트는 그대로 살아 있어 편집 가능하고, Google 드라이브에서는 Slides용 Google 드로잉으로 열립니다 |
-| 인쇄/디자인 앱용 벡터 | **EPS**, or **EPS (CMYK)** | Illustrator/인쇄 워크플로용 PostScript 벡터 |
+| Office/Windows 앱용 벡터 | **EMF** | PowerPoint/Word에 편집 가능한 벡터로 붙여넣어지고, 텍스트는 그대로 살아 있어 편집할 수 있으며, Google 드라이브에서는 Slides용 Google 드로잉으로 열려요 |
+| 인쇄/디자인 앱용 벡터 | **EPS** 또는 **EPS (CMYK)** | Illustrator/인쇄 워크플로용 PostScript 벡터 |
 | 커팅/CAD 기기용 벡터 | **DXF** | 레이저 커터, 비닐 플로터, CNC - 밀리미터 단위의 윤곽선 경로 |
-| 편집 가능한 슬라이드 덱 | **PowerPoint** (PPTX) | 네이티브로 편집 가능한 텍스트와 도형, 이미지와 벡터는 추출 가능하게 유지됩니다 |
-| LMS가 가져올 수 있는 강좌 | **SCORM** (LMS) | 매니페스트, 실행 페이지, 슬라이드, 자막이 포함된 내레이션 영상이 담긴 zip 파일 - Design 덱에서 생성 |
-| 편집 가능한 텍스트 문서 | **Word** (DOCX) or **OpenDocument** (ODT) | 워드 프로세서가 계속 편집할 수 있는 실제 단락과 제목 (Doc Studio) |
-| 사진 또는 범용 이미지 | **PNG** (lossless) or **JPG** (smaller) | 범용 래스터 |
+| 편집 가능한 슬라이드 덱 | **PowerPoint** (PPTX) | 네이티브로 편집 가능한 텍스트와 도형, 이미지와 벡터는 추출 가능한 상태로 유지돼요 |
+| 휴대 가능한 교육 과정 | **Export course** | 프로젝트 콘텐츠를 검토하고 버전 관리되는 웹사이트, SCORM, 또는 실험적인 xAPI 패키지를 만들어요 |
+| 편집 가능한 텍스트 문서 | **Word** (DOCX) 또는 **OpenDocument** (ODT) | 워드 프로세서로 계속 편집할 수 있는 실제 단락과 제목 (Doc Studio) |
+| 사진 또는 범용 이미지 | **PNG**(무손실) 또는 **JPG**(경량) | 범용 래스터 |
 | 더 작은 최신 이미지 | **WebP** / **AVIF** | 더 나은 압축, 알파 채널 |
-| 인쇄 | **PDF**, or **Print PDF** (CMYK) | 실제 페이지 크기; 인쇄용 CMYK |
+| 인쇄 | **PDF** 또는 **Print PDF**(CMYK) | 실제 페이지 크기; 인쇄용 CMYK |
 | 인쇄기용 래스터 | **Print TIFF** (CMYK) | RIP용 DeviceCMYK 픽셀 |
 | 웹용 애니메이션 | **GIF** | 어디서나 작동하지만 파일 크기가 큼 |
 | 풀 컬러 + 실제 알파를 갖춘 애니메이션 | **APNG** | 애니메이션 PNG - 팔레트 제한 없음, 완전한 투명도 |
 | 애니메이션, 최소 파일 크기 | **Animated WebP** | 풀 컬러 + 알파, GIF나 APNG보다 압축률이 좋음 |
 | 확대되는 애니메이션 벡터 | **Animated SVG** | 독립적으로 완결됨; 브라우저나 `<img>`에서 반복 재생되며, 코덱이 필요 없고, 크기 제한 없음 |
-| 소셜/공유용 비디오 | **MP4** or **WebM** | 바이트당 최고 품질 (아래 참조) |
+| 소셜/공유용 비디오 | **MP4** 또는 **WebM** | 바이트당 최고 품질 (아래 참조) |
 | 서식 있는 텍스트/이메일 서명 | **HTML** | 메일 클라이언트에 서식이 유지된 채 붙여넣어짐 |
 | 일반 텍스트 콘텐츠 | **MD** / **TXT** | 텍스트만 |
 | 캘린더 일정 | **ICS** | 모든 캘린더 앱으로 가져오기 가능 |
@@ -150,16 +150,18 @@ SVG를 내보낼 수 있는 도구라면 어떤 것이든 **Penpot 파일**(`.pe
 
 ## SCORM(강좌 패키지)
 
-Design 덱은 **SCORM 패키지**로 내보낼 수 있습니다 - Moodle, Canvas, Blackboard든 사내 LMS든, 학습 관리 시스템이 가져올 수 있는 zip 파일입니다. 형식 선택기에서 **SCORM (LMS)**을 고르면 내보내기는 다음을 기록합니다:
+지원되는 도구, 프로젝트 폴더, 또는 선택 항목에서 **Export course**를 선택하세요. Design에서는 **SCORM (LMS)**를 선택하고 Download를 눌러도 이 강좌 워크플로가 열려요. Lolly는 작업물을 저장하고, 강좌 콘텐츠와 순서를 검토하게 한 다음, 모듈과 그 내보내기 대화 상자를 열어요.
 
-- <!--i:layout--> **슬라이드** - 아트보드당 이미지 하나로, 아트보드가 허용하는 곳에서는 벡터로, 허용하지 않는 곳에서만 픽셀로 저장됩니다.
-- <!--i:play--> 자막 트랙이 딸린 **내레이션 영상** - 온디바이스 음성이 읽어 주는 발표자 노트로, [Presenting](/info/create/using.html#presenting)이 재생하는 것과 정확히 동일합니다.
-- <!--i:file--> 슬라이드를 순서대로 넘기고 영상을 재생하며, 모든 LMS가 지원하는 버전인 SCORM 1.2 런타임을 통해 완료 상태를 LMS에 보고하는 **실행 페이지**.
-- <!--i:font--> 덱이 사용하는 글꼴 - 오프라인에서도 실행 페이지가 동일하게 렌더링되도록 합니다.
+- <!--i:layout--> 각 소스에 대해 사용할 수 있는 표현 방식을 선택하세요: 정지 페이지, 동영상으로서의 모션, 오디오, 또는 다운로드 가능한 자료예요. 모듈에는 네이티브 레슨 텍스트와 읽기 대체 텍스트를 추가하세요.
+- <!--i:play--> 학습자 플레이어를 미리 보고 설명과 자막을 검토하세요. 모션은 무음 애니메이션을 포함해 동영상으로 포함돼요. 도구가 저장된 입력값에서 재현할 수 없는 경우, 완성된 녹화본을 먼저 내보내세요.
+- <!--i:file--> Website, SCORM 1.2, SCORM 2004 4th Edition, 또는 실험적인 xAPI 대상 중에서 선택하세요. 실제 콘텐츠와 ZIP 크기를 확인한 다음, 확인된 버전을 저장하고 다운로드하세요.
+- <!--i:check--> 완료하려면 필수 레슨을 모두 확인 처리하고 Finish를 선택해야 해요. 웹사이트 플레이어는 진행 상황을 브라우저에 저장하고, LMS 패키지는 이를 받는 LMS에 연결돼요.
 
 ![SCORM (LMS)을 선택한 Design 덱의 내보내기 패널](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-패키지 안의 그 무엇도 외부와 통신하지 않습니다: 이것은 zip 안의 파일들일 뿐이며, 번들러도 CDN도 계정도 없이 LMS 내부에서 실행됩니다. 웹 앱과 데스크톱 앱은 이를 생성할 수 있지만 CLI는 그렇지 않은데, 아트보드를 촬영하고 영상을 인코딩하려면 브라우저가 필요하기 때문입니다.
+패키지에는 완성된 콘텐츠가 포함되어 있고, Lolly 계정이 필요하지 않아요. Website ZIP은 HTTP(S) 호스트에 압축을 풀고, LMS ZIP은 내용을 바꾸지 않은 채로 가져오세요. 강좌를 배포하기 전에 실제 대상 환경에서 테스트해 보세요.
+
+저장된 여러 작업물, 가져온 미디어, 자료로 구성된 강좌를 만들려면 [교육 과정 만들기](/info/create/training-creators.html)를 사용하세요. 학습 모듈에는 순서가 있는 자체 개요, 명시적인 레슨 확인, 학습자 미리보기, 버전 관리되는 패키지 이력이 있어요. 이 모듈의 CLI 경로는 이미 내보낸 미디어를 패키징할 수 있어요.
 
 ## DXF (재단 파일)
 
@@ -309,6 +311,10 @@ GIF는 어디서나 작동합니다(채팅/이메일에 적합하며, 비디오�
 - **파일 확인하기.** Lolly는 자체 크리덴셜도 검증해요. [/verify](/verify)에 아무 파일이나 놓거나(또는 CLI에서 `lolly validate <file>`을 실행해) 온디바이스 리포트를 받아보세요 - 파일이 실제로 Lolly로 만들어졌고 그 이후 변경되지 않았는지가 첫머리에 표시돼요. 웹 Verify 화면은 크리덴셜을 훨씬 넘어서요. **AI 생성 콘텐츠**를 표시하고, **Lolly Imprint**를 감지하고, **SEAL** 서명과 (선택적으로) 서드파티 픽셀 워터마크를 확인하고 **숨겨진 데이터**를 드러내요 - 모두 온디바이스에서, 아무것도 업로드하지 않고요. [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows)을 참고하세요.
 - **프라이버시.** 모든 과정이 기기에서 이뤄져요. 서명 키는 내보내기를 위해 생성되고 브라우저를 벗어나지 않으며, 아무것도 업로드되지 않고, 주장에는 이미 출처 메타데이터가 담고 있던 내용만 들어가요. 프라이버시 유틸리티(*본인 소유* 파일의 온디바이스 변환)는 절대 크리덴셜을 추가하지 않으며, *Strip Hidden Data*는 다른 임베드 메타데이터와 마찬가지로 C2PA 매니페스트도 제거해요.
 - **상호작용.** PDF의 경우 Content Credentials와 **비밀번호 보호**(어느 등급이든 - 위 참고)는 상호 배타적이에요(암호화된 PDF는 크리덴셜 첨부를 담을 수 없어요). 크리덴셜은 완성된 바이트에 대한 최종 단계로 추가돼요 - DPI/EXIF/색상 프로필 스탬프, PDF/X 메타데이터, 인쇄 마크 이후에요.
+
+### 출처 크레딧
+
+다른 사람의 작품을 배치한 내보내기는 그 출처도 크리덴셜에 함께 기록해요. 고정된 세트에서 가져온 이모지가 일상적인 예시예요: 작품, 제작자, 라이선스, 정확한 바이트가 온 곳, 그리고 무엇이 바뀌었는지가 모두 파일과 함께 이동해요. 내보내기 패널의 **Source credits** 행은 다운로드하기 전에 출처가 전달에 무엇을 요구하는지 알려주고, 다운로드한 뒤에는 크레딧이 파일에 포함되어 있다고 말하기 전에 전달된 바이트를 다시 읽어요. 지금 공유하려는, 다시 칠한 CC BY-SA 글리프처럼 선택을 요구하는 라이선스에는 해결 방법을 담은 카드가 나타나요. 다운로드가 막히는 일은 결코 없어요. [창작물의 권리와 크레딧](/info/creative-rights.html)에 관련 용어, 검토된 라이선스, 그리고 끝까지 사용자의 것으로 남는 것이 정리되어 있어요.
 
 ## 휴대폰에서
 

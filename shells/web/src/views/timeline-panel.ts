@@ -586,7 +586,7 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   laneWrap.setAttribute('role', 'listbox');
   laneWrap.setAttribute('aria-label', t('Clips'));
   laneWrap.setAttribute('aria-orientation', 'horizontal');
-  // Shift-click toggles, so the listbox must say so.
+  // Shift-click toggles, so the listbox must report it.
   laneWrap.setAttribute('aria-multiselectable', 'true');
   const scenery = document.createElement('div'); tp.scenery = scenery;
   scenery.className = 'tl-scenery';

@@ -1,8 +1,8 @@
 {
   "name": "Wykres",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
+  "description": "Wykresy od pierwszego wklejenia do zaawansowanej wizualizacji - wyjaśnione rekomendacje danych, jawne mapowanie pól, 35 klasycznych rodzin wektorowych, w tym Pareto, cele bullet i słupki zakresowe, szesnaście statystycznych i redakcyjnych odmian, sceny 3D z prawdziwą osią Z, kinowe loty kamerą, deterministyczny ruch, dostępne opisy oraz style skompilowane z aktywnego systemu projektowego.",
   "a11yLabel": "Wykres {{chartType}}{{#if heading}} - {{heading}}{{/if}}",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "featured.blurb": "Wklej tabelę - Wykres sprawia, że jest przejrzysta, dostępna i bezbłędnie zgodna z systemem projektowym",
   "inputs.chartType.label": "Typ wykresu",
   "inputs.chartType.options.bar": "Słupkowy - pionowy",
   "inputs.chartType.options.bar-horizontal": "Słupkowy - poziomy",

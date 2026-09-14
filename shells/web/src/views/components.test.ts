@@ -34,6 +34,10 @@ test('library mounts every specimen, filters and resets, keeps navigation local,
     export: { download: async (blob: Blob, filename: string) => { downloaded = { blob, filename }; resolveDownload(); } },
   } as unknown as HostV1;
   const view = document.querySelector<HTMLElement>('#view')!;
+  dom.window.__toolIndex = { tools: Array.from({ length: 8 }, (_, i) => ({
+    id: `featured-${i}`, name: `Featured ${i}`, category: 'utility',
+    listed: i !== 7, featured: { order: 8 - i },
+  })) };
   try {
     const { mountComponents } = await import('./components.ts');
     const { COMPONENT_SECTIONS: AUDIT_SECTIONS, COMPONENT_ARTWORK } = await import('./components-data.ts');
@@ -49,6 +53,21 @@ test('library mounts every specimen, filters and resets, keeps navigation local,
     assert.ok(view.querySelector('[data-cl-preview="projectTiles"] .folder-mosaic'));
     assert.ok(view.querySelector('[data-cl-preview="selectionBar"] .projects-bulkbar:not([hidden])'));
     assert.ok(view.querySelector('[data-cl-preview="editableWheel"] [data-be-wheel]'));
+    const featured = view.querySelector<HTMLElement>('[data-cl-preview="featuredRow"]')!;
+    assert.ok(featured.closest('.cl-card--wide'));
+    assert.ok(featured.querySelector('.featured--coverflow'));
+    assert.deepEqual([...featured.querySelectorAll<HTMLElement>('.ftile:not(.ftile--clone)')].map(tile => tile.dataset.tool),
+      ['featured-6', 'featured-5', 'featured-4', 'featured-3', 'featured-2', 'featured-1'], 'use the catalog curation, capped after sorting and excluding unlisted tools');
+    assert.equal(featured.querySelector('.ftile-link')?.getAttribute('href'), '#/tool/featured-6');
+    const firstCarousel = featured.querySelector('.featured')!;
+    const filmstrip = featured.querySelector<HTMLButtonElement>('[data-val="gallery"]')!;
+    filmstrip.click();
+    assert.equal(firstCarousel.isConnected, false, 'switching modes replaces the previous carousel');
+    assert.ok(featured.querySelector('.featured--static:not(.featured--coverflow)'));
+    assert.equal(filmstrip.getAttribute('aria-pressed'), 'true');
+    featured.querySelector<HTMLButtonElement>('[data-val="coverflow"]')!.click();
+    assert.ok(featured.querySelector('.featured--coverflow:not(.featured--static)'));
+    assert.equal(localStorage.getItem('lolly-featured-activity:tools'), null, 'previewing layouts does not record tool activity');
     const palette = view.querySelector<HTMLElement>('[data-color-field="cl-color"]')!;
     assert.ok(palette.querySelectorAll('.color-swatches button').length > 0, 'the missing palette must be visible without opening another menu');
     assert.equal(palette.querySelector<HTMLElement>('.color-popover')!.hidden, false);
@@ -101,6 +120,10 @@ test('library mounts every specimen, filters and resets, keeps navigation local,
     assert.equal(button.disabled, false);
     assert.match(button.closest('.cl-card-footer')!.textContent!, /File ready/);
     assert.doesNotMatch(button.closest('.cl-card-footer')!.textContent!, /Downloaded\./);
+    (view as HTMLElement & { _cleanup?: () => void })._cleanup?.();
+    const lastCarousel = featured.querySelector('.featured');
+    filmstrip.click();
+    assert.equal(featured.querySelector('.featured'), lastCarousel, 'cleanup removes the specimen mode listeners');
   } finally {
     (view as HTMLElement & { _cleanup?: () => void })._cleanup?.();
     dom.window.close();

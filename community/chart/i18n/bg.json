@@ -1,7 +1,7 @@
 {
   "name": "Диаграма",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "Диаграми от първото поставяне на данни до напреднала визуализация - обяснени препоръки за данни, изрично съпоставяне на полета, 35 класически векторни семейства, включително Парето, целеви ленти и диапазонни ленти, шестнайсет статистически и редакторски форми, сцени с реална 3D дълбочина, кинематографични полети, детерминирана анимация, достъпни описания и стилове, съставени от активния бранд.",
+  "featured.blurb": "Постави таблица - Диаграма я прави ясна, достъпна и категорично в стила на бранда",
   "a11yLabel": "Диаграма {{chartType}}{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "Тип диаграма",
   "inputs.chartType.options.bar": "Стълбове - вертикални",

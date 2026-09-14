@@ -1,7 +1,7 @@
 {
   "name": "Gráfico",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "Gráficos desde el primer pegado hasta la visualización avanzada - recomendaciones de datos explicadas, mapeo explícito de campos, 35 familias de gráficos vectoriales clásicos, incluidos Pareto, objetivos de bala y barras de rango, dieciséis articulaciones estadísticas y editoriales, escenas 3D con profundidad real, vuelos cinematográficos, movimiento determinista, descripciones accesibles y estilos compilados a partir del sistema de diseño activo.",
+  "featured.blurb": "Pega una tabla - Gráfico la hace clara, accesible e inconfundiblemente fiel a tu marca",
   "a11yLabel": "gráfico {{chartType}}{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "Tipo de gráfico",
   "inputs.chartType.options.bar": "Barras - vertical",

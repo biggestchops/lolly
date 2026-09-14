@@ -167,7 +167,7 @@ function backupReadme(
   const now = new Date();
   const date = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   const time = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
-  // The templates and tools the person made ride inside profile.json; the counts say so.
+  // The templates and tools the person made ride inside profile.json; the counts show it.
   const own = backupOwnCounts(profile);
 
   const lines = [

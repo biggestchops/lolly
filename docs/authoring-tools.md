@@ -90,6 +90,8 @@ Most of what `render` declares surfaces in one place the user sees: the export p
 - `c2pa` - defaults **`true`** (Content Credentials are **opt-out**). The **Content Credentials** card in the export popup is pre-checked for every stampable format (`pdf`, `png`/`apng`, `jpg`, `gif`, `svg`, `tiff`/`cmyk-tiff`, `webp`, `mp4`/`webm`, zip members), so the finished file gets a signed C2PA manifest (on-device key, so viewers report it as an unverified credential). Set `false` to opt a tool out. Forced **off** for `privacy: "on-device"` tools, which must never embed provenance into a user's own file. A `?c2pa=` link/save value overrides this per export.
 - `dims` - set `false` to hide the export dimension inputs in the download bar.
 - `aspectWarning` - `{ min?, max?, message }`. An **editor-only** amber caution shown in the Export popup when the chosen page aspect (`width ÷ height`) falls outside `[min, max]` (either bound optional). It's purely a guard against picking a size that breaks the layout - it never appears in the exported output. `multi-page-pdf` declares `{ "max": 1, "message": "…" }` (portrait-only).
+- `denseSections` - an array of `input.section` labels whose short controls the web sidebar lays out two to a row. A presentation hint only: the input model, URL encoding and every headless render are untouched, and the grid drops back to one column on a narrow panel or under large text.
+- `sectionIcons` - a map from an `input.section` label to the name of a shell icon, drawn before the label on the folded section head so a tool with many sections (`chart` declares sixteen) can be scanned by glyph as well as by word. Same presentation-only contract as `denseSections`: an unknown icon name draws nothing, and the CLI and TUI ignore it.
 
 **Physical units & print.** `width`/`height` are values in the export's `unit` (`px` default, or `mm`/`cm`/`in`/`pt`), and `dpi` sets raster resolution for physical units. PDF exports a true page size; the CMYK formats (`pdf-cmyk`, `cmyk-tiff`) pair with the `convertPaths` outlining toggle to produce print-ready, fonts-not-installed output. A `select` option can also carry `width`/`height`/`unit` to drive the export page size from a dropdown - e.g. `wayfinding-signage`'s **Sign size** select (A4/A3/A2… in mm) sets the printed page proportions when chosen.
 
@@ -438,6 +440,27 @@ function exportFile({ model }) {
 
 In the template, a `<button data-export-file>Download…</button>` triggers the hook; the shell wraps the bytes in a Blob and delivers them via `host.export.file` (download on web, `--output` on the CLI). Use `onInput`/`onInit` to return *extras* the template displays (e.g. what metadata was found). `strip-data` is the reference implementation.
 
+#### `showIf`
+
+Any input can declare `showIf` to render only while other inputs hold given values. One object is every pair required, and a value may be a list of accepted values:
+
+```json
+{ "id": "lineWidth", "type": "number", "showIf": { "renderMode": "vector", "chartType": ["line", "area"] } }
+```
+
+An array of such objects renders when any one of them matches, for the conditions a single map cannot say ("a vector bar, or a 3-D bar scene"):
+
+```json
+"showIf": [
+  { "renderMode": "vector", "chartType": ["bar", "bar-horizontal"] },
+  { "renderMode": "scene", "sceneType": "bar3d" }
+]
+```
+
+A `select` option can carry its own `showIf` with the same shape, so a choice the current mode cannot honour is not offered. The option that is currently selected always stays offered, marked not applicable, so a saved session or a shared link never changes meaning when the sidebar is rebuilt.
+
+All of this is a visibility overlay on the sidebar. URL params, hooks, the CLI and validation see every input and every option regardless, and a hidden input keeps its value. Chart is the reference: its render modes park the previous mode's type, so most of its controls gate on both. `validate:catalog` checks that every id a `showIf` names is a declared input.
+
 #### `bindToProfile`
 
 Any input can declare `bindToProfile: "firstname"` (or `email`, `headshot`, etc). When the tool mounts, it pre-fills from the user's profile. They can override per-session.
@@ -506,6 +529,8 @@ Handlebars-flavoured. **Logic-less by design.**
 | `{{media ref}}` | Emits the right element for **any** asset kind - `<img>`, `<video>` or a Lottie marker - from one call. Options hash: `class`, `style`, `loop`, `autoplay`, `muted`, `controls`, `fit` (`contain`/`cover`), `key`. |
 
 The data-format helpers `{{icsStamp}}`, `{{rfcText}}` and `{{csvCell}}` are for the sibling text templates - see [Data formats](#data-formats-json-csv-ics-vcf) below.
+
+**Emoji need nothing from you.** A tool declares no input, no capability and no manifest field for them. Whatever emoji end up in the rendered text - typed into a `text` field, arriving in a `blocks` body, written into the template as a default - the runtime draws from the emoji set the person chose, as pinned vector artwork, after every paint and again at export. That is why the same link looks the same on a phone, in the CLI and in a PDF, instead of getting whatever emoji font the machine happens to have. Where no set is chosen, or the chosen set does not carry that glyph, a neutral placeholder is drawn and never a system glyph, and where the device has no set at all the characters are left exactly as your template wrote them. Two limits to keep in mind while you author: a template whose **root** is an `<svg>` is skipped whole (SVG has no way to put a picture inside a text run), and the export records each placed set as a source ingredient in the file's Content Credentials, so the set's licence travels with the output. `engine/emoji.md` has the detail.
 
 ### Canvas tools: readiness, the frame clock and GPU rendering
 

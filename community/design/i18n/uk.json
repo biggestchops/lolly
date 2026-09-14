@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Знизу зліва",
   "inputs.boxes.fields.imgpos.options.center bottom": "Знизу",
   "inputs.boxes.fields.imgpos.options.right bottom": "Знизу справа",
-  "description": "Відкрите полотно для вільного розташування - текст, зображення, фігури й живі рендери з інших ваших інструментів Lolly, усе відповідно до вашого бренду."
+  "description": "Відкрите полотно для вільного розташування - текст, зображення, фігури й живі рендери з інших ваших інструментів Lolly, усе узгоджене з вашою дизайн-системою."
 }

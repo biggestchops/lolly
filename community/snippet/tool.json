@@ -77,6 +77,7 @@
     },
     {
       "id": "titleScale",
+      "section": "Title bar",
       "label": "Title size",
       "type": "number",
       "display": "slider",
@@ -88,14 +89,16 @@
     },
     {
       "id": "titleIcon",
-      "label": "Title bar icon",
+      "section": "Title bar",
+      "label": "Icon",
       "type": "asset",
       "assetType": "image",
       "allowUpload": true,
-      "help": "Optional logo or glyph shown in the window title bar, before the filename. Drop in a brand mark to make the frame yours."
+      "help": "Optional logo or glyph shown in the window title bar, before the filename. Drop in a logo to make the frame yours."
     },
     {
       "id": "iconScale",
+      "section": "Title bar",
       "label": "Icon size",
       "type": "number",
       "display": "slider",
@@ -113,7 +116,7 @@
       "options": [
         {
           "value": "auto",
-          "label": "Auto Detect"
+          "label": "Auto detect"
         },
         {
           "value": "javascript",
@@ -157,7 +160,7 @@
         },
         {
           "value": "plain",
-          "label": "Plain Text"
+          "label": "Plain text"
         }
       ]
     },
@@ -169,15 +172,15 @@
       "options": [
         {
           "value": "suse-dark",
-          "label": "Brand Dark"
+          "label": "Design system dark"
         },
         {
           "value": "suse-light",
-          "label": "Brand Light"
+          "label": "Design system light"
         },
         {
           "value": "github-dark",
-          "label": "GitHub Dark"
+          "label": "GitHub dark"
         },
         {
           "value": "nord",
@@ -187,10 +190,10 @@
     },
     {
       "id": "windowStyle",
-      "label": "Window Manager",
+      "label": "Frame style",
       "type": "select",
       "default": "nuremberg",
-      "help": "Window chrome look. Nuremberg = GNOME Adwaita, Cupertino = macOS, Redmond = Windows.",
+      "help": "Which desktop the buttons imitate. Nuremberg is GNOME Adwaita, Cupertino is macOS and Redmond is Windows.",
       "options": [
         {
           "value": "cupertino",
@@ -208,6 +211,7 @@
     },
     {
       "id": "calloutMode",
+      "section": "Callouts",
       "label": "Comment callouts",
       "type": "select",
       "default": "off",
@@ -233,14 +237,19 @@
     },
     {
       "id": "calloutPrefix",
+      "section": "Callouts",
+      "showIf": {
+        "calloutMode": "custom"
+      },
       "label": "Callout prefixes",
       "type": "text",
       "default": "",
       "placeholder": "TODO, FIXME, @param",
-      "help": "Comma-separated. Only trailing comments starting with one of these become callouts. Used when Comment callouts is set to Custom prefix."
+      "help": "Comma-separated. Only trailing comments starting with one of these become callouts."
     },
     {
       "id": "calloutFont",
+      "section": "Callouts",
       "label": "Callout text",
       "type": "select",
       "default": "mono",
@@ -256,34 +265,38 @@
         },
         {
           "value": "brand",
-          "label": "Brand sans"
+          "label": "Design system sans"
         },
         {
           "value": "brand-italic",
-          "label": "Brand italic"
+          "label": "Design system italic"
         }
       ]
     },
     {
       "id": "lineNumbers",
-      "label": "Line Numbers",
+      "display": "pill",
+      "label": "Line numbers",
       "type": "boolean",
       "default": true
     },
     {
       "id": "showWindow",
-      "label": "Window Chrome",
+      "display": "pill",
+      "label": "Window chrome",
       "type": "boolean",
       "default": true
     },
     {
       "id": "shadow",
+      "display": "pill",
       "label": "Drop shadow",
       "type": "boolean",
       "default": true
     },
     {
       "id": "blinkCursor",
+      "display": "pill",
       "label": "Blink cursor",
       "help": "A terminal-style blinking caret after the code, on screen. Off keeps the exported still clean.",
       "type": "boolean",

@@ -150,6 +150,8 @@
 /* Press: the object goes IN. Only the select gets it - a text field has a
    caret to confirm the hit, a menulist has nothing until the popup paints. */
 .field-select:active:not(:disabled) {
+  /* Literal on purpose: the press is an INSET drop and every step of the
+     elevation ramp is an outer one, so no token spells a recessed box. */
   box-shadow: inset 0 1px 3px #0003;
 }
 
@@ -164,7 +166,7 @@
 /* Invalid, but only once the user has actually typed something wrong - never
    on an untouched empty required field. */
 .field-input:user-invalid {
-  box-shadow: inset 0 1px #fff1, 0 0 0 2px hsl(var(--destructive) / .45);
+  box-shadow: var(--ui-effect-bevel), 0 0 0 2px hsl(var(--destructive) / .45);
 }
 
 /* ─── The micro-label ────────────────────────────────────────────────────── */
@@ -424,7 +426,11 @@
 
    The colour picker's three sliders (`.color-mode-slider`, `.color-lch-slider`,
    `.color-alpha-slider`) deliberately do NOT take this class - they paint their
-   own gradient tracks. */
+   own gradient tracks.
+
+   The 2px track and 1px tick corners below (and the slider's, further down) are
+   half of what they round: they stay literals because the smallest radius token,
+   `--radius-xs`, is 4px, which would square a 4px track off. */
 .field-range {
   appearance: none;
   -webkit-appearance: none;
@@ -437,7 +443,9 @@
 
 /* Vendor track/thumb pseudo-elements must live in SEPARATE rules - an unknown
    vendor pseudo invalidates an entire selector list, so a combined
-   ::-webkit-…, ::-moz-… rule would drop out in both engines. */
+   ::-webkit-…, ::-moz-… rule would drop out in both engines.
+   Both tracks keep a literal drop for the same reason the select's press does:
+   a recessed track is an inset, and the elevation tokens are all outer. */
 .field-range::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
@@ -738,10 +746,12 @@ input.field-range.is-upgraded { display: none; }
 @media (prefers-contrast: more) {
   .field-input,
   .field-select {
-    box-shadow: inset 0 0 0 1px hsl(var(--muted-foreground) / .75), inset 0 1px #fff1, 0 .1rem .3rem #0002;
+    box-shadow: inset 0 0 0 1px hsl(var(--muted-foreground) / .75), var(--ui-effect-bevel), var(--ui-elevation-control);
   }
   .field-input:hover:not(:disabled),
   .field-select:hover:not(:disabled) {
+    /* The highlight and the drop are both stronger than --bevel / --shadow-1 carry,
+       which is the point at this preference: they stay literal. */
     box-shadow: inset 0 0 0 1px hsl(var(--muted-foreground)), inset 0 1px #fff2, 0 .12rem .4rem #0004;
   }
   .field-input:focus,

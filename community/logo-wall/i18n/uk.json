@@ -1,5 +1,5 @@
 {
-  "name": "Logo Wall",
+  "name": "Стіна логотипів",
   "description": "Впорядкуйте купу логотипів у чисту, рівномірну сітку спонсорів - стіну «NASCAR».",
   "a11yLabel": "Сітка з {{logos.length}} логотипів",
   "inputs.columns.label": "Колонки",

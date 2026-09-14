@@ -1,7 +1,7 @@
 {
   "id": "audiogram",
   "name": "Audiogram",
-  "description": "Turn a voice clip or song into a branded video that actually moves with the sound - bars, spectrum, ring, ridgeline or scope, ready for social.",
+  "description": "Turn a voice clip or song into a video in your design system's colours that actually moves with the sound - bars, spectrum, ring, ridgeline or scope, ready for social.",
   "a11yLabel": "Audiogram card for {{default title \"an audio clip\"}} with a waveform animated from the audio",
   "version": "2.7.2",
   "engineVersion": ">=1.150.0 <2.0.0",
@@ -118,7 +118,7 @@
       "type": "asset",
       "assetType": "audio",
       "allowUpload": true,
-      "help": "Pick a track from your library, upload a clip, or tap Record to speak one now. It's decoded on your device to drive the animation - the audio never leaves the browser. The animation and the exported video run the full length of the clip; very long clips (over about 10 minutes) still work but get a coarser animation. Leave empty for a placeholder waveform. To hear it in the export, choose \"This tool's audio\" as the Audio track in the download options."
+      "help": "Pick a track from your library, upload a clip or tap Record to speak one now. It's decoded on your device to drive the animation - the audio never leaves the browser. The animation and the exported video run the full length of the clip; very long clips (over about 10 minutes) still work but get a coarser animation. Leave empty for a placeholder waveform. To hear it in the export, choose \"This tool's audio\" as the Audio track in the download options."
     },
     {
       "id": "title",
@@ -181,7 +181,7 @@
           "label": "MilkDrop (WebGL)"
         }
       ],
-      "help": "MilkDrop runs the real thing: a WebGL visualiser driven frame by frame from your clip, in your brand colours. Where it cannot run (no WebGL, a headless render) the card falls back to bars. Bars, mirror and spectrum read the real frequency spectrum. Wave shows the clip's envelope with a playhead. Oscilloscope draws the actual waveform. Ring, blob, ridgeline and dots are frequency-driven too."
+      "help": "MilkDrop runs the real thing: a WebGL visualiser driven frame by frame from the clip, in the design system's colours. Where it cannot run (no WebGL, a headless render) the card falls back to bars. Bars, mirror and spectrum read the real frequency spectrum. Wave shows the clip's envelope with a playhead. Oscilloscope draws the actual waveform. Ring, blob, ridgeline and dots are frequency-driven too."
     },
     {
       "id": "vizLook",
@@ -590,20 +590,20 @@
           "label": "True Visionary (Final Mix) · Zylot"
         }
       ],
-      "help": "Only used by the MilkDrop style. The Lolly presets are built from your brand palette; the rest are community MilkDrop presets, run as their authors wrote them with your colours pushed through. Their names stay on the card unless you turn the credit off.",
+      "help": "Only used by the MilkDrop style. The Lolly presets are built from the design system palette; the rest are community MilkDrop presets, run as their authors wrote them with the design system's colours pushed through. Their names stay on the card unless you turn the credit off.",
       "showIf": {
         "style": "milkdrop"
       }
     },
     {
       "id": "vizBrand",
-      "label": "Brand influence",
+      "label": "Palette influence",
       "type": "select",
       "default": "strong",
       "options": [
         {
           "value": "off",
-          "label": "None · the preset's own colours"
+          "label": "Off"
         },
         {
           "value": "subtle",
@@ -615,10 +615,10 @@
         },
         {
           "value": "full",
-          "label": "Full · brand colour throughout"
+          "label": "Full"
         }
       ],
-      "help": "How far a community preset is pulled toward your palette. Its light and shade are kept either way, so the motion still reads as the author made it.",
+      "help": "How far a community preset is pulled toward the design system palette. Its light and shade are kept either way, so the motion still reads as the author made it.",
       "showIf": {
         "style": "milkdrop"
       }
@@ -649,11 +649,11 @@
         },
         {
           "value": "overlay",
-          "label": "Full-bleed visual, text over"
+          "label": "Full-bleed visual, text at the bottom"
         },
         {
           "value": "overlay-top",
-          "label": "Full-bleed visual, text on top"
+          "label": "Full-bleed visual, text at the top"
         },
         {
           "value": "overlay-center",
@@ -696,6 +696,7 @@
     },
     {
       "id": "start",
+      "section": "Playback",
       "label": "Start at",
       "type": "number",
       "default": 0,
@@ -707,6 +708,7 @@
     },
     {
       "id": "beat",
+      "section": "Playback",
       "label": "Kick on the beat",
       "type": "boolean",
       "default": true,
@@ -714,6 +716,7 @@
     },
     {
       "id": "captions",
+      "section": "Captions",
       "label": "Captions",
       "type": "boolean",
       "default": true,
@@ -721,6 +724,7 @@
     },
     {
       "id": "transcript",
+      "section": "Captions",
       "label": "Transcript",
       "type": "longtext",
       "default": "",
@@ -732,6 +736,7 @@
     },
     {
       "id": "autoCaption",
+      "section": "Captions",
       "label": "Auto-caption",
       "type": "boolean",
       "default": false,
@@ -739,18 +744,21 @@
     },
     {
       "id": "accent",
-      "label": "Waveform colour",
+      "section": "Colour",
+      "label": "Visualiser colour",
       "type": "color",
       "default": "{color.semantic.secondary}"
     },
     {
       "id": "ink",
+      "section": "Colour",
       "label": "Text colour",
       "type": "color",
       "default": "{color.semantic.on-primary}"
     },
     {
       "id": "bg",
+      "section": "Colour",
       "label": "Background",
       "type": "color",
       "default": "{color.semantic.primary}"

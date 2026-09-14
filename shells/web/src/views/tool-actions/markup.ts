@@ -7,6 +7,7 @@
  * a value (an event listener), goes through `ta.<module>.<fn>`. Extracted verbatim
  * from renderActions() by scripts/split-closure.ts.
  */
+import { learningRenditions } from '../../../../../engine/src/learning/delivery.ts';
 import { CMYK_CONDITIONS, DEFAULT_CMYK_CONDITION, HDR_DEFAULTS, UNITS } from '@lolly/engine';
 import { durableSupport, liveCaptureSupport } from '../../bridge/format-support.js';
 import { helpTip } from '../../components/help-tip.js';
@@ -172,7 +173,7 @@ export function buildFormatOptions(ta: ActionsCtx): void {
       <div class="section-card export-pdfpass${pdfPassInitOpen ? ' is-open' : ''}" data-pdf-only style="display:${initialFmt === 'pdf' || initialFmt === 'zip' ? 'flex' : 'none'}">
         <button type="button" class="pdfpass-head" data-action="pdfpass-toggle" aria-expanded="${pdfPassInitOpen}">${ICON_LOCK}<span>Password protect</span></button>
         <div class="pdfpass-body" data-pdfpass-body style="display:${pdfPassInitOpen ? 'flex' : 'none'}">
-          <input type="password" data-action="pdf-password" autocomplete="new-password" spellcheck="false"
+          <input type="password" class="field-input" data-action="pdf-password" autocomplete="new-password" spellcheck="false"
                  value="${escapeText(exportDefaults.password ?? '')}"
                  placeholder="Leave blank for no password" aria-label="Open password">
           <select class="pdfpass-tier field-select field-select--sm" data-action="pdf-lock-tier" aria-label="Encryption strength">
@@ -241,7 +242,7 @@ export function buildFormatOptions(ta: ActionsCtx): void {
   // embeds, never the native vector slides/shapes or byte-faithful user uploads.
   // A deck of headings, boxes and a vector logo (or one whose only pictures are
   // your own photos) therefore carries no detectable Imprint even with it on - so
-  // say so rather than let the toggle over-promise. It rides baked content:
+  // report it rather than let the toggle over-promise. It rides baked content:
   // rotated or CSS-filtered elements, effect layers, inline SVG art, rendered charts.
   const containerImprintFmt = imprintFmts.some(
     (f) => f === 'pptx' || f === 'pdf' || f === 'pdf-cmyk'
@@ -369,7 +370,7 @@ export function buildPrintAndRows(ta: ActionsCtx): void {
         <div class="print-body" data-print-body style="display:${printInitOn ? 'flex' : 'none'}">
           <label class="print-bleed">
             <span>Bleed</span>
-            <input type="number" data-action="print-bleed" value="${printInitMm}" min="0" max="25" step="0.5" aria-label="Bleed in millimetres">
+            <input type="number" class="field-input field-input--sm" data-action="print-bleed" value="${printInitMm}" min="0" max="25" step="0.5" aria-label="Bleed in millimetres">
             <span>mm</span>
           </label>
           <div class="print-toggles">
@@ -503,10 +504,10 @@ export function buildPrintAndRows(ta: ActionsCtx): void {
     ? `
         <div class="video-params" data-anim-params style="display:${ta.formatRules.isAnimatedFmt(initialFmt) ? 'flex' : 'none'}">
           <span class="vp-field help-tip-host"><span>${escapeText(t('Start after'))}</span>
-            <input type="number" data-action="video-wait" value="${defaultWait}" min="0" max="30" step="0.5"
+            <input type="number" class="field-input field-input--sm" data-action="video-wait" value="${defaultWait}" min="0" max="30" step="0.5"
                    aria-label="${escapeText(t('Start recording after (seconds)'))}"><span>s</span>${timingTip!.button}${timingTip!.pop}</span>
           <span class="vp-field"><span>${escapeText(t('Duration'))}</span>
-            <input type="number" data-action="video-duration" value="${defaultDuration}" min="1" max="${durationMax}" step="0.5"
+            <input type="number" class="field-input field-input--sm" data-action="video-duration" value="${defaultDuration}" min="1" max="${durationMax}" step="0.5"
                    aria-label="${escapeText(t('Recording duration (seconds)'))}"><span>s</span></span>
           <label class="gif-dither-toggle" data-gif-only
                  style="display:${initialFmt === 'gif' ? 'flex' : 'none'}">
@@ -855,8 +856,10 @@ export function buildPrintAndRows(ta: ActionsCtx): void {
   // pixel of the export. Rendered only for a costable job with a card and canShowMoney.
   const costRow = costPanelHtml(); ta.costRow = costRow;
   const secondaryRow = `<div class="export-action-buttons">${copyBtn}${saveBtn}${copyUrlBtn}</div>`; ta.secondaryRow = secondaryRow;
+  const courseBtn = actions.includes('download') && affordance === 'download' && learningRenditions({ ...manifest, render: { ...manifest.render, formats: ta.formats } }).length
+    ? `<button type="button" class="btn" data-course-export>${t('Export course')}</button>` : '';
   const downloadRow = downloadBtn
-    ? `<div class="export-action-buttons">${saveAsBtn}${downloadBtn}</div>`
+    ? `<div class="export-action-buttons">${saveAsBtn}${downloadBtn}${courseBtn}</div>`
     : blockedNote; ta.downloadRow = downloadRow;
 
   // Audio-capture tools (render.capture:'audio'): the recording is the deliverable,
@@ -889,7 +892,7 @@ export function paintBar(ta: ActionsCtx): void {
       ${actions.includes('download') ? `<p class="export-degraded-note" data-export-degraded role="status" hidden style="margin:.2rem 0 0;color:hsl(var(--muted-foreground));font-size:12px;text-align:center"></p>` : ''}
       ${actions.includes('download') ? `<p class="export-delivery" data-export-delivery role="status" hidden></p>` : ''}
     </div>
-    ${actions.includes('download') ? `${recordingRow}${filenameRow}${dimsRow}${timingRow}${aspectWarnRow}${fidelityWarnRow}${notesHandoutRow}${hdrRow}${cmykRow}${printRow}${pkgRow}${protectionRow}<div class="export-ingredient-note" data-ingredient-note hidden></div>${audioRow}${loudnessRow}${captionsRow}${settingsRow}${videoQualityRow}${sendRow}${preflightRow}${costRow}` : ''}
+    ${actions.includes('download') ? `${recordingRow}${filenameRow}${dimsRow}${timingRow}${aspectWarnRow}${fidelityWarnRow}${notesHandoutRow}${hdrRow}${cmykRow}${printRow}${pkgRow}${protectionRow}<div class="export-ingredient-note" data-ingredient-note hidden></div>${ta.rights.rowHtml()}${audioRow}${loudnessRow}${captionsRow}${settingsRow}${videoQualityRow}${sendRow}${preflightRow}${costRow}` : ''}
   `;
   void ta.notes.fillIngredientNote();
 

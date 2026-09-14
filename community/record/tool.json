@@ -119,7 +119,7 @@
       "label": "Camera clip",
       "assetType": "video",
       "allowUpload": true,
-      "help": "Your recorded take - tap ● on the middle frame to film it, or drop in a video. The intro and outro wrap around it on export."
+      "help": "Press ● on the middle frame to film a take, or drop in a video. The intro and outro wrap around it on export."
     },
     {
       "id": "clipFit",
@@ -136,10 +136,11 @@
           "label": "Fit whole video"
         }
       ],
-      "help": "How your clip sits in the frame. Fill crops it to cover the frame edge-to-edge; Fit shows the whole video with bars - handy when you upload a landscape or square recording into a portrait frame."
+      "help": "How the clip sits in the frame. Fill crops it to cover the frame edge-to-edge; Fit shows the whole video with bars, for a landscape or square recording in a portrait frame."
     },
     {
       "id": "transcript",
+      "section": "Subtitles",
       "label": "Transcript",
       "type": "longtext",
       "default": "",
@@ -148,10 +149,11 @@
       "dataSource": {
         "accept": ".srt,.vtt,text/plain,text/vtt"
       },
-      "help": "Subtitles as SRT. Filled by Transcribe, or drop in your own file. Exported as an .srt or .vtt file to upload alongside the video, not burned into the picture. Times shift to match the intro card in front of your clip."
+      "help": "Subtitles as SRT, filled by Transcribe or dropped in as a file. Exported as a separate .srt or .vtt to upload alongside the video, not burned into the picture; times shift to allow for the intro card."
     },
     {
       "id": "autoCaption",
+      "section": "Subtitles",
       "label": "Auto-caption",
       "type": "boolean",
       "default": false,
@@ -160,6 +162,7 @@
     },
     {
       "id": "introMs",
+      "section": "Timing",
       "label": "Intro length",
       "type": "number",
       "display": "slider",
@@ -172,6 +175,7 @@
     },
     {
       "id": "outroMs",
+      "section": "Timing",
       "label": "Outro length",
       "type": "number",
       "display": "slider",
@@ -184,6 +188,7 @@
     },
     {
       "id": "enterMs",
+      "section": "Timing",
       "label": "Entrance speed",
       "type": "number",
       "display": "slider",

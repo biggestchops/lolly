@@ -1,7 +1,7 @@
 {
   "name": "Graphique",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "Des graphiques du premier collage à la visualisation avancée - recommandations de données expliquées, mappage explicite des champs, 35 familles vectorielles classiques dont Pareto, jauges à cible et barres de plage, seize articulations statistiques et éditoriales, vraies scènes 3D, survols cinématiques, mouvement déterministe, descriptions accessibles et styles compilés à partir du système de design actif.",
+  "featured.blurb": "Colle un tableau - Chart le rend clair, accessible et indiscutablement fidèle à ton système de design",
   "a11yLabel": "Graphique {{chartType}}{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "Type de graphique",
   "inputs.chartType.options.bar": "Barres - verticales",

@@ -70,46 +70,11 @@
   text-decoration: underline;
 }
 
-/* ═══ Mobile / touch affordances ═════════════════════════════════════════════
-   Polish for finger input. Desktop is untouched: the font-size bumps and the
-   enlarged hit-areas live behind (pointer: coarse), and the press feedback is
-   :active (a no-op on a mouse until you actually click). Hover-only affordances
-   never fire on touch, so these add the tactile cues a finger otherwise misses. */
-
-/* Kill the translucent grey/blue flash iOS & Android paint over tapped
-   controls - we provide our own :active feedback instead. */
-.btn,
-.color-trigger,
-.color-swatch,
-.asset-picker-trigger,
-.asset-clear,
-.block-add,
-.block-remove,
-.input-row--checkbox,
-.custom-slider,
-button {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Quick, springy press state. Transform-only so it composites on the GPU and
-   can't reflow the layout. */
-.color-trigger:active,
-.asset-picker-trigger:active,
-.asset-clear:active,
-.block-add:active,
-.block-remove:active {
-  transform: scale(0.97);
-}
-.color-swatch:active {
-  transform: scale(1.05);
-}
-.color-trigger,
-.asset-picker-trigger,
-.asset-clear,
-.block-add,
-.block-remove {
-  transition: border-color var(--dur-1), background var(--dur-1), color var(--dur-1), transform 0.08s ease;
-}
+/* The touch affordances (tap-highlight, press state and the sidebar buttons'
+   shared transition) live in base.css beside the reduced-motion guard that
+   cancels the press scale; they were here by accident of history. The
+   (pointer: coarse) font-size floor below stays: it is about text entry, not
+   this page. */
 
 @media (pointer: coarse) {
   /* 16px is the threshold below which iOS Safari zooms the page on focus - a

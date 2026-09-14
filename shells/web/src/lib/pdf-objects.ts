@@ -455,7 +455,7 @@ export function buildPattern(ec: ShadingCtx, o: Ref, depth: number): PdfPattern 
   if (ptype === 2) {
     const shading = buildShading(ec, d.get(PDFName.of('Shading')));
     if (!shading) return null;   // buildShading already warned with the reason
-    // A CONSTANT function-based shading is just a colour - say so, rather than
+    // A CONSTANT function-based shading is just a colour - report it, rather than
     // shipping a gradient the serializer can only decline.
     if (shading.type === 1 && !shading.tileKey) return { flat: shading.flat, matrix };
     return { shading, matrix, ...(shading.flat ? { flat: shading.flat } : {}) };

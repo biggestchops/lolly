@@ -13,6 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getInputPolicy, setToolInputPolicies, clearInputPolicies, _clearInputPoliciesForTests,
+  onToolInputMount, notifyToolInputMount, policyValuesFor, governedParamKeys,
 } from './input-policy.ts';
 
 test('dormant by default: empty registry returns undefined for anything', () => {
@@ -80,4 +81,95 @@ test('clearInputPolicies restores the global dormant default', () => {
   setToolInputPolicies('x', { a: { mode: 'locked' } });
   clearInputPolicies();
   assert.equal(getInputPolicy('x', 'a'), undefined);
+});
+
+test('policyValuesFor: a locked value the model lacks, a choice outside its set, nothing else', () => {
+  _clearInputPoliciesForTests();
+  setToolInputPolicies('qr-code', {
+    color: { mode: 'locked', value: '#30ba78' },
+    size: { mode: 'locked' }, // the fail-closed shape: locked, no value to apply
+    background: { mode: 'hidden' },
+    shape: { mode: 'choice', allow: ['square', 'round'] },
+    style: { mode: 'choice', allow: ['a', 'b'], value: 'b' },
+    framing: { mode: 'locked', value: { zoom: 1, x: 0, y: 0 } },
+  });
+  const model = [
+    { id: 'url', value: 'https://x' },
+    { id: 'color', value: '#000000' },
+    { id: 'size', value: 4 },
+    { id: 'background', value: '#fff' },
+    { id: 'shape', value: 'diamond' },
+    { id: 'style', value: 'zzz' },
+    { id: 'framing', value: { zoom: 1, x: 0, y: 0 } },
+  ];
+  assert.deepEqual(policyValuesFor('qr-code', model), {
+    color: '#30ba78', // locked and different
+    shape: 'square', // outside the set, no preferred value: the first allowed
+    style: 'b', // outside the set, the policy's own value is allowed
+  });
+  // Already at the locked value, or inside the set: nothing to apply.
+  assert.deepEqual(policyValuesFor('qr-code', [{ id: 'color', value: '#30ba78' }, { id: 'shape', value: 'round' }]), {});
+  // No tool, or an ungoverned tool: empty, and cheap.
+  assert.deepEqual(policyValuesFor(undefined, model), {});
+  assert.deepEqual(policyValuesFor('poster', model), {});
+  _clearInputPoliciesForTests();
+});
+
+test('governedParamKeys: locked and hidden inputs by id and alias, nothing for choice or editable', () => {
+  _clearInputPoliciesForTests();
+  setToolInputPolicies('qr-code', {
+    color: { mode: 'locked', value: '#30ba78' },
+    background: { mode: 'hidden' },
+    shape: { mode: 'choice', allow: ['square'] },
+  });
+  const inputs = [
+    { id: 'url', urlKey: 'u' },
+    { id: 'color', urlKey: 'c' },
+    { id: 'background' },
+    { id: 'shape', urlKey: 's' },
+  ];
+  assert.deepEqual([...governedParamKeys('qr-code', inputs)].sort(), ['background', 'c', 'color']);
+  assert.equal(governedParamKeys('poster', inputs).size, 0);
+  assert.equal(governedParamKeys(undefined, inputs).size, 0);
+  _clearInputPoliciesForTests();
+});
+
+test('tool-mount hook: silent when empty, runs per mount, replays a late registration, unregisters', () => {
+  _clearInputPoliciesForTests();
+  notifyToolInputMount('qr-code'); // nobody listening: nothing happens
+  const seen: string[] = [];
+  const off = onToolInputMount((id) => seen.push(id));
+  assert.deepEqual(seen, ['qr-code'], 'a hook registered after the mount is replayed the open tool');
+  notifyToolInputMount('event-badge');
+  assert.deepEqual(seen, ['qr-code', 'event-badge']);
+  off();
+  notifyToolInputMount('poster');
+  assert.deepEqual(seen, ['qr-code', 'event-badge'], 'an unregistered hook stays silent');
+  _clearInputPoliciesForTests();
+  onToolInputMount((id) => seen.push(id));
+  assert.deepEqual(seen, ['qr-code', 'event-badge'], 'the test reset forgets the mounted tool: no replay');
+  _clearInputPoliciesForTests();
+});
+
+test('tool-mount hook: a throwing hook is logged and never stops the mount or the next hook', () => {
+  _clearInputPoliciesForTests();
+  const errors: unknown[] = [];
+  const orig = console.error;
+  console.error = (e: unknown) => {
+    errors.push(e);
+  };
+  try {
+    notifyToolInputMount('poster');
+    onToolInputMount(() => {
+      throw new Error('boom');
+    });
+    const after: string[] = [];
+    onToolInputMount((id) => after.push(id));
+    notifyToolInputMount('chart');
+    assert.deepEqual(after, ['poster', 'chart']);
+  } finally {
+    console.error = orig;
+  }
+  assert.equal(errors.length, 2, 'once on its replayed registration, once on the next mount');
+  _clearInputPoliciesForTests();
 });

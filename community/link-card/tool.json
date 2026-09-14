@@ -1,7 +1,7 @@
 {
   "id": "link-card",
   "name": "Link Card",
-  "description": "Paste a link, get a branded social card - title, description, site chip and a thumbnail, at Open Graph, square or summary size.",
+  "description": "Paste a link, get a social card in your design system - title, description, site chip and a thumbnail, at Open Graph, square or summary size.",
   "a11yLabel": "Link card for {{siteLabel}}: {{headingLabel}}",
   "version": "1.0.1",
   "engineVersion": "^1.0.0",
@@ -65,13 +65,13 @@
       "type": "asset",
       "assetType": "image",
       "allowUpload": true,
-      "help": "Drop in a picture, or paste a Lolly URL Capture link for a live screenshot of the page. Leave it empty and the card prints a monogram panel."
+      "help": "Drop in a picture, or paste a Lolly URL Screenshot link to grab the page itself. Leave it empty and the card prints a monogram panel."
     },
     {
       "id": "imageFraming",
-      "label": "Zoom & Position",
+      "label": "Zoom & position",
       "type": "vector",
-      "help": "Zoom scales the thumbnail up; X / Y pan it within its panel (like object-position). Drag a label or type a value.",
+      "help": "Zoom scales the thumbnail up. X and Y pan it inside its panel. Drag a label or type a value.",
       "fields": [
         { "id": "zoom", "label": "Zoom", "min": 100, "max": 400, "step": 1, "default": 100 },
         { "id": "x", "label": "X", "min": 0, "max": 100, "step": 1, "default": 50 },
@@ -87,21 +87,21 @@
       "options": [
         {
           "value": "og-horizontal",
-          "label": "Open Graph - 1200 x 630",
+          "label": "Open Graph · 1200 × 630",
           "width": 1200,
           "height": 630,
           "unit": "px"
         },
         {
           "value": "square",
-          "label": "Square - 1080 x 1080",
+          "label": "Square · 1080 × 1080",
           "width": 1080,
           "height": 1080,
           "unit": "px"
         },
         {
           "value": "twitter-summary",
-          "label": "Summary card - 1200 x 600",
+          "label": "Summary card · 1200 × 600",
           "width": 1200,
           "height": 600,
           "unit": "px"
@@ -110,6 +110,7 @@
     },
     {
       "id": "color",
+      "section": "Look",
       "label": "Ink",
       "type": "color",
       "group": "Look",
@@ -117,6 +118,7 @@
     },
     {
       "id": "background",
+      "section": "Look",
       "label": "Card",
       "type": "color",
       "group": "Look",
@@ -124,6 +126,7 @@
     },
     {
       "id": "accent",
+      "section": "Look",
       "label": "Accent",
       "type": "color",
       "group": "Look",

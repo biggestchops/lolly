@@ -1,6 +1,6 @@
 {
   "name": "URL Ekran Görüntüsü",
-  "description": "Herhangi bir web sayfası, herhangi bir kaydırma derinliğinde, özel CSS ile",
+  "description": "İstediğin herhangi bir kaydırma derinliğinde herhangi bir web sayfası, özel CSS ile.",
   "a11yLabel": "{{default url \"(no URL set)\"}} ekran görüntüsü",
   "inputs.url.label": "URL",
   "inputs.url.help": "Yakalanacak sayfa. Dışa aktarma sırasında gerçek bir tarayıcı motorunda yakalanır.",

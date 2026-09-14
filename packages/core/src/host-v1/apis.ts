@@ -25,6 +25,7 @@ export const HOST_V1_OPTIONAL_APIS = [
   'net', 'tokens', 'text', 'pdf', 'pptx', 'capture', 'compose', 'media', 'scan', 'lift',
   'keyframes', 'recorder', 'audio', 'codec', 'layers', 'upscale', 'matte', 'ocr', 'speech',
   'viz', 'color', 'images', 'raster', 'geom', 'connectors', 'c2pa', 'prepare', 'compare', 'textTools',
+  'emoji',
 ] as const;
 
 export type HostApiName = (typeof HOST_V1_OPTIONAL_APIS)[number];

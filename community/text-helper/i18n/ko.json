@@ -1,5 +1,5 @@
 {
-  "name": "Text",
-  "description": "Find, edit, understand and transform text.",
+  "name": "텍스트",
+  "description": "텍스트를 찾고, 편집하고, 이해하고, 변환해요. 브랜드 전용 문자와 이모지를 살펴보거나, 코드와 로그를 다루거나, ASCII 아트 글자를 만들 수 있어요.",
   "a11yLabel": "Text - characters, editing, analysis and conversions"
 }

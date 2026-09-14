@@ -90,6 +90,7 @@ interface BatchRow {
 
 /** Preferred format + optional output dimensions for a batch render. */
 interface RenderRowOpts {
+  signal?: AbortSignal;
   format?: string;
   width?: number;
   height?: number;
@@ -186,7 +187,7 @@ function withToolNet(host: HostV1, manifest: ToolManifest): HostV1 {
 async function mountToolCanvas(
   styles: string | null | undefined,
   hydrated: string,
-  { layoutW, fixedHeight, composeStack, host, settleMs, getModel }: { layoutW: number; fixedHeight?: number; composeStack?: readonly string[]; host: HostV1; settleMs?: number; getModel?: () => InputModelItem[] },
+  { layoutW, fixedHeight, composeStack, host, settleMs, getModel, mountEmoji }: { layoutW: number; fixedHeight?: number; composeStack?: readonly string[]; host: HostV1; settleMs?: number; getModel?: () => InputModelItem[]; mountEmoji?: (canvas: HTMLElement) => Promise<unknown> },
 ): Promise<{ stage: ExportStage; canvas: HTMLDivElement }> {
   const stage: ExportStage = document.createElement('div');
   stage.setAttribute('aria-hidden', 'true');
@@ -244,6 +245,10 @@ async function mountToolCanvas(
     if (getModel) (canvas as CanvasCommitEl).__lollyModel = getModel;
     runTemplateScripts(canvas);
     await waitForQuiescence(canvas, { silenceMs: settleMs !== undefined && settleMs > 0 ? settleMs : SETTLE_MS });
+    // Emoji, once the template's own scripts have stopped building the DOM, so
+    // the pass sees the finished text. The paged path exports one page node at a
+    // time, so drawing the whole stage here is what keeps every page equal.
+    await mountEmoji?.(canvas);
     // Resolve embeds to local blob/data URLs before export so the embedded render
     // appears in the output. The compose stack is threaded so an embed inside a
     // composed child stays guarded (undefined → [] for the paged path).
@@ -293,7 +298,7 @@ type ExportStage = HTMLDivElement & { _lottieCleanup?: () => void };
  *        in `unit` (px/mm/cm/in/pt); blank falls back to the tool's native size.
  *        `dpi` sets raster resolution for physical units.
  */
-export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, width, height, unit = 'px', dpi, composeStack, watermark, embedMeta, thumbnail, previewPage, previewTimeMs, thumbAssets, strongPassword, c2pa, imprint, settleMs }: RenderRowOpts = {}): Promise<RenderRowResult> {
+export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, width, height, unit = 'px', dpi, composeStack, watermark, embedMeta, thumbnail, previewPage, previewTimeMs, thumbAssets, strongPassword, c2pa, imprint, settleMs, signal }: RenderRowOpts = {}): Promise<RenderRowResult> {
   const tool = await getTool(row.toolId);
   if (!isExportable(tool.manifest)) {
     throw new Error(`"${tool.manifest.name}" is render-only and cannot be exported.`);
@@ -331,7 +336,7 @@ export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, wid
   let stage: ExportStage | undefined;
   let posterClock: ReturnType<typeof import('../bridge/sequence-dom.ts').createSequenceTime> | null = null;
   try {
-    const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, fixedHeight: layoutH, composeStack, host, settleMs, getModel: () => runtime.getModel() });
+    const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, fixedHeight: layoutH, composeStack, host, settleMs, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el) });
     stage = mounted.stage;
     const canvas = mounted.canvas;
     posterClock = previewTimeMs !== undefined && Number.isFinite(previewTimeMs)
@@ -354,7 +359,7 @@ export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, wid
     // watermark/embedMeta/thumbnail are forwarded only when set (compose passes
     // watermark:false + embedMeta:false so an embedded child isn't stamped); batch
     // rows leave them undefined so runtime.export keeps its normal defaults.
-    const exportOpts: { width?: string | number; height?: string | number; dpi?: number; watermark?: boolean; embedMeta?: boolean; thumbnail?: boolean; strongPassword?: string; wait?: number; duration?: number; fps?: number; c2pa?: boolean; imprint?: boolean; colorProfile?: string; bleed?: string; cropMarks?: boolean; registrationMarks?: boolean; bleedMarks?: boolean; colorBars?: boolean; provenance?: boolean } = { width: outW, height: outH, dpi };
+    const exportOpts: { signal?: AbortSignal; width?: string | number; height?: string | number; dpi?: number; watermark?: boolean; embedMeta?: boolean; thumbnail?: boolean; strongPassword?: string; wait?: number; duration?: number; fps?: number; c2pa?: boolean; imprint?: boolean; colorProfile?: string; bleed?: string; cropMarks?: boolean; registrationMarks?: boolean; bleedMarks?: boolean; colorBars?: boolean; provenance?: boolean } = { width: outW, height: outH, dpi, signal };
     if (watermark !== undefined) exportOpts.watermark = watermark;
     if (embedMeta !== undefined) exportOpts.embedMeta = embedMeta;
     if (thumbnail !== undefined) exportOpts.thumbnail = thumbnail;
@@ -402,7 +407,9 @@ export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, wid
       exportOpts.width = rect.width;
       exportOpts.height = rect.height;
     }
+    signal?.throwIfAborted();
     const blob = await runtime.export(target, fmt, exportOpts);
+    signal?.throwIfAborted();
     return { blob, format: fmt, url };
   } finally {
     posterClock?.restore();
@@ -422,7 +429,7 @@ export async function mountTemplateMotion(host: HostV1, toolId: string, values: 
   try {
     const { stage, canvas } = await mountToolCanvas(tool.styles, runtime.getHydrated(), {
       layoutW: tool.manifest.render.width, fixedHeight: tool.manifest.render.height,
-      host, getModel: () => runtime.getModel(),
+      host, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el),
     });
     ownedStage = stage;
     const clock = (await import('../bridge/sequence-dom.ts')).createSequenceTime(canvas);
@@ -444,7 +451,7 @@ export async function mountTemplateMotion(host: HostV1, toolId: string, values: 
  * SVG, doesn't choke resvg. Falls back to a single whole-canvas export for a tool that
  * declares no page boxes.
  */
-export async function renderToolPages(row: BatchRow, host: HostV1, { format, thumbnail, thumbAssets }: RenderRowOpts = {}): Promise<RenderPagesResult> {
+export async function renderToolPages(row: BatchRow, host: HostV1, { format, thumbnail, thumbAssets, signal }: RenderRowOpts = {}): Promise<RenderPagesResult> {
   const tool = await getTool(row.toolId);
   if (!isExportable(tool.manifest)) {
     throw new Error(`"${tool.manifest.name}" is render-only and cannot be exported.`);
@@ -456,20 +463,25 @@ export async function renderToolPages(row: BatchRow, host: HostV1, { format, thu
   // No fixed height: let the document lay out its FULL height so every page box is
   // measured (page boxes are fixed-size, so they render identically whether or not
   // the viewport clips them).
-  const { stage, canvas } = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, host, getModel: () => runtime.getModel() });
-
+  let stage: ExportStage | undefined;
   try {
+    const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, host, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el) });
+    stage = mounted.stage;
+    const canvas = mounted.canvas;
     const fmt = chooseFormat(tool.manifest, format);
     // Each page box is exported on its own; no page boxes → export the whole canvas once.
     const pageEls = [...canvas.querySelectorAll<HTMLElement>('[data-pdf-page]')];
     const targets: HTMLElement[] = pageEls.length ? pageEls : [canvas];
     const pages: Blob[] = [];
     for (const el of targets) {
-      pages.push(await runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail }));
+      signal?.throwIfAborted();
+      pages.push(await runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail, signal }));
+      signal?.throwIfAborted();
     }
     return { pages, format: fmt };
   } finally {
-    stage._lottieCleanup?.();
-    stage.remove();
+    stage?._lottieCleanup?.();
+    stage?.remove();
+    runtime.destroy();
   }
 }

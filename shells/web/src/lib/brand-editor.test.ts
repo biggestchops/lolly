@@ -80,14 +80,18 @@ test('colour workspace creates empty groups, moves directly, saves on Enter, pre
     assert.deepEqual(installed, beforeDraft, 'reviewing does not apply');
     input('[data-be-steps]', '6');
     assert.equal($<HTMLElement>('[data-be-review]').hidden, true, 'changing settings retires a stale proposal');
-    click('[data-be-add-ramp="primary"]'); await settle();
+    // Adding shades persists through the same async save chain as the rename below, so
+    // poll for the group rather than pause a fixed 20 ms - on a loaded runner the save had
+    // not reached the fake host yet and 'Primary shades' was missing.
+    click('[data-be-add-ramp="primary"]'); await settle(() => paletteGroups(installed).includes('Primary shades'));
     assert.deepEqual((installed as any).color.semantic, (beforeDraft as any).color.semantic);
     assert.deepEqual((installed as any).color.custom.ink, (beforeDraft as any).color.custom.ink);
     assert.ok(paletteGroups(installed).includes('Primary shades'));
     assert.ok(walkSwatches(installed, 'light').length > 2);
     click('[data-be-undo]'); await settle();
     assert.deepEqual(installed, beforeDraft, 'Undo restores the complete document after adding a shade group');
-    click('[data-be-add-shade]:not(:disabled)'); await settle();
+    click('[data-be-add-shade]:not(:disabled)');
+    await settle(() => walkSwatches(installed, 'light').filter(s => s.kind !== 'semantic').length === 3);
     assert.equal(walkSwatches(installed, 'light').filter(s => s.kind !== 'semantic').length, 3, 'a single shade adds exactly one swatch');
     click('[data-be-undo]'); await settle();
     assert.deepEqual(installed, beforeDraft);

@@ -167,7 +167,7 @@ async function inspectPptx(bytes: Uint8Array, opts: PptxInspectOpts | undefined,
     };
 
     // Node-kind tally. A deck of nothing but pictures has no colour or typeface
-    // a rebrand can reach, and the tool needs to say so before the download.
+    // a rebrand can reach, and the tool needs to report it before the download.
     const content = { pictures: 0, texts: 0, shapes: 0, tables: 0, unknown: 0 };
 
     for (const slide of deck.slides) {

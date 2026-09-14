@@ -1,0 +1,78 @@
+{
+  "name": "ofl-font-runtime",
+  "title": "An OFL 1.1 font rendering text: the text carries no condition",
+  "citations": [
+    "SIL Open Font License 1.1: the permission block covers the Font Software.",
+    "OFL FAQ, question 1.4: documents rendered with the font are not affected by the licence."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/example-sans",
+        "title": "Example Sans",
+        "creators": [
+          {
+            "name": "Example Type Foundry",
+            "role": "creator"
+          }
+        ],
+        "sourceUrl": "https://example.org/example-sans.ttf",
+        "sourceHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        "rights": [
+          {
+            "declaration": "OFL-1.1",
+            "url": "https://openfontlicense.org/open-font-license-official-text/",
+            "copyright": "Copyright 2024 Example Type Foundry",
+            "notices": [
+              "Example Sans is a Reserved Font Name"
+            ],
+            "assertedBy": "catalog",
+            "evidence": "notice-file",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/example-sans",
+        "role": "runtime",
+        "operations": [
+          "placed"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/example-sans",
+        "classification": "unchanged",
+        "rule": "unchanged-use-v1",
+        "licence": "OFL-1.1",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [],
+    "unresolved": []
+  }
+}

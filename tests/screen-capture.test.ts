@@ -78,7 +78,7 @@ test('the sensor capabilities still validate (screen is additive, not a replacem
 
 // ─── version ─────────────────────────────────────────────────────────────────
 
-test('ENGINE_VERSION is 1.191.0', () => {
+test('ENGINE_VERSION is 1.197.0', () => {
   // A literal pin: the screencap surface shipped at 1.54, and tools declare
   // ^1.54.0 to require it. session-record only checks the stamp equals whatever
   // ENGINE_VERSION happens to be (tautological) - this catches an errant bump.
@@ -470,7 +470,23 @@ test('ENGINE_VERSION is 1.191.0', () => {
   //          (on-device text edit/inspect/convert/generate) plus optional
   //          `host.text.characters` (one font file's real Unicode coverage, no fallback) -
   //          additive within HostV1, no capture change.
-  assert.equal(ENGINE_VERSION, '1.191.0');
+  // 1.192.0 (2026-09-12): `host.text.toPath` gains opt-in `preserveWhitespaceAdvance`
+  //          for mixed text and emoji layout - additive within HostV1, no capture change.
+  // 1.193.0 (2026-09-12): `showIf` accepts a list of maps (any one sufficient) and a
+  //          select option may carry its own `showIf` - manifest overlays only, no capture change.
+  // 1.194.0 (2026-09-12): Content Credentials source ingredients without a credential of
+  //          their own (`SourceIngredient`, `tools.lolly.rights`, relationship-correct
+  //          opened/placed actions, `C2paReport.ingredients`) - additive, no capture change.
+  // 1.195.0 (2026-09-12): learning module v1 (versioned module documents, validation,
+  //          completion rules, resumable attempts, compilation over injected media
+  //          resolution) - HostV1 unchanged, no capture change.
+  // 1.196.0 (2026-09-13): optional `host.emoji` (pinned vector emoji packs a shell mounts
+  //          from its catalog) plus an asset manifest `meta` block and the reserved
+  //          `emoji`/`emojifx` params - additive within HostV1, no capture change.
+  // 1.197.0 (2026-09-13): the optional `rights` export option (the attribution plan an
+  //          export promised, and the callback a host reports its measured receipt
+  //          through) - additive within HostV1, no capture change.
+  assert.equal(ENGINE_VERSION, '1.197.0');
 });
 
 // ─── loadTool: a ^1.54.0 tool loads against this engine ───────────────────────

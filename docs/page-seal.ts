@@ -78,6 +78,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { decodeCbor, parseC2paStore, prepareC2paIngredient } from '../engine/src/c2pa-extract.ts';
+import type { C2paIngredientData } from '../engine/src/c2pa-extract.ts';
 import { C2PA_SPEC_VERSION, buildExternalC2paStore } from '../engine/src/c2pa.ts';
 import { verifyC2pa } from '../engine/src/c2pa-verify.ts';
 import { C2PA_CHECK } from '../engine/src/c2pa-verdict.ts';
@@ -175,7 +176,10 @@ export function pageComponentRefs(html: string): string[] {
   return out;
 }
 
-type PageIngredient = NonNullable<ExportC2paOpts['ingredients']>[number];
+// Only credentialed components are collected here (a page's signed screenshots),
+// so the narrower read-side shape is exact; the writer also accepts source
+// ingredients without a credential, which a docs page never places.
+type PageIngredient = C2paIngredientData;
 
 /** Component path → its ingredient (or null: an uncredentialed or missing file).
  *  A build asks for the same ~340 files once per page; the reads are 50 MB. */

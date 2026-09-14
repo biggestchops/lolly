@@ -1,6 +1,6 @@
 {
   "name": "URL-skärmdump",
-  "description": "Vilken webbsida som helst, på valfritt skrolldjup, med egen CSS",
+  "description": "Vilken webbsida som helst, på vilket rulldjup som helst, med egen CSS.",
   "a11yLabel": "Skärmdump av {{default url \"(ingen URL angiven)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Sidan som ska fångas. Fångas vid exporttillfället i en riktig webbläsarmotor.",

@@ -54,8 +54,10 @@
  * pre-built `<video>`: they have no still sibling to poster with, so they ship
  * `preload="none"` and no `autoplay`, and the arm below is what starts them.
  */
-import { escape } from '../utils.ts';
+import { escape as escapeHtml } from '../utils.ts';
 import { prefersReducedMotion } from './a11y-prefs.ts';
+import { perfUiOn, subscribePerfUi } from '../feature-flags.ts';
+import { t } from '../i18n.ts';
 
 export function isHtmlPreview(src: string | undefined | null): boolean {
   return !!src && src.endsWith('.html');
@@ -79,7 +81,7 @@ export function motionKind(src: string): MotionKind {
  * calm gallery - a tile that starts moving under the pointer is the opposite of that.
  */
 export function motionPreviewsSuppressed(): boolean {
-  if (prefersReducedMotion()) return true;
+  if (perfUiOn() || prefersReducedMotion()) return true;
   return typeof document !== 'undefined' && document.documentElement.dataset.a11yPreviews === 'hidden';
 }
 
@@ -97,15 +99,15 @@ export function previewMedia(
   if (isHtmlPreview(src)) {
     // No fetchpriority on the iframe: it isn't an LCP candidate (its own document paints
     // the art), and the attribute has no defined effect on a frame's subresources.
-    return `<iframe class="${cls}" src="${escape(src)}" tabindex="-1" aria-hidden="true" loading="${eager ? 'eager' : 'lazy'}" scrolling="no" sandbox="allow-same-origin" style="border:0;background:transparent;pointer-events:none;${iframeSize}"></iframe>`;
+    return `<iframe class="${cls}" src="${escapeHtml(src)}" tabindex="-1" aria-hidden="true" loading="${eager ? 'eager' : 'lazy'}" scrolling="no" sandbox="allow-same-origin" style="border:0;background:transparent;pointer-events:none;${iframeSize}"></iframe>`;
   }
   // data-motion-poster repeats the static src rather than reading it back at pause time:
   // the raster branch OVERWRITES src with the APNG, so by then the element no longer knows
   // what it used to show.
   const motion = anim
-    ? ` data-motion="${motionKind(anim)}" data-motion-src="${escape(anim)}" data-motion-poster="${escape(src)}"`
+    ? ` data-motion="${motionKind(anim)}" data-motion-src="${escapeHtml(anim)}" data-motion-poster="${escapeHtml(src)}"`
     : '';
-  return `<img class="${cls}" src="${escape(src)}" alt="" aria-hidden="true" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async"${motion}>`;
+  return `<img class="${cls}" src="${escapeHtml(src)}" alt="" aria-hidden="true" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async"${motion}>`;
 }
 
 /**
@@ -119,7 +121,7 @@ export function previewMedia(
  * `muted` + `playsinline` stay mandatory - a browser refuses to start a video without them.
  */
 export function motionVideoThumb(url: string, cls: string): string {
-  return `<video class="${cls}" data-motion="video" src="${escape(url)}" muted loop playsinline preload="none"></video>`;
+  return `<video class="${cls}" data-motion="video" src="${escapeHtml(url)}" muted loop playsinline preload="none"></video>`;
 }
 
 /** Every motion-capable element under `root`, in document order. */
@@ -138,16 +140,27 @@ const upgraded = new WeakMap<HTMLElement, HTMLVideoElement>();
  * both run, as would a picker tile opened over a gallery still playing underneath.
  */
 let playing: HTMLElement | null = null;
+const playButtons = new WeakMap<HTMLElement, HTMLButtonElement>();
+subscribePerfUi(on => { if (on && playing) stopMotionPreview(playing); });
+
+function updatePlayButton(el: HTMLElement, on: boolean): void {
+  const button = playButtons.get(el);
+  if (!button) return;
+  button.setAttribute('aria-pressed', String(on));
+  button.textContent = t(on ? 'Pause preview' : 'Preview animation');
+}
 
 /**
- * Start this element's motion, if motion is allowed at all. Idempotent - a second call
+ * Start this element's motion. Explicit playback is a user's play-button gesture;
+ * automatic callers obey Performance UI and reduced motion. Idempotent - a second call
  * while it is already playing is a no-op, which is what lets a hover and the centered-tile
  * observer both drive the same element without fighting.
  */
-export function playMotionPreview(el: HTMLElement): void {
-  if (motionPreviewsSuppressed()) return;
+export function playMotionPreview(el: HTMLElement, explicit = false): void {
+  if (!explicit && motionPreviewsSuppressed()) return;
   if (playing && playing !== el) stopMotionPreview(playing);
   playing = el;
+  updatePlayButton(el, true);
   // tagName, not `instanceof HTMLVideoElement`: the element belongs to the document's
   // realm, which is not this module's realm under jsdom or inside an iframe, and there the
   // constructor identity check silently answers false for a real <video>.
@@ -192,6 +205,7 @@ function startVideo(video: HTMLVideoElement): void {
  *  not to a paused frame halfway through a loop. */
 export function stopMotionPreview(el: HTMLElement): void {
   if (playing === el) playing = null;
+  updatePlayButton(el, false);
   if (el.tagName === 'VIDEO') {
     const v = el as HTMLVideoElement;
     v.pause();
@@ -275,7 +289,7 @@ function motionBox(el: HTMLElement): Element {
   // last, and the other could then never be picked. A surface that packs them like that
   // gets per-element observation instead, which is at worst the flapping described above
   // and never a preview that can never play.
-  if (!parent || parent.querySelectorAll('[data-motion]').length !== 1) return el;
+  if (parent?.querySelectorAll('[data-motion]').length !== 1) return el;
   return parent;
 }
 
@@ -297,7 +311,71 @@ function motionBox(el: HTMLElement): Element {
  */
 export function armMotionPreviews(root: Element, { hover = true, isCurrent = () => true }: MotionArmOpts = {}): { destroy(): void } {
   let current: HTMLElement | null = null;
+  let explicitObserver: IntersectionObserver | undefined;
+  const stopExplicit = (): void => {
+    explicitObserver?.disconnect(); explicitObserver = undefined;
+    if (current) stopMotionPreview(current);
+    current = null;
+  };
+  const onVisibility = (): void => { if (root.ownerDocument.hidden) stopExplicit(); };
+  root.ownerDocument.addEventListener('visibilitychange', onVisibility);
+  // Put a real button BESIDE a clickable card, never inside another button/link.
+  // Reuse the original nodes so tile handlers, decoded posters and focus survive.
+  const controls = new Map<HTMLElement, { button: HTMLButtonElement; wrap: HTMLElement; target: Element }>();
+  const syncControls = (on: boolean): void => {
+    if (!on) {
+      for (const [el, { button, wrap, target }] of controls) {
+        button.remove(); playButtons.delete(el);
+        if (wrap.parentNode) { wrap.before(target); wrap.remove(); }
+      }
+      controls.clear();
+      return;
+    }
+    for (const el of motionPreviewEls(root)) {
+      if (controls.has(el) || playButtons.has(el)) continue;
+      const target = el.closest('button, a') ?? el;
+      if (target === root || !root.contains(target)) continue;
+      const wrap = el.ownerDocument.createElement('div');
+      wrap.className = 'motion-preview-wrap';
+      const button = el.ownerDocument.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn--sm motion-preview-control';
+      button.dataset.motionPreviewControl = '';
+      target.before(wrap); wrap.append(target, button);
+      controls.set(el, { button, wrap, target }); playButtons.set(el, button);
+      updatePlayButton(el, playing === el);
+      // Capture at the root suppresses the tile's delegated pick/open handler.
+    }
+  };
+  const onClick = (event: Event): void => {
+    const target = event.target as Element | null;
+    const button = target?.closest?.('[data-motion-preview-control]');
+    if (!button) return;
+    for (const [el, control] of controls) {
+      if (control.button !== button) continue;
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!isCurrent()) return;
+      if (playing === el) stopExplicit();
+      else {
+        stopExplicit(); current = el; playMotionPreview(el, true);
+        if (typeof IntersectionObserver === 'function') {
+          explicitObserver = new IntersectionObserver(entries => {
+            if (entries.some(entry => !entry.isIntersecting)) stopExplicit();
+          });
+          explicitObserver.observe(motionBox(el));
+        }
+      }
+      return;
+    }
+  };
+  root.addEventListener('click', onClick, true);
+  syncControls(perfUiOn());
+  const unsubscribePerf = subscribePerfUi(on => {
+    stopExplicit();
+    syncControls(on);
+  });
   const setCurrent = (next: HTMLElement | null): void => {
+    if (next && motionPreviewsSuppressed()) return;
     if (next === current || !isCurrent()) return;
     if (current) stopMotionPreview(current);
     current = next;
@@ -309,11 +387,11 @@ export function armMotionPreviews(root: Element, { hover = true, isCurrent = () 
     // relatedTarget is where the pointer went. Still inside the same card (crossing from
     // the image onto its caption) is not a leave.
     const to = (e as PointerEvent).relatedTarget;
-    if (motionElFor(root, to) !== current) setCurrent(null);
+    if (!perfUiOn() && motionElFor(root, to) !== current) setCurrent(null);
   };
   const onFocusIn = (e: Event): void => setCurrent(motionElFor(root, e.target));
   const onFocusOut = (e: Event): void => {
-    if (motionElFor(root, (e as FocusEvent).relatedTarget) !== current) setCurrent(null);
+    if (!perfUiOn() && motionElFor(root, (e as FocusEvent).relatedTarget) !== current) setCurrent(null);
   };
 
   const fine = pointerFine();
@@ -329,7 +407,7 @@ export function armMotionPreviews(root: Element, { hover = true, isCurrent = () 
     const elOf = new Map<Element, HTMLElement>();
     const visible = new Set<Element>();
     const pickCentered = (): void => {
-      if (!isCurrent()) return;
+      if (!isCurrent() || perfUiOn()) return;
       const mid = (root.ownerDocument?.defaultView?.innerHeight ?? 0) / 2;
       let best: Element | null = null;
       let bestDist = Infinity;
@@ -356,6 +434,10 @@ export function armMotionPreviews(root: Element, { hover = true, isCurrent = () 
 
   return {
     destroy() {
+      unsubscribePerf();
+      root.ownerDocument.removeEventListener('visibilitychange', onVisibility);
+      stopExplicit();
+      root.removeEventListener('click', onClick, true);
       root.removeEventListener('pointerover', onOver);
       root.removeEventListener('pointerout', onOut);
       root.removeEventListener('focusin', onFocusIn);
@@ -363,6 +445,7 @@ export function armMotionPreviews(root: Element, { hover = true, isCurrent = () 
       io?.disconnect();
       if (current) stopMotionPreview(current);
       current = null;
+      syncControls(false);
     },
   };
 }

@@ -237,7 +237,7 @@ async function commit(
 /**
  * Re-speak the sentences that changed and rewrite the clip in place. Resolves
  * null when nothing changed or the run was cancelled; throws when the clip
- * cannot be read, spoken or written, so the panel can say so and keep the edit
+ * cannot be read, spoken or written, so the panel can report it and keep the edit
  * on screen.
  */
 export async function regenerateTtsClip(

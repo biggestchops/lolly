@@ -1,6 +1,6 @@
 {
-  "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "name": "Chương trình",
+  "description": "Một chương trình hội nghị chỉ từ một bảng duy nhất - danh sách theo trình tự thời gian, thời khóa biểu nhiều luồng, hoặc màn hình đang diễn ra và tiếp theo đặt ở cửa ra vào - cùng một file .ics thật cho mọi phiên.",
   "a11yLabel": "{{default headingText \"Chương trình\"}} - {{sessionCount}} phiên, {{trackCount}} luồng",
   "inputs.title.label": "Sự kiện",
   "inputs.title.placeholder": "ví dụ Northwind Summit 2026",

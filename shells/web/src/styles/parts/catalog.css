@@ -134,21 +134,10 @@
   gap: var(--grid-gap);   /* tokens.css - collapses to --grid-gap-tight ≤640px */
 }
 
-/* ── Asset tile ──
-   Same look as the Tools-view cards (.gtile): borderless, a soft drop-shadow and the
-   same slightly-rounded corner, on a --card surface. `display` / `padding` / `border`
-   / `background` are set explicitly so nothing leaks in from the summary component's
-   generic `.cat-tile` (padding + flex + --background border) - see the note above. */
+/* Catalog tile layout; shared appearance lives in object-tiles.css. */
 .catalog .cat-tile {
-  position: relative;
   display: block;
   padding: 0;
-  border: none;
-  border-radius: calc(var(--radius) * 1.1);
-  background: hsl(var(--card));
-  overflow: hidden;
-  box-shadow: 0 .1rem .4rem #0002;
-  transition: box-shadow var(--dur-1), opacity var(--dur-1);
   /* Skip layout + paint (the conic-gradient checkerboard figure, shadow, star chip)
      for tiles scrolled off-screen - the catalog builds hundreds of tiles at once.
      Mirrors the gallery's .gtile. `auto` remembers each tile's real rendered height
@@ -156,7 +145,6 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 220px;
 }
-.catalog .cat-tile:hover { box-shadow: 0 .3rem .9rem #00000026; }
 .catalog .cat-tile.is-hidden-asset { opacity: .55; }
 /* The tile body is a button that opens the details modal. Reset button chrome. */
 .cat-tile-open {
@@ -170,9 +158,9 @@
   aspect-ratio: 4 / 3;
   position: relative;                 /* anchor for the absolutely-filled thumb */
   display: grid; place-items: center; /* centres the stub text when there's no image */
-  background: repeating-conic-gradient(hsl(var(--muted) / .5) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
   overflow: hidden;
 }
+
 .cat-thumb { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 /* Fill the fixed 4/3 box absolutely. A percentage/max height can't resolve against the
    aspect-ratio-derived (indefinite) height of a grid item, so a portrait image overflows
@@ -201,12 +189,7 @@
    the player is destroyed, so the resting frame returns for off-screen/un-mounted tiles. */
 .cat-thumb-motion.is-lottie-live { background-image: none !important; color: transparent; }
 
-.cat-tile-cap { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.cat-tile-name {
-  font-size: var(--fs-lg); font-weight: 600; line-height: 1.2; color: hsl(var(--foreground));
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.cat-tile-sub { font-size: var(--fs-sm); color: hsl(var(--muted-foreground)); display: flex; align-items: center; gap: var(--sp-2); }
+.cat-tile-sub { display: flex; align-items: center; gap: var(--sp-2); }
 .cat-src {
   font-size: calc(.6rem * var(--a11y-fs)); font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   padding: 1px 5px; border-radius: var(--radius);
@@ -267,43 +250,9 @@
 /* (The per-tile favourite star chip is gone - favourite lives in the context menu
    and the selection toolbar, matching the gallery cards.) */
 
-/* Selection dot - bottom-LEFT like the gallery cards' .tile-check, but anchored to
-   the FIGURE's lower-left corner rather than the tile's: the caption row (source
-   pill + format) owns the tile's bottom-left here. The figure is a fixed 4/3 of
-   the tile width, so its bottom edge is 75cqw from the top - the tile is the size
-   container. Hidden until hover on fine pointers; always shown once anything in
-   the grid is selected (so the rest are obviously togglable) and on coarse
-   pointers. */
+/* Anchor the shared selection dot to the lower-left corner of the 4:3 preview. */
 .catalog .cat-tile { container-type: inline-size; }
-.cat-check {
-  position: absolute; top: calc(75cqw - 32px); left: 6px; z-index: 3;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; padding: 0;
-  border: 2px solid #fff; border-radius: var(--radius-pill); cursor: pointer;
-  color: transparent; background: #0006;
-  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-  opacity: 0; transition: opacity var(--dur-1), background var(--dur-1), color var(--dur-1);
-}
-.cat-check svg { display: block; }
-.cat-tile:hover .cat-check,
-.cat-tile:focus-within .cat-check,
-.catalog.has-selection .cat-check { opacity: 1; }
-.cat-check[aria-pressed="true"] {
-  opacity: 1; background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: #fff;
-}
-.cat-check:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
-/* A selected tile reads clearly - a primary ring, mirroring the projects tiles. */
-.catalog .cat-tile.is-selected { box-shadow: 0 0 0 2px hsl(var(--primary)), 0 .3rem .9rem #00000026; }
-@media (pointer: coarse) {
-  .cat-check { opacity: 1; }
-  /* Touch shows every star + check chip at once, so a live backdrop-filter blur runs
-     on all ~240 tiles simultaneously - one of the priciest mobile paint ops. Drop the
-     blur here; a more-opaque solid background reads just as clearly. Desktop keeps the
-     frosted look (only the hovered tile's chip is visible at a time). */
-  .cat-star, .cat-check { -webkit-backdrop-filter: none; backdrop-filter: none; background: #0009; }
-  /* Hit area only, via ::after - the 26px chip itself stays put. */
-  .cat-check::after { content: ''; position: absolute; inset: calc((28px - 100%) / -2); }
-}
+.cat-check { top: calc(75cqw - var(--object-check-size) - 6px); }
 
 /* The uploads drop area lives in styles/parts/dropzone.css now (.updz*, shared with the
    brand studio's Assets tab) - the old .cat-dropzone rules that stood here were dead once
@@ -423,7 +372,7 @@ button.cat-download { font: inherit; cursor: pointer; }
 /* ── View-options popover (favourites view mode + strip toggle) ── */
 .cat-viewopts {
   position: absolute; top: calc(100% + 8px); right: 0;
-  min-width: 210px; z-index: 100000;
+  min-width: 210px; z-index: var(--z-top);
 }
 .cat-viewopts .view-seg { margin-bottom: 8px; }
 
@@ -673,6 +622,53 @@ button.cat-download { font: inherit; cursor: pointer; }
   height: 24px; border-radius: calc(var(--radius) * .6); overflow: hidden;
 }
 .cat-lab-step { display: block; }
+
+/* ── Emoji sets ─────────────────────────────────────────────────────────────
+   An emoji pack is a catalog asset like any other, and its tile shows the SET: five
+   glyphs drawn from that pack's own artwork, over the family and style names.
+   lib/emoji-specimen.ts fills the slot once the tile is on screen (a bundle is 15 to
+   20 MB, so nothing is fetched before that). Until then the slot is EMPTY and takes
+   no room: the characters are never written into the live page, because this
+   machine's emoji font would paint them - the one thing choosing a set prevents. So
+   the names line carries the tile on its own, and keeps carrying it on a device that
+   does not hold the pack. */
+.cat-thumb-emoji {
+  width: 100%; height: 100%; box-sizing: border-box; padding: var(--sp-3);
+  display: grid; grid-template-rows: 1fr auto; align-items: center; justify-items: center;
+  gap: var(--sp-2); text-align: center;
+}
+/* The glyphs are sized in `em` by the engine, so this font-size IS the artwork size.
+   It deliberately does NOT ride var(--a11y-fs): this is preview art inside a fixed
+   4/3 box, like a thumbnail image, and a thumbnail does not grow under largeText.
+   The names line below is real type, so it takes a type token. */
+.cat-emoji-specimen {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: .18em; font-size: 30px; line-height: 1;
+}
+.cat-emoji-specimen:empty { display: none; }
+/* A flat figure, not the shared checkerboard (object-tiles.css). The checkerboard
+   says "this picture has transparency", which is a fact about a file; a specimen is
+   five small glyphs, and the pattern behind them only makes them harder to read. */
+.catalog .cat-tile-fig:has(.cat-thumb-emoji) { background: hsl(var(--muted) / .35); }
+.cat-emoji-names {
+  font-size: var(--fs-2xs); font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; color: hsl(var(--muted-foreground));
+}
+/* In the details sheet the specimen IS the preview, so it gets the room a picture
+   would have had. A flat surface, like text and audio: the checkerboard means "this
+   is transparent", which says nothing about a set. */
+.cat-details-preview:has(.cat-thumb-emoji) { background: hsl(var(--muted) / .35); }
+.cat-details-preview .cat-thumb-emoji {
+  width: auto; height: auto; max-height: 40vh; padding: var(--sp-6); gap: var(--sp-4);
+}
+.cat-thumb-emoji--lg .cat-emoji-specimen { font-size: 52px; }
+.cat-thumb-emoji--lg .cat-emoji-names { font-size: var(--fs-xs); }
+/* The glyphs a set does not carry, listed with the reason each one was recorded
+   with. A count, never a verdict - so no warning colour and no shield. */
+.cat-emoji-gaps { margin-top: var(--sp-2); }
+.cat-emoji-gap-head { margin: var(--sp-2) 0 var(--sp-1); font-weight: 600; }
+.cat-emoji-gap-list { margin: 0; padding-inline-start: 1.1em; display: grid; gap: 2px; }
+.cat-emoji-gap-list code { font-size: var(--fs-xs); }
 
 /* A text asset (.txt/.md) reads as text, not a picture: a scrollable monospace panel
    fills the preview instead of a broken image, and the checkerboard would only imply a

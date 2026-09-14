@@ -102,6 +102,7 @@
     },
     {
       "id": "minorRoadWeight",
+      "section": "Roads & water",
       "label": "Minor road weight",
       "type": "number",
       "display": "slider",
@@ -113,6 +114,7 @@
     },
     {
       "id": "majorRoadWeight",
+      "section": "Roads & water",
       "label": "Major road weight",
       "type": "number",
       "display": "slider",
@@ -124,12 +126,14 @@
     },
     {
       "id": "showWater",
+      "section": "Roads & water",
       "label": "Show water",
       "type": "boolean",
       "default": true
     },
     {
       "id": "waterWeight",
+      "section": "Roads & water",
       "label": "Waterway weight",
       "type": "number",
       "display": "slider",
@@ -141,14 +145,16 @@
     },
     {
       "id": "roadColor",
-      "label": "Road color",
+      "section": "Roads & water",
+      "label": "Road colour",
       "type": "color",
       "default": "{color.semantic.primary}",
       "help": "Leave empty to use the theme's default."
     },
     {
       "id": "waterColor",
-      "label": "Water color",
+      "section": "Roads & water",
+      "label": "Water colour",
       "type": "color",
       "default": "{color.semantic.secondary}",
       "help": "Leave empty to use the theme's default."
@@ -162,6 +168,7 @@
     },
     {
       "id": "route",
+      "section": "Route",
       "label": "Route (GPX)",
       "type": "longtext",
       "rows": 4,
@@ -174,13 +181,15 @@
     },
     {
       "id": "routeColor",
-      "label": "Route color",
+      "section": "Route",
+      "label": "Route colour",
       "type": "color",
       "default": "",
-      "help": "The track line and its start and end dots. Leave empty for the theme's route color, which stands out from the roads."
+      "help": "The track line and its start and end dots. Leave empty for the theme route colour, which stands out from the roads."
     },
     {
       "id": "routeWidth",
+      "section": "Route",
       "label": "Route weight",
       "type": "number",
       "display": "slider",
@@ -195,7 +204,7 @@
       "label": "Map viewport",
       "type": "text",
       "default": "",
-      "placeholder": "pan & zoom to set",
+      "placeholder": "Pan or zoom to set",
       "help": "Auto-saved when you pan or zoom. Clear to reset to the default framing."
     }
   ]

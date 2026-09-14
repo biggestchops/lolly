@@ -43,7 +43,7 @@ Nama fail dan pemilih format terletak di bahagian atas panel sebagai satu pasang
 | Vektor untuk cetakan / aplikasi reka bentuk | **EPS**, atau **EPS (CMYK)** | Vektor PostScript untuk aliran kerja Illustrator / akhbar cetak |
 | Vektor untuk mesin pemotong / CAD | **DXF** | Pemotong laser, plotter vinil, CNC - laluan garis luar dalam milimeter |
 | Dek slaid yang boleh disunting | **PowerPoint** (PPTX) | Teks + bentuk boleh disunting secara asli, dengan imej dan vektor kekal boleh diekstrak |
-| Kursus yang boleh diimport oleh LMS | **SCORM** (LMS) | Fail zip dengan manifest, halaman pelancaran, slaid dan filem naratif dengan kapsyen - daripada dek Design |
+| Kursus latihan mudah alih | **Export course** | Semak kandungan projek dan bina pakej Website, SCORM atau xAPI eksperimen yang berversi |
 | Dokumen teks yang boleh disunting | **Word** (DOCX) atau **OpenDocument** (ODT) | Perenggan dan tajuk sebenar yang boleh terus disunting oleh pemproses kata (Doc Studio) |
 | Foto atau imej serba guna | **PNG** (tanpa kehilangan) atau **JPG** (lebih kecil) | Raster sejagat |
 | Imej moden yang lebih kecil | **WebP** / **AVIF** | Mampatan lebih baik, alfa |
@@ -150,16 +150,18 @@ Untuk membukanya, mulakan Penpot, pilih projek dan pilih **Import**. Apabila log
 
 ## SCORM (pakej kursus)
 
-Dek Design boleh keluar sebagai **pakej SCORM** - fail zip yang diimport oleh sistem pengurusan pembelajaran, sama ada Moodle, Canvas, Blackboard atau LMS korporat. Pilih **SCORM (LMS)** dalam pemilih format dan eksport menulis:
+Pilih **Export course** daripada alat yang disokong, folder projek atau satu pilihan. Dalam Design, memilih **SCORM (LMS)** dan Download turut membuka aliran kerja kursus ini. Lolly menyimpan ciptaan itu, membenarkan anda menyemak kandungan dan susunan kursus, kemudian membuka modul itu dan dialog eksportnya.
 
-- <!--i:layout--> **Slaid**, satu imej setiap artboard, sebagai vektor di mana artboard membenarkannya dan sebagai piksel hanya di mana ia tidak membenarkannya.
-- <!--i:play--> **Filem naratif** dengan trek kapsyennya - nota penceramah dibacakan oleh suara pada peranti, tepat seperti yang dimainkan oleh [Presenting](/info/create/using.html#presenting).
-- <!--i:file--> **Halaman pelancaran** yang melangkah melalui slaid, memainkan filem dan melaporkan penyelesaian kembali kepada LMS melalui masa jalan SCORM 1.2, versi yang diterima oleh setiap LMS.
-- <!--i:font--> Fon yang digunakan oleh dek, supaya halaman pelancaran terjana sama semasa luar talian.
+- <!--i:layout--> Pilih rendisi yang tersedia bagi setiap sumber: halaman statik, gerakan sebagai video, audio atau sumber boleh muat turun. Tambah teks pelajaran asli dan alternatif bacaan dalam modul itu.
+- <!--i:play--> Pratonton pemain pelajar dan semak penerangan serta kapsyen. Gerakan disertakan sebagai video, termasuk animasi senyap. Eksport rakaman siap terlebih dahulu apabila sesuatu alat tidak dapat menghasilkannya semula daripada input tersimpan.
+- <!--i:file--> Pilih Website, SCORM 1.2, SCORM 2004 4th Edition, atau sasaran xAPI eksperimen. Semak kandungan sebenar dan saiz ZIP, kemudian simpan dan muat turun versi yang telah disemak.
+- <!--i:check--> Penyelesaian memerlukan pengakuan bagi setiap pelajaran yang diperlukan dan memilih Finish. Pemain laman web menyimpan kemajuan dalam pelayar; pakej LMS menyambung kepada LMS penerimanya.
 
 ![Panel eksport pada dek Design dengan SCORM (LMS) dipilih](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Tiada apa-apa dalam pakej itu yang menghubungi pelayan luar: ia hanyalah fail dalam zip, dan ia berjalan di dalam LMS tanpa pemasang bundle, tanpa CDN dan tanpa akaun. Aplikasi web dan desktop membinanya; CLI tidak, kerana memotret artboard dan mengekod filem memerlukan pelayar.
+Pakej itu mengandungi kandungan siapnya sendiri dan tidak memerlukan akaun Lolly. Ekstrak ZIP Website ke atas hos HTTP(S); import ZIP LMS tanpa mengubah kandungannya. Uji destinasi yang dimaksudkan sebelum mengedarkan kursus itu.
+
+Bagi kursus yang dihimpun daripada beberapa ciptaan tersimpan, media yang diimport dan sumber, gunakan [Cipta kursus latihan](/info/create/training-creators.html). Modul pembelajaran itu mempunyai rangka tersusunnya sendiri, pengakuan pelajaran yang jelas, pratonton pelajar dan sejarah pakej berversi. Laluan CLI-nya boleh membungkus media yang telah anda eksport.
 
 ## DXF (fail potong)
 
@@ -309,6 +311,10 @@ Eksport boleh membawa **Content Credentials** - manifes [C2PA](https://c2pa.org)
 - **Menyemak sesuatu fail.** Lolly turut mengesahkan kelayakannya sendiri: jatuhkan mana-mana fail pada [/verify](/verify) (atau jalankan `lolly validate <file>` dalam CLI) untuk laporan di peranti - diketuai oleh sama ada fail itu sememangnya dibuat dengan Lolly dan tidak berubah sejak itu. Paparan Verify web membaca jauh melebihi kelayakan itu: ia menandakan **kandungan janaan AI**, mengesan **Lolly Imprint**, menyemak tandatangan **SEAL** dan (opt-in) tera air piksel pihak ketiga serta mendedahkan **data tersembunyi** - kesemuanya di peranti, tiada apa yang dimuat naik. Lihat [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Privasi.** Semuanya berlaku pada peranti anda: kunci penandatanganan dicipta untuk eksport itu dan tidak sekali-kali meninggalkan pelayar, tiada apa dimuat naik dan tuntutan itu hanya mengandungi apa yang metadata provenans sudah bawa. Utiliti privasi (transformasi di peranti bagi fail anda *sendiri*) tidak sekali-kali menambah kelayakan, dan *Strip Hidden Data* akan mengeluarkan manifes C2PA seperti mana-mana metadata terbenam yang lain.
 - **Interaksi.** Bagi PDF, Content Credentials dan **perlindungan kata laluan** (mana-mana peringkat - lihat di atas) saling eksklusif (PDF yang disulitkan tidak boleh membawa lampiran kelayakan itu). Kelayakan itu ditambah sebagai langkah terakhir ke atas bait yang telah siap - selepas cap DPI/EXIF/profil warna, metadata PDF/X dan tanda cetak.
+
+### Kredit sumber
+
+Eksport yang meletakkan karya orang lain turut merekodkan sumber itu dalam kredensial. Emoji yang diambil daripada set yang disematkan ialah kes harian: karya itu, penciptanya, lesen, dari mana bait sebenarnya berasal dan apa yang berubah semuanya mengembara bersama fail. Baris **Kredit sumber** dalam panel eksport menyatakan apa yang diminta oleh sumber-sumber itu daripada penyerahan sebelum anda memuat turun, dan selepas muat turun ia membaca semula bait yang diserahkan sebelum ia menyatakan kredit itu ada dalam fail. Lesen yang meminta anda membuat pilihan, seperti glif CC BY-SA yang diwarnakan semula yang bakal anda kongsi, mendapat satu kad berserta jalan keluarnya; muat turun tidak pernah disekat. [Hak kreatif dan kredit](/info/creative-rights.html) mengandungi perkataan itu, lesen yang disemak dan apa yang kekal milik anda.
 
 ## Pada telefon
 

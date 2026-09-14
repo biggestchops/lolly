@@ -1,5 +1,10 @@
 # Vendored Jelly UI (web components)
 
+Local Performance UI patch: `setPerformanceMode()` cancels active physics and
+settles each membrane. Existing controls retain their form state and repaint on
+input without sustaining an animation loop. Preserve this hook when re-vendoring;
+`lib/jelly.ts` calls it when the shell policy changes.
+
 `jelly.mjs` is the built ESM bundle of **Jelly UI** - dependency-free web components
 whose controls render a soft-body "jelly" squish on a per-component `<canvas>`
 (2D spring-membrane physics, no WebGL, no SVG filters). It powers the flag-gated

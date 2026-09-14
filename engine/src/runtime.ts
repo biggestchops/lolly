@@ -26,6 +26,12 @@
  */
 
 import { missingRequires, type HostApiName } from '@lolly-tools/core';
+import type { EmojiStyleV1 } from '@lolly-tools/core';
+import type { EmojiSetInfoV1 } from '@lolly-tools/core/emoji-v1';
+import { emojiSourceIngredients, emojiWorksAndUses } from './emoji-rights.ts';
+import { sourceIngredientsFor } from './rights-attribution.ts';
+import type { SourceDetailV1 } from './rights-attribution.ts';
+import { evaluateCreativeUses } from './rights-evaluate.ts';
 import { buildInputModel, updateInput, modelToValues, modelForHooks, flattenValue, summarizeInputs, normalizeTableValue, tokenBindingsOf } from './inputs.ts';
 import { hydrate, resolvePaintBindings } from './template.ts';
 import { buildExportMeta } from './metadata.ts';
@@ -36,10 +42,19 @@ import { isBakedRef } from './bake.ts';
 import type { InputModelItem, InputValue } from './inputs.ts';
 import type { LoadedTool, ToolManifest } from './loader.ts';
 import type { ComposeMemo } from './compose.ts';
+import type { EmojiDomNode, EmojiDomResult } from './emoji-dom.ts';
+import type { EmojiArtworkCache, EmojiTextIO } from './emoji-inline.ts';
+import type { EmojiLineSource } from './emoji-line.ts';
+import type { VerifiedEmojiPack } from './emoji-pack.ts';
+import type { C2paSourceIngredient } from './c2pa.ts';
 import type {
   HostV1, AssetRef, ExportFormat, ExportOpts, MediaFrame, TokenSet,
-  AudioLevel, RecordOpts, RecordSession, IngredientCredential,
+  AudioLevel, RecordOpts, RecordSession, IngredientCredential, SourceIngredient,
 } from './bridge/host-v1.ts';
+import type {
+  AttributionReceiptV1, CreativeUseV1, CreativeWorkRecordV1, DeliveryRouteV1,
+  RightsDecisionV1, RightsEvaluationV1, UseContextV1,
+} from '@lolly-tools/core/rights-v1';
 import { parseProviderRef } from './asset-provider.ts';
 import { assetVersionPin, decodeAssetVersion, unavailablePinnedAsset, type AssetVersionPin } from './asset-version.ts';
 
@@ -53,6 +68,62 @@ export interface RuntimeState {
 export interface HookError {
   hook: string;
   message: string;
+}
+
+/**
+ * What the emoji pass knows right now, for a shell's chrome to read and show.
+ * `present` is only "this host can supply pinned packs at all" - it says nothing
+ * about whether a set has been chosen or whether the render contains any emoji.
+ */
+export interface RuntimeEmojiState {
+  /** The host offers `host.emoji`. False on a shell with no pack storage. */
+  present: boolean;
+  /** Glyphs drawn from the chosen set in the last pass. */
+  replaced: number;
+  /** Clusters the last pass left as the neutral placeholder. */
+  unresolved: number;
+  /** The style in force, or null while no set has been chosen. */
+  style: EmojiStyleV1 | null;
+  /** The sets this host can load, once the runtime has listed them. */
+  sets?: EmojiSetInfoV1[];
+}
+
+/** One pass over a rendered tree, plus whether the host could serve it at all. */
+export interface RuntimeEmojiResult extends EmojiDomResult {
+  present: boolean;
+}
+
+/**
+ * What one pass is FOR. The default is the render: the tree becomes the one a
+ * later set change redraws, and its counts become what the chrome reads.
+ *
+ * Chrome that draws emoji of its own - a sidebar table cell, the picker grid, the
+ * specimen row in the Emoji section - passes `track: false`. Such a pass draws
+ * artwork and reports what it drew, and changes nothing the chrome can see: a
+ * one-cell walk must not become the answer to "does this render carry emoji", and
+ * it must not steal the tree a set change is supposed to redraw.
+ */
+export interface RuntimeEmojiPassOpts {
+  /** Record this pass as the render. Default true. */
+  track?: boolean;
+  /**
+   * The letter every placement id in this pass starts with. Default `e`, which is
+   * the canvas. Two roots walked into ONE document need different scopes, or both
+   * start counting at the beginning and one root's gradient or clip path paints
+   * the other's glyph.
+   */
+  idScope?: string;
+}
+
+/**
+ * What a caller knows about the delivery it is evaluating (plan 253). Every
+ * field is optional, and the delivery is a partial of its own, so a shell that
+ * knows only the format says only the format. An unstated audience stays
+ * `unknown`: a private draft and a public post ask different things of a
+ * ShareAlike source, and guessing either way would be an answer nobody gave.
+ */
+export interface RuntimeRightsContext extends Partial<Omit<UseContextV1, 'delivery'>> {
+  delivery?: Partial<UseContextV1['delivery']>;
 }
 
 /** An asset ref (saved session / URL) that no longer resolves. */
@@ -203,6 +274,66 @@ export interface Runtime {
    * entity-encode the JSON's quotes.
    */
   getHydratedText(str: string): string;
+  /**
+   * Draw every emoji in a rendered tree from the chosen set, in place. A runtime
+   * service every tool gets: no manifest opt-in, no tool code, so one recipe
+   * covers the design tool's text boxes and every other canvas alike.
+   *
+   * Idempotent and safe to call after each paint. The packs a style pins are
+   * loaded once per runtime and the prepared artwork is cached, so a repaint
+   * costs a walk rather than a download. A host with no `host.emoji` answers
+   * `present: false` and touches nothing.
+   *
+   * `opts` is for a caller that is NOT the render: chrome drawing its own emoji
+   * passes `track: false` and an `idScope` of its own. See RuntimeEmojiPassOpts.
+   */
+  applyEmojiToDom(node: unknown, opts?: RuntimeEmojiPassOpts): Promise<RuntimeEmojiResult>;
+  /** Put the characters back, so a caret and input composition work on plain text. */
+  revertEmojiDom(node: unknown): Promise<number>;
+  /** Choose the set and treatment, and re-draw the last tree the pass ran on. */
+  setEmojiStyle(style: EmojiStyleV1 | null): Promise<void>;
+  /** What the emoji pass knows right now (a fresh snapshot on every read). */
+  readonly emoji: RuntimeEmojiState;
+  /** Called whenever the state above changes. Returns the unsubscribe. */
+  onEmojiChange(fn: (state: RuntimeEmojiState) => void): () => void;
+  /**
+   * The Content Credentials source ingredients for the artwork the last pass
+   * placed, one per distinct glyph. `export()` already appends these to the
+   * ingredients it hands the host, so this is for a shell whose export bridge
+   * stamps the credential itself (the CLI does, in buildExportC2paOpts).
+   */
+  emojiIngredients(): C2paSourceIngredient[];
+  /**
+   * What the recorded sources in this render ask of the person delivering it
+   * (plan 253): the reviewed licence rules applied to the works this render
+   * placed, the delivery it is headed for, and the decisions a person made.
+   *
+   * Deterministic and free of I/O, so a shell may call it on every paint. The
+   * caller supplies whatever it knows about the delivery; what it leaves out
+   * falls back to this tool's first declared format, a file route, and an
+   * audience of `unknown`, which is the honest answer before anyone says where
+   * the file is going.
+   */
+  rights(context?: RuntimeRightsContext): RightsEvaluationV1;
+  /**
+   * Record a choice a person made about one work - a licence for an adaptation
+   * they share, or a permission they hold separately. Kept per runtime, so the
+   * next evaluation and the next export both see it, and readable through
+   * {@link Runtime.rightsDecisions} for the session record. A decision replaces
+   * an earlier one for the same work and kind.
+   */
+  setRightsDecision(decision: RightsDecisionV1): void;
+  /** Every decision recorded on this runtime, oldest first. A copy, not the store. */
+  rightsDecisions(): RightsDecisionV1[];
+  /** Restore decisions from a saved session. Replaces whatever is held. */
+  setRightsDecisions(decisions: readonly RightsDecisionV1[]): void;
+  /**
+   * What the last export actually delivered, as the host measured it by reading
+   * the written bytes back. Null until a host reports one: an unread export is
+   * not a confirmed one, so nothing here ever says credits are included before
+   * a reader found them.
+   */
+  readonly lastReceipt: AttributionReceiptV1 | null;
   manifest: ToolManifest;
   styles: string | null;
   /** Asset refs (saved session / URL) that no longer resolve - read once after mount. */
@@ -349,9 +480,12 @@ export async function createRuntime(
   // Profile is an interface (no implicit index signature), so hand it over as a
   // fresh ProfileValues object. Read-only downstream, so the copy is a no-op.
   // The person's saved templates ride the same record (plans/226) but are never
-  // a bind target, and their shape is not an input value, so they stay out.
-  const { userTemplates: _templates, ...profileValues } = profile;
+  // a bind target, and their shape is not an input value, so they stay out. The
+  // emoji preference (plans/252) is the same: a seed the shell reads when it
+  // opens new work, never a value a tool input can bind to.
+  const { userTemplates: _templates, emoji: _emojiPref, ...profileValues } = profile;
   void _templates;
+  void _emojiPref;
   let model = buildInputModel(tool.manifest, { profile: profileValues, initial: initialState });
 
   // The set of declared input ids is fixed for the life of the runtime (only
@@ -707,11 +841,269 @@ export async function createRuntime(
     return str ? hydrate(str, templateContext(), { raw: true }) : '';
   }
 
+  // ── Emoji: pinned pack artwork over every rendered tree ────────────────────
+  // The runtime owns this so no tool has to. The shell calls the pass after each
+  // paint (a live canvas) and export() calls it again on the node it is about to
+  // render, so a mount site that forgot the live call still exports artwork
+  // rather than whatever font the machine happened to have.
+  let emojiStyle: EmojiStyleV1 | null = null;
+  let emojiCensus: EmojiLineSource[] = [];
+  let emojiSets: EmojiSetInfoV1[] | undefined;
+  let emojiReplaced = 0, emojiUnresolved = 0;
+  // The last tree the pass ran on, so changing the set re-draws what is on screen.
+  let emojiNode: unknown = null;
+  // Prepared plus treated artwork, keyed by pack pin, meaning and treatment, so a
+  // glyph used a hundred times is prepared once and a repaint prepares nothing.
+  const emojiArtwork: EmojiArtworkCache = new Map();
+  // One admission per pin for the life of this mount.
+  const emojiPacks = new Map<string, Promise<VerifiedEmojiPack | null>>();
+  const emojiListeners = new Set<(state: RuntimeEmojiState) => void>();
+  let emojiChain: Promise<unknown> = Promise.resolve();
+
+  /**
+   * Cheapest possible gate, and the reason a plain Latin render pays nothing for
+   * this feature: the pinned Unicode tables are half a megabyte, so they are
+   * loaded on demand, and no character at or above U+00A9 means no emoji of any
+   * kind. U+00A9 (copyright) is the lowest scalar the pass's own pre-check looks
+   * for, so this is a true superset of it and never hides a real emoji. Written
+   * as an escaped range, so this file carries no invisible characters.
+   */
+  const EMOJI_MAYBE = /[\u00A9-\uFFFF]/;
+
+  const emojiSnapshot = (): RuntimeEmojiState => ({
+    present: Boolean(host.emoji),
+    replaced: emojiReplaced,
+    unresolved: emojiUnresolved,
+    style: emojiStyle ? structuredClone(emojiStyle) : null,
+    ...(emojiSets ? { sets: structuredClone(emojiSets) } : {}),
+  });
+
+  function notifyEmoji(): void {
+    if (!emojiListeners.size) return;
+    const state = emojiSnapshot();
+    for (const listener of [...emojiListeners]) {
+      try { listener(state); } catch (e) { host.log('warn', `onEmojiChange ${(e as Error).message}`, { toolId: tool.manifest.id }); }
+    }
+  }
+
+  /** One pass at a time: two paints in flight must not rewrite one tree together. */
+  function queueEmoji<T>(fn: () => Promise<T>): Promise<T> {
+    const run = emojiChain.then(fn, fn);
+    emojiChain = run.then(() => undefined, () => undefined);
+    return run;
+  }
+
+  /** Admit the style's primary pin and its ordered fallbacks, once each. */
+  async function emojiPacksFor(style: EmojiStyleV1): Promise<VerifiedEmojiPack[]> {
+    const api = host.emoji;
+    if (!api) return [];
+    const { emojiPackPinKey, readEmojiPack } = await import('./emoji-pack.ts');
+    const out: VerifiedEmojiPack[] = [];
+    for (const pin of [style.primary, ...style.fallbacks]) {
+      const key = emojiPackPinKey(pin);
+      let pending = emojiPacks.get(key);
+      if (!pending) {
+        pending = (async () => {
+          const bytes = await api.manifest(pin);
+          // A host that does not have this exact release answers null, never a
+          // substitute, so the pass draws its placeholder instead of a different
+          // picture. That refusal is the whole point of pinning. It is said out
+          // loud, because a link naming a set this device does not hold otherwise
+          // degrades to a page of placeholder squares with nothing to read.
+          if (!bytes) {
+            host.log('warn', `emoji set ${pin.id} ${pin.pin.version} is not on this device - drawing placeholders`, { toolId: tool.manifest.id });
+            return null;
+          }
+          const read = await readEmojiPack(bytes, pin);
+          if (read.ok) return read.pack;
+          host.log('warn', `emoji set ${pin.id}: ${read.issue.message}`, { toolId: tool.manifest.id });
+          return null;
+        })().catch((e: unknown) => {
+          host.log('warn', `emoji set ${pin.id}: ${(e as Error).message}`, { toolId: tool.manifest.id });
+          return null;
+        });
+        emojiPacks.set(key, pending);
+      }
+      const pack = await pending;
+      if (pack) out.push(pack);
+    }
+    return out;
+  }
+
+  /** Listed once per mount, in the background, so the chrome can offer a choice. */
+  async function loadEmojiSets(): Promise<void> {
+    const api = host.emoji;
+    if (!api || emojiSets) return;
+    try { emojiSets = await api.sets(); } catch { emojiSets = []; }
+    notifyEmoji();
+  }
+
+  async function runEmojiPass(
+    node: unknown, opts: RuntimeEmojiPassOpts = {},
+  ): Promise<RuntimeEmojiResult> {
+    const api = host.emoji;
+    if (!api) return { present: false, replaced: 0, unresolved: 0, census: [] };
+    // A pass queued before the shell unmounted must not run now, and above all
+    // must not take a fresh reference to a tree destroy() just let go of.
+    if (destroyed) return { present: true, replaced: 0, unresolved: 0, census: [] };
+    const root = node as { textContent?: string | null } | null | undefined;
+    if (!root || typeof root !== 'object') return { present: true, replaced: 0, unresolved: 0, census: [] };
+    // A tracked pass IS the render. An untracked one (chrome drawing its own
+    // emoji) draws artwork, reports what it drew and records nothing: it neither
+    // becomes the tree a set change redraws nor rewrites the counts the Emoji
+    // section reads, so a one-cell walk cannot hide the section over a canvas
+    // full of emoji.
+    const track = opts.track !== false;
+    const nothing: EmojiDomResult = { replaced: 0, unresolved: 0, census: [] };
+    const record = (result: EmojiDomResult): void => {
+      if (!track) return;
+      emojiReplaced = result.replaced;
+      emojiUnresolved = result.unresolved;
+      emojiCensus = result.census;
+      notifyEmoji();
+    };
+    if (track) emojiNode = root;
+    if (!EMOJI_MAYBE.test(root.textContent ?? '')) {
+      record(nothing);
+      return { present: true, ...nothing };
+    }
+    // One read, held across every await below. setEmojiStyle assigns
+    // synchronously and queues its own pass, so a swap landing during the pack
+    // load would otherwise resolve the NEW style's pin against the OLD style's
+    // packs and draw the whole tree as placeholders for a frame.
+    const style = emojiStyle;
+    // Nothing to choose means nothing to prompt for. With no set chosen AND no
+    // set on the device, the placeholder would mark every emoji with a mark
+    // nobody can clear, so the characters are left exactly as they are. A set
+    // that exists but has not been chosen, and a chosen set that lacks a glyph,
+    // both still draw the placeholder: those are choices a person can act on.
+    if (!style) {
+      await loadEmojiSets();
+      if (!emojiSets?.length) {
+        record(nothing);
+        return { present: true, ...nothing };
+      }
+    }
+    const packs = style ? await emojiPacksFor(style) : [];
+    const { applyEmojiToDom } = await import('./emoji-dom.ts');
+    const io: EmojiTextIO = {
+      async loadArtwork(pin, asset) {
+        const bytes = await api.artwork(pin, asset);
+        if (!bytes) throw new Error(`emoji artwork missing: ${asset.id}`);
+        return bytes;
+      },
+      // The contract types the parser's result as unknown so the SDK carries no
+      // DOM types; the engine is where it is narrowed, and the static subset
+      // refuses anything the parser hands back that is not a real SVG document.
+      parseXml: api.parseXml as EmojiTextIO['parseXml'],
+    };
+    const result = await applyEmojiToDom(
+      root as EmojiDomNode, style, packs, io, { cache: emojiArtwork, idScope: opts.idScope },
+    );
+    record(result);
+    // Only list the sets once this render has shown it cares - a set was chosen,
+    // or the text carries emoji somebody may want to choose a set for.
+    if (!emojiSets && (style || result.replaced || result.unresolved)) void loadEmojiSets();
+    return { present: true, ...result };
+  }
+
+  // ── Creative rights: what the recorded sources ask of this delivery ────────
+  // The emoji census is the first producer of works and uses; others (a placed
+  // catalog illustration, a LUT) join the same list without changing anything
+  // downstream. The rules are pure data in rights-profiles.ts, the evaluation
+  // reads no clock and no file, and the decisions a person made live here for
+  // the life of the mount so a session can save them.
+  let rightsChoices: RightsDecisionV1[] = [];
+  let lastRightsReceipt: AttributionReceiptV1 | null = null;
+
+  /** The delivery a context describes, with this tool's own defaults underneath. */
+  function rightsContext(context: RuntimeRightsContext | undefined, fallbackFormat?: string): UseContextV1 {
+    const given = context?.delivery ?? {};
+    const format = given.format ?? fallbackFormat ?? tool.manifest.render?.formats?.[0] ?? 'png';
+    // A credential is promised only where one is actually being written, which
+    // is why this asks the tool's own provenance default rather than a list of
+    // formats: promising an ingredient a route never carries is the one thing
+    // section 4.3 forbids. The receipt measures the truth afterwards either way.
+    const carriesCredential = given.canCarryCredential ?? (tool.manifest.render?.c2pa !== false && tool.manifest.privacy !== 'on-device');
+    const route: DeliveryRouteV1 = given.route ?? (carriesCredential ? 'file-with-c2pa' : 'file-without-c2pa');
+    return {
+      operation: context?.operation ?? 'render',
+      delivery: {
+        format,
+        route,
+        canCarryCredential: given.canCarryCredential ?? (route === 'file-with-c2pa' || route === 'package'),
+        // A clipboard carries pixels and nothing beside them; every other route
+        // here has somewhere a reader can find the credit.
+        canCarryReadableCredit: given.canCarryReadableCredit ?? route !== 'clipboard',
+      },
+      audience: context?.audience ?? 'unknown',
+      ...(context?.commercial !== undefined ? { commercial: context.commercial } : {}),
+      ...(context?.outputLicence !== undefined ? { outputLicence: context.outputLicence } : {}),
+      ...(context?.evaluatedAt !== undefined ? { evaluatedAt: context.evaluatedAt } : {}),
+    };
+  }
+
+  /**
+   * One evaluation over one census, and the records it was made from. An export
+   * freezes the census first and hands the same answer to both the credential
+   * and the plan, so the bytes and the credits can never describe two states.
+   */
+  function evaluateRights(census: readonly EmojiLineSource[], context: RuntimeRightsContext | undefined, fallbackFormat?: string): {
+    evaluation: RightsEvaluationV1; works: CreativeWorkRecordV1[]; uses: CreativeUseV1[]; details: Record<string, SourceDetailV1>;
+  } {
+    const { works, uses, details } = emojiWorksAndUses(census);
+    const evaluation = evaluateCreativeUses({ works, uses, details, context: rightsContext(context, fallbackFormat), decisions: rightsChoices });
+    return { evaluation, works, uses, details };
+  }
+
   return {
     getModel: () => model,
     getHydrated,
     getHydratedString,
     getHydratedText,
+
+    applyEmojiToDom: (node, opts) => queueEmoji(() => runEmojiPass(node, opts)),
+    revertEmojiDom: (node) => queueEmoji(async () => {
+      if (!node || typeof node !== 'object') return 0;
+      emojiNode = node;
+      const { revertEmojiDom } = await import('./emoji-dom.ts');
+      return revertEmojiDom(node as EmojiDomNode);
+    }),
+    async setEmojiStyle(style) {
+      emojiStyle = style ? structuredClone(style) : null;
+      // The prepared-artwork cache is keyed by pin, meaning and treatment, so the
+      // old style's entries stay valid and switching back costs nothing.
+      if (emojiNode) await queueEmoji(() => runEmojiPass(emojiNode));
+      else notifyEmoji();
+    },
+    get emoji() { return emojiSnapshot(); },
+    onEmojiChange(fn) {
+      emojiListeners.add(fn);
+      return () => { emojiListeners.delete(fn); };
+    },
+    emojiIngredients: () => emojiSourceIngredients(emojiCensus),
+
+    rights: (context) => evaluateRights(emojiCensus, context).evaluation,
+    setRightsDecision(decision) {
+      rightsChoices = [
+        ...rightsChoices.filter((held) => !(held.work === decision.work && held.kind === decision.kind)),
+        { ...decision },
+      ];
+    },
+    rightsDecisions: () => rightsChoices.map((decision) => ({ ...decision })),
+    setRightsDecisions(decisions) {
+      // Deduped by work and kind, keeping the last, exactly as setRightsDecision
+      // does. A restored list that named one work twice would otherwise let the
+      // order of a stored array decide which choice applies.
+      // Keyed through JSON, because a work id is arbitrary text out of a pack
+      // manifest and a key glued together with a separator could be made to
+      // collide with another pair.
+      const held = new Map<string, RightsDecisionV1>();
+      for (const decision of decisions) held.set(JSON.stringify([decision.work, decision.kind]), { ...decision });
+      rightsChoices = [...held.values()];
+    },
+    get lastReceipt() { return lastRightsReceipt; },
+
     manifest: tool.manifest,
     styles: tool.styles,
     // Asset refs (from a saved session / URL) that no longer resolve. The shell
@@ -1117,6 +1509,12 @@ export async function createRuntime(
         // exporting an unstaged canvas silently would be worse than failing.
         await runHook('beforeExport', () => beforeExport({ node: renderedNode, format, opts, host }));
       }
+      // Emoji, after the tool has finished staging the node and before anything
+      // reads it. Running it here rather than only at each mount site is what
+      // makes the promise hold on every shell: an export sees pinned artwork even
+      // where the live canvas never ran the pass. Idempotent, so a canvas the
+      // shell already drew is walked and left alone.
+      const emojiPass = await queueEmoji(() => runEmojiPass(renderedNode));
       // Central transparent-background default - the counterpart to a tool's own beforeExport.
       // A tool whose synthesised `transparentBg` input is ON wants a transparent backdrop, but
       // many only omit the SVG bg rect and never clear the RASTER canvas, so their PNG/WebP
@@ -1208,7 +1606,7 @@ export async function createRuntime(
       // ingest) and library/catalog assets (the host may extract one from the
       // asset's own bytes - v1.31). A credential we can't read is skipped,
       // never fatal to the export.
-      let ingredients: IngredientCredential[] | undefined;
+      let ingredients: (IngredientCredential | SourceIngredient)[] | undefined;
       if (!isOnDevice && meta !== undefined && host.assets?.credential) {
         const ids = new Set<string>();
         const note = (v: unknown): void => {
@@ -1237,6 +1635,24 @@ export async function createRuntime(
           } catch { /* unreadable credential - skip, don't fail the export */ }
         }
         if (prepared.length) ingredients = prepared;
+      }
+      // Emoji artwork this render placed: one source ingredient per distinct
+      // glyph, recording the set's own licence and creator and the exact bytes
+      // Lolly drew from. A CC BY source stays CC BY in the record. Same two gates
+      // as the credentialed ingredients above, so an on-device utility and an
+      // unstamped thumbnail still carry nothing.
+      //
+      // ONE evaluation is frozen here, over the census this export's own pass
+      // returned, and the same census produces both the ingredients and the
+      // plan handed to the host - so the bytes and the credits can never
+      // describe two different states (plan 253 section 8.1). The ingredients
+      // are byte-identical to what emojiSourceIngredients wrote before this
+      // route existed; tests/rights-runtime.test.ts holds that.
+      let rightsPlan: RightsEvaluationV1 | null = null;
+      if (!isOnDevice && meta !== undefined && emojiPass.census.length) {
+        const frozen = evaluateRights(emojiPass.census, { delivery: { canCarryCredential: Boolean(opts.c2pa) } }, format);
+        rightsPlan = frozen.evaluation;
+        ingredients = [...(ingredients ?? []), ...sourceIngredientsFor(frozen.works, frozen.uses, frozen.details)];
       }
       // When stamping Content Credentials (never the on-device utility path),
       // record a compact digest of the scalar inputs this render came from -
@@ -1328,6 +1744,17 @@ export async function createRuntime(
           ...(c2paTextAdded ? { c2paTextAdded } : {}),
           ...(c2paAiUpscale ? { c2paAiUpscale } : {}),
           ...(c2paAiIngredients.length ? { c2paAiIngredients } : {}),
+          // The attribution this export promised, and the way back for what it
+          // delivered. A host that reads its own bytes back calls onReceipt
+          // once; a host that does not leaves lastReceipt null, which reads as
+          // "prepared, not measured" rather than as a confirmed delivery.
+          ...(rightsPlan ? {
+            rights: {
+              plan: rightsPlan.plan,
+              fingerprint: rightsPlan.fingerprint,
+              onReceipt: (receipt: AttributionReceiptV1) => { lastRightsReceipt = receipt; },
+            },
+          } : {}),
           // Tag output with a colour profile by default (sRGB for raster, the
           // default press condition for CMYK PDF). Thumbnails stay untagged.
           colorProfile: opts.colorProfile ?? (opts.thumbnail ? 'none' : 'srgb'),
@@ -1362,6 +1789,12 @@ export async function createRuntime(
       stopMeterLoop();
       cancelRecording();
       ++hookRunSeq; // Ignore late reports/results from a tool that is no longer mounted.
+      // Let the tree the emoji pass last walked go. An offscreen export stage is
+      // removed from the document right after its render, and holding the node
+      // here would keep the whole detached stage alive for nothing.
+      emojiNode = null;
+      emojiListeners.clear();
+      emojiArtwork.clear();
       try { hooks?.dispose?.(); } catch (e) { host.log('warn', `hook dispose ${(e as Error).message}`, { toolId: tool.manifest.id }); }
     },
   };

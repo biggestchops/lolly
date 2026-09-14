@@ -1,0 +1,68 @@
+{
+  "name": "missing-evidence-beside-parsed",
+  "title": "A field that was looked for and found empty is not a second, disagreeing declaration",
+  "citations": [
+    "packages/core/src/rights-v1.ts, RightsEvidenceStatusV1: `missing` says the field was looked for; it is not a grant.",
+    "Plan 253 section 6.1: a parser returning an empty result is not automatically evidence that no licence exists.",
+    "CC BY 4.0 legal code section 3(a)(1): the attribution condition stands on the grant that was actually recorded."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/river",
+        "title": "River Illustration",
+        "creators": [{ "name": "Example Artist", "role": "creator" }],
+        "sourceUrl": "https://example.org/river.svg",
+        "sourceHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "rights": [
+          {
+            "declaration": "",
+            "assertedBy": "exporter",
+            "evidence": "native-metadata",
+            "status": "missing"
+          },
+          {
+            "declaration": "CC-BY-4.0",
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      { "work": "example/river", "role": "incorporated", "operations": ["placed"] }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": { "format": "png", "route": "file-with-c2pa", "canCarryCredential": true, "canCarryReadableCredit": true },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/river",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "CC-BY-4.0",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [
+      {
+        "work": "example/river",
+        "credit": "\"River Illustration\" by Example Artist, CC BY 4.0 https://creativecommons.org/licenses/by/4.0/, source https://example.org/river.svg, unchanged.",
+        "changes": "unchanged"
+      }
+    ],
+    "optional": [],
+    "channels": ["c2pa-ingredients", "readable-details"],
+    "changes": [],
+    "unresolved": []
+  }
+}

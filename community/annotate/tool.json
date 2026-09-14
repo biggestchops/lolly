@@ -81,7 +81,7 @@
       "type": "file",
       "accept": ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"],
       "maxSize": 52428800,
-      "help": "A JPEG, PNG, WebP, GIF or SVG. It is read in your browser and never leaves your device; you can also drop it straight onto the canvas. PDF pages are out of scope here - export the page as an image first, or use Redact for a PDF. Without a picture the tool draws a placeholder screen so the marks still have something to sit on."
+      "help": "A JPEG, PNG, WebP, GIF or SVG, read in your browser and never uploaded. You can also drop it straight onto the canvas. For a PDF page, export it as an image first or use Redact. With no picture the tool draws a placeholder screen so the marks have something to sit on."
     },
     {
       "id": "annotations",
@@ -138,6 +138,7 @@
     },
     {
       "id": "annotStyle",
+      "display": "segmented",
       "label": "Mark style",
       "type": "select",
       "default": "solid",

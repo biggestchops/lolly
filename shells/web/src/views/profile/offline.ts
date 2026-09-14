@@ -372,7 +372,7 @@ export async function loadOffline(pv: ProfileViewCtx) {
   let catalogPlanned = plannedBytes.catalog;
 
   // A part is downloadable when its manifest (or index) was reachable. The
-  // dev server ships no dist/precache.json - the rows say so instead of
+  // dev server ships no dist/precache.json - the rows state it instead of
   // pretending a download happened.
   const partAvailable: Record<OfflinePartId, boolean> = {
     app: !!precache, docs: !!infoManifest, verify: !!precache && plannedBytes.verify > 0, catalog: !!catSummary,
@@ -596,7 +596,7 @@ export async function loadOffline(pv: ProfileViewCtx) {
       }
       if (cancelled) {
         // Cancelled - everything already fetched stays cached, so the next
-        // run resumes from here. Say so instead of reading as an error.
+        // run resumes from here. Report it instead of reading as an error.
         announce(t('Download paused - already-saved files are kept'));
         return false;
       }

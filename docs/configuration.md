@@ -10,8 +10,8 @@ A **profile** binds a set of tool packs to a brand catalog. `profiles.json` at t
 {
   "default": "suse",
   "profiles": {
-    "suse":        { "label": "SUSE",  "tools": ["community", "brands/suse/tools"], "exclude": ["rebrand-deck", "street-map"], "catalog": "brands/suse/catalog" },
-    "lolly-start": { "label": "Lolly Start (blank brand)", "tools": ["community", "brands/lolly-start/tools"], "catalog": "brands/lolly-start/catalog" }
+    "suse":        { "label": "SUSE",  "tools": ["community", "brands/suse/tools"], "exclude": ["rebrand-deck", "street-map"], "assets": ["community/emoji-packs"], "catalog": "brands/suse/catalog" },
+    "lolly-start": { "label": "Lolly Start (blank brand)", "tools": ["community", "brands/lolly-start/tools"], "assets": ["community/emoji-packs"], "catalog": "brands/lolly-start/catalog" }
   }
 }
 ```
@@ -26,6 +26,8 @@ pnpm run build:catalog --profile=suse   # or name it on a catalog script
 ```
 
 `packages/node-shell/src/content-roots.ts` is the resolver every script, shell and service asks. Precedence: an explicit `--profile=<name>`, then `LOLLY_PROFILE`, then `profiles.json`'s `default`, then the first profile whose packs are all on disk - which is what makes a public clone with no `brands/suse` land on `lolly-start` by itself. It answers "where does tool `<id>` live" (`toolFile`, `listToolFiles`, `readToolManifest`) and "where is the catalog" (`catalogFile`) against the profile's roots, **later roots winning on id collisions**, so a brand pack can override a community tool of the same id. The optional `exclude` list drops tool ids from *this* profile after that merge - a community tool one brand would rather not ship stays available to every other profile, and an id that isn't there is warned about, not fatal.
+
+A profile's optional `assets` list mounts **shared asset roots**, which is how one file can belong to every brand at once. A shared root is a directory holding its own `index.json` plus its files: those entries are appended to the brand's asset index, and their urls are the profile-independent `/catalog/packs/<rootName>/<file>`. `community/emoji-packs/` is the one this repository ships. It holds the complete Twemoji Color emoji set as a single 15.7 MB on-demand bundle, both profiles list it, and `suse` and `lolly-start` therefore serve the same file with no copy in either catalog. `readAssetIndex()` is the merged index every Node reader asks for, the dev server assembles the same merge per request, and `materializeInto` writes each root to `catalog/packs/<name>/` with the merged index beside it. Shared roots are additive: an asset id claimed by two roots is refused rather than resolved by order, and a root that is not on disk is skipped rather than treated as a missing pack, so a build that does not carry a shared root still resolves everything else.
 
 One copy survives, because a browser still fetches `/tools/<id>/…` and `/catalog/…` over HTTP: `materializeInto(dest)` writes a real `tools/` + `catalog/` tree, and that is what a `dist/` build, an RPM payload or a Docker image carries. Nothing materialises anything into your working tree, so an edit to a tool is an edit in its pack, committed there.
 

@@ -19,6 +19,14 @@
  * `scripts/gen-asset-added-dates.ts` - maintained exactly like the checksums
  * below, so the index never has to be hand-edited for it.
  *
+ * SHARED ASSET ROOTS get the same treatment. A root listed in a profile's `assets`
+ * (community/emoji-packs) holds its own index.json, its entries are appended to every
+ * mounted brand's index at read time and their urls are /catalog/packs/<root>/<file>,
+ * which `catalogFile` resolves, so the loop below is the same one. Those files are
+ * shared, so a per-brand build must not rewrite them once per brand: `--shared-only`
+ * does the roots and nothing else, `--skip-shared` does the brand and nothing else,
+ * and build-catalog-all.ts uses the pair to touch each file once.
+ *
  * It also labels each raster format file with its `depth` (bits per channel),
  * sniffed from the container header - see `depthForFormat` below and
  * plans/61-deeprichpixels.md section 10 item 6. Depth follows provenance: the label is a
@@ -36,7 +44,7 @@ import { pathToFileURL } from 'node:url';
 // scripts already import across this boundary - validate-catalog.ts pulls in
 // shells/web/src/palette.ts, tests/fuzz/targets.ts fuzzes this very function.
 import { depthHint } from '../shells/web/src/lib/image-sample.ts';
-import { catalogFile } from '../packages/node-shell/src/content-roots.ts';
+import { allAssetRoots, catalogFile } from '../packages/node-shell/src/content-roots.ts';
 import { repoRoot } from '../packages/node-shell/src/repo-root.ts';
 import { applyProfileArg } from './lib/profile-arg.ts';
 
@@ -123,8 +131,8 @@ export async function depthForFormat(assetType: string | undefined, bytes: Uint8
   return hint.bitsPerChannel;
 }
 
-async function run(): Promise<void> {
-  const index = JSON.parse(readFileSync(INDEX_PATH, 'utf8')) as AssetIndex;
+async function stamp(indexPath: string, label: string): Promise<void> {
+  const index = JSON.parse(readFileSync(indexPath, 'utf8')) as AssetIndex;
   let updated = 0;
   let labelled = 0;
   const missing: string[] = [];
@@ -162,8 +170,21 @@ async function run(): Promise<void> {
     process.exit(1);
   }
 
-  writeFileSync(INDEX_PATH, JSON.stringify(index, null, 2) + '\n');
-  console.log(`✓ Checksummed ${index.assets.length} assets (${updated} entr${updated === 1 ? 'y' : 'ies'} changed, ${labelled} depth-labelled)`);
+  writeFileSync(indexPath, JSON.stringify(index, null, 2) + '\n');
+  console.log(`✓ Checksummed ${index.assets.length} ${label} assets (${updated} entr${updated === 1 ? 'y' : 'ies'} changed, ${labelled} depth-labelled)`);
+}
+
+async function run(): Promise<void> {
+  const args = process.argv.slice(2);
+  const sharedOnly = args.includes('--shared-only');
+  if (!sharedOnly) await stamp(INDEX_PATH, 'brand');
+  if (args.includes('--skip-shared')) return;
+  // Shared roots are keyed by directory, so the same root listed by two profiles is
+  // stamped once. Their urls resolve through catalogFile like any other.
+  for (const shared of allAssetRoots()) {
+    const indexPath = join(shared.dir, 'index.json');
+    if (existsSync(indexPath)) await stamp(indexPath, `shared "${shared.name}"`);
+  }
 }
 
 // Only rewrite the index when run directly (`node scripts/checksum-assets.ts`).

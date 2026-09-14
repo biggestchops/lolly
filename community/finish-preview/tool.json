@@ -33,18 +33,18 @@
       "type": "asset",
       "assetType": "raster",
       "allowUpload": true,
-      "help": "Pick your artwork or upload your own. It's processed on your device - the pixels never leave the browser."
+      "help": "Pick artwork or upload your own. It's processed on your device - the pixels never leave the browser."
     },
     {
       "id": "finish",
-      "label": "Finish",
+      "label": "Type",
       "section": "Finish",
       "type": "select",
       "default": "foil-gold",
       "options": [
-        { "value": "foil-gold", "label": "Foil - gold" },
-        { "value": "foil-silver", "label": "Foil - silver" },
-        { "value": "foil-holographic", "label": "Foil - holographic" },
+        { "value": "foil-gold", "label": "Gold foil" },
+        { "value": "foil-silver", "label": "Silver foil" },
+        { "value": "foil-holographic", "label": "Holographic foil" },
         { "value": "spot-uv-gloss", "label": "Spot UV gloss" },
         { "value": "emboss", "label": "Emboss" },
         { "value": "deboss", "label": "Deboss" },
@@ -96,7 +96,7 @@
         { "value": "dark", "label": "Dark areas" },
         { "value": "colour", "label": "By colour" }
       ],
-      "help": "Where the finish goes. Light and dark areas threshold the artwork's perceptual (OKLab) lightness; By colour matches areas near a chosen colour."
+      "help": "Where the finish goes. Light and dark areas split the artwork by perceptual lightness; By colour matches areas near a chosen colour."
     },
     {
       "id": "maskColor",
@@ -117,7 +117,7 @@
       "min": 0,
       "max": 100,
       "step": 1,
-      "help": "Lightness cut-off (OKLab L) for light/dark masks, or match radius for By colour. Ignored for Whole image."
+      "help": "Lightness cut-off for light and dark masks, or match radius for By colour. Ignored for Whole image."
     },
     {
       "id": "softness",
@@ -175,7 +175,7 @@
       "group": "export",
       "type": "boolean",
       "default": false,
-      "help": "Switch to the deliverable: the finish mask as pure black on white with an overprint label. Send THIS to your print house - the shiny preview is presentation only and must never be baked into artwork."
+      "help": "Switch to the deliverable: the finish mask as pure black on white with an overprint label. Send this file to the print house, not the shiny preview."
     }
   ],
   "hooks": {

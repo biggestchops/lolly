@@ -5,7 +5,7 @@
     "HOST_V1_OPTIONAL_APIS": {
       "module": "apis.ts",
       "kind": "FirstStatement",
-      "sha256": "c496275809c4ce277c04c6455d735879fb1d94cd809a34745bb96988678da80e"
+      "sha256": "782ae2a34f51025b925d43c72b84ac84f0932d84f8eb96cd0c578e187fc190cc"
     },
     "HostApiName": {
       "module": "apis.ts",
@@ -60,7 +60,17 @@
     "IngredientCredential": {
       "module": "assets.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "1ccccb422f38a2cd5efec1cbff5af4c6c0b9759c33767c3bca77c5877aab9a0f"
+      "sha256": "c65ff394cf5244f5fca05fb9a316a981f5dc17e40fd54ac71d9cd82d101ae322"
+    },
+    "RightsRecord": {
+      "module": "assets.ts",
+      "kind": "InterfaceDeclaration",
+      "sha256": "ba29311c68cd4b20b3dfc0ab33df9296d229564b11bbdd7fc9ae48955f64ecbf"
+    },
+    "SourceIngredient": {
+      "module": "assets.ts",
+      "kind": "InterfaceDeclaration",
+      "sha256": "5cd96f110a775e0a205beeab893fe470c9a4eb7c7b62d1bd2662109521c58504"
     },
     "AssetQuery": {
       "module": "assets.ts",
@@ -110,7 +120,7 @@
     "C2paSignOpts": {
       "module": "c2pa.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "0354f52a7027211aae34afe1f5df3a93817b672e19271f480101e2ecb7b7be43"
+      "sha256": "cd69fa730752653e9210d11c59146675e3af8870f3e51c079c612eeb8a6b76f6"
     },
     "C2paAPI": {
       "module": "c2pa.ts",
@@ -352,6 +362,11 @@
       "kind": "InterfaceDeclaration",
       "sha256": "4724567ba25a41b1e29b89a425203558f7eefce1ca3524a1ad129da909cc6473"
     },
+    "EmojiAPI": {
+      "module": "emoji.ts",
+      "kind": "InterfaceDeclaration",
+      "sha256": "57ab8cf71c770457939d54ad17b816ed230b1fb5f5d54fd98dce19473f89586b"
+    },
     "ExportPackSpec": {
       "module": "export.ts",
       "kind": "InterfaceDeclaration",
@@ -375,7 +390,7 @@
     "ExportOpts": {
       "module": "export.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "eb03436e154dc3c9bf30d2273495e28b78320a29222a28450c9bdd15a6ad252e"
+      "sha256": "4b1acf234591b2eb6bfbc4c3e833ebc93931c0645db0907daff321ee63df7060"
     },
     "ExportMeta": {
       "module": "export.ts",
@@ -475,7 +490,7 @@
     "HostV1": {
       "module": "host.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "d06279cb9449bd2f6adec82b0a85f887b4bdececc5df9b193150711547e90602"
+      "sha256": "fb8c56bc48142affc8484a4d534d8fa8b6491d7359426f04bf34d270b3f85fdd"
     },
     "Capability": {
       "module": "host.ts",
@@ -865,7 +880,7 @@
     "Profile": {
       "module": "profile.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "f6253fd8a8a54ec4d1ed16f0e4a4000fe682bb37681bfb7ab35f03ddc73eb22f"
+      "sha256": "6a9a28092681d7a55f4bd6b400041446f11d0eabeb4890eab6cced576b4fccb9"
     },
     "RasterAPI": {
       "module": "raster.ts",
@@ -1000,7 +1015,7 @@
     "TextToPathOpts": {
       "module": "text.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "bd909a762b82d3820507e7f2ddca8e94a32f57db2267f5ba9690ea6db75960eb"
+      "sha256": "bb406b3f5cd8fc31671cf1d629e4379633800391a3ff0823809fa65b13a45a49"
     },
     "TextPathCluster": {
       "module": "text.ts",

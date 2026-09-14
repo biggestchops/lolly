@@ -124,7 +124,7 @@ const VIEWPORT_DEFAULTS = { width: 1440, height: 900, dpi: 192 };
 /**
  * Drive behaviour for a DOCS capture: when a click's actionability retries run out
  * on an element Playwright reports as "outside of the viewport", dispatch it in the
- * page instead and say so.
+ * page instead and report it.
  *
  * The class this exists for: the tool view is a fixed-height shell (`.tool-view` is
  * `overflow: hidden` and the document never scrolls), and its closed export panel is
@@ -1395,7 +1395,7 @@ function genAiFromPage(imageB64: string[] = []): { ingredients?: NonNullable<Par
     try {
       const buf = new Uint8Array(Buffer.from(b64, 'base64'));
       const ing = prepareC2paIngredient(buf);
-      if (ing && aiKind(ing.digitalSourceType) && !ingredients.some((p) => p.activeLabel === ing.activeLabel)) {
+      if (ing && aiKind(ing.digitalSourceType) && !ingredients.some((p) => 'activeLabel' in p && p.activeLabel === ing.activeLabel)) {
         ingredients.push({ ...ing, relationship: 'componentOf' });
       }
     } catch { /* uncredentialed source - skip */ }
@@ -1551,7 +1551,7 @@ function pinProfile(): () => void {
   };
 }
 
-/** With --no-build the dist may have been built under another brand - say so. */
+/** With --no-build the dist may have been built under another brand - report it. */
 function checkDistBrand(): void {
   try {
     const ids = (p: string): string =>

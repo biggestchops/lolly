@@ -1571,7 +1571,7 @@ export async function mountColorLab(view: HTMLElement, host: ColorLabHost, param
   //
   // Painted with `gamutSolidToSvg`'s default sRGB encode: a static SVG can only
   // show colours the viewer's browser can render, so it shows the hull's STRUCTURE
-  // in sRGB rather than faking wide-gamut colour. The captions say so.
+  // in sRGB rather than faking wide-gamut colour. The captions state it.
   const SNAP_SVG_SIZE = 480;
 
   /** One solid → a self-contained SVG string at the CURRENT orientation. Default

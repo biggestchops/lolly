@@ -168,6 +168,62 @@ export function wireThemePick(pv: ProfileViewCtx): void {
   });
 }
 
+/**
+ * The Emoji card (plans/252) - the set new work starts from.
+ *
+ * The shared control in `preference` mode: a set and a treatment, no colours. It
+ * is a SEED and the copy says so; a document or a saved session that already
+ * names a set keeps it, so turning this on never redraws work already made.
+ * Mounted lazily because the control carries its own stylesheet chunk, which the
+ * profile page has no reason to pay for until this card exists.
+ */
+export async function wireEmojiPref(pv: ProfileViewCtx): Promise<void> {
+  const { host, viewEl } = pv;
+  const section = viewEl.querySelector<HTMLElement>('#emoji-pref-section');
+  const body = viewEl.querySelector<HTMLElement>('#emoji-pref-body');
+  if (!body) return;
+  const [{ mountEmojiStyleControl }, { currentEmojiPreference, setEmojiPreference }] = await Promise.all([
+    import('../../components/emoji-style-control.ts'),
+    import('../../lib/emoji-prefs.ts'),
+  ]);
+  const prefsHost = host as unknown as Parameters<typeof setEmojiPreference>[0];
+  const saved = await currentEmojiPreference(prefsHost);
+  // The listing is read ONCE, here, and handed to the control: it decides whether
+  // this card exists at all, and it is what turns a stored pin into the set's own
+  // name in the collapsed summary. A device with no packs gets no card rather than
+  // an empty dropdown, the same answer the tool sidebar gives.
+  const sets = host.emoji ? await host.emoji.sets().catch(() => []) : [];
+  if (!viewEl.isConnected) return;
+  if (!sets.length) {
+    if (section) section.hidden = true;
+    return;
+  }
+  const summarise = (value: unknown): void => {
+    const id = (value as { pin?: { id?: string } } | null)?.pin?.id;
+    const known = id ? sets.find((set) => set.pin.id === id) : undefined;
+    // The set's own name, the way every other summary on this page is human copy.
+    // A pin this device no longer holds falls back to the slug, because that is
+    // the only honest thing left to say about it.
+    const label = known?.label ?? (id ? id.split('/').slice(-2).join('/') : '');
+    pv.summaries.setSummary('emoji-pref-section', label || t('No set chosen'));
+  };
+  body.textContent = '';
+  mountEmojiStyleControl(body, {
+    host,
+    mode: 'preference',
+    value: saved,
+    sets,
+    onChange: (next) => {
+      summarise(next);
+      // A preference is never a document, so nothing here is applied to anything
+      // on screen. It is saved, and the next new piece of work reads it.
+      void setEmojiPreference(prefsHost, next && 'pin' in next ? next : null);
+      announce(next ? t('Saved') : t('Cleared'));
+    },
+  });
+  summarise(saved);
+}
+
 export function prefsOps(pv: ProfileViewCtx) {
   return {
     a11yRow: bindOp(pv, a11yRow),
@@ -180,5 +236,6 @@ export function prefsOps(pv: ProfileViewCtx) {
     wireAppearanceRows: bindOp(pv, wireAppearanceRows),
     wireRenderSaveRows: bindOp(pv, wireRenderSaveRows),
     wireThemePick: bindOp(pv, wireThemePick),
+    wireEmojiPref: bindOp(pv, wireEmojiPref),
   };
 }

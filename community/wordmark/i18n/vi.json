@@ -1,6 +1,6 @@
 {
   "name": "Chữ hiệu",
-  "description": "Gõ một từ, nhận ngay logo chữ dạng vector thuần túy theo font thương hiệu của bạn - người nhận không cần cài font.",
+  "description": "Gõ một từ, nhận ngay một wordmark dạng vector đường dẫn thuần túy theo phông chữ hệ thống thiết kế - người nhận không bao giờ cần cài phông chữ đó.",
   "a11yLabel": "Chữ hiệu ghi {{default text \"Wordmark\"}}",
   "inputs.text.label": "Văn bản",
   "inputs.font.label": "Phông chữ",

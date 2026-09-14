@@ -46,15 +46,18 @@ import type { ToolManifest } from '../engine/src/loader.ts';
  * publishing the catalog.
  */
 
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, realpathSync, statSync, existsSync } from 'node:fs';
 import { analyseRequires } from './tool-requires.ts';
 import {
-  catalogFile, contentUrlFile, toolDirs as resolveToolDirs, toolFile, readToolManifest,
-  listToolFiles,
+  catalogFile, contentRoots, contentUrlFile, toolDirs as resolveToolDirs, toolFile,
+  readToolManifest, listToolFiles,
 } from '@lolly-tools/node-shell/content-roots';
+// The emoji bundle audit, imported rather than shelled out to: the module runs its
+// own audits only when it IS the command (see its main guard).
+import { auditBundle, checkEmojiPackSpecimen, readPackFacts } from './check-emoji-packs.ts';
 import { applyProfileArg } from './lib/profile-arg.ts';
 import { createHash } from 'node:crypto';
-import { join, resolve, dirname } from 'node:path';
+import { join, resolve, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Schemas declare the draft 2020-12 dialect, so use Ajv's 2020 build (the
 // default export only knows draft-07 and throws on the unknown meta-schema).
@@ -1473,6 +1476,125 @@ for (const asset of assetsIndex.assets) {
         if (/style="/.test(body)) errors.push(`[asset ${asset.id}] themable icon has an inline style attribute`);
         if (/\bstroke[-\w]*\s*[:=]/.test(body)) errors.push(`[asset ${asset.id}] themable icon has stroke styling (fills only)`);
       }
+    }
+  }
+}
+
+// ─── Shared asset roots (a profile's `assets` list) ─────────────────────────
+//
+// A shared root's entries reach every profile that mounts it, so they are validated
+// in the same pass and by the same rules as the brand's: schema, the file on disk,
+// a current checksum and the generated `added` date. Two rules are theirs alone. A
+// shared entry's urls must sit under its own /catalog/packs/<name>/ namespace, the
+// one prefix every profile serves that root from; and its id may not also be a
+// brand's, because an asset id is a permanent contract and nothing could then say
+// which file it named. An emoji pack gets the bundle audit on top - the manifest pin,
+// the glyph count and every artwork hash - which is the whole contract a shell relies
+// on before it hands a byte of a pack to a renderer.
+
+for (const shared of contentRoots().assetRoots) {
+  const indexPath = join(shared.dir, 'index.json');
+  if (!existsSync(indexPath)) {
+    errors.push(`shared asset root "${shared.name}": no index.json at ${indexPath}`);
+    continue;
+  }
+  let sharedIndex: any;
+  try {
+    sharedIndex = JSON.parse(readFileSync(indexPath, 'utf8'));
+  } catch (err) {
+    errors.push(`shared asset root "${shared.name}": index.json is not valid JSON - ${(err as Error).message}`);
+    continue;
+  }
+  const prefix = `/catalog/packs/${shared.name}/`;
+  // Resolved once, so the containment check below compares like with like: a
+  // checkout can itself sit behind a link (/tmp on macOS is one), and comparing a
+  // resolved file against an unresolved root would call every file an escape.
+  const sharedReal = realpathSync(shared.dir);
+  for (const asset of sharedIndex.assets ?? []) {
+    const where = `[shared ${shared.name} asset ${asset.id}]`;
+    if (seenAssetIds.has(asset.id)) {
+      errors.push(`${where} id is already declared in this profile's catalog - a shared root may not redefine a brand's asset`);
+    }
+    seenAssetIds.add(asset.id);
+    assetById.set(asset.id, asset);
+
+    if (!validateAsset(asset)) {
+      for (const err of validateAsset.errors ?? []) {
+        errors.push(`${where} schema: ${err.instancePath || '/'} ${err.message}`);
+      }
+      continue;
+    }
+
+    const expectedAdded = ASSET_ADDED_DATES[asset.id];
+    if (asset.added !== expectedAdded) {
+      errors.push(`${where} added "${asset.added ?? '(absent)'}" does not match the committed date map's "${expectedAdded ?? '(absent)'}" - run \`pnpm run build:catalog\``);
+    }
+
+    for (const formats of [asset.formats, ...Object.values(asset.locales ?? {})] as any[]) {
+      for (const fmt of formats ?? []) {
+        if (!String(fmt.url).startsWith(prefix)) {
+          errors.push(`${where} format "${fmt.format}" url "${fmt.url}" is outside this root's namespace "${prefix}"`);
+          continue;
+        }
+        const absPath = contentUrlFile(fmt.url);
+        if (!absPath) {
+          errors.push(`${where} format "${fmt.format}" url "${fmt.url}" does not exist on disk`);
+          continue;
+        }
+        // The file the url names must BE in this root, not point at something
+        // outside it. Nothing between the url and the bytes resolves a symlink,
+        // and materializeInto copies with `dereference: true`, so a link committed
+        // into a contributed pack would be served in dev and baked into dist.
+        // check-emoji-packs.ts guards its snapshots the same way.
+        let realPath: string;
+        try { realPath = realpathSync(absPath); }
+        catch (err) {
+          errors.push(`${where} format "${fmt.format}" url "${fmt.url}" cannot be resolved - ${(err as Error).message}`);
+          continue;
+        }
+        if (realPath !== sharedReal && !realPath.startsWith(sharedReal + sep)) {
+          errors.push(`${where} format "${fmt.format}" url "${fmt.url}" resolves to ${realPath}, outside the shared root ${sharedReal} - a shared asset root may not serve a file through a link`);
+          continue;
+        }
+        const bytes = readFileSync(realPath);
+        const actual = `sha256-${createHash('sha256').update(bytes).digest('base64')}`;
+        if (fmt.checksum !== actual) {
+          errors.push(`${where} format "${fmt.format}" checksum stale - run \`pnpm run build:catalog\``);
+        }
+        const expectedDepth = await depthForFormat(asset.type, bytes);
+        if (expectedDepth == null && fmt.depth !== undefined) {
+          errors.push(`${where} format "${fmt.format}" declares depth ${fmt.depth} but its bytes state no depth - run \`pnpm run build:catalog\``);
+        } else if (expectedDepth != null && fmt.depth !== expectedDepth) {
+          errors.push(`${where} format "${fmt.format}" depth ${fmt.depth ?? '(absent)'} does not match the file's ${expectedDepth}-bit header - run \`pnpm run build:catalog\``);
+        }
+      }
+    }
+
+    if (!asset.tags?.includes('emoji-pack')) continue;
+    const meta = asset.meta?.emoji;
+    if (!meta || typeof meta !== 'object') {
+      errors.push(`${where} is tagged "emoji-pack" but carries no meta.emoji - a shell reads the pin, the glyph count and the licence before it downloads anything`);
+      continue;
+    }
+    if (meta.id !== asset.id) errors.push(`${where} meta.emoji.id "${meta.id}" is not the asset id`);
+    if (meta.version !== asset.version) errors.push(`${where} meta.emoji.version "${meta.version}" is not the asset version "${asset.version}"`);
+    if (!/^sha256:[0-9a-f]{64}$/.test(String(meta.checksum))) {
+      errors.push(`${where} meta.emoji.checksum "${meta.checksum}" is not a sha256:<hex> pin`);
+    }
+    if (!Number.isInteger(meta.glyphs) || meta.glyphs <= 0) {
+      errors.push(`${where} meta.emoji.glyphs must be the number of glyphs the manifest carries`);
+    }
+    const bundlePath = contentUrlFile(asset.formats?.[0]?.url ?? '');
+    if (!bundlePath) continue;   // already reported as missing above
+    try {
+      await auditBundle(bundlePath, indexPath);
+      // A baked specimen (the catalog tile's artwork) must agree with the bundle it
+      // was lifted from, or a tile draws a set that is not the one on disk.
+      for (const issue of checkEmojiPackSpecimen(meta as Record<string, unknown>, await readPackFacts(bundlePath))) {
+        errors.push(`${where} ${issue}`);
+      }
+    } catch (err) {
+      errors.push(`${where} bundle audit failed: ${(err as Error).message}`);
     }
   }
 }

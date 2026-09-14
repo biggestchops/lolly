@@ -35,12 +35,197 @@ import { derivePeaks } from '../../lib/audio-peaks.ts';
 import { songUrlToWavBlobUrl } from '../../lib/zzfxm-render.ts';
 import { modUrlToWavBlobUrl } from '../../lib/mod-render.ts';
 import { attachAudioMeter } from '../../lib/audio-meter.ts';
-import { applySuggestion, buildThemedAssetId, buildTreatedAssetId, extractC2paStore, humanizeText, restyleIconTheme, rewordCandidates, verifyC2pa } from '@lolly/engine';
+import { applySuggestion, buildThemedAssetId, buildTreatedAssetId, extractC2paStore, humanizeText, licenceProfile, normaliseLicence, restyleIconTheme, rewordCandidates, verifyC2pa } from '@lolly/engine';
 import type { RewordCandidate, } from '@lolly/engine';
+import type { AssetRef } from '@lolly-tools/core/host-v1';
+import { assetLicenceDeclaration, readAssetRightsRecord, type AssetRightsMeta } from '../../lib/asset-rights.ts';
 import { lollyBadge } from '../../lib/lolly-badge.ts';
-import { CHEVRON_LEFT, CHEVRON_RIGHT, CROP_ICON, DOWNLOAD_ICON, EYE_ICON, EYE_OFF_ICON, PAUSE_ICON, PENCIL_ICON, PLAY_ICON, REPLACE_ICON, SHARE_ICON, SHIELD_ICON, STAR_ICON, TAG_ICON, TRASH_ICON, attachZoom, catalogAddedText, isThemable, isVector, isVerifiableAsset, setCropModeActive, svgTextToDataUrl } from './shared.ts';
+import { CHEVRON_LEFT, CHEVRON_RIGHT, CROP_ICON, DOWNLOAD_ICON, EYE_ICON, EYE_OFF_ICON, PAUSE_ICON, PENCIL_ICON, PLAY_ICON, REPLACE_ICON, SHARE_ICON, SHIELD_ICON, STAR_ICON, TAG_ICON, TRASH_ICON, attachZoom, catalogAddedText, emojiPackMeta, emojiPackPin, emojiPackSource, isCanonicalGlyphKey, isThemable, isVector, isVerifiableAsset, setCropModeActive, svgTextToDataUrl } from './shared.ts';
+import type { EmojiPackAbsence, EmojiPackTileMeta } from './shared.ts';
+import { emojiSpecimenArtwork, paintEmojiSpecimen } from '../../lib/emoji-specimen.ts';
+import type { EmojiPrefsHost } from '../../lib/emoji-prefs.ts';
 import { audioCardArt, wireAudioViz } from './details-shared.ts';
 import { bindOp, type DetailsCtx } from './details-context.ts';
+
+/**
+ * The rights rows of the details sheet (plan 253, section 7.1): who is credited,
+ * under what licence, the exact credit to paste, and what using the work asks of
+ * you. Reads the optional structured `rights` record when the catalog carries one
+ * and falls back to the legacy `license`/`attribution` strings, so an asset that
+ * has only ever had those keeps the rows it had.
+ *
+ * Two things it deliberately does not do. It never prints a publisher name this
+ * build does not actually hold - the old row said "SUSE catalog" on every profile,
+ * including a public clone that has no SUSE pack at all. And it never reports a
+ * missing licence as permission: absent reads as not recorded.
+ */
+export function assetRightsRows(ref: AssetRef, isUser: boolean): string {
+  const meta = (ref.meta ?? {}) as AssetRightsMeta;
+  const record = readAssetRightsRecord(meta.rights);
+  const declared = assetLicenceDeclaration(meta);
+  const normalised = declared ? normaliseLicence(declared) : null;
+  const profile = normalised?.id ? licenceProfile(normalised.id) : null;
+  const creators = (record?.creators ?? []).filter((party) => party.role !== 'publisher');
+  const publisher = (record?.creators ?? []).find((party) => party.role === 'publisher');
+  const credited = creators.map((party) => party.name).filter(Boolean).join(', ');
+  // Only an http(s) locator becomes a link. A catalog entry is authored data, but
+  // it is still data, and a link is the one place a string becomes an action.
+  const sourceUrl = typeof record?.sourceUrl === 'string' && /^https?:\/\//i.test(record.sourceUrl) ? record.sourceUrl : '';
+  const sourceParts = [
+    isUser ? escapeText(t('Your upload')) : escapeText(publisher?.name ?? t('Catalog')),
+    credited ? escapeText(tRaw('credited to {who}', { who: credited })) : '',
+    sourceUrl ? `<a href="${escapeText(sourceUrl)}" target="_blank" rel="noopener noreferrer">${t('Original work')}</a>` : '',
+  ].filter(Boolean).join(' · ');
+
+  const licenceName = normalised?.id
+    ? `${profile?.name ?? normalised.id}${!profile?.name && normalised.version ? ` ${normalised.version}` : ''}`
+    : '';
+  const licenceCell = declared
+    ? `<span title="${escapeText(declared)}">${escapeText(licenceName || declared)}</span>`
+    : escapeText(t('Not recorded'));
+
+  const credit = typeof meta.attribution === 'string' && meta.attribution.trim() ? meta.attribution.trim() : '';
+  const creditRow = credit
+    ? `<div><dt>${t('Credit')}</dt><dd>${escapeText(credit)} <button type="button" class="cat-tag" data-act="copy-credit" data-credit="${escapeText(credit)}">${t('Copy credit')}</button></dd></div>`
+    : '';
+
+  // The profile's own reviewed rules, in one line. A licence with conditions is
+  // stated plainly; it is not an error and is never styled as one.
+  //
+  // What a work REQUIRES and what an export DELIVERED are two facts, and a tile
+  // can only know the first. The old wording said the credit was "included on
+  // export", which is a permanent completion claim about every future route,
+  // including the ones that carry no credit at all: a clipboard copy, a
+  // destination that strips metadata. Plan section 7.1 gives a tile the
+  // requirement and the proposed route; completion belongs to an output receipt,
+  // and section 4.3 lets the finished sentence be said only after readback.
+  const using = !declared
+    ? t('Licence not recorded.')
+    : !profile?.reviewed
+      ? t('Conditions recorded, not yet interpreted.')
+      : profile.shareAlike
+        ? t('Credit required. Lolly prepares it for the export routes that can carry it. ShareAlike applies to adapted versions you share.')
+        : profile.obligation === 'attribution'
+          ? t('Credit required. Lolly prepares it for the export routes that can carry it.')
+          : profile.courtesyCredit
+            ? t('No credit required. A courtesy credit is welcome.')
+            : t('No credit required.');
+
+  return `<div><dt>${t('Source')}</dt><dd>${sourceParts}</dd></div>`
+    + `<div><dt>${t('Licence')}</dt><dd>${licenceCell}</dd></div>`
+    + creditRow
+    + `<div><dt>${t('Using this work')}</dt><dd>${escapeText(using)}</dd></div>`;
+}
+
+/**
+ * The canonical Unicode Emoji 17.0 repertoire the shipped packs are measured
+ * against - the entry count of the engine's own pinned table
+ * (`engine/src/emoji-data/17.0.json`, and the coverage table in
+ * `engine/emoji.md`). Stated here rather than imported because the table is a
+ * 500 KB JSON document and this is one integer; `emoji-pack-rows.test.ts` reads
+ * the real file and fails if the two ever part company.
+ */
+export const CANONICAL_EMOJI_GLYPHS = 3953;
+
+/** A count as this locale writes it. A repertoire is four digits, so the grouping matters. */
+const count = (n: number): string => n.toLocaleString();
+
+/** One recorded gap: the key, and the reason the pack build wrote down for it. */
+const gapList = (rows: readonly EmojiPackAbsence[]): string =>
+  `<ul class="cat-emoji-gap-list">${rows.map(row =>
+    `<li><code>${escapeText(row.key)}</code>${row.reason ? ` - ${escapeText(row.reason)}` : ''}</li>`).join('')}</ul>`;
+
+/**
+ * What a person chooses an emoji set on (plans/252): which family and style it is,
+ * which release, how many glyphs it carries and how much of the canonical
+ * repertoire that covers.
+ *
+ * Coverage is a COUNT, not a verdict. A set with gaps is not a broken set: the
+ * four OpenMoji glyphs missing from it are upstream files the engine's static SVG
+ * subset refuses, each recorded with the message it was refused with, and a
+ * withheld glyph is one somebody left out on purpose. Both are listed with their
+ * reasons rather than summarised away, and a glyph a set does not carry draws the
+ * neutral placeholder - never this machine's own emoji font.
+ */
+export function emojiPackRows(ref: AssetRef): string {
+  const pack = emojiPackMeta(ref);
+  if (!pack) return '';
+  const absences = [...pack.missing, ...pack.withheld];
+  // A pack's own symbols carry an asset id for a key; a Unicode glyph carries hex
+  // scalars. Only the second kind can be a hole in the canonical repertoire.
+  const canonicalGaps = absences.filter(row => isCanonicalGlyphKey(row.key)).length;
+  const covered = Math.max(0, CANONICAL_EMOJI_GLYPHS - canonicalGaps);
+  const customs = Math.max(0, pack.glyphs - covered);
+  const coverage = pack.coverageComplete
+    ? tRaw('Complete - all {total} canonical glyphs.', { total: count(CANONICAL_EMOJI_GLYPHS) })
+    : tRaw('{covered} of the {total} canonical glyphs.', { covered: count(covered), total: count(CANONICAL_EMOJI_GLYPHS) });
+  const extras = customs ? ` ${tRaw('Plus {n} of the set’s own symbols.', { n: count(customs) })}` : '';
+  const gaps = absences.length
+    ? `<details class="cat-dl-advanced cat-emoji-gaps">`
+      + `<summary>${escapeText(tRaw('{n} glyphs are not in this set', { n: count(absences.length) }))}</summary>`
+      + (pack.missing.length
+        ? `<p class="cat-emoji-gap-head">${t('Left out because the source artwork was refused:')}</p>${gapList(pack.missing)}` : '')
+      + (pack.withheld.length
+        ? `<p class="cat-emoji-gap-head">${t('Withheld on purpose:')}</p>${gapList(pack.withheld)}` : '')
+      + `</details>`
+    : '';
+  return `<div><dt>${t('Family')}</dt><dd>${escapeText(pack.family)}</dd></div>`
+    + `<div><dt>${t('Style')}</dt><dd>${escapeText(pack.style)}</dd></div>`
+    + `<div><dt>${t('Release')}</dt><dd>${escapeText(pack.version)}</dd></div>`
+    + `<div><dt>${t('Glyphs')}</dt><dd>${escapeText(count(pack.glyphs))}</dd></div>`
+    + `<div><dt>${t('Coverage')}</dt><dd>${escapeText(coverage + extras)}${gaps}</dd></div>`;
+}
+
+/**
+ * Record this pack as the set new work starts from, and say whether it took.
+ *
+ * The write goes through the same preference module the /profile card writes, and
+ * is then READ BACK: setEmojiPreference is best-effort by design (a seed must never
+ * block the work), so a write that went nowhere would otherwise be reported as a
+ * saved choice. A SEED, not a restyle - a document, a saved session or a link that
+ * already names a set keeps the set it names.
+ */
+export async function useEmojiSet(host: EmojiPrefsHost, pack: EmojiPackTileMeta): Promise<boolean> {
+  const { currentEmojiPreference, setEmojiPreference } = await import('../../lib/emoji-prefs.ts');
+  await setEmojiPreference(host, { pin: emojiPackPin(pack), mode: 'original', strengthBps: 0 });
+  const saved = await currentEmojiPreference(host);
+  return saved?.pin.id === pack.id && saved.pin.pin.version === pack.version;
+}
+
+/** Say, on the button itself, that this set is the one new work already starts from. */
+function markUsingEmojiSet(dlg: HTMLElement): void {
+  const btn = dlg.querySelector<HTMLElement>('.cat-act-use-emoji');
+  if (!btn) return;
+  btn.setAttribute('aria-pressed', 'true');
+  btn.classList.add('is-on');
+  const label = btn.querySelector('span');
+  if (label) label.textContent = t('Your emoji set');
+}
+
+/**
+ * The two reads an emoji pack's sheet needs after it is up: draw the specimen from
+ * the set's own artwork, and mark the button where this set is already the one.
+ *
+ * The specimen goes through the shared helper, so this sheet and a grid tile draw
+ * the same five glyphs: the ones the catalog entry carries, or, for an entry with
+ * no bake, one pack load shared by every surface that asks.
+ */
+export function paintEmojiPack(dt: DetailsCtx): void {
+  const { cat, dlg, host, ref } = dt;
+  const pack = emojiPackMeta(ref);
+  if (!pack) return;
+  void emojiSpecimenArtwork(host, emojiPackSource(pack)).then((artwork) => {
+    if (cat.detailsDialog !== dlg) return;   // closed or paged away while the pack loaded
+    const stub = dlg.querySelector<HTMLElement>('.cat-thumb-emoji');
+    if (stub) paintEmojiSpecimen(stub, artwork);
+  }).catch(() => { /* the family and style line stands on its own */ });
+  void (async () => {
+    const { currentEmojiPreference } = await import('../../lib/emoji-prefs.ts');
+    const saved = await currentEmojiPreference(host as unknown as EmojiPrefsHost);
+    if (cat.detailsDialog !== dlg) return;
+    if (saved?.pin.id === pack.id && saved.pin.pin.version === pack.version) markUsingEmojiSet(dlg);
+  })().catch(() => { /* the button just reads as an offer, which it still is */ });
+}
 
 /** The asset's facts the sheet is built from. */
 export function readAsset(dt: DetailsCtx): void {
@@ -245,6 +430,10 @@ export function buildSheet(dt: DetailsCtx): void {
             // primary "edit" verb for these types (they have no in-place crop/grade).
             ref.type === 'model' ? `<button type="button" class="btn cat-act-open-3d" data-act="open-3d">${icon('box', { size: 14 })}<span>${t('Open in 3D')}</span></button>` : '',
             ref.type === 'lut' ? `<button type="button" class="btn cat-act-open-lut" data-act="open-lut">${icon('camera', { size: 14 })}<span>${t('Open in Darkroom')}</span></button>` : '',
+            // An emoji set's primary verb: make it the set new work starts from.
+            // A SEED, not a restyle - a document, a saved session or a link that
+            // already names a set keeps the set it names (lib/emoji-prefs.ts).
+            emojiPackMeta(ref) ? `<button type="button" class="btn cat-act-use-emoji" data-act="use-emoji-set" aria-pressed="false">${icon('smile', { size: 14 })}<span>${t('Use this set')}</span></button>` : '',
             `<button type="button" class="btn cat-act-fav${fav ? ' is-fav' : ''}" data-act="fav" data-sfx="twinkle" aria-pressed="${fav}">${STAR_ICON}<span>${fav ? t('Favourited') : t('Favourite')}</span></button>`,
             `<button type="button" class="btn cat-act-download" data-act="download">${DOWNLOAD_ICON}<span>${configurable ? t('Download…') : t('Download')}</span></button>`,
             textAssetSupported(ref) ? `<button type="button" class="btn" data-act="open-text">${t('Open in Text')}</button>` : '',
@@ -302,18 +491,10 @@ export function buildSheet(dt: DetailsCtx): void {
         <h2 class="cat-details-name">${escapeText(name)}${aiSignalsChip(ref)}</h2>
         ${ref.type === 'audio' ? `<div class="cat-details-art" data-audio-art aria-hidden="true">${audioCardArt(cat, ref)}</div>` : ''}
         <dl class="cat-details-meta">
-          <div><dt>${t('Source')}</dt><dd>${isUser ? t('Your upload') : t('SUSE catalog')}</dd></div>
+          ${assetRightsRows(ref, isUser)}
+          ${emojiPackRows(ref)}
           <div><dt>${t('Category')}</dt><dd>${escapeText(t(categoryLabel(libCategory(ref, cat.overrides))))}</dd></div>
           <div><dt>${t('Format')}</dt><dd>${escapeText(String(ref.format ?? ref.type).toUpperCase())}</dd></div>
-          ${(() => {
-            // Licence + credit for a catalog asset that carries them (e.g. the SUSE7
-            // LUT, CC BY 4.0, © SUSE / Peter Chamalian). The SPDX id prettifies
-            // in place (cc-by-4.0 → CC BY 4.0); the credit is the required attribution.
-            const lic = (ref.meta as { license?: string } | undefined)?.license;
-            const cred = (ref.meta as { attribution?: string } | undefined)?.attribution;
-            return (lic ? `<div><dt>${t('Licence')}</dt><dd>${escapeText(String(lic).replace(/-/g, ' ').toUpperCase())}</dd></div>` : '')
-              + (cred ? `<div><dt>${t('Credit')}</dt><dd>${escapeText(String(cred))}</dd></div>` : '');
-          })()}
           <div class="cat-details-origins-row"><dt>${t('Origins')}</dt><dd class="cat-details-ai" data-origins></dd></div>
           ${(() => {
             // Added/Modified (plans/132 WP-A): uploads always have a date (the id
@@ -626,6 +807,26 @@ export function wireSheetEvents(dt: DetailsCtx): void {
     }
     const act = target.closest<HTMLElement>('[data-act]')?.dataset.act;
     if (!act) return;
+    // The exact credit, as the catalog recorded it, ready to paste into a caption
+    // or a post description - the one delivery a file's metadata cannot make.
+    if (act === 'copy-credit') {
+      const line = target.closest<HTMLElement>('[data-credit]')?.dataset.credit ?? '';
+      try { await navigator.clipboard.writeText(line); announce(t('Credit copied.')); }
+      catch { announce(t('The credit could not be copied. It is still selectable in the row.')); }
+      return;
+    }
+    // Make this set the one new work starts from (useEmojiSet above, which reads
+    // the preference back before reporting anything).
+    if (act === 'use-emoji-set') {
+      const pack = emojiPackMeta(ref);
+      if (!pack) return;
+      let saved = false;
+      try { saved = await useEmojiSet(host as unknown as EmojiPrefsHost, pack); } catch { saved = false; }
+      if (!saved) { announce(t('That set could not be saved. Your emoji preference is unchanged.')); return; }
+      markUsingEmojiSet(dlg);
+      announce(tRaw('{set} is now the set your new work starts from.', { set: pack.label }));
+      return;
+    }
     if (act === 'open-text') {
       try { await openAssetInText(host, ref); cat.sections.closeDetails(); } catch (error) { announce(error instanceof Error ? error.message : t('This text could not be read.')); }
       return;
@@ -1419,6 +1620,7 @@ export function sheetOps(dt: DetailsCtx) {
     readAsset: bindOp(dt, readAsset),
     buildSheet: bindOp(dt, buildSheet),
     paintPassport: bindOp(dt, paintPassport),
+    paintEmojiPack: bindOp(dt, paintEmojiPack),
     wireTextAsset: bindOp(dt, wireTextAsset),
     wireSheetEvents: bindOp(dt, wireSheetEvents),
   };

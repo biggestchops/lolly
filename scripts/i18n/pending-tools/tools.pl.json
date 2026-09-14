@@ -1,0 +1,657 @@
+{
+  "corpus": "tools",
+  "lang": "pl",
+  "brief": "Translate the given UI strings from English into Polish (pl) for a software product.\nThese are gallery-card fields of an open-source, on-device design-asset platform called Lolly: each tool's NAME (a short noun phrase, two to four words), its one- or two-sentence DESCRIPTION, and sometimes a featured BLURB (one sentence). Register: plain, calm, confident product copy for a professional reader; no marketing embellishment, no added explanation. Keep each string about as long as the source; a card has fixed room.\nTool names translate as ordinary nouns (a \"QR Code\" tool is the QR code tool). Sentence case, never Title Case. Never use an em dash (use a comma, a colon, or a plain hyphen with spaces as the source does). No Oxford comma where the language has that choice.\nNever translate these terms: Lolly, SUSE, Geeko, Content Credentials, C2PA, Pose Geeko, Neurospicy. Keep file formats and acronyms (SVG, PNG, PDF, MP4, QR, C2PA, URL, CSS, OKLCH, MIDI, GPU) as they are.\n\"design system\" is the product's word for a brand's tokens, colours and type; use one consistent term for it in the target language and reuse it everywhere. \"Lolly\" is the product name and never changes; \"Design\" as a tool name (the open canvas) and \"Doc Studio\", \"Deck Studio\", \"Booth Studio\" are tool names and translate as ordinary nouns.\nRegister notes for pl: neutral-informal Polish (ty - the standard modern app register, never Pan/Pani); concise imperatives for actions, established Polish tech vocabulary where natural, Latin script kept for untranslatable product/technical terms; Western digits\nTerm notes: {\"house style\":\"the organisation's OWN editorial/design standard, as in a publishing or fashion house - never a residence or home decor. Use the target language's established term for an organisation's style standard (German 'Hausstil', Turkish 'kurumsal stil'), or keep the English where local professionals do.\",\"house rules\":\"an organisation's standing working conventions - never the rules of a household.\",\"in-house\":\"done inside the organisation itself - never inside a building or dwelling.\",\"design house / fashion house / publishing house\":\"a company or atelier - never a physical building.\",\"powerhouse\":\"an idiom for something exceptionally capable - never a power station or building.\",\"house reader rule\":\"this codebase's own parser convention (never throws, null on bad input) - 'house' means the project, not a home.\"}\nReply by writing the same JSON file back with a top-level \"translations\" array: one {\"id\", \"text\"} per item, ids exactly as in \"items\", text in the target language. Leave \"items\" untouched.",
+  "items": [
+    {
+      "id": "agenda::name",
+      "text": "Agenda"
+    },
+    {
+      "id": "agenda::description",
+      "text": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session."
+    },
+    {
+      "id": "annotate::name",
+      "text": "Annotate"
+    },
+    {
+      "id": "annotate::description",
+      "text": "Mark up your own screenshot on your device - arrows, boxes, numbered steps, callouts, highlighter and a spotlight dim."
+    },
+    {
+      "id": "audiogram::description",
+      "text": "Turn a voice clip or song into a video in your design system's colours that actually moves with the sound - bars, spectrum, ring, ridgeline or scope, ready for social."
+    },
+    {
+      "id": "backdrop::name",
+      "text": "Backdrop"
+    },
+    {
+      "id": "backdrop::description",
+      "text": "Living backdrops from your design system's colours: sixteen GPU effects - flowing silk, prismatic blooms, liquid contours, metaballs, god rays and more. Tune, freeze the exact moment you want, and export stills or motion loops for heroes, walls and meeting backgrounds."
+    },
+    {
+      "id": "calendar-ics::name",
+      "text": "Calendar"
+    },
+    {
+      "id": "captions::name",
+      "text": "Captions"
+    },
+    {
+      "id": "captions::description",
+      "text": "Subtitles for a clip - turn its speech into text on device or drop in an SRT/VTT file, style the cues, and export burned-in frames plus clean .srt and .vtt sidecars."
+    },
+    {
+      "id": "certificate::name",
+      "text": "Certificate"
+    },
+    {
+      "id": "certificate::description",
+      "text": "Completion and award certificates from the active design system - one name at a time, or a whole roster from a CSV in Bulk from rows."
+    },
+    {
+      "id": "chart::description",
+      "text": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active design system."
+    },
+    {
+      "id": "chart::blurb",
+      "text": "Paste a table - Chart makes it clear, accessible and unmistakably on-brand"
+    },
+    {
+      "id": "claim::name",
+      "text": "Claim"
+    },
+    {
+      "id": "clean::name",
+      "text": "Clean"
+    },
+    {
+      "id": "clean::description",
+      "text": "Clean a voice recording, trim edge silence and set its loudness on your device."
+    },
+    {
+      "id": "compress-pdf::name",
+      "text": "Compress"
+    },
+    {
+      "id": "contrast-check::description",
+      "text": "Check a text and background pair, or every pairing in the design system palette, against WCAG 2.1 and APCA, and see how it reads to colour-blind viewers."
+    },
+    {
+      "id": "countdown-timer::name",
+      "text": "Countdown"
+    },
+    {
+      "id": "darkroom::description",
+      "text": "A pro photo-grading darkroom: film looks, third-party .cube LUTs, design system colour treatments and finishing texture - then bake your look as a LUT any editor can use. Opens a Photoshop or GIMP file as layers too: position, blend and hide each one, grade the composite, and export flat images or a layered PSD."
+    },
+    {
+      "id": "deck-studio::description",
+      "text": "Turn Markdown or a JSON spec into a native, editable PowerPoint deck - real text, bullets, tables and the design system theme - in seconds. The fast text-first path to a deck; reach for the Design canvas when you want to lay slides out by hand or animate them. Charts and diagrams come from your other Lolly tools. Exports .pptx (editable), plus PDF and PNG."
+    },
+    {
+      "id": "design::description",
+      "text": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system."
+    },
+    {
+      "id": "diagram-builder::name",
+      "text": "Diagrams"
+    },
+    {
+      "id": "diagram-builder::description",
+      "text": "Org charts, flowcharts, timelines and more - from cards, text, Mermaid, DOT or CSV."
+    },
+    {
+      "id": "filter::description",
+      "text": "One tool for photo effects: pick halftone, scanline, posterize, voronoi, dither or ASCII art (vector) or duotone, pixel-stretch, misprint or glitch (raster). Design system overlays, live camera and exports to as many formats as each effect supports."
+    },
+    {
+      "id": "finish-preview::name",
+      "text": "Finishes"
+    },
+    {
+      "id": "frame::name",
+      "text": "Frame"
+    },
+    {
+      "id": "frame::description",
+      "text": "Drop in a screenshot and get it framed, padded and shadowed on a design system backdrop."
+    },
+    {
+      "id": "gradient::name",
+      "text": "Gradient"
+    },
+    {
+      "id": "gradient::description",
+      "text": "Five ways to build a gradient from the design system swatches: soft radial Blend, a real Coons-patch mesh as crisp SVG (Subdivide) or a smooth raster (Mesh), freeform Warp points and the animated Flow waves. Drag everything right on the canvas; export stills or join-free video loops."
+    },
+    {
+      "id": "growth::name",
+      "text": "Growth"
+    },
+    {
+      "id": "growth::description",
+      "text": "Differential growth: a line that repels itself until it folds into coral. Seed it from a ring, a burst, headline letterforms or a logo, and export the result as real, plotter-ready SVG paths."
+    },
+    {
+      "id": "icon::name",
+      "text": "Icon"
+    },
+    {
+      "id": "icon::description",
+      "text": "Favicon and app-icon maker - a multi-size .ico, PNG and SVG, or the whole app kit as one zip."
+    },
+    {
+      "id": "jump::name",
+      "text": "Jump"
+    },
+    {
+      "id": "jump::description",
+      "text": "A one-link landing page: your links, heading, portrait and colours on an expressive page - and the whole page lives inside the link you share."
+    },
+    {
+      "id": "link-card::name",
+      "text": "Link Card"
+    },
+    {
+      "id": "link-card::description",
+      "text": "Paste a link, get a social card in your design system - title, description, site chip and a thumbnail, at Open Graph, square or summary size."
+    },
+    {
+      "id": "logo-wall::name",
+      "text": "Logo Wall"
+    },
+    {
+      "id": "multi-page-pdf::name",
+      "text": "Booklet"
+    },
+    {
+      "id": "pages::description",
+      "text": "Reorder, rotate, extract, delete, merge or split PDF pages on your device."
+    },
+    {
+      "id": "pricing-table::name",
+      "text": "Pricing"
+    },
+    {
+      "id": "pricing-table::description",
+      "text": "Plans as columns, features as rows, ticks and crosses, and one plan picked out as the recommended one."
+    },
+    {
+      "id": "print-sheet::name",
+      "text": "Print Sheet"
+    },
+    {
+      "id": "print-sheet::description",
+      "text": "Lay one design - or a whole pile of them - out n-up on A4, Letter or A3, across as many pages as it takes, with crop marks in the margin."
+    },
+    {
+      "id": "prompt-card::name",
+      "text": "Prompt Card"
+    },
+    {
+      "id": "qr-code::name",
+      "text": "QR Code"
+    },
+    {
+      "id": "qr-code::description",
+      "text": "Scannable codes of every kind: QR, Micro QR, Data Matrix, Aztec and PDF417 for links, contacts, Wi-Fi, events, locations and text - plus retail and logistics barcodes from EAN-13 and Code 128 to ITF-14, GS1-128, GS1 DataBar and MaxiCode."
+    },
+    {
+      "id": "rebrand-deck::name",
+      "text": "Rebrand"
+    },
+    {
+      "id": "sandbox::name",
+      "text": "Sandbox"
+    },
+    {
+      "id": "scan-code::name",
+      "text": "Scan"
+    },
+    {
+      "id": "scan-code::description",
+      "text": "Read QR codes and barcodes on-device, with nothing sent to any cloud. A reader, not an opener: it decodes, classifies and explains what a code carries - links, Wi-Fi, contacts, product codes - and lets you act deliberately. Copy is always the first action; opening, joining or adding is an explicit, informed tap."
+    },
+    {
+      "id": "scan-code::blurb",
+      "text": "Read any code, safely and offline"
+    },
+    {
+      "id": "sign::name",
+      "text": "Sign"
+    },
+    {
+      "id": "sign::description",
+      "text": "Place your signature on a PDF, optionally add a Content Credential and lock the result."
+    },
+    {
+      "id": "signature::name",
+      "text": "Signature"
+    },
+    {
+      "id": "signature::description",
+      "text": "Sign with a finger, stylus or mouse and get a clean signature on transparency - SVG or PNG, no scanner, no photo of a bit of paper."
+    },
+    {
+      "id": "snippet::name",
+      "text": "Snippet"
+    },
+    {
+      "id": "spatial-photo::name",
+      "text": "Spatial Photo"
+    },
+    {
+      "id": "spatial-photo::description",
+      "text": "Drop in one photo and move a camera through it: depth is read on your device, so a flat picture becomes a scene with real parallax, atmosphere and focus."
+    },
+    {
+      "id": "stationery::name",
+      "text": "Stationery"
+    },
+    {
+      "id": "stationery::description",
+      "text": "Business cards, letterhead and compliments slips from the design system, each piece sized to its real print trim, ready as a print PDF."
+    },
+    {
+      "id": "synth::name",
+      "text": "Synth"
+    },
+    {
+      "id": "synth::description",
+      "text": "A visual instrument you play. Four scenes run live on the GPU: fluid ink, a particle swarm that flies at your headline or your logo, a feedback field, and your own camera. Every colour comes out of the design system palette, and the picture moves to your pointer, to a music track, and to a MIDI controller. Export a still or a join-free loop."
+    },
+    {
+      "id": "text-helper::description",
+      "text": "Find, edit, understand and transform text. Browse brand characters and emoji, work with code and logs, or create ASCII lettering."
+    },
+    {
+      "id": "timezone::name",
+      "text": "Timezone"
+    },
+    {
+      "id": "timezone::description",
+      "text": "Turn places and timezones into artwork that follows the design system. Rotate a vector atlas or a detailed WebGL globe, unfold projections, label your people and places, then export artwork, a camera tour or structured schedules."
+    },
+    {
+      "id": "trim::name",
+      "text": "Trim"
+    },
+    {
+      "id": "trim::description",
+      "text": "Cut an audio or video clip, change its container, mute it or extract its audio on your device."
+    },
+    {
+      "id": "url-shot::description",
+      "text": "Any web page, at any scroll depth, with custom CSS."
+    },
+    {
+      "id": "wayfinding-signage::name",
+      "text": "Wayfinding"
+    },
+    {
+      "id": "wordmark::description",
+      "text": "Type a word, get a pure-path vector wordmark in the design system font - recipients never need the font installed."
+    },
+    {
+      "id": "work-avatar::name",
+      "text": "Work Avatar"
+    },
+    {
+      "id": "work-avatar::description",
+      "text": "A round profile photo with a treatment and a ring of text - the campaign badge for LinkedIn and every other place your face goes, in your design system's colours and type."
+    },
+    {
+      "id": "brand-lockup::name",
+      "text": "Lockup"
+    },
+    {
+      "id": "deck-builder::name",
+      "text": "Deck"
+    },
+    {
+      "id": "event-name-badge::name",
+      "text": "Badges"
+    },
+    {
+      "id": "logo-lockup-partner::name",
+      "text": "Partner Lockup"
+    },
+    {
+      "id": "quotes::name",
+      "text": "Quotes"
+    },
+    {
+      "id": "tool-logo::description",
+      "text": "Place the SUSE logo on a colour or transparent background."
+    }
+  ],
+  "translations": [
+    {
+      "id": "agenda::name",
+      "text": "Agenda"
+    },
+    {
+      "id": "agenda::description",
+      "text": "Program konferencji z jednej tabeli - chronologiczna lista, harmonogram z wieloma ścieżkami albo ekran teraz-i-potem przy wejściu - oraz prawdziwy plik .ics każdej sesji."
+    },
+    {
+      "id": "annotate::name",
+      "text": "Adnotacje"
+    },
+    {
+      "id": "annotate::description",
+      "text": "Oznaczaj własny zrzut ekranu na swoim urządzeniu - strzałki, ramki, numerowane kroki, objaśnienia, zakreślacz i tryb reflektora z przyciemnieniem tła."
+    },
+    {
+      "id": "audiogram::description",
+      "text": "Zamień nagranie głosowe lub piosenkę w wideo w kolorach Twojego systemu projektowego, które faktycznie porusza się z dźwiękiem - słupki, spektrum, pierścień, linia grzbietowa lub oscyloskop, gotowe na social media."
+    },
+    {
+      "id": "backdrop::name",
+      "text": "Tło"
+    },
+    {
+      "id": "backdrop::description",
+      "text": "Żywe tła w kolorach Twojego systemu projektowego: szesnaście efektów GPU - płynący jedwab, pryzmatyczne rozbłyski, płynne kontury, metaballs, god rays i więcej. Dostrajaj, zatrzymaj dokładnie ten moment, który chcesz, i eksportuj nieruchome kadry albo pętle ruchu do obrazów hero, ścian i teł spotkań."
+    },
+    {
+      "id": "calendar-ics::name",
+      "text": "Kalendarz"
+    },
+    {
+      "id": "captions::name",
+      "text": "Napisy"
+    },
+    {
+      "id": "captions::description",
+      "text": "Napisy dla klipu - transkrybuj go na urządzeniu albo wgraj plik SRT/VTT, dostosuj wygląd napisów i eksportuj klatki z wypalonymi napisami oraz czyste, towarzyszące pliki .srt i .vtt."
+    },
+    {
+      "id": "certificate::name",
+      "text": "Certyfikat"
+    },
+    {
+      "id": "certificate::description",
+      "text": "Certyfikaty ukończenia i certyfikaty nagrody z aktywnego systemu projektowego - jedno imię naraz albo cała lista z pliku CSV przez Bulk from rows."
+    },
+    {
+      "id": "chart::description",
+      "text": "Wykresy od pierwszego wklejenia do zaawansowanej wizualizacji - wyjaśnione rekomendacje danych, jawne mapowanie pól, 35 klasycznych rodzin wektorowych, w tym Pareto, cele bullet i słupki zakresowe, szesnaście statystycznych i redakcyjnych odmian, sceny 3D z prawdziwą osią Z, kinowe loty kamerą, deterministyczny ruch, dostępne opisy oraz style skompilowane z aktywnego systemu projektowego."
+    },
+    {
+      "id": "chart::blurb",
+      "text": "Wklej tabelę - Wykres sprawia, że jest przejrzysta, dostępna i bezbłędnie zgodna z systemem projektowym"
+    },
+    {
+      "id": "claim::name",
+      "text": "Zastrzeżenie"
+    },
+    {
+      "id": "clean::name",
+      "text": "Czyszczenie"
+    },
+    {
+      "id": "clean::description",
+      "text": "Oczyść nagranie głosowe, przytnij ciszę na krawędziach i ustaw głośność na swoim urządzeniu."
+    },
+    {
+      "id": "compress-pdf::name",
+      "text": "Kompresja"
+    },
+    {
+      "id": "contrast-check::description",
+      "text": "Sprawdź parę kolorów tekstu i tła, albo każdą parę w palecie Twojego systemu projektowego, względem WCAG 2.1 i APCA, i zobacz, jak wygląda to dla osób z daltonizmem."
+    },
+    {
+      "id": "countdown-timer::name",
+      "text": "Odliczanie"
+    },
+    {
+      "id": "darkroom::description",
+      "text": "Profesjonalna ciemnia do korekcji kolorów: style filmowe, zewnętrzne pliki LUT .cube, zabiegi kolorystyczne systemu projektowego i tekstura wykończenia - a następnie zapisz swój styl jako LUT, którego użyje dowolny edytor. Otwiera też plik Photoshop lub GIMP jako warstwy: ustawiaj, mieszaj i ukrywaj każdą z nich, koryguj całą kompozycję i eksportuj płaskie obrazy albo warstwowy PSD."
+    },
+    {
+      "id": "deck-studio::description",
+      "text": "Zamień Markdown albo specyfikację JSON w natywną, edytowalną prezentację PowerPoint - z prawdziwym tekstem, punktami, tabelami i motywem systemu projektowego - w kilka sekund. Najszybsza, tekstowa droga do prezentacji; sięgnij po płótno Design, gdy chcesz układać slajdy ręcznie albo je animować. Wykresy i diagramy pochodzą z innych Twoich narzędzi Lolly. Eksportuje .pptx (edytowalny), a także PDF i PNG."
+    },
+    {
+      "id": "design::description",
+      "text": "Otwarte płótno do swobodnego układu - tekst, obrazy, kształty i renderowania na żywo z innych narzędzi Lolly, wszystko zgodne z Twoim systemem projektowym."
+    },
+    {
+      "id": "diagram-builder::name",
+      "text": "Diagramy"
+    },
+    {
+      "id": "diagram-builder::description",
+      "text": "Schematy organizacyjne, schematy blokowe, osie czasu i inne - z kart, tekstu, Mermaid, DOT lub CSV."
+    },
+    {
+      "id": "filter::description",
+      "text": "Jedno narzędzie do efektów fotograficznych: wybierz halftone, scanline, posterize, voronoi, dither albo ASCII art (wektor), lub duotone, rozciąganie pikseli, błąd druku albo glitch (raster). Nakładki z systemu projektowego, kamera na żywo i eksport do tylu formatów, ile obsługuje dany efekt."
+    },
+    {
+      "id": "finish-preview::name",
+      "text": "Wykończenia"
+    },
+    {
+      "id": "frame::name",
+      "text": "Ramka"
+    },
+    {
+      "id": "frame::description",
+      "text": "Wstaw zrzut ekranu - otrzymasz go w ramce, z marginesem i cieniem na tle systemu projektowego."
+    },
+    {
+      "id": "gradient::name",
+      "text": "Gradient"
+    },
+    {
+      "id": "gradient::description",
+      "text": "Pięć sposobów na zbudowanie gradientu z próbek kolorów systemu projektowego: miękki radialny Blend, prawdziwa siatka Coons-patch jako ostre SVG (Subdivide) albo gładki raster (Mesh), swobodne punkty Warp i animowane fale Flow. Przeciągaj wszystko wprost na płótnie; eksportuj nieruchome kadry albo bezszwowe pętle wideo."
+    },
+    {
+      "id": "growth::name",
+      "text": "Wzrost"
+    },
+    {
+      "id": "growth::description",
+      "text": "Wzrost różnicowy: linia, która odpycha samą siebie, aż zwinie się w kształt przypominający koralowiec. Ustaw kształt początkowy - pierścień, eksplozję, litery Twojego nagłówka albo Twoje logo - i eksportuj wynik jako prawdziwe ścieżki SVG gotowe do plotera."
+    },
+    {
+      "id": "icon::name",
+      "text": "Ikona"
+    },
+    {
+      "id": "icon::description",
+      "text": "Kreator favicon i ikon aplikacji - wielorozmiarowy plik .ico, PNG i SVG, albo cały zestaw aplikacji w jednym archiwum zip."
+    },
+    {
+      "id": "jump::name",
+      "text": "Skok"
+    },
+    {
+      "id": "jump::description",
+      "text": "Strona docelowa w jednym linku: Twoje linki, nagłówek, portret i kolory na wyrazistej stronie - a cała strona mieści się w samym linku, którym się dzielisz."
+    },
+    {
+      "id": "link-card::name",
+      "text": "Karta z linkiem"
+    },
+    {
+      "id": "link-card::description",
+      "text": "Wklej link - otrzymaj kartę społecznościową w Twoim systemie projektowym: tytuł, opis, chip witryny i miniaturę, w rozmiarze Open Graph, kwadratowym albo Summary."
+    },
+    {
+      "id": "logo-wall::name",
+      "text": "Ściana logo"
+    },
+    {
+      "id": "multi-page-pdf::name",
+      "text": "Broszura"
+    },
+    {
+      "id": "pages::description",
+      "text": "Zmień kolejność, obróć, wyodrębnij, usuń, połącz lub podziel strony PDF na swoim urządzeniu."
+    },
+    {
+      "id": "pricing-table::name",
+      "text": "Cennik"
+    },
+    {
+      "id": "pricing-table::description",
+      "text": "Plany jako kolumny, funkcje jako wiersze, ptaszki i krzyżyki, i jeden plan wyróżniony jako polecany."
+    },
+    {
+      "id": "print-sheet::name",
+      "text": "Arkusz do druku"
+    },
+    {
+      "id": "print-sheet::description",
+      "text": "Rozmieść jeden projekt - albo całą ich stertę - w układzie n-up na arkuszu A4, Letter lub A3, na tylu stronach, ile potrzeba, ze znacznikami cięcia na marginesie."
+    },
+    {
+      "id": "prompt-card::name",
+      "text": "Karta promptu"
+    },
+    {
+      "id": "qr-code::name",
+      "text": "Kod QR"
+    },
+    {
+      "id": "qr-code::description",
+      "text": "Skanowalne kody każdego rodzaju: QR, Micro QR, Data Matrix, Aztec i PDF417 dla linków, kontaktów, Wi-Fi, wydarzeń, lokalizacji i tekstu - a także kody kreskowe handlu detalicznego i logistyki, od EAN-13 i Code 128 po ITF-14, GS1-128, GS1 DataBar i MaxiCode."
+    },
+    {
+      "id": "rebrand-deck::name",
+      "text": "Rebranding"
+    },
+    {
+      "id": "sandbox::name",
+      "text": "Piaskownica"
+    },
+    {
+      "id": "scan-code::name",
+      "text": "Skanowanie"
+    },
+    {
+      "id": "scan-code::description",
+      "text": "Odczytuj kody QR i kody kreskowe na urządzeniu, bez wysyłania niczego do chmury. Czytnik, nie otwieracz: dekoduje, klasyfikuje i wyjaśnia, co niesie kod - linki, Wi-Fi, kontakty, kody produktów - i pozwala działać świadomie. Kopiowanie jest zawsze pierwszą czynnością; otwarcie, dołączenie lub dodanie to jawne, świadome dotknięcie."
+    },
+    {
+      "id": "scan-code::blurb",
+      "text": "Odczytaj dowolny kod, bezpiecznie i offline"
+    },
+    {
+      "id": "sign::name",
+      "text": "Podpisywanie"
+    },
+    {
+      "id": "sign::description",
+      "text": "Umieść swój podpis na pliku PDF, opcjonalnie dodaj Content Credential i zablokuj wynik."
+    },
+    {
+      "id": "signature::name",
+      "text": "Podpis"
+    },
+    {
+      "id": "signature::description",
+      "text": "Podpisz się palcem, rysikiem albo myszką i uzyskaj czysty podpis na przezroczystym tle - SVG lub PNG, bez skanera, bez zdjęcia kartki papieru."
+    },
+    {
+      "id": "snippet::name",
+      "text": "Fragment kodu"
+    },
+    {
+      "id": "spatial-photo::name",
+      "text": "Zdjęcie przestrzenne"
+    },
+    {
+      "id": "spatial-photo::description",
+      "text": "Wstaw jedno zdjęcie i przeprowadź przez nie kamerę: głębia jest odczytywana na Twoim urządzeniu, dzięki czemu płaskie zdjęcie staje się sceną z prawdziwą paralaksą, atmosferą i ostrością."
+    },
+    {
+      "id": "stationery::name",
+      "text": "Papeteria"
+    },
+    {
+      "id": "stationery::description",
+      "text": "Wizytówki, papier firmowy i bileciki grzecznościowe z systemu projektowego - każdy element w dokładnym rozmiarze, gotowy jako PDF do druku."
+    },
+    {
+      "id": "synth::name",
+      "text": "Synth"
+    },
+    {
+      "id": "synth::description",
+      "text": "Wizualny instrument, na którym grasz. Cztery sceny działają na żywo na GPU: płynny atrament, rój cząsteczek lecący w stronę Twojego nagłówka albo Twojego logo, efekt sprzężenia zwrotnego i Twoja własna kamera. Każdy kolor pochodzi z palety systemu projektowego, a obraz reaguje na Twój kursor, na utwór muzyczny i na kontroler MIDI. Eksportuj nieruchomy kadr albo bezszwową pętlę."
+    },
+    {
+      "id": "text-helper::description",
+      "text": "Znajdź, edytuj, zrozum i przekształć tekst. Przeglądaj znaki marki i emoji, pracuj z kodem i logami, albo twórz napisy ASCII."
+    },
+    {
+      "id": "timezone::name",
+      "text": "Strefa czasowa"
+    },
+    {
+      "id": "timezone::description",
+      "text": "Zamień miejsca i strefy czasowe w grafikę zgodną z systemem projektowym. Obracaj wektorowy atlas albo szczegółowy globus WebGL, rozwijaj odwzorowania, oznacz swoich ludzi i miejsca, a następnie eksportuj grafikę, wycieczkę kamerą lub uporządkowane harmonogramy."
+    },
+    {
+      "id": "trim::name",
+      "text": "Przycinanie"
+    },
+    {
+      "id": "trim::description",
+      "text": "Przytnij klip audio lub wideo, zmień jego kontener, wycisz go albo wyodrębnij z niego dźwięk na swoim urządzeniu."
+    },
+    {
+      "id": "url-shot::description",
+      "text": "Dowolna strona internetowa, na dowolnej głębokości przewijania, z niestandardowym CSS."
+    },
+    {
+      "id": "wayfinding-signage::name",
+      "text": "Oznakowanie kierunkowe"
+    },
+    {
+      "id": "wordmark::description",
+      "text": "Wpisz słowo i uzyskaj czysty wektorowy znak słowny w czcionce systemu projektowego - odbiorcy nigdy nie muszą mieć zainstalowanej tej czcionki."
+    },
+    {
+      "id": "work-avatar::name",
+      "text": "Awatar zawodowy"
+    },
+    {
+      "id": "work-avatar::description",
+      "text": "Okrągłe zdjęcie profilowe z efektem i pierścieniem tekstu - odznaka kampanii na LinkedIn i każde inne miejsce, gdzie pojawia się Twoja twarz, w kolorach i czcionce Twojego systemu projektowego."
+    },
+    {
+      "id": "brand-lockup::name",
+      "text": "Układ logo"
+    },
+    {
+      "id": "deck-builder::name",
+      "text": "Kreator slajdów"
+    },
+    {
+      "id": "event-name-badge::name",
+      "text": "Identyfikatory"
+    },
+    {
+      "id": "logo-lockup-partner::name",
+      "text": "Układ logo partnera"
+    },
+    {
+      "id": "quotes::name",
+      "text": "Cytaty"
+    },
+    {
+      "id": "tool-logo::description",
+      "text": "Umieść logo SUSE na kolorowym lub przezroczystym tle."
+    }
+  ]
+}

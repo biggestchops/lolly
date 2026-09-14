@@ -32,7 +32,7 @@
       "label": "Effect",
       "type": "select",
       "default": "metaballs",
-      "help": "Every effect moves and takes your colours. Silk flow, Prism bloom and Liquid contours bring a MilkDrop-inspired play of light and colour.",
+      "help": "Every effect moves and takes the design system's colours. Silk flow, Prism bloom and Liquid contours bring a MilkDrop-inspired play of light and colour.",
       "options": [
         { "value": "metaballs", "label": "Metaballs", "badge": "orbs", "formats": ["png", "jpg", "webp", "avif", "webm", "mp4", "gif"] },
         { "value": "smoke-ring", "label": "Smoke ring", "badge": "orbs", "formats": ["png", "jpg", "webp", "avif", "webm", "mp4", "gif"] },
@@ -54,7 +54,7 @@
     },
     {
       "id": "count",
-      "label": "Colours",
+      "label": "Number of colours",
       "type": "number",
       "display": "slider",
       "default": 4,
@@ -109,11 +109,12 @@
       "label": "Background",
       "type": "color",
       "default": "{color.semantic.surface}",
-      "help": "The field behind the effect. Dark grounds make the colours glow; try your design system's surface for a calmer wash."
+      "help": "The field behind the effect. Dark grounds make the colours glow; try the design system's surface for a calmer wash."
     },
     {
       "id": "brandInfluence",
-      "label": "Brand influence",
+      "display": "segmented",
+      "label": "Palette influence",
       "type": "select",
       "default": "strong",
       "showIf": { "effect": ["silk-flow", "prism-bloom", "liquid-contours"] },
@@ -123,7 +124,7 @@
         { "value": "strong", "label": "Strong" },
         { "value": "full", "label": "Full" }
       ],
-      "help": "How strongly your swatches shape the colour. Strong keeps a little spectral shimmer; Full follows your palette most closely, preserving shadows and luminous edges. Off reveals the original spectrum."
+      "help": "How strongly the design system's swatches shape the colour. Strong keeps a little spectral shimmer; Full follows the palette most closely, preserving shadows and luminous edges. Off reveals the original spectrum."
     },
     {
       "id": "intensity",
@@ -184,7 +185,7 @@
       "max": 300,
       "step": 5,
       "showIf": { "effect": ["metaballs", "neuro-noise", "perlin-noise", "warp", "spiral", "swirl", "silk-flow", "prism-bloom", "liquid-contours", "dot-orbit", "voronoi", "smoke-ring", "god-rays", "color-panels", "pulsing-border", "dithering"] },
-      "help": "Playback speed, as a percentage of each effect's designed pace. 0 freezes the live canvas; a video export still moves. Clips are not seamless loops - pick a length in the export bar where the cut sits well."
+      "help": "Playback speed, as a percentage of each effect's designed pace. 0 freezes the live canvas; a video export still moves. Clips do not loop cleanly - pick a length in the export bar where the cut sits well."
     },
     {
       "id": "phase",

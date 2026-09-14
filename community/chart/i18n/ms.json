@@ -1,7 +1,7 @@
 {
   "name": "Carta",
-  "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active brand profile.",
-  "featured.blurb": "Paste a table — Chart makes it clear, accessible and unmistakably on-brand",
+  "description": "Carta daripada tampalan pertama hingga visualisasi lanjutan - cadangan data yang dijelaskan, pemetaan medan eksplisit, 35 keluarga vektor klasik termasuk Pareto, sasaran peluru dan bar julat, enam belas artikulasi statistik dan editorial, adegan 3D-z sebenar, penerbangan sinematik, gerakan deterministik, penerangan mesra akses dan gaya yang dihimpun daripada sistem reka bentuk aktif.",
+  "featured.blurb": "Tampal jadual - Carta menjadikannya jelas, mudah diakses dan pastinya kekal berjenama",
   "a11yLabel": "Carta {{chartType}}{{#if heading}} - {{heading}}{{/if}}",
   "inputs.chartType.label": "Jenis carta",
   "inputs.chartType.options.bar": "Bar - menegak",

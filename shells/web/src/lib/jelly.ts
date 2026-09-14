@@ -16,7 +16,7 @@
  * [data-jelly-mode] attribute that theme.ts stamps alongside [data-theme].
  */
 
-import { flagEnabledSync, JELLY_FLAG } from '../feature-flags.ts';
+import { flagEnabledSync, perfUiOn, subscribePerfUi, JELLY_FLAG } from '../feature-flags.ts';
 
 const BRIDGE_ID = 'jelly-token-bridge';
 
@@ -100,6 +100,8 @@ jelly-input {
 
 let loading: Promise<void> | null = null;
 let ready = false;
+let setJellyPerformanceMode: ((on: boolean) => void) | undefined;
+subscribePerfUi(on => setJellyPerformanceMode?.(on));
 
 // The WKWebView in the current macOS/iOS beta grows the jelly components' canvas
 // without bound - a measure-then-redraw feedback loop that scales each control up
@@ -114,7 +116,7 @@ const NATIVE_WEBVIEW = typeof window !== 'undefined'
 
 /** Whether the Jelly effects flag is on (sync read of the boot-hydrated mirror). */
 export function jellyEnabled(): boolean {
-  if (NATIVE_WEBVIEW) return false;
+  if (NATIVE_WEBVIEW || perfUiOn()) return false;
   return flagEnabledSync(JELLY_FLAG.id);
 }
 
@@ -137,7 +139,7 @@ export function jellyActive(): boolean {
  * (e.g. right after a toggle, when the sync mirror hasn't been written yet).
  */
 export async function ensureJelly(on: boolean = jellyEnabled()): Promise<boolean> {
-  if (!on) return false;
+  if (!on || perfUiOn()) return false;
   // The gate above only stops callers that read jellyEnabled(); the feature-flag
   // toggle passes its new state in directly (profile.ts), so bar the native
   // WebView here too - otherwise flipping the flag on desktop loads the bundle and
@@ -149,7 +151,9 @@ export async function ensureJelly(on: boolean = jellyEnabled()): Promise<boolean
   // way - refuse up front rather than warning once per mount.
   if (typeof customElements === 'undefined') return false;
   if (!loading) {
-    loading = import('../vendor/jelly/jelly.mjs').then(() => {
+    loading = import('../vendor/jelly/jelly.mjs').then(module => {
+      setJellyPerformanceMode = module.setPerformanceMode;
+      setJellyPerformanceMode(perfUiOn());
       if (!document.getElementById(BRIDGE_ID)) {
         const style = document.createElement('style');
         style.id = BRIDGE_ID;
@@ -166,7 +170,7 @@ export async function ensureJelly(on: boolean = jellyEnabled()): Promise<boolean
   }
   try {
     await loading;
-    return true;
+    return !perfUiOn();
   } catch (err) {
     loading = null; // a failed chunk load may be transient - allow a retry
     console.warn('jelly: bundle failed to load', err);

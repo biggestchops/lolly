@@ -23,8 +23,9 @@
  */
 
 import '../styles/parts/valid.css';   // async CSS chunk (lazy view - not on the landing)
-import { verifyC2pa, verifySeal, pemToDer, c2paTrustAnchors, extractFileMetadata, appendedIsExpected, META_GROUP_ORDER, META_GROUP_LABEL, stripMetadata, isStrippableFormat, detectWatermark, detectWatermarkSearch, analyzeLsb, isPptx, pptxMediaImages } from '@lolly/engine';
+import { verifyC2pa, verifySeal, pemToDer, c2paTrustAnchors, extractFileMetadata, appendedIsExpected, META_GROUP_ORDER, META_GROUP_LABEL, stripMetadata, isStrippableFormat, detectWatermark, detectWatermarkSearch, analyzeLsb, isPptx, pptxMediaImages, evaluateReuse, licenceDisplayName, normaliseLicence, rightsReportFromC2pa } from '@lolly/engine';
 import type { FileMetadata, MetaField, MetaGroup, StripFormat, SealVerifyResult } from '@lolly/engine';
+import type { CreativeOperationV1, CreativeUseRoleV1, DeliveryRouteV1 } from '@lolly-tools/core/rights-v1';
 import { looksLikePptxFile, inflatePptx, PPTX_MIME } from '../bridge/pptx.ts';
 // The docx sniff only (a name/type test plus its MIME). The reader itself is loaded
 // lazily where it is used, so a drop that is not a Word file never pays for it.
@@ -56,7 +57,7 @@ import { mountProfileFab } from '../components/profile-menu.ts';
 // tested) standalone. See valid-verdict.ts's header for why this lives apart from the
 // rendering below.
 import {isExpectedRow, pipStatusWord, scorecardModel, resolveState, sourceTypeLabel,
-  stateTone, STATE_COPY, hashFailed,
+  stateTone, STATE_COPY, hashFailed, rightsReportOf, rightsSourceReport,
 } from './valid-verdict.ts';
 import type { Check, SignerIdentity, Signer, Claim, VerifyReport, Watermark, ScorecardItem } from './valid-verdict.ts';
 // The C2PA 2.4 text-binding models - same pure-module rule as valid-verdict.ts.
@@ -516,7 +517,7 @@ function renderMetadata(meta: FileMetadata | undefined, preview: Preview | undef
 
 // ── AI-generated flag ───────────────────────────────────────────────────────
 // The loudest marker on the page: when the file declares its pixels came from
-// a trained model, we say so in a purple, animated, unmissable banner. Two
+// a trained model, we report it in a purple, animated, unmissable banner. Two
 // declaration sources, two strengths of claim: a signed C2PA assertion
 // (report.aiGenerated), or the bare IPTC DigitalSourceType tag in the file's
 // embedded metadata (meta.ai) - the sidecar flag Gemini/Imagen, Midjourney and
@@ -1544,6 +1545,171 @@ export function stepsHtml(report: VerifyReport): string {
     </details>`;
 }
 
+/**
+ * Sources - what went INTO this file, as its credential records it.
+ *
+ * Read-only, and deliberately plain. Each row is one recorded ingredient: what it
+ * is, how it was used, who made it, the licence it came under, where the exact
+ * bytes live and what was done to them.
+ *
+ * The line that earns this panel is the honesty line. A source that carries no
+ * Content Credential of its own - an upstream SVG, a CC BY illustration, an emoji
+ * pack's artwork - is recorded by the exporter, which is not the same thing as
+ * the source signing for itself. A reader cannot tell those apart from a title
+ * and a licence, so the panel says which one it is on every row rather than
+ * letting a recorded licence read as a proven one.
+ */
+export function sourcesHtml(report: VerifyReport, fileIndex = 0): string {
+  const sources = report.ingredients ?? [];
+  if (!sources.length) return '';
+  // The engine reads the same ingredients into the plan's own vocabulary: one
+  // computed summary sentence and one ready-to-paste credit line per source. It
+  // names nothing itself, so no creator or licence is hard-coded in this view.
+  const rightsReport = rightsReportOf(report);
+  // `relationship` is a string off the file under review, so the two known values
+  // are tested by name rather than looked up in an object. Both strings are
+  // literal t() call sites, which is the only form the translation extractor can
+  // see, so they are translated like the rest of the panel.
+  const useText = (relationship: string | undefined): string => {
+    if (relationship === 'componentOf') return t('Placed in this file');
+    if (relationship === 'parentOf') return t('This file was made from it');
+    return relationship ?? '';
+  };
+  const rows = sources.map((source, i) => {
+    const rights = source.rights;
+    const link = rights?.sourceUrl || source.data?.url || source.informationalUri || '';
+    // http(s) only: a credential is a file somebody sent you, so its links are
+    // untrusted input and must never be able to name a javascript: target.
+    const safe = /^https?:\/\//i.test(link) ? link : '';
+    // The canonical licence NAME, with the exact declaration kept in the title so
+    // nothing a source wrote is replaced by a tidier spelling of it. The name is
+    // read whenever the identifier resolves, not only when it differs from the
+    // declaration: a credential records `CC-BY-SA-4.0`, and printing the raw id
+    // here while the export panel printed `CC BY-SA 4.0` handed two people two
+    // different strings for one licence.
+    const declared = rights?.license ?? '';
+    const canonical = declared ? normaliseLicence(declared) : null;
+    const licenceText = canonical?.id ? licenceDisplayName(canonical.id) : declared;
+    const licenceCell = declared
+      ? `<span title="${escape(declared)}">${escape(licenceText)}</span>`
+      : '';
+    const facts: Array<[string, string]> = [
+      [t('Used'), useText(source.relationship)],
+      [t('Creator'), rights?.creator ?? ''],
+      [t('Attribution'), rights?.attribution ?? ''],
+      // The upstream release tag or commit the bytes came from. Labelled as the
+      // source's revision, because a bare 40-character hash beside Creator and
+      // Licence reads as noise rather than as provenance.
+      [t('Source revision'), rights?.revision ?? ''],
+    ];
+    const factRows = facts.filter(([, value]) => value).map(([label, value]) =>
+      `<div class="valid-input-row"><dt>${escape(label)}</dt><dd><span>${escape(value)}</span></dd></div>`).join('')
+      + (licenceCell ? `<div class="valid-input-row"><dt>${escape(t('Licence'))}</dt><dd>${licenceCell}</dd></div>` : '');
+    const changes = rights?.modifications?.length
+      ? `<p class="valid-source-changes">${t('Changed on the way in: {list}', { list: rights.modifications.join(', ') })}</p>`
+      : '';
+    const credit = source.credentialed
+      ? t('Signed by the source, and its credential travelled with it.')
+      : t('Recorded by the exporter, not signed by the source.');
+    // The credit line as the engine assembles it, carried on the button so a copy
+    // never has to re-derive it from the markup around it.
+    const creditLine = rightsReport?.recorded[i]?.credit ?? '';
+    const actions = [
+      creditLine
+        ? `<button type="button" class="btn valid-source-act" data-copy-credit="${escape(creditLine)}">${t('Copy credit')}</button>`
+        : '',
+      safe
+        ? `<a class="btn valid-source-act" href="${escape(safe)}" target="_blank" rel="noopener noreferrer">${t('Open source')}</a>`
+        : '',
+    ].filter(Boolean).join('');
+    return `
+      <li class="valid-source">
+        <p class="valid-source-title">${escape(source.title || t('Untitled source'))}${source.format ? ` <span class="valid-source-format">${escape(source.format)}</span>` : ''}</p>
+        <p class="valid-source-credit">${escape(credit)}</p>
+        <dl class="valid-input-list">${factRows}</dl>
+        ${changes}
+        ${actions ? `<p class="valid-source-actions">${actions}</p>` : ''}
+      </li>`;
+  }).join('');
+  const summaryLine = rightsReport
+    ? `<p class="valid-sources-summary">${escape(rightsReport.summary)}</p>`
+      + rightsReport.carried.limits.map((line) => `<p class="valid-sources-limit">${escape(line)}</p>`).join('')
+    : '';
+  // Opening Verify says nothing about what someone intends to do next, so the
+  // reuse question is asked only when a reader picks one. Nothing is fetched.
+  const reuseOpts = [`<option value="">${escape(t('Choose a use…'))}</option>`]
+    .concat(REUSE_CHECKS.map((check) => `<option value="${escape(check.id)}">${escape(t(check.label))}</option>`)).join('');
+  const reuseBlock = `
+        <div class="valid-sources-reuse">
+          <label class="valid-sources-reuse-label" for="valid-reuse-${fileIndex}">${t('Check for this use')}</label>
+          <select class="field-select" id="valid-reuse-${fileIndex}" data-reuse-check="${fileIndex}">${reuseOpts}</select>
+          <div class="valid-sources-reuse-out" data-reuse-out="${fileIndex}" aria-live="polite"></div>
+        </div>`;
+  return `
+    <details class="valid-sources valid-panel valid-panel-disclosure"${disclosureOpenAttr()}>
+      <summary class="valid-panel-summary">
+        <span class="valid-panel-summary-title">${svgIcon('layersStack')}<span>${t('Sources')}</span></span>
+        <span class="valid-panel-summary-meta">${t('{n} recorded', { n: sources.length })}</span>
+        <span class="valid-disclosure-chev" aria-hidden="true">${ICON_CHEVRON}</span>
+      </summary>
+      ${summaryLine}
+      <ul class="valid-sources-list">${rows}</ul>
+      ${reuseBlock}
+    </details>`;
+}
+
+/**
+ * The four reuses a reader can ask about, each one a delivery context the engine
+ * evaluator already understands. They are questions, not intentions: nothing is
+ * recorded, nothing is fetched and the answer is thrown away when the select is
+ * put back to its first option.
+ */
+interface ReuseCheck {
+  id: string;
+  label: string;
+  role: CreativeUseRoleV1;
+  operations: CreativeOperationV1[];
+  route: DeliveryRouteV1;
+  canCarryCredential: boolean;
+  canCarryReadableCredit: boolean;
+}
+const REUSE_CHECKS: ReuseCheck[] = [
+  { id: 'share', label: 'Share it publicly as it is', role: 'incorporated', operations: ['placed'], route: 'file-with-c2pa', canCarryCredential: true, canCarryReadableCredit: true },
+  { id: 'adapt', label: 'Adapt it and share the result', role: 'incorporated', operations: ['placed', 'recoloured'], route: 'file-with-c2pa', canCarryCredential: true, canCarryReadableCredit: true },
+  { id: 'redistribute', label: 'Pass on the source files themselves', role: 'source-distribution', operations: ['placed'], route: 'package', canCarryCredential: true, canCarryReadableCredit: true },
+  { id: 'stripped', label: 'Post it where metadata is removed', role: 'incorporated', operations: ['placed'], route: 'connector', canCarryCredential: false, canCarryReadableCredit: false },
+];
+
+/**
+ * The answer to one reuse question, in the same words the export panel uses. A
+ * licence with conditions is stated, never styled as a broken asset, and the
+ * status is the evaluator's own so a terminal and this page cannot disagree.
+ */
+export function reuseAnswerHtml(report: VerifyReport, checkId: string): string {
+  const check = REUSE_CHECKS.find((c) => c.id === checkId);
+  if (!check) return '';
+  const evaluation = evaluateReuse(rightsSourceReport(report), {
+    operation: check.role === 'source-distribution' ? 'package' : 'send',
+    delivery: {
+      format: report.format ?? '',
+      route: check.route,
+      canCarryCredential: check.canCarryCredential,
+      canCarryReadableCredit: check.canCarryReadableCredit,
+    },
+    audience: 'public',
+  }, { role: check.role, operations: check.operations });
+  const head = evaluation.status === 'ready'
+    ? t('Nothing is left to decide for this use, on what this file records.')
+    : evaluation.status === 'unknown'
+      ? t('Some of what this use needs is not recorded here.')
+      : evaluation.status === 'use-not-covered'
+        ? t('A recorded licence does not cover this use.')
+        : t('This use needs a decision from you.');
+  const issues = evaluation.issues.map((issue) =>
+    `<li><span class="valid-reuse-code">${escape(issue.code)}</span> ${escape(issue.summary)}</li>`).join('');
+  return `<p class="valid-reuse-head">${escape(head)}</p>${issues ? `<ul class="valid-reuse-issues">${issues}</ul>` : ''}`;
+}
+
 // The assertion/validation log, boxed as a panel matching Change history - the raw,
 // per-check result behind the hero scorecard's eight collapsed pips (every
 // hashed-URI assertion, the claim signature, the certificate window, the hard
@@ -1684,6 +1850,9 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
   // A synthetic-voice step's recorded script (its own panel, between "made
   // from" and "what happened" - it is source material, not an event).
   const scriptBlock = report.found && report.claim ? scriptHtml(report) : '';
+  // "Sources" reads with "Made from" and the script: all three are material that
+  // went in, distinct from the history of what was done to it.
+  const sourcesBlock = report.found ? sourcesHtml(report, fileIndex) : '';
   const checksBlock = checksHtml(report);
   const selfnoteBlock = report.found && report.claim && !report.madeWithLolly ? `
         <p class="valid-selfnote guide-absent">${identity
@@ -1728,7 +1897,7 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
   const metaBlock = renderMetadata(meta, preview, fileIndex);
   const metaInMasonry = meta?.gps ? '' : metaBlock;
   const mappedMeta = meta?.gps ? `<div class="valid-meta-feature">${metaBlock}</div>` : '';
-  const panelsBlock = `<div class="valid-panels">${summaryBlock}${madeFromBlock}${scriptBlock}${stepsBlock}${checksBlock}${metaInMasonry}</div>${mappedMeta}`;
+  const panelsBlock = `<div class="valid-panels">${summaryBlock}${madeFromBlock}${scriptBlock}${sourcesBlock}${stepsBlock}${checksBlock}${metaInMasonry}</div>${mappedMeta}`;
   // The two "key validations" + the signed-by caption shown under the "Made with
   // Lolly" pill - only for the flagship lolly hero; every other good state keeps
   // the single prose sub + identityLine above.
@@ -1983,10 +2152,19 @@ function wireMasonry(viewEl: HTMLElement, reportEl: HTMLElement): void {
 // credentials, then claim the file" is one surface. The signed file downloads and
 // the panel re-verifies in place so the viewer immediately sees their claim on the chain.
 
-/** Licence options offered when claiming a file - mirrors community/claim
- *  (option value = the exact string embedded as dc:rights, incl. the CC deed URL). */
-const CLAIM_LICENCES: Array<{ value: string; label: string }> = [
-  { value: '', label: 'Proprietary - All rights reserved' },
+/**
+ * Licence options offered when claiming a file - mirrors community/claim
+ * (option value = the exact string embedded as dc:rights, incl. the CC deed URL).
+ *
+ * The first option is empty and means exactly what it says: no public licence was
+ * declared. It is NOT a retained-rights notice, which is the second option and
+ * writes a notice of its own. Those are different facts about a file, and the
+ * empty value used to be labelled as the second one, which said something the
+ * claimant never chose (plan 253, section 9.3).
+ */
+export const CLAIM_LICENCES: Array<{ value: string; label: string }> = [
+  { value: '', label: 'No public licence declared' },
+  { value: 'All rights reserved', label: 'All rights reserved - a retained-rights notice' },
   { value: 'CC0 1.0 (Public Domain) · https://creativecommons.org/publicdomain/zero/1.0/', label: 'CC0 1.0 - Public Domain' },
   { value: 'CC BY 4.0 · https://creativecommons.org/licenses/by/4.0/', label: 'CC BY 4.0 - Attribution' },
   { value: 'CC BY-SA 4.0 · https://creativecommons.org/licenses/by-sa/4.0/', label: 'CC BY-SA 4.0 - Attribution-ShareAlike' },
@@ -1996,6 +2174,47 @@ const CLAIM_LICENCES: Array<{ value: string; label: string }> = [
   { value: 'CC BY-NC-ND 4.0 · https://creativecommons.org/licenses/by-nc-nd/4.0/', label: 'CC BY-NC-ND 4.0 - NonCommercial-NoDerivatives' },
   { value: 'Public Domain Mark 1.0 · https://creativecommons.org/publicdomain/mark/1.0/', label: 'Public Domain Mark - already public domain' },
 ];
+
+/**
+ * What the claimant says their claim rests on. Signing records the sentence, not
+ * a finding: uploading a file is not ownership of it, and a Lolly signature says
+ * who asserted this and that the bytes match, never that the assertion is true.
+ */
+export const CLAIM_BASIS: Array<{ value: string; label: string; sentence: string }> = [
+  { value: 'author', label: 'I created this work', sentence: 'Credentials added by the claimant, who asserts they created this work.' },
+  { value: 'contribution', label: 'I hold rights in my own contribution', sentence: 'Credentials added by the claimant, who asserts rights in their own contribution and not in the rest of the work.' },
+  { value: 'distribution', label: 'I am authorised to distribute this work', sentence: 'Credentials added by the claimant, who asserts they are authorised to distribute this work.' },
+];
+
+/**
+ * What a stripped file no longer carries, said plainly, with the credit it used
+ * to carry beside it and a way to deliver that credit some other way.
+ *
+ * The stripped bytes are never restamped. A privacy control that quietly put a
+ * credential back would not be one, so the remedy is a package: the clean file
+ * and CREDITS.txt together (plan 253, section 10.2). Empty when nothing was
+ * recorded, so an ordinary private file gets no note it does not need.
+ */
+export function stripCreditNoteHtml(fileIndex: string, format: string, sources: { count: number; credits: string }): string {
+  if (!sources.count || !sources.credits) return '';
+  return `${t('All embedded metadata removed. This file no longer carries its source credits ({n} sources); include the accompanying credit when sharing.', { n: sources.count })}
+      <button type="button" class="btn valid-source-act" data-copy-credit="${escape(sources.credits)}">${t('Copy credit')}</button>
+      <button type="button" class="btn valid-source-act" data-clean-copy="${escape(fileIndex)}" data-clean-format="${escape(format)}" data-clean-package="1">${t('Clean file with separate credits')}</button>`;
+}
+
+/**
+ * The `dc:rights` line one claim writes: the copyright notice the claimant typed
+ * and the licence they chose, in that order, and nothing else.
+ *
+ * Three distinct outcomes, which is the whole point of the chooser above. No
+ * public licence declared writes no licence line at all; All rights reserved
+ * writes that notice; a public licence writes its name and deed URL. The profile
+ * is never a source of either field, so nobody is given a licence or an ownership
+ * claim they did not make (plan 253, section 9.3).
+ */
+export function claimRights(copyright: string, licence: string): string {
+  return [copyright, licence].map((s) => String(s || '').trim()).filter(Boolean).join(' · ');
+}
 
 /** The engine format key + MIME + whether it takes the pixel Imprint, for a verify
  *  format string / filename - the claimable set (what host.c2pa.sign can carry a
@@ -2039,6 +2258,8 @@ function claimPanelHtml(fileIndex: number, format: string | null | undefined, fi
         </label>` : '';
   const licenceOpts = CLAIM_LICENCES.map(l =>
     `<option value="${escape(l.value)}">${escape(t(l.label))}</option>`).join('');
+  const basisOpts = CLAIM_BASIS.map(b =>
+    `<option value="${escape(b.value)}">${escape(t(b.label))}</option>`).join('');
   return `
       <details class="valid-panel valid-claim" data-claim-panel="${fileIndex}" data-claim-key="${escape(fk.key)}" data-claim-mime="${escape(fk.mime)}" data-claim-raster="${fk.raster ? '1' : ''}">
         <summary class="valid-claim-summary">
@@ -2061,9 +2282,14 @@ function claimPanelHtml(fileIndex: number, format: string | null | undefined, fi
             <input type="text" class="valid-claim-input" data-claim-copyright="${fileIndex}" placeholder="© 2026 ${escape(t('Your Name'))}">
           </label>
           <label class="valid-claim-field">
+            <span>${t('Claiming as')}</span>
+            <select class="field-select valid-claim-select" data-claim-basis="${fileIndex}">${basisOpts}</select>
+          </label>
+          <label class="valid-claim-field">
             <span>${t('Rights / licence')}</span>
             <select class="field-select valid-claim-select" data-claim-licence="${fileIndex}">${licenceOpts}</select>
           </label>
+          <p class="valid-claim-note">${t('Your answer is recorded as your own assertion. Signing says who asserted it and that the bytes match, never that it is proven.')}</p>
           ${durableRow}
           <div class="valid-claim-actions">
             <button type="button" class="btn valid-claim-sign" data-claim-sign="${fileIndex}">${t('Sign & download')}</button>
@@ -2979,6 +3205,10 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
   // Each report's scalar-input digest, same indexing - what a [data-recreate]
   // click (the "Recreate with these settings" CTA) seeds the tool link from.
   let activeDigests: Array<Record<string, string> | undefined> = [];
+  // The reports behind the current batch, same indexing - what the Sources
+  // panel's "Check for this use" re-reads. Held rather than recomputed because a
+  // reuse question must answer about the file that was actually checked.
+  let activeReports: Array<VerifyReport | undefined> = [];
   // How the CURRENT batch arrived, which two of the text-binding sentences
   // depend on: `activeSourceUrl` is the address the file was read from (the
   // `?src=`/dropped-link paths - a relative credential reference only means
@@ -3006,6 +3236,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     previewUrls = [];
     activeFiles = list;
     activeDigests = [];
+    activeReports = [];
     // A source address only describes a single fetched file; a multi-file batch
     // has none, and the pending markers are one-shot either way.
     activeSourceUrl = list.length === 1 ? pendingSourceUrl : null;
@@ -3022,6 +3253,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       reportEl.innerHTML = `<div class="valid-reports-list">${checkingHtml(t('Checking {name}…', { name: file.name }))}</div>`;
       const { report, error, meta, watermark, mine, seal, snippet, textSignals } = await verifyFile(file);
       activeDigests[0] = report?.environment?.inputs;
+      activeReports[0] = report ?? undefined;
       reportEl.querySelector('.valid-reports-list')!.innerHTML = report
         ? renderReportBody(file.name, report, meta, makePreview(file, report, snippet), 0, watermark, mine, seal, notesFor(report, 0), textSignals, ocrReady)
         : `<p class="valid-busy">${t('Could not check this file: {message}', { message: error! })}</p>`;
@@ -3156,6 +3388,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       const file = list[i]!, card = cards[i]!;
       const { report, error, meta, watermark, mine, seal, snippet, textSignals } = await verifyFile(file);
       activeDigests[i] = report?.environment?.inputs;
+      activeReports[i] = report ?? undefined;
       if (report) {
         // A no-credential file with a positive signal (made here / imprint) gets
         // the good (green) stripe, matching its badge - not the neutral grey.
@@ -3208,6 +3441,26 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
   };
   const CLEAN_MIME: Record<string, string> = { jpeg: 'image/jpeg', png: 'image/png', svg: 'image/svg+xml' };
 
+  /**
+   * What a strip is about to remove from a third party, read BEFORE the bytes
+   * change. A privacy control that quietly drops somebody else's required credit
+   * is not a privacy success, so the sources are counted first and the note after
+   * the strip says what the clean file no longer carries (plan 253, section 10.2).
+   * The stripped bytes are never restamped: the promise was byte removal.
+   */
+  async function creditsBeforeStrip(bytes: Uint8Array): Promise<{ count: number; credits: string }> {
+    try {
+      const out = await verifyC2pa(bytes);
+      const rights = rightsReportFromC2pa(out);
+      const lines = rights.recorded.map((source) => source.credit).filter(Boolean);
+      return { count: rights.recorded.length, credits: lines.join('\n') };
+    } catch {
+      // A file this reader cannot parse gets no claim either way: no sources are
+      // reported, and nothing says the file had none.
+      return { count: 0, credits: '' };
+    }
+  }
+
   // The quiet "download a cleaned copy" action beside the metadata reveal - same
   // lossless byte surgery as the Hidden Data tool (JPEG/PNG/SVG in-engine,
   // PDF via host.pdf.strip), offered right where a viewer just saw what the file
@@ -3222,6 +3475,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     try {
       if (file.size > MAX_VERIFY_BYTES) throw new Error('File is too large to clean here.');
       const bytes = new Uint8Array(await file.arrayBuffer());
+      const sources = await creditsBeforeStrip(bytes);
       let outBytes: Uint8Array, mime: string;
       if (format === 'PDF') {
         if (!host.pdf?.strip) throw new Error('PDF cleaning isn’t available in this app.');
@@ -3232,14 +3486,45 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
         outBytes = stripMetadata(bytes, fmt);
         mime = CLEAN_MIME[fmt] || 'application/octet-stream';
       }
-      await host.export.file(new Blob([outBytes as BlobPart], { type: mime }), { filename: cleanFileName(file.name) });
+      if (btn.dataset.cleanPackage === '1' && sources.credits) {
+        // The stripped bytes plus the credits, together, so a route that cannot
+        // carry metadata still has somewhere to put the credit. The clean file
+        // itself is untouched - nothing is written back into it.
+        const { zipAsync } = await import('../lib/zip.ts');
+        const zip = await zipAsync({
+          [cleanFileName(file.name)]: outBytes,
+          'CREDITS.txt': new TextEncoder().encode(`${sources.credits}\n`),
+        });
+        await host.export.file(new Blob([zip as BlobPart], { type: 'application/zip' }), { filename: `${cleanFileName(file.name)}.zip` });
+      } else {
+        await host.export.file(new Blob([outBytes as BlobPart], { type: mime }), { filename: cleanFileName(file.name) });
+      }
       btn.textContent = t('Downloaded ✓');
+      showStripNote(btn, sources);
     } catch (err) {
       btn.textContent = t('Couldn’t clean this file');
       host.log('warn', 'valid: clean-copy failed', { error: (err as Error)?.message });
     } finally {
       setTimeout(() => { btn.disabled = false; btn.textContent = original; }, 2000);
     }
+  }
+
+  /**
+   * The note after a strip. It states what left with the metadata rather than
+   * reporting a clean file and nothing else, and the credit it offers is the one
+   * the file used to carry. Shown once per button.
+   */
+  function showStripNote(btn: HTMLButtonElement, sources: { count: number; credits: string }): void {
+    if (!sources.count || !sources.credits) return;
+    const row = btn.parentElement;
+    if (!row) return;
+    row.querySelector('[data-strip-note]')?.remove();
+    const note = document.createElement('p');
+    note.className = 'valid-clean-note';
+    note.setAttribute('role', 'status');
+    note.dataset.stripNote = '1';
+    note.innerHTML = stripCreditNoteHtml(btn.dataset.cleanCopy ?? '', btn.dataset.cleanFormat ?? '', sources);
+    row.appendChild(note);
   }
   // Append "-payload" before an extension derived from the sniffed kind:
   // report.jpg → report-payload.zip (for an appended zip), report-payload.bin
@@ -3395,6 +3680,9 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     const bodyHtml = res.report
       ? banner + renderReportBody(file.name, res.report, res.meta, makePreview(file, res.report, res.snippet), i, res.watermark, res.mine, res.seal, notesFor(res.report, i), res.textSignals, ocrReady)
       : failedHtml;
+    // A repaint replaces the card the reuse check reads from, so the held report
+    // follows it. Otherwise a re-signed file would be answered about its old bytes.
+    activeReports[i] = res.report ?? undefined;
     if (activeFiles.length === 1) {
       const listWrap = reportEl.querySelector<HTMLElement>('.valid-reports-list');
       if (listWrap) listWrap.innerHTML = bodyHtml;
@@ -3463,6 +3751,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     const val = (name: string): string => (panel.querySelector<HTMLInputElement>(`[data-claim-${name}]`)?.value ?? '').trim();
     const author = val('author'), contact = val('contact'), copyright = val('copyright');
     const licence = panel.querySelector<HTMLSelectElement>('[data-claim-licence]')?.value ?? '';
+    const basis = panel.querySelector<HTMLSelectElement>('[data-claim-basis]')?.value ?? '';
     const durable = !!panel.querySelector<HTMLInputElement>('[data-claim-durable]')?.checked;
     const key = panel.dataset.claimKey ?? '';
     const mime = panel.dataset.claimMime || 'application/octet-stream';
@@ -3491,10 +3780,12 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       const contactTokens = contact.split(/[\s·,;]+/).filter(Boolean);
       const email = contactTokens.find((s) => s.includes('@')) ?? '';
       const site = contactTokens.find((s) => !s.includes('@') && s.includes('.')) ?? '';
-      const rights = [copyright, licence].map((s) => String(s || '').trim()).filter(Boolean).join(' · ');
+      const rights = claimRights(copyright, licence);
+      const sentence = CLAIM_BASIS.find((b) => b.value === basis)?.sentence;
       const opts: Parameters<NonNullable<HostV1['c2pa']>['sign']>[2] = { action: 'imported', imprinted } as Record<string, unknown>;
       if (author) (opts as Record<string, unknown>).author = { name: author, ...(email ? { email } : {}), ...(site ? { url: site } : {}) };
       if (rights) (opts as Record<string, unknown>).rights = rights;
+      if (sentence) (opts as Record<string, unknown>).description = sentence;
       if (ingredients.length) (opts as Record<string, unknown>).ingredients = ingredients;
       const signed = await host.c2pa.sign(stamped, key, opts);
       await host.export.file(new Blob([signed as BlobPart], { type: mime }), { filename: file.name });
@@ -3849,6 +4140,28 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
         setTimeout(() => { sc.textContent = was; }, 1500);
       }).catch(() => { /* clipboard refused - the text stays selectable in the pre */ });
     }
+    // Copy one source's credit line. The text rides on the button, so a copy is
+    // exactly the line the plan assembled and never a scrape of the markup.
+    const cc = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copy-credit]');
+    if (cc) {
+      const line = cc.dataset.copyCredit ?? '';
+      void navigator.clipboard.writeText(line).then(() => {
+        const was = cc.textContent;
+        cc.textContent = t('Copied');
+        setTimeout(() => { cc.textContent = was; }, 1500);
+      }).catch(() => { /* clipboard refused - the line is still readable in the row */ });
+    }
+  });
+
+  // "Check for this use" - answered from the held report, on this device, on ask.
+  reportEl.addEventListener('change', (e) => {
+    const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('[data-reuse-check]');
+    if (!sel) return;
+    const i = Number(sel.dataset.reuseCheck ?? '0');
+    const out = reportEl.querySelector<HTMLElement>(`[data-reuse-out="${i}"]`);
+    const report = activeReports[i];
+    if (!out) return;
+    out.innerHTML = report && sel.value ? reuseAnswerHtml(report, sel.value) : '';
   });
 
   drop.addEventListener('click', () => input.click());

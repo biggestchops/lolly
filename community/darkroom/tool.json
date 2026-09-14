@@ -1,7 +1,7 @@
 {
   "id": "darkroom",
   "name": "Darkroom",
-  "description": "A pro photo-grading darkroom: film looks, third-party .cube LUTs, brand-seeded colour treatments and finishing texture - then bake your look as a LUT any editor can use. Opens a Photoshop or GIMP file as layers too: position, blend and hide each one, grade the composite, and export flat images or a layered PSD.",
+  "description": "A pro photo-grading darkroom: film looks, third-party .cube LUTs, design system colour treatments and finishing texture - then bake your look as a LUT any editor can use. Opens a Photoshop or GIMP file as layers too: position, blend and hide each one, grade the composite, and export flat images or a layered PSD.",
   "a11yLabel": "Graded photo preview - {{default preset \"custom\"}} look",
   "version": "2.2.1",
   "engineVersion": "^1.12.0",
@@ -26,6 +26,7 @@
     { "label": "Vivid slide LUT", "values": { "lutSource": "preset", "lutPreset": "slide-vivid" } }
   ],
   "render": {
+    "sectionIcons": {"Layers": "layers", "Develop": "sliders", "HSL / Colour": "palette", "Film look": "filmStrip", "LUT": "convert", "Colour treatment": "paintbrush", "Texture": "noise", "View": "eye"},
     "width": 1080,
     "height": 1080,
     "formats": ["png", "jpg", "webp", "svg", "penpot", "webm", "mp4", "exr", "hdr", "tiff", "pdf", "avif"],
@@ -49,11 +50,11 @@
       "type": "asset",
       "assetType": "image",
       "allowUpload": true,
-      "help": "Pick a photo or SVG, or upload your own - vectors are rasterised on selection. Everything is processed on your device - the pixels never leave the browser. Leave empty to grade the lorikeet portrait that ships with the catalogue, or hit “Go live” to grade your camera."
+      "help": "Pick a photo or SVG, or upload your own - vectors are rasterised on selection. Everything is processed on your device - the pixels never leave the browser. Leave empty to grade the lorikeet portrait that ships with the catalogue, or choose Use camera to grade a live feed."
     },
     {
       "id": "imageFraming",
-      "label": "Zoom & Position",
+      "label": "Zoom & position",
       "framingFor": "image",
       "help": "Drag the photo on the canvas to move it, scroll to zoom, and hold Alt while dragging to correct converging verticals. Or drag a label / type a value here.",
       "type": "vector",
@@ -280,7 +281,7 @@
     },
     {
       "id": "lutSource",
-      "label": "LUT",
+      "label": "LUT source",
       "section": "LUT",
       "type": "select",
       "default": "none",
@@ -358,12 +359,12 @@
       "section": "LUT",
       "type": "boolean",
       "default": false,
-      "help": "Bakes the whole colour pipeline - Develop, film look, the preset or uploaded LUT and brand treatment - into one .cube LUT for DaVinci Resolve, Premiere, Final Cut or Photoshop, and downloads it. The switch flips itself back off. Texture effects (grain, vignette…) are spatial and can't live in a LUT."
+      "help": "Bakes the whole colour pipeline - Develop, film look, the preset or uploaded LUT and colour treatment - into one .cube LUT for DaVinci Resolve, Premiere, Final Cut or Photoshop, and downloads it. The switch flips itself back off. Texture effects (grain, vignette…) are spatial and can't live in a LUT."
     },
     {
       "id": "treatment",
       "label": "Treatment",
-      "section": "Brand colour",
+      "section": "Colour treatment",
       "type": "select",
       "default": "none",
       "options": [
@@ -373,12 +374,12 @@
         { "value": "gradient", "label": "Gradient map (3 stops)" },
         { "value": "split",    "label": "Split tone" }
       ],
-      "help": "Colour treatments seeded from your brand palette. Leave the colours below empty to auto-pick from the brand's tokens; set them to override."
+      "help": "Colour treatments seeded from the design system palette. Leave the colours below empty to auto-pick from its tokens; set them to override."
     },
     {
       "id": "treatmentAmount",
       "label": "Treatment amount",
-      "section": "Brand colour",
+      "section": "Colour treatment",
       "type": "number",
       "display": "slider",
       "default": 80,
@@ -391,29 +392,29 @@
     {
       "id": "treatShadow",
       "label": "Shadow colour",
-      "section": "Brand colour",
+      "section": "Colour treatment",
       "type": "color",
       "default": "",
       "showIf": { "treatment": ["tint", "duotone", "gradient", "split"] },
-      "help": "Empty = auto: the darkest colour in your brand palette."
+      "help": "Empty = auto: the darkest colour in the design system palette."
     },
     {
       "id": "treatMid",
       "label": "Midtone colour",
-      "section": "Brand colour",
+      "section": "Colour treatment",
       "type": "color",
       "default": "",
       "showIf": { "treatment": ["gradient"] },
-      "help": "Empty = auto: the most colourful swatch in your brand palette."
+      "help": "Empty = auto: the most colourful swatch in the design system palette."
     },
     {
       "id": "treatHighlight",
       "label": "Highlight colour",
-      "section": "Brand colour",
+      "section": "Colour treatment",
       "type": "color",
       "default": "",
       "showIf": { "treatment": ["duotone", "gradient", "split"] },
-      "help": "Empty = auto: the lightest colour in your brand palette."
+      "help": "Empty = auto: the lightest colour in the design system palette."
     },
     {
       "id": "grain",
@@ -477,7 +478,7 @@
     },
     {
       "id": "fringe",
-      "label": "Chromatic aberration",
+      "label": "Colour fringing",
       "section": "Texture",
       "type": "number",
       "display": "slider",

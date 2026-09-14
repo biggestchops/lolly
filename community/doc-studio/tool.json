@@ -94,7 +94,7 @@
       "label": "Body typeface",
       "type": "select",
       "default": "SUSE",
-      "help": "The whole document is set in this face. Pasted text is normalised to it, so exports stay on brand.",
+      "help": "The whole document is set in this face. Pasted text is normalised to it, so exports keep the design system's face.",
       "options": [
         {
           "value": "SUSE",

@@ -43,7 +43,7 @@ Trường tên tệp và bộ chọn định dạng nằm ở đầu bảng đi�
 | Vector cho in ấn / ứng dụng thiết kế | **EPS**, hoặc **EPS (CMYK)** | Vector PostScript cho Illustrator / quy trình in ấn |
 | Vector cho máy cắt / máy CAD | **DXF** | Máy cắt laser, máy cắt decal, CNC - đường viền tính bằng milimét |
 | Bản trình chiếu chỉnh sửa được | **PowerPoint** (PPTX) | Văn bản + hình dạng gốc chỉnh sửa được, hình ảnh và vector vẫn trích xuất được |
-| Khóa học mà LMS có thể nhập | **SCORM** (LMS) | Một tệp zip gồm manifest, trang khởi chạy, các slide và phim có thuyết minh kèm phụ đề - từ một bản trình chiếu Design |
+| Một khóa đào tạo có thể mang đi | **Export course** | Xem lại nội dung dự án và tạo một gói Website, SCORM hoặc xAPI thử nghiệm có quản lý phiên bản |
 | Tài liệu văn bản chỉnh sửa được | **Word** (DOCX) hoặc **OpenDocument** (ODT) | Đoạn văn và tiêu đề thật mà trình xử lý văn bản có thể tiếp tục chỉnh sửa (Doc Studio) |
 | Ảnh chụp hoặc hình ảnh đa dụng | **PNG** (không mất dữ liệu) hoặc **JPG** (nhỏ hơn) | Raster phổ dụng |
 | Ảnh hiện đại, nhỏ hơn | **WebP** / **AVIF** | Nén tốt hơn, có kênh alpha |
@@ -150,16 +150,18 @@ Bất kỳ công cụ nào xuất được SVG cũng có thể xuất một **t�
 
 ## SCORM (gói khóa học)
 
-Một bản trình chiếu Design có thể xuất ra dưới dạng **gói SCORM** - tệp zip mà một hệ thống quản lý học tập (LMS) nhập vào, dù đó là Moodle, Canvas, Blackboard hay một LMS nội bộ doanh nghiệp. Chọn **SCORM (LMS)** trong bảng chọn định dạng và bản xuất sẽ ghi ra:
+Chọn **Export course** từ một công cụ được hỗ trợ, một thư mục dự án hoặc một lựa chọn. Trong Design, chọn **SCORM (LMS)** và Download cũng mở ra quy trình khóa học này. Lolly lưu lại tác phẩm, cho bạn xem lại nội dung và thứ tự khóa học, sau đó mở mô-đun cùng hộp thoại xuất của nó.
 
-- <!--i:layout--> **Các slide**, mỗi artboard một hình ảnh, dạng vector khi artboard cho phép và chỉ ở dạng điểm ảnh khi không thể.
-- <!--i:play--> **Phim thuyết minh** kèm rãnh phụ đề - ghi chú của người thuyết trình được đọc bởi một giọng nói trên thiết bị, đúng như [Presenting](/info/create/using.html#presenting) phát chúng.
-- <!--i:file--> **Một trang khởi chạy** dẫn qua từng slide, phát phim và báo cáo hoàn thành về LMS thông qua runtime SCORM 1.2, phiên bản mà mọi LMS đều chấp nhận.
-- <!--i:font--> Các phông chữ mà bản trình chiếu sử dụng, để trang khởi chạy hiển thị giống hệt khi ngoại tuyến.
+- <!--i:layout--> Chọn bản dựng khả dụng cho mỗi nguồn: trang tĩnh, chuyển động dưới dạng video, âm thanh hoặc một tài nguyên có thể tải xuống. Thêm văn bản bài học gốc và các phương án đọc thay thế trong mô-đun.
+- <!--i:play--> Xem trước trình phát của người học và xem lại phần mô tả cùng phụ đề. Chuyển động được đưa vào dưới dạng video, kể cả hoạt hình im lặng. Hãy xuất một bản ghi hoàn chỉnh trước, khi một công cụ không thể dựng lại nó từ các đầu vào đã lưu.
+- <!--i:file--> Chọn Website, SCORM 1.2, SCORM 2004 4th Edition, hoặc một mục tiêu xAPI thử nghiệm. Kiểm tra nội dung thực tế và dung lượng ZIP, sau đó lưu và tải xuống phiên bản đã kiểm tra.
+- <!--i:check--> Hoàn thành yêu cầu xác nhận mọi bài học bắt buộc và chọn Finish. Trình phát trên website lưu tiến độ trong trình duyệt; một gói LMS kết nối với LMS nhận nó.
 
 ![Bảng xuất trên một bản trình chiếu Design với SCORM (LMS) được chọn](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Không có gì trong gói này gọi về máy chủ nào cả: đó chỉ là các tệp trong một zip, và nó chạy bên trong LMS mà không cần bundler, không cần CDN và không cần tài khoản. Ứng dụng web và desktop tạo ra gói này; CLI thì không, vì việc chụp lại artboard và mã hóa phim cần đến trình duyệt.
+Gói này bao gồm nội dung hoàn chỉnh của nó và không yêu cầu tài khoản Lolly. Giải nén một Website ZIP lên một máy chủ HTTP(S); nhập một LMS ZIP mà không thay đổi nội dung của nó. Hãy kiểm tra điểm đến dự kiến trước khi phân phối khóa học.
+
+Đối với một khóa học được ghép từ nhiều tác phẩm đã lưu, phương tiện đã nhập và tài nguyên, hãy dùng [Tạo một khóa đào tạo](/info/create/training-creators.html). Mô-đun học tập có dàn ý được sắp xếp riêng, các xác nhận bài học rõ ràng, bản xem trước cho người học và lịch sử gói có quản lý phiên bản. Đường dẫn CLI của nó có thể đóng gói phương tiện mà bạn đã xuất trước đó.
 
 ## DXF (tệp cắt)
 
@@ -309,6 +311,10 @@ Các bản xuất có thể mang **Content Credentials** - một manifest [C2PA]
 - **Kiểm tra một file.** Lolly cũng xác minh chứng nhận của chính mình: thả bất kỳ file nào vào [/verify](/verify) (hoặc chạy `lolly validate <file>` trong CLI) để nhận báo cáo trên thiết bị - nổi bật là việc file có thực sự được tạo bằng Lolly và chưa bị thay đổi kể từ đó hay không. Giao diện Verify trên web đọc được nhiều hơn cả chứng nhận: nó gắn cờ **nội dung do AI tạo**, phát hiện **Lolly Imprint**, kiểm tra chữ ký **SEAL** và (tùy chọn) watermark pixel của bên thứ ba, đồng thời phát hiện **dữ liệu ẩn** - tất cả đều trên thiết bị, không tải lên đâu cả. Xem [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Quyền riêng tư.** Mọi thứ diễn ra trên thiết bị của bạn: khóa ký được tạo riêng cho lần xuất đó và không bao giờ rời khỏi trình duyệt, không có gì được tải lên và tuyên bố chỉ chứa những gì siêu dữ liệu nguồn gốc đã có sẵn. Các tiện ích quyền riêng tư (biến đổi trên thiết bị đối với *chính* file của bạn) không bao giờ thêm chứng nhận, và *Strip Hidden Data* sẽ xóa manifest C2PA giống như bất kỳ siêu dữ liệu nhúng nào khác.
 - **Tương tác.** Đối với PDF, Content Credentials và **bảo vệ bằng mật khẩu** (ở cấp độ nào - xem ở trên) loại trừ lẫn nhau (một PDF đã mã hóa không thể mang tệp đính kèm chứng nhận). Chứng nhận được thêm vào như bước cuối cùng trên các byte đã hoàn thiện - sau khi đóng dấu DPI/EXIF/hồ sơ màu, siêu dữ liệu PDF/X và dấu in.
+
+### Ghi công nguồn
+
+Một bản xuất đặt vào tác phẩm của người khác cũng ghi lại nguồn đó trong chứng nhận. Một emoji lấy từ một bộ đã ghim là trường hợp thường gặp hằng ngày: tác phẩm, người tạo ra nó, giấy phép, các byte chính xác đến từ đâu và điều gì đã thay đổi - tất cả đều đi theo tệp. Dòng **Source credits** trong bảng xuất cho biết các nguồn yêu cầu gì đối với việc phân phối trước khi bạn tải xuống, và sau khi tải xuống nó đọc lại các byte đã phân phối trước khi báo rằng ghi công đã có trong tệp. Một giấy phép yêu cầu bạn phải chọn, chẳng hạn một glyph CC BY-SA đã đổi màu mà bạn sắp chia sẻ, sẽ nhận được một thẻ cho biết các lối ra; việc tải xuống không bao giờ bị chặn. [Quyền sáng tạo và ghi công](/info/creative-rights.html) có đầy đủ các thuật ngữ, các giấy phép đã xem xét và những gì luôn thuộc về bạn.
 
 ## Trên điện thoại
 

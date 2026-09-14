@@ -1,5 +1,5 @@
 {
-  "name": "Scan",
-  "description": "Read QR codes and barcodes on-device, with nothing sent to any cloud. A reader, not an opener: it decodes, classifies and explains what a code carries - links, Wi-Fi, contacts, product codes - and lets you act deliberately. Copy is always the first action; opening, joining or adding is an explicit, informed tap.",
-  "featured.blurb": "Read any code, safely and offline"
+  "name": "扫描",
+  "description": "在设备上读取 QR 码和条码，不会把任何内容发送到云端。它是“阅读器”，不是“打开器”：会解码、分类并说明一个码携带的内容 - 链接、Wi-Fi、联系人、产品码 - 让你自己决定要不要行动。复制永远是第一个操作；打开、加入或添加则需要你明确点一下才会执行。",
+  "featured.blurb": "安全离线读取任何码"
 }

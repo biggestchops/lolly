@@ -788,7 +788,7 @@ test('Narrate is greyed when there is nothing to narrate, and when there are no 
 
 test('a checkbox row reports a NORMALISED write too, not the value it sent', () => {
   // The port stores something truthy that is not `true` - the row's read is
-  // `=== true`, so the honest answer is "off", and the row must say so.
+  // `=== true`, so the honest answer is "off", and the row must report it.
   const stored = new Map<string, unknown>();
   const f = fixture({
     model: { getInput: id => stored.get(id), setInput: (id) => { stored.set(id, 'yes'); } },

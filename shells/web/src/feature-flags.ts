@@ -134,7 +134,7 @@ export const STRIP_UPLOAD_META_FLAG: FeatureFlag = {
   label: 'Strip metadata from uploads',
   pill: 'privacy',
   default: false,
-  info: 'Removes EXIF, location (GPS) and other embedded metadata from images you upload. Content Credentials (C2PA provenance) are always preserved - a signed or AI-generated image keeps its credential either way.',
+  info: 'Removes EXIF, location (GPS) and other embedded metadata from images you upload. Content Credentials (C2PA provenance) are always preserved - a signed or AI-generated image keeps its credential either way. A credit another person embedded goes with the rest of the metadata, so record it on the asset if the work is theirs.',
 };
 
 // Opt-IN (default OFF): the export panel's "Before you export" prepress card. A
@@ -154,23 +154,36 @@ export const PREFLIGHT_FLAG: FeatureFlag = {
 
 // Opt-IN (default OFF): Performance UI - a simplified, cheaper-to-paint chrome for weaker
 // devices. When ON it strips the GPU-expensive chrome effects (backdrop blur, shadows,
-// blend modes) and pauses decorative previews until hovered. Reflected onto <html> by
-// applyPerfUi below; the whole effect is a single gated stylesheet (styles/parts/perf-ui.css),
-// so with the flag OFF nothing matches and the UI is byte-identical - the a11y-prefs additive
-// rule. Deliberately CHROME-ONLY: it never reaches the tool canvas or the export stages, so a
+// blend modes), stops decorative loops and makes media previews explicit. applyPerfUi
+// reflects the flag onto <html> and notifies mounted effects. Saved effect preferences
+// remain independent. Deliberately CHROME-ONLY: it never reaches the tool canvas or the export stages, so a
 // render (and its export, whose geometry is shared with the CLI) is never altered.
 export const PERFORMANCE_UI_FLAG: FeatureFlag = {
   id: 'perf-ui',
   label: 'Performance UI',
   pill: 'lighter',
   default: false,
-  info: 'Simplifies the interface to paint faster on lower-powered devices: turns off the blur, shadows and blend effects in the app chrome, and animates previews only while you hover them. It never changes anything you make - your exports are identical either way.',
+  info: 'Simplifies the interface to paint faster on lower-powered devices: turns off decorative effects, plays previews only when you ask, and limits background downloads. It never changes anything you make - your exports are identical either way.',
 };
+
+const PERF_UI_CHANGE = 'lolly:perf-ui-change';
+
+/** Subscribe for this mount's lifetime. Saved effect preferences remain independent. */
+export function subscribePerfUi(listener: (on: boolean) => void): () => void {
+  if (typeof document === 'undefined') return () => {};
+  const target = document;
+  const changed = (event: Event): void => listener((event as CustomEvent<boolean>).detail);
+  target.addEventListener(PERF_UI_CHANGE, changed);
+  return () => target.removeEventListener(PERF_UI_CHANGE, changed);
+}
 
 /** Reflect the Performance UI flag onto <html> so the gated stylesheet can apply. Absent
  *  attribute ⇒ full chrome (the default). Best-effort, like the localStorage mirror. */
 export function applyPerfUi(on: boolean): void {
-  try { document.documentElement.toggleAttribute('data-perf-ui', on); } catch { /* no DOM */ }
+  if (typeof document === 'undefined') return;
+  document.documentElement.toggleAttribute('data-perf-ui', on);
+  const EventType = document.defaultView?.CustomEvent ?? CustomEvent;
+  document.dispatchEvent(new EventType(PERF_UI_CHANGE, { detail: on }));
 }
 
 /** Synchronous read of the Performance UI flag, for JS sites that must decide whether to

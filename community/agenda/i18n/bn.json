@@ -1,6 +1,6 @@
 {
-  "name": "Agenda",
-  "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
+  "name": "সূচি",
+  "description": "এক টেবিল থেকে একটি কনফারেন্স প্রোগ্রাম - কালানুক্রমিক তালিকা, মাল্টি-ট্র্যাক সময়সূচি, অথবা দরজার জন্য এখন-ও-পরবর্তী স্ক্রিন - এবং প্রতিটি সেশনের জন্য একটি প্রকৃত .ics ফাইল।",
   "a11yLabel": "{{default headingText \"সূচি\"}} - {{sessionCount}} সেশন, {{trackCount}} ট্র্যাক",
   "inputs.title.label": "অনুষ্ঠান",
   "inputs.title.placeholder": "যেমন Northwind Summit 2026",

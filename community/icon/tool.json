@@ -51,7 +51,8 @@
     },
     {
       "id": "imageZoom",
-      "label": "Image zoom",
+      "section": "Image",
+      "label": "Zoom",
       "type": "number",
       "display": "slider",
       "default": 100,
@@ -62,7 +63,8 @@
     },
     {
       "id": "imageX",
-      "label": "Image X",
+      "section": "Image",
+      "label": "X",
       "type": "number",
       "display": "slider",
       "default": 0,
@@ -73,7 +75,8 @@
     },
     {
       "id": "imageY",
-      "label": "Image Y",
+      "section": "Image",
+      "label": "Y",
       "type": "number",
       "display": "slider",
       "default": 0,
@@ -84,18 +87,22 @@
     },
     {
       "id": "background",
+      "section": "Look",
       "label": "Background",
       "type": "color",
       "default": "{color.semantic.primary}"
     },
     {
       "id": "color",
-      "label": "Label color",
+      "section": "Look",
+      "label": "Label colour",
       "type": "color",
       "default": "{color.semantic.on-primary}"
     },
     {
       "id": "shape",
+      "display": "segmented",
+      "section": "Look",
       "label": "Shape",
       "type": "select",
       "default": "rounded",
@@ -116,6 +123,7 @@
     },
     {
       "id": "weight",
+      "section": "Look",
       "label": "Weight",
       "type": "select",
       "default": "800",
@@ -133,10 +141,11 @@
           "label": "Semibold"
         }
       ],
-      "help": "Heavier weights hold up better at tiny sizes. (SUSE Mono's heaviest face is Extra bold.)"
+      "help": "Heavier weights hold up better at tiny sizes. Extra bold is the heaviest weight on offer."
     },
     {
       "id": "tracking",
+      "section": "Look",
       "label": "Letter spacing",
       "type": "number",
       "display": "slider",
@@ -144,10 +153,11 @@
       "min": -4,
       "max": 14,
       "step": 1,
-      "help": "Negative values tuck the letters together - essential for fitting 3–4 monospace caps into a 16 px tile. Mono is wide, so push it well into the negatives."
+      "help": "Negative values tuck the letters together - essential for fitting 3 or 4 monospace caps into a 16 px tile. Mono is wide, so push it well into the negatives."
     },
     {
       "id": "labelScale",
+      "section": "Look",
       "label": "Label size",
       "type": "number",
       "display": "slider",
@@ -159,6 +169,7 @@
     },
     {
       "id": "variant",
+      "section": "App manifest",
       "label": "Show",
       "type": "select",
       "default": "icon",
@@ -180,10 +191,11 @@
           "label": "Social card"
         }
       ],
-      "help": "Which face of the kit the canvas shows. The zip always holds every face, so this is a preview switch - and a way to export one on its own. The social card exports at 1200x630."
+      "help": "Which face of the kit the canvas shows; the zip always holds every face, so this is a preview switch and a way to export one on its own. The social card exports at 1200 × 630."
     },
     {
       "id": "appName",
+      "section": "App manifest",
       "label": "App name",
       "type": "text",
       "default": "ICO Studio",
@@ -192,6 +204,7 @@
     },
     {
       "id": "appShortName",
+      "section": "App manifest",
       "label": "Short name",
       "type": "text",
       "default": "ICO",
@@ -200,6 +213,7 @@
     },
     {
       "id": "maskable",
+      "section": "App manifest",
       "label": "Maskable icon",
       "type": "boolean",
       "default": true,
@@ -207,6 +221,7 @@
     },
     {
       "id": "monochrome",
+      "section": "App manifest",
       "label": "Monochrome icon",
       "type": "boolean",
       "default": true,

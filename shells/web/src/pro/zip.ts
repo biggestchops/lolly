@@ -175,7 +175,7 @@ export function creditText(files: ManifestFile[] = [], { zipName, author, unmade
     `[[ 📦 ${pkg} ]]`,
   ];
 
-  // A retry is a second package for one job - say so here, at the top, so the two
+  // A retry is a second package for one job - report it here, at the top, so the two
   // zips are readable as one job rather than as two unrelated runs.
   if (retryOf) {
     lines.push('', '[ This is a retry ]', '', `These are the rows that failed in ${retryOf} and were rendered again.`);

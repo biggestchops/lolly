@@ -150,7 +150,7 @@ export function collectUnmade(input: RunReportInput): UnmadeRow[] {
   for (const s of skipped) {
     out.push({
       // A skipped row never entered the runner, so its position comes from planBatch,
-      // which captured it at drop time. Absent → we say so rather than guess a number.
+      // which captured it at drop time. Absent → we report it rather than guess a number.
       row: s.srcIndex == null ? null : s.srcIndex + 1,
       runIndex: null,
       label: rowLabel(s.row),

@@ -1,6 +1,6 @@
 {
   "name": "Screenshot ng URL",
-  "description": "Kahit anong web page, sa kahit anong scroll-depth, may custom na CSS",
+  "description": "Kahit anong web page, sa kahit anong scroll depth, na may custom CSS.",
   "a11yLabel": "Screenshot ng {{default url \"(walang naka-set na URL)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Ang page na kukunan ng screenshot. Kinukuha ito sa oras ng export gamit ang tunay na browser engine.",

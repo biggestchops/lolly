@@ -19,7 +19,7 @@
   align-items: center;
   gap: var(--sp-4);
   max-width: min(92vw, 30rem);
-  padding: 6px 6px 6px 14px;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-7);
   border-radius: var(--radius-pill);
   background: hsl(var(--card) / 0.92);
   -webkit-backdrop-filter: blur(8px);
@@ -33,7 +33,7 @@
   opacity: 0;
   visibility: hidden;
   transform: translateX(-50%) translateY(8px);
-  transition: opacity 0.16s ease, transform var(--dur-2) var(--ease-out), visibility 0.16s;
+  transition: opacity var(--dur-2) ease, transform var(--dur-2) var(--ease-out), visibility var(--dur-2);
 }
 .toast.is-visible {
   opacity: 1;
@@ -47,9 +47,9 @@
 /* A toast carrying a sentence rather than a label. The default message is
    nowrap + ellipsis, which is right for "Copied link" and silently eats anything
    longer - so a multi-line notice has to opt in rather than be truncated. */
-.toast--wrap { max-width: min(92vw, 34rem); border-radius: var(--radius); padding: 10px 14px; }
+.toast--wrap { max-width: min(92vw, 34rem); border-radius: var(--radius); padding: var(--sp-5) var(--sp-7); }
 .toast--wrap .toast-message { white-space: normal; overflow: visible; line-height: 1.45; }
-.toast.is-muted { padding: 6px 14px; }
+.toast.is-muted { padding: var(--sp-3) var(--sp-7); }
 .toast.is-muted .toast-message { color: hsl(var(--muted-foreground)); }
 .toast-action {
   pointer-events: auto;            /* the one part of the toast that takes clicks */
@@ -60,7 +60,7 @@
   font-weight: 600;
   cursor: pointer;
   height: 28px;
-  padding: 0 14px;
+  padding: 0 var(--sp-7);
   border-radius: var(--radius-pill);
   transition: filter var(--dur-1);
 }
@@ -123,10 +123,10 @@
     flex-direction: column;
     border-right: none;
     border-bottom: 1px solid hsl(var(--border));
-    border-radius: 0 0 16px 16px;
+    border-radius: 0 0 var(--ui-radius-panel) var(--ui-radius-panel);
     box-shadow: var(--shadow-3);
     transition: height 0.34s var(--ease-out); /* confident, decelerating settle */
-    z-index: 50;
+    z-index: var(--z-overlay);
     /* Clip the sheet so the form can't spill past its rounded bottom edge. The
        grip is NOT a child (it's a sibling in tool.js, position:fixed) so this
        clipping never crops it. Inputs scroll via .sidebar-body's own overflow. */
@@ -255,13 +255,17 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 100;
+    z-index: var(--z-max);
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--ui-motion-overlay) var(--ui-motion-standard), visibility var(--ui-motion-overlay) var(--ui-motion-standard);
   }
   .tool-layout.export-open .export-overlay { opacity: 1; visibility: visible; }
-  .export-overlay-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
+  /* A deliberate black scrim, not a themed one: every dialog backdrop in the shell
+     dims towards black in all three themes (parts/dialogs.css), and taking the ink
+     token here would veil the preview in white on the dark theme. Same pixels as
+     before, written in the house hsl form. */
+  .export-overlay-scrim { position: absolute; inset: 0; background: hsl(0 0% 0% / 0.45); }
   .export-popup {
     position: absolute;
     left: 0; right: 0; bottom: 0;
@@ -294,7 +298,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 16px 12px;
+    padding: var(--sp-7) var(--sp-7) var(--sp-6);
     border-bottom: 0;
     flex-shrink: 0;
   }
@@ -1368,6 +1372,83 @@ html[data-a11y-motion="reduce"] .url-budget-toast { animation: none; }
   cursor: pointer;
 }
 .cost-reveal:hover { background: hsl(var(--muted) / 0.8); }
+
+/* Tier 3.55 - the rights row, "Source credits" (views/tool-actions/rights-row.ts,
+   plan 253 section 4). What the recorded sources ask of THIS delivery, and the
+   one inline card that lets a person answer.
+
+   Deliberately toneless. A ShareAlike condition is a permitted-use choice
+   somebody made, not a defect, so the decision card takes the SAME calm fill and
+   hairline border as a plain note: no red, no warning tint, no pulse. There is no
+   green badge for the settled state either - a tick beside a licence reads as
+   "checked and cleared", which is a claim this row must never make. Severity, such
+   as it is, lives entirely in the wording.
+
+   Box, head and hint come from the shared .section-card anatomy in
+   parts/disclosure.css; only the cards, the credits fold and the status line are
+   local. The card shape is the .preflight-finding one: a tinted fill plus a full
+   hairline border, never a one-sided stripe, and no dashed border anywhere (those
+   are reserved for drop areas). */
+.export-rights-cards {
+  display: grid;
+  gap: var(--sp-3);
+}
+.export-rights-cards:empty { display: none; }
+.export-rights-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 9px 11px;
+  border-radius: var(--radius-md);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.5);
+}
+.export-rights-card-line {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: hsl(var(--foreground));
+}
+.export-rights-card-scope,
+.export-rights-permission-label,
+.export-rights-summary,
+.export-rights-status {
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: hsl(var(--muted-foreground));
+}
+.export-rights-card-actions,
+.export-rights-permission {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.export-rights-card-actions:empty { display: none; }
+.export-rights-permission-label { flex: 1 1 100%; }
+.export-rights-permission .field-input { flex: 1 1 11rem; min-width: 0; }
+.export-rights-details { display: flex; flex-direction: column; gap: var(--sp-3); }
+.export-rights-summary { cursor: pointer; }
+.export-rights-summary:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: calc(var(--radius) * 0.75);
+}
+/* The exact credit a recipient needs, kept selectable and wrapped: it is text to
+   copy, so it must never be clipped to one line or rendered in a size nobody
+   reads it at. The panel's own type, not a monospace block. */
+.export-rights-credit {
+  margin: 0;
+  max-height: 9rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
 
 /* .export-cmyk/.export-audio/.export-pdfpass/.export-c2pa/.export-print all
    carry the literal `section-card` class now (component audit rec 7) - the

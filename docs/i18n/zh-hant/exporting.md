@@ -43,7 +43,7 @@ Share（分享）會在工具上方開啟，連結已經建立完成，造訪時
 | 適用於印刷／設計應用程式的向量 | **EPS**,或 **EPS (CMYK)** | 供 Illustrator／印刷工作流程使用的 PostScript 向量 |
 | 適用於切割／CAD 機器的向量 | **DXF** | 雷射切割機、割字機、CNC - 以毫米為單位的輪廓路徑 |
 | 可編輯的投影片簡報 | **PowerPoint**(PPTX) | 原生可編輯文字與圖形,圖片與向量皆可取出使用 |
-| 可供 LMS 匯入的課程 | **SCORM**(LMS) | 一個 zip 檔,內含清單檔、啟動頁面、投影片,以及附字幕的旁白影片 - 來自 Design 簡報 |
+| 可攜式的培訓課程 | **匯出課程** | 檢查專案內容,產生具版本記錄的網站、SCORM 或實驗性的 xAPI 套件 |
 | 可編輯的文字文件 | **Word**(DOCX)或 **OpenDocument**(ODT) | 真正的段落與標題,文書處理軟體可繼續編輯(Doc Studio) |
 | 相片或一般用途影像 | **PNG**(無損)或 **JPG**(較小) | 通用點陣圖 |
 | 更小的現代影像格式 | **WebP** / **AVIF** | 壓縮效果更佳,支援透明度 |
@@ -150,16 +150,18 @@ PowerPoint 也是一個**匯入**管道。將 `.pptx` 拖放到任何上傳區�
 
 ## SCORM(課程套件)
 
-Design 簡報可以匯出為**SCORM package** - 也就是學習管理系統(LMS)可匯入的 zip 檔,無論是 Moodle、Canvas、Blackboard 或企業自有的 LMS 皆可。在格式選擇器中選取 **SCORM (LMS)**,匯出就會產生:
+從受支援的工具、專案資料夾或所選內容中選擇**匯出課程**。在 Design 中，選擇**SCORM (LMS)**並下載，同樣會開啟這個課程工作流程。Lolly 會儲存這份創作，讓你檢查課程內容與順序，然後開啟該模組及其匯出對話方塊。
 
-- <!--i:layout--> **投影片**,每個畫板一張圖片,畫板允許的話以向量呈現,只有在無法向量化時才使用點陣圖。
-- <!--i:play--> **旁白影片**及其字幕軌 - 由裝置端語音朗讀的講者備忘稿,與 [Presenting](/info/create/using.html#presenting) 播放的內容完全一致。
-- <!--i:file--> **一個啟動頁面**,會依序播放投影片、播放影片,並透過每個 LMS 都接受的 SCORM 1.2 執行環境,將完成狀態回報給 LMS。
-- <!--i:font--> 簡報所使用的字型,讓啟動頁面離線時也能呈現相同效果。
+- <!--i:layout--> 為每個來源選擇可用的呈現形式：靜態頁面、以影片形式呈現的動態內容、音訊，或可下載的資源。在模組中新增原生課程文字與替代閱讀內容。
+- <!--i:play--> 預覽學習者播放器，檢查描述文字與字幕。動態內容（包括無聲動畫）都會以影片形式包含在內。當某個工具無法從已儲存的輸入重新生成一段錄製內容時，請先匯出成品錄製內容。
+- <!--i:file--> 選擇網站、SCORM 1.2、SCORM 2004 第 4 版，或實驗性的 xAPI 目標。檢查實際內容與 ZIP 大小，然後儲存並下載已檢查過的版本。
+- <!--i:check--> 要完成課程，需要確認每一課必修內容並選擇「完成」。網站播放器會把進度儲存在瀏覽器中；LMS 包則會連線到接收它的 LMS。
 
 ![Design 簡報上已選擇 SCORM (LMS) 的匯出面板](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-套件中沒有任何內容會對外連線回報:它只是 zip 中的檔案,在 LMS 內執行時不需要打包工具、CDN 或帳號。網頁版與桌面版應用程式可以產生它;CLI 則不行,因為拍攝畫板與編碼影片都需要瀏覽器。
+這個包包含它的成品內容，不需要 Lolly 帳號。把網站版 ZIP 解壓到某個 HTTP(S) 主機上；匯入 LMS 版 ZIP 時不要改動其中的內容。在正式分發課程之前，請先測試預定的投放目的地。
+
+如果課程是由多個已儲存的創作、匯入的媒體與資源組合而成，請使用[建立培訓課程](/info/create/training-creators.html)。該學習模組擁有自己的有序大綱、明確的課程確認機制、學習者預覽，以及帶版本記錄的包歷史。它的命令列路徑可以把你已經匯出的媒體打包起來。
 
 ## DXF(切割檔)
 
@@ -309,6 +311,10 @@ GIF 在任何地方都能運作(很適合聊天/電子郵件用途;檔案較大�
 - **檢查檔案。** Lolly 也會驗證自己所發出的憑證：將任何檔案拖放至 [/verify](/verify)（或在 CLI 中執行 `lolly validate <file>`），即可取得裝置端報告 - 首要呈現此檔案是否確實由 Lolly 製作、且自此之後未曾變更。網頁版 Verify 檢視畫面所讀取的內容遠不止憑證本身：它會標記**AI 生成內容**、偵測 **Lolly Imprint**、檢查 **SEAL** 簽章與（選擇性開啟的）第三方像素浮水印，並揭露**隱藏資料** - 全部皆在裝置端進行，不會上傳任何內容。詳見 [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows)。
 - **隱私。** 一切都在你的裝置上完成：簽署金鑰是為此次匯出而產生，且永遠不會離開瀏覽器，不會上傳任何內容，而且此宣告只包含來源中繼資料原本就攜帶的資訊。隱私工具（對*你自己*檔案進行的裝置端轉換）絕不會加入憑證，而*Strip Hidden Data* 會像移除其他內嵌中繼資料一樣，移除 C2PA 資訊清單。
 - **互動關係。** 對於 PDF 而言，Content Credentials 與**密碼保護**（任一等級 - 見上文）互斥（加密的 PDF 無法附加憑證）。憑證會在完成的位元組上以最後一個步驟加入 - 於 DPI／EXIF／色彩描述檔標記、PDF/X 中繼資料與印刷標記之後。
+
+### 來源署名
+
+一次放置了他人作品的匯出，也會把該來源記錄進憑證之中。從某個固定的表情符號集中選用的表情符號就是最常見的情形：作品本身、其創作者、授權、確切位元組的出處，以及有過哪些改動，都會隨檔案一起傳遞。匯出面板中的**來源署名**一列，會在下載之前告訴你這些來源對本次交付提出了什麼要求；下載完成之後，它會先回讀交付的位元組，然後才會說署名已經寫入檔案。像一個即將分享的、經過重新上色的 CC BY-SA 字形這樣需要你做出選擇的授權，會得到一張列出各種解決方式的卡片；下載本身絕不會被阻止。[創作權益與署名](/info/creative-rights.html)一文列出了具體措辭、已稽核的授權，以及始終歸你所有的部分。
 
 ## 在手機上
 

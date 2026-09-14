@@ -252,3 +252,11 @@ Then look at it in a real browser at desktop width and at 640px: a tool is at
 Read the computed style of a changed rule, not just the screenshot, so a
 token that failed to resolve cannot hide behind a similar-looking fallback.
 A green run without a look means "not exercised".
+
+For a pass over many tools, `node scripts/capture-sidebars.ts [id ...]` drives
+every mounted tool headless against the dev server and writes a folded and an
+expanded screenshot of each sidebar plus one `sidebar-audit.json` (rows,
+sections and their open state, labels, controls, hit areas under 24px, dashed
+and accent borders, stray glyphs). Review from the JSON first, the screenshots
+second. Tools it cannot capture are the file-first utilities before a file is
+chosen, the design canvas, and anything the active profile does not mount.

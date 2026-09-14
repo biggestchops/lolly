@@ -11,7 +11,7 @@
  * active profile by rewriting the repo-root tools/ and catalog/ symlink views. The
  * subrepo collapse (plan 244) removed the views, so there is nothing to switch: a
  * profile is resolved per process from profiles.json plus LOLLY_PROFILE, and the way
- * to run something under another brand is to say so on that command
+ * to run something under another brand is to report it on that command
  * (`LOLLY_PROFILE=suse pnpm run cli …`, or `--profile=suse` on a catalog script).
  *
  * What is left is the question people actually asked when they ran it: which brand am
@@ -28,12 +28,17 @@ import { repoRoot } from '../packages/node-shell/src/repo-root.ts';
 
 import { applyProfileArg } from './lib/profile-arg.ts';
 
-interface Profile { label?: string; tools: string[]; catalog: string; exclude?: string[] }
+interface Profile {
+  label?: string; tools: string[]; catalog: string; assets?: string[]; exclude?: string[];
+}
 interface ProfilesFile { default: string; profiles: Record<string, Profile> }
 
 const ROOT = repoRoot();
 
-/** Every profile in profiles.json with whether its packs are all on disk. */
+/** Every profile in profiles.json with whether its packs are all on disk.
+ *  `assets` roots are not counted: a shared root is additive, so an absent one is
+ *  one fewer pack in the index rather than a profile that cannot resolve. Same rule
+ *  as content-roots.ts isComplete, which is what actually decides. */
 function inventory(): { name: string; label: string; complete: boolean; missing: string[] }[] {
   const cfg = JSON.parse(readFileSync(join(ROOT, 'profiles.json'), 'utf8')) as ProfilesFile;
   return Object.entries(cfg.profiles).map(([name, p]) => {
@@ -75,6 +80,9 @@ function main(): void {
   console.log(`profile      ${roots.profile}`);
   console.log(`tool roots   ${roots.toolRoots.map(rel).join(', ')}`);
   console.log(`catalog      ${rel(roots.catalogRoot)}`);
+  if (roots.assetRoots.length) {
+    console.log(`asset roots  ${roots.assetRoots.map((a) => `${rel(a.dir)} (/catalog/packs/${a.name}/)`).join(', ')}`);
+  }
   console.log(`tools        ${ids.length}`);
   if (roots.exclude.size) console.log(`excluded     ${[...roots.exclude].sort().join(', ')}`);
 

@@ -312,7 +312,7 @@ export async function wireSidebar(tview: ToolViewCtx): Promise<void> {
     : ''; tview.captureNotice = captureNotice;
 
   // A resumed session made under another design system (plans/186 section 3.8):
-  // say so, and offer the switch when that system is on this device. Rendering
+  // report it, and offer the switch when that system is on this device. Rendering
   // continues with the active one meanwhile - a missing ref keeps its cached hex,
   // which is the half-rebrand the notice is warning about.
   const madeWithOnDevice =
@@ -382,6 +382,18 @@ export async function wireSidebar(tview: ToolViewCtx): Promise<void> {
             ${captureNotice}
             ${madeWithNotice}
             <div id="tool-inputs" class="tool-inputs"></div>
+            ${
+              /* Emoji (plans/252). OUTSIDE #tool-inputs on purpose: renderInputs wipes
+                  that container with innerHTML on every model change and only emits
+                  section heads for declared inputs, and this is not an input - it is
+                  chrome for a runtime service every tool gets. Hidden until the runtime
+                  reports the host can load sets (onEmojiChange), so a shell with no
+                  packs shows nothing rather than an empty promise. */ ''
+            }
+            <details class="input-section" id="emoji-section" hidden>
+              <summary class="input-section-summary"><span class="input-section-title"><span class="input-section-icon" aria-hidden="true">${icon('smile', { size: 14 })}</span>${escapeText(t('Emoji'))}</span></summary>
+              <div class="input-section-body" id="emoji-section-body"></div>
+            </details>
             ${
               hasInputs
                 ? `

@@ -81,7 +81,7 @@ export const fieldControl = (pv: ProfileViewCtx, f: string, value: string) => {
   const ro = getFieldPolicy(f)?.mode === 'locked' ? ' readonly' : '';
   return pv.jellyOn
     ? `<jelly-input ${fieldAttrs(f)}${ro} name="${f}" size="sm" label="${escapeText(t(FIELD_LABELS[f] ?? f))}" value="${escapeText(value)}"></jelly-input>`
-    : `<input ${fieldAttrs(f)}${ro} name="${f}" value="${escapeText(value)}" placeholder=" ">`;
+    : `<input ${fieldAttrs(f)}${ro} class="field-input" name="${f}" value="${escapeText(value)}" placeholder=" ">`;
 };
 // The Save button - <jelly-button type="submit"> drives the closest light-DOM
 // form via requestSubmit(), so the same submit listener fires. It must NOT
@@ -159,8 +159,8 @@ export function wireFlagRows(pv: ProfileViewCtx): void {
     // Toggling Jelly effects applies on the spot: load the bundle if needed, then
     // re-render the list so every row swaps between the CSS switch and
     // <jelly-switch>. Focus returns to the toggled control (innerHTML drops it).
-    if (flagId === JELLY_FLAG.id) {
-      pv.jellyOn = await ensureJelly(input.checked);
+    if (flagId === JELLY_FLAG.id || flagId === PERFORMANCE_UI_FLAG.id) {
+      pv.jellyOn = await ensureJelly(isFlagOn(pv.liveProfile, JELLY_FLAG));
       const list = viewEl.querySelector('#feature-flags');
       if (list) {
         list.innerHTML = pv.rows.flagListHtml();

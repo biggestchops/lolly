@@ -26,6 +26,7 @@ import type { RevisionCursor } from '../../bridge/revision-records.ts';
 import type { ToolDesignSystemContext, ToolDesignSystemRecord } from '../tool-design-system-context.ts';
 import type { CarriedMountState } from '../../lib/collab-live-mount.ts';
 import type { UrlState } from '../../../../../engine/src/url-mode.ts';
+import type { SessionEmojiStamp } from '../../../../../engine/src/session-record.ts';
 import type { DroppedAsset } from '../../../../../engine/src/runtime.ts';
 import type { CompiledDocument, DocumentDiff, DocumentInspection, DocumentMeasurement } from '../../../../../engine/src/document-api.ts';
 import type { HistoryModel } from '../tool-history.ts';
@@ -69,7 +70,7 @@ export interface ToolViewCtx {
   inputIds: string[];
   encLinkQuery: string | null;
   carriedMount: CarriedMountState;
-  openedSession: { url: UrlState; values: Record<string, InputValue>; cursor?: RevisionCursor; };
+  openedSession: { url: UrlState; values: Record<string, InputValue>; cursor?: RevisionCursor; emoji?: SessionEmojiStamp; };
   values: UrlState['values'];
   urlFormat: UrlState['format'];
   autoExport: boolean;

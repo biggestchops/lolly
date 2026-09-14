@@ -210,7 +210,7 @@ export async function runDriveSteps(page: PageLike, steps: readonly DriveStep[],
     // `at` is a fraction of the target's own box, resolved to Playwright's
     // element-relative `position`. Element-relative, never viewport pixels: a
     // recipe that hardcoded coordinates would silently mis-aim the day a panel
-    // moved, and nothing about the picture would say so.
+    // moved, and nothing about the picture would reveal it.
     const box = step.kind === 'drag' || (step.kind !== 'press' && step.at)
       ? await target.boundingBox()
       : null;

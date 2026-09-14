@@ -25,7 +25,7 @@ import { clearInstancePack, getPackMeta } from './pack-store.ts';
 /**
  * How many locally saved sessions belong to a tool THIS pack installed. They
  * stay - they are the person's - but with the tool gone they will not open until
- * the device reconnects, and the Leave dialog should say so rather than let the
+ * the device reconnects, and the Leave dialog should report it rather than let the
  * person find out in Projects. Best-effort: any failure reads as zero, never as
  * a reason to block leaving.
  */

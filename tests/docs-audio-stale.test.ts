@@ -54,6 +54,8 @@ const STALE_ALLOWED: Record<string, string> = {
   // stale, and delete it the moment the page is re-rendered.
   'en/about': '2026-09-06: the review pass reworded the positioning copy (what Lolly is not, the '
     + 'C2PA and offline qualifications); narration re-render deferred by the owner - re-render, then delete this line.',
+  'en/ai-stance': '2026-09-12: "say so" joined the vernacular ban list and one sentence was reworded '
+    + '(its Content Credentials record it); narration re-render deferred by the owner - re-render, then delete this line.',
   'en/privacy': '2026-09-06: the review pass corrected the send-target inventory (six rows; Bluesky '
     + 'and Discord are desktop-only); narration re-render deferred by the owner - re-render, then delete this line.',
 };

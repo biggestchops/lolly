@@ -1,0 +1,85 @@
+{
+  "name": "ofl-font-in-package",
+  "title": "The same OFL 1.1 font redistributed inside a package: the notice travels",
+  "citations": [
+    "SIL Open Font License 1.1, condition 2: a redistributed copy, on its own or in a bundle, carries the licence and the copyright notice.",
+    "SIL Open Font License 1.1, condition 3: the Reserved Font Name rule."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/example-sans",
+        "title": "Example Sans",
+        "creators": [
+          {
+            "name": "Example Type Foundry",
+            "role": "creator"
+          }
+        ],
+        "sourceUrl": "https://example.org/example-sans.ttf",
+        "sourceHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        "rights": [
+          {
+            "declaration": "OFL-1.1",
+            "url": "https://openfontlicense.org/open-font-license-official-text/",
+            "copyright": "Copyright 2024 Example Type Foundry",
+            "notices": [
+              "Example Sans is a Reserved Font Name"
+            ],
+            "assertedBy": "catalog",
+            "evidence": "notice-file",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/example-sans",
+        "role": "source-distribution",
+        "operations": [
+          "placed"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "package",
+      "delivery": {
+        "format": "zip",
+        "route": "package",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/example-sans",
+        "classification": "unchanged",
+        "rule": "unchanged-use-v1",
+        "licence": "OFL-1.1",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [
+      {
+        "work": "example/example-sans",
+        "credit": "\"Example Sans\" by Example Type Foundry, Copyright 2024 Example Type Foundry, SIL Open Font License 1.1 https://openfontlicense.org/open-font-license-official-text/.",
+        "changes": "unchanged",
+        "noticeText": "Example Sans is a Reserved Font Name"
+      }
+    ],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-companion"
+    ],
+    "changes": [],
+    "unresolved": []
+  }
+}

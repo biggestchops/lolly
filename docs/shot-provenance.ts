@@ -118,7 +118,7 @@ function decode(path: string): ShotProvenance | null {
         when ??= str(get(first, 'when'));
         // aiKind reads the IPTC digitalSourceType vocabulary: a docs screenshot is
         // digitalCreation, so this is normally undefined. It is read anyway - if a
-        // shot ever captures AI-generated artwork, the line must say so rather than
+        // shot ever captures AI-generated artwork, the line must report it rather than
         // the site deciding the distinction does not matter here.
         ai ??= aiKind(get(first, 'digitalSourceType'));
       } else if (a.label === 'tools.lolly.export') {

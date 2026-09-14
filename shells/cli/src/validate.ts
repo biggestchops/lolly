@@ -57,7 +57,7 @@ import { verifyC2pa, resolveVerdict, defaultTrustAnchors, c2paTrustAnchors, LOLL
 import type { DeepScanResult } from '@lolly-tools/node-shell/webshell-render';
 import type { Inspection } from '@lolly-tools/node-shell/inspect';
 import { verdictSlug } from '@lolly-tools/node-shell/verdict-slugs';
-import { cleanControlChars, verdictHeadline, verdictFacts, verdictChecks } from '@lolly-tools/node-shell/verdict-report';
+import { cleanControlChars, verdictHeadline, verdictFacts, verdictChecks, verdictSources } from '@lolly-tools/node-shell/verdict-report';
 import { expandHome, splitAnchorList, describeAnchorSet } from '@lolly-tools/node-shell/trust-anchors';
 import { EXIT, usageError } from './exit-codes.ts';
 import { useColor } from './output.ts';
@@ -296,6 +296,20 @@ export async function validateFile(
     for (const chk of verdictChecks(report)) {
       const mark = chk.mark === 'ok' ? paint(GREEN, '✓') : chk.mark === 'info' ? paint(DIM, 'ℹ') : paint(RED, '✕');
       process.stdout.write(`  ${mark} ${chk.code} ${paint(DIM, ' - ' + chk.explanation)}\n`);
+    }
+    // What the file records about the creative work inside it. A separate
+    // question from whether the credential verifies, so it gets its own block in
+    // the engine's own wording (plan 253, section 9.2) rather than a fact row.
+    const sources = verdictSources(report);
+    if (sources) {
+      process.stdout.write(`  ${paint(DIM, 'Sources')}\n`);
+      process.stdout.write(`    ${sources.summary}\n`);
+      for (const src of sources.sources) {
+        const facts = [src.creator, src.licence].filter(Boolean).join(' - ');
+        process.stdout.write(`    - ${src.title}${facts ? ` (${facts})` : ''}${paint(DIM, ` - ${src.asserted}`)}\n`);
+        process.stdout.write(paint(DIM, `      ${src.credit}\n`));
+      }
+      for (const limit of sources.limits) process.stdout.write(paint(DIM, `    ${limit}\n`));
     }
     // WHICH anchor set produced that verdict. Printed for every file that was read,
     // including the no-credential case: "nothing vouches for this signer" and "you

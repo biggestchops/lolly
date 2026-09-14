@@ -1,0 +1,73 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+
+/* The shared emoji control (components/emoji-style-control.ts). Ships with the
+   control's own chunk, like components/emoji-picker.css: the sidebar section and
+   the profile row both reach it through a dynamic import, so nothing here exists
+   in the document until someone opens a surface that offers a set.
+
+   Almost everything is borrowed on purpose - .field-row, .field-label,
+   .field-select (parts/fields.css) and .badge-select--segmented (parts/tool.css)
+   - so this control looks like every other control in the sidebar. What is left
+   is the specimen strip and the two lines of small print. */
+
+.emoji-style {
+  display: flex;
+  flex-direction: column;
+  /* The section body this sits in uses --sp-4 between its rows, so the control
+     shares that rhythm instead of setting a tighter one of its own. */
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+/* The specimen: five glyphs drawn from the chosen set at a size worth judging.
+   The engine's own inline sizing rides each glyph as an inline style, so this
+   only sets the type size they are relative to and gives them room to sit in. */
+.emoji-style-specimen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 2.6rem;
+  padding: var(--sp-2) var(--sp-3);
+  /* On the chrome type scale, not in rem: the large-text preference rides inside
+     the --fs-* tokens and deliberately never moves the root font size, so a rem
+     here would be the one thing in the panel that ignored it. */
+  font-size: calc(var(--fs-xl) * 1.5);
+  line-height: 1;
+  border-radius: var(--radius-md);
+  background: hsl(var(--muted) / .5);
+}
+.emoji-style-specimen:empty {
+  display: none;
+}
+
+/* The protection switch uses the house field primitives (.field-toggle around
+   .field-check, parts/fields.css), so it is the same tick as every other one in
+   the sidebar. Nothing is restated here. */
+
+/* Six options do not fit one sidebar row, and the default wrap left Duotone alone
+   on a second line, reading as a mistake rather than a choice. Scoped to this
+   control: the segmented primitive itself is shared and stays as it is. */
+.emoji-style .badge-select--segmented {
+  flex-wrap: wrap;
+}
+.emoji-style .badge-select--segmented .badge-select-opt {
+  flex: 1 1 30%;
+}
+
+/* The inspector column's density: it sits beside .fc-row controls, which are an
+   inline label and a small select, so the specimen comes down to match. */
+.emoji-style--compact {
+  gap: var(--sp-2);
+}
+.emoji-style--compact .emoji-style-specimen {
+  min-height: 2rem;
+  font-size: calc(var(--fs-xl) * 1.1);
+}
+
+.emoji-style-note {
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--ui-color-text-muted);
+}

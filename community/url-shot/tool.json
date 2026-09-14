@@ -1,7 +1,7 @@
 {
   "id": "url-shot",
   "name": "URL Screenshot",
-  "description": "Any web page, at any scroll-depth, with custom CSS",
+  "description": "Any web page, at any scroll depth, with custom CSS.",
   "a11yLabel": "Screenshot of {{default url \"(no URL set)\"}}",
   "version": "0.2.2",
   "engineVersion": "^1.0.0",
@@ -35,6 +35,7 @@
     },
     {
       "id": "scrollDepth",
+      "section": "Capture",
       "label": "Scroll depth",
       "type": "number",
       "display": "slider",
@@ -42,10 +43,11 @@
       "min": 0,
       "max": 1,
       "step": 0.05,
-      "help": "How far down the page to scroll before capturing. 0 = top, 1 = bottom. For a video, this is where the pan STARTS."
+      "help": "How far down the page to scroll before capturing. 0 = top, 1 = bottom. For a video, this is where the pan starts."
     },
     {
       "id": "scrollTo",
+      "section": "Capture",
       "label": "Scroll to (video)",
       "type": "number",
       "display": "slider",
@@ -53,10 +55,11 @@
       "min": 0,
       "max": 1,
       "step": 0.05,
-      "help": "Video export only: pan DOWN to this depth over the clip - a scroll of the page from 'Scroll depth' to here. Set equal to 'Scroll depth' for a still hold. Ignored for image formats."
+      "help": "Video export only: pan down to this depth over the clip - a scroll of the page from 'Scroll depth' to here. Set it equal to 'Scroll depth' for a still hold. Ignored for image formats."
     },
     {
       "id": "zoom",
+      "section": "Capture",
       "label": "Zoom",
       "type": "number",
       "display": "slider",
@@ -68,6 +71,7 @@
     },
     {
       "id": "waitMs",
+      "section": "Capture",
       "label": "Settle delay (ms)",
       "type": "number",
       "default": 500,
@@ -78,6 +82,7 @@
     },
     {
       "id": "css",
+      "section": "Capture",
       "label": "Custom CSS",
       "type": "longtext",
       "rows": 6,
@@ -86,7 +91,8 @@
     },
     {
       "id": "cropTop",
-      "label": "Crop top",
+      "section": "Crop",
+      "label": "Top",
       "type": "number",
       "display": "slider",
       "default": 0,
@@ -97,7 +103,8 @@
     },
     {
       "id": "cropRight",
-      "label": "Crop right",
+      "section": "Crop",
+      "label": "Right",
       "type": "number",
       "display": "slider",
       "default": 0,
@@ -108,7 +115,8 @@
     },
     {
       "id": "cropBottom",
-      "label": "Crop bottom",
+      "section": "Crop",
+      "label": "Bottom",
       "type": "number",
       "display": "slider",
       "default": 0,
@@ -119,7 +127,8 @@
     },
     {
       "id": "cropLeft",
-      "label": "Crop left",
+      "section": "Crop",
+      "label": "Left",
       "type": "number",
       "display": "slider",
       "default": 0,
@@ -130,13 +139,14 @@
     },
     {
       "id": "recolor",
-      "label": "Recolor",
+      "section": "Colour",
+      "label": "Recolour",
       "type": "select",
       "default": "none",
       "options": [
         { "value": "none", "label": "Original colours" },
         { "value": "invert", "label": "Invert (keep hues)" },
-        { "value": "grayscale", "label": "Grayscale" },
+        { "value": "grayscale", "label": "Greyscale" },
         { "value": "sepia", "label": "Sepia" },
         { "value": "hue", "label": "Hue shift" },
         { "value": "tint", "label": "Tint (swap to a colour)" }
@@ -145,6 +155,7 @@
     },
     {
       "id": "hue",
+      "section": "Colour",
       "label": "Hue angle",
       "type": "number",
       "display": "slider",
@@ -152,17 +163,19 @@
       "min": 0,
       "max": 360,
       "step": 5,
-      "help": "Degrees to rotate every colour by when Recolor is 'Hue shift'."
+      "help": "Degrees to rotate every colour by when Recolour is 'Hue shift'."
     },
     {
       "id": "tintColor",
+      "section": "Colour",
       "label": "Tint colour",
       "type": "color",
       "default": "{color.semantic.primary}",
-      "help": "The colour the page is washed in when Recolor is 'Tint'."
+      "help": "The colour the page is washed in when Recolour is 'Tint'."
     },
     {
       "id": "compare",
+      "section": "Compare",
       "label": "Compare viewports",
       "type": "select",
       "default": "single",
@@ -175,6 +188,7 @@
     },
     {
       "id": "mobileWidth",
+      "section": "Compare",
       "label": "Phone width",
       "type": "number",
       "default": 390,
@@ -186,6 +200,7 @@
     },
     {
       "id": "mobileHeight",
+      "section": "Compare",
       "label": "Phone height",
       "type": "number",
       "default": 844,

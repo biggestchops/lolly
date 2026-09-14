@@ -118,7 +118,9 @@ The fifth pathway, and the one the other four link into whenever a claim needs i
 | [input-not-impersonation.md](input-not-impersonation.md) | end user | An AI agent may fill in the inputs and may not claim to be you: what the exact line is, how it is enforced, and what a rogue agent still cannot do. |
 | [content-credentials-identity.md](content-credentials-identity.md) | end user | What a Content Credential is, what enrolling an identity adds, and how anyone checks a file. |
 | [content-credentials-engineering.md](content-credentials-engineering.md) | security | The engineering companion: device/CA architecture, engine contracts, the CA service, web-shell wiring, one-time operator setup. |
+| [creative-rights.md](creative-rights.md) | end user | The reviewed licence profiles with their citations, the one vocabulary of states, what Lolly credits for you, what stays your choice, and the CLI statuses and issue codes. |
 | [ai-stance.md](ai-stance.md) | end user | AI welcomed as labour and refused as impersonation: Lolly's position on generated content, and what backs each commitment. |
+| [tenets.md](tenets.md) | end user | The foundational page: vision, three values, mission and mantra, in the project's own words. |
 | [ai-features.md](ai-features.md) | end user | Text-to-speech, upscaling and background removal - generated once under guard-rails, then rendered identically everywhere, and why inventing pixels is marked AI while removing them is not. |
 | [eu-ai-act.md](eu-ai-act.md) | end user | Article 50 and AI-content marking since 2 August 2026, and what Lolly honestly does: preserving arriving marks, declaring its own AI operations, verifying any file on-device. |
 | [beatrice-warde.md](beatrice-warde.md) | end user | The typographer whose 1932 lines this project adapted, what we changed, and who she was. |

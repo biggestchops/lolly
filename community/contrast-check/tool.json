@@ -1,7 +1,7 @@
 {
   "id": "contrast-check",
   "name": "Contrast",
-  "description": "Check a text and background pair, or every pairing in your brand palette, against WCAG 2.1 and APCA, and see how it reads to colour-blind viewers.",
+  "description": "Check a text and background pair, or every pairing in the design system palette, against WCAG 2.1 and APCA, and see how it reads to colour-blind viewers.",
   "version": "1.2.1",
   "engineVersion": "^1.0.0",
   "status": "community",
@@ -39,14 +39,14 @@
       "label": "Text colour",
       "type": "color",
       "default": "{color.semantic.text}",
-      "help": "The foreground under test - defaults to your brand text colour."
+      "help": "The foreground under test - defaults to the design system text colour."
     },
     {
       "id": "background",
       "label": "Background",
       "type": "color",
       "default": "{color.semantic.surface}",
-      "help": "The surface the text sits on - defaults to your brand surface."
+      "help": "The surface the text sits on - defaults to the design system surface."
     },
     {
       "id": "mode",
@@ -54,7 +54,7 @@
       "type": "select",
       "display": "segmented",
       "default": "pair",
-      "help": "One pair, or every combination of your brand palette colours.",
+      "help": "One pair, or every combination of the design system palette.",
       "options": [
         {
           "value": "pair",
@@ -68,7 +68,7 @@
     },
     {
       "id": "metric",
-      "label": "Scale",
+      "label": "Contrast scale",
       "type": "select",
       "display": "segmented",
       "default": "wcag",

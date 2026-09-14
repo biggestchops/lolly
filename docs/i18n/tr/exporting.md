@@ -43,7 +43,7 @@ Dosya adı ve format seçici, panelin üstünde tek bir `ad.format` çifti olara
 | Baskı/tasarım uygulamaları için vektör | **EPS** veya **EPS (CMYK)** | Illustrator/matbaa iş akışları için PostScript vektör |
 | Kesim/CAD makineleri için vektör | **DXF** | Lazer kesiciler, vinil plotterlar, CNC - milimetre cinsinden dış hat yolları |
 | Düzenlenebilir bir slayt destesi | **PowerPoint** (PPTX) | Yerel düzenlenebilir metin + şekiller, görseller ve vektörler çıkarılabilir kalır |
-| Bir LMS'in içe aktarabileceği bir kurs | **SCORM** (LMS) | Manifest, bir başlatma sayfası, slaytlar ve altyazılı seslendirilmiş film içeren bir zip dosyası - bir Design destesinden |
+| Taşınabilir bir eğitim kursu | **Kursu dışa aktar** | Proje içeriğini gözden geçir ve sürümlenmiş bir Web Sitesi, SCORM veya deneysel bir xAPI paketi oluştur |
 | Düzenlenebilir bir metin belgesi | **Word** (DOCX) veya **OpenDocument** (ODT) | Bir kelime işlemcinin düzenlemeye devam edebileceği gerçek paragraflar ve başlıklar (Doc Studio) |
 | Bir fotoğraf veya genel amaçlı görsel | **PNG** (kayıpsız) veya **JPG** (daha küçük) | Evrensel raster |
 | Daha küçük modern görseller | **WebP** / **AVIF** | Daha iyi sıkıştırma, alfa |
@@ -150,16 +150,18 @@ Açmak için Penpot'u başlat, bir proje seç ve **Import**'u (İçe Aktar) seç
 
 ## SCORM (kurs paketleri)
 
-Bir Design destesi bir **SCORM paketi** olarak dışarı çıkabilir - bir öğrenim yönetim sisteminin içe aktardığı zip dosyası, ister Moodle, Canvas, Blackboard ister kurumsal bir LMS olsun. Format seçicide **SCORM (LMS)**'i seç, dışa aktarma şunları yazar:
+Desteklenen bir araçtan, bir proje klasöründen veya bir seçimden **Kursu dışa aktar**'ı seç. Design'da, **SCORM (LMS)**'i ve İndir'i seçmek de bu kurs iş akışını açar. Lolly oluşturmayı kaydeder, kurs içeriğini ve sırasını gözden geçirmene izin verir, ardından modülü ve onun dışa aktarma iletişim kutusunu açar.
 
-- <!--i:layout--> **Slaytlar**, çalışma yüzeyi başına bir görsel, izin verdiği yerde vektör, izin vermediği yerde ise sadece piksel olarak.
-- <!--i:play--> **Seslendirilmiş film**, altyazı izlemesiyle birlikte - cihaz üzerinde çalışan bir sesle okunan konuşmacı notları, tam olarak [Presenting](/info/create/using.html#presenting)'in oynattığı şekilde.
-- <!--i:file--> Slaytlar arasında adım adım ilerleyen, filmi oynatan ve tamamlanma durumunu her LMS'in kabul ettiği sürüm olan SCORM 1.2 çalışma zamanı üzerinden LMS'e bildiren **bir başlatma sayfası**.
-- <!--i:font--> Destenin kullandığı yazı tipleri, böylece başlatma sayfası çevrimdışıyken de aynı şekilde görüntülenir.
+- <!--i:layout--> Her kaynak için mevcut sunumu seç: durağan sayfalar, video olarak hareket, ses veya indirilebilir bir kaynak. Modüle yerel ders metni ve okuma alternatifleri ekle.
+- <!--i:play--> Öğrenci oynatıcısını önizle ve açıklamaları ile altyazıları gözden geçir. Hareket, sessiz animasyon dahil video olarak dahil edilir. Bir araç onu kaydedilmiş girdilerden yeniden oluşturamadığında önce bitmiş bir kaydı dışa aktar.
+- <!--i:file--> Web Sitesi, SCORM 1.2, SCORM 2004 4th Edition veya deneysel bir xAPI hedefi seç. Gerçek içeriği ve ZIP boyutunu kontrol et, ardından kontrol edilen sürümü kaydet ve indir.
+- <!--i:check--> Tamamlama, her gerekli dersi onaylamayı ve Bitir'i seçmeyi gerektirir. Web sitesi oynatıcısı ilerlemeyi tarayıcıda saklar; bir LMS paketi kendi alıcı LMS'ine bağlanır.
 
 ![SCORM (LMS) seçiliyken bir Design destesindeki dışa aktarma paneli](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Paketin içindeki hiçbir şey eve telefon etmez: bir zip içindeki dosyalardır ve LMS içinde paketleyici, CDN veya hesap gerekmeden çalışır. Web ve masaüstü uygulamaları bunu oluşturur; CLI oluşturmaz, çünkü çalışma yüzeylerini fotoğraflamak ve filmi kodlamak tarayıcı gerektirir.
+Paket, bitmiş içeriğini içerir ve bir Lolly hesabı gerektirmez. Bir Web Sitesi ZIP'ini bir HTTP(S) sunucusuna çıkar; bir LMS ZIP'ini içeriğini değiştirmeden içe aktar. Kursu dağıtmadan önce hedeflenen varış noktasını test et.
+
+Birkaç kaydedilmiş oluşturmadan, içe aktarılmış medyadan ve kaynaklardan bir araya getirilen bir kurs için [Bir eğitim kursu oluştur](/info/create/training-creators.html) kullan. Öğrenim modülünün kendi sıralı taslağı, açık ders onayları, öğrenci önizlemesi ve sürümlenmiş paket geçmişi vardır. CLI yolu, zaten dışa aktardığın medyayı paketleyebilir.
 
 ## DXF (kesim dosyaları)
 
@@ -309,6 +311,10 @@ Dışa aktarımlar **Content Credentials** taşıyabilir - dosyanın Lolly ile y
 - **Bir dosyayı kontrol etme.** Lolly kendi kimlik bilgilerini de doğrular: [/verify](/verify) üzerine herhangi bir dosya bırak (veya CLI'de `lolly validate <file>` çalıştır) cihaz üzerinde bir rapor için - dosyanın gerçekten Lolly ile yapıldığı ve o zamandan beri değişmediği başlıkta yer alır. Web Doğrula görünümü kimlik bilgisinin çok ötesini okur: **AI tarafından üretilmiş içeriği** işaretler, **Lolly Damgası**'nı tespit eder, **SEAL** imzalarını ve (isteğe bağlı) üçüncü taraf piksel filigranlarını kontrol eder ve **gizli veriyi** ortaya çıkarır - hepsi cihaz üzerinde, hiçbir şey yüklenmeden. Bkz. [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Gizlilik.** Her şey cihazında olur: imzalama anahtarı dışa aktarım için oluşturulur ve tarayıcıdan asla çıkmaz, hiçbir şey yüklenmez ve iddia yalnızca köken meta verisinin zaten taşıdığını içerir. Gizlilik araçları (*kendi* dosyalarının cihaz üzerinde dönüşümleri) asla kimlik bilgisi eklemez ve *Gizli Veriyi Sil*, diğer gömülü meta veriler gibi bir C2PA manifestosunu da kaldırır.
 - **Etkileşimler.** PDF'ler için, Content Credentials ve **şifre koruması** (her iki kademe de - yukarıya bak) karşılıklı dışlayıcıdır (şifrelenmiş bir PDF kimlik bilgisi ekini alamaz). Kimlik bilgisi, tamamlanmış baytlar üzerinde son adım olarak eklenir - DPI/EXIF/renk profili damgalamasından, PDF/X meta verisinden ve baskı işaretlerinden sonra.
+
+### Kaynak atıfları
+
+Başkasının işini yerleştiren bir dışa aktarma, o kaynağı kimlik bilgisine de kaydeder. Sabitlenmiş bir setten çizilen bir emoji, günlük durumdur: iş, yaratıcısı, lisansı, tam baytların nereden geldiği ve neyin değiştiği, hepsi dosyayla birlikte yolculuk eder. Dışa aktarma panelinin **Kaynak atıfları** satırı, indirmeden önce kaynakların teslimden ne istediğini söyler ve indirmeden sonra atıfların dosyada olduğunu söylemeden önce teslim edilen baytları geri okur. Paylaşmak üzere olduğun yeniden renklendirilmiş bir CC BY-SA glifi gibi, seçmeni isteyen bir lisans, çıkış yollarıyla birlikte bir kart alır; indirme asla engellenmez. [Yaratıcı haklar ve atıflar](/info/creative-rights.html) sayfasında sözcükler, incelenen lisanslar ve sende kalanlar bulunur.
 
 ## Telefonda
 

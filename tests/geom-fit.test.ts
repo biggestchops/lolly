@@ -622,7 +622,7 @@ test('the offset fixture is genuinely smooth - a cusped source would be a differ
       assert.ok(Math.hypot(s.dx, s.dy) > 1e-6, `the offset source cusps at t=${i / 400}`);
     }
     // The analytic derivative is what the fit reads end tangents from; a wrong one would
-    // quietly bias every fit and nothing else here would say so.
+    // quietly bias every fit and nothing else here would report it.
     for (let i = 1; i < 20; i++) {
       const t = i / 20, h = 1e-6;
       const a = src.sample(t - h), b = src.sample(t + h), m = src.sample(t);

@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Sol alt",
   "inputs.boxes.fields.imgpos.options.center bottom": "Alt",
   "inputs.boxes.fields.imgpos.options.right bottom": "Sağ alt",
-  "description": "Serbest düzenleme için açık bir tuval - metin, görseller, şekiller ve diğer Lolly araçlarınızdan canlı görüntüler, hepsi markanıza uygun."
+  "description": "Serbest düzenleme için açık bir tuval - metin, görseller, şekiller ve diğer Lolly araçlarından canlı görüntüler, hepsi tasarım sistemine bağlı kalır."
 }

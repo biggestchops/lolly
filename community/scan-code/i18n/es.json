@@ -1,5 +1,5 @@
 {
-  "name": "Scan",
-  "description": "Read QR codes and barcodes on-device, with nothing sent to any cloud. A reader, not an opener: it decodes, classifies and explains what a code carries - links, Wi-Fi, contacts, product codes - and lets you act deliberately. Copy is always the first action; opening, joining or adding is an explicit, informed tap.",
-  "featured.blurb": "Read any code, safely and offline"
+  "name": "Escanear",
+  "description": "Lee códigos QR y de barras en el dispositivo, sin enviar nada a la nube. Un lector, no un abridor: decodifica, clasifica y explica lo que contiene un código - enlaces, Wi-Fi, contactos, códigos de producto - y te deja actuar con intención. Copiar es siempre la primera acción; abrir, unirse o añadir es un toque explícito e informado.",
+  "featured.blurb": "Lee cualquier código, de forma segura y sin conexión"
 }

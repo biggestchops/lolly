@@ -1699,7 +1699,7 @@ const twoThemeDoc = () => ({
 test('penpotTokensJson: the active theme selection wins, so dark stays active when it is not listed first (gap #3)', () => {
   const doc = twoThemeDoc();
 
-  // No selection: honour the first theme, but say so explicitly.
+  // No selection: honour the first theme, but report it explicitly.
   const def = penpotTokensJson(doc)!;
   assert.deepEqual((def.$metadata as any).activeThemes, ['light']);
   assert.deepEqual((def.$metadata as any).activeSets, ['base', 'light']);

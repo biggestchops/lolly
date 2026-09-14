@@ -524,7 +524,7 @@ test('a gamut needs the REVERSE transform, not just an intent tag', () => {
   assert.equal(iccGamutIntent(abstract, 'perceptual'), false,
     'an abst profile has no device gamut, so no intent of it answers a gamut question');
 
-  // A profile that CAN answer must still say so, or this gate has closed the door
+  // A profile that CAN answer must still report it, or this gate has closed the door
   // on every real press and display.
   const both = parseIccProfile(buildProfile({
     deviceClass: 'prtr', space: 'CMYK',

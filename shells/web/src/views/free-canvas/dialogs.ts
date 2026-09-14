@@ -1010,7 +1010,7 @@ export function askChoreograph(fc: FcCtx): void {
   async function run(): Promise<void> {
   const { timeCfg } = fc;
     if (yes.disabled || !timeCfg) return;
-    // The generator floors the arc at 0.8 s; say so in the field rather than let it read
+    // The generator floors the arc at 0.8 s; report it in the field rather than let it read
     // 0.1 while a 0.8 s arc is made.
     let sec = parseFloat(secIn.value);
     if (secDirty && Number.isFinite(sec) && sec < 0.8) {

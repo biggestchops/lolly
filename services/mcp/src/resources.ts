@@ -8,7 +8,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createTokenSet, pickHeadAssetId } from '@lolly/engine';
-import { assetIndexPath, contentUrl, previewsDir } from './paths.ts';
+import { assetIndex, contentUrl, previewsDir } from './paths.ts';
 import { loadIndex, loadToolCached } from './catalog.ts';
 import { toolInputSchema } from './schema.ts';
 import { withHost } from './host.ts';
@@ -57,7 +57,7 @@ export function headTokensAsset<T extends { id: string; type: string }>(assets: 
 }
 
 async function tokensResource(uri: string): Promise<ResourceContent> {
-  const idx = JSON.parse(await readFile(assetIndexPath(), 'utf8')) as AssetIndex;
+  const idx = assetIndex<AssetIndex>();
   const tokenAsset = headTokensAsset(idx.assets);
   if (!tokenAsset) return { uri, mimeType: 'application/json', text: JSON.stringify({ colors: [], note: 'No tokens asset in catalog.' }) };
   const tokenUrl = tokenAsset.formats[0]!.url;
@@ -76,7 +76,7 @@ function parseDataUrl(url: string): { mime: string; base64: string } | null {
 
 /** The catalog listing an agent needs to pick a REAL asset id instead of hallucinating one. */
 async function assetsListing(uri: string): Promise<ResourceContent> {
-  const idx = JSON.parse(await readFile(assetIndexPath(), 'utf8')) as AssetIndex;
+  const idx = assetIndex<AssetIndex>();
   // Same listing shape host.assets.query resolves (id/type/name/tags), minus bytes;
   // fetch an individual asset via lolly://asset/{id}.
   const assets = idx.assets.map(a => ({

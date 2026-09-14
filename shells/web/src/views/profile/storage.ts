@@ -907,7 +907,7 @@ export async function loadStorage(pv: ProfileViewCtx) {
           onMotionFound: (count) => askKeepTabActive(count),
         });
         // A falsy result means the motion prompt was cancelled - the backup still went out,
-        // but nothing was rendered, so say so rather than finishing silently.
+        // but nothing was rendered, so report it rather than finishing silently.
         if (!result) announce(t('Backup saved. Render cancelled, so nothing else was downloaded.'));
         return result;
       } catch (err) {

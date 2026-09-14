@@ -13,7 +13,8 @@
  * the model, so skipping is a no-op. Anything uncertain returns false → the caller
  * does a full renderInputs() → the panel can never drift from the model.
  */
-import type { InputControl, InputValue } from '../../../../engine/src/inputs.ts';
+import { matchesShowIf } from '../../../../engine/src/inputs.ts';
+import type { InputControl, InputValue, ShowIf } from '../../../../engine/src/inputs.ts';
 
 /** The slice of an input model item this module reads. */
 export interface SyncableInput {
@@ -21,7 +22,7 @@ export interface SyncableInput {
   value: InputValue;
   control: InputControl;
   group?: string;
-  showIf?: Record<string, InputValue>;
+  showIf?: ShowIf;
 }
 
 // Controls whose entire value lives in one [data-input-id] element's .value, so
@@ -45,8 +46,7 @@ function cssEscape(s: string): string {
 export function visibleInputKey(model: SyncableInput[]): string {
   const values = Object.fromEntries(model.map(i => [i.id, i.value]));
   return model
-    .filter(i => i.group !== 'export' && (!i.showIf || Object.entries(i.showIf).every(([k, v]) =>
-      Array.isArray(v) ? v.includes(values[k] as InputValue) : values[k] === v)))
+    .filter(i => i.group !== 'export' && matchesShowIf(i.showIf, values))
     .map(i => i.id)
     .join('\n');
 }

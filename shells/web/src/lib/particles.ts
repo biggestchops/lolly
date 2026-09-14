@@ -16,7 +16,7 @@
 import { hexToOklch, contrastRatio } from '@lolly/engine';
 import { tokenValueToHex } from '../brand-vars.ts';
 import { prefersReducedMotion } from './a11y-prefs.ts';
-import { perfUiOn } from '../feature-flags.ts';
+import { perfUiOn, subscribePerfUi } from '../feature-flags.ts';
 
 /** The chip palette: [box-fill, ink] pairs. Brand-derived when tokens are
  * loaded (see brandChipPairs); this SUSE set is the fallback for a tokenless
@@ -218,6 +218,8 @@ function burstWith(x: number, y: number, palette: ReadonlyArray<readonly [string
   document.body.appendChild(canvas);
 
   let raf = 0;
+  const stop = (): void => { cancelAnimationFrame(raf); canvas.remove(); unsubscribePerf(); };
+  const unsubscribePerf = subscribePerfUi(on => { if (on) stop(); });
   const tick = (): void => {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     for (let i = chips.length - 1; i >= 0; i--) {
@@ -235,7 +237,7 @@ function burstWith(x: number, y: number, palette: ReadonlyArray<readonly [string
       ctx.restore();
     }
     if (chips.length) { raf = requestAnimationFrame(tick); }
-    else { cancelAnimationFrame(raf); canvas.remove(); }
+    else stop();
   };
   raf = requestAnimationFrame(tick);
 }

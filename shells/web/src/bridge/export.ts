@@ -42,7 +42,9 @@ import type { Box, ChromeEl } from './frame-static.ts';
 import { buildExportPack, renderLinuxPackage } from './export-linux-package.ts';
 import { createDownload } from './download.ts';
 import { packIco } from './ico-pack.ts';
-import type { ExportMeta, IngredientCredential, HostV1, C2paSignOpts } from '@lolly-tools/core/host-v1';
+import type { ExportMeta, IngredientCredential, SourceIngredient, HostV1, C2paSignOpts } from '@lolly-tools/core/host-v1';
+import { checkAttributionReadback, sha256Hex, verifyC2pa } from '@lolly/engine';
+import type { C2paReport } from '../../../../engine/src/c2pa-verify.ts';
 import type { C2paActionInput } from '../../../../engine/src/c2pa.ts';
 import type { LabelSlot, PrintGeometry } from '../../../../engine/src/print-marks.ts';
 import type { CornerRadii, CornerPair } from '../../../../engine/src/css-box.ts';
@@ -365,12 +367,57 @@ async function renderFormat(node: Element, format: string, opts: ExportOpts = {}
     // runtime already supplied for declared asset inputs (so a bitmap that WAS a
     // declared asset is not double-listed).
     if (opts._ingredientSink?.length) {
-      const have = new Set((opts.ingredients ?? []).map((i) => i.activeLabel));
+      // A source ingredient (no credential of its own) has no manifest label; it never collides.
+      const have = new Set((opts.ingredients ?? []).map((i) => ('activeLabel' in i ? i.activeLabel : undefined)));
       opts.ingredients = [...(opts.ingredients ?? []), ...opts._ingredientSink.filter((i) => !have.has(i.activeLabel))];
     }
-    return stampC2pa(blob, key, opts, dimensions);
+    const stamped = await stampC2pa(blob, key, opts, dimensions);
+    await reportRightsReceipt(stamped, opts);
+    return stamped;
   }
+  // A route with no credential still owes an honest answer: the readback below
+  // finds nothing and the receipt says so, rather than the promise being dropped.
+  await reportRightsReceipt(blob, opts);
   return blob;
+}
+
+/** A report for bytes that carry no credential at all - what an unstamped file
+ *  honestly reads as, and what a failed verify falls back to. */
+const NO_CREDENTIAL: C2paReport = {
+  found: false, state: 'none', trusted: false, madeWithLolly: false, likelyMadeWithLolly: false,
+  partsMadeWithLolly: false, delivered: false, format: null, checks: [],
+};
+
+/**
+ * Measure what the delivered bytes actually carry, and hand the runtime one
+ * receipt (plan 253 section 8.4). Read back from the file that is about to be
+ * delivered, never from what the writer believed it wrote: `stampC2pa` catches
+ * every failure and ships the unstamped bytes, so a promise of credits would
+ * otherwise survive a credential that was never written. A verify that fails or
+ * throws produces the same honest answer as an absent credential - state
+ * `written`, one `credential.ingredient-missing` per required source - so the
+ * export panel can offer the credit to copy instead of a silent raw file.
+ *
+ * Skipped entirely when the plan promised no required notice: there is nothing
+ * to measure, and a render with no obligation must not pay for a parse.
+ */
+async function reportRightsReceipt(blob: Blob, opts: ExportOpts): Promise<void> {
+  const rights = opts.rights;
+  if (!rights?.onReceipt || !rights.plan.required.length) return;
+  let report = NO_CREDENTIAL;
+  let outputHash: string | undefined;
+  try {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    outputHash = `sha256:${await sha256Hex(bytes)}`;
+    report = await verifyC2pa(bytes);
+  } catch (err) {
+    _host?.log?.('warn', `rights: the delivered file could not be read back - ${(err as Error)?.message || err}`);
+  }
+  try {
+    rights.onReceipt(checkAttributionReadback(rights.plan, report, outputHash, rights.fingerprint));
+  } catch (err) {
+    _host?.log?.('warn', `rights: the receipt could not be reported - ${(err as Error)?.message || err}`);
+  }
 }
 
 // A top-&-tail recorder's render target carries [data-toptail] (on the node or a
@@ -2298,7 +2345,7 @@ async function signAndEmbedC2pa(blob: Blob, format: string, o: {
   author?: { name: string; email?: string; url?: string };
   rights?: string;
   actions: C2paActionInput[];
-  ingredients?: IngredientCredential[];
+  ingredients?: (IngredientCredential | SourceIngredient)[];
   aiDisclosure?: Record<string, never>;
   days?: number;
 }, host: WebHost | null = _host): Promise<Blob> {
@@ -2348,7 +2395,7 @@ export async function stampDerivedC2pa(host: HostV1, blob: Blob, format: string,
   /** Honest transform steps (c2pa.color_adjustments / c2pa.cropped / c2pa.converted / …). */
   actions: C2paActionInput[];
   /** The source asset's own preserved credential(s), carried as ingredient manifests. */
-  ingredients?: IngredientCredential[];
+  ingredients?: (IngredientCredential | SourceIngredient)[];
   /** Transform detail (source id, treatment, crop box, …) → tools.lolly.export `inputs`. */
   inputs?: Record<string, string>;
   /** Output size, e.g. '1024×768'. */
@@ -5682,9 +5729,15 @@ async function renderZip(node: Element, opts: ExportOpts): Promise<Blob> {
   // password - so a PDF stays locked even after the zip is unpacked. Always the strong
   // tier for the inner PDF (RC4 needs a plain unfinished doc; AES composes with any).
   // Non-PDF members carry no lock of their own - only the container protects them.
+  // A member reports no receipt of its own. `renderFormat` re-enters once per
+  // sub-format and the runtime keeps the LAST receipt it is handed, so a bundle
+  // of five members used to leave one receipt describing one member, with an
+  // `outputHash` that was not the delivered file's (AttributionReceiptV1
+  // documents that hash as the delivered bytes). One receipt is reported for the
+  // container instead, on the assembled archive, by the outer renderFormat call.
   const memberOpts: ExportOpts = password
-    ? { ...opts, password: undefined, strongPassword: password }
-    : { ...opts, password: undefined, strongPassword: undefined };
+    ? { ...opts, rights: undefined, password: undefined, strongPassword: password }
+    : { ...opts, rights: undefined, password: undefined, strongPassword: undefined };
   const members: Array<{ name: string; bytes: Uint8Array }> = [];
   for (const f of (opts.bundleFormats ?? []).filter(x => x !== 'zip')) {
     const blob = await renderFormat(node, f, memberOpts);
@@ -5900,7 +5953,7 @@ async function renderVideo(node: Element, opts: ExportOpts, preferred: string): 
   const frameCount = plan.frameCount;
   if (fps !== reqFps) {
     _host?.log?.('warn', `Video frame rate lowered to ${fps}fps to keep the whole ${(durationMs / 1000).toFixed(1)}s clip inside the frame buffer.`);
-    // ...and say so where a person will actually see it (host.log is console-only).
+    // ...and report it where a person will actually see it (host.log is console-only).
     _exportNoticeSink?.(`Exported at ${fps} fps (lowered from ${reqFps} to fit this length).`);
   }
   if (plan.truncated) {
@@ -6092,7 +6145,7 @@ async function renderVideo(node: Element, opts: ExportOpts, preferred: string): 
   }
   // WP-F: reaching Phase 2 with a transcript in hand means the WebCodecs mux path did
   // not carry it (no pick, unencodable audio container, or a mid-encode fallback). The
-  // MediaRecorder replay below cannot embed a soft track - say so, never silently.
+  // MediaRecorder replay below cannot embed a soft track - report it, never silently.
   if (wantSoftSubs) _host?.log?.('warn', SOFT_SUBTITLES_DROPPED_MSG);
 
   // Phase 2: replay pre-rendered frames at target fps into captureStream.

@@ -46,6 +46,11 @@
  */
 
 import { storeZip } from '../../engine/src/zip.ts';
+import { readEmojiPack } from '../../engine/src/emoji-pack.ts';
+import { prepareEmojiSvg, emojiSvgMarkup } from '../../engine/src/emoji-svg.ts';
+import { emojiGraphemes, segmentEmojiText } from '../../engine/src/emoji-segment.ts';
+import { sha256Hex } from '../../engine/src/bytes.ts';
+import emojiSeed from '../fixtures/emoji/twemoji/manifest.json' with { type: 'json' };
 import { inspectPreparation, applyPreparation } from '../../engine/src/prepare.ts';
 import { embedC2paInPdf, embedC2pa, attachC2paStore, encodeCbor, type Signer } from '../../engine/src/c2pa.ts';
 import { generateSigner, generateCaRoot, issueLeafCert } from '../../engine/src/x509.ts';
@@ -1559,7 +1564,48 @@ export const geomTarget: FuzzTarget = {
   },
 };
 
+export const emojiPackTarget: FuzzTarget = {
+  name: 'emoji-pack',
+  async seeds() {
+    return [new TextEncoder().encode(JSON.stringify(emojiSeed))];
+  },
+  async invoke(bytes) {
+    // Match the transport digest so mutations reach JSON/schema/semantic checks.
+    // Digest mismatch is exercised independently by the direct contract tests.
+    await readEmojiPack(bytes, { id: emojiSeed.id, pin: { version: emojiSeed.version }, checksum: `sha256:${await sha256Hex(bytes)}` });
+  },
+};
+
+export const emojiSvgTarget: FuzzTarget = {
+  name: 'emoji-svg',
+  async seeds() {
+    return [
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><circle cx="18" cy="18" r="18" fill="#fc4"/></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><defs><radialGradient id="a"><stop offset="1" style="stop-color:#fff"/></radialGradient></defs><path fill="url(#a)" d="M0 0C1 2 3 4 5 6Z"/></svg>',
+    ].map(source => new TextEncoder().encode(source));
+  },
+  async invoke(bytes) {
+    const manifest = structuredClone(emojiSeed);
+    manifest.glyphs[0]!.asset.checksum = `sha256:${await sha256Hex(bytes)}`;
+    const encoded = new TextEncoder().encode(JSON.stringify(manifest));
+    const loaded = await readEmojiPack(encoded, { id: manifest.id, pin: { version: manifest.version }, checksum: `sha256:${await sha256Hex(encoded)}` });
+    if (!loaded.ok) throw new Error(loaded.issue.message);
+    const result = await prepareEmojiSvg(loaded.pack, { kind: 'unicode', key: '1f600' }, bytes, parseXml);
+    if (result.ok) emojiSvgMarkup(result.svg);
+  },
+};
+
+export const emojiTextTarget: FuzzTarget = {
+  name: 'emoji-text',
+  async seeds() { return ['A 😀 👩🏽‍💻 🇬🇧 © ♥︎ ♥️ 1️⃣', 'क्\u200dष\r\na\u0301', '😀\u200d😀'].map(text => new TextEncoder().encode(text)); },
+  async invoke(bytes) {
+    const text = new TextDecoder().decode(bytes);
+    emojiGraphemes(text); segmentEmojiText(text);
+  },
+};
+
 export const ALL_TARGETS: FuzzTarget[] = [
+  emojiPackTarget, emojiSvgTarget, emojiTextTarget,
   prepareTarget, c2paVerifyTarget, cborTarget, mediaSniffTarget, pdfMapTarget, pdfDerivedTarget, x509Target,
   fileMetadataTarget, stripMetadataTarget, videoMetaTarget, dataImportTarget, brandImportTarget, tarReadTarget,
   epubReadTarget, jpegStructureTarget,

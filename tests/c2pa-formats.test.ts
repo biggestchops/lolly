@@ -569,7 +569,7 @@ const tinyOgg = (): Uint8Array => concat([
 // self-asserts AND chains when composited into a top-&-tail / record video.
 //
 // The audio legs are why the shell-side type had to widen: the embedder could
-// always sign them, `stampCaptureClip`'s signature just didn't say so, and voice
+// always sign them, `stampCaptureClip`'s signature just didn't report it, and voice
 // takes were the one capture shipping uncredentialed. The shell half is pinned in
 // shells/web/src/bridge/capture-clip-c2pa.test.ts.
 const RECORDED: Array<[string, Uint8Array, string]> = [

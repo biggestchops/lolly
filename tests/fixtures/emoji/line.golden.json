@@ -1,0 +1,20 @@
+{
+  "openmoji": {
+    "svg": "sha256:d680a8888506a368e188d0671c1c59c26a051d8c78af7960ce7da151735ceedd",
+    "rgba": "sha256:72a03f725cda0f17172f74745a323334c826f1a362e71e8e24dd3c3ce0b6f0ae",
+    "width": 408,
+    "height": 62
+  },
+  "twemoji": {
+    "svg": "sha256:b564eb2e2c95aa1b20e45564f5354a293b50c5a015de8443455b186c27271e5c",
+    "rgba": "sha256:d2fcaf858f7701d92a3bb830e4c7f6c773898d9e29163dbd2ac710772bb83550",
+    "width": 408,
+    "height": 62
+  },
+  "noto": {
+    "svg": "sha256:e6ae134b4105de3c127e0593e243eb0b02952f0375a69a0aea4f0e834c628a67",
+    "rgba": "sha256:b52dcfc1a298c550ec1b19ce660701c304f277658d01d29766874d0764920007",
+    "width": 408,
+    "height": 62
+  }
+}

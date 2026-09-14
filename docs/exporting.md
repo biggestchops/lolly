@@ -43,7 +43,7 @@ The filename and the format picker sit at the top of the panel as one `name.form
 | Vector for print / design apps | **EPS**, or **EPS (CMYK)** | PostScript vector for Illustrator / press workflows |
 | Vector for cutting / CAD machines | **DXF** | Laser cutters, vinyl plotters, CNC - outline paths in millimetres |
 | An editable slide deck | **PowerPoint** (PPTX) | Native editable text + shapes, with images and vectors kept extractable |
-| A course an LMS can import | **SCORM** (LMS) | A zip with the manifest, a launch page, the slides and the narrated film with captions - from a Design deck |
+| A portable training course | **Export course** | Review project content and build a versioned Website, SCORM or experimental xAPI package |
 | An editable text document | **Word** (DOCX) or **OpenDocument** (ODT) | Real paragraphs and headings a word processor can keep editing (Doc Studio) |
 | A photo or general-purpose image | **PNG** (lossless) or **JPG** (smaller) | Universal raster |
 | Smaller modern images | **WebP** / **AVIF** | Better compression, alpha |
@@ -150,16 +150,18 @@ To open it, start Penpot, pick a project and choose **Import**. Signed in to Pen
 
 ## SCORM (course packages)
 
-A Design deck can leave as a **SCORM package** - the zip a learning management system imports, whether that is Moodle, Canvas, Blackboard or a corporate LMS. Pick **SCORM (LMS)** in the format picker and the export writes:
+Choose **Export course** from a supported tool, a project folder or a selection. In Design, choosing **SCORM (LMS)** and Download also opens this course workflow. Lolly saves the creation, lets you review the course content and order, then opens the module and its export dialog.
 
-- <!--i:layout--> **The slides**, one image per artboard, as vector where the artboard allows it and as pixels only where it does not.
-- <!--i:play--> **The narrated film** with its caption track - the speaker notes read by an on-device voice, exactly as [Presenting](/info/create/using.html#presenting) plays them.
-- <!--i:file--> **A launch page** that steps through the slides, plays the film and reports completion back to the LMS through the SCORM 1.2 runtime, the version every LMS accepts.
-- <!--i:font--> The fonts the deck uses, so the launch page renders the same offline.
+- <!--i:layout--> Choose the available rendition for each source: still pages, motion as video, audio or a downloadable resource. Add native lesson text and reading alternatives in the module.
+- <!--i:play--> Preview the learner player and review descriptions and captions. Motion is included as video, including silent animation. Export a finished recording first when a tool cannot recreate it from saved inputs.
+- <!--i:file--> Select Website, SCORM 1.2, SCORM 2004 4th Edition, or an experimental xAPI target. Check the actual content and ZIP size, then save and download the checked version.
+- <!--i:check--> Completion requires acknowledging every required lesson and selecting Finish. The website player stores progress in the browser; an LMS package connects to its receiving LMS.
 
 ![The export panel on a Design deck with SCORM (LMS) chosen](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
-Nothing in the package calls home: it is files in a zip, and it runs inside the LMS with no bundler, no CDN and no account. The web and desktop apps build it; the CLI does not, because photographing the artboards and encoding the film need the browser.
+The package includes its finished content and does not require a Lolly account. Extract a Website ZIP onto an HTTP(S) host; import an LMS ZIP without changing its contents. Test the intended destination before distributing the course.
+
+For a course assembled from several saved creations, imported media and resources, use [Create a training course](/info/create/training-creators.html). The learning module has its own ordered outline, explicit lesson acknowledgements, learner preview and versioned package history. Its CLI path can package media that you have already exported.
 
 ## DXF (cut files)
 
@@ -309,6 +311,10 @@ Exports can carry **Content Credentials** - a signed [C2PA](https://c2pa.org) ma
 - **Checking a file.** Lolly verifies its own credentials too: drop any file on [/verify](/verify) (or run `lolly validate <file>` in the CLI) for an on-device report - headlined by whether the file was genuinely made with Lolly and unchanged since. The web Verify view reads well beyond the credential: it flags **AI-generated content**, detects the **Lolly Imprint**, checks **SEAL** signatures and (opt-in) third-party pixel watermarks and surfaces **hidden data** - all on-device, nothing uploaded. See [Content Credentials Identity → Beyond the credential](/info/content-credentials-identity.html#beyond-the-credential-what-else-verify-shows).
 - **Privacy.** Everything happens on your device: the signing key is created for the export and never leaves the browser, nothing is uploaded and the claim contains only what the provenance metadata already carries. Privacy utilities (on-device transforms of *your own* files) never add credentials, and *Strip Hidden Data* will remove a C2PA manifest like any other embedded metadata.
 - **Interactions.** For PDFs, Content Credentials and **password protection** (either tier - see above) are mutually exclusive (an encrypted PDF can't take the credential attachment). The credential is added as the final step over the finished bytes - after DPI/EXIF/colour-profile stamping, PDF/X metadata and print marks.
+
+### Source credits
+
+An export that places someone else's work records that source in the credential too. An emoji drawn from a pinned set is the everyday case: the work, its creator, the licence, where the exact bytes came from and what changed all travel with the file. The export panel's **Source credits** row says what the sources ask of the delivery before you download, and after the download it reads the delivered bytes back before it says the credits are in the file. A licence that asks you to choose, such as a recoloured CC BY-SA glyph you are about to share, gets a card with the ways out; the download is never blocked. [Creative rights and credits](/info/creative-rights.html) has the words, the reviewed licences and what stays yours.
 
 ## On a phone
 

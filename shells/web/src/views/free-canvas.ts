@@ -1963,7 +1963,14 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     selection: selectionPort,
     guides: fc.authoringGuides ?? undefined,
     artboard: artboardPort,
-    thumb: (frameBox, maxW, maxH) => frameThumb(canvasEl, frameBox, cfg, { maxW, maxH }),
+    thumb: (frameBox, maxW, maxH) => {
+      const thumb = frameThumb(canvasEl, frameBox, cfg, { maxW, maxH });
+      // The clone is taken on the paint tick, before the asynchronous emoji pass has run
+      // over the live page, so the clone gets its own pass: a thumbnail never shows the
+      // machine's own emoji font. Idempotent when the page was already passed.
+      void fc.runtime.applyEmojiToDom?.(thumb)?.catch(() => undefined);
+      return thumb;
+    },
     model: modelPort,
     navigatorActions,
     inspectorActions,

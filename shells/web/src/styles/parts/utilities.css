@@ -44,24 +44,6 @@
   color: hsl(var(--card-foreground));
 }
 
-/* was .field-input - 9 rules */
-.export-pdfpass input[type="password"],
-.print-bleed input[type="number"],
-.video-params input[type="number"],
-.identity-email-row .identity-email-input,
-.identity-days-row .identity-days-select,
-.color-trigger,
-.asset-picker-trigger,
-.asset-edit,
-.profile-view .profile-field input {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  border: 0;
-  border-radius: calc(var(--radius)*1.5);
-  box-shadow: 0 1px #fff2, inset 0 .051em .23em #0002;
-  font: inherit;
-}
-
 /* was .icon-fab - 1 rules */
 .history-fab {
   position: relative;

@@ -1,0 +1,79 @@
+.learning-entry,
+.learning-export {
+  width: min(920px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  padding: 24px;
+  color: var(--text);
+  background: var(--surface, Canvas);
+  border: 1px solid var(--border, #888);
+  border-radius: 12px;
+}
+.learning-entry::backdrop,
+.learning-export::backdrop {
+  background: #0008;
+}
+.learning-entry li {
+  padding: 12px;
+  border-bottom: 1px solid var(--border, #888);
+}
+.learning-entry label,
+.learning-export label {
+  display: block;
+  margin: 12px 0;
+}
+.learning-entry input:not([type="checkbox"]),
+.learning-entry select,
+.learning-export input,
+.learning-export select,
+.learning-export textarea {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  color: inherit;
+  background: var(--surface, Canvas);
+  border: 1px solid var(--border, #888);
+  border-radius: 6px;
+  font: inherit;
+}
+.learning-entry button,
+.learning-export button {
+  margin: 6px 8px 6px 0;
+  padding: 8px 16px;
+}
+.learning-entry footer,
+.learning-export footer {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.learning-entry-error {
+  color: var(--text);
+  font-weight: 600;
+}
+.learning-export dl {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 2fr;
+  gap: 8px;
+}
+.learning-export dd {
+  margin: 0;
+}
+.learning-export progress {
+  width: 100%;
+}
+.learning-entry :focus-visible,
+.learning-export :focus-visible {
+  outline: 3px solid Highlight;
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .learning-entry,
+  .learning-export {
+    padding: 16px;
+  }
+  .learning-export dl {
+    display: block;
+  }
+}

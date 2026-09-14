@@ -138,7 +138,7 @@ export interface SiteReadOptions {
  * nothing at all until `read()` is called.
  */
 export interface SiteTransport {
-  /** Names who does the reading, so the consent line can say so honestly. */
+  /** Names who does the reading, so the consent line can report it honestly. */
   readonly kind: 'extension' | 'native';
   read(url: string, options?: SiteReadOptions): Promise<SiteReadResult>;
 }

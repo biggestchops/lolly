@@ -175,6 +175,11 @@ Export options:
                            tool's own pin; a slug this catalog does not ship falls
                            through to the pin, then the head, and says so either way
   --verify                 for a file utility: print a per-file line when no check failed
+  --rights=private         state that this render is not being delivered to anyone, so a
+                           condition that applies on sharing does not apply and no
+                           delivery claim is recorded. There is no flag for ignoring a
+                           licence condition: a render whose sources still need a
+                           decision prints them and exits 4
 
 Link options:
   --z=<token>              a packed share link's state
@@ -297,7 +302,7 @@ async function main(): Promise<void> {
   // before any work, so the top-level catch can name the command in a failure envelope
   // even when the throw happened before the command function was reached. A bare tool
   // id reports as `describe`/`run` - the verb it is sugar for - not as its own name.
-  const VERBS = new Set(['prepare', 'files', 'start', 'system', 'list', 'describe', 'run', 'compile', 'schema', 'inspect', 'diff', 'measure', 'optimize', 'package', 'validate', 'preflight', 'install-browser', 'assets', 'batch', 'smoke', 'models', 'speak', 'transcribe', 'mix', 'upscale', 'matte', 'ocr', 'detect-ai', 'reword', 'depth', 'icons', 'pack', 'completion', 'tui']);
+  const VERBS = new Set(['learning', 'prepare', 'files', 'start', 'system', 'list', 'describe', 'run', 'compile', 'schema', 'inspect', 'diff', 'measure', 'optimize', 'package', 'validate', 'preflight', 'install-browser', 'assets', 'batch', 'smoke', 'models', 'speak', 'transcribe', 'mix', 'upscale', 'matte', 'ocr', 'detect-ai', 'reword', 'depth', 'icons', 'pack', 'completion', 'tui']);
   beginCommand(VERBS.has(cmd ?? '') ? cmd! : 'run', g.json);
 
   // Content-free binary (plans/131): the published CLI ships no tools and no catalog.
@@ -309,6 +314,11 @@ async function main(): Promise<void> {
   // `list` / `describe` / `run` exist because the first positional is an open namespace
   // shared with tool ids: a brand pack shipping a tool called `batch` would otherwise be
   // permanently unreachable. The verbs can never be shadowed.
+  if (cmd === 'learning') {
+    const { learningCli } = await import('../src/learning.ts');
+    await learningCli(positionals.slice(1), flags, g.json);
+    return;
+  }
   if (cmd === 'files') {
     if (args.some(arg => /^--(?:to|max-edge|quality|target-bytes|background)$/.test(arg))) throw usageError('File operation options need explicit values: --to=jpeg --quality=0.92 --max-edge=1920.');
     const { filesCli } = await import('../src/files.ts');

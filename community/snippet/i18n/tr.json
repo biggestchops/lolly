@@ -1,5 +1,5 @@
 {
-  "name": "Snippet",
+  "name": "Kod Parçası",
   "description": "Kod parçacıklarını temiz, sözdizimi vurgulamalı, paylaşılabilir görüntülere dönüştür.",
   "inputs.code.label": "Kod",
   "inputs.code.placeholder": "Kodunu buraya yapıştır…",

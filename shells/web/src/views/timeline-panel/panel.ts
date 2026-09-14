@@ -496,7 +496,7 @@ export function setOpen(tp: TpCtx, next: boolean): void {
   } else {
     // A hidden panel has no visible mic button, no meter and no elapsed clock, so a
     // take cannot survive the close: the microphone would stay open with nothing on
-    // screen to say so.
+    // screen to report it.
     tp.recording.cancelTake();
     // End any gesture FIRST: Escape is reachable mid-drag, and a live resize keeps
     // calling reserve() on every subsequent pointermove - leaving the artboard

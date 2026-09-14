@@ -1,4 +1,4 @@
 {
-  "name": "Sign",
-  "description": "Place your signature on a PDF, optionally add a Content Credential and lock the result."
+  "name": "签署",
+  "description": "把签名放到 PDF 上，可选择添加 Content Credential，并锁定最终文件。"
 }

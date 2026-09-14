@@ -1,5 +1,5 @@
 {
-  "name": "Snippet",
+  "name": "スニペット",
   "description": "コードスニペットをシンプルでシンタックスハイライト付きの共有可能な画像に変換します。",
   "inputs.code.label": "コード",
   "inputs.code.placeholder": "ここにコードを貼り付けてください…",

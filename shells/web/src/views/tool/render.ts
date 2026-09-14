@@ -19,6 +19,7 @@ import { hydrateEmbeds, neutralizeEmbeds } from '../../bridge/embed.ts';
 import { markdownSafeUrl, mountTableCellEditing } from '../../lib/table-canvas-edit.ts';
 import type { TableEditOpts } from '../../lib/table-canvas-edit.ts';
 import { mountFilmstrip } from '../../lib/page-filmstrip.ts';
+import { mountEmoji } from '../emoji-mount.ts';
 import { boundEndpointIds, geometryFastPathPlan } from '../canvas-scene.ts';
 import type { Box } from '../free-canvas-math.ts';
 import { c2paDefaultOn, exportTargetNode, extFor, isCmykFmt, isPrintFmt } from '../tool-actions.ts';
@@ -274,6 +275,19 @@ export function paint(tview: ToolViewCtx): void {
       console.error('Render failed:', err);
       showCanvasError(tview);
     }
+  }
+
+  // Emoji: draw every one from the chosen pinned set (plan 252). Runs on EVERY
+  // painted frame, not only the full rebuild - the live-preview patch path
+  // rewrites text in place, which is where a keystroke that adds an emoji goes. The
+  // runtime owns the work and the idempotence, so a frame whose text did not
+  // change costs a walk. Fire and forget: the runtime serialises its passes, so
+  // an export that starts mid-walk queues its own pass behind this one rather
+  // than capturing a half-drawn canvas.
+  if (contentPainted) {
+    const paintGen = tview.renderGen;
+    void mountEmoji(contentEl, { isCurrent: () => paintGen === tview.renderGen, runtime: tview.runtime })
+      .catch((err) => console.warn('emoji mount failed:', err));
   }
 
   // Mounted Design health must never inspect the previous DOM against a newer

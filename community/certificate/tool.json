@@ -1,7 +1,7 @@
 {
   "id": "certificate",
   "name": "Certificate",
-  "description": "Completion and award certificates from the active brand - one name at a time, or a whole roster from a CSV in Bulk from rows.",
+  "description": "Completion and award certificates from the active design system - one name at a time, or a whole roster from a CSV in Bulk from rows.",
   "a11yLabel": "{{default titleText \"Certificate\"}} for {{default recipientName \"a recipient\"}}",
   "version": "1.0.3",
   "engineVersion": "^1.0.0",
@@ -80,12 +80,25 @@
       "type": "select",
       "urlKey": "k",
       "default": "completion",
-      "help": "Sets the wording: the title and the line above what the certificate is for. Leave the Title field empty to keep the wording in step with this.",
+      "help": "Sets the wording: the title and the line above what the certificate is for.",
       "options": [
         { "value": "completion", "label": "Completion" },
         { "value": "achievement", "label": "Achievement" },
         { "value": "award", "label": "Award" },
         { "value": "appreciation", "label": "Appreciation" }
+      ]
+    },
+    {
+      "id": "pageSize",
+      "label": "Sheet",
+      "type": "select",
+      "urlKey": "ps",
+      "default": "a4-landscape",
+      "help": "Sets the sheet proportion and the exported page size.",
+      "options": [
+        { "value": "a4-landscape", "label": "A4 landscape · 297 × 210 mm", "width": 297, "height": 210, "unit": "mm" },
+        { "value": "letter-landscape", "label": "US Letter landscape · 11 × 8.5 in", "width": 11, "height": 8.5, "unit": "in" },
+        { "value": "screen", "label": "Screen · 1600 × 1131 px", "width": 1600, "height": 1131, "unit": "px" }
       ]
     },
     {
@@ -152,15 +165,15 @@
       "default": "Northwind Institute",
       "maxLength": 80,
       "section": "Issuer",
-      "help": "Printed at the top when the brand ships no logo, or under it when it does."
+      "help": "Printed at the top when the design system ships no logo, or under it when it does."
     },
     {
       "id": "brandLogo",
-      "label": "Brand logo",
+      "label": "Logo",
       "type": "boolean",
       "default": true,
       "section": "Issuer",
-      "help": "Place the active brand's logo at the top - the light or dark version to suit the paper colour. Falls back to the Issued by line when the brand ships no logo."
+      "help": "Place the active design system's logo at the top - the light or dark version to suit the paper colour. Falls back to the Issued by line when the design system ships no logo."
     },
     {
       "id": "serial",
@@ -171,19 +184,6 @@
       "section": "Issuer",
       "placeholder": "No. 2026-0413",
       "help": "Optional small line at the foot of the sheet. Plain text, exactly as typed - the tool never makes one up."
-    },
-    {
-      "id": "pageSize",
-      "label": "Sheet",
-      "type": "select",
-      "urlKey": "ps",
-      "default": "a4-landscape",
-      "help": "Sets the sheet proportion and the exported page size.",
-      "options": [
-        { "value": "a4-landscape", "label": "A4 landscape · 297 × 210 mm", "width": 297, "height": 210, "unit": "mm" },
-        { "value": "letter-landscape", "label": "US Letter landscape · 11 × 8.5 in", "width": 11, "height": 8.5, "unit": "in" },
-        { "value": "screen", "label": "Screen · 1600 × 1131 px", "width": 1600, "height": 1131, "unit": "px" }
-      ]
     },
     {
       "id": "color",

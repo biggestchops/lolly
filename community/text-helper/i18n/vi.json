@@ -1,5 +1,5 @@
 {
-  "name": "Text",
-  "description": "Find, edit, understand and transform text.",
+  "name": "Văn bản",
+  "description": "Tìm, chỉnh sửa, hiểu và biến đổi văn bản. Duyệt ký tự thương hiệu và emoji, làm việc với mã và log, hoặc tạo chữ nghệ thuật ASCII.",
   "a11yLabel": "Text - characters, editing, analysis and conversions"
 }

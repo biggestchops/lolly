@@ -40,6 +40,9 @@ export function openDetails(cat: CatCtx, ref: AssetRef, initialTheme?: string | 
   dt.panels.renderOrigins();
 
   dt.sheet.paintPassport();
+  // An emoji set has no picture to preview: its specimen IS the preview, drawn
+  // from the pinned pack after the sheet is up (lib/emoji-specimen.ts).
+  dt.sheet.paintEmojiPack();
 
   dt.sheet.wireTextAsset();
   // Inline video edit (plans/130): Grade and Trim are two tabs of ONE mode over

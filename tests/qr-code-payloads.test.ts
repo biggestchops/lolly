@@ -188,7 +188,7 @@ test('vcard: a full card renders even at the highest error correction', { skip: 
 
 test('content past the real version-40 capacity still reports the ceiling', { skip: SKIP }, async () => {
   // The genuine spec limit at ecl H is 1273 bytes (version 40). Past it, the
-  // tool must say so rather than render a placeholder no one can explain.
+  // tool must report it rather than render a placeholder no one can explain.
   const { error, svg } = await mount({ payload: 'text', text: 'x'.repeat(1400), ecl: 'H' });
   assert.match(error, /too long/i);
   assert.ok(svg.includes('QR code unavailable'));

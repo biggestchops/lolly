@@ -30,6 +30,8 @@ import { preflightOps } from './tool-actions/preflight.ts';
 import { videoOps } from './tool-actions/video.ts';
 import { copyingOps } from './tool-actions/copying.ts';
 import { markupOps } from './tool-actions/markup.ts';
+import { learningOps } from './tool-actions/learning.ts';
+import { rightsOps } from './tool-actions/rights-row.ts';
 import { wiringOps } from './tool-actions/wiring.ts';
 
 
@@ -72,7 +74,9 @@ function renderActions(
   ta.video = videoOps(ta);
   ta.copying = copyingOps(ta);
   ta.markup = markupOps(ta);
+  ta.rights = rightsOps(ta);
   ta.wiring = wiringOps(ta);
+  ta.learning = learningOps(ta);
   ta.el = el as ActionsCtx['el'];
   ta.manifest = manifest;
   ta.runtime = runtime;
@@ -372,6 +376,7 @@ function renderActions(
   ta.dims.wireUnitSelect();
 
   ta.wiring.wireApprovalAndActions();
+  ta.learning.wire();
 
   ta.copying.wireSendTargets();
 

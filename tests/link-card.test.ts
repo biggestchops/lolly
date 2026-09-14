@@ -230,7 +230,8 @@ test('the tool adds no network surface of its own', { skip: SKIP }, () => {
   assert.equal(thumb.type, 'asset');
   assert.equal(thumb.assetType, 'image');
   assert.equal(thumb.allowUpload, true);
-  assert.match(thumb.help, /URL Capture link/, 'the help must point at the paste-a-link path');
+  // The tool is named URL Screenshot (the one-word renames of 2026-08-27 kept its id).
+  assert.match(thumb.help, /URL Screenshot link/, 'the help must point at the paste-a-link path');
 });
 
 test('the canonical ids keep their canonical types', { skip: SKIP }, async () => {

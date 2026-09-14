@@ -101,5 +101,5 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Bawah kiri",
   "inputs.boxes.fields.imgpos.options.center bottom": "Bawah",
   "inputs.boxes.fields.imgpos.options.right bottom": "Bawah kanan",
-  "description": "Kanvas terbuka untuk susunan bebas - teks, imej, bentuk dan render langsung daripada alat Lolly lain anda, semuanya mematuhi jenama anda."
+  "description": "Kanvas terbuka untuk susunan bebas - teks, imej, bentuk dan hasil langsung daripada alat Lolly anda yang lain, semuanya dikekalkan mengikut sistem reka bentuk anda."
 }

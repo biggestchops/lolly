@@ -1654,7 +1654,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
     const path = flightPath(frameRect(from), frameRect(toIndex), viewport());
     if (!path || path.spans > FLIGHT_MAX_SPANS) {
       // Nothing to fly (a degenerate frame), or so far that the move would read as a
-      // whoosh rather than a journey. Crossfade instead and say so in the attribute.
+      // whoosh rather than a journey. Crossfade instead and report it in the attribute.
       stage.dataset.prTransition = 'fade';
       if (canvasMode) setCanvasMode(false);
       active = clampIndex(deck, toIndex);

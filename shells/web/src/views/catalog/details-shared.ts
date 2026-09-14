@@ -152,7 +152,7 @@ export function wireAudioViz(cat: CatCtx, dlg: HTMLElement, ref: AssetRef, meter
     // click handler died and the surface never flipped.
     if (on && !presets.length) await loadPresets();
     if (on && !presets.length) {
-      // Say so. Returning quietly here is exactly what made the toggle, the shuffle,
+      // Report it. Returning quietly here is exactly what made the toggle, the shuffle,
       // the palette and "use as cover" all appear broken at once - one silent gate,
       // four dead controls, no way to tell which.
       const note = dlg.querySelector<HTMLElement>('.cat-audio-note');

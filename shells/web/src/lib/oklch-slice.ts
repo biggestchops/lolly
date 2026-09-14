@@ -330,7 +330,7 @@ export function paintSliceChart(
     `${state.plane}|${state.fixed.toFixed(4)}|${cMax}|${gamutSourceId(limit)}|${encode}|${displayAnchorGamut()}|${hdrActive}|${tierA}|${expKey}|${w}x${h}`;
 
   // The context, the ImageData and the engine's `encode` MUST name the same space - 
-  // mismatching them shifts every pixel with nothing on screen to say so. They are
+  // mismatching them shifts every pixel with nothing on screen to show it. They are
   // kept in lockstep by asking the platform first and deriving the other two from
   // its answer, in this order, so there is no path on which they can differ.
   const acquired = acquire2d(canvas);

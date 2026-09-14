@@ -213,7 +213,7 @@ export function animateSummary(enter: unknown, exit: unknown): string[] {
  * The keyframe wire has more than one spelling for the same curve: the engine's adapters
  * accept a preset token, a preset NAME and a raw `cubic-bezier`, and normalise on the way
  * in - so a track can legitimately carry `eb(0.4)(0)(0.2)(1)`, which is `es`, which is
- * Smooth. This is the read-side normalisation that makes the ease picker say so. Held to
+ * Smooth. This is the read-side normalisation that makes the ease picker show it. Held to
  * the engine's own two answers - the preset name, then the CSS curve - so this can never
  * name a curve the engine would not.
  *

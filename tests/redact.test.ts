@@ -107,7 +107,7 @@ const resnapGeom = (): any => (RESNAP_GEOM ||= loadTemplateGeom());
 
 // A drawn bar, as the canvas commits one: 'm' means measured with nothing under
 // it. Bars with no `n` at all are the "never measured" case vector export
-// refuses, and the tests that exercise that say so explicitly.
+// refuses, and the tests that exercise that report it explicitly.
 const drawn = (x: number, y: number, w: number, h: number, over: any = {}): any =>
   ({ page: 1, x, y, w, h, n: 'm', ...over });
 

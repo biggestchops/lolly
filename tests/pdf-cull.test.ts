@@ -89,7 +89,7 @@ const num = (tag: string, name: string, dflt = 0): number => {
 /**
  * Drawable-element bboxes of a pdfNodesToSvg document, in page space.
  * Deliberately re-derived from the markup - never from pdfNodeExtent - so the two
- * can disagree and the test can say so. Clip-path wrappers ARE honoured (a clip
+ * can disagree and the test can report it. Clip-path wrappers ARE honoured (a clip
  * only removes ink, so ignoring them would make the oracle demand that clipped
  * plates be kept).
  */

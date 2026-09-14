@@ -1,0 +1,98 @@
+{
+  "name": "requested-attribution",
+  "title": "The licensor's own attribution sentence, and the changes the renderer actually recorded",
+  "citations": [
+    "CC BY-SA 4.0 legal code section 3(a)(1)(A)(i): retain identification of the creator(s) and any others designated to receive attribution, in any reasonable manner requested by the Licensor.",
+    "CC BY-SA 4.0 legal code section 3(a)(1)(B): indicate if the material was modified.",
+    "Plan 253 section 8.3: the C2PA adapter and the readable credits describe the same source revisions."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "community/emoji/openmoji/color",
+        "title": "grinning face (OpenMoji Color 17.0.0)",
+        "creators": [
+          {
+            "name": "OpenMoji contributors",
+            "role": "creator"
+          }
+        ],
+        "sourceUrl": "https://example.org/openmoji/1f600.svg",
+        "revision": "f9fc506a3f913be9897ab0181d611d4c910a4104",
+        "sourceHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "rights": [
+          {
+            "declaration": "CC-BY-SA-4.0",
+            "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "notice-file",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "community/emoji/openmoji/color",
+        "role": "incorporated",
+        "operations": [
+          "placed"
+        ],
+        "scope": {
+          "count": 3
+        }
+      }
+    ],
+    "details": {
+      "community/emoji/openmoji/color": {
+        "format": "image/svg+xml",
+        "attribution": "All emojis designed by OpenMoji, the open-source emoji and icon project. CC BY-SA 4.0.",
+        "modifications": [
+          "Canonicalized SVG syntax and inline presentation styles.",
+          "Prefixed local SVG ids and paint references for placement."
+        ]
+      }
+    },
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "private"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "community/emoji/openmoji/color",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "CC-BY-SA-4.0",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [
+      {
+        "work": "community/emoji/openmoji/color",
+        "credit": "\"grinning face (OpenMoji Color 17.0.0)\", All emojis designed by OpenMoji, the open-source emoji and icon project. CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/, source https://example.org/openmoji/1f600.svg, changes: Canonicalized SVG syntax and inline presentation styles, Prefixed local SVG ids and paint references for placement.",
+        "changes": "Canonicalized SVG syntax and inline presentation styles., Prefixed local SVG ids and paint references for placement."
+      }
+    ],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [
+      "Canonicalized SVG syntax and inline presentation styles.",
+      "Prefixed local SVG ids and paint references for placement."
+    ],
+    "unresolved": []
+  }
+}

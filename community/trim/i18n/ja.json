@@ -1,4 +1,4 @@
 {
-  "name": "Trim",
-  "description": "Cut an audio or video clip, change its container, mute it or extract its audio on your device."
+  "name": "トリミング",
+  "description": "音声や動画クリップを、デバイス上でカット、コンテナ形式の変更、ミュート、音声抽出できます。"
 }

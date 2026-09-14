@@ -1,5 +1,5 @@
 {
-  "name": "Calendar",
+  "name": "التقويم",
   "description": "حول تفاصيل الفعالية إلى ملف تقويم (.ics) يعمل مع أي تطبيق تقويم.",
   "inputs.eventName.label": "اسم الفعالية",
   "inputs.eventName.placeholder": "مثال: المراجعة الربع سنوية",

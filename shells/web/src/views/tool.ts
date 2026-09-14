@@ -376,6 +376,11 @@ export async function mountTool(
   tview.render.wireRenderLoop();
 
   await tview.setup.mountLiveControls();
+
+  // Emoji (plans/252): last, because it seeds from the link, the saved session
+  // and the profile in that order, and both of the first two are only settled
+  // once everything above has run.
+  await tview.setup.wireEmojiSection();
 }
 
 // makeFetchFile is imported from bridge/tool-loader.ts - the one shared implementation

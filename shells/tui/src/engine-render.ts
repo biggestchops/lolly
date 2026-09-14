@@ -113,6 +113,10 @@ export async function renderSvg(runtime: Runtime, dom: JSDOM): Promise<string | 
   try {
     const canvas = canvasOf(dom);
     canvas.innerHTML = runtime.getHydrated();
+    // The terminal preview is a surface a person looks at, so it draws emoji from
+    // the chosen set like any other canvas. Stated here rather than left to the
+    // side effect of the export below, which walks the same node a moment later.
+    await runtime.applyEmojiToDom(canvas);
     const blob = await runtime.export(canvas, 'svg', {});
     return await blob.text();
   } catch {
@@ -141,7 +145,7 @@ export async function exportToFile(
   // run.ts). Only pdf/pdf-cmyk/cmyk-tiff carry a bleed box or crop marks - nothing draws them
   // onto a PNG/SVG/EPS on any tier, and the Tier-B browser's renderRaster ignores them too, so
   // a png+bleed/marks link would otherwise write a file byte-identical to one without them,
-  // exit 0, with nothing to say so. Refuse by name instead. Shared message, no drift vs the CLI.
+  // exit 0, with nothing to show for it. Refuse by name instead. Shared message, no drift vs the CLI.
   if ((dims.bleed || dims.marks) && !canCarryPrintPrep(fmt)) {
     throw new Error(printPrepRefusal(fmt));
   }
@@ -165,6 +169,10 @@ export async function exportToFile(
           manifest: manifest as { id: string; name?: string },
           model: runtime.getModel(),
           format: fmt, dims, days: dims.c2paDays, profile,
+          // Same reason as the CLI: this shell stamps here rather than in
+          // host.export.render, so the emoji artwork the render placed has to be
+          // handed over explicitly or its licence would go unrecorded.
+          ingredients: runtime.emojiIngredients(),
         }));
       } catch { /* non-fatal - write the unstamped bytes */ }
     }

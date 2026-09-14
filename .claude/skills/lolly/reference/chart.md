@@ -87,9 +87,9 @@ Generated from `community/chart/tool.json`. Aliases are the `urlKey` column.
 <!-- GEN:chart-inputs -->
 | ID | Alias | Type | Default | Section | What it does |
 |---|---|---|---|---|---|
-| `chartIntent` | `goal` | select | `manual` | - | What should the chart show? |
-| `renderMode` | `rm` | select | `vector` | - | Mode |
-| `chartType` | `ct` | select | `bar` | - | 2-D chart type |
+| `chartIntent` | `goal` | select | `manual` | - | What to show |
+| `renderMode` | `rm` | select | `vector` | - | Render |
+| `chartType` | `ct` | select | `bar` | - | Chart type |
 | `paretoCumulative` | - | boolean | true | Pareto | Show cumulative percentage |
 | `paretoThreshold` | - | number | 80 | Pareto | Cumulative reference (%) |
 | `bulletTarget` | - | number | 100 | Bullet targets | Fallback target |
@@ -105,13 +105,15 @@ Generated from `community/chart/tool.json`. Aliases are the `urlKey` column.
 | `plotConfidenceBand` | `pci` | boolean | true | Statistical | 95% confidence band |
 | `plotFacetDirection` | `pfd` | select | `rows` | Statistical | Facet direction |
 | `plotMotionPreset` | `psm` | select | `none` | Animation | Statistical motion |
-| `data` | `d` | longtext | `Quarter,Coffee,Tea,Juice\nQ1,42…` | - | Paste your table |
+| `data` | `d` | longtext | `Quarter,Coffee,Tea,Juice\nQ1,42…` | - | Data |
+| `heading` | `t` | text | `""` | - | Title |
+| `subheading` | `st` | text | `""` | - | Subtitle / source |
 | `chartStyle` | `sty` | select | `brand-default` | - | Style |
 | `palette` | `pl` | select | `ordered` | Colour & style | Palette |
 | `paletteSeed` | `pz` | color | `{color.semantic.primary}` | Colour & style | Base colour |
-| `paletteBlend` | `pb` | select | `smooth` | Colour & style | Colour blend |
+| `paletteBlend` | `pb` | select | `smooth` | Colour & style | Colour interpolation |
 | `paletteBlendTo` | `p2` | color | `{color.semantic.secondary}` | Colour & style | Second colour |
-| `hueRoute` | `hr` | select | `short` | Colour & style | Hue route |
+| `hueRoute` | `hr` | select | `short` | Colour & style | Hue direction |
 | `colorBy` | `cb` | select | `series` | Colour & style | Colour by |
 | `barStyle` | `b3` | select | `flat` | Colour & style | Bar look |
 | `pieStyle` | `p3` | select | `flat` | Colour & style | Pie look |
@@ -139,13 +141,13 @@ Generated from `community/chart/tool.json`. Aliases are the `urlKey` column.
 | `hasHeader` | `hh` | boolean | true | Data | First row is a header |
 | `delimiter` | `dl` | select | `auto` | Data | Column separator |
 | `transpose` | `tp` | boolean | false | Data | Swap rows & columns |
-| `labelColumn` | `lc` | text | `""` | Field mapping | X / category |
-| `seriesColumns` | `sc` | text | `""` | Field mapping | Y / measure(s) |
-| `pivotColumn` | `pv` | text | `""` | Field mapping | Colour / series / facet |
+| `labelColumn` | `lc` | text | `""` | Field mapping | Category column (X) |
+| `seriesColumns` | `sc` | text | `""` | Field mapping | Value columns (Y) |
+| `pivotColumn` | `pv` | text | `""` | Field mapping | Split into series (colour) |
 | `zColumn` | `zc` | text | `""` | Field mapping | Z / depth |
 | `sizeColumn` | `szc` | text | `""` | Field mapping | Size |
 | `frameColumn` | `fc` | text | `""` | Animation | Frame / time |
-| `motionPreset` | `mp` | select | `none` | Animation | Motion |
+| `motionPreset` | `mp` | select | `none` | Animation | Scene motion |
 | `animSpeed` | `as` | number | 1.5 | Animation | Seconds per frame |
 | `frameLabelShow` | `fl` | boolean | true | Animation | Show frame label |
 | `frameLabelSize` | `fls` | number | 36 | Animation | Frame label size |
@@ -154,24 +156,24 @@ Generated from `community/chart/tool.json`. Aliases are the `urlKey` column.
 | `frameLabelPos` | `flp` | select | `tr` | Animation | Frame label position |
 | `animEase` | `ae` | select | `smooth` | Animation | Motion |
 | `animDirection` | `ad` | select | `loop` | Animation | Loop style |
-| `stackMode` | `sm` | select | `grouped` | Chart | Series layout |
-| `curve` | `cv` | select | `monotone` | Chart | Line shape |
-| `showPoints` | `pt` | boolean | false | Chart | Show point markers |
-| `pointSize` | `ps` | number | 10 | Chart | Point size |
-| `sizeBy` | `sz` | select | `uniform` | Chart | Bubble size |
-| `lineWidth` | `lw` | number | 3 | Chart | Line width |
-| `fillOpacity` | `fo` | number | 85 | Chart | Fill opacity % |
-| `donutRadius` | `dr` | number | 0.55 | Chart | Inner radius (hole) |
-| `sliceGap` | `sg` | number | 1 | Chart | Gap between slices |
-| `cornerRadius` | `cr` | number | 6 | Chart | Corner radius |
-| `barPadding` | `bp` | number | 0.2 | Chart | Bar spacing |
-| `barGap` | `bpg` | number | 0.08 | Chart | Series gap |
-| `binCount` | `bc` | number | 0 | Chart | Bins (0 = auto) |
-| `sort` | `so` | select | `none` | Chart | Sort |
-| `labelLayout` | `ll` | select | `auto` | Labels & bar size | Category label layout |
-| `labelReserve` | `lr` | number | 0 | Labels & bar size | Label area (%, 0 = auto) |
-| `labelLines` | `ln` | number | 2 | Labels & bar size | Max label lines |
-| `barThickness` | `bt` | number | 0 | Labels & bar size | Bar thickness (px, 0 = auto) |
+| `stackMode` | `sm` | select | `grouped` | Marks & spacing | Series layout |
+| `curve` | `cv` | select | `monotone` | Marks & spacing | Line shape |
+| `showPoints` | `pt` | boolean | false | Marks & spacing | Show point markers |
+| `pointSize` | `ps` | number | 10 | Marks & spacing | Point size |
+| `sizeBy` | `sz` | select | `uniform` | Marks & spacing | Bubble size |
+| `lineWidth` | `lw` | number | 3 | Marks & spacing | Line width |
+| `fillOpacity` | `fo` | number | 85 | Marks & spacing | Fill opacity % |
+| `donutRadius` | `dr` | number | 0.55 | Marks & spacing | Inner radius (hole) |
+| `sliceGap` | `sg` | number | 1 | Marks & spacing | Gap between slices |
+| `cornerRadius` | `cr` | number | 6 | Marks & spacing | Corner radius |
+| `barPadding` | `bp` | number | 0.2 | Marks & spacing | Bar spacing |
+| `barGap` | `bpg` | number | 0.08 | Marks & spacing | Series gap |
+| `binCount` | `bc` | number | 0 | Marks & spacing | Bins (0 = auto) |
+| `sort` | `so` | select | `none` | Marks & spacing | Sort |
+| `labelLayout` | `ll` | select | `auto` | Category labels | Category label layout |
+| `labelReserve` | `lr` | number | 0 | Category labels | Label area (%, 0 = auto) |
+| `labelLines` | `ln` | number | 2 | Category labels | Max label lines |
+| `barThickness` | `bt` | number | 0 | Category labels | Bar thickness |
 | `yScaleType` | `ys` | select | `linear` | Axes & scale | Value scale |
 | `yZero` | `yz` | boolean | true | Axes & scale | Start value axis at zero |
 | `yMax` | `ym` | number | 0 | Axes & scale | Value axis max (0 = auto) |
@@ -191,9 +193,7 @@ Generated from `community/chart/tool.json`. Aliases are the `urlKey` column.
 | `palette4` | `c4` | color | `""` | Custom palette | Colour 4 |
 | `palette5` | `c5` | color | `""` | Custom palette | Colour 5 |
 | `palette6` | `c6` | color | `""` | Custom palette | Colour 6 |
-| `annotations` | `an` | longtext | `""` | Annotations | Annotations |
-| `heading` | `t` | text | `""` | Titles & labels | Title |
-| `subheading` | `st` | text | `""` | Titles & labels | Subtitle / source |
+| `annotations` | `an` | longtext | `""` | Titles & labels | Annotations |
 | `titleSize` | `tz` | number | 34 | Titles & labels | Title text size |
 | `titleWeight` | `tw` | number | 500 | Titles & labels | Title weight |
 | `titlePosition` | `tpo` | select | `top` | Titles & labels | Title position |

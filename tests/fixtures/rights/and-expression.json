@@ -1,0 +1,57 @@
+{
+  "name": "and-expression",
+  "title": "A declaration naming cumulative terms is recorded, not read as its first term",
+  "citations": [
+    "Plan 253 section 3.2: `AND` means cumulative terms; do not flatten an expression into a 'most restrictive' label.",
+    "Plan 253 section 3.2: dedicated combined profiles must reference their exact combined texts, not a synthetic licence assembled by concatenating labels.",
+    "CC BY-SA 4.0 legal code section 3(b): the ShareAlike condition applies to Adapted Material that is shared, so dropping the second term would drop a condition."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/bundle",
+        "title": "Bundled Artwork",
+        "creators": [{ "name": "Example Studio", "role": "creator" }],
+        "sourceUrl": "https://example.org/bundle.svg",
+        "sourceHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "rights": [
+          {
+            "declaration": "CC BY 4.0 AND CC BY-SA 4.0",
+            "expression": "CC-BY-4.0 AND CC-BY-SA-4.0",
+            "url": "https://example.org/bundle-terms",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      { "work": "example/bundle", "role": "incorporated", "operations": ["placed", "recoloured"] }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": { "format": "png", "route": "file-with-c2pa", "canCarryCredential": true, "canCarryReadableCredit": true },
+      "audience": "public"
+    }
+  },
+  "expect": {
+    "status": "unknown",
+    "issues": ["licence.unknown"],
+    "uses": [
+      {
+        "work": "example/bundle",
+        "classification": "adaptation",
+        "rule": "adaptation-operations-v1",
+        "licence": null,
+        "reviewed": false,
+        "issues": ["licence.unknown"]
+      }
+    ],
+    "required": [],
+    "optional": [],
+    "channels": ["c2pa-ingredients", "readable-details"],
+    "changes": ["recoloured"],
+    "unresolved": ["example/bundle: cumulative terms recorded, not yet interpreted"]
+  }
+}

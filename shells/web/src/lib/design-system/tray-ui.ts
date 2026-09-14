@@ -452,7 +452,7 @@ export function mountTrayUi(shell: HTMLElement, ctx: TrayUiCtx): TrayUi {
     if (!c) return false;
     // A refusal is as loud as a failure. A press that reports nothing added is
     // the same experience as a dead button, and the button is still there
-    // afterwards (the candidate stays pending) - so say so, once, here, rather
+    // afterwards (the candidate stays pending) - so report it, once, here, rather
     // than leaving the caller to guess which of its own paths went quiet.
     const failed = (): false => {
       announce(tRaw('{value} could not be added.', { value: c.value }));

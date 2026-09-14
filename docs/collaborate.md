@@ -26,7 +26,7 @@ it: `PRIVATE_COLLAB_FLAG` is the LAST row `flagRow()` writes into #feature-flags
 The flag's `info` sentence is NOT inline copy - it is a help-tip popover (`.help-tip-pop`,
 `hidden` until hover/tap) behind the (i) button on the row, which is why the alt text
 above claims only the label, the beta pill and the switch. If the capture pass wants the
-explanation visible, drive the (i) open (`click:` the row's `.help-tip-btn`) and say so
+explanation visible, drive the (i) open (`click:` the row's `.help-tip-btn`) and describe that in the alt
 in the alt text; never drive the switch itself, which would turn the feature off.
 ALSO: `aud-feature-switches` already publishes this element. Consider pointing this
 section at that baseline instead of minting a second near-identical shot.

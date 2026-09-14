@@ -10,7 +10,7 @@
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { createAssetsAPI, typeMatches } from './assets.ts';
+import { createAssetsAPI, typeMatches, withoutReservedMeta } from './assets.ts';
 
 test('an untyped query admits every type', () => {
   for (const t of ['raster', 'vector', 'video', 'audio', 'text', 'data', 'font']) {
@@ -159,4 +159,32 @@ describe('_replaceUserAssetBytes', () => {
     assert.deepEqual((rec.meta as Record<string, unknown>).tts, { voice: 'bf_lily' }, 'the heal changes no meta of its own');
     assert.deepEqual(pinned, ['user/tts/1-hello']);
   });
+});
+
+// ── The entry's free-form meta blob may not answer a rights question ──────────
+
+test("a catalog entry's unvalidated meta blob never shadows a validated field", () => {
+  // schemas/asset.schema.json declares this blob as "not validated beyond being
+  // an object", and it is spread ahead of the computed keys so the type-specific
+  // facts a shell needs before download (an emoji pack's pin, glyph count) ride
+  // along. The rights and identity keys are stripped out of it first: they are
+  // top-level fields of the entry, validated, and an entry whose blob answered
+  // one of them could state a licence nothing checked and disagree with the same
+  // asset's resolved ref.
+  const out = withoutReservedMeta({
+    emoji: { pin: 'x', glyphs: 3953 },
+    license: 'CC0-1.0',
+    attribution: 'whatever the blob says',
+    rights: { works: [] },
+    brandLock: true,
+    name: 'not the name',
+    tags: ['not the tags'],
+  });
+  assert.deepEqual(out, { emoji: { pin: 'x', glyphs: 3953 } });
+});
+
+test('a meta blob that is not an object at all is read as empty', () => {
+  for (const value of [null, undefined, 'a string', 42, ['an', 'array']]) {
+    assert.deepEqual(withoutReservedMeta(value), {});
+  }
 });

@@ -1,0 +1,80 @@
+{
+  "name": "nc-recognised-not-reviewed",
+  "title": "CC BY-NC 4.0 is recognised, its conditions recorded, and nothing is decided for it",
+  "citations": [
+    "CC BY-NC 4.0 legal code, section 2(a)(1): the grant is limited to NonCommercial purposes.",
+    "Plan 253 section 3.2 and section 4.2: internal company work can still be commercial, and a free download is not an automatic NonCommercial pass."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/nc-illustration",
+        "title": "NonCommercial Illustration",
+        "creators": [
+          {
+            "name": "Example Artist",
+            "role": "creator"
+          }
+        ],
+        "sourceUrl": "https://example.org/nc.svg",
+        "sourceHash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "rights": [
+          {
+            "declaration": "CC BY-NC 4.0",
+            "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/nc-illustration",
+        "role": "incorporated",
+        "operations": [
+          "placed"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "unknown",
+    "issues": [
+      "licence.unknown"
+    ],
+    "uses": [
+      {
+        "work": "example/nc-illustration",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "CC-BY-NC-4.0",
+        "reviewed": false,
+        "issues": [
+          "licence.unknown"
+        ]
+      }
+    ],
+    "required": [],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [],
+    "unresolved": [
+      "example/nc-illustration: CC-BY-NC-4.0 conditions recorded, not yet interpreted"
+    ]
+  }
+}

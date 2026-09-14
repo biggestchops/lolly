@@ -1,0 +1,84 @@
+{
+  "name": "package-route",
+  "title": "A package route carries the credential and a companion credits file",
+  "citations": [
+    "Plan 253 section 8.2: a package delivers the artifact, the bound credential and readable credits together."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/river-illustration",
+        "title": "River Illustration",
+        "creators": [
+          {
+            "name": "Example Artist",
+            "role": "creator"
+          },
+          {
+            "name": "Example Catalogue",
+            "role": "publisher"
+          }
+        ],
+        "sourceUrl": "https://example.org/river.svg",
+        "revision": "2024-05-01",
+        "sourceHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "rights": [
+          {
+            "declaration": "cc-by-4.0",
+            "url": "https://creativecommons.org/licenses/by/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/river-illustration",
+        "role": "incorporated",
+        "operations": [
+          "placed"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "package",
+      "delivery": {
+        "format": "zip",
+        "route": "package",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/river-illustration",
+        "classification": "collection-component",
+        "rule": "collection-component-v1",
+        "licence": "CC-BY-4.0",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [
+      {
+        "work": "example/river-illustration",
+        "credit": "\"River Illustration\" by Example Artist (Example Catalogue), CC BY 4.0 https://creativecommons.org/licenses/by/4.0/, source https://example.org/river.svg, unchanged.",
+        "changes": "unchanged"
+      }
+    ],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-companion"
+    ],
+    "changes": [],
+    "unresolved": []
+  }
+}

@@ -21,6 +21,7 @@ import { AssetChecksumError } from '../bridge/assets.ts';
 import { assertToolIndexIntegrity, getToolIntegrity } from './integrity.ts';
 import { currentLang, t } from '../i18n.ts';
 import { pinnedAssetIds, refreshPinnedToolFiles } from '../lib/offline-pins.ts';
+import { runBackgroundTasks } from '../lib/background-tasks.ts';
 // The "Available offline" download manager is DYNAMICALLY imported: this module is
 // on the boot path (main.ts syncs the catalog), but both reads below happen inside
 // `syncCorePrefetch`, which already runs on the idle pass AFTER first paint - and
@@ -185,7 +186,7 @@ function renderOfflineChip(offline: boolean): void {
     chip.style.cssText = [
       'position:fixed', 'left:12px', 'bottom:12px', 'z-index:2147483647',
       'pointer-events:none', 'padding:6px 10px', 'border-radius:999px',
-      'font:500 12px/1.2 SUSE,system-ui,-apple-system,sans-serif', 'color:#fff',
+      'font:500 12px/1.2 var(--font-brand,system-ui),sans-serif', 'color:#fff',
       'background:rgba(20,20,20,.82)', 'box-shadow:0 1px 4px rgba(0,0,0,.3)',
     ].join(';');
     document.body.appendChild(chip);
@@ -575,7 +576,7 @@ export async function syncCorePrefetch(host: SyncHost): Promise<void> {
     const pinned = await pinnedAssetIds().catch(() => new Set<string>());
     const scoped = await offlineScopeFilter().catch(() => null);
     const wanted = index.assets.filter(a => a.tier === 'core' || pinned.has(a.id) || scoped?.(a));
-    await Promise.allSettled(wanted.map(a => prefetchAsset(host, a)));
+    await runBackgroundTasks(wanted, a => prefetchAsset(host, a));
     // Downloaded app/docs/verify parts re-sync on this same idle path when
     // their manifest watermark moved (a deploy re-downloads only the delta).
     await offlineManager().then(m => m.resyncOfflineParts()).catch(() => {});

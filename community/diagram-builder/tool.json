@@ -63,7 +63,7 @@
       "label": "Build from",
       "type": "select",
       "default": "visual",
-      "help": "Visual edits cards as form rows. Text renders a typed description. ASCII art traces boxes you draw. Mermaid reads a flowchart or sequenceDiagram subset. DOT reads a Graphviz digraph. Pikchr draws a PIC-style diagram from placed shapes. Table reads a pasted CSV. Every text mode also takes a dropped file.",
+      "help": "Pick how you describe the diagram: card rows, plain text, drawn ASCII boxes, Mermaid, DOT, Pikchr or a pasted table. Each text mode reads a subset of that language, and every one of them also takes a dropped file.",
       "options": [
         { "value": "visual", "label": "Visual editor" },
         { "value": "text", "label": "Text (type it)" },
@@ -75,14 +75,14 @@
       ]
     },
 
-    { "id": "theme", "label": "Theme", "type": "select", "default": "custom", "section": "Style", "help": "Seeds the colours below. Pick one, then override any individual colour.", "options": [ { "value": "custom", "label": "Custom" }, { "value": "brand-light", "label": "Brand (light)" }, { "value": "brand-dark", "label": "Brand (dark)" }, { "value": "blueprint", "label": "Blueprint" }, { "value": "mono", "label": "Mono" }, { "value": "mint", "label": "Mint" } ] },
+    { "id": "theme", "label": "Theme", "type": "select", "default": "custom", "section": "Style", "help": "Seeds the colours below. Pick one, then override any individual colour.", "options": [ { "value": "custom", "label": "Custom" }, { "value": "brand-light", "label": "Design system (light)" }, { "value": "brand-dark", "label": "Design system (dark)" }, { "value": "blueprint", "label": "Blueprint" }, { "value": "mono", "label": "Mono" }, { "value": "mint", "label": "Mint" } ] },
     { "id": "cardLayout", "label": "Card layout", "type": "select", "default": "row", "section": "Style", "help": "How each card arranges its image and text. Side by side puts the image on the left with left-aligned text - a card with no image uses the full width. Image on top stacks a centred image above centred text.", "options": [ { "value": "row", "label": "Side by side (image left)" }, { "value": "stacked", "label": "Image on top" } ] },
     { "id": "nodeFill", "label": "Card fill", "type": "color", "default": "{color.semantic.surface}", "section": "Style" },
     { "id": "nodeStroke", "label": "Card border", "type": "color", "default": "{color.semantic.primary}", "section": "Style" },
     { "id": "cardBorderWidth", "label": "Card border width", "type": "number", "display": "slider", "min": 0, "max": 6, "step": 0.5, "default": 2, "section": "Style", "help": "0 = borderless cards." },
     { "id": "nodeText", "label": "Card text", "type": "color", "default": "{color.semantic.text}", "section": "Style" },
     { "id": "labelSize", "label": "Label size", "type": "number", "display": "slider", "min": 10, "max": 28, "step": 1, "default": 10, "section": "Style" },
-    { "id": "labelWeight", "label": "Label weight", "type": "number", "display": "slider", "min": 100, "max": 900, "step": 100, "default": 500, "section": "Style", "help": "Font weight of the card labels (100 Thin → 900 Black)." },
+    { "id": "labelWeight", "label": "Label weight", "type": "number", "display": "slider", "min": 100, "max": 900, "step": 100, "default": 500, "section": "Style", "help": "Font weight of the card labels (100 Thin to 900 Black)." },
     { "id": "edgeColor", "label": "Connectors", "type": "color", "default": "{color.semantic.primary}", "section": "Style", "help": "Colour of the automatic connectors / spines." },
     { "id": "connectorWidth", "label": "Connector width", "type": "number", "display": "slider", "min": 0.3, "max": 6, "step": 0.1, "default": 2.6, "section": "Style" },
     { "id": "background", "label": "Background", "type": "color", "default": "{color.semantic.surface}", "section": "Style", "help": "Set to Transparent for a knock-out background." },
@@ -101,7 +101,7 @@
       "label": "Title",
       "type": "text",
       "default": "",
-      "placeholder": "Optional heading shown above the diagram"
+      "placeholder": "e.g. Team structure"
     },
 
     {
@@ -179,7 +179,7 @@
       "type": "select",
       "default": "pyramid",
       "showIf": { "diagramType": "pyramid" },
-      "help": "Cards are listed top→bottom. Pyramid widens downward, funnel narrows, inverted widens upward.",
+      "help": "Cards are listed top to bottom. Pyramid widens downward, funnel narrows, inverted widens upward.",
       "options": [
         { "value": "pyramid", "label": "Pyramid (wide base)" },
         { "value": "funnel", "label": "Funnel (narrowing)" },
@@ -410,9 +410,9 @@
       "default": []
     },
 
-    { "id": "arrowStyle", "label": "Arrow line", "type": "select", "default": "solid", "section": "Arrows", "help": "Default line style for arrows that don't set their own.", "options": [ { "value": "solid", "label": "Solid" }, { "value": "dashed", "label": "Dashed" }, { "value": "dotted", "label": "Dotted" } ] },
-    { "id": "arrowHead", "label": "Arrowhead", "type": "select", "default": "triangle", "section": "Arrows", "help": "Default arrowhead for arrows that don't set their own.", "options": [ { "value": "triangle", "label": "Triangle" }, { "value": "open", "label": "Open" }, { "value": "diamond", "label": "Diamond" }, { "value": "circle", "label": "Circle" }, { "value": "bar", "label": "Bar" }, { "value": "double", "label": "Double-ended" }, { "value": "none", "label": "None" } ] },
-    { "id": "arrowWidth", "label": "Arrow width", "type": "number", "display": "slider", "min": 0.5, "max": 8, "step": 0.5, "default": 2, "section": "Arrows" },
-    { "id": "arrowHeadSize", "label": "Arrowhead size", "type": "number", "display": "slider", "min": 6, "max": 28, "step": 1, "default": 11, "section": "Arrows" }
+    { "id": "arrowStyle", "label": "Arrow line", "type": "select", "default": "solid", "section": "Arrow defaults", "help": "Default line style for arrows that don't set their own.", "options": [ { "value": "solid", "label": "Solid" }, { "value": "dashed", "label": "Dashed" }, { "value": "dotted", "label": "Dotted" } ] },
+    { "id": "arrowHead", "label": "Arrowhead", "type": "select", "default": "triangle", "section": "Arrow defaults", "help": "Default arrowhead for arrows that don't set their own.", "options": [ { "value": "triangle", "label": "Triangle" }, { "value": "open", "label": "Open" }, { "value": "diamond", "label": "Diamond" }, { "value": "circle", "label": "Circle" }, { "value": "bar", "label": "Bar" }, { "value": "double", "label": "Double-ended" }, { "value": "none", "label": "None" } ] },
+    { "id": "arrowWidth", "label": "Arrow width", "type": "number", "display": "slider", "min": 0.5, "max": 8, "step": 0.5, "default": 2, "section": "Arrow defaults" },
+    { "id": "arrowHeadSize", "label": "Arrowhead size", "type": "number", "display": "slider", "min": 6, "max": 28, "step": 1, "default": 11, "section": "Arrow defaults" }
   ]
 }

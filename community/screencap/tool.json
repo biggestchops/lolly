@@ -41,16 +41,14 @@
     {
       "id": "shot",
       "label": "Screenshot",
-      "section": "Capture",
       "type": "asset",
       "assetType": "raster",
       "allowUpload": true,
-      "help": "Pick an image to crop, or use the Screenshot button above the canvas where your browser supports screen capture."
+      "help": "Pick an image to crop, or use the Screenshot button above the canvas if your browser supports screen capture."
     },
     {
       "id": "crop",
       "label": "Crop",
-      "section": "Capture",
       "type": "vector",
       "help": "Region of the shot to export, as a percentage. Drag on the canvas to set it.",
       "fields": [
@@ -102,15 +100,17 @@
     },
     {
       "id": "systemAudio",
+      "display": "pill",
       "label": "System audio",
       "section": "Recording",
       "type": "boolean",
       "default": true,
-      "help": "Record the sound from the shared screen or tab. Full system-wide audio is Chrome on Windows/ChromeOS; on a tab it's the tab's audio; on macOS and Firefox there may be no system sound at all."
+      "help": "Record the sound from the shared screen or tab. Whole-system sound works in Chrome on Windows and ChromeOS; elsewhere you may get only the tab's audio, or none at all."
     },
     {
       "id": "micNarration",
-      "label": "Narrate",
+      "display": "pill",
+      "label": "Microphone",
       "section": "Recording",
       "type": "boolean",
       "default": false,

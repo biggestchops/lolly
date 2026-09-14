@@ -1,0 +1,88 @@
+{
+  "name": "apache-recoloured",
+  "title": "Apache 2.0 artwork recoloured: a credit and the NOTICE text, and no ShareAlike",
+  "citations": [
+    "Apache License 2.0, section 4(2): mark the changed files.",
+    "Apache License 2.0, section 4(3) and 4(4): keep the attribution notices and carry the NOTICE text in the derivative work."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/icon-set",
+        "title": "Example Icon",
+        "creators": [
+          {
+            "name": "Example Org",
+            "role": "creator"
+          }
+        ],
+        "sourceUrl": "https://example.org/icon.svg",
+        "sourceHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "rights": [
+          {
+            "declaration": "Apache 2.0",
+            "url": "https://www.apache.org/licenses/LICENSE-2.0",
+            "copyright": "Copyright 2023 Example Org",
+            "notices": [
+              "Example Icon Set\nCopyright 2023 Example Org"
+            ],
+            "assertedBy": "catalog",
+            "evidence": "notice-file",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "work": "example/icon-set",
+        "role": "incorporated",
+        "operations": [
+          "placed",
+          "recoloured"
+        ]
+      }
+    ],
+    "context": {
+      "operation": "render",
+      "delivery": {
+        "format": "png",
+        "route": "file-with-c2pa",
+        "canCarryCredential": true,
+        "canCarryReadableCredit": true
+      },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "ready",
+    "issues": [],
+    "uses": [
+      {
+        "work": "example/icon-set",
+        "classification": "adaptation",
+        "rule": "adaptation-operations-v1",
+        "licence": "Apache-2.0",
+        "reviewed": true,
+        "issues": []
+      }
+    ],
+    "required": [
+      {
+        "work": "example/icon-set",
+        "credit": "\"Example Icon\" by Example Org, Copyright 2023 Example Org, Apache License 2.0 https://www.apache.org/licenses/LICENSE-2.0, source https://example.org/icon.svg, changes: recoloured.",
+        "changes": "recoloured",
+        "noticeText": "Example Icon Set\nCopyright 2023 Example Org"
+      }
+    ],
+    "optional": [],
+    "channels": [
+      "c2pa-ingredients",
+      "readable-details"
+    ],
+    "changes": [
+      "recoloured"
+    ],
+    "unresolved": []
+  }
+}

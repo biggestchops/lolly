@@ -928,7 +928,7 @@ export async function mountProjects(
     const batchFrom = folderId && folderId !== UNCAT ? folderId : null;
     const batchHref = `#/batch${batchFrom ? `?from=${encodeURIComponent(batchFrom)}` : ''}`;
     // nosemgrep: lolly-href-escape-is-not-scheme-validation - first-party `#/batch` hash route built just above
-    return `<a href="${escape(batchHref)}" class="btn projects-batch-btn" aria-label="${escape(t('Open Batch mode - render many at once'))}" title="${escape(t('Batch'))}">${BATCH_ICON}<span>${t('Batch')}</span></a>`;
+    return `${folderId ? `<button type="button" class="btn" data-course-folder="${escape(folderId)}">${t('Export course')}</button>` : ''}<a class="btn" href="#/learning${batchFrom ? `?from=${encodeURIComponent(batchFrom)}` : ''}">${t('Create learning module')}</a><a href="${escape(batchHref)}" class="btn projects-batch-btn" aria-label="${escape(t('Open Batch mode - render many at once'))}" title="${escape(t('Batch'))}">${BATCH_ICON}<span>${t('Batch')}</span></a>`;
   }
 
   function shell(heading: string, active: 'tools' | 'projects' | 'catalog', inner: string, { inFolder = false }: { inFolder?: boolean } = {}): string {
@@ -993,6 +993,7 @@ export async function mountProjects(
     rootSelector: '.projects',
     count: () => selected.size,
     actions: [
+      { id: 'course', icon: RENDER_ICON, label: () => t('Export course'), hidden: () => inTemplates() },
       { id: 'render', icon: RENDER_ICON, label: () => t('Render selection'), extraClass: 'projects-render projects-bulk-render', hidden: () => inTemplates() },
       { id: 'edit', icon: EDIT_ICON, label: () => t('Edit together'), title: () => t('Open the selected sessions side by side with one combined sidebar'), hidden: () => !editableSelection() },
       { id: 'sheet', icon: SHEET_ICON, label: () => t('Edit as sheet'), title: () => t('Open the whole selection as rows in the batch grid - no size limit'), hidden: () => !sheetableSelection() },
@@ -1220,6 +1221,9 @@ export async function mountProjects(
       const rn = t.closest<HTMLElement>('[data-rename-folder]');
       if (rn) { startRename(rn, rn.dataset.renameFolder); return; }
 
+      const course = t.closest<HTMLElement>('[data-course-folder]');
+      if (course) { void exportCourse('folder', course.dataset.courseFolder); return; }
+
       // Render whole folder
       const rf = t.closest<HTMLElement>('[data-render-folder]');
       if (rf) { renderFolder(rf.dataset.renderFolder!); return; }
@@ -1431,6 +1435,7 @@ export async function mountProjects(
     // the blueprint save, and both arrive in this dispatch.
     if (action === 'save-templates') { void tpl.saveSessions(templatableSelection().map(sessionSource), { ask: false }); return; }
     if (inTemplates()) { void tpl.bulk(action, [...selected.keys()]); return; }
+    if (action === 'course') { void exportCourse(); return; }
     if (action === 'render') { renderSelection(); return; }
     if (action === 'cut' || action === 'copy') { setClipboard(action, [...selected.keys()]); return; }
     if (action === 'download') { void downloadOriginals(t('Selection'), selectedByKind('session'), selectedByKind('image'), topLevelSelectedFolders()); return; }
@@ -1566,6 +1571,7 @@ export async function mountProjects(
         menuItem('move-folder', MOVE_ICON, t('Move to…')),
         clip(),
         canPaste ? menuItem('paste-into', PASTE_ICON, t('Paste here')) : '',
+        menuItem('course-folder', RENDER_ICON, t('Export course')),
         menuItem('render', RENDER_ICON, t('Render folder'), { render: true }),
         menuItem('download-folder', DOWNLOAD_ICON, t('Download originals')),
         menuItem('save-template', TEMPLATE_ICON, t('Save project as a blueprint…')),
@@ -1574,7 +1580,7 @@ export async function mountProjects(
         menuItem('delete', TRASH_ICON, t('Move to Trash'), { danger: true }),
       ].join('');
     }
-    if (kind === 'image') return projectAssetMenu(imageRefs.get(ref), fav(), clip());
+    if (kind === 'image') return menuItem('course-image', RENDER_ICON, t('Export course')) + projectAssetMenu(imageRefs.get(ref), fav(), clip());
     // A batch session is a multi-row group with no single tool URL, so it can't be
     // shared as a link - offer Share only for single-tool sessions.
     const canShare = !isBatchSlot(ref);
@@ -1590,6 +1596,7 @@ export async function mountProjects(
       clip(),
       canShare ? menuItem('share', SHARE_ICON, t('Share link')) : '',
       menuItem('info', INFO_ICON, t('Get info')),
+      menuItem('course-session', RENDER_ICON, t('Export course')),
       menuItem('render-session', RENDER_ICON, t('Render'), { render: true }),
       menuItem('delete-session', TRASH_ICON, t('Move to Trash'), { danger: true }),
     ].join('');
@@ -1689,6 +1696,7 @@ export async function mountProjects(
         onPick: async (dest) => { await store.moveItem(ref, dest, 'session'); await reload(); render(); announce(t('Session moved')); },
       });
     }
+    else if (act.startsWith('course-')) await exportCourse(act.slice(7), ref);
     else if (act === 'render-session') renderSession(ref);
     else if (act === 'share') shareSession(ref);
     else if (act === 'delete-session') { await trashSessions([ref]); }
@@ -2163,6 +2171,11 @@ export async function mountProjects(
       const data = await (host as ProjectsHost).state.load(entry.slot);
       if (!data) return;
       data.__label = name;
+      if (entry.slot.startsWith('__learning__:') && data.__learningModule) {
+        const { parseLearningModule } = await import('../../../../engine/src/learning/module.ts');
+        const module = parseLearningModule(data.__learningModule);
+        module.title = name; module.revision += 1; data.__learningModule = module;
+      }
       if (isBatchSlot(entry.slot)) {
         // A batch slot encodes its label → re-key under a new slot + follow membership.
         const newSlot = BATCH_SLOT_PREFIX + name;
@@ -2206,6 +2219,13 @@ export async function mountProjects(
       for (let n = 2; isTaken(newSlot); n++) {
         name = t('{name} copy {n}', { name: base, n });
         newSlot = batch ? BATCH_SLOT_PREFIX + name : `${entry.toolId}:${Date.now()}-${n}`;
+      }
+      if (slot.startsWith('__learning__:') && data.__learningModule) {
+        const { parseLearningModule } = await import('../../../../engine/src/learning/module.ts');
+        const copy = parseLearningModule(data.__learningModule);
+        copy.id = crypto.randomUUID(); copy.title = name; copy.revision = 1;
+        newSlot = `__learning__:${copy.id}`;
+        data.__learningModule = copy; data.__learningReleases = [];
       }
       data.__label = name;
       if (!batch) data.__export_filename = name;   // single-tool export filename tracks the name
@@ -2678,6 +2698,21 @@ export async function mountProjects(
   }
 
   // ── render a whole folder as one nested batch zip (gated /pro import) ────────
+  async function exportCourse(kind?: string, ref?: string): Promise<void> {
+    closeMenu();
+    const { startLearningCourse } = await import('../lib/learning-entry.ts');
+    const id = kind === 'folder' ? ref : folderId;
+    const folder = folders.find(f => f.id === id);
+    await startLearningCourse(host as unknown as import('./picker.ts').PickerHost, {
+      title: kind === 'folder' ? folder?.name || 'Learning module' : undefined,
+      projectId: folder?.id,
+      folders,
+      folderIds: kind === 'folder' ? (ref === UNCAT ? [] : [ref!]) : kind ? [] : topLevelSelectedFolders(),
+      sessionRefs: kind === 'session' ? [ref!] : kind === 'folder' ? (ref === UNCAT ? uncategorised().map(e => e.slot) : []) : kind ? [] : selectedByKind('session'),
+      assetRefs: kind === 'image' ? [ref!] : kind ? [] : selectedByKind('image'),
+    });
+  }
+
   async function renderFolder(id: string): Promise<void> {
     closeMenu();
     const isUncat = id === UNCAT;
@@ -2710,6 +2745,7 @@ export async function mountProjects(
   // A single-tool session downloads as a bare file (its native format); a batch session
   // falls back to a zip. See pro/folder-export.js renderSessionToFile.
   function renderSession(slot: string): void {
+    if (slot.startsWith('__learning__:')) { window.location.hash = `#/learning?slot=${encodeURIComponent(slot)}&export=1`; return; }
     // The job is named by what it is rendering - the session's own name, else its tool.
     // It is what the toast (and a desktop notification) says while this view is gone.
     const entry = entryBySlot().get(slot);
@@ -2995,7 +3031,7 @@ export async function mountProjects(
 
   /** Copy a folder and its whole subtree under `dest`: fresh records, every session
    *  duplicated. Image references stay with the original (one home each) - the
-   *  count comes back so the paste can say so. */
+   *  count comes back so the paste can report it. */
   async function deepCopyFolder(id: string, dest: string | null, made: Set<string>): Promise<{ imagesStayed: number } | null> {
     const src = folders.find(f => f.id === id);
     if (!src) return null;

@@ -80,6 +80,9 @@ const ALLOWED_PACKAGES = new Set([
   'ajv/dist/2020.js',           // engine/src/validate.ts - engine/package.json dep
   '@lolly-tools/core/host-v1',  // engine/src/bridge/host-v1.ts - the SDK contract
   '@lolly-tools/core',          // engine/src/loader.ts - type-only manifest/render specs
+  // engine/src/emoji-treatment.ts - the treatment, palette and protection types.
+  // Type-only, and they are not re-exported from the SDK barrel above.
+  '@lolly-tools/core/emoji-v1',
   // engine/package.json dep (declared 2026-08-05, allowlist missed at the time).
   // Pure JS zip/gzip codec, no DOM/fs/network - same platform-agnostic bar as
   // handlebars/ajv above. Used directly by epub.ts (zipSync), font-convert.ts
@@ -109,6 +112,8 @@ const ALLOWED_ESCAPES = new Set([
   'schemas/tool.schema.json',
   'schemas/asset.schema.json',
   'schemas/asset-ref.schema.json',
+  'schemas/emoji-pack-v1.schema.json',
+  'schemas/emoji-style-v1.schema.json',
   // Same category as the three above: a parent-repo contract file the engine
   // VALIDATES against, not a shell/tool/brand dependency. Added when the rate-card
   // work landed (engine/src/validate.ts imports all four the same way).

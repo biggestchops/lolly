@@ -231,6 +231,22 @@ export async function createBridge(): Promise<WebHost> {
     run: async (request) => (await loadTextTools()).run(request),
     highlight: async (text, language, options) => (await loadTextTools()).highlight(text, language, options),
   };
+  // Pinned emoji packs (v1.196) from the catalog's `emoji-pack` bundle assets. A LAZY
+  // FACADE like text/pdf: nothing here is read at boot, and the module pulls a sha256
+  // helper plus a bundle parse that only a surface actually drawing emoji needs. All
+  // FOUR methods are listed, `parseXml` included: a facade that offers fewer methods
+  // than the impl has made host.capture.vector lie to url-shot for a whole release, so
+  // the rule here is that the surface always matches (see the capture note below).
+  const loadEmoji = memo(async () => (await import('./emoji.ts')).createEmojiAPI(host.assets));
+  host.emoji = {
+    sets: async () => (await loadEmoji()).sets(),
+    manifest: async (pin) => (await loadEmoji()).manifest(pin),
+    artwork: async (pin, asset) => (await loadEmoji()).artwork(pin, asset),
+    // Synchronous in the contract, so it cannot wait on the lazy module. DOMParser is
+    // the same non-networked parser the impl uses, which is why inlining it here is
+    // the whole method and not a shortcut past one.
+    parseXml: (source: string) => new DOMParser().parseFromString(source, 'image/svg+xml'),
+  };
   host.compare = {
     run: async (request, options) => (await import('../lib/compare-client.ts')).runComparison(request, options),
     visual: async (request, options) => (await import('../lib/compare-client.ts')).runVisualComparison(request, options),

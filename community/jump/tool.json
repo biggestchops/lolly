@@ -215,7 +215,7 @@
       "urlKey": "st",
       "section": "Style",
       "default": "cinema",
-      "help": "\"Scroll cinema\" opens full-height with one scene per link. \"Aurora glass\", \"Front page\", \"Cover story\" and \"Playroom\" are expressive landing pages built from your brand colours and type; Buttons, Cards and Minimal are plain lists.",
+      "help": "Scroll cinema opens full-height with one scene per link. Aurora glass, Front page, Cover story and Playroom are expressive landing pages built from the design system's colours and type; Buttons, Cards and Minimal are plain lists.",
       "options": [
         {
           "value": "cinema",
@@ -253,12 +253,13 @@
     },
     {
       "id": "mood",
+      "display": "segmented",
       "label": "Mood",
       "type": "select",
       "urlKey": "m",
       "section": "Style",
       "default": "calm",
-      "help": "How far the page moves: one dial, turning whatever its style animates. Aurora glass: the speed the light field flows. Scroll cinema: how far each scene travels as it arrives. Playroom: how buoyant the bubbles float and how hard they bounce in. Front page and Cover story: how much travel the type and the picture reveal take. It changes nothing for the plain lists, and nothing for a visitor who asks for reduced motion.",
+      "help": "How far the page moves. Each style animates something different, and the plain lists do not move at all. A visitor who asks for reduced motion always gets the still page.",
       "options": [
         {
           "value": "calm",
@@ -276,7 +277,7 @@
     },
     {
       "id": "color",
-      "label": "Text",
+      "label": "Text colour",
       "type": "color",
       "urlKey": "ink",
       "section": "Style",
@@ -319,7 +320,7 @@
         "text",
         "emoji"
       ],
-      "help": "Up to ten, one row per link. The address goes first; the name is optional, and a blank one shows the site's own name. Tap a cell in the Emoji column to pick a glyph. Everything starts empty on purpose: only what you type travels, so a page built from the CLI or a hand-typed link never carries sample content. Share with the Share button - the whole page lives inside the link, offline, nothing on a server.",
+      "help": "Up to ten links, one per row. The address goes first; a blank name shows the site's own name, and a tap in the Emoji column picks a glyph. Nothing is stored on a server: the whole page travels inside the share link.",
       "default": {
         "columns": [
           "URL",
@@ -354,7 +355,7 @@
       "assetType": "image",
       "allowUpload": true,
       "urlKey": "av",
-      "help": "A face or logo above the heading. A catalog or brand asset travels as a tiny reference, so the share link stays short; an uploaded picture only opens on this device unless the link is packed."
+      "help": "A face or logo above the heading. A catalog or design system asset travels as a tiny reference, so the share link stays short; an uploaded picture only opens on this device unless the link is packed."
     },
     {
       "id": "backdrop",
@@ -363,7 +364,7 @@
       "assetType": "image",
       "allowUpload": true,
       "urlKey": "bg",
-      "help": "A full-bleed picture behind the page. The Cover story style builds its whole opening from it; Aurora dims it under the glass. Catalog and brand assets keep the share link tiny."
+      "help": "A full-bleed picture behind the page. The Cover story style builds its whole opening from it; Aurora dims it under the glass. Catalog and design system assets keep the share link tiny."
     },
     {
       "id": "onVisit",

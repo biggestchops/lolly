@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import type { AssetRef } from './asset-ref.ts';
+import type { EmojiPreferenceV1 } from '../emoji-v1.ts';
 
 // ─── Profile ────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,18 @@ export interface Profile {
      *  whatever this says. */
     followDesignSystem?: boolean;
   };
+  /**
+   * Which emoji set and brand treatment new work starts from (plans/252).
+   * Additive and optional: absent means no set has been chosen, and a surface
+   * with no set draws the engine's neutral placeholder rather than the machine's
+   * own emoji font.
+   *
+   * A SEED, not a restyle. A document or a saved session that already carries its
+   * own choice keeps it; this only decides what a fresh open starts with. The
+   * palette is deliberately not stored: a treatment resolves its colours from the
+   * brand in force when it is applied, and the document then pins them.
+   */
+  emoji?: EmojiPreferenceV1;
   /** Nearby-discovery preferences (plans/110). Additive + optional, so a profile
    *  without it is byte-identical to today. The only PERSISTED visibility mode is
    * `standing` ("always visible on networks I join") - an opt-in for trusted LANs;

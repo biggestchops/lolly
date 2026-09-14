@@ -23,7 +23,7 @@ import { hydrateChromeFollow } from './lib/chrome-follow.ts';
 import { computeViewportInsets } from './lib/viewport-insets.ts';
 import { initI18n, loadedLang } from './i18n.ts';
 import { hydrateSfxMuted, hydrateSfxVolume, installGlobalSfx, playSfx } from './lib/sfx.ts';
-import { hydrateFeatureFlags, flagEnabledSync, isFlagOnSync, applyPerfUi, PERFORMANCE_UI_FLAG } from './feature-flags.ts';
+import { hydrateFeatureFlags, flagEnabledSync, isFlagOnSync, applyPerfUi, perfUiOn, PERFORMANCE_UI_FLAG } from './feature-flags.ts';
 // The collab + nearby WIRING is installed after first paint (see installCollabWiring
 // below the import block): five registration modules whose bodies do nothing until a
 // human opens a Share dialog or arrives on #/join, but whose static graph - the private
@@ -91,7 +91,7 @@ installDepthSeam();
 type WebHost = Awaited<ReturnType<typeof createBridge>>;
 
 /** Route names the shell can be in. */
-type RouteName = 'gallery' | 'utilities' | 'tool' | 'profile' | 'dashboard' | 'pro' | 'projects' | 'history' | 'catalog' | 'verify' | 'convert' | 'data' | 'prepare' | 'compare' | 'start' | 'multi' | 'components' | 'lab' | 'pdf' | 'script' | 'ask' | 'docs' | 'join' | 'join-reply';
+type RouteName = 'learning' | 'gallery' | 'utilities' | 'tool' | 'profile' | 'dashboard' | 'pro' | 'projects' | 'history' | 'catalog' | 'verify' | 'convert' | 'data' | 'prepare' | 'compare' | 'start' | 'multi' | 'components' | 'lab' | 'pdf' | 'script' | 'ask' | 'docs' | 'join' | 'join-reply';
 
 /** A parsed route: a discriminated union on `name`. */
 type Route =
@@ -104,6 +104,7 @@ type Route =
   | { name: 'compare' }
   | { name: 'data'; params?: string }
   | { name: 'pro'; params?: string }
+  | { name: 'learning'; params?: string }
   | { name: 'projects'; folderId: string | null; params?: string }
   | { name: 'history'; params?: string }
   | { name: 'catalog'; params?: string }
@@ -123,6 +124,7 @@ type Route =
 /** The #view container, which a mounted view may stamp a teardown fn onto. */
 interface ViewElement extends HTMLElement {
   _cleanup?: () => void;
+  _beforeLeave?: () => Promise<boolean>;
 }
 
 /** The File Handling API's launch queue: an installed PWA opened through the OS
@@ -185,6 +187,7 @@ interface RouteSpec {
  * than editing four parallel lists that silently half-work when one is missed.
  */
 const ROUTES: Record<RouteName, RouteSpec> = {
+  learning: { label: 'Learning module', sigKey: 'params', footer: 'none' },
   gallery: { label: 'Tools gallery', tab: 'tools', viewClasses: ['gallery-view'], footer: 'search' },
   // Utilities IS the gallery view (mountGallery in only-utility mode), so it must
   // carry the same scoping class - gallery.css's desktop saved-list grid, footer
@@ -337,6 +340,8 @@ async function navigate(host: WebHost, opts: { force?: boolean } = {}): Promise<
   // falls back to the outgoing view's mount-time URL.
   const leftHref = takeLeavingHref();
   if (!opts.force && routeSig === mountedRouteSig) return;
+  const outgoing = document.getElementById('view') as ViewElement | null;
+  if (outgoing?._beforeLeave && !await outgoing._beforeLeave()) return;
   const prevSig = mountedRouteSig;
   mountedRouteSig = routeSig;
   if (routeSig !== prevSig) recordFeaturedRoute(route);
@@ -362,6 +367,7 @@ async function navigate(host: WebHost, opts: { force?: boolean } = {}): Promise<
   // still mounts. (Individual teardown steps are also hardened in tool.ts's cleanup.)
   try { view._cleanup?.(); } catch (e) { console.error('[nav] outgoing view cleanup threw:', e); }
   delete view._cleanup;
+  delete view._beforeLeave;
 
   // The Projects "+ New tool" / resume flow arms one-shot sessionStorage markers
   // (lolly:fileInto, lolly:returnTo) that the tool view READS on mount (it can't
@@ -577,6 +583,12 @@ async function navigate(host: WebHost, opts: { force?: boolean } = {}): Promise<
     case 'history': {
       const { mountHistory } = await import('./views/history.ts');
       await mountHistory(view, host, route.params);
+      break;
+    }
+    case 'learning': {
+      const { mountLearning } = await import('./views/learning.ts');
+      await mountLearning(view, host as unknown as Parameters<typeof mountLearning>[1], route.params);
+      mountedRouteSig = routeSignature(parseRoute());
       break;
     }
     case 'projects': {
@@ -1574,7 +1586,10 @@ async function boot(): Promise<void> {
 
   // Warm the likely-next view chunks so the first tap doesn't pay a cold dynamic-import.
   // import() promises are cached, so the later route reuses these.
-  const warmTool = (): void => { void import('./views/tool.ts').catch(() => {}); };
+  const warmTool = (): void => {
+    void import('./lib/mount-runtime.ts').catch(() => {});
+    void import('./views/tool.ts').catch(() => {});
+  };
 
   // The TOOL path is special: it statically pulls the render engine (createRuntime +
   // Handlebars + Ajv + export, ~170 KB gz). That used to sit on the boot preload - moving
@@ -1591,9 +1606,15 @@ async function boot(): Promise<void> {
   // the visitor has touched anything, which is what scripts/check-first-load.ts counts and
   // what no byte budget can see. The view itself warms on intent below instead, where a
   // pointerdown still puts it in flight ahead of the click that navigates.
-  const warmEngine = (): void => { void import('./lib/mount-runtime.ts').catch(() => {}); };
-  if (typeof requestIdleCallback === 'function') requestIdleCallback(warmEngine, { timeout: 600 });
-  else setTimeout(warmEngine, 200);
+  const warmEngine = (): void => {
+    if (!perfUiOn()) void import('./lib/mount-runtime.ts').catch(() => {});
+  };
+  // Navigation intent below still warms the tool, including its engine. Check again
+  // inside the callback in case performance mode changed while it was waiting.
+  if (!perfUiOn()) {
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(warmEngine, { timeout: 600 });
+    else setTimeout(warmEngine, 200);
+  }
 
   // Warm a view the instant a link to it is hovered or pressed. Capture-phase, one-shot
   // per target (import() caches), and it fires ahead of the click that navigates. Covers
@@ -1640,9 +1661,11 @@ async function boot(): Promise<void> {
     if (!toolWarmed || warmedViews.size < views) return;
     document.removeEventListener('pointerover', warmOnIntent, { capture: true });
     document.removeEventListener('pointerdown', warmOnIntent, { capture: true });
+    document.removeEventListener('focusin', warmOnIntent, { capture: true });
   };
   document.addEventListener('pointerover', warmOnIntent, { capture: true, passive: true });
   document.addEventListener('pointerdown', warmOnIntent, { capture: true, passive: true });
+  document.addEventListener('focusin', warmOnIntent, { capture: true });
 
   // Re-render on any route change. hashchange covers legacy #/… links and external
   // deep links; popstate covers History-API back/forward across /t/<id> tool entries;
@@ -1775,6 +1798,7 @@ function parseRoute(): Route {
       window.location.replace(`/#/batch${query ? `?${query}` : ''}`);
       return { name: 'pro', params: query || '' };
     }
+    if (parts[0] === 'learning') return { name: 'learning', params: query || '' };
     if (parts[0] === 'p') return { name: 'projects', folderId: parts[1] || null, params: query || '' };
     if (parts[0] === 'c' || parts[0] === 'catalog') return { name: 'catalog', params: query || '' };
     if (parts[0] === 'u' || parts[0] === 'utilities') return { name: 'utilities', params: query || '' }; // gallery filtered to the utility category

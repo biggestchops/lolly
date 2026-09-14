@@ -92,7 +92,7 @@ test('no options: untrusted info row, valid state - CA-issued leaf names the rea
   assert.ok(untrusted, 'untrusted row present');
   assert.equal(untrusted.ok, false);
   // The stamped fixture is signed by a CA-ISSUED leaf (chain [leaf, root]) that
-  // chains to no pinned anchor - untrustedReason must say so, not claim an
+  // chains to no pinned anchor - untrustedReason must report it, not claim an
   // "ephemeral on-device key" (the old conflated copy this test used to pin).
   assert.match(untrusted.explanation, /CA-issued certificate that chains to no pinned trust anchor/);
   assert.equal(check(report, 'signingCredential.trusted'), undefined);

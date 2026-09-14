@@ -175,7 +175,7 @@ export function sessionTile(entry: SessionEntry, { toolName = '', sizeBytes = 0,
   }
 
   const badges = [
-    batch ? '<span class="tile-badge tile-badge--type">Batch</span>' : fmtBadge(format),
+    entry.slot.startsWith('__learning__:') ? '<span class="tile-badge tile-badge--type">Learning module</span>' : batch ? '<span class="tile-badge tile-badge--type">Batch</span>' : fmtBadge(format),
     dimBadge(width, height, unit),
     batch ? rowCountBadge(meta.rowCount) : '',
     sizeBytes ? `<span class="tile-badge tile-badge--size">${fmtBytes(sizeBytes)}</span>` : '',
@@ -475,7 +475,7 @@ function tileShell({ ref, kind, batch, cover, title, sub, badges, openAttr, open
     <div class="folder-tile${selected ? ' is-selected' : ''}" data-ref="${escape(ref)}" data-kind="${kind}"${batch ? ' data-batch="1"' : ''}>
       ${selectable ? selectToggle(ref, kind, selected, title) : ''}
       ${open}
-        ${cover}
+        <span class="tile-figure">${cover}</span>
         <span class="tile-meta">
           <span class="tile-title" title="${escape(title)}">${escape(title)}</span>
           ${sub ? `<span class="tile-sub">${escape(sub)}</span>` : ''}

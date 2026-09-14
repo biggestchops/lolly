@@ -5,7 +5,7 @@
  * needs. No engine coupling: this is pure Node fs, mirroring shells/cli.
  */
 import { readFile } from 'node:fs/promises';
-import { catalogFile, readToolText } from '@lolly-tools/node-shell/content-roots';
+import { catalogFile, readAssetIndex, readToolText } from '@lolly-tools/node-shell/content-roots';
 
 /** A denormalised tool row as the generated catalog index carries it. */
 export interface ToolEntry {
@@ -54,8 +54,10 @@ export interface AssetRow {
   formats?: Array<{ format: string; url: string; size?: number }>;
 }
 
-/** All catalog assets, in registry order (mirrors the web catalog view's source). */
+/** All catalog assets, in registry order (mirrors the web catalog view's source).
+ *  Merged by the resolver: the brand catalog's entries plus every shared asset root's,
+ *  so a pack mounted once outside the brands is listed on every profile (plan 252). */
 export async function loadAssets(): Promise<AssetRow[]> {
-  const idx = JSON.parse(await readFile(catalogFile('assets/index.json'), 'utf8')) as { assets?: AssetRow[] };
+  const idx = readAssetIndex() as { assets?: AssetRow[] };
   return idx.assets ?? [];
 }

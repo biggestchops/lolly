@@ -1,0 +1,56 @@
+{
+  "name": "source-distribution-unreviewed",
+  "title": "Passing on the source bytes of a licence nobody has interpreted is not permission",
+  "citations": [
+    "Plan 253 section 3.2: missing, ambiguous or unsupported terms are a gap; do not turn unknown into 'safe to share'.",
+    "Plan 253 section 7.2: permission to render is not permission to distribute the source asset or an editable pack.",
+    "engine/src/rights-profiles.ts: a profile recognised and not reviewed records `redistributeSource: 'unknown'`."
+  ],
+  "input": {
+    "works": [
+      {
+        "id": "example/stock-photo",
+        "title": "Stock Photo",
+        "creators": [{ "name": "Example Photographer", "role": "creator" }],
+        "sourceUrl": "https://example.org/stock.jpg",
+        "sourceHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "rights": [
+          {
+            "declaration": "CC BY-NC 4.0",
+            "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+            "assertedBy": "catalog",
+            "evidence": "catalog-entry",
+            "status": "parsed"
+          }
+        ]
+      }
+    ],
+    "uses": [
+      { "work": "example/stock-photo", "role": "source-distribution", "operations": ["placed"] }
+    ],
+    "context": {
+      "operation": "package",
+      "delivery": { "format": "zip", "route": "package", "canCarryCredential": true, "canCarryReadableCredit": true },
+      "audience": "shared"
+    }
+  },
+  "expect": {
+    "status": "actions-required",
+    "issues": ["licence.unknown", "source.redistribution-unknown"],
+    "uses": [
+      {
+        "work": "example/stock-photo",
+        "classification": "unchanged",
+        "rule": "unchanged-use-v1",
+        "licence": "CC-BY-NC-4.0",
+        "reviewed": false,
+        "issues": ["licence.unknown", "source.redistribution-unknown"]
+      }
+    ],
+    "required": [],
+    "optional": [],
+    "channels": ["c2pa-ingredients", "readable-companion"],
+    "changes": [],
+    "unresolved": ["example/stock-photo: CC-BY-NC-4.0 conditions recorded, not yet interpreted"]
+  }
+}

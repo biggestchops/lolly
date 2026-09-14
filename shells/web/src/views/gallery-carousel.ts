@@ -125,7 +125,7 @@ export function syncCarState(gcar: HTMLElement): void {
     dot.toggleAttribute(CAR_FAILED_ATTR, !ready && failed);
   });
   // Fewer than two ready looks ⇒ there is no second pane to step to. The arrows stay
-  // in place and say so, rather than vanishing and reappearing as the strip fills.
+  // in place and report it, rather than vanishing and reappearing as the strip fills.
   const inert = slides.filter(isSlideReady).length < 2;
   gcar.querySelectorAll<HTMLElement>('.gcar-nav').forEach(b => { b.toggleAttribute(CAR_INERT_ATTR, inert); });
 }

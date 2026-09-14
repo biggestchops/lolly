@@ -1,6 +1,6 @@
 {
   "name": "URL-skjermbilde",
-  "description": "Alle nettsider, uansett scroll-dybde, med egendefinert CSS",
+  "description": "Enhver nettside, ved hvilken som helst rulledybde, med egendefinert CSS.",
   "a11yLabel": "Skjermbilde av {{default url \"(no URL set)\"}}",
   "inputs.url.label": "URL",
   "inputs.url.help": "Siden som skal fanges. Fanges i en ekte nettleser-motor ved eksport.",

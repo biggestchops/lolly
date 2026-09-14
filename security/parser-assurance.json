@@ -2,6 +2,54 @@
   "version": 1,
   "inventory": "docs/parser-inventory.md",
   "parsers": {
+    "engine/src/emoji-svg.ts": {
+      "fuzzTargets": [
+        "emoji-svg"
+      ],
+      "details": {
+        "inputSource": "Source SVG bytes from a verified emoji pack, with injected XML parsing after digest admission",
+        "bounds": "2 MiB source, no DTD/entity declarations or processing instructions, 4,096 elements, depth 32, 48 attributes per element, 1 M attribute characters; strict element/attribute/paint subset with local gradient, clipPath and use-in-clipPath references only",
+        "directTests": "`tests/emoji-svg.test.ts`, `tests/emoji-line.test.ts`, `tests/emoji-line.browser.test.ts`",
+        "fuzzCoverage": "`emoji-svg` recomputes pack/artwork digests before mutating static SVG, local gradients and clip paths",
+        "notes": "Unsupported visual features fail rather than being removed; inert declarations (enable-background, class, color, overflow, display other than none) are omitted and recorded, and a display:none element is dropped with its paint servers kept referenceable. Canonical source pixel equality is measured for four fixtures in the suite and for every admitted glyph of four full families by `scripts/import-emoji-pack.ts --verify` (a local run, not CI). No text, images, masks, filters, animation or use outside clipPath."
+      }
+    },
+    "engine/src/emoji-svg-syntax.ts": {
+      "fuzzTargets": [
+        "emoji-svg"
+      ],
+      "details": {
+        "inputSource": "SVG path data, transforms and numeric attributes after byte verification",
+        "bounds": "400 K path/list characters, 100 K arguments, 10 K segments, 64 transforms per attribute, finite scalar magnitudes at most 1 M",
+        "directTests": "`tests/emoji-svg.test.ts`",
+        "fuzzCoverage": "`emoji-svg` reaches strict numeric and path grammar checks",
+        "notes": "No tolerant prefix recovery or arc approximation. Packed arc flags are unsupported in the initial subset."
+      }
+    },
+    "engine/src/emoji-segment.ts": {
+      "fuzzTargets": [
+        "emoji-text"
+      ],
+      "details": {
+        "inputSource": "Mixed text and emoji strings from authored line specimens",
+        "bounds": "65,536 UTF-16 code units, rejects unpaired surrogates; binary lookup in pinned Unicode 17 tables and a linear scan",
+        "directTests": "`tests/emoji-segment.test.ts`, `tests/emoji-line.test.ts`",
+        "fuzzCoverage": "`emoji-text` mutates UTF-8 cluster, selector, Indic and regional-indicator seeds",
+        "notes": "Passes the complete Unicode 17 GraphemeBreakTest corpus. Unknown emoji clusters stay whole. Bidi property lookup guards an LTR specimen and does not implement paragraph bidi layout."
+      }
+    },
+    "engine/src/emoji-pack.ts": {
+      "fuzzTargets": [
+        "emoji-pack"
+      ],
+      "details": {
+        "inputSource": "Pinned UTF-8 emoji pack manifests and separate source SVG byte snapshots",
+        "bounds": "32 MiB manifest, 20,000 glyphs, 64 notices of at most 256 KiB each, bounded strings and metrics; 2 MiB artwork; fixed-depth JSON schema and unique semantic identities",
+        "directTests": "`tests/emoji-pack.test.ts`, `tests/emoji-resolve.test.ts`, `tests/emoji-browser.test.ts`",
+        "fuzzCoverage": "`emoji-pack` mutates a real pinned manifest and recomputes the transport digest to reach validation",
+        "notes": "Checksums and schema admission do not sanitize SVG or prove source rights. The resolver accepts opaque admitted handles and cannot substitute another installed version. Unicode sequence lookup uses vendored data, with a separate 32-scalar input limit."
+      }
+    },
     "engine/src/pdf-map.ts": {
       "fuzzTargets": [
         "pdf-map"

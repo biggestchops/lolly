@@ -2020,7 +2020,7 @@ export function wireColorField(scope: HTMLElement, { onChange = () => {}, onInte
       // active, or an `oklch()`/`color(display-p3 …)` pasted anywhere, lands
       // instead of being silently held as unparseable.
       const parsed = spaceParse(activeSpec(field), raw);
-      if (!parsed) { markInvalid(input, true); return; }   // hold the last good colour, and say so
+      if (!parsed) { markInvalid(input, true); return; }   // hold the last good colour, and report it
       markInvalid(input, false);
       // A notation with no alpha of its own keeps the alpha the slider is showing - 
       // typing `#30ba78` over a 60% colour must not make it opaque. An alpha it DID

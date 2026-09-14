@@ -6,7 +6,7 @@
  *
  * Why this exists: until GA the CLI's svg branch serialised jsdom's `<text>` verbatim,
  * so a recipient without the font opened the file and saw a different design, with
- * nothing to say so - the same silent-wrong-output class the fail-loud work removed.
+ * nothing to show for it - the same silent-wrong-output class the fail-loud work removed.
  * EMF, EPS and DXF already outline in this very process through svgDomToIr and the same
  * host.text, so svg was the odd one out on its own shell, not a capability gap.
  *

@@ -1,5 +1,5 @@
 {
-  "name": "Snippet",
+  "name": "Fragmento",
   "description": "Convierte fragmentos de código en imágenes limpias, con resaltado de sintaxis y listas para compartir.",
   "inputs.code.label": "Código",
   "inputs.code.placeholder": "Pega tu código aquí…",

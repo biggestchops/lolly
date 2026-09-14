@@ -6,7 +6,7 @@
   "status": "official",
   "category": "event",
   "singleInstance": true,
-  "description": "Turn places and timezones into brand-led artwork. Rotate a vector atlas or a detailed WebGL globe, unfold projections, label your people and places, then export artwork, a camera tour or structured schedules.",
+  "description": "Turn places and timezones into artwork that follows the design system. Rotate a vector atlas or a detailed WebGL globe, unfold projections, label your people and places, then export artwork, a camera tour or structured schedules.",
   "a11yLabel": "World timezone artwork with labelled places and local times",
   "tags": [
     "timezone",
@@ -22,6 +22,7 @@
     "brand"
   ],
   "render": {
+    "sectionIcons": {"Story": "document", "Time": "clock", "Map": "globe", "View": "eye", "Map detail": "mapPin", "Colour": "palette", "Type and size": "font", "Motion": "animate"},
     "width": 1440,
     "height": 1080,
     "formats": [
@@ -55,112 +56,6 @@
   },
   "inputs": [
     {
-      "id": "heading",
-      "label": "Headline",
-      "type": "text",
-      "default": "",
-      "section": "Story"
-    },
-    {
-      "id": "eyebrow",
-      "label": "Series / overline",
-      "type": "text",
-      "default": "",
-      "section": "Story"
-    },
-    {
-      "id": "annotation",
-      "label": "Description",
-      "type": "longtext",
-      "default": "",
-      "section": "Story"
-    },
-    {
-      "id": "footer",
-      "label": "Call to action / footer",
-      "type": "text",
-      "default": "",
-      "section": "Story"
-    },
-    {
-      "id": "timeMode",
-      "label": "Time",
-      "type": "select",
-      "default": "now",
-      "section": "Time",
-      "options": [
-        {
-          "value": "now",
-          "label": "Live \u00b7 now"
-        },
-        {
-          "value": "fixed",
-          "label": "Scheduled moment"
-        }
-      ]
-    },
-    {
-      "id": "eventTime",
-      "label": "Scheduled date & time",
-      "type": "datetime-local",
-      "default": "",
-      "section": "Time",
-      "help": "Interpreted in the reference timezone, never the browser timezone."
-    },
-    {
-      "id": "referenceZone",
-      "label": "Reference timezone",
-      "type": "text",
-      "default": "",
-      "section": "Time",
-      "help": "Optional reference clock. IANA identifier, e.g. Europe/London. Scheduled times use UTC when blank."
-    },
-    {
-      "id": "ambiguity",
-      "label": "Repeated autumn hour",
-      "type": "select",
-      "default": "earlier",
-      "section": "Time",
-      "options": [
-        {
-          "value": "earlier",
-          "label": "First occurrence"
-        },
-        {
-          "value": "later",
-          "label": "Second occurrence"
-        }
-      ]
-    },
-    {
-      "id": "eventMinutes",
-      "label": "Event duration (minutes)",
-      "type": "number",
-      "default": 60,
-      "section": "Time",
-      "min": 1,
-      "max": 1440,
-      "step": 1,
-      "display": "slider"
-    },
-    {
-      "id": "clockStyle",
-      "label": "Clock display",
-      "type": "select",
-      "default": "24",
-      "section": "Time",
-      "options": [
-        {
-          "value": "24",
-          "label": "24 hour"
-        },
-        {
-          "value": "12",
-          "label": "12 hour"
-        }
-      ]
-    },
-    {
       "id": "locations",
       "label": "Places",
       "type": "blocks",
@@ -184,8 +79,7 @@
           "place": "Noosa, AU"
         }
       ],
-      "section": "Places",
-      "help": "Type a city or IANA timezone in the first column; press Enter for the next row. The remaining columns are optional. Paste a list of cities or a spreadsheet with these column headings. Add a country code for ambiguous cities (London, GB). Pop out for more space. Move rows up to set the tour route. Fill region accepts yes or no; coordinates and timezone override the lookup.",
+      "help": "Type a city or IANA timezone in the first column; press Enter for the next row. The other columns are optional: add a country code for an ambiguous city (London, GB), and move rows to set the tour route. Coordinates and a timezone override the lookup.",
       "fields": [
         {
           "id": "label",
@@ -249,6 +143,116 @@
         "spread",
         "longitude",
         "latitude"
+      ]
+    },
+    {
+      "id": "heading",
+      "label": "Headline",
+      "type": "text",
+      "default": "",
+      "section": "Story"
+    },
+    {
+      "id": "eyebrow",
+      "label": "Overline",
+      "help": "A short line above the headline, such as a series name.",
+      "type": "text",
+      "default": "",
+      "section": "Story"
+    },
+    {
+      "id": "annotation",
+      "label": "Description",
+      "type": "longtext",
+      "default": "",
+      "section": "Story"
+    },
+    {
+      "id": "footer",
+      "label": "Footer line",
+      "help": "A closing line under the map, such as a call to action.",
+      "type": "text",
+      "default": "",
+      "section": "Story"
+    },
+    {
+      "id": "timeMode",
+      "display": "segmented",
+      "label": "Time",
+      "type": "select",
+      "default": "now",
+      "section": "Time",
+      "options": [
+        {
+          "value": "now",
+          "label": "Live now"
+        },
+        {
+          "value": "fixed",
+          "label": "Scheduled moment"
+        }
+      ]
+    },
+    {
+      "id": "eventTime",
+      "label": "Scheduled date & time",
+      "type": "datetime-local",
+      "default": "",
+      "section": "Time",
+      "help": "Interpreted in the reference timezone, never the browser timezone."
+    },
+    {
+      "id": "referenceZone",
+      "label": "Reference timezone",
+      "type": "text",
+      "default": "",
+      "section": "Time",
+      "help": "Optional reference clock. IANA identifier, e.g. Europe/London. Scheduled times use UTC when blank."
+    },
+    {
+      "id": "ambiguity",
+      "label": "Repeated autumn hour",
+      "type": "select",
+      "default": "earlier",
+      "section": "Time",
+      "options": [
+        {
+          "value": "earlier",
+          "label": "First occurrence"
+        },
+        {
+          "value": "later",
+          "label": "Second occurrence"
+        }
+      ]
+    },
+    {
+      "id": "eventMinutes",
+      "label": "Event duration (minutes)",
+      "type": "number",
+      "default": 60,
+      "section": "Time",
+      "min": 1,
+      "max": 1440,
+      "step": 1,
+      "display": "slider"
+    },
+    {
+      "id": "clockStyle",
+      "display": "segmented",
+      "label": "Clock display",
+      "type": "select",
+      "default": "24",
+      "section": "Time",
+      "options": [
+        {
+          "value": "24",
+          "label": "24 hour"
+        },
+        {
+          "value": "12",
+          "label": "12 hour"
+        }
       ]
     },
     {
@@ -335,7 +339,7 @@
     },
     {
       "id": "unfold",
-      "label": "Unfold globe \u2192 projection",
+      "label": "Unfold globe to projection",
       "type": "number",
       "default": 1,
       "section": "Map",
@@ -343,22 +347,22 @@
       "max": 1,
       "step": 0.01,
       "display": "slider",
-      "help": "WebGL: blend the globe into the chosen flat projection. Globe ignores this control."
+      "help": "Blends the globe into the chosen flat projection, on the WebGL renderer. It does nothing while Projection is set to Globe."
     },
     {
       "id": "view",
-      "label": "View \u00b7 longitude, latitude, roll, zoom",
+      "label": "View",
       "type": "text",
       "default": "15,22,0,1",
-      "section": "Map",
-      "help": "Drag the map to rotate. Shift-drag to roll. Scroll to zoom. This shared camera is saved in URLs and slots."
+      "section": "View",
+      "help": "Longitude, latitude, roll and zoom. Drag the map to rotate, shift-drag to roll, scroll to zoom."
     },
     {
       "id": "fov",
       "label": "Camera field of view",
       "type": "number",
       "default": 40,
-      "section": "Map",
+      "section": "View",
       "min": 20,
       "max": 80,
       "step": 1,
@@ -369,7 +373,7 @@
       "label": "Map tilt",
       "type": "number",
       "default": 0,
-      "section": "Map",
+      "section": "View",
       "min": -65,
       "max": 65,
       "step": 1,
@@ -381,42 +385,42 @@
       "label": "Graticule",
       "type": "boolean",
       "default": true,
-      "section": "Map"
+      "section": "Map detail"
     },
     {
       "id": "showBorders",
       "label": "Country borders",
       "type": "boolean",
       "default": true,
-      "section": "Map"
+      "section": "Map detail"
     },
     {
       "id": "showNight",
-      "label": "Day / night shading",
+      "label": "Day and night shading",
       "type": "boolean",
       "default": true,
-      "section": "Map"
+      "section": "Map detail"
     },
     {
       "id": "showLabels",
       "label": "Labels on map",
       "type": "boolean",
       "default": true,
-      "section": "Map"
+      "section": "Map detail"
     },
     {
       "id": "showConnections",
       "label": "Connections between places",
       "type": "boolean",
       "default": true,
-      "section": "Map"
+      "section": "Map detail"
     },
     {
       "id": "regionOpacity",
       "label": "Region colour strength",
       "type": "number",
       "default": 0.45,
-      "section": "Map",
+      "section": "Map detail",
       "min": 0,
       "max": 1,
       "step": 0.05,
@@ -424,10 +428,10 @@
     },
     {
       "id": "theme",
-      "label": "Brand treatment",
+      "label": "Theme",
       "type": "select",
       "default": "midnight",
-      "section": "Design",
+      "section": "Colour",
       "options": [
         {
           "value": "midnight",
@@ -439,7 +443,7 @@
         },
         {
           "value": "brand",
-          "label": "Brand colour"
+          "label": "Design system colour"
         },
         {
           "value": "minimal",
@@ -452,28 +456,28 @@
       "label": "Accent",
       "type": "color",
       "default": "{color.semantic.primary}",
-      "section": "Design"
+      "section": "Colour"
     },
     {
       "id": "background",
       "label": "Background override",
       "type": "color",
       "default": "",
-      "section": "Design"
+      "section": "Colour"
     },
     {
       "id": "ink",
       "label": "Text override",
       "type": "color",
       "default": "",
-      "section": "Design"
+      "section": "Colour"
     },
     {
       "id": "titleSize",
       "label": "Headline size",
       "type": "number",
       "default": 68,
-      "section": "Design",
+      "section": "Type and size",
       "min": 24,
       "max": 120,
       "step": 1,
@@ -484,7 +488,7 @@
       "label": "Headline weight",
       "type": "number",
       "default": 500,
-      "section": "Design",
+      "section": "Type and size",
       "min": 100,
       "max": 900,
       "step": 100,
@@ -495,7 +499,7 @@
       "label": "Map label size",
       "type": "number",
       "default": 15,
-      "section": "Design",
+      "section": "Type and size",
       "min": 10,
       "max": 30,
       "step": 1,
@@ -506,7 +510,7 @@
       "label": "Map size",
       "type": "number",
       "default": 1,
-      "section": "Design",
+      "section": "Type and size",
       "min": 0.5,
       "max": 1.5,
       "step": 0.05,
@@ -539,7 +543,7 @@
     },
     {
       "id": "duration",
-      "label": "Loop duration (seconds)",
+      "label": "Loop seconds",
       "type": "number",
       "default": 12,
       "section": "Motion",

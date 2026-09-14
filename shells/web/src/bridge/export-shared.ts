@@ -10,6 +10,7 @@
 import { parseDimension, isPhysical, CSS_DPI, embedWatermark, roundedRectPath } from '@lolly/engine';
 import type { ExportAudio } from './audio-envelope.ts';
 import type { HostV1, ExportMeta, IngredientCredential } from '@lolly-tools/core/host-v1';
+import type { AttributionPlanV1, AttributionReceiptV1 } from '@lolly-tools/core/rights-v1';
 import type { Dimension } from '../../../../engine/src/units.ts';
 import type { CornerRadii, CornerPair } from '../../../../engine/src/css-box.ts';
 import type { BrandPaletteEntry } from './export-pdf-vector.ts';
@@ -58,6 +59,16 @@ export interface ExportOpts {
   c2paInputs?: Record<string, string>;   // scalar-input digest → tools.lolly.export assertion (runtime-supplied)
   c2paCapture?: { camera?: boolean; microphone?: boolean; screen?: boolean }; // sensor/screen origin → created step = digitalCapture/screenCapture (runtime-supplied)
   c2paTextAdded?: { sample?: string };   // text over an opened asset → a c2pa.edited "Added text" step (runtime-supplied)
+  /** The attribution this export promised, and the callback that says what it
+   *  delivered (plan 253, HostV1 v1.197). Runtime-supplied: the plan comes from
+   *  one frozen evaluation, and the bridge calls `onReceipt` once after reading
+   *  the written bytes back, so nothing claims credits are included before a
+   *  reader found them. */
+  rights?: {
+    plan: AttributionPlanV1;
+    fingerprint: string;
+    onReceipt?(receipt: AttributionReceiptV1): void;
+  };
   c2paAiUpscale?: { model: string; version: string }; // AI-upscaled essence → created = compositeWithTrainedAlgorithmicMedia + a model-naming edit step (runtime-supplied)
   c2paAiIngredients?: Array<{ name: string; kind: 'full' | 'partial' }>; // placed assets the user declared AI-made (runtime-supplied) → composite created step + c2pa.placed + a section 18.28 ai-disclosure
   colorProfile?: string;

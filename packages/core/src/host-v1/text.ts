@@ -60,6 +60,9 @@ export interface TextToPathOpts {
    * instead of forcing a non-outlined <text> fallback. Defaults to 0.
    */
   letterSpacing?: number;
+  /** Shape whitespace-only runs for their advance, keeping an empty path and null bbox.
+   *  Defaults to false for compatibility. Mixed text/emoji layout needs this (v1.192). */
+  preserveWhitespaceAdvance?: boolean;
   /**
    * OpenType variation-axis settings for a VARIABLE font, as HarfBuzz strings
    * (`['wght=700']`). Without them a variable face shapes at its default

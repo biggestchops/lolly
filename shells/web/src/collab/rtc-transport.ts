@@ -1207,7 +1207,7 @@ export function createRtcTransport(opts: RtcTransportOptions): RtcTransport {
       bindChannel(lane, channel);
     });
     // A re-arm inherits the previous connection's `'closed'` reading until this runs;
-    // the session is connecting again, and the pill must say so.
+    // the session is connecting again, and the pill must report it.
     recomputeConnection();
     publish();
     return conn;

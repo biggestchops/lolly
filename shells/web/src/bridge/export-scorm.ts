@@ -145,7 +145,7 @@ export interface ScormPackage {
   blob: Blob;
   /** Every packaged path, `imsmanifest.xml` included, in write order. */
   files: string[];
-  /** How many slides were photographed. Fewer than `slides.length` when a render failed. */
+  /** How many slides were photographed. A failed slide rejects the export. */
   slideCount: number;
   /** Whether the narrated film made it into the package. */
   hasFilm: boolean;
@@ -221,7 +221,8 @@ export async function buildScormPackage(opts: ScormPackageOpts): Promise<ScormPa
   const version: ScormVersion = opts.version === '2004' ? '2004' : '1.2';
   const lang = String(opts.lang ?? '').trim() || 'en';
   const title = String(opts.title ?? '').trim() || 'Presentation';
-  const slidesIn = (opts.slides ?? []).slice(0, MAX_SCORM_SLIDES);
+  if ((opts.slides?.length ?? 0) > MAX_SCORM_SLIDES) throw new Error(`SCORM export supports up to ${MAX_SCORM_SLIDES} slides. Split this deck before exporting.`);
+  const slidesIn = opts.slides ?? [];
 
   const zipFiles: Record<string, Uint8Array> = {};
   const enc = new TextEncoder();
@@ -237,10 +238,8 @@ export async function buildScormPackage(opts: ScormPackageOpts): Promise<ScormPa
     const input = slidesIn[i]!;
     let still: ScormStill | null = null;
     try { still = input.el ? await opts.renderStill(input.el, i) : null; }
-    catch { still = null; }
-    // A slide that would not render is DROPPED, not packaged as a broken <img>: the
-    // learner sees a shorter deck rather than a hole, and the manifest stays truthful.
-    if (!still?.bytes?.length) continue;
+    catch (cause) { throw new Error(`Slide ${i + 1} could not be rendered. The SCORM package was not created.`, { cause }); }
+    if (!still?.bytes?.length) throw new Error(`Slide ${i + 1} is empty. The SCORM package was not created.`);
     const name = `${SLIDE_DIR}/slide-${i + 1}.${still.ext === 'png' ? 'png' : 'svg'}`;
     put(name, still.bytes);
     launchSlides.push({
@@ -255,7 +254,8 @@ export async function buildScormPackage(opts: ScormPackageOpts): Promise<ScormPa
   opts.signal?.throwIfAborted();
   let film: ScormFilm | null = null;
   try { film = opts.renderFilm ? await opts.renderFilm() : null; }
-  catch { film = null; }
+  catch (cause) { throw new Error('The video could not be rendered. The SCORM package was not created.', { cause }); }
+  if (opts.renderFilm && !film?.bytes?.length) throw new Error('The video is empty. The SCORM package was not created.');
 
   const cues = scormNarrationCues(opts.narration ?? []);
   // The slices win when there are any: they are the spoken words' own timings. A

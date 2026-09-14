@@ -17,8 +17,12 @@ import {
   createRuntime, parseUrlState, expandQuery,
   C2PA_FORMATS, embedC2pa, buildInputModel, serializeUrlState,
   parseDimension, toPixels, PENPOT_MIME,
+  attributionCredits, checkAttributionReadback, verifyC2pa,
 } from '@lolly/engine';
-import type { ExportFormat, ExportOpts, Profile, InputFile } from '@lolly-tools/core/host-v1';
+import type { C2paSourceIngredient } from '@lolly/engine';
+import type { RightsEvaluationV1 } from '@lolly-tools/core/rights-v1';
+import type { EmojiSetInfoV1 } from '@lolly-tools/core/emoji-v1';
+import type { ExportFormat, ExportOpts, Profile, InputFile, HostV1 } from '@lolly-tools/core/host-v1';
 import type { ToolManifest } from '../../../engine/src/loader.ts';
 // Relative imports (not `@lolly-tools/node-shell/...`): this file is inlined into the
 // Vercel MCP bundle, where a bare workspace specifier would dangle (see bridge.ts).
@@ -29,6 +33,7 @@ import { needsBrowserTier } from '@lolly-tools/node-shell/browser-tier';
 import { readFile, stat } from 'node:fs/promises';
 import { loadToolCached } from './catalog.ts';
 import { withHost } from './host.ts';
+import type { Jsdom } from './host.ts';
 import { fontsDir, BROWSERS_DIR } from './paths.ts';
 import { webShellBase, closeWebShell } from './webshell.ts';
 import {
@@ -89,6 +94,26 @@ export interface RenderOpts {
   maxRasterPixels?: number;
 }
 
+/**
+ * What the creative sources in a render ask of whoever delivers it (plan 253),
+ * as a machine result: stable issue codes, the readable credit and the
+ * evaluation's fingerprint. Present for a browser-free render, which this
+ * process composed, and for a browser-tier render that asked for emoji, whose
+ * census is re-established here (see `emojiCensus`). Absent otherwise: a Tier B
+ * render was produced by a web shell that recorded its own, and inventing an
+ * answer for bytes this process never composed would be a claim, not a reading.
+ */
+export interface RenderRightsResult {
+  status: string;
+  issues: { code: string; work?: string; summary: string }[];
+  /** One line per required credit, ready to paste beside the file. */
+  credits: string;
+  fingerprint: string;
+  /** True only when the delivered bytes were read back and every required source
+   *  was found in them. False also means "not checked". */
+  creditsInFile: boolean;
+}
+
 export interface RenderResult {
   bytes: Uint8Array;
   mime: string;
@@ -96,6 +121,7 @@ export interface RenderResult {
   /** Which render tier produced the bytes: 'A', 'A(resvg)', or 'B'. */
   tier: string;
   warnings: string[];
+  rights?: RenderRightsResult;
 }
 
 /** Raised for a caller-facing render problem (bad format, browser not configured). */
@@ -128,7 +154,7 @@ export function mimeForFormat(fmt: string): string {
     case 'hdr': return 'image/vnd.radiance';
     case 'tiff': case 'cmyk-tiff': return 'image/tiff';
     case 'ico': return 'image/x-icon';
-    // A Penpot binfile archive. It IS a zip, but the type must not say so: a
+    // A Penpot binfile archive. It IS a zip, but the type must not report it: a
     // `zip` MIME is what renames the download to `.zip` downstream, and Penpot's
     // Import wants the `.penpot` name. PENPOT_MIME is the engine's own constant.
     case 'penpot': return PENPOT_MIME;
@@ -186,20 +212,183 @@ function exportOpts(o: RenderOpts): ExportOpts & { password?: string } {
   return opts;
 }
 
-/** Tier A: hydrate the tool and export via the engine's own path (no browser). */
+/** The two reserved emoji params, verbatim, as a query delivers them. What they
+ *  mean is the engine's decision on every shell, so nothing here reads them. */
+export interface EmojiRequest {
+  emoji?: string | null;
+  emojifx?: string | null;
+}
+
+/**
+ * Choose the set this render draws its emoji from, exactly as the CLI does
+ * (`applyEmojiParams` in shells/cli/src/run.ts): one parser, one grammar, so a
+ * link that draws Twemoji in the app draws Twemoji here. The URL names a set and
+ * a treatment; the pin comes from this deployment's own catalog listing and the
+ * palette from the brand in force, so a link can say what to draw and can never
+ * describe the bytes it is drawn from.
+ *
+ * Parse issues come back as warnings rather than a throw: a link always draws
+ * something, and the caller is told what could not be honoured.
+ */
+async function applyEmojiRequest(
+  runtime: Awaited<ReturnType<typeof createRuntime>>,
+  host: HostV1,
+  request: EmojiRequest,
+): Promise<string[]> {
+  const named = request.emoji?.trim();
+  const fx = request.emojifx?.trim();
+  if (!named && !fx) return [];
+  if (!host.emoji) return ['This server cannot load emoji sets, so the emoji argument had no effect.'];
+  const { parseEmojiParams } = await import('../../../engine/src/emoji-style.ts');
+  const swatches = host.tokens ? await host.tokens.colors() : [];
+  const parsed = parseEmojiParams(
+    { emoji: named, emojifx: fx },
+    await host.emoji.sets(),
+    swatches.map((swatch) => ({ id: swatch.ref, hex: swatch.value })),
+  );
+  const warnings = parsed.issues.map((issue) => issue.message);
+  if (!parsed.pin) {
+    if (fx && !named) {
+      warnings.push(`emojifx=${fx} names a treatment but no set, so there is no artwork to treat. Add emoji=<id>@<version>.`);
+    }
+    return warnings;
+  }
+  await runtime.setEmojiStyle({
+    schemaVersion: 1,
+    primary: parsed.pin,
+    fallbacks: [],
+    metricsPolicy: 'inline-em-v1',
+    treatment: parsed.treatment ?? { mode: 'original', strengthBps: 0 },
+  });
+  return warnings;
+}
+
+/**
+ * Hydrate a tool into the render canvas, choose its emoji set and draw every
+ * glyph from it.
+ *
+ * Shared by the browser-free render and by the browser tier's census below, so
+ * the two place the same artwork from the same decisions rather than from two
+ * copies of the same four lines.
+ */
+async function mountAndDraw(
+  dom: Jsdom,
+  host: HostV1,
+  toolId: string,
+  values: Record<string, unknown>,
+  emoji: EmojiRequest,
+): Promise<{
+  runtime: Awaited<ReturnType<typeof createRuntime>>;
+  canvas: Element;
+  warnings: string[];
+}> {
+  const tool = await loadToolCached(toolId);
+  const runtime = await createRuntime(tool, host, values as never);
+  const canvas = dom.window.document.getElementById('canvas');
+  if (!canvas) throw new RenderError('render canvas missing');
+  // The set is chosen BEFORE the first pass: setEmojiStyle redraws a tree it has
+  // already drawn, and there is nothing drawn yet, so this costs one pass.
+  const warnings = await applyEmojiRequest(runtime, host, emoji);
+  canvas.innerHTML = runtime.getHydrated();
+  // Draw every emoji from the chosen set. An export walks this same node and
+  // would run the pass anyway; saying it here keeps the hydrate-then-draw order
+  // the same on every shell.
+  await runtime.applyEmojiToDom(canvas);
+  return { runtime, canvas: canvas as unknown as Element, warnings };
+}
+
+/**
+ * The source census for bytes this process did not compose.
+ *
+ * The browser tier draws its emoji inside the web shell and hands back only the
+ * file, so the same tool is hydrated here, with the same values and the same
+ * set, and what THAT pass placed is what the credential records. No export: the
+ * picture is already made, and this is only being asked what went into it. The
+ * census describes the text, not the layout, so a browser render and this one
+ * place the same distinct glyphs even where they lay the line out differently.
+ *
+ * Exported for the test that pins this seam; `render` is its only caller.
+ */
+export async function emojiCensus(
+  toolId: string,
+  values: Record<string, unknown>,
+  fmt: string,
+  profile: Profile,
+  emoji: EmojiRequest,
+): Promise<{ ingredients: C2paSourceIngredient[]; rights: RightsEvaluationV1 }> {
+  return withHost(profile, async (dom, host) => {
+    const { runtime } = await mountAndDraw(dom, host, toolId, values, emoji);
+    return {
+      ingredients: runtime.emojiIngredients(),
+      rights: runtime.rights({ delivery: { format: fmt, canCarryCredential: C2PA_FORMATS.includes(fmt) } }),
+    };
+  });
+}
+
+/**
+ * The emoji sets this deployment's catalog registers, as the host lists them.
+ *
+ * Held for the life of the process: the packs are pinned files on disk that a
+ * running server cannot change, and the alternative is a jsdom boot every time
+ * an agent asks what it may choose from. A failed read is not held, so a catalog
+ * that arrives late is picked up on the next call.
+ */
+let emojiSetsHeld: Promise<EmojiSetInfoV1[]> | null = null;
+export function emojiSets(): Promise<EmojiSetInfoV1[]> {
+  emojiSetsHeld ??= withHost({}, async (_dom, host) => (host.emoji ? host.emoji.sets() : []))
+    .catch((e: unknown) => { emojiSetsHeld = null; throw e; });
+  return emojiSetsHeld;
+}
+
+/** `id@version`, the one spelling a set is named by on the wire. */
+export const emojiSetName = (set: EmojiSetInfoV1): string => `${set.pin.id}@${set.pin.pin.version}`;
+
+/**
+ * Resolve the `emoji` argument to the exact `id@version` the set is registered
+ * under. A person names a set the way they read it, so the short form and a bare
+ * id both resolve while exactly one registered set answers to them. Anything
+ * else is a usage error naming what IS registered: a render that quietly came
+ * back without the artwork it was asked for would be the worse answer.
+ */
+export function resolveEmojiSetName(
+  named: string,
+  sets: readonly EmojiSetInfoV1[],
+): { set: string } | { error: string } {
+  const raw = named.trim();
+  const at = raw.lastIndexOf('@');
+  const id = at > 0 ? raw.slice(0, at) : raw;
+  const version = at > 0 ? raw.slice(at + 1) : '';
+  const short = (full: string): string => full.split('/').slice(-2).join('/');
+  const matches = sets.filter((set) => (set.pin.id === id || short(set.pin.id) === id)
+    && (!version || set.pin.pin.version === version));
+  if (matches.length === 1) return { set: emojiSetName(matches[0]!) };
+  const registered = sets.length
+    ? sets.map((set) => `${emojiSetName(set)} (${set.label})`).join(', ')
+    : 'none - this deployment registers no emoji set';
+  if (matches.length > 1) {
+    return { error: `More than one emoji set answers to "${raw}". Name one exactly: ${registered}.` };
+  }
+  return { error: `Unknown emoji set "${raw}". Registered sets: ${registered}.` };
+}
+
+/**
+ * Tier A: hydrate the tool and export via the engine's own path (no browser).
+ *
+ * The emoji artwork the render placed comes back with the bytes. It has to: this
+ * host is the CLI's Node bridge, whose `host.export.render` ignores
+ * `opts.ingredients`, so the stamp at the end of `render` is the only place the
+ * pack's licence and creator can be written into the credential.
+ */
 async function renderTierA(
   toolId: string,
   values: Record<string, unknown>,
   fmt: string,
   opts: ExportOpts,
   profile: Profile,
-): Promise<{ bytes: Uint8Array; mime: string }> {
+  emoji: EmojiRequest,
+): Promise<{ bytes: Uint8Array; mime: string; ingredients: C2paSourceIngredient[]; rights: RightsEvaluationV1; warnings: string[] }> {
   return withHost(profile, async (dom, host) => {
-    const tool = await loadToolCached(toolId);
-    const runtime = await createRuntime(tool, host, values as never);
-    const canvas = dom.window.document.getElementById('canvas');
-    if (!canvas) throw new RenderError('render canvas missing');
-    canvas.innerHTML = runtime.getHydrated();
+    const { runtime, canvas, warnings } = await mountAndDraw(dom, host, toolId, values, emoji);
     let blob: Blob;
     try {
       blob = await runtime.export(canvas as unknown as Element, fmt as ExportFormat, opts);
@@ -222,7 +411,16 @@ async function renderTierA(
       if (e instanceof RenderIntegrityError) throw new RenderError(e.message);
       throw e;
     }
-    return { bytes, mime: blob.type || mimeForFormat(fmt) };
+    return {
+      bytes,
+      mime: blob.type || mimeForFormat(fmt),
+      ingredients: runtime.emojiIngredients(),
+      // The same evaluation the CLI and the app make, from the same rules, over
+      // the sources this render placed. The audience stays unknown: an agent
+      // asking for a file has said nothing about where it goes.
+      rights: runtime.rights({ delivery: { format: fmt, canCarryCredential: C2PA_FORMATS.includes(fmt) } }),
+      warnings,
+    };
   });
 }
 
@@ -356,6 +554,16 @@ export async function closeBrowser(): Promise<void> {
  *  Content Credentials AFTER the browser returns (one path for both tiers). */
 const EXPORT_URL_RESERVED = ['format', 'export', 'copy', 'width', 'w', 'height', 'h', 'unit', 'dpi', 'password', 'profile', 'c2pa', 'preview', 'options'];
 
+/**
+ * Whether a request asked for emoji artwork. The two params travel to the web
+ * shell untouched, so a browser-tier render really does place a set's artwork
+ * while the census that would record it stays here in Node.
+ */
+export function carriesEmojiParams(query: string): boolean {
+  const p = new URLSearchParams(query);
+  return Boolean(p.get('emoji') || p.get('emojifx'));
+}
+
 /** Build the `#/tool/<id>?…` URL that makes the web shell auto-export on load. */
 export function exportUrl(base: string, toolId: string, query: string, fmt: string, o: RenderOpts): string {
   const p = new URLSearchParams(query);
@@ -458,7 +666,11 @@ async function renderTierB(
   });
 }
 
-async function stampC2pa(bytes: Uint8Array, fmt: string, manifest: ToolManifest, values: Record<string, unknown>, o: RenderOpts): Promise<Uint8Array> {
+/** Exported for the test that pins the source-ingredient wiring; `render` is its only caller. */
+export async function stampC2pa(
+  bytes: Uint8Array, fmt: string, manifest: ToolManifest, values: Record<string, unknown>, o: RenderOpts,
+  ingredients: C2paSourceIngredient[] = [],
+): Promise<Uint8Array> {
   // The shared node-shell payload (dimensions, inputs digest, date, author gate),
   // so an MCP-made asset inspects as richly as a CLI/TUI/browser-made one.
   const opts = buildExportC2paOpts({
@@ -469,6 +681,10 @@ async function stampC2pa(bytes: Uint8Array, fmt: string, manifest: ToolManifest,
     dims: { width: o.width ?? null, height: o.height ?? null, unit: o.unit ?? null, dpi: o.dpi ?? null },
     days: o.c2pa?.days,
     profile: o.profile,
+    // One componentOf source ingredient per distinct glyph this render placed,
+    // carrying the pack's own licence, creator and the exact bytes it came from.
+    // Without it an MCP export that drew CC BY artwork records no licence for it.
+    ...(ingredients.length ? { ingredients } : {}),
   });
   return embedC2pa(bytes, fmt as ExportFormat, opts);
 }
@@ -512,19 +728,30 @@ export async function render(toolId: string, query: string, o: RenderOpts = {}):
     depth: o.depth ?? st.depth ?? undefined,
   };
   const profile = o.profile ?? {};
+  // The set and treatment travel in the query, so one reader answers for the
+  // file, the editable link and the browser tier's URL alike.
+  const emoji: EmojiRequest = { emoji: st.emoji, emojifx: st.emojiFx };
   const warnings: string[] = [];
   // Open-password is only wired through for standard `pdf` (via the one-shot
   // browser binding); the
-  // CMYK press path drops it, so the returned PDF would be UNprotected. Say so.
+  // CMYK press path drops it, so the returned PDF would be UNprotected. Report it.
   if (merged.password && exportFmt === 'pdf-cmyk') {
     warnings.push('Password is not applied for pdf-cmyk - the returned PDF is not protected. Use format "pdf" for an open-password.');
   }
   let out: { bytes: Uint8Array; mime: string; tier: string };
+  // The emoji artwork a browser-free render placed. Tier B stamps inside the web
+  // shell, which records its own, so this stays empty there.
+  let placed: C2paSourceIngredient[] = [];
+  // What those sources ask of a delivery, for the same tier and the same reason.
+  let evaluation: RightsEvaluationV1 | null = null;
 
   if (TIER_A.has(exportFmt)) {
     try {
-      const r = await renderTierA(toolId, values, exportFmt, exportOpts(merged), profile);
-      out = { ...r, tier: 'A' };
+      const r = await renderTierA(toolId, values, exportFmt, exportOpts(merged), profile, emoji);
+      placed = r.ingredients;
+      evaluation = r.rights;
+      warnings.push(...r.warnings);
+      out = { bytes: r.bytes, mime: r.mime, tier: 'A' };
     } catch (e) {
       // Same decision the CLI runner and the png fast path below already made:
       // on a browser-capable host, escalate ANY browser-free failure rather than
@@ -534,12 +761,18 @@ export async function render(toolId: string, query: string, o: RenderOpts = {}):
       // (noBrowser) keeps the honest hard failure.
       if (o.noBrowser) throw e;
       warnings.push(`Browser-free path unavailable (${(e as Error).message}); trying the browser tier.`);
+      placed = [];
+      evaluation = null;
       out = { ...(await renderTierB(toolId, q, exportFmt, merged)), tier: 'B' };
     }
   } else if (exportFmt === 'png' && formats.includes('svg')) {
     // SVG-native fast path: engine SVG → resvg PNG, no browser.
     try {
-      const svg = await renderTierA(toolId, values, 'svg', exportOpts({ ...merged, width: undefined, height: undefined, unit: 'px' }), profile);
+      const svg = await renderTierA(toolId, values, 'svg', exportOpts({ ...merged, width: undefined, height: undefined, unit: 'px' }), profile, emoji);
+      // The raster below is that SVG, so it placed the same artwork.
+      placed = svg.ingredients;
+      evaluation = svg.rights;
+      warnings.push(...svg.warnings);
       const px = targetPx(merged.width, merged.unit, merged.dpi);
       const png = await svgToPng(new TextDecoder().decode(svg.bytes), px, merged.background, o.maxRasterPixels);
       out = { bytes: png, mime: 'image/png', tier: 'A(resvg)' };
@@ -550,6 +783,8 @@ export async function render(toolId: string, query: string, o: RenderOpts = {}):
         throw e instanceof RenderError ? e : new RenderError(`SVG→PNG render failed: ${(e as Error).message}`);
       }
       warnings.push(`SVG→PNG fast path unavailable (${(e as Error).message}); trying the browser tier.`);
+      placed = [];
+      evaluation = null;
       out = { ...(await renderTierB(toolId, q, exportFmt, merged)), tier: 'B' };
     }
   } else {
@@ -560,14 +795,62 @@ export async function render(toolId: string, query: string, o: RenderOpts = {}):
   }
 
   let bytes = out.bytes;
+  // The browser tier draws its emoji inside the web shell and hands back only
+  // the bytes, so the census is established here instead: the same tool, the
+  // same values, the same set, hydrated in Node. Without it the credential
+  // stamped below would record no sources at all, which reads in Verify as a
+  // file that used none, even where the picture carries a CC BY-SA glyph.
+  // Only when a set was actually asked for: an ordinary browser render places
+  // no artwork and should not pay a second hydrate to be told so.
+  if (out.tier.startsWith('B') && !evaluation && carriesEmojiParams(q)) {
+    try {
+      const census = await emojiCensus(toolId, values, exportFmt, profile, emoji);
+      placed = census.ingredients;
+      evaluation = census.rights;
+    } catch (e) {
+      // A hook that throws in jsdom is the one case left. Say which check failed
+      // rather than letting the silence speak (plan 253 section 4.3 asks for
+      // what was checked, in words), and never fail a finished render over it.
+      warnings.push('This render drew emoji in the browser tier, and the source census could not be established '
+        + `here (${(e as Error).message}), so the result records no creative sources and no rights answer. `
+        + 'Ask for a format the browser-free tier renders, or read the set\'s licence from the catalog entry.');
+    }
+  }
   if (merged.c2pa?.on && C2PA_FORMATS.includes(exportFmt as ExportFormat) && !(exportFmt === 'pdf' && merged.password)) {
-    try { bytes = await stampC2pa(bytes, exportFmt, tool.manifest, values, merged); }
+    try { bytes = await stampC2pa(bytes, exportFmt, tool.manifest, values, merged, placed); }
     catch (e) { warnings.push(`Content Credentials not attached - ${(e as Error).message}`); }
   } else if (merged.c2pa?.on) {
     warnings.push(`Format "${fmt}" cannot carry Content Credentials - skipped.`);
   }
 
-  return { bytes, mime: out.mime, format: fmt, tier: out.tier, warnings };
+  return {
+    bytes, mime: out.mime, format: fmt, tier: out.tier, warnings,
+    ...(evaluation ? { rights: await rightsResult(evaluation, bytes) } : {}),
+  };
+}
+
+/**
+ * The rights half of a render result. `creditsInFile` is measured by reading the
+ * delivered bytes back, never by trusting that the stamp above ran: the stamp
+ * catches its own failures and warns, so a promise of credits would otherwise
+ * outlive a credential that was never written. Nothing to credit means nothing
+ * to read back, and the field stays false rather than claiming a check happened.
+ */
+export async function rightsResult(evaluation: RightsEvaluationV1, bytes: Uint8Array): Promise<RenderRightsResult> {
+  let creditsInFile = false;
+  if (evaluation.plan.required.length) {
+    try {
+      const report = await verifyC2pa(bytes);
+      creditsInFile = checkAttributionReadback(evaluation.plan, report).state === 'readback-confirmed';
+    } catch { /* unreadable bytes are not a confirmed delivery, which is the default */ }
+  }
+  return {
+    status: evaluation.status,
+    issues: evaluation.issues.map((issue) => ({ code: issue.code, ...(issue.work ? { work: issue.work } : {}), summary: issue.summary })),
+    credits: attributionCredits(evaluation.plan),
+    fingerprint: evaluation.fingerprint,
+    creditsInFile,
+  };
 }
 
 export interface FileArg {

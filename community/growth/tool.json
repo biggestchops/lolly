@@ -1,7 +1,7 @@
 {
   "id": "growth",
   "name": "Growth",
-  "description": "Differential growth: a line that repels itself until it folds into coral. Seed it from a ring, a burst, your headline's letterforms or your logo, and export the result as real, plotter-ready SVG paths.",
+  "description": "Differential growth: a line that repels itself until it folds into coral. Seed it from a ring, a burst, headline letterforms or a logo, and export the result as real, plotter-ready SVG paths.",
   "a11yLabel": "Differential growth pattern grown from a {{seedShape}} seed",
   "version": "1.1.1",
   "engineVersion": "^1.152.0",
@@ -28,7 +28,7 @@
       "label": "Seed",
       "type": "select",
       "default": "burst",
-      "help": "What the growth starts from. Text and Logo trace your own outlines, so every counter and hole grows into its own organism.",
+      "help": "What the growth starts from. Text and Logo trace the outlines you pick, so every counter and hole grows into its own organism.",
       "options": [
         { "value": "burst", "label": "Burst (several rings)" },
         { "value": "ring", "label": "Ring" },
@@ -44,7 +44,7 @@
       "default": "GROW",
       "maxLength": 60,
       "showIf": { "seedShape": ["text"] },
-      "help": "Outlined in your brand font, then grown."
+      "help": "Outlined in the design system font, then grown."
     },
     {
       "id": "logo",
@@ -118,7 +118,7 @@
     {
       "id": "seed",
       "label": "Variation",
-      "section": "Growth",
+      "section": "Result",
       "type": "number",
       "default": 7,
       "min": 0,
@@ -129,7 +129,7 @@
     {
       "id": "grown",
       "label": "Finished piece",
-      "section": "Growth",
+      "section": "Result",
       "type": "boolean",
       "default": true,
       "help": "On lands on the finished organism. Turn it off to watch it grow from the seed - that is what an animated export records."

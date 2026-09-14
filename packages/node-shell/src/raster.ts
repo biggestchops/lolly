@@ -8,7 +8,7 @@
 import { parseDimension, toPixels, fromU8Srgb, hdrViewTransform } from '@lolly/engine';
 import type { DeepFrame } from '@lolly/engine';
 // DEEP RELATIVE IMPORTS, not the `@lolly/engine` barrel: exr.ts and radiance.ts are
-// deliberately engine-internal (their own module headers say so; see the bytes.ts /
+// deliberately engine-internal (their own module headers state it; see the bytes.ts /
 // gainmap.ts precedent recorded in plans/61-deeprichpixels.md section 9c). They are consumed by
 // deep-path import, exactly the way packages/node-shell/src/pptx.ts reaches
 // engine/src/pptx-read.ts. Nothing was added to the barrel for this feature.
@@ -137,7 +137,7 @@ export function canCarryPrintPrep(format: string): boolean {
  * The refusal text for `--bleed`/`--marks` on a format that cannot carry page geometry,
  * in one place so the CLI and TUI say the same true thing. Print prep that cannot be
  * applied is a refusal, not a shrug: accepting the flags would hand back a file
- * byte-identical to one exported without them, exit 0, with nothing to say so. That is the worst
+ * byte-identical to one exported without them, exit 0, with nothing to show for it. That is the worst
  * failure mode for a print job: discovered at the press, on someone else's money.
  */
 export function printPrepRefusal(format: string): string {

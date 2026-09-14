@@ -6,6 +6,154 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+1.197.0 - An export says what attribution it promised, and a host says what it
+delivered. The new optional `rights` export option carries the attribution plan
+one frozen evaluation produced, plus the callback a host reports its receipt
+through after reading the written bytes back, so a panel, a credential and a
+receipt all describe the same source revisions and nothing claims credits are
+included before a reader found them (plan 253). The runtime gains `rights()`,
+`setRightsDecision()`, `setRightsDecisions()`, `rightsDecisions()` and
+`lastReceipt` over the same evaluation, and the saved session record moves to
+format 4 with the licence decisions a person recorded, which older readers still
+open. Additive: a host that ignores the option behaves exactly as before.
+The public surface gains the rules themselves, all of them pure: the versioned
+identifier table and the seven reviewed licence profiles with the section of each
+primary text they were read from (`RIGHTS_RULES_VERSION`, `normaliseLicence`,
+`readLicenceExpression`, `licenceProfile`, `licenceProfiles`,
+`licenceDisplayName`, `roleObligation`, `publicLocator`), the deterministic
+evaluator (`evaluateCreativeUses`), attribution delivery
+(`attributionCredits`, `attributionCompanion`, `sourceIngredientsFor`,
+`checkAttributionReadback`) and the file-level report Verify, the CLI, the TUI
+and MCP all answer from (`rightsReportFromC2pa`, `evaluateReuse`). The types are
+the SDK's `@lolly-tools/core/rights-v1`, with `RIGHTS_ISSUE_CODES` and
+`RIGHTS_STATUSES` as the stable machine vocabulary. No network, no clock and no
+filesystem: the rule data is versioned and in the repository, a context carries
+the date when a caller wants one recorded, and NonCommercial and NoDerivatives
+are recognised and deliberately not interpreted.
+Also in this minor, from the learning workstream: portable website learning
+delivery, source rendition selection, course summaries and export preflight
+helpers (`compileLearningModule`, `learningRenditions`, `learningSummary`,
+`checkLearningExportSize` and their types). Browser progress is isolated by
+course release and path, and the additive v1 event contract leaves learner
+identity and server storage to future integrations.
+A monochrome emoji set now follows the text colour. Under the `original`
+treatment the engine checks whether an admitted glyph is single ink (every
+fill, stroke and stop colour on every element is `none`, black or white) and,
+if it is, binds its black paints to `currentColor`; white stays white and
+nothing else in the tree moves. An inline `<svg>` inherits CSS `color`, so a
+glyph drawn from a black set reads the colour of the run it sits in, the way
+the same artwork behaves when the set ships as a font, instead of staying black
+against white text and on a dark surface. `isSingleInkEmojiSvg` and
+`inkPreparedEmojiSvg` are the new pure functions in `emoji-svg.ts`, the inked
+tree carries the normalizer `static-svg-v1+emoji-ink-v1`, and one change is
+recorded: `Single-ink paints follow the surrounding text colour.` That sentence
+is deliberately not a recolour, because no palette was applied and no colour
+was chosen, the document's own text colour draws it, so the rights census
+reports the glyph as placed and a ShareAlike set asks for no adaptation
+decision. The rule reads the artwork, not the pack, so it also reaches the 79
+OpenMoji Color glyphs that set draws as black line art; the 3,953 Twemoji
+Color glyphs are untouched and their prepared bytes are unchanged. `influence`,
+`snap`, `mono` and `duotone` run exactly as before, because there black is a
+palette decision like any other colour.
+
+1.196.0 - Emoji in ordinary text is drawn from a chosen, pinned vector pack, not
+from the operating system. Optional `host.emoji.sets/manifest/artwork/parseXml`
+lets a shell mount packs from its catalog and hand over exact bytes for an exact
+pin; a host holding a different release answers null rather than a substitute.
+The asset manifest gains an optional `meta` object, the type-specific facts a
+shell reads before it downloads the bytes (an emoji pack's pin, glyph count and
+licence). `emoji` and `emojifx` are reserved URL and CLI params, written into
+share links so a document's set and treatment travel with it. The runtime runs
+one idempotent pass over a rendered node, before every export as well as on a
+live canvas, replacing each emoji cluster with the pack's canonical artwork and
+appending the packs' rights to the export's Content Credentials as source
+ingredients. Brand treatments (original, influence, snap, mono, duotone) recolour
+that artwork through a pinned palette with deterministic colour maths, so every
+host produces the same bytes; skin tones, flags and custom symbols keep their own
+colours unless the treatment says otherwise. An unresolved cluster draws a neutral
+placeholder and never falls back to a system font.
+The runtime API is `applyEmojiToDom`, `revertEmojiDom` (a text box puts the
+characters back before it becomes editable), `setEmojiStyle`, `emoji`,
+`onEmojiChange` and `emojiIngredients` for a shell that builds its own C2PA
+options. `applyEmojiToDom` takes an optional second argument,
+`{ track?, idScope? }`: a tracked pass IS the render, so its tree is the one a
+set change redraws and its counts are what `emoji` reports, while chrome that
+draws emoji of its own - a sidebar cell, a picker grid, a specimen row - passes
+`track: false` and an id scope of its own, because placement ids come from a work
+item's place in the tree it was handed and two roots in one document would
+otherwise mint the same local ids. Only those types reach the barrel: the pinned Unicode tables are half a
+megabyte, so a render with no emoji in it loads none of the modules. The SDK
+gains `Profile.emoji`, a personal preference that seeds new work and never
+restyles a document, a session or a link that already names a set, and the
+session record gains an optional `emoji` stamp at format version 3, which older
+readers still open. Sizing is `inline-em-v1`: a glyph is placed as an inline
+element measured in em from its own viewBox, advance and metrics, so the host
+lays the line out exactly as it lays out text today. Paragraph layout and
+`host.text.layoutRuns` are not part of this.
+The pack a shell mounts now lives once for every brand, which is a resolver and
+shell change rather than a HostV1 one: `profiles.json` takes an optional `assets`
+list of shared asset roots, and `packages/node-shell/src/content-roots.ts`
+resolves them through `contentRoots().assetRoots`, a `packs/<name>/<rel>` argument
+to `catalogFile` behind the profile-independent url `/catalog/packs/<name>/<file>`,
+`readAssetIndex()` (the brand's entries plus every mounted root's, in root order)
+and `materializeInto`, which copies the roots and writes the merged index into a
+build output. An asset id claimed by two roots is refused rather than resolved by
+order. What is registered there is the COMPLETE Twemoji Color 17.0.3 set, all
+3,953 canonical glyphs in one on-demand bundle of 15,710,132 bytes under
+`community/emoji-packs/`, so `suse` and `lolly-start` serve the same file and the
+171-glyph starter subset that used to sit in one brand catalog is gone. The web
+picker draws from it too: `drawPackArtwork` walks the `unicode-emoji-picker`
+component's open shadow root with the runtime's own untracked pass, so each grid
+cell and each tab glyph is the chosen set's artwork instead of the machine's
+font. Neither the engine's public surface nor HostV1 changed for any of that.
+
+1.195.0 - Learning module v1: versioned module documents, validation and
+completion rules, compact resumable attempts, and compilation over injected
+media resolution and hashing. No learner storage, LMS APIs or DOM dependencies
+are added to the engine. HostV1 is unchanged.
+
+1.194.0 - Content Credentials for sources that carry no credential of their
+own. `ingredients` now also accepts a `SourceIngredient` (`credential: 'none'`,
+defined in the SDK): the engine writes a `c2pa.ingredient.v3` assertion with no
+`activeManifest` and no `validationResults`, binds the original bytes through
+the ingredient's external hashed URI when a public locator exists, and records
+the source's rights (creator, licence, attribution, source, revision,
+modifications, source and used hashes) in a `tools.lolly.rights` assertion
+bound to that ingredient. Nothing is fabricated on the upstream author's
+behalf, and the composition's own `dc:rights` is untouched. Two writer repairs
+that plans 252 and 253 asked for: the action now follows the relationship
+(a `componentOf` ingredient is `c2pa.placed` after the head step; `parentOf`
+stays `c2pa.opened` first, byte-identical for existing callers), and a manifest
+with more than one `parentOf` ingredient is refused (`manifest.multipleParents`)
+- `collectIngredients` marks an SVG's nested rasters `componentOf`. The reader
+gains `collectIngredientRecords` and `C2paReport.ingredients`: every ingredient
+any manifest recorded, credentialed or plain source, with its bound rights.
+`emojiSourceIngredients` / `emojiCreditsText` turn a compiled emoji line's
+source census into those ingredients and readable credits; the line census now
+carries each glyph's label, asset id and set names. The internal static emoji
+SVG subset (not on the barrel) now admits clipPath with use references, clip-rule,
+paint-order, CSS colour keywords and display:none, and omits (recording each)
+the inert enable-background, class, color and overflow declarations Illustrator
+emits, which takes the four pinned families from 75 to 99 percent admitted with
+every admitted glyph pixel-identical to its source in the reference rasteriser.
+
+1.193.0 - Conditional visibility grows two shapes, both visibility overlays only
+(URL params, hooks and validation see every input and option as before). An
+input's `showIf` may be a list of maps, any one sufficient, for the conditions
+an ANDed map could not say ("vector bar, or a 3-D bar scene"). A select option
+may carry its own `showIf`, so a choice the current mode cannot honour is not
+offered; the selected option always stays offered, marked not applicable, so a
+saved session or a link never changes meaning. `matchesShowIf` is the one
+predicate, exported for shells. Chart is the first tool to use both.
+
+1.192.0 - `host.text.toPath` accepts optional `preserveWhitespaceAdvance` for
+mixed text and emoji layout. Web and Node hosts shape whitespace-only runs when
+requested, retaining their measured advance with an empty outline and null ink
+bounds. Existing callers keep the previous blank-run behavior. Internal emoji
+experiments add pinned Unicode 17 grapheme segmentation, strict static SVG
+admission and an outlined LTR line specimen; these are not a tool-facing emoji
+capability or a completed creative-rights export workflow.
+
 1.191.0 - Portable text operations. Optional `host.textTools.operations/run/highlight` lists and
 runs on-device text work - the Edit / Inspect / Convert / Generate groups, each operation
 declaring its own options - and returns the new text plus notes and optional observations
