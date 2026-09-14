@@ -20,9 +20,9 @@ import { bindOp, type ActionsCtx } from './context.ts';
 // The user now holds their artifact (a download, a clipboard copy, a library
 // save). tool.ts listens for this to stand down the unsaved-changes leave
 // guard: a session whose latest edits made it out is resolved, not unsaved.
-export const exportCompleted = (ta: ActionsCtx): void => {
+export const exportCompleted = (ta: ActionsCtx, action?: 'save'): void => {
   const { el } = ta;
-  el?.dispatchEvent(new CustomEvent('lolly:export-complete', { bubbles: true }));
+  el?.dispatchEvent(new CustomEvent('lolly:export-complete', { bubbles: true, detail: action }));
 };
 // The Save action - one builder for both render sites (the default actions row
 // and the save-only bar for input-less tools). Jelly mode swaps in a neutral
@@ -110,7 +110,7 @@ export async function performSave(ta: ActionsCtx,
     ta.fileIntoFolder = null;
     label.textContent = 'Saved';
     announce('Saved');
-    exportCompleted(ta);
+    exportCompleted(ta, 'save');
     return true; // leave the button as-is; the caller navigates away
   } catch (e) {
     console.error('Save failed:', e);
@@ -149,6 +149,7 @@ export function settleSaveButton(_ta: ActionsCtx, btn: HTMLButtonElement): void 
 // dialog clears the memory, so that choice is followed too. Best-effort: any
 // failure saves exactly as before.
 export async function quickSaveFolder(ta: ActionsCtx): Promise<string | null> {
+  if (ta.fileIntoFolder !== null) return ta.fileIntoFolder;
   const { host } = ta;
   try {
     const { lastPickedFolder } = await import('../../lib/save-dialog.ts');

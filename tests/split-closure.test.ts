@@ -9,6 +9,30 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 
+test('a constant immediately before an extracted block is published before the block reads it', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'lolly-split-boundary-'));
+  const relative = path.relative(root, dir);
+  try {
+    writeFileSync(path.join(dir, 'view.ts'), `export function mount() {
+  const value = 42;
+  const result: number[] = [];
+  result.push(value);
+  function read(): number[] { return result; }
+  return read();
+}
+`);
+    writeFileSync(path.join(dir, 'tsconfig.json'), '{}');
+    writeFileSync(path.join(dir, 'plan.json'), JSON.stringify({
+      file: `${relative}/view.ts`, fn: 'mount', tsconfig: `${relative}/tsconfig.json`,
+      outDir: `${relative}/features`, ctxName: 'ctx', ctxType: 'ViewCtx',
+      modules: [{ name: 'setup', start: 'read' }], blocks: [{ name: 'writeResult', module: 'setup', from: 4, to: 4 }],
+    }));
+    execFileSync(process.execPath, ['scripts/split-closure.ts', path.join(dir, 'plan.json'), '--apply'], { cwd: root });
+    const generated = await import(path.join(dir, 'view.ts')) as { mount(): number[] };
+    assert.deepEqual(generated.mount(), [42]);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('closure splitting preserves ordered side-effect imports on the lazy entry only', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'lolly-split-imports-'));
   const relative = path.relative(root, dir);

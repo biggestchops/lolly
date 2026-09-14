@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import { markLookFailed, markLookReady } from './gallery-carousel.ts';
+import { previewDeadline } from '../lib/preview-deadline.ts';
 
 /** A failed or stalled preview releases the serial queue and stays visibly failed. */
 export async function loadGalleryLook(
@@ -11,7 +12,6 @@ export async function loadGalleryLook(
   const img = slide.querySelector<HTMLImageElement>('.gcar-img');
   if (!gcar.isConnected || !img || img.getAttribute('src')) return;
   let expired = false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
   const work = async (): Promise<void> => {
     const { thumb, href } = await render();
     if (expired || !gcar.isConnected) return;
@@ -23,15 +23,12 @@ export async function loadGalleryLook(
     markLookReady(gcar, slide);
   };
   try {
-    await Promise.race([
-      work(),
-      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Preview timed out')), timeoutMs); }),
-    ]);
+    await previewDeadline(work(), timeoutMs);
   } catch {
     expired = true;
     if (gcar.isConnected) {
       img.removeAttribute('src');
       markLookFailed(gcar, slide);
     }
-  } finally { clearTimeout(timer); }
+  }
 }

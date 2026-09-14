@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { previewDeadline } from './preview-deadline.ts';
 /** One serial idle queue shared by the gallery grid and featured strips. */
 export interface PreviewTask {
   /** Lower runs first; null parks the task until the view makes it relevant. */
@@ -43,12 +44,7 @@ export function createPreviewQueue(
       if (chosen < 0) return;
       const task = tasks.splice(chosen, 1)[0]!;
       running = true;
-      let deadline: ReturnType<typeof setTimeout> | undefined;
-      void Promise.race([
-        Promise.resolve().then(() => task.run()),
-        new Promise<never>((_, reject) => { deadline = setTimeout(() => reject(new Error('Preview render timed out')), timeoutMs); }),
-      ]).catch(onError).finally(() => {
-        clearTimeout(deadline);
+      void previewDeadline(Promise.resolve().then(() => task.run()), timeoutMs).catch(onError).finally(() => {
         running = false;
         wake();
       });

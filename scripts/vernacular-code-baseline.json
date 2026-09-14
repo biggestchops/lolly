@@ -396,7 +396,7 @@
   "shells/web/src/views/script-studio.ts": 2,
   "shells/web/src/views/sequence-clock.test.ts": 5,
   "shells/web/src/views/sequence-clock.ts": 9,
-  "shells/web/src/views/start.ts": 15,
+  "shells/web/src/views/start.ts": 1,
   "shells/web/src/views/template-chooser.ts": 1,
   "shells/web/src/views/timeline-math.ts": 16,
   "shells/web/src/views/timeline-panel.test.ts": 13,

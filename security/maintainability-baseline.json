@@ -63,32 +63,25 @@
       "typeEscapes": 68
     },
     "shells/web/src/views/gallery.ts": {
-      "lines": 1923,
-      "largestFunctionLines": 1830,
+      "lines": 1914,
+      "largestFunctionLines": 1816,
       "importFanIn": 1,
-      "importFanOut": 56,
+      "importFanOut": 57,
       "typeEscapes": 8
     },
     "shells/web/src/views/picker.ts": {
-      "lines": 2631,
-      "largestFunctionLines": 2204,
+      "lines": 2619,
+      "largestFunctionLines": 2188,
       "importFanIn": 25,
-      "importFanOut": 49,
+      "importFanOut": 50,
       "typeEscapes": 3
     },
     "shells/web/src/views/projects.ts": {
-      "lines": 2357,
-      "largestFunctionLines": 3039,
+      "lines": 2346,
+      "largestFunctionLines": 3018,
       "importFanIn": 1,
-      "importFanOut": 48,
+      "importFanOut": 49,
       "typeEscapes": 9
-    },
-    "shells/web/src/views/start.ts": {
-      "lines": 2515,
-      "largestFunctionLines": 3302,
-      "importFanIn": 1,
-      "importFanOut": 43,
-      "typeEscapes": 22
     },
     "shells/web/src/views/tool-inputs.ts": {
       "lines": 2929,
@@ -397,7 +390,14 @@
     "shells/web/src/views/record-control.ts": 1,
     "shells/web/src/views/screen-capture-control.ts": 1,
     "shells/web/src/views/sequence-clock.ts": 5,
-    "shells/web/src/views/start.ts": 22,
+    "shells/web/src/views/start.ts": 5,
+    "shells/web/src/views/start/brand.ts": 3,
+    "shells/web/src/views/start/candidates.ts": 1,
+    "shells/web/src/views/start/exporting.ts": 2,
+    "shells/web/src/views/start/pdf.ts": 3,
+    "shells/web/src/views/start/rooms.ts": 2,
+    "shells/web/src/views/start/site.ts": 3,
+    "shells/web/src/views/start/tokens.ts": 3,
     "shells/web/src/views/timeline-captions.ts": 1,
     "shells/web/src/views/timeline-math.ts": 1,
     "shells/web/src/views/timeline-panel/clips.ts": 2,

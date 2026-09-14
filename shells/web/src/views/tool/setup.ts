@@ -50,6 +50,7 @@ import { collectExportParams, decryptEncryptedLink, setToolEmojiParams, showShar
 import { setSessionEmojiStamp } from '../../bridge/state.ts';
 import type { PanelEl, ToolRuntime } from './shared.ts';
 import { bindOp, type ToolViewCtx } from './context.ts';
+import { navigateTo } from '../../nav.ts';
 
 /** Network allowlist notice, initial values and the first render pass. */
 export async function guardNetworkAndSeed(tview: ToolViewCtx): Promise<void> {
@@ -534,7 +535,7 @@ export async function templatePick(tview: ToolViewCtx): Promise<void> {
   if (!slot) {
     try {
       const into = sessionStorage.getItem('lolly:fileInto');
-      if (into !== null) tview.fileIntoFolder = into || null;
+      if (into !== null) tview.fileIntoFolder = into;
     } catch (_e) {
       /* sessionStorage unavailable (private mode) */
     }
@@ -827,8 +828,13 @@ export function mountActions(tview: ToolViewCtx): void {
   }
   // renderActions announces every completed download/copy/save - see
   // exportedSinceEdit above for why that quiets the unsaved-changes guards.
-  actionsEl?.addEventListener('lolly:export-complete', () => {
+  let returnAfterSave = tview.fileIntoFolder !== null && tview.fromFolder;
+  actionsEl?.addEventListener('lolly:export-complete', (event) => {
     tview.exportedSinceEdit = true;
+    if (returnAfterSave && (event as CustomEvent<unknown>).detail === 'save') {
+      returnAfterSave = false;
+      navigateTo(tview.returnTo);
+    }
   });
 }
 

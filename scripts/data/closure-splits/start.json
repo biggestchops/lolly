@@ -1,0 +1,165 @@
+{
+  "file": "shells/web/src/views/start.ts",
+  "fn": "mountStart",
+  "tsconfig": "shells/web/tsconfig.json",
+  "outDir": "shells/web/src/views/start",
+  "ctxName": "start",
+  "ctxType": "StartCtx",
+  "header": "Make it yours: brand rooms, source imports, exports and recovery.",
+  "renameImports": {
+    "escape": "escapeText"
+  },
+  "modules": [
+    {
+      "name": "navigation",
+      "start": "wireBackPill"
+    },
+    {
+      "name": "feedback",
+      "start": "showImportResult"
+    },
+    {
+      "name": "brand",
+      "start": "checkpointBeforeInstall"
+    },
+    {
+      "name": "rooms",
+      "start": "syncPaletteSheet"
+    },
+    {
+      "name": "exporting",
+      "start": "showNote"
+    },
+    {
+      "name": "candidates",
+      "start": "addColorsToSystem"
+    },
+    {
+      "name": "images",
+      "start": "scanImageFile"
+    },
+    {
+      "name": "pdf",
+      "start": "formatOf"
+    },
+    {
+      "name": "site",
+      "start": "siteResultEl"
+    },
+    {
+      "name": "sources",
+      "start": "sourceTiles"
+    },
+    {
+      "name": "tokens",
+      "start": "routeDroppedFile"
+    },
+    {
+      "name": "lifecycle",
+      "start": "onKey"
+    }
+  ],
+  "overrides": {
+    "keepInTray": "candidates",
+    "isRec": "exporting"
+  },
+  "blocks": [
+    {
+      "name": "renderShell",
+      "module": "navigation",
+      "from": 524,
+      "to": 650
+    },
+    {
+      "name": "wireChrome",
+      "module": "navigation",
+      "from": 652,
+      "to": 654
+    },
+    {
+      "name": "wireRegistry",
+      "module": "brand",
+      "from": 702,
+      "to": 740
+    },
+    {
+      "name": "mountEditor",
+      "module": "brand",
+      "from": 804,
+      "to": 854
+    },
+    {
+      "name": "wireEditorPanels",
+      "module": "rooms",
+      "from": 858,
+      "to": 863
+    },
+    {
+      "name": "wireRooms",
+      "module": "rooms",
+      "from": 993,
+      "to": 1034
+    },
+    {
+      "name": "wireFocusRoute",
+      "module": "rooms",
+      "from": 1078,
+      "to": 1088
+    },
+    {
+      "name": "wirePackExport",
+      "module": "exporting",
+      "from": 1102,
+      "to": 1118
+    },
+    {
+      "name": "wireTokensExport",
+      "module": "exporting",
+      "from": 1148,
+      "to": 1168
+    },
+    {
+      "name": "wireFontsExport",
+      "module": "exporting",
+      "from": 1184,
+      "to": 1273
+    },
+    {
+      "name": "wireRecoveryAndVersions",
+      "module": "brand",
+      "from": 1281,
+      "to": 1335
+    },
+    {
+      "name": "wireTray",
+      "module": "candidates",
+      "from": 1378,
+      "to": 1426
+    },
+    {
+      "name": "wireSources",
+      "module": "sources",
+      "from": 2775,
+      "to": 2820
+    },
+    {
+      "name": "wireTokenDrop",
+      "module": "tokens",
+      "from": 3009,
+      "to": 3040
+    },
+    {
+      "name": "wireTokenReview",
+      "module": "tokens",
+      "from": 3482,
+      "to": 3632
+    },
+    {
+      "name": "wireCleanup",
+      "module": "lifecycle",
+      "from": 3673,
+      "to": 3693
+    }
+  ],
+  "sourceCommit": "b9c1e4234"
+}

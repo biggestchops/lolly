@@ -15,6 +15,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveStartRoute, isStartArea, START_AREAS, START_ROOMS, DEFAULT_AREA, START_SOURCES } from './start-route.ts';
 
+async function startSource(): Promise<string> {
+  const { readFile, readdir } = await import('node:fs/promises');
+  const folder = new URL('../../views/start/', import.meta.url);
+  const files = (await readdir(folder)).filter(name => name.endsWith('.ts')).sort();
+  const parts = await Promise.all([
+    readFile(new URL('../../views/start.ts', import.meta.url), 'utf8'),
+    ...files.map(name => readFile(new URL(name, folder), 'utf8')),
+  ]);
+  return parts.join('\n');
+}
+
 test('nothing asked for lands on Overview with nothing open', () => {
   const r = resolveStartRoute('');
   assert.equal(r.area, 'overview');
@@ -216,12 +227,11 @@ test('the Versions entry is a LATCH, so ?area=versions is not a one-way door', a
   // A source guard rather than a mount: views/start.ts has no DOM test yet (plan
   // 97 section 16 lists one as still owed) and standing the whole studio up for three
   // lines of state would be the wrong trade. Replace this the day that test lands.
-  const { readFile } = await import('node:fs/promises');
-  const src = await readFile(new URL('../../views/start.ts', import.meta.url), 'utf8');
-  const fn = src.slice(src.indexOf('const syncVersionsEntry'), src.indexOf('let openVersions'));
-  assert.match(fn, /activeArea === 'versions'\)\s*versionsOffered = true/,
+  const src = await startSource();
+  const fn = src;
+  assert.match(fn, /start\.activeArea === 'versions'\)\s*start\.versionsOffered = true/,
     'arriving at the panel has to latch the entry on');
-  assert.match(fn, /versionsBtn\.hidden = !versionsOffered/,
+  assert.match(fn, /versionsBtn\.hidden = !start\.versionsOffered/,
     'and visibility reads the latch alone, not the current area');
   // The late answer used to be hasPublishableSystem's, which is also true for a
   // system that merely EXISTS - one colour into a blank brand was enough, which
@@ -233,8 +243,7 @@ test('the Versions entry is a LATCH, so ?area=versions is not a one-way door', a
 
 test('B2: only a PUBLISHED version puts Versions in the rail, and the first publish stays reachable', async () => {
   // Same source-guard trade as the latch test above, for the same reason.
-  const { readFile } = await import('node:fs/promises');
-  const src = await readFile(new URL('../../views/start.ts', import.meta.url), 'utf8');
+  const src = await startSource();
   assert.doesNotMatch(src, /hasPublishableSystem\(/,
     'a system that merely exists is not a published version - the rail entry must not read that');
   assert.match(src, /readIndex\(versionsCtx\)/,
@@ -242,14 +251,13 @@ test('B2: only a PUBLISHED version puts Versions in the rail, and the first publ
   // Removing the rail entry would strand a furnished system with no way to make
   // its FIRST version, so the quiet export-group entry is the other half of B2
   // and is gated on exactly those two facts.
-  assert.match(src, /versionsLink\.hidden = versionsOffered \|\| !worthExporting/,
+  assert.match(src, /versionsLink\.hidden = start\.versionsOffered \|\| !start\.worthExporting/,
     'the quiet entry shows for a system worth exporting that has never published, and only then');
   assert.match(src, /data-ds-versions-link/, 'and it is rendered in the rail foot');
 });
 
 test('B1: the export actions wait for the system to hold something', async () => {
-  const { readFile } = await import('node:fs/promises');
-  const src = await readFile(new URL('../../views/start.ts', import.meta.url), 'utf8');
+  const src = await startSource();
   // The Overview room's own predicate, not a second copy of it: readOverview
   // answers false for a missing tokens asset and for the starter placeholder,
   // and the string 'lolly/tokens/brand' must never be spelled out here.
@@ -272,20 +280,19 @@ test('B1: the export actions wait for the system to hold something', async () =>
   // Called from the two paths the studio already refreshes on, so furnishing
   // mid-session does not need a reload: every room change, and every committed
   // edit (before onChange's hidden-Overview early return).
-  const selectRoom = src.slice(src.indexOf('const selectRoom ='), src.indexOf('railEl.addEventListener'));
-  assert.match(selectRoom, /refreshFurnished\(\);/,
+  const selectRoom = src.slice(src.indexOf('export const selectRoom ='), src.indexOf('export function openFocus'));
+  assert.match(selectRoom, /refreshFurnished\(start\);/,
     'selectRoom re-reads, which is also the install path (install() ends in selectRoom)');
-  const onChange = src.slice(src.indexOf('onChange: () => {'), src.indexOf('overview?.refresh();'));
+  const onChange = src.slice(src.indexOf('onChange: () => {'), src.indexOf('start.overview?.refresh();'));
   assert.match(onChange, /refreshFurnished\(\);[\s\S]*if \(overviewPanel\.hidden\) return;/,
     'a commit made in another room still reveals the actions');
 });
 
 test('B3: the source picker has a visible way out, and its file tile says it in plain words', async () => {
-  const { readFile } = await import('node:fs/promises');
-  const src = await readFile(new URL('../../views/start.ts', import.meta.url), 'utf8');
+  const src = await startSource();
   assert.match(src, /class="start-import-close" data-ds-src-close/,
     'the dialog carries a close control, not just Escape and a backdrop tap');
-  assert.match(src, /\[data-ds-src-close\]'\)\) \{[\s\S]{0,80}closeImport\(\)/,
+  assert.match(src, /\[data-ds-src-close\]'\)\) \{[\s\S]{0,80}closeImport\(start\)/,
     'and the delegate the picker already has routes it');
   assert.match(src, /t\('A \.lolly file, tokens JSON, a Penpot project or an SVG\.'\)/,
     'the file tile leads with the preferred .lolly format in plain words');
@@ -296,7 +303,7 @@ test('B3: the source picker has a visible way out, and its file tile says it in 
 test('Profile file entry opens the file stage and its controls survive modal reparenting', async () => {
   const { readFile } = await import('node:fs/promises');
   const [start, card] = await Promise.all([
-    readFile(new URL('../../views/start.ts', import.meta.url), 'utf8'),
+    startSource(),
     readFile(new URL('./design-systems-card.ts', import.meta.url), 'utf8'),
   ]);
   assert.match(card, /#\/start\?source=file&rename=1/,
@@ -316,7 +323,7 @@ test('B4: one Home in the studio - the FAB stands down when the pill already is 
   // house glyphs in the back row.
   const { readFile } = await import('node:fs/promises');
   const pill = await readFile(new URL('../../components/back-pill.ts', import.meta.url), 'utf8');
-  const src = await readFile(new URL('../../views/start.ts', import.meta.url), 'utf8');
+  const src = await startSource();
   assert.match(pill, /' data-back-home'/, 'the attribute is emitted with a leading space');
   assert.match(pill, /data-back-pill="\$\{mode\}"\$\{atHome\}>/, 'and immediately before the tag close');
   assert.match(src, /backPill\.includes\(' data-back-home>'\)/,

@@ -120,6 +120,10 @@ const FREEZE_CSS =
   '*{content-visibility:visible!important}';
 
 const VIEWPORT_DEFAULTS = { width: 1440, height: 900, dpi: 192 };
+// A cold gallery renders every brand-aware look serially, including off-screen
+// cards. Wait for its real settled signal; individual renders have their own
+// deadline, and this outer limit still fails a capture that never settles.
+const CAPTURE_READY_TIMEOUT_MS = 180_000;
 
 /**
  * Drive behaviour for a DOCS capture: when a click's actionability retries run out
@@ -666,7 +670,7 @@ async function preflightNeutralState(baseUrl: string, shots: ShotDef[]): Promise
   // other has to be caught here rather than in a published baseline.
   const themes: Array<string | undefined> = [undefined, ...(shots.some((s) => s.dark) ? ['dark'] : [])];
 
-  const browser = await getBrowser();
+  const browser = await getBrowser({ graphics: 'auto' });
   for (const theme of themes) {
     const ctx = await browser.newContext({
       viewport: { width: 1280, height: 800 }, serviceWorkers: 'block', ...captureContext(theme),
@@ -692,9 +696,9 @@ async function preflightNeutralState(baseUrl: string, shots: ShotDef[]): Promise
 }
 
 async function captureOne(sharp: Sharp, baseUrl: string, shot: ShotDef): Promise<ShotResult> {
-  // cropSelector → measure the element and stamp exact crop insets onto the shot,
-  // so both capture paths frame it without hand-authored fractions.
-  if (shot.cropSelector) {
+  // The SVG walker measures and frames its own crop in the capture context.
+  // Other paths need crop insets measured in advance.
+  if (shot.cropSelector && !(shot.format === 'svg' && shot.walker)) {
     try {
       shot = { ...shot, ...(await resolveSelectorCrop(baseUrl, shot)) };
     } catch (e) {
@@ -715,7 +719,7 @@ async function captureOne(sharp: Sharp, baseUrl: string, shot: ShotDef): Promise
  */
 async function resolveSelectorCrop(baseUrl: string, shot: ShotDef): Promise<Partial<ShotDef>> {
   const { params, dims } = paramsFor(shot);
-  const browser = await getBrowser();
+  const browser = await getBrowser({ graphics: 'auto' });
   const ctx = await browser.newContext({
     viewport: { width: dims.width, height: dims.height }, deviceScaleFactor: 1,
     serviceWorkers: 'block', ...captureContext(shot.theme),
@@ -735,7 +739,7 @@ async function resolveSelectorCrop(baseUrl: string, shot: ShotDef): Promise<Part
     // waitSelector: the deterministic settle - block until the page says it is
     // ready (e.g. the ?neuro demo's data-demo-settled) instead of guessing wall
     // clock. Applied here too so the measured crop box sees the same final state.
-    if (shot.waitSelector) await page.waitForSelector(shot.waitSelector, { state: 'attached', timeout: 60_000 });
+    if (shot.waitSelector) await page.waitForSelector(shot.waitSelector, { state: 'attached', timeout: CAPTURE_READY_TIMEOUT_MS });
     if (params.scrollDepth > 0) {
       // Retry until the scroll actually TOOK: late layout (locale re-render,
       // reveal observers, content-visibility) can grow the document after the
@@ -878,7 +882,7 @@ type VectorCapture = { bytes: Uint8Array; framed: { width: number; height: numbe
 
 async function captureVector(baseUrl: string, shot: ShotDef): Promise<VectorCapture> {
   const { params, dims } = paramsFor(shot);
-  const browser = await getBrowser();
+  const browser = await getBrowser({ graphics: 'auto' });
   const ctx = await browser.newContext({
     viewport: { width: dims.width, height: dims.height },
     serviceWorkers: 'block',
@@ -901,7 +905,7 @@ async function captureVector(baseUrl: string, shot: ShotDef): Promise<VectorCapt
     // waitSelector: the deterministic settle - block until the page says it is
     // ready (e.g. the ?neuro demo stamps data-demo-settled once its fixed frame
     // sequence has rendered) instead of guessing how fast this machine's GL is.
-    if (shot.waitSelector) await page.waitForSelector(shot.waitSelector, { state: 'attached', timeout: 60_000 });
+    if (shot.waitSelector) await page.waitForSelector(shot.waitSelector, { state: 'attached', timeout: CAPTURE_READY_TIMEOUT_MS });
     if (params.scrollDepth > 0) {
       // Retry until the scroll actually TOOK: late layout (locale re-render,
       // reveal observers, content-visibility) can grow the document after the
@@ -1305,6 +1309,17 @@ async function captureOneVector(baseUrl: string, shot: ShotDef): Promise<ShotRes
   try { bytes = optimizeShotSvg(bytes); } catch (e) {
     console.warn(`  svgo failed for ${shot.slug} - keeping unoptimised capture (${(e as Error).message})`);
   }
+  // Compare the same representation that will be signed and stored. A rejected
+  // optimisation must also be rejected on a comparison-only run, or the raw
+  // baseline reports a change on every capture forever.
+  if (bytes !== rawBytes) {
+    const gate = await svgFidelityGate(rawBytes, bytes);
+    if (!gate.ok) {
+      console.warn(`  FIDELITY GATE: svgo altered ${shot.slug} beyond tolerance `
+        + `(maxΔ ${gate.maxChannelDelta}/255, ${(gate.overFrac * 100).toFixed(3)}% px >2) - keeping unoptimised bytes`);
+      bytes = rawBytes;
+    }
+  }
 
   const { dims } = paramsFor(shot);
   // Expected output dims. The print path renders the whole page and WINDOWS it, so
@@ -1345,19 +1360,7 @@ async function captureOneVector(baseUrl: string, shot: ShotDef): Promise<ShotRes
   const verdict = classifyVectorShot({ newText, newBytes: bytes.byteLength, expected, oldText, oldBytes });
   const promote = opts.rebuild || verdict.kind === 'new' || (verdict.kind === 'changed' && opts.accept);
   if (promote) {
-    // The "damn sure" gate, paid only at write time: rasterise original vs
-    // optimised and pixel-compare. A breach writes the ORIGINAL capture and
-    // says so - optimisation is only ever a no-op or a win.
-    let finalBytes = bytes;
-    if (bytes !== rawBytes) {
-      const gate = await svgFidelityGate(rawBytes, bytes);
-      if (!gate.ok) {
-        console.warn(`  FIDELITY GATE: svgo altered ${shot.slug} beyond tolerance `
-          + `(maxΔ ${gate.maxChannelDelta}/255, ${(gate.overFrac * 100).toFixed(3)}% px >2) - keeping unoptimised bytes`);
-        finalBytes = rawBytes;
-      }
-    }
-    writeFileSync(baselinePath, await stampC2pa(finalBytes, shot, dims, imageB64));
+    writeFileSync(baselinePath, await stampC2pa(bytes, shot, dims, imageB64));
   }
   return { slug: shot.slug, format: shot.format, lang: shot.lang, theme: shot.theme, verdict, wrote: promote, bytes: bytes.byteLength };
 }

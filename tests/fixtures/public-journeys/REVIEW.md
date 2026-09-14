@@ -18,7 +18,7 @@ This is a reviewer walkthrough and targeted regression testing, not an observati
 | --- | --- | --- |
 | Immediate useful file | Welcome → Explore → QR Code → Encodes: Link → URL → Export PNG. | The downloaded 600 × 600 PNG decodes to `https://example.org/welcome`. The gallery example initially selected Calendar event; the participant had to switch to Link. |
 | Existing material | Make it yours → Bring a file → tokens JSON → choose `color.primary` → install. Then Open → `welcome.svg` → Edit in Design. | All four exact colours arrived. Five editable objects imported. Changed the headline to `Northstar open day` and downloaded an SVG. The original run clipped text; see the fix below. |
-| Keep and reuse | Saved `Northstar announcement` in `Northstar launch`, saved a reusable template, reloaded Projects, then New asset → Templates → search Northstar and created `Northstar next event`. | The folder contained two distinct saved-session slots. Reopening the original still showed `Northstar open day`, confirming that editing the second creation did not overwrite it. A full browser restart and the adjacent `+ Add` route remain to be checked. |
+| Keep and reuse | Saved `Northstar announcement` in `Northstar launch`, saved a reusable template, reloaded Projects, then New asset → Templates → search Northstar and created `Northstar next event`. | The folder contained two distinct saved-session slots. Reopening the original still showed `Northstar open day`, confirming that editing the second creation did not overwrite it. The adjacent `+ Add` route and persistent browser restart now have automated coverage below. |
 | Known colours, no file | Welcome → Make it yours → add blue `#0067B1` and yellow `#FFC72C` → assign colour roles → Explore tools → Design. | No brand file or sign-in required. Both swatches remained through navigation/reload. The downloaded ZIP exposed an export scaling defect; see the fix below. A later check showed Secondary was still unassigned, explaining the grey accent. Explicitly selecting Northstar Yellow produced a saved confirmation; both role choices and the committed Northstar name then survived reload. Persistence after all Incognito windows close is not established. |
 
 Font snapping is intentional: imported text adopts Lolly's brand font vocabulary. Andy confirmed that a brand user should add their own font in Make it yours → Type. Substitution itself is not a defect.
@@ -36,14 +36,19 @@ The native browser download was repeated after the scale fix. `Northstar announc
 
 The geometry change is checked against the simple text/shape fixture, including both text layers, known-font behavior and returning from Type. It is not a claim of complete SVG fidelity for every transform or rich-text source.
 
-## Remaining priorities
+## Priority completion, 14 September 2026
 
-1. **Reachable brand recovery.** Imports take durable checkpoints, but source inspection found `listCheckpoints` and `restoreCheckpoint` used only by state tests. Add a checkpoint list with restore and undo before calling journey 2 complete.
-2. **Finish persistence and delivery evidence.** The original has been reopened without the second creation's edits. Check the reusable template itself, exercise `+ Add`, repeat delivery after the confirmed Secondary assignment, and complete the normal-browser restart check. The first role selection was not committed; it is not evidence of a colour-mapping defect.
-3. **Narrow, keyboard and cached-offline pass.** The targeted import regression uses keyboard actions. That is not a complete keyboard or touch audit. Run essential edit/export steps on a warmed production build with networking disabled; a Vite dev session cannot establish this.
-4. **External observation.** Invite unfamiliar users only after reviewer blockers have been removed. Use the task sheet without coaching and record time, assistance and recoveries separately. No external invitations were sent.
+Brand recovery is now reachable from **Restore brand settings** in Make it yours. The dialog keeps a checkpoint of the settings it replaces. A persistent Chromium profile was closed and reopened: the selected blue tokens remained, and restoring **Before restore** brought the later yellow settings back. Recovery is scoped to the active brand and reports storage failures without overwriting the checkpoint ring.
 
-Do not mark the four-journey plan complete from these reviewer results alone.
+The Projects picker renders previews for shipped and user templates through the shared brand-aware renderer. List failures retain usable choices and offer retry; preview failures retain a named card. Browser checks cover repeated **+ Add** creating distinct saved records with the original template unchanged, and **Open → edit → Save** filing and returning to the originating folder or root. The same walkthrough checks the create actions in Preview and List modes, Escape, focus restoration, both themes, large text and a 390px viewport.
+
+Gallery navigation was exercised with keyboard, native horizontal wheel input and Chromium's touch input at a narrow viewport. The test controls preview completion order so gestures encounter a pending pane, then verifies that scrolling settles on a ready example. It also checks OS/app reduced motion and hidden previews. This is browser emulation, not an observation on a physical phone.
+
+On the public production build, a QR tool and SVG export were warmed online. With the browser context's networking disabled, its URL was edited and a new 25,070-byte SVG was downloaded. The output parses as SVG, contains rendered geometry and differs from the online output. This establishes that cached edit/export path; it does not establish a cold offline visit or every tool's offline behavior. Files are in the local output directory alongside the earlier walkthrough exports.
+
+## Remaining observation
+
+Run the external-participant task sheet with people unfamiliar with Lolly. Keep their discovery, completion time, assistance and recoveries separate from these reviewer and automated checks. No external invitations were sent, and the four-journey research plan remains open for that observation.
 
 ## Validation
 

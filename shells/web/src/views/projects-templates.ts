@@ -25,6 +25,7 @@ import { escape as escapeHtml } from '../utils.ts';
 import { icon } from '../lib/icons.ts';
 import { menuItemHtml } from '../lib/context-menu.ts';
 import { loadHiddenTemplates } from '../lib/hidden-templates.ts';
+import { previewDeadline } from '../lib/preview-deadline.ts';
 import { loadTemplateStart } from '../lib/template-start.ts';
 import { resolveTemplateSeed, shippedTemplateRef, userTemplateRef } from '../lib/template-ref.ts';
 import { createUserTemplateStore, type UserTemplate } from '../lib/user-templates.ts';
@@ -690,17 +691,19 @@ export function hydrateTemplatePreviews(
       const item = byRef.get(img.dataset.tplPreview ?? '');
       if (!item || !img.isConnected || img.getAttribute('src')) continue;
       try {
-        const { renderFeaturedVariant } = await import('../lib/featured-render.ts');
-        const { fetchTemplateFile } = await import('../lib/template-source.ts');
-        let values = item.values;
-        let posterMs = item.posterMs;
-        if (!values) {
-          const file = await fetchTemplateFile(item.toolId, item.id);
-          if (!file) throw new Error('Template unavailable');
-          values = file.values as Record<string, unknown>;
-          posterMs = posterMs ?? file.motion?.posterMs;
-        }
-        const thumb = await renderFeaturedVariant(host, item.toolId, item.formats, item.id, values, 'template', posterMs);
+        const thumb = await previewDeadline((async () => {
+          const { renderFeaturedVariant } = await import('../lib/featured-render.ts');
+          const { fetchTemplateFile } = await import('../lib/template-source.ts');
+          let values = item.values;
+          let posterMs = item.posterMs;
+          if (!values) {
+            const file = await fetchTemplateFile(item.toolId, item.id);
+            if (!file) throw new Error('Template unavailable');
+            values = file.values as Record<string, unknown>;
+            posterMs = posterMs ?? file.motion?.posterMs;
+          }
+          return renderFeaturedVariant(host, item.toolId, item.formats, item.id, values, 'template', posterMs);
+        })());
         if (!thumb) throw new Error('Preview unavailable');
         if (img.isConnected && !stopped) {
           img.onload = () => {

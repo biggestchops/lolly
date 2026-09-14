@@ -1251,7 +1251,7 @@ html[data-a11y-previews="hidden"] .gtile .tile-check { top: auto; bottom: 6px; }
   position: absolute;
   inset: auto 12px 36px;
   text-align: center;
-  font-size: calc(11px * var(--a11y-fs));
+  font-size: var(--fs-2xs);
   color: hsl(var(--foreground));
   background: hsl(var(--background) / .9);
   border-radius: var(--radius);

@@ -1339,7 +1339,13 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // +2 on 2026-09-04 (plans/186): the "Editing <label>" line under the studio header and
   // the read-only page for a locked design system - the label is escape()d in both, the
   // rest is t() copy and fixed links.
-  'views/start.ts': 8,
+  'views/start.ts': 2,
+  // Start feature extraction: the same escaped templates; the editor error now uses textContent.
+  'views/start/navigation.ts': 1,
+  'views/start/feedback.ts': 1,
+  'views/start/brand.ts': 1,
+  'views/start/pdf.ts': 1,
+  'views/start/site.ts': 1,
   // Moved from start.ts: static sheet shell and escaped swatchTile()/group labels.
   'lib/design-system/palette-sheet.ts': 3,
   // 1 as of 2026-08-09 (new template-chooser overlay, Design frame primitive). The

@@ -63,6 +63,7 @@ import { mountModal } from '../components/modal.ts';
 import type { ModalHandle } from '../components/modal.ts';
 import { startBatchExport } from '../lib/batch-job.ts';
 import { announce } from '../a11y.ts';
+import { listCreateBtns as createButtonsHtml, emptyFolderHtml } from './projects-create.ts';
 import { mountProjectsViewOptions } from './projects-view-options.ts';
 import type { BodyPopoverHandle } from '../components/body-popover.ts';
 import { openShareDialog } from '../components/share-dialog.ts';
@@ -720,36 +721,7 @@ export async function mountProjects(
     ? actionTile('template', TEMPLATE_ICON, t('New project from a blueprint'), t('Start from a saved blueprint'))
     : '';
 
-  /** The compact create buttons UP TOP (Andy, 2026-08-22): one toolbar, in the
-   *  root's own header row and in a folder view's header before "Render folder",
-   *  in BOTH view modes (plans/245). The root grid keeps its create tiles in grid
-   *  mode; a folder grid carries none. */
-  function listCreateBtns(isUncat = false): string {
-    const btn = (kind: string, glyph: string, label: string): string =>
-      `<button type="button" class="btn projects-create-btn" data-create-btn="${kind}">${glyph}<span>${escape(label)}</span></button>`;
-    return [
-      isUncat ? '' : btn('folder', FOLDER_PLUS_ICON, t('New folder')),
-      btn('tool', FILE_PLUS_ICON, t('New asset')),
-      !isUncat && templates.length ? btn('template', TEMPLATE_ICON, t('New project from a blueprint')) : '',
-    ].join('');
-  }
-
-  /** The empty-folder blank state (Andy, 2026-08-22): no grid, an invitation to
-   *  the two create actions instead. The buttons reuse the header's
-   *  [data-create-btn] wiring; Uncategorised (not a real folder) offers only
-   *  New asset under its own explanation. */
-  function emptyFolderHtml(isUncat: boolean): string {
-    return `
-      <div class="projects-blank">
-        <span class="projects-blank-icon" aria-hidden="true">${isUncat ? FILE_PLUS_ICON : FOLDER_ICON}</span>
-        <p class="projects-blank-title">${isUncat ? t('Nothing is uncategorised') : t('This folder is empty')}</p>
-        <p class="projects-blank-sub">${isUncat ? t('Sessions you save without filing them are kept here.') : t('Add your first creation, or group work in a sub-folder.')}</p>
-        <div class="projects-blank-actions">
-          <button type="button" class="btn projects-render projects-create-btn" data-create-btn="tool">${FILE_PLUS_ICON}<span>${t('New asset')}</span></button>
-          ${isUncat ? '' : `<button type="button" class="btn projects-create-btn" data-create-btn="folder">${FOLDER_PLUS_ICON}<span>${t('New folder')}</span></button>`}
-        </div>
-      </div>`;
-  }
+  const listCreateBtns = (isUncat = false): string => createButtonsHtml(isUncat, templates.length > 0);
 
   function folderHtml(id: string): string {
     const isUncat = id === UNCAT;
@@ -2272,6 +2244,8 @@ export async function mountProjects(
   function startCreateTool(): void { void openAddPicker(); }
 
   async function openAddPicker(): Promise<void> {
+    let leaving = false;
+    const focusSelector = document.activeElement?.closest('[data-create="tool"]') ? '[data-create="tool"] .tile-primary' : '[data-create-btn="tool"]';
     // A real folder is the drop target; at the root / the synthetic Uncategorised bucket
     // there's no folder to hold an image (catalog references especially have nowhere to
     // live loose), so image adds are declined there with a nudge while tool + saved-
@@ -2304,6 +2278,7 @@ export async function mountProjects(
     // Both doors that LEAVE for an editor file what comes back into this folder and
     // return here on Save, so the tool door and the template door cannot drift.
     const openInEditor = (hash: string): void => {
+      leaving = true;
       try { sessionStorage.setItem(FILE_INTO_KEY, target ?? ''); } catch { /* private mode */ }
       armReturn();
       window.location.hash = hash;
@@ -2370,7 +2345,12 @@ export async function mountProjects(
     });
     // The picker closed (× / Escape / a tool that navigated away) - reflect everything
     // added under it in one pass.
-    if (mounted) { await reload(); render(); }
+    if (mounted) {
+      await reload();
+      if (!mounted) return;
+      render();
+      if (!leaving && !document.querySelector('dialog[open]')) viewEl.querySelector<HTMLElement>(focusSelector)?.focus({ preventScroll: true });
+    }
   }
 
   // Create a saved session for `toolId` and file it into the current folder. With no seed it
