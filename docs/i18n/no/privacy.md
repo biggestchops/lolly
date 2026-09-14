@@ -187,7 +187,7 @@ enheten din. Dette avsnittet dekker det ene *valgfrie* steget på toppen av dett
 \<your email\>" i stedet for en anonym nøkkel. **Hvis du hopper over registreringen, gjelder ingenting i
 dette avsnittet for deg, og ingen personopplysninger forlater noensinne enheten din.**
 
-![Verified identity-kortet på profilsiden, telefonbredde: velgeren for sertifikatets levetid og registreringssteget under det, sovende inntil du selv starter det](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Verified identity-kortet på profilsiden, telefonbredde: velgeren for sertifikatets levetid og registreringssteget under det, sovende inntil du selv starter det](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Hvis du registrerer deg, er dette nøyaktig hva som skjer:
 

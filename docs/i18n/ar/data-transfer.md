@@ -2,7 +2,7 @@
 
 كل ما يجمعه مستخدم Lolly يعيش **على جهازه** - بلا حساب، بلا سحابة. حزمة نقل البيانات هي وسيلة انتقال تلك القيمة: صدّرها من تثبيت واحد، واحمل الملف بأي وسيلة (USB، AirDrop، بريد إلكتروني لنفسك، مشاركة شبكية) واستورده في تثبيت آخر. الملف *هو* وسيلة النقل. يمكن أن تكون الوجهة غير متصلة أو متصلة بالإنترنت. لا فرق، لأن لا شيء يتواصل مع خادم على الإطلاق.
 
-![الزران اللذان ينقلان تثبيتا كاملا: تصدير بياناتي يكتب ملفا مضغوطا واحدا، واستيراد بيانات يقرأه من جديد](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![الزران اللذان ينقلان تثبيتا كاملا: تصدير بياناتي يكتب ملفا مضغوطا واحدا، واستيراد بيانات يقرأه من جديد](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 هذه الصفحة هي مواصفة التنسيق. لدليل المستخدم النهائي راجع [Using Lolly → الانتقال إلى جهاز آخر](/info/using.html). التنفيذ موجود في [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts)، ويثبّت [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) عقد الذهاب والإياب.
 

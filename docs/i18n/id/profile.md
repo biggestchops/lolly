@@ -19,15 +19,15 @@ Semua isi profil tersimpan **di perangkat**, dalam basis data lokal browser (Ind
 | **Accessibility** | Empat sakelar kenyamanan - *Reduce motion*, *Hide colourful previews*, *High contrast*, *Large text* - disimpan pada catatan profil, sehingga ikut terbawa dalam ekspor profil. Lihat [Accessibility](#accessibility). |
 | **Your work** | Sesi tersimpan (dengan thumbnail) - diatur ke dalam folder bersarang di **[Projects](/info/using.html)** - pustaka **My images** Anda, dan statistik aktivitas lokal, semuanya terkait dengan profil ini. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Layar Profile - nama, kontak, foto profil opsional, dan preferensi Anda](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Layar Profile - nama, kontak, foto profil opsional, dan preferensi Anda](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Tidak ada satu pun dari ini yang wajib. Profil kosong adalah profil yang sangat baik; Anda hanya mengisi apa yang menghemat waktu pengetikan.
 
 Halaman ini panjang, sehingga memiliki **settings rail**-nya sendiri di sisi samping - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - dengan bidang **Search settings** di atasnya yang menyaring daftar saat Anda mengetik. Setiap bagian dapat ditautkan langsung sebagai `#/profile?focus=<section-id>`, yang membukanya dan menggulirkannya agar terlihat (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, dan seterusnya), sehingga sebuah tautan dapat menunjuk ke satu pengaturan, bukan ke bagian atas halaman.
 
-![Tiga kartu tema, masing-masing menampilkan pratinjau tipe dan warnanya sendiri, dengan kartu yang aktif ditandai](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Tiga kartu tema, masing-masing menampilkan pratinjau tipe dan warnanya sendiri, dengan kartu yang aktif ditandai](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Profil adalah sebuah konteks, bukan sekadar seseorang
 
@@ -35,9 +35,9 @@ Kata "profil" mengesankan satu orang yang tetap, tapi di Lolly ini sebenarnya se
 
 ### Sebagai individu
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Kontrol headshot, kosong hingga Anda mengunggah foto yang kemudian tetap tersimpan di perangkat ini](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Kontrol headshot, kosong hingga Anda mengunggah foto yang kemudian tetap tersimpan di perangkat ini](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Sebagai tim
 
@@ -53,7 +53,7 @@ Di Lolly, peran itu hanyalah **profil lain yang Anda simpan siap pakai** - sebua
 
 Pada suatu saat, satu instalasi memiliki **satu profil aktif** - detail yang dilihat oleh sebuah alat saat ini. Tidak ada pengalih profil di dalam aplikasi; sebagai gantinya, setiap profil adalah **bundle portabel** (satu file `.zip`, lihat [di bawah](#moving-a-profile-to-a-new-device)). Ini sengaja dibuat sebagai mekanisme yang sama dengan memindahkan ke perangkat baru - sebuah profil adalah file yang dapat Anda simpan, salin, dan muat.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Peralihan paling bersih:** **Profile → Storage → Clear all my data**, lalu **Import** bundle untuk konteks yang akan Anda masuki. Anda sekarang berkarya murni sebagai profil tersebut.
 - <!--i:layers--> **Layering:** mengimpor *tanpa* menghapus terlebih dahulu akan **menggabungkan** - profil, sesi, dan gambar yang diimpor mendarat di atas apa yang sudah ada, menggantikan apa pun dengan nama yang sama dan menyisakan yang lain. Berguna untuk menarik sesi tersimpan satu tim ke dalam setup Anda sendiri; bukan yang Anda inginkan jika Anda memerlukan batas peran yang bersih.
@@ -61,7 +61,7 @@ Pada suatu saat, satu instalasi memiliki **satu profil aktif** - detail yang dil
 
 Jadi jika Anda benar-benar menjalankan beberapa konteks sekaligus (Anda, tim Anda, topi manajer acara), Anda menyimpan beberapa bundel dan memuat yang Anda butuhkan:
 
-![Meter penyimpanan, merinci sesi tersimpan, gambar, dan cache dibandingkan dengan yang sebenarnya dilaporkan peramban](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Meter penyimpanan, merinci sesi tersimpan, gambar, dan cache dibandingkan dengan yang sebenarnya dilaporkan peramban](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Simpan satu bundel per konteks dan ganti nama berkasnya sesuai isinya (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Berkas itu *adalah* profilnya.
 
@@ -104,7 +104,7 @@ Jika browser belum memberikan penyimpanan persisten, bagian ini akan menyatakann
 
 ## Memindahkan profil ke perangkat baru
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Karena sebuah profil sepenuhnya lokal, satu-satunya cara memindahkannya ke instalasi kosong - laptop baru, browser yang baru direset, mesin rekan kerja, kotak offline - adalah dengan **membawa berkasnya**. Tidak ada login yang memulihkannya untuk Anda, dan itulah intinya: tidak ada apa pun yang pernah meninggalkan perangkat Anda sejak awal.
 
@@ -112,7 +112,7 @@ Karena sebuah profil sepenuhnya lokal, satu-satunya cara memindahkannya ke insta
 - <!--i:upload--> **Import data…** pada instalasi lain membaca kembali file itu dan Anda melanjutkan persis dari tempat Anda berhenti.
 - <!--i:box--> **Export my data & render everything** menulis backup yang sama *ditambah* zip kedua yang me-render setiap sesi tersimpan menjadi file hasil akhirnya, dalam folder yang mencerminkan Projects Anda. Arsip offline lengkap dari sumber maupun hasil - dan bisa berukuran besar serta lambat jika sesinya banyak.
 
-![Dua tombol yang memindahkan seluruh instalasi: Export my data menulis satu zip, Import data membacanya kembali](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Dua tombol yang memindahkan seluruh instalasi: Export my data menulis satu zip, Import data membacanya kembali](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Bundel ini adalah zip biasa yang mandiri, jadi ia bisa dipindahkan lewat cara **apa pun** - USB, AirDrop, berbagi jaringan, email-ke-diri-sendiri - dan targetnya bisa sepenuhnya offline. Setiap bagian diberi checksum, jadi berkas yang rusak dalam perjalanan tertangkap saat impor alih-alih dipulihkan dalam keadaan setengah rusak. Impor **menggabungkan** (profil/sesi/gambar dengan nama yang sama ditimpa; semua lainnya dipertahankan), jadi ia tidak pernah menghapus target yang sudah digunakan.
 
@@ -122,13 +122,13 @@ Untuk tata letak bundel yang tepat, kebijakan versi dan aturan integritas, lihat
 
 ## Cara tool menggunakan profil Anda
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Sebuah tool hanya *mengisi otomatis* field profil yang memang secara eksplisit dirancang untuk diikat:
 
 **Opsi opt-in (provenans).** Saat Anda mengekspor aset, detail Anda secara opsional ikut serta sebagai **provenans** - baris penulis/kredit yang disematkan dalam metadata file (PNG, PDF, SVG, …) - sehingga aset jadi dapat menyatakan siapa yang membuatnya. *Inilah* yang diatur oleh **Use my details to create**: biarkan mati dan ekspor tetap membawa atribusi tool/platform "Made with Lolly", tetapi tidak ada baris penulis/kontak pribadi yang disematkan. (Opt-in yang sama menetapkan penulis pada run batch **/pro**.) (Penulis tool: lihat [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) dan [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Satu-satunya sakelar Use my details to create, terletak di samping Save Profile dan mati sampai Anda menyalakannya](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Satu-satunya sakelar Use my details to create, terletak di samping Save Profile dan mati sampai Anda menyalakannya](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profil vs Platform vs Kapabilitas
 
@@ -147,7 +147,7 @@ Istilah ini dipakai berlebihan di seluruh proyek. Tidak satu pun dari keduanya a
 - <!--i:box--> **Content profile** - konfigurasi waktu-build di `profiles.json` yang mengikat sekumpulan paket tool ke katalog brand (misalnya `suse`, `lolly-start`). Ini yang dipilih operator saat deploy, dan ini juga yang dipilih **parameter URL/CLI** `profile` sebagai varian *warna* saat ekspor (kondisi cetak ICC/CMYK - lihat [URL Mode](/info/url-mode.html)). Keduanya berkaitan dengan *build/output*, bukan dengan *Anda*. Lihat [Configuration](/info/configuration.html).
 - <!--i:seal--> **Identity profile** - **identitas Content Credentials terverifikasi** opsional yang dapat Anda daftarkan (sertifikat berumur pendek yang mengikat email Anda ke ekspor bertanda tangan Anda). Itu adalah identitas penandatanganan, terpisah dari kolom nama/kontak profil pribadi, meski **Use my details to create** mengatur apakah salah satunya disematkan. Lihat [Content Credentials Identity](/info/content-credentials-identity.html).
 
-![Kartu Verified identity, lebar-ponsel: pemilih masa berlaku sertifikat dan langkah pendaftaran di bawahnya - identity profile, terpisah dari detail pribadi Anda](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Kartu Verified identity, lebar-ponsel: pemilih masa berlaku sertifikat dan langkah pendaftaran di bawahnya - identity profile, terpisah dari detail pribadi Anda](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Privasi
 

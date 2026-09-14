@@ -19,9 +19,9 @@ Todo lo que hay en un perfil vive **en el dispositivo**, en la base de datos loc
 | **Accesibilidad** | Cuatro interruptores de confort - *Reducir movimiento*, *Ocultar vistas previas coloridas*, *Alto contraste*, *Texto grande* - guardados en el registro de perfil, así que viajan en una exportación de perfil. Consulta [Accesibilidad](#accessibility). |
 | **Tu trabajo** | Sesiones guardadas (con miniaturas) - organizadas en carpetas anidadas en **[Proyectos](/info/using.html)** - tu biblioteca **Mis imágenes** y las estadísticas de actividad local, todo vinculado a este perfil. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![La pantalla de Perfil - nombre, contacto, una foto opcional y tus preferencias](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![La pantalla de Perfil - nombre, contacto, una foto opcional y tus preferencias](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 | Parte | Qué es |
 |---|---|
@@ -35,7 +35,7 @@ Todo lo que hay en un perfil vive **en el dispositivo**, en la base de datos loc
 
 La página es larga, así que lleva su propio **riel de ajustes** por el lateral - Tus datos, Apariencia, Accesibilidad, Instancia de Lolly, Tu actividad, Almacenamiento, Disponible sin conexión, Feature flags, Content Credentials - con un campo de **Buscar ajustes** encima que filtra la lista mientras escribes. Cada sección se puede enlazar directamente como `#/profile?focus=<section-id>`, lo que la abre y la desplaza a la vista (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, etc.), así un enlace puede apuntar a un ajuste concreto en vez de a la parte superior de la página.
 
-![Tres tarjetas de tema, cada una mostrando su propio tipo y color, con la activa marcada](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Tres tarjetas de tema, cada una mostrando su propio tipo y color, con la activa marcada](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Un perfil es un contexto, no solo una persona
 
@@ -43,9 +43,9 @@ La palabra "perfil" sugiere una única persona fija, pero en Lolly es en realida
 
 ### Como individuo
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![El control de foto, vacío hasta que subes una imagen que luego permanece en este dispositivo](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![El control de foto, vacío hasta que subes una imagen que luego permanece en este dispositivo](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Como equipo
 
@@ -61,7 +61,7 @@ En Lolly, ese papel es solo **otro perfil que tienes a mano** - un paquete guard
 
 En cualquier momento una instalación tiene **un perfil activo** - los datos que ve una herramienta ahora mismo. No hay un selector de perfil dentro de la app; en su lugar, cada perfil es un **paquete portátil** (un único `.zip`, ver [más abajo](#moving-a-profile-to-a-new-device)). Ese es, deliberadamente, el mismo mecanismo que mudarse a un dispositivo nuevo - un perfil es un archivo que puedes guardar, copiar y cargar.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **El cambio más limpio:** **Perfil → Almacenamiento → Borrar todos mis datos**, y luego **Importar** el paquete del contexto al que vas a pasar. Ahora estás creando puramente como ese perfil.
 - <!--i:layers--> **Superposición:** importar *sin* borrar antes **fusiona** - el perfil, las sesiones y las imágenes importadas se colocan encima de lo que ya había, reemplazando lo que tenga el mismo nombre y dejando el resto. Útil para traer las sesiones guardadas de un equipo a tu propia configuración; no lo que quieres si necesitas un límite de rol limpio.
@@ -69,7 +69,7 @@ En cualquier momento una instalación tiene **un perfil activo** - los datos que
 
 Así que si de verdad manejas varios contextos a la vez (tú, tu equipo, el sombrero de gestor de eventos), conservas varios paquetes y cargas el que necesites:
 
-![El medidor de almacenamiento, desglosando sesiones guardadas, imágenes y caché frente a lo que realmente informa el navegador](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![El medidor de almacenamiento, desglosando sesiones guardadas, imágenes y caché frente a lo que realmente informa el navegador](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Conserva un paquete por contexto y renombra los archivos según lo que son (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). El archivo *es* el perfil.
 
@@ -112,7 +112,7 @@ Si el navegador no ha concedido almacenamiento persistente, la sección lo indic
 
 ## Mover un perfil a un dispositivo nuevo
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Como un perfil es totalmente local, la única forma de llevarlo a una instalación en blanco - un portátil nuevo, un navegador recién restablecido, el equipo de un compañero, una máquina sin conexión - es **llevar el archivo contigo**. Ningún inicio de sesión lo restaura por ti, y esa es la idea: nada salió nunca de tu dispositivo, para empezar.
 
@@ -120,7 +120,7 @@ Como un perfil es totalmente local, la única forma de llevarlo a una instalaci�
 - <!--i:upload--> **Import data…** (Importar datos…) en la otra instalación vuelve a leer ese archivo y retomas exactamente donde lo dejaste.
 - <!--i:box--> **Export my data & render everything** (Exportar mis datos y renderizar todo) escribe esa misma copia de seguridad *además de* un segundo zip que renderiza cada sesión guardada a su archivo de salida final, en carpetas que reflejan tus Proyectos. Un archivo completo sin conexión tanto de las fuentes como de los resultados - y puede ser grande y lento con muchas sesiones.
 
-![Los dos botones que mueven una instalación entera: Exportar mis datos escribe un zip, Importar datos lo vuelve a leer](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Los dos botones que mueven una instalación entera: Exportar mis datos escribe un zip, Importar datos lo vuelve a leer](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 El paquete es un zip plano y autocontenido, así que viaja por **cualquier** medio - USB, AirDrop, un recurso compartido de red, un correo a ti mismo - y el destino puede estar totalmente sin conexión. Cada parte lleva su suma de comprobación, así que un archivo dañado durante el traslado se detecta al importar en lugar de restaurarse a medias. Importar **combina** (el perfil/sesión/imagen con el mismo nombre se sobrescribe; todo lo demás se conserva), así que nunca borra un destino que ya estuviera en uso.
 
@@ -130,13 +130,13 @@ Para el diseño exacto del paquete, la política de versiones y las reglas de in
 
 ## Cómo usan las herramientas tu perfil
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Una herramienta solo *autocompleta* los campos del perfil para los que fue diseñada explícitamente:
 
 **La opción de aceptar (procedencia).** Cuando exportas un activo, tus datos opcionalmente viajan como **procedencia** - una línea de autoría/crédito incrustada en los metadatos del archivo (PNG, PDF, SVG, …) - de modo que un activo terminado pueda decir quién lo hizo. *Esto* es lo que controla **Usar mis datos para crear**: déjalo desactivado y la exportación sigue llevando la atribución de herramienta/plataforma "Hecho con Lolly", pero no se incrusta ninguna línea personal de autoría/contacto. (La misma opción establece el autor en las ejecuciones por lotes de **/pro**.) (Autores de herramientas: consulta [Crear herramientas → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) y [API del host → `host.profile`](/info/host-api.html#host-profile).)
 
-![El único interruptor Usar mis datos para crear, junto a Guardar perfil y desactivado hasta que lo activas](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![El único interruptor Usar mis datos para crear, junto a Guardar perfil y desactivado hasta que lo activas](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Perfil frente a Plataforma frente a Capacidades
 
@@ -155,7 +155,7 @@ La palabra está sobrecargada en todo el proyecto. Ninguna de estas dos es el pe
 - <!--i:box--> **Perfil de contenido** - una configuración en tiempo de compilación en `profiles.json` que vincula un conjunto de paquetes de herramientas a un catálogo de marca (por ejemplo, `suse`, `lolly-start`). Es lo que elige un operador al desplegar, y es lo que el **parámetro de URL/CLI** `profile` también selecciona como una variante de *color* en el momento de exportar (la condición de imprenta ICC/CMYK - consulta [Modo URL](/info/url-mode.html)). Ambos tratan de la *compilación/salida*, no de ti. Consulta [Configuración](/info/configuration.html).
 - <!--i:seal--> **Perfil de identidad** - la **identidad verificada de Content Credentials** opcional que puedes inscribir (un certificado de vida corta que vincula tu correo a tus exportaciones firmadas). Eso es una identidad de firma, separada de los campos de nombre/contacto del perfil personal, aunque **Usar mis datos para crear** controla si se incrusta uno u otro. Consulta [Identidad de Content Credentials](/info/content-credentials-identity.html).
 
-![La tarjeta de identidad verificada, en ancho de móvil: el selector de vida del certificado y el paso de inscripción debajo - el perfil de identidad, separado de tus datos personales](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![La tarjeta de identidad verificada, en ancho de móvil: el selector de vida del certificado y el paso de inscripción debajo - el perfil de identidad, separado de tus datos personales](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Privacidad
 

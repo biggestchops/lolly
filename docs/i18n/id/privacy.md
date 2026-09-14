@@ -190,7 +190,7 @@ mendaftarkan identitas terverifikasi, sehingga ekspor Anda menampilkan "Verified
 \<your email\>" alih-alih kunci anonim. **Jika Anda melewati pendaftaran, tidak ada yang dibahas di
 bagian ini berlaku untuk Anda, dan tidak ada data pribadi yang pernah meninggalkan perangkat Anda.**
 
-![Kartu identitas Verified pada halaman profil, lebar ponsel: pemilih masa berlaku sertifikat dan langkah pendaftaran di bawahnya, dorman sampai Anda memulainya sendiri](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Kartu identitas Verified pada halaman profil, lebar ponsel: pemilih masa berlaku sertifikat dan langkah pendaftaran di bawahnya, dorman sampai Anda memulainya sendiri](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Jika Anda mendaftar, berikut yang persis terjadi:
 

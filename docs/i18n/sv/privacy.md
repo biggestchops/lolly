@@ -198,7 +198,7 @@ att registrera en verifierad identitet, så att dina exporter säger "Verified -
 \<your email\>" i stället för en anonym nyckel. **Hoppar du över registreringen gäller inget i
 det här avsnittet dig, och ingen personlig data lämnar någonsin din enhet.**
 
-![Kortet Verified identity på profilsidan, telefonbredd: väljaren för certifikatets livslängd och registreringssteget under det, vilande tills du själv startar det](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Kortet Verified identity på profilsidan, telefonbredd: väljaren för certifikatets livslängd och registreringssteget under det, vilande tills du själv startar det](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Om du registrerar dig är det här exakt vad som händer:
 

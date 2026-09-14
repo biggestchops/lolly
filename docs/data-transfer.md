@@ -2,7 +2,7 @@
 
 Everything a Lolly user accumulates lives **on their device** - no account, no cloud. The data-transfer bundle is how that value moves: export it on one install, carry the file by any means (USB, AirDrop, email-to-self, a network share) and import it on another. The file *is* the transport. The target can be offline or online. It makes no difference, because nothing ever talks to a server.
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 This page is the format spec. For the end-user walkthrough see [Using Lolly → Moving to another device](/info/using.html). The implementation is [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), and [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) pins the round-trip contract.
 

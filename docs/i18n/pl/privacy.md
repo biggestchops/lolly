@@ -197,7 +197,7 @@ zarejestrowanie zweryfikowanej tożsamości, dzięki czemu Twoje eksporty mówi�
 \<your email\>" zamiast anonimowego klucza. **Jeśli pominiesz rejestrację, nic w
 tej sekcji Cię nie dotyczy i żadne dane osobowe nigdy nie opuszczają Twojego urządzenia.**
 
-![Karta zweryfikowanej tożsamości na stronie profilu, szerokość telefonu: wybór czasu życia certyfikatu i krok rejestracji poniżej, nieaktywne, dopóki sam ich nie uruchomisz](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Karta zweryfikowanej tożsamości na stronie profilu, szerokość telefonu: wybór czasu życia certyfikatu i krok rejestracji poniżej, nieaktywne, dopóki sam ich nie uruchomisz](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Jeśli się zarejestrujesz, oto dokładnie, co się dzieje:
 

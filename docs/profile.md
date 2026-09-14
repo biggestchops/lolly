@@ -21,13 +21,13 @@ Everything in a profile lives **on the device**, in the browser's local database
 
 None of this is required. A blank profile is a perfectly good profile; you fill in only what saves you typing.
 
-![The Profile screen - name, contact, an optional headshot and your preferences](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![The Profile screen - name, contact, an optional headshot and your preferences](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Preferences are the one part that changes how the app looks back at you. The theme cards are live previews and apply the moment you pick one, on this device only.
 
 The page is a long one, so it carries its own **settings rail** down the side - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - with a **Search settings** field above it that filters the list as you type. Every section is deep-linkable as `#/settings?focus=<section-id>`, which opens it and scrolls it into view (`#/settings?focus=storage-section`, `?focus=feature-flags-section`, and so on), so a link can point at one setting rather than at the top of the page.
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## A profile is a context, not just a person
 
@@ -37,7 +37,7 @@ The word "profile" suggests one fixed person, but in Lolly it's really a **creat
 
 The default. The profile is you: your name, your email, your headshot. Set it once and your signature, your badge, your conference lockup all fill themselves in. This is what most people will ever need.
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### As a team
 
@@ -61,7 +61,7 @@ So if you genuinely juggle several contexts (you, your team, the event-manager h
 
 Storage is where both halves of that live: the meter accounts for every byte this install is holding, category by category, and the buttons under it are how you clear or carry it.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Keep a bundle per context and rename the files for what they are (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). The file *is* the profile.
 
@@ -112,7 +112,7 @@ Under **Settings → Preferences → Storage → Move to another device**:
 - <!--i:upload--> **Import data…** on the other install reads that file back in and you pick up exactly where you left off.
 - <!--i:box--> **Export my data & render everything** writes that same backup *plus* a second zip that renders every saved session to its finished output file, in folders that mirror your Projects. A complete offline archive of both the sources and the results - and it can be large and slow with a lot of sessions.
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 The bundle is a plain, self-contained zip, so it travels by **any** means - USB, AirDrop, a network share, email-to-yourself - and the target can be completely offline. Each part is checksummed, so a file damaged in transit is caught on import rather than restored half-broken. Import **merges** (same-named profile/session/image is overwritten; everything else is kept), so it never wipes a target that was already in use.
 
@@ -128,7 +128,7 @@ A tool only ever *pre-fills* the profile fields it was explicitly built to bind:
 
 **The opt-in (provenance).** When you export an asset, your details optionally ride along as **provenance** - an author/credit line embedded in the file's metadata (PNG, PDF, SVG, …) - so a finished asset can say who made it. *This* is what **Use my details to create** governs: leave it off and the export still carries the "Made with Lolly" tool/platform attribution, but no personal author/contact line is embedded. (The same opt-in sets the author on **/pro** batch runs.) (Tool authors: see [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) and [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![The single Use my details to create switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details to create switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profile vs Platform vs Capabilities
 
@@ -147,7 +147,7 @@ The word is overloaded across the project. Neither of these is the personal prof
 - <!--i:box--> **Content profile** - a build-time configuration in `profiles.json` that binds a set of tool packs to a brand catalog (e.g. `suse`, `lolly-start`). It's what an operator picks when deploying, and it's what the `profile` **URL/CLI parameter** also selects a *colour* variant of at export time (the ICC/CMYK press condition - see [URL Mode](/info/url-mode.html)). Both are about the *build/output*, not about *you*. See [Configuration](/info/configuration.html).
 - <!--i:seal--> **Identity profile** - the optional **verified Content Credentials identity** you can enrol (a short-lived certificate that ties your email to your signed exports). That's a signing identity, separate from the personal profile's name/contact fields, though **Use my details to create** governs whether either is embedded. See [Content Credentials Identity](/info/content-credentials-identity.html).
 
-![The Verified identity card, phone-width: the certificate lifetime picker and the enrolment step beneath it - the identity profile, separate from your personal details](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![The Verified identity card, phone-width: the certificate lifetime picker and the enrolment step beneath it - the identity profile, separate from your personal details](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Privacy
 

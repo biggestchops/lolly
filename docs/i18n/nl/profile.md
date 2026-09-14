@@ -19,15 +19,15 @@ Alles in een profiel leeft **op het apparaat**, in de lokale database van de bro
 | **Toegankelijkheid** | Vier comfortschakelaars - *Beweging beperken*, *Kleurrijke previews verbergen*, *Hoog contrast*, *Grote tekst* - die op het profielrecord staan, zodat ze meegaan in een profielexport. Zie [Toegankelijkheid](#accessibility). |
 | **Je werk** | Opgeslagen sessies (met miniaturen) - georganiseerd in geneste mappen in **[Projecten](/info/using.html)** - je **Mijn afbeeldingen** bibliotheek en de lokale activiteitsstatistieken, allemaal gekoppeld aan dit profiel. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Het Profielscherm - naam, contact, een optionele pasfoto en je voorkeuren](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Het Profielscherm - naam, contact, een optionele pasfoto en je voorkeuren](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Niets hiervan is verplicht. Een leeg profiel is een prima profiel; je vult alleen in wat je typewerk bespaart.
 
 De pagina is lang, dus heeft hij een eigen **instellingenrail** aan de zijkant - Jouw gegevens, Weergave, Toegankelijkheid, Lolly-instantie, Jouw activiteit, Opslag, Beschikbaar offline, Feature flags, Content Credentials - met een **Instellingen zoeken** veld erboven dat de lijst filtert terwijl je typt. Elke sectie is diep te linken als `#/profile?focus=<section-id>`, wat hem opent en in beeld scrolt (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, enzovoort), zodat een link naar één instelling kan verwijzen in plaats van naar de bovenkant van de pagina.
 
-![Drie themakaarten, elk met een preview van zijn eigen type en kleur, met de actieve gemarkeerd](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Drie themakaarten, elk met een preview van zijn eigen type en kleur, met de actieve gemarkeerd](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## Een profiel is een context, niet alleen een persoon
 
@@ -35,9 +35,9 @@ Het woord "profiel" doet een vaste persoon vermoeden, maar in Lolly is het eigen
 
 ### Als individu
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![De pasfotobediening, leeg totdat je een foto uploadt die vervolgens op dit apparaat blijft](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![De pasfotobediening, leeg totdat je een foto uploadt die vervolgens op dit apparaat blijft](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Als team
 
@@ -53,7 +53,7 @@ In Lolly is die rol gewoon **een ander profiel dat je bij de hand houdt** - een 
 
 Op elk moment heeft een installatie **één actief profiel** - de gegevens die een tool op dat moment ziet. Er is geen profielwisselaar in de app; in plaats daarvan is elk profiel een **draagbaar pakket** (één `.zip`, zie [hieronder](#moving-a-profile-to-a-new-device)). Dat is bewust hetzelfde mechanisme als verhuizen naar een nieuw apparaat - een profiel is een bestand dat je kunt opslaan, kopiëren en laden.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Schoonste wissel:** **Profiel → Opslag → Al mijn gegevens wissen**, en vervolgens het pakket **importeren** voor de context waar je naartoe gaat. Je maakt nu puur als dat profiel.
 - <!--i:layers--> **Laagsgewijs:** importeren *zonder* eerst te wissen **voegt samen** - het geïmporteerde profiel, de sessies en de afbeeldingen komen boven op wat er al staat, waarbij alles met dezelfde naam wordt vervangen en de rest blijft staan. Handig om de opgeslagen sessies van één team in je eigen opstelling te trekken; niet wat je wilt als je een schone rolgrens nodig hebt.
@@ -61,7 +61,7 @@ Op elk moment heeft een installatie **één actief profiel** - de gegevens die e
 
 Dus als je echt met meerdere contexten jongleert (jij, je team, het eventmanager-hoedje), bewaar je meerdere bundels en laad je degene die je nodig hebt:
 
-![De opslagmeter, die opgeslagen sessies, afbeeldingen en cache uitsplitst tegenover wat de browser daadwerkelijk rapporteert](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![De opslagmeter, die opgeslagen sessies, afbeeldingen en cache uitsplitst tegenover wat de browser daadwerkelijk rapporteert](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Bewaar per context een bundel en hernoem de bestanden naar wat ze zijn (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Het bestand *is* het profiel.
 
@@ -104,7 +104,7 @@ Als de browser geen persistente opslag heeft toegekend, meldt de sectie dat en b
 
 ## Een profiel verplaatsen naar een nieuw apparaat
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Omdat een profiel volledig lokaal is, is de enige manier om het op een lege installatie te krijgen - een nieuwe laptop, een net gereset browser, de machine van een collega, een offline machine - door **het bestand mee te nemen**. Geen enkele login herstelt het voor je, en dat is precies het punt: er heeft nooit iets je apparaat verlaten.
 
@@ -112,7 +112,7 @@ Omdat een profiel volledig lokaal is, is de enige manier om het op een lege inst
 - <!--i:upload--> **Import data…** (Gegevens importeren…) op de andere installatie leest dat bestand weer in, en je gaat precies verder waar je gebleven was.
 - <!--i:box--> **Export my data & render everything** (Mijn gegevens exporteren & alles renderen) schrijft diezelfde back-up *plus* een tweede zip die elke opgeslagen sessie rendert naar het bijbehorende definitieve uitvoerbestand, in mappen die je Projecten weerspiegelen. Een compleet offline archief van zowel de bronnen als de resultaten - en dit kan groot en traag zijn bij veel sessies.
 
-![De twee knoppen die een hele installatie verplaatsen: Mijn gegevens exporteren schrijft één zip, Gegevens importeren leest hem weer in](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![De twee knoppen die een hele installatie verplaatsen: Mijn gegevens exporteren schrijft één zip, Gegevens importeren leest hem weer in](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 De bundel is een gewone, zelfstandige zip, dus hij reist met **elk** middel - USB, AirDrop, een netwerkshare, e-mail naar jezelf - en het doelapparaat kan volledig offline zijn. Elk onderdeel heeft een checksum, zodat een bestand dat onderweg beschadigd raakt bij het importeren wordt opgemerkt in plaats van half kapot te worden hersteld. Importeren **voegt samen** (profiel/sessie/afbeelding met dezelfde naam wordt overschreven; al de rest blijft behouden), zodat een doel dat al in gebruik was nooit wordt gewist.
 
@@ -122,13 +122,13 @@ Voor de exacte pakketopbouw, versiebeleid en integriteitsregels, zie **[Gegevens
 
 ## Hoe tools je profiel gebruiken
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Een tool *vult* alleen ooit de profielvelden *vooraf in* die het expliciet is gebouwd om te koppelen:
 
 **De opt-in (herkomst).** Wanneer je een asset exporteert, liften je gegevens optioneel mee als **herkomst** - een auteur/creditregel ingebed in de metadata van het bestand (PNG, PDF, SVG, …) - zodat een afgewerkte asset kan aangeven wie hem gemaakt heeft. *Dit* is wat **Mijn gegevens gebruiken voor het maken van** bepaalt: laat hem uit en de export draagt nog steeds de "Made with Lolly" tool-/platformattributie, maar er wordt geen persoonlijke auteur-/contactregel ingebed. (Dezelfde opt-in stelt de auteur in bij **/pro** batchruns.) (Toolauteurs: zie [Tools schrijven → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) en [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![De enkele schakelaar Mijn gegevens gebruiken voor het maken van, naast Profiel opslaan en uit totdat je hem aanzet](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![De enkele schakelaar Mijn gegevens gebruiken voor het maken van, naast Profiel opslaan en uit totdat je hem aanzet](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profiel versus Platform versus Mogelijkheden
 
@@ -147,7 +147,7 @@ Het woord wordt in het hele project op meerdere manieren gebruikt. Geen van beid
 - <!--i:box--> **Content profile** - een configuratie ten tijde van build in `profiles.json` die een set toolpakketten koppelt aan een merkcatalogus (bijv. `suse`, `lolly-start`). Het is wat een operator kiest bij het deployen, en het is ook wat de `profile` **URL/CLI-parameter** kiest als een *kleur*variant bij export (de ICC/CMYK-drukconditie - zie [URL Mode](/info/url-mode.html)). Beide gaan over de *build/uitvoer*, niet over *jou*. Zie [Configuratie](/info/configuration.html).
 - <!--i:seal--> **Identity profile** - de optionele **geverifieerde Content Credentials-identiteit** die je kunt inschrijven (een kortlevend certificaat dat je e-mail koppelt aan je ondertekende exports). Dat is een ondertekeningsidentiteit, los van de naam-/contactvelden van het persoonlijke profiel, hoewel **Mijn gegevens gebruiken voor het maken van** bepaalt of een van beide wordt ingebed. Zie [Content Credentials Identity](/info/content-credentials-identity.html).
 
-![De kaart Geverifieerde identiteit, telefoonbreedte: de certificaatlevensduurkiezer en de inschrijvingsstap eronder - het identiteitsprofiel, los van je persoonlijke gegevens](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![De kaart Geverifieerde identiteit, telefoonbreedte: de certificaatlevensduurkiezer en de inschrijvingsstap eronder - het identiteitsprofiel, los van je persoonlijke gegevens](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Privacy
 

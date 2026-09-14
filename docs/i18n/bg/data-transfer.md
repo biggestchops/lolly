@@ -2,7 +2,7 @@
 
 Всичко, което потребител на Lolly натрупва, живее **на неговото устройство** - без акаунт, без облак. Пакетът за прехвърляне на данни е начинът, по който тази стойност се движи: изнеси я на една инсталация, пренеси файла с каквото и да е средство (USB, AirDrop, имейл до себе си, споделена мрежова папка) и внеси я на друга. Файлът *е* транспортът. Целта може да е офлайн или онлайн. Няма значение, защото нищо никога не комуникира със сървър.
 
-![Двата бутона, които местят цяла инсталация: Изнеси моите данни записва един zip, Внеси данни го зарежда обратно](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Двата бутона, които местят цяла инсталация: Изнеси моите данни записва един zip, Внеси данни го зарежда обратно](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Тази страница е спецификацията на формата. За описание за крайния потребител виж [Using Lolly → Moving to another device](/info/using.html). Реализацията е в [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), а [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) фиксира договора за пренасяне на данните напред-назад.
 

@@ -192,7 +192,7 @@ Lolly는 내보내기 결과물에 암호화된 **Content Credential**을 봉인
 **등록을 건너뛰면 이 섹션의 어떤 내용도 사용자에게 적용되지 않으며,
 개인정보는 절대 기기를 벗어나지 않습니다.**
 
-![휴대폰 너비의 프로필 페이지에 있는 Verified identity 카드: 인증서 유효기간 선택기와 그 아래의 등록 단계, 사용자가 직접 시작하기 전까지는 비활성 상태다](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![휴대폰 너비의 프로필 페이지에 있는 Verified identity 카드: 인증서 유효기간 선택기와 그 아래의 등록 단계, 사용자가 직접 시작하기 전까지는 비활성 상태다](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 등록하면 정확히 다음과 같은 일이 일어납니다:
 

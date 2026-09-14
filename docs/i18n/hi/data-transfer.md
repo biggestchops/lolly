@@ -2,7 +2,7 @@
 
 Lolly उपयोगकर्ता जो कुछ भी जमा करता है वह **उसके डिवाइस पर** रहता है - कोई अकाउंट नहीं, कोई क्लाउड नहीं। डेटा-ट्रांसफ़र बंडल इसी मूल्य को हिलाने का तरीका है: इसे एक इंस्टॉल पर एक्सपोर्ट करें, फ़ाइल को किसी भी माध्यम से ले जाएँ (USB, AirDrop, ईमेल-टू-सेल्फ़, एक नेटवर्क शेयर) और दूसरे पर इम्पोर्ट करें। फ़ाइल *ही* परिवहन है। लक्ष्य डिवाइस ऑफ़लाइन हो या ऑनलाइन। इससे कोई फ़र्क़ नहीं पड़ता, क्योंकि कभी किसी सर्वर से बात नहीं होती।
 
-![वे दो बटन जो पूरी इंस्टॉल को स्थानांतरित करते हैं: Export my data एक zip लिखता है, Import data उसे वापस पढ़ता है](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![वे दो बटन जो पूरी इंस्टॉल को स्थानांतरित करते हैं: Export my data एक zip लिखता है, Import data उसे वापस पढ़ता है](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 यह पृष्ठ फ़ॉर्मैट स्पेक है। अंतिम-उपयोगकर्ता वॉकथ्रू के लिए देखें [Using Lolly → Moving to another device](/info/using.html)। कार्यान्वयन है [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), और [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) राउंड-ट्रिप कॉन्ट्रैक्ट को पिन करता है।
 

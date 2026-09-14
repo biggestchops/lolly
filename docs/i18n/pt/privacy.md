@@ -202,7 +202,7 @@ inscrever uma identidade verificada, para que suas exportações digam "Verifica
 \<your email\>" em vez de uma chave anônima. **Se você pular a inscrição, nada nesta seção
 se aplica a você, e nenhum dado pessoal jamais sai do seu dispositivo.**
 
-![O cartão de identidade Verified na página de perfil, com largura de celular: o seletor de tempo de vida do certificado e a etapa de inscrição abaixo dele, inativa até que você mesmo a inicie](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![O cartão de identidade Verified na página de perfil, com largura de celular: o seletor de tempo de vida do certificado e a etapa de inscrição abaixo dele, inativa até que você mesmo a inicie](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Se você se inscrever, aqui está exatamente o que acontece:
 

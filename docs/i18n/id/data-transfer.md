@@ -2,7 +2,7 @@
 
 Semua yang terkumpul dari pengguna Lolly berada **di perangkatnya** - tanpa akun, tanpa cloud. Bundel transfer data adalah cara nilai itu berpindah: ekspor di satu instalasi, bawa file dengan cara apa pun (USB, AirDrop, email ke diri sendiri, berbagi jaringan) dan impor di instalasi lain. File itu *adalah* transportnya. Target bisa offline atau online. Tidak ada bedanya, karena tidak ada yang pernah berbicara dengan server.
 
-![Dua tombol yang memindahkan seluruh instalasi: Export my data menulis satu zip, Import data membacanya kembali](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Dua tombol yang memindahkan seluruh instalasi: Export my data menulis satu zip, Import data membacanya kembali](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Halaman ini adalah spesifikasi formatnya. Untuk panduan langkah demi langkah bagi pengguna akhir lihat [Using Lolly → Moving to another device](/info/using.html). Implementasinya ada di [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), dan [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) mengunci kontrak bolak-balik (round-trip).
 

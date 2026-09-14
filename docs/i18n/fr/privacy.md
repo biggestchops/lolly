@@ -192,7 +192,7 @@ inscrire une identité vérifiée, pour que tes exports affichent "Verified - si
 \<your email\>" au lieu d'une clé anonyme. **Si tu ignores l'inscription, rien dans
 cette section ne te concerne, et aucune donnée personnelle ne quitte jamais ton appareil.**
 
-![La carte d'identité vérifiée sur la page profil, largeur téléphone : le sélecteur de durée de vie du certificat et l'étape d'inscription en dessous, dormante jusqu'à ce que tu la lances toi-même](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![La carte d'identité vérifiée sur la page profil, largeur téléphone : le sélecteur de durée de vie du certificat et l'étape d'inscription en dessous, dormante jusqu'à ce que tu la lances toi-même](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Si tu t'inscris, voici exactement ce qui se passe :
 

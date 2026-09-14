@@ -181,7 +181,7 @@ Lolly 可以将一个加密的 **Content Credential** 封入你的导出结果�
 \<your email\>”，而不是一个匿名密钥。**如果你跳过注册，本节内容
 就与你无关，也不会有任何个人数据离开你的设备。**
 
-![个人资料页上的已验证身份卡片，手机宽度：证书有效期选择器及其下方的注册步骤，在你自己启动之前处于休眠状态](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![个人资料页上的已验证身份卡片，手机宽度：证书有效期选择器及其下方的注册步骤，在你自己启动之前处于休眠状态](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 如果你确实注册了，接下来会发生的事情如下：
 

@@ -2,7 +2,7 @@
 
 Vše, co uživatel Lolly nashromáždí, žije **na jeho zařízení** - žádný účet, žádný cloud. Balíček pro přenos dat je způsob, jak se tato hodnota přesouvá: exportuj ho na jedné instalaci, přenes soubor jakýmkoli způsobem (USB, AirDrop, e-mail sám sobě, síťové sdílení) a naimportuj ho na jiné. Soubor *je* přenos. Cíl může být offline nebo online. Nehraje to roli, protože nic nikdy nekomunikuje se serverem.
 
-![Dvě tlačítka, která přesunou celou instalaci: Exportovat má data zapíše jeden zip, Importovat data ho zase načte](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Dvě tlačítka, která přesunou celou instalaci: Exportovat má data zapíše jeden zip, Importovat data ho zase načte](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Tato stránka je specifikace formátu. Návod pro koncového uživatele najdeš v [Používání Lolly → Přechod na jiné zařízení](/info/using.html). Implementace je [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts) a [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) fixuje kontrakt zpětné kompatibility (round-trip).
 

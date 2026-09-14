@@ -19,15 +19,15 @@ Alt i en profil finnes **på enheten**, i nettleserens lokale database (IndexedD
 | **Tilgjengelighet** | Fire komfortbrytere - *Reduce motion*, *Hide colourful previews*, *High contrast*, *Large text* - lagret på profilposten, så de følger med ved en profileksport. Se [Accessibility](#accessibility). |
 | **Ditt arbeid** | Lagrede økter (med miniatyrbilder) - organisert i nøstede mapper i **[Projects](/info/using.html)** - biblioteket ditt **My images** og de lokale aktivitetsstatistikkene, alt knyttet til denne profilen. |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Profilskjermen - navn, kontakt, et valgfritt portrettbilde og preferansene dine](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Profilskjermen - navn, kontakt, et valgfritt portrettbilde og preferansene dine](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 Ingenting av dette er obligatorisk. En blank profil er en helt utmerket profil; du fyller bare inn det som sparer deg for skriving.
 
 Siden er lang, så den har sin egen **innstillingsskinne** nedover siden - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - med et **Search settings**-felt over den som filtrerer listen etter hvert som du skriver. Hver seksjon er dyplenkbar som `#/profile?focus=<section-id>`, som åpner den og skroller den inn i visning (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, og så videre), slik at en lenke kan peke på én innstilling i stedet for toppen av siden.
 
-![Tre temakort, hvert forhåndsviser sin egen type og farge, med det aktive markert](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Tre temakort, hvert forhåndsviser sin egen type og farge, med det aktive markert](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## En profil er en kontekst, ikke bare en person
 
@@ -35,9 +35,9 @@ Ordet «profil» antyder én fast person, men i Lolly er det egentlig en **skape
 
 ### Som enkeltperson
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![Portrettbilde-kontrollen, tom inntil du laster opp et bilde som deretter blir værende på denne enheten](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![Portrettbilde-kontrollen, tom inntil du laster opp et bilde som deretter blir værende på denne enheten](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### Som et team
 
@@ -53,7 +53,7 @@ I Lolly er den rollen bare **en annen profil du har for hånden** - en lagret pa
 
 På et hvilket som helst tidspunkt har en installasjon **én aktiv profil** - detaljene et verktøy ser akkurat nå. Det finnes ingen profilbytter i appen; i stedet er hver profil en **portabel pakke** (en enkelt `.zip`, se [under](#moving-a-profile-to-a-new-device)). Det er bevisst den samme mekanismen som å flytte til en ny enhet - en profil er en fil du kan lagre, kopiere og laste inn.
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **Reneste bytte:** **Profile → Storage → Clear all my data**, deretter **Import** pakken for konteksten du går inn i. Nå skaper du utelukkende som den profilen.
 - <!--i:layers--> **Lagdeling:** å importere *uten* å tømme først **fletter** - den importerte profilen, øktene og bildene havner oppå det som allerede er der, og erstatter alt med samme navn mens resten blir stående. Praktisk for å hente inn ett teams lagrede økter i ditt eget oppsett; ikke det du vil ha om du trenger en ren rollegrense.
@@ -61,7 +61,7 @@ På et hvilket som helst tidspunkt har en installasjon **én aktiv profil** - de
 
 Så hvis du virkelig sjonglerer flere kontekster (deg, teamet ditt, eventansvarlig-hatten), holder du på flere pakker og laster inn den du trenger:
 
-![Lagringsmåleren, som bryter ned lagrede økter, bilder og cache mot det nettleseren faktisk rapporterer](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![Lagringsmåleren, som bryter ned lagrede økter, bilder og cache mot det nettleseren faktisk rapporterer](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > Hold én pakke per kontekst og gi filene nytt navn etter hva de er (`LollyTools-events-2026.zip`, `LollyTools-me.zip`). Filen *er* profilen.
 
@@ -104,7 +104,7 @@ Hvis nettleseren ikke har gitt varig lagring, sier delen fra om det og tilbyr **
 
 ## Flytte en profil til en ny enhet
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Fordi en profil er helt lokal, er den eneste måten å få den inn på en blank installasjon - en ny bærbar datamaskin, en nylig tilbakestilt nettleser, en kollegas maskin, en offline-boks - å **ta med filen**. Ingen innlogging gjenoppretter den for deg, og det er hele poenget: ingenting forlot noensinne enheten din i utgangspunktet.
 
@@ -112,7 +112,7 @@ Fordi en profil er helt lokal, er den eneste måten å få den inn på en blank 
 - <!--i:upload--> **Importer data …** på den andre installasjonen leser den filen tilbake inn, og du fortsetter nøyaktig der du slapp.
 - <!--i:box--> **Eksporter dataene mine og render alt** skriver den samme sikkerhetskopien *pluss* en andre zip som rendrer hver lagrede økt til sin ferdige utfil, i mapper som gjenspeiler prosjektene dine. Et komplett offlinearkiv av både kildene og resultatene - og det kan bli stort og tregt med mange økter.
 
-![De to knappene som flytter en hel installasjon: Eksporter dataene mine skriver én zip, Importer data leser den tilbake](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![De to knappene som flytter en hel installasjon: Eksporter dataene mine skriver én zip, Importer data leser den tilbake](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Pakken er en enkel, selvstendig zip-fil, så den kan reise på **en hvilken som helst** måte - USB, AirDrop, en nettverksdeling, e-post til deg selv - og målet kan være helt offline. Hver del er sjekksummert, slik at en fil som er skadet under overføring, oppdages ved import i stedet for å bli gjenopprettet halvveis ødelagt. Import **slår sammen** (profil/økt/bilde med samme navn overskrives; alt annet beholdes), så den sletter aldri et mål som allerede er i bruk.
 
@@ -122,13 +122,13 @@ For den eksakte pakkestrukturen, versjonspolicyen og integritetsreglene, se **[D
 
 ## Hvordan verktøy bruker profilen din
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 Et verktøy *forhåndsutfyller* bare noensinne de profilfeltene det eksplisitt er bygget for å binde til:
 
 **Opt-in-valget (proveniens).** Når du eksporterer en ressurs, kan detaljene dine valgfritt følge med som **proveniens** - en forfatter-/krediteringslinje bygget inn i filens metadata (PNG, PDF, SVG, …) - slik at en ferdig ressurs kan si hvem som lagde den. *Dette* er det **Bruk detaljene mine ved oppretting** styrer: la den stå av, og eksporten har fortsatt attribusjonen «Laget med Lolly» for verktøy/plattform, men ingen personlig forfatter-/kontaktlinje blir bygget inn. (Det samme opt-in-valget setter forfatteren på batch-kjøringer i **/pro**.) (Verktøyforfattere: se [Lage verktøy → `bindToProfile`](/info/authoring-tools.html#bindtoprofile) og [Host API → `host.profile`](/info/host-api.html#host-profile).)
 
-![Den ene bryteren Bruk detaljene mine ved oppretting, ved siden av Lagre profil og av til du slår den på](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Den ene bryteren Bruk detaljene mine ved oppretting, ved siden av Lagre profil og av til du slår den på](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## Profil vs. plattform vs. funksjoner
 
@@ -147,7 +147,7 @@ Ordet brukes i flere betydninger på tvers av prosjektet. Ingen av disse er den 
 - <!--i:box--> **Innholdsprofil** - en byggetidskonfigurasjon i `profiles.json` som binder et sett med verktøypakker til en merkevarekatalog (f.eks. `suse`, `lolly-start`). Det er det en operatør velger ved utrulling, og det er også det **URL-/CLI-parameteren** `profile` velger som en *fargevariant* av ved eksporttidspunktet (ICC-/CMYK-trykktilstanden - se [URL-modus](/info/url-mode.html)). Begge handler om *bygget/utdataene*, ikke om *deg*. Se [Konfigurasjon](/info/configuration.html).
 - <!--i:seal--> **Identitetsprofil** - den valgfrie **verifiserte Content Credentials-identiteten** du kan registrere (et kortlevd sertifikat som knytter e-posten din til dine signerte eksporter). Det er en signeringsidentitet, atskilt fra den personlige profilens navn-/kontaktfelt, selv om **Bruk detaljene mine ved oppretting** styrer om noen av dem blir bygget inn. Se [Content Credentials-identitet](/info/content-credentials-identity.html).
 
-![Kortet for Verifisert identitet, telefonbredde: velgeren for sertifikatets levetid og registreringssteget under - identitetsprofilen, atskilt fra de personlige detaljene dine](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Kortet for Verifisert identitet, telefonbredde: velgeren for sertifikatets levetid og registreringssteget under - identitetsprofilen, atskilt fra de personlige detaljene dine](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## Personvern
 

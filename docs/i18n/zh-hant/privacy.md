@@ -166,7 +166,7 @@ Lolly 可以在你的匯出檔案中封入加密的 **Content Credential**，讓
 \<your email\>」，而不是一組匿名金鑰。**若你略過註冊，本節內容就與你
 無關，也絕不會有任何個人資料離開你的裝置。**
 
-![設定檔頁面上的 Verified identity（已驗證身分）卡片，手機寬度畫面：憑證有效期限選擇器及其下方的註冊步驟，在你自行啟動之前皆處於休眠狀態](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![設定檔頁面上的 Verified identity（已驗證身分）卡片，手機寬度畫面：憑證有效期限選擇器及其下方的註冊步驟，在你自行啟動之前皆處於休眠狀態](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 若你確實進行註冊，以下就是實際發生的事：
 

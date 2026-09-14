@@ -199,7 +199,7 @@ iscrivere un'identità verificata, così le tue esportazioni dicono "Verified - 
 \<your email\>" invece di una chiave anonima. **Se salti l'iscrizione, nulla in
 questa sezione ti riguarda, e nessun dato personale lascia mai il tuo dispositivo.**
 
-![La scheda identità verificata nella pagina profilo, larghezza telefono: il selettore della durata del certificato e il passaggio di iscrizione sottostante, dormiente finché non lo avvii tu stesso](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![La scheda identità verificata nella pagina profilo, larghezza telefono: il selettore della durata del certificato e il passaggio di iscrizione sottostante, dormiente finché non lo avvii tu stesso](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Se ti iscrivi, ecco esattamente cosa succede:
 

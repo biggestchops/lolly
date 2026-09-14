@@ -2,7 +2,7 @@
 
 Wszystko, co gromadzi użytkownik Lolly, znajduje się **na jego urządzeniu** - bez konta, bez chmury. Paczka transferu danych to sposób, w jaki ta wartość się przemieszcza: eksportujesz ją na jednej instalacji, przenosisz plik dowolną metodą (USB, AirDrop, e-mail do siebie, udział sieciowy) i importujesz na drugiej. Plik *jest* transportem. Cel może być offline lub online. Nie ma to znaczenia, bo nic nigdy nie łączy się z serwerem.
 
-![Dwa przyciski przenoszące całą instalację: Eksportuj moje dane zapisuje jeden plik zip, Importuj dane wczytuje go z powrotem](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Dwa przyciski przenoszące całą instalację: Eksportuj moje dane zapisuje jeden plik zip, Importuj dane wczytuje go z powrotem](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Ta strona to specyfikacja formatu. Instrukcję dla użytkownika końcowego znajdziesz w [Using Lolly → Moving to another device](/info/using.html). Implementacja to [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), a [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) zabezpiecza kontrakt pełnego cyklu import/eksport.
 

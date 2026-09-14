@@ -186,7 +186,7 @@ thiết bị của bạn. Phần này đề cập đến bước duy nhất *tù
 \<your email\>" thay vì một khóa ẩn danh. **Nếu bạn bỏ qua việc đăng ký, không gì trong
 phần này áp dụng cho bạn, và không có dữ liệu cá nhân nào rời khỏi thiết bị của bạn.**
 
-![Thẻ danh tính Verified trên trang hồ sơ, độ rộng điện thoại: bộ chọn thời hạn chứng chỉ và bước đăng ký bên dưới, không hoạt động cho đến khi bạn tự khởi động nó](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![Thẻ danh tính Verified trên trang hồ sơ, độ rộng điện thoại: bộ chọn thời hạn chứng chỉ và bước đăng ký bên dưới, không hoạt động cho đến khi bạn tự khởi động nó](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 Nếu bạn đăng ký, đây là chính xác những gì xảy ra:
 

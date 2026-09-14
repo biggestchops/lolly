@@ -407,8 +407,8 @@ function scanDocs(): Array<ShotDef & { file: string }> {
  * The top-level docs/*.md pages that differ from origin/main - the union of
  * committed changes (`git diff --name-only origin/main...HEAD`) and uncommitted
  * working-tree edits (`git status --porcelain`), filtered to `*.md` files at the
- * docs root. Both git invocations run with `-C DOCS_DIR` and report paths relative
- * to that directory - the same bare basenames scanDocs keys `ShotDef.file` on (it only reads top-level *.md, never
+ * docs root. Git reports repository-relative paths even with `-C DOCS_DIR`;
+ * strip the docs prefix to match the basenames scanDocs keys `ShotDef.file` on (it only reads top-level *.md, never
  * the i18n/ translations, so nested paths are irrelevant to recipe mapping).
  *
  * Returns `null`, NOT an empty set, when the docs dir is absent or either git
@@ -429,7 +429,7 @@ function changedDocsPages(): Set<string> | null {
 
   const out = new Set<string>();
   const addIfMd = (path: string): void => {
-    const p = path.trim().replace(/^"|"$/g, '');
+    const p = path.trim().replace(/^"|"$/g, '').replace(/^docs\//, '');
     // Top-level *.md only: that is the domain scanDocs discovers recipes in.
     if (p.endsWith('.md') && !p.includes('/')) out.add(p);
   };

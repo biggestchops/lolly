@@ -19,15 +19,15 @@
 | **无障碍** | 四个舒适度开关 - *Reduce motion*、*Hide colourful previews*、*High contrast*、*Large text* - 保存在个人资料记录中,因此会随个人资料一起导出。参见 [无障碍](#accessibility)。 |
 | **你的工作内容** | 已保存的会话(带缩略图) - 在 **[Projects](/info/using.html)** 中组织为嵌套文件夹 - 你的 **My images** 图库以及本地活动统计,全部与此个人资料关联。 |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![个人资料页面 - 姓名、联系方式、一张可选头像照片以及你的偏好设置](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![个人资料页面 - 姓名、联系方式、一张可选头像照片以及你的偏好设置](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 以上都不是必填项。一个空白的个人资料本身就是完全可用的;你只需填写能替你省去重复输入的部分。
 
 这个页面很长,因此在侧边带有自己的**设置导航栏** - Your details、Appearance、Accessibility、Lolly instance、Your activity、Storage、Available offline、Feature flags、Content Credentials - 上方还有一个 **Search settings** 输入框,随着你的输入实时过滤列表。每个部分都可以通过 `#/profile?focus=<section-id>` 形成深层链接,打开该部分并将其滚动到可见位置(例如 `#/profile?focus=storage-section`、`?focus=feature-flags-section` 等),因此一个链接可以直接指向某一项设置,而不只是页面顶部。
 
-![三张主题卡片,各自预览自身的字体和颜色,当前使用的那张会被标出](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![三张主题卡片,各自预览自身的字体和颜色,当前使用的那张会被标出](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## 个人资料是一种情境,而不仅仅是一个人
 
@@ -35,9 +35,9 @@
 
 ### 作为个人
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![头像控件,在你上传照片之前为空,上传后照片会保留在此设备上](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![头像控件,在你上传照片之前为空,上传后照片会保留在此设备上](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### 作为团队
 
@@ -53,7 +53,7 @@
 
 在任意时刻,一个安装只有**一个活动个人资料** - 也就是工具此刻能看到的信息。应用内没有个人资料切换器;取而代之的是,每个个人资料都是一个**可移动的包**(一个 `.zip` 文件,参见[下文](#moving-a-profile-to-a-new-device))。这是刻意与迁移到新设备使用相同的机制 - 个人资料就是一个可以保存、复制和加载的文件。
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **最干净的切换方式:** **Profile → Storage → Clear all my data**,然后 **Import** 你即将进入的那个场景所对应的包。此后你就是纯粹以那个个人资料在创建。
 - <!--i:layers--> **叠加:** 不先清空就导入会**合并** - 导入的个人资料、会话和图片会叠加在已有内容之上,覆盖同名的内容,保留其余部分。适合把某个团队已保存的会话拉进你自己的环境;但如果你需要一个干净的角色边界,这就不是你想要的做法。
@@ -61,7 +61,7 @@
 
 所以,如果你确实需要在多个情境之间切换(你自己、你的团队、活动经理这顶帽子),就保留多个资料包,需要哪个就加载哪个:
 
-![存储用量表,将已保存的会话、图片和缓存与浏览器实际报告的用量进行对比拆分](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![存储用量表,将已保存的会话、图片和缓存与浏览器实际报告的用量进行对比拆分](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > 为每个情境保留一个资料包,并按其用途重命名文件(`LollyTools-events-2026.zip`、`LollyTools-me.zip`)。这个文件*就是*个人资料。
 
@@ -104,7 +104,7 @@ Lolly 会随着你的使用逐步缓存内容,但这种边用边缓存的方式�
 
 ## 将个人资料迁移到新设备
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 由于个人资料完全保存在本地,要把它带到一次全新的安装——一台新笔记本电脑、一个刚重置的浏览器、同事的电脑、一台离线设备——唯一的方法就是**携带这个文件**。没有登录能替你恢复它,而这正是重点所在:从一开始就没有任何东西离开过你的设备。
 
@@ -112,7 +112,7 @@ Lolly 会随着你的使用逐步缓存内容,但这种边用边缓存的方式�
 - <!--i:upload--> 在另一台设备上用**导入数据…**读取该文件,即可原样接续。
 - <!--i:box--> **导出我的数据并渲染全部**会写出同样的备份,*外加*第二个 zip,其中把每个已保存的会话都渲染成最终输出文件,目录结构与你的项目一一对应。这是源文件与结果的完整离线归档 - 会话较多时可能体积大、速度慢。
 
-![移动整个安装内容的两个按钮:导出我的数据写出一个 zip,导入数据将其读回](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![移动整个安装内容的两个按钮:导出我的数据写出一个 zip,导入数据将其读回](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 这个资料包是一个普通的、自包含的 zip 文件,因此可以通过**任何**方式传输——U 盘、AirDrop、网络共享、发邮件给自己——目标设备也可以完全离线。每个部分都经过校验,因此传输中损坏的文件会在导入时被发现,而不会以半损坏状态被恢复。导入会**合并**(同名的个人资料/会话/图片会被覆盖;其余全部保留),所以它绝不会清空一个已在使用中的目标设备。
 
@@ -122,13 +122,13 @@ Lolly 会随着你的使用逐步缓存内容,但这种边用边缓存的方式�
 
 ## 工具如何使用你的个人资料
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 工具只会*预填*它被明确设计用来绑定的个人资料字段:
 
 **可选项(来源信息)。**当你导出资产时,你的信息可以选择性地随附为**来源信息** - 一条嵌入文件元数据(PNG、PDF、SVG 等)的作者/署名行 - 让完成的资产能说明是谁制作的。**使用我的信息进行创建**管理的正是*这一项*:关闭它,导出仍会带有“Made with Lolly”的工具/平台署名,但不会嵌入个人作者/联系方式行。(同一开关也决定 **/pro** 批处理运行的作者信息。)(工具作者请参见[编写工具指南 → `bindToProfile`](/info/authoring-tools.html#bindtoprofile)和[Host API → `host.profile`](/info/host-api.html#host-profile)。)
 
-![单个“使用我的信息进行创建”开关,位于保存档案旁,默认关闭直到你手动打开](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![单个“使用我的信息进行创建”开关,位于保存档案旁,默认关闭直到你手动打开](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## 个人资料 vs 平台 vs 功能
 
@@ -147,7 +147,7 @@ Lolly 会随着你的使用逐步缓存内容,但这种边用边缓存的方式�
 - <!--i:box--> **内容配置文件** - `profiles.json` 中的一项构建期配置,将一组工具包绑定到某个品牌目录(例如 `suse`、`lolly-start`)。这是运营者部署时的选择,也是 `profile` **URL/CLI 参数**在导出时选择*颜色*变体的依据(ICC/CMYK 印刷条件 - 参见 [URL 模式](/info/url-mode.html))。二者都关乎*构建/输出*,而非*你本人*。参见[配置](/info/configuration.html)。
 - <!--i:seal--> **身份档案** - 你可以选择注册的**已验证 Content Credentials 身份**(一份将你的邮箱与你签名的导出内容绑定的短期证书)。这是一种签名身份,与个人档案中的姓名/联系方式字段是分开的,不过**使用我的信息进行创建**决定二者是否被嵌入。参见 [Content Credentials 身份](/info/content-credentials-identity.html)。
 
-![已验证身份卡片,手机宽度视图:证书有效期选择器及其下方的注册步骤 - 身份档案,与你的个人信息分开](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![已验证身份卡片,手机宽度视图:证书有效期选择器及其下方的注册步骤 - 身份档案,与你的个人信息分开](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## 隐私
 

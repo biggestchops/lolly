@@ -2,7 +2,7 @@
 
 Lolly 사용자가 쌓아온 모든 것은 **기기에** 있어요 - 계정도 없고 클라우드도 없어요. 데이터 전송 번들은 그 가치를 옮기는 방법이에요. 한 설치본에서 내보내고, 파일을 어떤 수단으로든(USB, AirDrop, 자신에게 보내는 이메일, 네트워크 공유) 옮긴 뒤, 다른 설치본에서 가져와요. 파일 자체가 전송 수단이에요. 대상은 오프라인이든 온라인이든 상관없어요. 서버와는 아무것도 통신하지 않으니까요.
 
-![설치본 전체를 이전하는 두 버튼: 내 데이터 내보내기는 zip 하나를 작성하고, 데이터 가져오기는 그것을 다시 읽어들입니다](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![설치본 전체를 이전하는 두 버튼: 내 데이터 내보내기는 zip 하나를 작성하고, 데이터 가져오기는 그것을 다시 읽어들입니다](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 이 페이지는 형식 명세예요. 최종 사용자용 안내는 [Using Lolly → Moving to another device](/info/using.html)를 참고하세요. 구현체는 [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts)이고, [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts)가 왕복 계약을 고정해요.
 

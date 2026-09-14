@@ -2,7 +2,7 @@
 
 Tot ce acumulează un utilizator Lolly rămâne **pe dispozitivul lui** - fără cont, fără cloud. Pachetul de transfer de date este modul în care această valoare se mută: îl exporți pe o instalare, transporți fișierul prin orice mijloc (USB, AirDrop, email către tine însuți, o partajare de rețea) și îl imporți pe alta. Fișierul *este* transportul. Ținta poate fi offline sau online. Nu contează, pentru că nimic nu comunică vreodată cu un server.
 
-![Cele două butoane care mută o instalare întreagă: Export my data scrie un zip, Import data îl citește înapoi](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![Cele două butoane care mută o instalare întreagă: Export my data scrie un zip, Import data îl citește înapoi](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 Această pagină este specificația formatului. Pentru ghidul pentru utilizatorul final, vezi [Using Lolly → Moving to another device](/info/using.html). Implementarea este [`shells/web/src/data-transfer.ts`](../shells/web/src/data-transfer.ts), iar [`tests/data-transfer.test.ts`](../tests/data-transfer.test.ts) fixează contractul de round-trip.
 

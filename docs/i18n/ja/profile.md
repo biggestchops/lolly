@@ -19,15 +19,15 @@
 | **Accessibility** | 4つの快適設定 - *Reduce motion*、*Hide colourful previews*、*High contrast*、*Large text* - はプロフィールレコードに保持されるため、プロフィールのエクスポートにも付随します。[Accessibility](#accessibility)を参照してください。 |
 | **Your work** | 保存されたセッション(サムネイル付き) - **[Projects](/info/using.html)**内のネストされたフォルダに整理されます - および**My images**ライブラリとローカルのアクティビティ統計。すべてこのプロフィールに紐づきます。 |
 
-![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
-![Profile画面 - 氏名、連絡先、任意のヘッドショット、各種設定](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
+![Profile画面 - 氏名、連絡先、任意のヘッドショット、各種設定](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&walker=1&localize=1&dark=1&filename=profile-details)
 
 これらはすべて任意です。空欄のプロフィールもそれはそれで問題なく機能します。入力の手間が省ける項目だけを埋めれば十分です。
 
 このページは長いため、側面に独自の**設定レール**を備えています - Your details、Appearance、Accessibility、Lolly instance、Your activity、Storage、Available offline、Feature flags、Content Credentials - その上部には入力するそばからリストを絞り込む**Search settings**フィールドがあります。各セクションは`#/profile?focus=<section-id>`としてディープリンク可能で、これを開くとそのセクションが表示位置までスクロールされます(`#/profile?focus=storage-section`、`?focus=feature-flags-section`など)。そのため、リンクはページの先頭ではなく1つの設定を直接指し示すことができます。
 
-![3つのテーマカード。それぞれ独自のタイプと色をプレビューし、有効なものにはフラグが付いている](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
+![3つのテーマカード。それぞれ独自のタイプと色をプレビューし、有効なものにはフラグが付いている](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dappearance-section&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
 ## プロフィールは単なる「人」ではなく「文脈」
 
@@ -35,9 +35,9 @@
 
 ### 個人として
 
-![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![The headshot control, empty until you upload a photo that then stays on this device](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
-![ヘッドショットのコントロール。写真をアップロードするまでは空で、アップロード後はこの端末に保存される](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot)
+![ヘッドショットのコントロール。写真をアップロードするまでは空で、アップロード後はこの端末に保存される](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Ddetails-section&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-side&walker=1&dark=1&filename=pd-profile-headshot&css=.profile-details-main%7Bdisplay%3Anone%7D)
 
 ### チームとして
 
@@ -53,7 +53,7 @@ Lollyでは、その役割は単に**手元に置いておく別のプロフィ�
 
 どの瞬間でも、あるインストールには**1つのアクティブなプロフィール**しかありません - それが今この瞬間にツールから見えている詳細情報です。アプリ内にプロフィール切り替え機能はありません。その代わり、各プロフィールは**持ち運び可能なバンドル**(単一の`.zip`、[下記](#moving-a-profile-to-a-new-device)を参照)です。これは新しい端末への移行と意図的に同じ仕組みです - プロフィールは保存、コピー、読み込みができる1つのファイルです。
 
-![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![The storage meter, breaking down saved sessions, images and cache against what the browser actually reports](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 - <!--i:trash--> **最もクリーンな切り替え方:** **Profile → Storage → Clear all my data**を実行し、その後、移行先のコンテキスト用のバンドルを**Import**します。これで、そのプロフィールとして純粋に作成する状態になります。
 - <!--i:layers--> **レイヤー化:** 先にクリアせずにインポートすると**マージ**されます - インポートされたプロフィール、セッション、画像は既存のものの上に重なり、同名のものは置き換えられ、それ以外は残ります。あるチームの保存済みセッションを自分の環境に取り込むのに便利ですが、明確な役割の境界が必要な場合には向きません。
@@ -61,7 +61,7 @@ Lollyでは、その役割は単に**手元に置いておく別のプロフィ�
 
 そのため、複数の文脈（あなた自身、チーム、イベントマネージャーという役割）を実際に使い分けている場合は、複数のバンドルを保持しておき、必要なものを読み込みます。
 
-![ストレージメーター。保存されたセッション、画像、キャッシュの内訳を、ブラウザが実際に報告する値と比較して表示する](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
+![ストレージメーター。保存されたセッション、画像、キャッシュの内訳を、ブラウザが実際に報告する値と比較して表示する](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%2C.storage-subsection%2C.storage-actions%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.store-meter&dark=1&filename=pd-storage-meter)
 
 > 文脈ごとにバンドルを保管し、内容がわかるようファイル名を変更しておきましょう（`LollyTools-events-2026.zip`、`LollyTools-me.zip`）。ファイルそのものが、プロフィール*なのです*。
 
@@ -104,7 +104,7 @@ Lollyは利用しながらキャッシュを蓄積していきますが、この
 
 ## プロフィールを新しいデバイスへ移行する
 
-![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![The two buttons that move a whole install: Export my data writes one zip, Import data reads it back](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 プロフィールは完全にローカルなものであるため、まっさらなインストール——新しいノートPC、リセットしたばかりのブラウザ、同僚のマシン、オフラインの端末——にそれを持ち込む唯一の方法は、**ファイルを運ぶこと**です。ログインによって復元されることはありません。それこそが重要な点であり、そもそもあなたのデバイスから何かが外に出たことは一度もないのです。
 
@@ -112,7 +112,7 @@ Lollyは利用しながらキャッシュを蓄積していきますが、この
 - <!--i:upload--> 別のインストール先の**Import data…**でそのファイルを読み込むと、中断した箇所からそのまま再開できます。
 - <!--i:box--> **Export my data & render everything**は同じバックアップに*加えて*、保存済みのすべてのセッションを完成した出力ファイルにレンダリングした2つ目のzipを、Projectsの構成を反映したフォルダー内に書き出します。ソースと結果の両方を含む完全なオフラインアーカイブです - セッション数が多いと大きく、時間がかかることがあります。
 
-![インストール全体を移動する2つのボタン: Export my dataは1つのzipを書き出し、Import dataはそれを読み込みます](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=.storage-subsection&dark=1&filename=pd-transfer-controls)
+![インストール全体を移動する2つのボタン: Export my dataは1つのzipを書き出し、Import dataはそれを読み込みます](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Dstorage-section&width=1440&height=1800&dpi=192&waitMs=2400&css=.store-manages%7Bdisplay%3Anone%7D&walker=1&format=svg&cropSelector=%23storage-section%20.storage-subsection&dark=1&filename=pd-transfer-controls)
 
 バンドルはそれ自体で完結した通常のzipファイルなので、USB、AirDrop、ネットワーク共有、自分宛のメールなど**あらゆる**手段で運ぶことができ、移行先は完全にオフラインでも構いません。各パートにはチェックサムが付いているため、転送中に破損したファイルは、中途半端に壊れた状態で復元されるのではなく、インポート時に検出されます。インポートは**マージ**方式（同名のプロフィール／セッション／画像は上書きされ、それ以外はそのまま保持）なので、すでに使用中の移行先を消去してしまうことはありません。
 
@@ -122,13 +122,13 @@ Lollyは利用しながらキャッシュを蓄積していきますが、この
 
 ## ツールがプロフィールをどう使うか
 
-![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![The single Use my details switch, sitting beside Save Profile and off until you turn it on](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ツールは、明示的に紐づけるよう作られたプロフィールのフィールドを*事前入力*するだけです。
 
 **オプトイン(来歴情報)。** アセットをエクスポートすると、あなたの詳細情報は任意で**来歴情報(provenance)**として一緒に含まれます - ファイルのメタデータ(PNG、PDF、SVGなど)に埋め込まれる作者/クレジット行です - これにより、完成したアセットは誰が作ったかを示せます。*これ*こそが**Use my details to create**が制御する対象です。オフにしたままでも、エクスポートには「Made with Lolly」というツール/プラットフォームの帰属表示は引き続き含まれますが、個人の作者/連絡先情報は埋め込まれません。(同じオプトインが**/pro**の一括処理での作者も設定します。)(ツール作者向け: [Authoring Tools → `bindToProfile`](/info/authoring-tools.html#bindtoprofile)および[Host API → `host.profile`](/info/host-api.html#host-profile)を参照してください。)
 
-![Save Profileの横にある単一のUse my details to createスイッチ。オンにするまではオフのままです](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
+![Save Profileの横にある単一のUse my details to createスイッチ。オンにするまではオフのままです](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Duse-details&width=1440&height=900&dpi=192&waitMs=1600&format=svg&cropSelector=.profile-check&walker=1&dark=1&filename=pd-use-my-details)
 
 ## プロフィール・プラットフォーム・機能の違い
 
@@ -147,7 +147,7 @@ Lollyは利用しながらキャッシュを蓄積していきますが、この
 - <!--i:box--> **Content profile** - `profiles.json`内のビルド時設定で、一連のツールパックをブランドカタログ(`suse`、`lolly-start`など)に結び付けます。これは運用者がデプロイ時に選択するもので、`profile` **URL/CLIパラメータ**もエクスポート時に選択する*色*バリアント(ICC/CMYKの印刷条件 - [URL Mode](/info/url-mode.html)を参照)を指すものでもあります。どちらも*ビルド/出力*に関するものであり、*あなた*に関するものではありません。[Configuration](/info/configuration.html)を参照してください。
 - <!--i:seal--> **Identity profile** - 登録できる任意の**検証済みContent Credentials ID**(あなたのメールアドレスと署名済みエクスポートを結び付ける短命の証明書)です。これは署名用のIDであり、個人プロファイルの名前/連絡先フィールドとは別のものですが、どちらが埋め込まれるかは**Use my details to create**が制御します。[Content Credentials Identity](/info/content-credentials-identity.html)を参照してください。
 
-![電話幅のVerified identityカード: 証明書の有効期間を選ぶピッカーとその下の登録ステップ - 個人情報とは別のidentity profile](/t/url-shot?url=%2F%23%2Fprofile%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
+![電話幅のVerified identityカード: 証明書の有効期間を選ぶピッカーとその下の登録ステップ - 個人情報とは別のidentity profile](/t/url-shot?url=%2F%23%2Fsettings%3Ffocus%3Didentity-section&width=430&height=1600&dpi=192&waitMs=2400&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%7D&format=svg&walker=1&cropSelector=%23identity-section&dark=1&filename=pv-identity-enrol)
 
 ## プライバシー
 
