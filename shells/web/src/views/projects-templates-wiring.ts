@@ -136,6 +136,8 @@ export function templatePickerSource(
 ): CollectTemplates {
   const byRef = new Map<string, TemplateItem>();
   return {
+    error: () => tpl.loadError(),
+    hydrate: (root) => tpl.hydrate(root),
     list: async () => {
       await tpl.load(profile);
       const items = tpl.pickable();

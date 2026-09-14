@@ -22,6 +22,8 @@
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import { installUserTokens } from '../../bridge/tokens.ts';
 import type { WebTokensAPI } from '../../bridge/tokens.ts';
+import { activeHeadId } from './active.ts';
+import { USER_TOKENS_ID } from '../../bridge/tokens.ts';
 
 /** A named, restorable snapshot of the head document. */
 export interface Checkpoint {
@@ -34,6 +36,7 @@ export interface Checkpoint {
 /** What a checkpoint stores: the listing fields plus the document itself. */
 interface CheckpointRecord extends Checkpoint {
   doc: unknown;
+  headId?: string;
 }
 
 export interface StudioState {
@@ -51,7 +54,7 @@ export interface StudioState {
   /** Checkpoints oldest first - the order they were taken. */
   listCheckpoints(): Promise<Checkpoint[]>;
   /** Reinstall a checkpoint's document. False when the id is unknown. */
-  restoreCheckpoint(id: string): Promise<boolean>;
+  restoreCheckpoint(id: string, beforeRestoreLabel?: string): Promise<boolean>;
   /** Subscribe to installs; returns an unsubscribe. */
   onChange(cb: (action: string) => void): () => void;
 }
@@ -114,7 +117,7 @@ export function createStudioState(host: HostV1, opts: StudioStateOptions = {}): 
   const subs = new Set<(action: string) => void>();
 
   async function readCheckpoints(): Promise<CheckpointRecord[]> {
-    const stored = await host.state.load(CHECKPOINTS_KEY).catch(() => null);
+    const stored = await host.state.load(CHECKPOINTS_KEY);
     const entries = (stored as { entries?: unknown } | null)?.entries;
     if (!Array.isArray(entries)) return [];
     return entries.filter((e): e is CheckpointRecord =>
@@ -146,6 +149,16 @@ export function createStudioState(host: HostV1, opts: StudioStateOptions = {}): 
     if (undoStack.length > UNDO_LIMIT) undoStack.shift();
   }
 
+  async function checkpoint(label: string): Promise<string> {
+    if (!isDoc(head)) throw new Error('checkpoint: no tokens document loaded');
+    const record: CheckpointRecord = { id: checkpointId(), label, date: new Date().toISOString(), doc: clone(head), headId: await activeHeadId(host) };
+    const list = await readCheckpoints();
+    list.push(record);
+    while (list.length > CHECKPOINT_LIMIT) list.shift();
+    await host.state.save(CHECKPOINTS_KEY, { entries: list });
+    return record.id;
+  }
+
   return {
     async load() {
       const raw = await tokens?.raw?.().catch(() => null);
@@ -168,23 +181,22 @@ export function createStudioState(host: HostV1, opts: StudioStateOptions = {}): 
       return true;
     },
 
-    async checkpoint(label) {
-      if (!isDoc(head)) throw new Error('checkpoint: no tokens document loaded');
-      const record: CheckpointRecord = { id: checkpointId(), label, date: new Date().toISOString(), doc: clone(head) };
-      const list = await readCheckpoints();
-      list.push(record);
-      while (list.length > CHECKPOINT_LIMIT) list.shift();
-      await host.state.save(CHECKPOINTS_KEY, { entries: list });
-      return record.id;
-    },
+    checkpoint,
 
     async listCheckpoints() {
-      return (await readCheckpoints()).map(({ id, label, date }) => ({ id, label, date }));
+      const headId = await activeHeadId(host);
+      return (await readCheckpoints())
+        .filter(record => (record.headId ?? USER_TOKENS_ID) === headId)
+        .map(({ id, label, date }) => ({ id, label, date }));
     },
 
-    async restoreCheckpoint(id) {
-      const record = (await readCheckpoints()).find(c => c.id === id);
+    async restoreCheckpoint(id, beforeRestoreLabel) {
+      const headId = await activeHeadId(host);
+      const record = (await readCheckpoints()).find(c => c.id === id && (c.headId ?? USER_TOKENS_ID) === headId);
       if (!record || !isDoc(record.doc)) return false;
+      // Read the selected document before saving: a full ring evicts its oldest.
+      if (beforeRestoreLabel) await checkpoint(beforeRestoreLabel);
+      if (await activeHeadId(host) !== headId) return false;
       await commit(record.doc, RESTORE_ACTION);
       return true;
     },

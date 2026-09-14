@@ -19,6 +19,7 @@ const idle = (callback: () => void): (() => void) => {
 export function createPreviewQueue(
   schedule: (callback: () => void) => () => void = idle,
   onError: (error: unknown) => void = error => console.warn('Preview render failed', error),
+  timeoutMs = 60_000,
 ) {
   let tasks: PreviewTask[] = [];
   let cancel: (() => void) | undefined;
@@ -42,7 +43,12 @@ export function createPreviewQueue(
       if (chosen < 0) return;
       const task = tasks.splice(chosen, 1)[0]!;
       running = true;
-      void Promise.resolve().then(() => task.run()).catch(onError).finally(() => {
+      let deadline: ReturnType<typeof setTimeout> | undefined;
+      void Promise.race([
+        Promise.resolve().then(() => task.run()),
+        new Promise<never>((_, reject) => { deadline = setTimeout(() => reject(new Error('Preview render timed out')), timeoutMs); }),
+      ]).catch(onError).finally(() => {
+        clearTimeout(deadline);
         running = false;
         wake();
       });

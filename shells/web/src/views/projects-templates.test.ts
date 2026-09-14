@@ -119,6 +119,22 @@ function collection(over: Partial<TemplatesCtx> & { host: TemplatesCtx['host'] }
   return createTemplatesCollection(ctx);
 }
 
+test('a template store failure preserves shipped choices and clears after retry', async () => {
+  const { host } = memoryHost();
+  const get = host.profile.get;
+  host.profile.get = async () => { throw new Error('Unavailable'); };
+  const tpl = collection({ host: host as TemplatesCtx['host'] });
+  await tpl.load(null);
+  assert.match(tpl.loadError()!, /could not be loaded/);
+  assert.ok(tpl.pickable().length);
+  assert.match(tpl.html(''), /data-tpl-retry/);
+  host.profile.get = get;
+  await tpl.load(null);
+  assert.equal(tpl.loadError(), null);
+  assert.doesNotMatch(tpl.html(''), /data-tpl-retry/);
+  tpl.destroy();
+});
+
 // ── the model ───────────────────────────────────────────────────────────────
 
 test('the collection lists own + shipped + hidden from the index and the profile', () => {

@@ -29,6 +29,7 @@
  *   the grids below still offer choosing a different image instead.
  */
 
+import { collectOk, collectLabel, flashCard } from './picker-feedback.ts';
 import '../styles/picker.css';   // async CSS chunk (lazy view - not on the landing)
 import { isHiddenSlot } from '../lib/batch-slots.ts';
 import { archiveBudgetFor, archiveMemberFile, readArchiveMembers, readUploadZip, readUploadArchiveBytes } from '../lib/archive-ingest.ts';
@@ -667,6 +668,7 @@ async function render(
     audioThumbs?.destroy();
     textThumbs?.destroy();
     motionThumbs?.destroy();
+    templatesTab?.destroy();
     // Before the wipe: the card's teardown revokes its preview URLs, and the upload
     // it is blocking still has to reach storeUserUpload with an answer.
     pendingTrim?.();
@@ -759,23 +761,6 @@ async function render(
   const catbarEl     = root.querySelector<HTMLElement>('.asset-picker-catbar');
 
   // ── collect-mode feedback ────────────────────────────────────────────────────
-  const collectOk = (r: CollectResult | boolean): boolean => typeof r === 'boolean' ? r : r.ok;
-  const collectLabel = (r: CollectResult | boolean): string =>
-    (typeof r === 'object' && r.label) || (collectOk(r) ? t('Added') : t('Couldn’t add'));
-  // Flash a tile as added (green ✓ overlay) or failed, then restore - the dialog stays
-  // open so several items can be gathered in a row. The card owns `position:relative`
-  // already (the format badge sits on it), so the overlay pins cleanly.
-  function flashCard(el: HTMLElement, r: CollectResult | boolean): void {
-    const ok = collectOk(r), label = collectLabel(r);
-    const card = el.closest<HTMLElement>('.asset-picker-toolcell, .asset-picker-card, .asset-picker-toolitem') ?? el;
-    card.classList.add(ok ? 'is-added' : 'is-addfail');
-    const badge = document.createElement('span');
-    badge.className = 'asset-picker-added';
-    badge.textContent = (ok ? '✓ ' : '') + label;
-    card.appendChild(badge);
-    announce(label);
-    setTimeout(() => { badge.remove(); card.classList.remove('is-added', 'is-addfail'); }, 1200);
-  }
   // A transient toast (upload / webcam / pasted-link adds have no tile to flash).
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
   function collectToast(r: CollectResult | boolean): void {

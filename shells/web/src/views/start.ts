@@ -89,6 +89,7 @@ import type { OverviewRoom } from '../lib/design-system/rooms/overview.ts';
 // whether anything is here.
 import { mountOverviewRoom, readOverview } from '../lib/design-system/rooms/overview.ts';
 import type { VersionsRoom } from '../lib/design-system/rooms/versions.ts';
+import { mountCheckpointRecovery } from '../lib/design-system/checkpoint-recovery.ts';
 // Versions (plan 97 section 6a, M7): a foot-pinned panel, not a room - it acts on the
 // whole design system, and it stays hidden until something has been published.
 import { mountVersionsRoom } from '../lib/design-system/rooms/versions.ts';
@@ -601,6 +602,7 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
                  that attribute would both take aria-current, and the versionsBtn
                  lookup reads the first one in the document. -->
             <button type="button" class="ds-versions-link" data-ds-versions-link hidden>${t('Versions & publishing')}</button>
+            <button type="button" class="ds-versions-link" data-start-recovery aria-haspopup="dialog">${t('Restore brand settings')}</button>
             <span class="ds-rail-note" data-start-note aria-live="polite"></span>
           </div>
         </aside>
@@ -1294,6 +1296,18 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
     undo: () => studio.undo(),
     notify: showNote,
   };
+  let recovery: ReturnType<typeof mountCheckpointRecovery> | null = null;
+  viewEl.querySelector('[data-start-recovery]')?.addEventListener('click', () => {
+    if (recovery?.el.isConnected) return;
+    recovery = mountCheckpointRecovery(studio, async () => {
+      if (!shell.isConnected) return;
+      await editor?.reload();
+      await refreshHead();
+      overview?.refresh();
+      versions?.refresh();
+      refreshFurnished();
+    });
+  });
   // The panel is built the first time it is opened, and it reads on mount - so
   // this is both the lazy mount and the re-entry refresh.
   openVersions = (): void => {
@@ -3625,7 +3639,7 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
     // The import dialog owns the key while it's open: the native <dialog> handles
     // Escape itself (its `cancel` event), but the keydown still bubbles up here -
     // without this guard one press would close the dialog AND leave the studio.
-    if (importModal) return;
+    if (importModal || recovery?.el.isConnected) return;
     // The Esc stack: floating popovers first (they close themselves and
     // stopImmediatePropagation before this handler - the query is a
     // belt-and-braces guard so the sheet never folds under a popover that
@@ -3662,6 +3676,7 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
     // A dialog outlives the view it was opened from (it's body-mounted), so leaving
     // the studio must take it with it.
     closeImport();
+    recovery?.close();
     unsubTray?.();
     unsubTray = null;
     unsubBeat?.();

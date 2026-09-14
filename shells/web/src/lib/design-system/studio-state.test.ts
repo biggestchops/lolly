@@ -142,6 +142,52 @@ test('checkpoint refuses when nothing is loaded', async () => {
   await assert.rejects(state.checkpoint('empty'), /no tokens document loaded/);
 });
 
+test('restoring the oldest checkpoint saves the outgoing settings even when the ring is full', async () => {
+  const { host, current } = fakeHost();
+  const state = createStudioState(host);
+  await state.load();
+  const first = await state.checkpoint('First');
+  for (let i = 1; i < CHECKPOINT_LIMIT; i++) await state.checkpoint(`Later ${i}`);
+  await state.install(DOC2, 'edit');
+  assert.equal(await state.restoreCheckpoint(first, 'Before restore'), true);
+  assert.deepEqual(current(), DOC);
+  const reopened = createStudioState(host);
+  await reopened.load();
+  const saved = (await reopened.listCheckpoints()).find(c => c.label === 'Before restore');
+  assert.ok(saved);
+  assert.equal(await reopened.restoreCheckpoint(saved.id), true);
+  assert.deepEqual(current(), DOC2);
+});
+
+test('checkpoint storage failures are visible and cannot overwrite the checkpoint ring', async () => {
+  const { host, current, slots } = fakeHost();
+  const state = createStudioState(host);
+  await state.load();
+  const id = await state.checkpoint('Kept');
+  const saved = structuredClone(slots.get(CHECKPOINTS_KEY));
+  host.state.load = async () => { throw new Error('Storage unavailable'); };
+  await assert.rejects(state.listCheckpoints(), /Storage unavailable/);
+  await assert.rejects(state.checkpoint('Cannot save'), /Storage unavailable/);
+  await assert.rejects(state.restoreCheckpoint(id), /Storage unavailable/);
+  assert.deepEqual(slots.get(CHECKPOINTS_KEY), saved);
+  assert.deepEqual(current(), DOC);
+});
+
+test('checkpoints from another brand cannot be listed or restored', async () => {
+  const { host, current } = fakeHost();
+  let headId = 'user/brands/one/tokens';
+  Object.assign(host.tokens!, { activeRecord: async () => ({ headId, source: { kind: 'imported' } }) });
+  const state = createStudioState(host);
+  await state.load();
+  const id = await state.checkpoint('Brand one');
+  headId = 'user/brands/two/tokens';
+  assert.deepEqual(await state.listCheckpoints(), []);
+  assert.equal(await state.restoreCheckpoint(id), false);
+  assert.deepEqual(current(), DOC);
+  headId = 'user/brands/one/tokens';
+  assert.equal((await state.listCheckpoints())[0]?.id, id);
+});
+
 test('restoreCheckpoint installs the snapshot and is itself undoable; an unknown id is false', async () => {
   const { host, current } = fakeHost();
   const state = createStudioState(host);

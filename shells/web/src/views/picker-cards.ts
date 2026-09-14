@@ -100,7 +100,9 @@ export function templateCard(template: PickerTemplate, quickAdd = false): string
     ? `${template.toolName} · ${t('Yours')}`
     : tRaw('Shipped with {tool}', { tool: template.toolName });
   const openBtn = `<button type="button" class="asset-picker-card asset-picker-toolitem no-preview${quickAdd ? ' asset-picker-toolitem--collect' : ''}" data-template-ref="${escapeHtml(template.ref)}" title="${escapeHtml(template.description ?? template.name)}">
+      <img class="asset-picker-toolitem-preview" alt="" decoding="async" data-tpl-preview="${escapeHtml(template.ref)}" hidden>
       <span class="asset-picker-toolitem-icon" aria-hidden="true">${TEMPLATE_GLYPH}</span>
+      <span class="asset-picker-sessitem-when" data-tpl-fallback hidden>${t('Preview unavailable')}</span>
       <span class="asset-picker-name">${escapeHtml(template.name)}</span>
       <span class="asset-picker-sessitem-when">${escapeHtml(sub)}</span>
     </button>`;

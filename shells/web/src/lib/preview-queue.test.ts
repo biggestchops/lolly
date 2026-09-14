@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createPreviewQueue } from './preview-queue.ts';
 
-function fixture() {
+function fixture(timeoutMs = 60_000) {
   const pending = new Set<() => void>();
   const errors: unknown[] = [];
   const queue = createPreviewQueue(callback => {
     pending.add(callback);
     return () => { pending.delete(callback); };
-  }, error => { errors.push(error); });
+  }, error => { errors.push(error); }, timeoutMs);
   const step = async () => {
     const callback = [...pending][0];
     assert.ok(callback, 'an idle job should be scheduled');
@@ -73,4 +73,17 @@ test('a failed cover does not block the remaining tools, and teardown cancels pe
   await f.drain();
   assert.deepEqual(seen, ['next cover']);
   assert.equal(f.pending.size, 0);
+});
+
+test('a render that never resolves releases the queue after its deadline', async () => {
+  const f = fixture(10);
+  let next = false;
+  f.queue.add({ priority: () => 0, run: () => new Promise(() => {}) });
+  f.queue.add({ priority: () => 0, run: async () => { next = true; } });
+  await f.step();
+  await new Promise(resolve => setTimeout(resolve, 25));
+  await f.drain();
+  assert.equal(next, true);
+  assert.match(String(f.errors[0]), /timed out/);
+  f.queue.destroy();
 });
