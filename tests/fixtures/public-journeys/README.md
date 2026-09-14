@@ -13,4 +13,4 @@ For the known-colours journey, provide only the brand name and colour values abo
 
 Run against an isolated `lolly-start` process with no private brand pack or prior Lolly state. Reviewer walkthroughs and automated checks are not external-user observations.
 
-Use [the participant sheet](PARTICIPANT.md) for uncoached observation and [the reviewer record](REVIEW.md) for findings and remaining checks.
+Use [the facilitator guide](FACILITATOR.md) to arrange sessions and vary the first task. Give participants [the introduction](PARTICIPANT.md) and one card from `tasks/` at a time. Copy [the session record](SESSION-RECORD.md) per participant and collect findings in [FINDINGS.md](FINDINGS.md). [The reviewer record](REVIEW.md) remains separate from external observations.
