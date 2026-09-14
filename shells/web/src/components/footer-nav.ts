@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// footer-nav.ts - the bottom nav bar's MARKUP: [Pro?] [Dashboard]  <search>  [Verify]
+// footer-nav.ts - the bottom nav bar's MARKUP: [Pro?] [Settings]  <search>  [Verify]
 // [What?]. Since plans/99 M1 the live bar is a shell-level singleton rendered and
 // wired ONCE by components/search-bar.ts (views claim its field instead of building
 // their own footer); the only other consumer is the component library's in-flow
@@ -19,7 +19,7 @@ export const NAV_ICONS = {
   zap: icon('zap'),
   table: icon('table'),
   help: icon('help'),
-  dashboard: icon('dashboard'),
+  settings: icon('sliders'),
   open: icon('upload'),
 } as const;
 
@@ -99,14 +99,14 @@ function navItem(o: { href: string; nativeClass: string; variant?: string; style
     // `.gallery-nav-link` (their `.gallery-footer > .btn` display/flex rules would
     // fight the jelly host box). `size="sm"` gives compact padding; the visible
     // .gallery-nav-label span keeps its class so the mobile label-hide still works.
-    // nosemgrep: lolly-href-escape-is-not-scheme-validation - footerNav()'s four literal routes ('#/batch', '#/d', '#/verify', docsAppHref('index') → '#/docs/index')
+    // nosemgrep: lolly-href-escape-is-not-scheme-validation - footerNav()'s four literal routes ('#/batch', '#/settings', '#/verify', docsAppHref('index') → '#/docs/index')
     return `<jelly-button class="gallery-nav-jelly" size="sm"${o.variant ? ` variant="${o.variant}"` : ''}${o.style ?? ''} data-href="${escape(o.href)}"${sfxAttr} aria-label="${escape(o.aria)}">${o.inner}</jelly-button>`;
   }
   // nosemgrep: lolly-href-escape-is-not-scheme-validation - same four literal footerNav() routes as the jelly branch above
   return `<a href="${escape(o.href)}" class="${o.nativeClass}"${sfxAttr} aria-label="${escape(o.aria)}">${o.inner}</a>`;
 }
 
-/** The shared bottom bar: [Open] [Dashboard]  <search>  [Verify] [What?].
+/** The shared bottom bar: [Open] [Settings]  <search>  [Verify] [What?].
  *  Batch moved OUT of here (Andy, 2026-08-26) - it now lives in the Projects top bar
  *  only (views/projects.ts topRightSlot), since a batch is a Projects-scoped action. */
 export function footerNav({ searchHtml }: FooterNavOpts): string {
@@ -120,9 +120,9 @@ export function footerNav({ searchHtml }: FooterNavOpts): string {
   const open = jellyActive()
     ? `<jelly-button class="gallery-nav-jelly" size="sm" variant="platinum" data-open-file data-sfx="click" aria-label="${escape(openAria)}">${openInner}</jelly-button>`
     : `<button type="button" class="gallery-nav-link btn" data-open-file data-sfx="click" aria-label="${escape(openAria)}">${openInner}</button>`;
-  const dashboard = navItem({
-    href: '#/d', nativeClass: 'gallery-nav-link btn', variant: 'platinum', sfx: 'dashboard',
-    aria: t('Dashboard - this device, the brand system & the full feature set'), inner: `${NAV_ICONS.dashboard}${label(t('Dashboard'))}`,
+  const settings = navItem({
+    href: '#/settings', nativeClass: 'gallery-nav-link btn', variant: 'platinum', sfx: 'click',
+    aria: t('Settings - preferences, design system and this device'), inner: `${NAV_ICONS.settings}${label(t('Settings'))}`,
   });
   // Verify keeps its solid SUSE Pine Green pill (explicit green in every theme,
   // matching the native rule) via an inline --jelly-fill / --jelly-label.
@@ -149,7 +149,7 @@ export function footerNav({ searchHtml }: FooterNavOpts): string {
   return `
     <footer class="gallery-footer${jellyActive() ? ' gallery-footer--jelly' : ''}"${firstRun}>
       ${open}
-      ${dashboard}
+      ${settings}
       ${searchHtml}
       ${verify}
       ${whatIs}

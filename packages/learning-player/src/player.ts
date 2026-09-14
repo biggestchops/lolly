@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import type { LearningContent, LearningAttempt } from '@lolly-tools/core/learning-v1';
+import type { renderLearningRichText } from './authoring.ts';
+import type { learningQuizCorrect } from '../../../engine/src/learning/authoring.ts';
 import type { LearningTracking } from './tracking.ts';
 import type {
   learningProgress,
@@ -20,7 +22,9 @@ export async function bootLearningPlayer(
     releaseId?: string
   ) => Promise<LearningTracking>,
   encodeAttempt: typeof encodeLearningAttempt,
-  decodeAttempt: typeof decodeLearningAttempt
+  decodeAttempt: typeof decodeLearningAttempt,
+  renderRichText: typeof renderLearningRichText,
+  quizCorrect: typeof learningQuizCorrect
 ): Promise<void> {
   const d = w.document;
   const root = d.getElementById('learning-player');
@@ -157,9 +161,74 @@ export async function bootLearningPlayer(
             sectionEl.append(issue);
           }
           if (block.kind === 'text') {
-            const text = make('p', block.text);
-            text.className = 'learning-text';
-            sectionEl.append(text);
+            if (block.richText) sectionEl.append(renderRichText(d, block.richText));
+            else {
+              const text = make('p', block.text);
+              text.className = 'learning-text';
+              sectionEl.append(text);
+            }
+          }
+          if (block.quiz) {
+            const quiz = block.quiz;
+            const form = make('form');
+            form.className = 'learning-quiz';
+            const fieldset = make('fieldset');
+            fieldset.append(make('legend', quiz.prompt || 'Write the question in the editor'));
+            const hint = make(
+              'p',
+              quiz.mode === 'multiple' ? 'Choose all correct answers.' : 'Choose one answer.'
+            );
+            hint.id = `quiz-hint-${block.id}`;
+            fieldset.setAttribute('aria-describedby', hint.id);
+            fieldset.append(hint);
+            const checked = state.quizAnswers?.[block.id] || [];
+            for (const option of quiz.options) {
+              const label = make('label');
+              const input = make('input');
+              input.type = quiz.mode === 'multiple' ? 'checkbox' : 'radio';
+              input.name = block.id;
+              input.value = option.id;
+              input.checked = checked.includes(option.id);
+              label.append(input, make('span', option.text || 'Write an answer in the editor'));
+              fieldset.append(label);
+            }
+            const feedback = make('p');
+            feedback.className = 'learning-quiz-feedback';
+            feedback.setAttribute('role', 'status');
+            const submit = make('button', 'Check answer');
+            submit.type = 'button';
+            const showFeedback = (answers: string[]) => {
+              const correct = quizCorrect(quiz, answers);
+              feedback.textContent = `${correct ? 'Correct.' : 'Not quite. Try again.'}${quiz.feedback ? ` ${quiz.feedback}` : ''}`;
+              feedback.hidden = false;
+              submit.textContent = 'Check again';
+            };
+            feedback.hidden = !checked.length;
+            if (checked.length) showFeedback(checked);
+            form.append(make('p', 'Practice check'), fieldset, submit, feedback);
+            const checkAnswer = (event: Event) => {
+              event.preventDefault();
+              if (busy || ended || !tracking || tracking.readOnly) return;
+              const answers = [...fieldset.querySelectorAll<HTMLInputElement>('input:checked')].map(
+                (input) => input.value
+              );
+              if (!answers.length) {
+                feedback.hidden = false;
+                feedback.textContent = 'Choose an answer first.';
+                fieldset.querySelector('input')?.focus();
+                return;
+              }
+              state = progress(content, state, { kind: 'answer', blockId: block.id, answers });
+              showFeedback(answers);
+              void save();
+            };
+            form.onsubmit = checkAnswer;
+            submit.onclick = checkAnswer;
+            fieldset.onchange = () => {
+              feedback.hidden = true;
+              submit.textContent = 'Check answer';
+            };
+            sectionEl.append(form);
           }
           for (const file of block.files || []) {
             if (block.kind === 'image' || block.kind === 'slides') {
@@ -211,6 +280,10 @@ export async function bootLearningPlayer(
     progressLabel.textContent = state.completed
       ? 'Course completed'
       : `${acknowledged} of ${required.length} required lessons complete`;
+    for (const control of lessonView.querySelectorAll<HTMLInputElement | HTMLButtonElement>(
+      '.learning-quiz input, .learning-quiz button'
+    ))
+      control.disabled = busy || ended || !tracking || tracking.readOnly;
     previous.disabled = busy || ended || index <= 0;
     next.disabled = busy || ended || !tracking || tracking.readOnly;
     finish.disabled =
@@ -311,6 +384,7 @@ export async function bootLearningPlayer(
       content.releaseId
     );
     restore(await tracking.read());
+    displayed = '';
     if (target === 'static')
       status.textContent =
         tracking.persistence === 'session'

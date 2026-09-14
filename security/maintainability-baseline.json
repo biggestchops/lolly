@@ -70,8 +70,8 @@
       "typeEscapes": 8
     },
     "shells/web/src/views/picker.ts": {
-      "lines": 2619,
-      "largestFunctionLines": 2188,
+      "lines": 2615,
+      "largestFunctionLines": 2182,
       "importFanIn": 25,
       "importFanOut": 50,
       "typeEscapes": 3
@@ -194,7 +194,6 @@
     "lib/pdf-thumbs.ts -> views/pdf-import.ts",
     "lib/pdf-vector-shot.ts -> views/pdf-import.ts",
     "lib/search/providers/catalog.ts -> views/catalog-filter.ts",
-    "lib/search/providers/settings.ts -> views/dashboard-registry.ts",
     "lib/search/providers/settings.ts -> views/profile.ts",
     "lib/stt-job.ts -> views/timeline-captions.ts",
     "lib/tts-regenerate.ts -> views/script-audio.ts",

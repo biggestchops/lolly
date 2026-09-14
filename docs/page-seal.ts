@@ -123,6 +123,8 @@ export interface SealTarget {
   path: string;
   /** Human title for the claim (the page's own title). */
   title?: string;
+  /** The person credited as the author of the page. */
+  author?: string;
   /** The markdown source this page was rendered from, e.g. `docs/exporting.md`. */
   source?: string;
 }
@@ -323,6 +325,7 @@ function pageC2paOpts(target: SealTarget, ingredients: PageIngredient[]): Export
   });
   return {
     ...opts,
+    ...(target.author ? { author: { name: target.author } } : {}),
     environment: {
       ...(opts.environment as Record<string, unknown>),
       // Lolly's own namespace - the only place "what kind of thing is this" is

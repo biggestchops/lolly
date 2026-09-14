@@ -39,8 +39,7 @@ const PLACES: readonly PlaceEntry[] = [
   { label: 'Colour Lab', href: '#/lab', glyph: 'palette', keywords: 'color colour contrast gamut report oklch' },
   { label: 'Component library', href: '#/components', glyph: 'shapes' },
   { label: 'Design System studio', href: '#/start', glyph: 'tokens', keywords: 'brand design system tokens colors colours fonts logos start' },
-  { label: 'Dashboard', href: '#/d', glyph: 'dashboard' },
-  { label: 'Profile', href: '#/profile', glyph: 'user', keywords: 'settings account preferences' },
+  { label: 'Settings', href: '#/settings', glyph: 'sliders', keywords: 'dashboard profile account preferences device brand capabilities activity' },
   { label: 'Script audio', href: '#/script', glyph: 'speech' },
 ];
 

@@ -27,6 +27,7 @@ import {
 } from '../../lib/learning-presentation.ts';
 import { startJob, cancelJob, type JobHandle } from '../../lib/jobs.ts';
 import { deliverBatchFile } from '../../lib/background-delivery.ts';
+import { releaseDeliveryFor } from '../../lib/download-recovery.ts';
 import { getExportPolicy, exportAffordance } from '../../lib/export-policy.ts';
 import { unzipSync } from 'fflate';
 import '../../lib/learning-entry.css';
@@ -48,6 +49,7 @@ interface Checked {
 /** Destination, preflight and delivery share one retained snapshot and exact ZIP. */
 export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
   let modal: ModalHandle<void> | undefined;
+  let recovery: HTMLDetailsElement | undefined;
   let checked: Checked | undefined;
   let original: LearningRelease | undefined;
   let job: JobHandle | undefined;
@@ -117,6 +119,17 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
     for (const attr of expanded) {
       const details = modal.el.querySelector<HTMLDetailsElement>(`[${attr}]`);
       if (details) details.open = true;
+    }
+    if (recovery)
+      recovery.hidden =
+        !saved || !recovery.querySelector('[data-delivery-recovery]')?.childElementCount;
+    for (const title of modal.el.querySelectorAll<HTMLElement>('.job-pill-title')) {
+      const pill = title.closest<HTMLElement>('.job-pill');
+      if (pill)
+        pill.hidden =
+          !!checked &&
+          title.textContent === `Checking course: ${checked.snapshot.title}` &&
+          !!pill.querySelector('.job-row-status--done');
     }
     const body = modal.el.querySelector('[data-delivery-body]');
     if (body) body.scrollTop = scroll;
@@ -316,8 +329,9 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
         }
         saved = release;
       }
-      status('Course version saved on this device. Download is ready.');
-      await ctx.publishing.download(`${saved!.id}/${prepared.target}`);
+      status('');
+      paint();
+      await download();
     } finally {
       saving = false;
       ctx.busy = false;
@@ -331,6 +345,15 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       }
       if (!ctx.disposed) ctx.ui.render();
     }
+  };
+  const download = async () => {
+    if (!saved) return;
+    await ctx.publishing.download(
+      `${saved.id}/${ctx.target}`,
+      modal?.el,
+      recovery?.querySelector<HTMLElement>('[data-delivery-recovery]') || undefined
+    );
+    if (recovery) recovery.hidden = false;
   };
   const report = async () => {
     const artifact = saved?.artifacts.find((a) => a.target === ctx.target);
@@ -356,8 +379,8 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       2
     );
     await deliverBatchFile(
-      undefined,
-      undefined,
+      modal?.el,
+      recovery?.querySelector<HTMLElement>('[data-delivery-recovery]') || undefined,
       {
         blob: new Blob([text], { type: 'application/json' }),
         filename: artifact.filename.replace(/\.zip$/, '-handoff.json'),
@@ -374,14 +397,17 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       cancel();
       checked = undefined;
       saved = undefined;
+      step = 0;
     }
     if (next?.id !== original?.id) note = next?.note || '';
     original = next;
-    step = ready() ? 2 : 0;
+    step = ready() ? 2 : Math.min(step, 1);
     modal = mountModal<void>('<div class="learning-dialog-content" data-learning-panel></div>', {
       className: 'learning-ui learning-export',
       ariaLabel: 'Export course',
       onClose: () => {
+        if (modal) releaseDeliveryFor(modal.el);
+        recovery = undefined;
         modal = undefined;
         if (!ctx.disposed)
           ctx.root
@@ -389,8 +415,20 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
             ?.focus({ preventScroll: true });
       },
     });
+    recovery = document.createElement('details');
+    recovery.className = 'learning-download-help';
+    const recoveryTitle = document.createElement('summary');
+    recoveryTitle.textContent = 'Download help';
+    const recoveryStatus = document.createElement('div');
+    recoveryStatus.dataset.deliveryRecovery = '';
+    recovery.append(recoveryTitle, recoveryStatus);
+    modal.el.querySelector('[data-learning-panel]')!.after(recovery);
     paint();
-    modal.el.querySelector<HTMLSelectElement>('[data-delivery-target]')?.focus();
+    modal.el
+      .querySelector<HTMLElement>(
+        step === 0 ? '[data-delivery-target]' : `[data-delivery-step="${step}"]`
+      )
+      ?.focus();
     modal.el.addEventListener('change', (event) => {
       const el = event.target as HTMLInputElement;
       if (ctx.checking || saving) return;
@@ -440,7 +478,13 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       if (el.dataset.deliveryLesson) {
         const id = el.dataset.deliveryLesson;
         close();
-        void ctx.edit.action('lesson', id);
+        const blockId = el.dataset.deliveryBlock;
+        void ctx.edit.action('lesson', id).then(() => {
+          if (blockId && !ctx.disposed)
+            ctx.ui.render(
+              `[data-block="${CSS.escape(blockId)}"] :is([data-block-field], [data-quiz-field=prompt])`
+            );
+        });
         return;
       }
       const action = el.hasAttribute('data-delivery-check')
@@ -450,10 +494,11 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
           : el.hasAttribute('data-delivery-report')
             ? report
             : el.hasAttribute('data-delivery-download')
-              ? () => ctx.publishing.download(`${saved!.id}/${ctx.target}`)
+              ? download
               : undefined;
       if (action)
         void action().catch((error) => {
+          if (recovery) recovery.open = true;
           status(error instanceof Error ? error.message : 'The export failed.', 'error');
           paint();
         });

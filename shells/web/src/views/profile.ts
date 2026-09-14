@@ -5,6 +5,7 @@ import '../styles/parts/tool.css';      // .help-tip-btn/-pop/-host styles - sha
                                         // from multi-edit.ts (component audit rec 13)
 import '../styles/parts/storage.css';   // the storage-reconciliation meter lives in /profile
 import '../styles/parts/offline-manager.css'; // the "Offline tools" download manager section
+import { t } from '../i18n.ts';
 import { currentTheme } from '../theme.ts';
 import { currentA11yPrefs } from '../lib/a11y-prefs.ts';
 import type { A11yPrefs } from '../lib/a11y-prefs.ts';
@@ -74,7 +75,7 @@ export async function mountProfile(viewEl: HTMLElement, host: ProfileHost, param
   pv.params = params;
   pv.mountProfile = mountProfile;
 
-  document.title = 'Profile - Lolly';
+  document.title = `${t('Settings')} - Lolly`;
   // Only the first-paint-critical reads run upfront. The Storage section's heavy
   // work is deferred to loadStorage() (run when the section is first expanded).
   const profile = await host.profile.get(); pv.profile = profile;

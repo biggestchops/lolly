@@ -23,6 +23,7 @@ try {
   await page.getByLabel('Course title', { exact: true }).fill('Linux onboarding');
   await page.getByRole('button', { name: 'Add lesson', exact: true }).click();
   await page.getByLabel('Lesson title', { exact: true }).fill('Prepare your environment');
+  await page.getByText('Lesson options', { exact: false }).first().click();
   await page.getByLabel('Section (optional)').fill('Getting started');
   await page.getByRole('button', { name: 'Add text', exact: true }).click();
   await page
@@ -40,7 +41,16 @@ try {
         'base64'
       ),
     });
-  await page.locator('.asset-picker-close').click();
+  await page.getByText('1 item added', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  assert.equal(await page.locator('.learning-source-preview img').count(), 1);
+  if (
+    !(await page
+      .locator('.learning-content-options')
+      .first()
+      .evaluate((el) => (el as HTMLDetailsElement).open))
+  )
+    await page.locator('.learning-content-options > summary').first().click();
   await page
     .getByLabel('Description or equivalent explanation')
     .fill('A terminal window. Use the written instructions above to complete this step.');
@@ -72,6 +82,22 @@ try {
     () => page.getByRole('button', { name: 'Save version and download ZIP', exact: true }).click(),
     'first.zip'
   );
+  assert.equal(
+    await page.locator('.learning-export .background-delivery').count(),
+    0,
+    'delivery recovery is local to this export'
+  );
+  await page.locator('.learning-download-help > summary').click();
+  const recoveryCopy = await save(
+    () =>
+      page
+        .locator('.learning-download-help .download-recovery')
+        .getByRole('button', { name: /^Download .* again$/ })
+        .click(),
+    'recovery.zip'
+  );
+  assert.deepEqual(recoveryCopy, first, 'Download help retries the exact stored bytes');
+  await page.locator('.learning-download-help > summary').click();
   const contents = unzipSync(first);
   assert.ok(contents['imsmanifest.xml']);
   const content = JSON.parse(strFromU8(contents['content.json']!));

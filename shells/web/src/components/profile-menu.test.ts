@@ -20,7 +20,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-const dom = new JSDOM('<!doctype html><html><body><a href="#/profile" id="pl">Profile</a></body></html>', { url: 'https://lolly.tools/' });
+const dom = new JSDOM('<!doctype html><html><body><a href="#/settings" id="pl">Profile</a></body></html>', { url: 'https://lolly.tools/' });
 globalThis.window = dom.window as unknown as typeof globalThis.window;
 globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
@@ -84,11 +84,11 @@ test('opens on desktop too (no longer gated to the mobile breakpoint)', () => {
   }
 });
 
-test('a modified click (open-in-new-tab) falls through to the #/profile href', () => {
+test('a modified click (open-in-new-tab) falls through to the #/settings href', () => {
   const detach = attachProfileMenu(trigger(), host);
   // A trailing listener (fires after attachProfileMenu's onClick) records whether the
   // handler left the default intact, THEN cancels it - so jsdom never follows the
-  // #/profile anchor and leaks a hashchange into a later test's open menu (NAV_EVENTS).
+  // #/settings anchor and leaks a hashchange into a later test's open menu (NAV_EVENTS).
   let handlerPrevented: boolean | null = null;
   trigger().addEventListener('click', (e) => { handlerPrevented = e.defaultPrevented; e.preventDefault(); });
   trigger().dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }));
@@ -129,7 +129,7 @@ test('mountProfileFab appends the right-most quick link and wires the same menu'
   mountProfileFab(cluster, host);
   const fab = cluster.querySelector<HTMLAnchorElement>('a.profile-fab');
   assert.ok(fab, 'fab appended');
-  assert.equal(fab!.getAttribute('href'), '#/profile', 'still an anchor to the profile page (for no-JS / new-tab)');
+  assert.equal(fab!.getAttribute('href'), '#/settings', 'still an anchor to the profile page (for no-JS / new-tab)');
   assert.equal(cluster.lastElementChild, fab, 'appended last, so it sits right-most in the cluster');
   assert.ok(fab!.getAttribute('aria-label'), 'accessible name present');
   // A plain click opens the consolidated menu (every width).
@@ -177,7 +177,7 @@ test('the Sound/Neurospicy switch appears only when the host has an assets API',
 test('createProfileControl returns an icon-only .profile-link that opens the consolidated menu', async () => {
   const link = createProfileControl(assetsHost, { className: 'stage-nav-profile' });
   assert.ok(link.classList.contains('profile-link') && link.classList.contains('stage-nav-profile'));
-  assert.equal(link.getAttribute('href'), '#/profile', 'still an anchor to the profile page');
+  assert.equal(link.getAttribute('href'), '#/settings', 'still an anchor to the profile page');
   assert.ok(link.querySelector('.profile-link-mark'), 'carries the Lolly-mark avatar');
   assert.equal(link.querySelector('.profile-link-name'), null, 'icon only - no name span');
   document.body.appendChild(link);

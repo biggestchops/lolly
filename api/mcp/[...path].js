@@ -34945,6 +34945,7 @@ var init_tool_url = __esm({
       "join",
       "join-reply",
       "profile",
+      "settings",
       "gallery",
       "platform",
       "capabilities",
@@ -87383,6 +87384,89 @@ var init_text_tools2 = __esm({
   }
 });
 
+// engine/src/learning/authoring.ts
+function learningLinkAllowed(href) {
+  return /^(https?:\/\/[^\s/]+|mailto:[^\s@]+@[^\s@]+)[^\s]*$/i.test(href) && !Array.from(href).some((c) => c.charCodeAt(0) <= 32 || c.charCodeAt(0) === 127);
+}
+function validLearningRichText(value) {
+  let count2 = 0, size = 0;
+  const record5 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+  const keys2 = (v, allowed) => Object.keys(v).every((k) => allowed.includes(k));
+  const blocks = ["paragraph", "heading", "bulletList", "orderedList", "blockquote"];
+  const visit = (v, parent, depth) => {
+    if (!record5(v) || ++count2 > 1e4 || depth > 12 || !keys2(v, ["type", "attrs", "content", "marks", "text"]))
+      return false;
+    const type = String(v.type);
+    const allowed = parent === "" ? ["doc"] : ["paragraph", "heading"].includes(parent) ? ["text", "hardBreak"] : ["bulletList", "orderedList"].includes(parent) ? ["listItem"] : blocks;
+    if (!allowed.includes(type)) return false;
+    if (v.text !== void 0 && (type !== "text" || typeof v.text !== "string")) return false;
+    if (type === "text") {
+      if (typeof v.text !== "string" || !v.text.length) return false;
+      size += v.text.length;
+      if (size > 1e5) return false;
+    }
+    if (v.attrs !== void 0) {
+      if (!record5(v.attrs)) return false;
+      if (type === "heading") {
+        if (!keys2(v.attrs, ["level"]) || v.attrs.level !== 2 && v.attrs.level !== 3) return false;
+      } else if (type === "orderedList") {
+        if (!keys2(v.attrs, ["start"]) || !Number.isInteger(v.attrs.start) || Number(v.attrs.start) < 1 || Number(v.attrs.start) > 1e4)
+          return false;
+      } else if (Object.keys(v.attrs).length) return false;
+    } else if (type === "heading") return false;
+    if (v.marks !== void 0) {
+      if (!["text", "hardBreak"].includes(type) || !Array.isArray(v.marks) || v.marks.length > 5)
+        return false;
+      const seen = /* @__PURE__ */ new Set();
+      for (const mark of v.marks) {
+        if (!record5(mark) || !keys2(mark, ["type", "attrs"]) || !["bold", "italic", "underline", "code", "link"].includes(String(mark.type)) || seen.has(mark.type))
+          return false;
+        seen.add(mark.type);
+        if (mark.type === "link") {
+          if (!record5(mark.attrs) || !keys2(mark.attrs, ["href", "target", "rel", "class"]) || typeof mark.attrs.href !== "string" || !learningLinkAllowed(mark.attrs.href))
+            return false;
+          for (const k of ["target", "rel", "class"])
+            if (mark.attrs[k] !== void 0 && mark.attrs[k] !== null && typeof mark.attrs[k] !== "string")
+              return false;
+        } else if (mark.attrs !== void 0 && (!record5(mark.attrs) || Object.keys(mark.attrs).length))
+          return false;
+      }
+    }
+    if (["text", "hardBreak"].includes(type)) return v.content === void 0;
+    if (v.content === void 0) return ["paragraph", "heading", "doc"].includes(type);
+    if (!Array.isArray(v.content)) return false;
+    if (["bulletList", "orderedList", "blockquote"].includes(type) && !v.content.length)
+      return false;
+    if (type === "listItem" && (!v.content.length || v.content[0]?.type !== "paragraph"))
+      return false;
+    return Array.from(v.content).every((child) => visit(child, type, depth + 1));
+  };
+  return visit(value, "", 0);
+}
+function learningRichTextPlain(node) {
+  if (node.type === "text") return node.text || "";
+  if (node.type === "hardBreak") return "\n";
+  return (node.content || []).map(learningRichTextPlain).join(["paragraph", "heading"].includes(node.type) ? "" : "\n");
+}
+function validLearningQuiz(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const q = value;
+  if (Object.keys(q).some((k) => !["mode", "prompt", "options", "feedback"].includes(k)) || !["single", "multiple", "true-false"].includes(q.mode) || typeof q.prompt !== "string" || q.prompt.length > 1e4 || typeof q.feedback !== "string" || q.feedback.length > 1e4 || !Array.isArray(q.options) || q.options.length < 2 || q.options.length > 8 || q.mode === "true-false" && q.options.length !== 2)
+    return false;
+  const ids2 = /* @__PURE__ */ new Set();
+  return Array.from(q.options).every((o) => {
+    if (!o || typeof o !== "object" || Object.keys(o).some((k) => !["id", "text", "correct"].includes(k)) || typeof o.id !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$/.test(o.id) || ids2.has(o.id) || typeof o.text !== "string" || o.text.length > 2e3 || typeof o.correct !== "boolean")
+      return false;
+    ids2.add(o.id);
+    return true;
+  });
+}
+var init_authoring = __esm({
+  "engine/src/learning/authoring.ts"() {
+    "use strict";
+  }
+});
+
 // engine/src/learning/module.ts
 function record3(v) {
   return !!v && typeof v === "object" && !Array.isArray(v);
@@ -87412,7 +87496,7 @@ function parseLearningModule(value) {
   const bad = () => {
     throw new Error("This learning module is invalid or uses an unsupported version.");
   };
-  if (!record3(value) || value.schemaVersion !== 1 || !id(value.id) || !Number.isSafeInteger(value.revision) || Number(value.revision) < 1)
+  if (!record3(value) || ![1, 2].includes(Number(value.schemaVersion)) || typeof value.schemaVersion !== "number" || !id(value.id) || !Number.isSafeInteger(value.revision) || Number(value.revision) < 1)
     return bad();
   if (!keys(
     value,
@@ -87442,7 +87526,15 @@ function parseLearningModule(value) {
       return bad();
     if (lesson.sectionId !== void 0 && !sections.has(String(lesson.sectionId))) return bad();
     for (const block of lesson.blocks) {
-      if (++blocks > LEARNING_LIMITS.blocks || !record3(block) || !unique(block.id) || !kinds.has(String(block.kind)) || !keys(block, "id kind text description decorative transcript captions source"))
+      if (++blocks > LEARNING_LIMITS.blocks || !record3(block) || !unique(block.id) || !kinds.has(String(block.kind)) || !keys(block, "id kind text richText quiz description decorative transcript captions source"))
+        return bad();
+      if (value.schemaVersion === 1 && (block.richText !== void 0 || block.quiz !== void 0 || block.kind === "quiz"))
+        return bad();
+      if (block.richText !== void 0 && (block.kind !== "text" || !validLearningRichText(block.richText)))
+        return bad();
+      if (block.quiz !== void 0 && (block.kind !== "quiz" || !validLearningQuiz(block.quiz)))
+        return bad();
+      if (block.kind === "quiz" && (block.source !== void 0 || block.quiz === void 0))
         return bad();
       for (const key of ["text", "description", "transcript", "captions"])
         if (block[key] !== void 0 && !text3(block[key])) return bad();
@@ -87481,10 +87573,25 @@ function checkLearningModule(module) {
     if (!lesson.title.trim()) add("error", "Give this lesson a title.");
     if (!lesson.blocks.length) add("error", "Add content to this lesson.");
     for (const block of lesson.blocks) {
-      if (block.kind === "text" && !block.text?.trim())
+      if (block.kind === "text" && !(block.richText ? learningRichTextPlain(block.richText) : block.text)?.trim())
         add("error", "Write the lesson text or remove the empty text.", block.id);
-      if (block.kind !== "text" && !block.source)
+      if (!["text", "quiz"].includes(block.kind) && !block.source)
         add("error", "Choose a source for this content.", block.id);
+      if (block.quiz) {
+        const q = block.quiz;
+        if (!q.prompt.trim()) add("error", "Write the quiz question.", block.id);
+        if (q.options.some((o) => !o.text.trim()))
+          add("error", "Write every answer option.", block.id);
+        const correct = q.options.filter((o) => o.correct).length;
+        if (!correct || q.mode !== "multiple" && correct !== 1)
+          add(
+            "error",
+            q.mode === "multiple" ? "Choose at least one correct answer." : "Choose one correct answer.",
+            block.id
+          );
+        if (new Set(q.options.map((o) => o.text.trim().toLowerCase())).size !== q.options.length)
+          add("error", "Give each answer option different text.", block.id);
+      }
       if (["image", "slides"].includes(block.kind) && !block.description?.trim() && !block.decorative)
         add("review", "Add an explanation for this visual content.", block.id);
       if (["video", "audio"].includes(block.kind) && !block.transcript?.trim() && !block.captions?.trim())
@@ -87502,6 +87609,7 @@ var LEARNING_LIMITS, ID3, assetTypes, keys, kinds;
 var init_module = __esm({
   "engine/src/learning/module.ts"() {
     "use strict";
+    init_authoring();
     LEARNING_LIMITS = {
       lessons: 200,
       blocks: 1e3,
@@ -87526,7 +87634,7 @@ var init_module = __esm({
       "data"
     ]);
     keys = (value, allowed) => Object.keys(value).every((key) => allowed.split(" ").includes(key));
-    kinds = /* @__PURE__ */ new Set(["text", "image", "video", "audio", "resource", "slides"]);
+    kinds = /* @__PURE__ */ new Set(["text", "image", "video", "audio", "resource", "slides", "quiz"]);
   }
 });
 
@@ -87542,6 +87650,15 @@ function learningProgress(content2, previous, action) {
     if (action.kind === "acknowledge" && !acknowledged.includes(lessonId))
       acknowledged.push(lessonId);
   }
+  const quizzes = content2.lessons.flatMap((l) => l.blocks || []).filter((b) => b.quiz);
+  const quizAnswers = {};
+  for (const block of quizzes) {
+    const answers = action.kind === "answer" && action.blockId === block.id ? action.answers : same ? candidate.quizAnswers?.[block.id] : void 0;
+    if (!Array.isArray(answers)) continue;
+    const chosen = block.quiz.options.filter((o) => answers.includes(o.id)).map((o) => o.id);
+    if (chosen.length && (block.quiz.mode === "multiple" || chosen.length === 1))
+      quizAnswers[block.id] = chosen;
+  }
   const required = content2.lessons.filter((l) => l.required);
   const ready = required.length > 0 && required.every((l) => acknowledged.includes(l.id));
   return {
@@ -87549,16 +87666,25 @@ function learningProgress(content2, previous, action) {
     releaseId: content2.releaseId,
     lessonId,
     acknowledged,
+    ...quizzes.length ? { quizAnswers } : {},
     completed: ready && (same && candidate.completed === true || action.kind === "finish")
   };
 }
 function encodeLearningAttempt(content2, attempt2, limit = 4096) {
+  const quizzes = content2.lessons.flatMap((l) => l.blocks || []).filter((b) => b.quiz);
+  const answers = quizzes.map(
+    (b) => b.quiz.options.reduce(
+      (mask, o, i) => mask | (attempt2.quizAnswers?.[b.id]?.includes(o.id) ? 1 << i : 0),
+      0
+    ).toString(16).padStart(2, "0")
+  ).join("");
   const data = JSON.stringify([
     1,
     content2.releaseId,
     content2.lessons.findIndex((l) => l.id === attempt2.lessonId),
     content2.lessons.map((l) => attempt2.acknowledged.includes(l.id) ? "1" : "0").join(""),
-    attempt2.completed ? 1 : 0
+    attempt2.completed ? 1 : 0,
+    ...quizzes.length ? [answers] : []
   ]);
   if (data.length > limit) throw new Error("Progress exceeds the selected LMS state limit.");
   return data;
@@ -87568,12 +87694,20 @@ function decodeLearningAttempt(content2, raw, reduce = learningProgress) {
   try {
     const a = JSON.parse(raw);
     if (Array.isArray(a) && a[0] === 1 && a[1] === content2.releaseId && Number.isInteger(a[2]) && typeof a[3] === "string" && a[3].length === content2.lessons.length && /^[01]*$/.test(a[3])) {
+      const quizzes = content2.lessons.flatMap((l) => l.blocks || []).filter((b) => b.quiz);
+      const quizAnswers = {};
+      if (typeof a[5] === "string" && a[5].length === quizzes.length * 2 && /^[0-9a-f]*$/.test(a[5]))
+        quizzes.forEach((b, i) => {
+          const mask = parseInt(a[5].slice(i * 2, i * 2 + 2), 16);
+          quizAnswers[b.id] = b.quiz.options.filter((_o, j) => mask & 1 << j).map((o) => o.id);
+        });
       previous = {
         version: 1,
         releaseId: a[1],
         lessonId: content2.lessons[a[2]]?.id,
         acknowledged: content2.lessons.filter((_l, i) => a[3][i] === "1").map((l) => l.id),
-        completed: a[4] === 1
+        completed: a[4] === 1,
+        quizAnswers
       };
     }
   } catch {
@@ -87632,15 +87766,17 @@ async function compileLearningModule(input, releaseId, resolve5, hash, onProgres
       const compiled = {
         id: block.id,
         kind: block.kind,
-        text: block.text,
+        text: block.richText ? learningRichTextPlain(block.richText) : block.text,
+        ...block.richText ? { richText: structuredClone(block.richText) } : {},
+        ...block.quiz ? { quiz: structuredClone(block.quiz) } : {},
         description: block.description,
         decorative: block.decorative,
         transcript: block.transcript
       };
-      if (options2.preview && block.kind === "text" && !block.text?.trim())
+      if (options2.preview && block.kind === "text" && !compiled.text?.trim())
         compiled.previewIssue = "This text block is empty. Add your explanation in the editor.";
       try {
-        if (block.kind !== "text") {
+        if (!["text", "quiz"].includes(block.kind)) {
           let parts;
           try {
             parts = await resolve5(block);
@@ -87691,7 +87827,7 @@ async function compileLearningModule(input, releaseId, resolve5, hash, onProgres
   }
   return {
     content: {
-      schemaVersion: 1,
+      schemaVersion: module.schemaVersion,
       ...options2.preview ? { previewOnly: true } : {},
       moduleId: module.id,
       releaseId,
@@ -87710,6 +87846,7 @@ var extensions;
 var init_compile = __esm({
   "engine/src/learning/compile.ts"() {
     "use strict";
+    init_authoring();
     init_module();
     extensions = {
       "image/png": "png",
@@ -87750,6 +87887,7 @@ function learningSummary(module) {
     lessons: module.lessons.length,
     required: module.lessons.filter((l) => l.required).length,
     optional: module.lessons.filter((l) => !l.required).length,
+    quizzes: blocks.filter((b) => b.kind === "quiz").length,
     videos: blocks.filter((b) => b.kind === "video").length,
     audio: blocks.filter((b) => b.kind === "audio").length,
     resources: blocks.filter((b) => b.kind === "resource").length,

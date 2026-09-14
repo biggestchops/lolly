@@ -4,7 +4,7 @@ Use a **learning module** to turn a Lolly project into a course for a website or
 
 For LMS delivery, the customer LMS enrols learners and records completion. For website delivery, learners open a static page and progress stays in their browser. You do not need a Lolly Work account to build a package. The draft and saved package versions live on your device.
 
-This first version supports ordered lessons, text, images, slides, video, audio and downloadable resources. It tracks completion of the whole module. Quizzes, scores, pass marks, branching and certificates are outside this version.
+Courses support ordered lessons, formatted text, images, slides, video, audio, downloadable resources and practice quizzes. Completion remains a learner acknowledgement of required lessons. Practice questions provide feedback and can be retried; scored assessments, pass marks, branching and certificates are outside this version.
 
 ## Start from your project
 
@@ -12,31 +12,58 @@ This first version supports ordered lessons, text, images, slides, video, audio 
 2. Choose **Export course**. Review the folder's content and nested folders. Imported files, saved tool creations and batch rows appear together. Existing learning modules contribute their lessons; **Open existing module** lets you export one without copying it.
 3. Use the checkboxes to choose content and **Move up** or **Move down** to set its teaching order. Unavailable content remains listed. Replace it, unselect it, or choose **Exclude unavailable items**. For a long selection, use **Find content** to locate an item; clear the search before reordering. **Select all** and **Clear selection** apply to the whole list. Choose a course title and **Create course from selection**.
 4. The course opens in the editor. Review the assembled outline, add explanations, adjust required lessons, or use **Add lesson** for another step. Folder names become section labels. Every imported item is required initially; review that choice.
-5. Open **Module details** to add a description, learning objectives and content language. Use a language tag such as `en`, `en-GB` or `de`. The learner controls are currently in English.
+5. Open **Course details** to add a description, learning objectives and content language. Use a language tag such as `en`, `en-GB` or `de`. The learner controls are currently in English.
 
 You can also select a mixture of project items and choose **Export course**, or choose **Export course** in a supported tool's export controls. The tool saves its current inputs before handing them over. **Create learning module** starts an empty outline from Projects. A course started without a folder appears with your unfiled work. Reopen its **Learning module** tile to continue editing.
 
-Changes save when you leave a field or change the outline. Wait for **Saved on this device** before closing the tab. **Retry save** retries a failed write. If another window has changed the module, keep the current window open and copy your edits before reopening the saved version. **Undo edit** reverses recent draft edits in the current editing session; it does not delete published versions.
+Changes save after a pause in typing, when you leave a field, or when you change the outline. Wait for **Saved on this device** before closing the tab. **Retry save** retries a failed write. If another window has changed the module, keep the current window open and copy your edits before reopening the saved version. **Undo edit** reverses recent draft edits in the current editing session; it does not delete published versions.
 
 ![A learning module with an ordered outline, native lesson text, an image and a downloadable resource](/info/shots/training-module-outline.svg)
 
 ## Arrange the course
 
-Each lesson holds one or more pieces of content. The order in the outline is the order learners see. The outline shows each lesson's content count and marks optional lessons. Select a lesson to edit it.
+Each lesson holds one or more pieces of content. The order in the outline is the order learners see. On a phone, open **Lessons** to organize the outline; choosing a lesson folds it again so you can edit the content. The outline shows each lesson's content count and marks optional lessons. Select a lesson to edit it.
 
-Content items can be expanded and collapsed. Open an item to edit its text, source or accessibility fields. The arrow buttons move it within the lesson, and the remove button removes it from the draft. **Undo edit** can restore a recent removal. Reordering keeps keyboard focus with the item.
+Text, questions and media appear directly on the lesson canvas. Click inside the text to edit. Open **Content options** beneath a visual or recording for its source, rendition and accessibility fields.
 
-- Use **Move lesson up** and **Move lesson down** to change the teaching order.
-- Enter a **Section (optional)** to group lessons under a heading. Give related lessons the same section name and place them together.
-- Leave **Required for completion** selected for lessons everyone must acknowledge. Clear it for reference material or further reading.
-- Within a lesson, use **Move content up** and **Move content down** to place explanations beside the media they describe.
-- Use **Remove content** or **Remove lesson** to remove material from the draft. This does not delete the original saved creation or an existing package.
+- Drag the grip beside a lesson to change the teaching order. **Move lesson up** and **Move lesson down** remain available in the lesson header.
+- Click a content header to select it. Hold the header or drag its grip to reorder. Use Command-click (Mac) or Control-click to add or remove items; Shift-click selects a range. Checkboxes also select content. Editing text does not select its content block.
+- Drag selected content together, or drop it onto another lesson in the outline. **Move to lesson** provides the same action through a destination picker. Selected content retains its order and is added at the destination's end.
+- Use the selection bar to duplicate or remove several items. **Clear selection** returns to editing. **Undo edit** restores recent changes, including moves and removals.
+- Use **Insert content below**, the plus between content items, to add text, designs, media, a quiz or a resource at that position. The buttons at the bottom append content.
+- Open **Lesson options** to enter a **Section (optional)** or change **Required for completion**. Give related lessons the same section name and place them together. Reference material can be optional.
+
+With a keyboard, focus a content or lesson grip and press Space or Enter to pick it up. Use arrow keys, Home or End to choose a position; Space or Enter places it. Escape cancels. The content actions menu also has **Move content up**, **Move content down** and **Remove content**. Reordering keeps focus with the item.
 
 Keep lessons focused. A useful pattern is a short explanation, a demonstration, then instructions for the learner to try the task themselves. The module must contain at least one required lesson, and every lesson must have content.
 
+## Format lesson text
+
+Choose **Add text**, then write on the canvas. Select text and use the formatting bar for **Bold**, **Italic**, **Underline**, bullet or numbered lists, quotes and links. **Text style** chooses a paragraph, heading or subheading. Standard editing shortcuts work; Alt+F10 moves focus from the text to its formatting bar.
+
+The text remains selectable and uses semantic headings and lists in the exported player. Links accept full `https://`, `http://` or `mailto:` addresses. Select a linked phrase and choose **Link** to change or remove it. Unsupported pasted formatting is removed; there are no arbitrary font or color overrides in lesson text.
+
+The active design system supplies the authoring colors, fonts and controls. Learner preview uses its resolved presentation. Saving a course version captures those styles and the required fonts alongside the content, so later profile edits do not restyle a package already shared with a customer.
+
+## Add practice quizzes
+
+Choose **Add quiz** after an explanation or demonstration.
+
+1. Choose **Choose one**, **Choose several**, or **True or false**.
+2. Write the question and answer choices. Single and multiple choice questions allow two to eight answers. True or false supplies its two answer labels.
+3. Mark the correct answer, or all correct answers for **Choose several**. Use **Add answer** or the remove control to change the choices.
+4. Open **Answer explanation** to describe the reasoning. This explanation appears after the learner checks an answer.
+5. Use **Preview as learner** to try both correct and incorrect responses. **Check answer** gives feedback; learners can change their choices and try again.
+
+Export preflight identifies empty questions, missing or duplicate answer text and invalid answer keys, and **Fix item** returns to the affected content. Practice answers resume with the saved attempt in a browser or LMS. They do not set an LMS score, pass mark or completion requirement. Every portable package includes its practice answer key, so use these questions for learning and rehearsal.
+
+![The course canvas with formatted teaching text and a practice question](/info/shots/training-course-quiz.svg)
+
 ## Add designs, slides and media
 
-Choose **Add content** inside the selected lesson. This opens Lolly's existing picker, with your projects, saved creations, library and uploads. You can add several items before closing it.
+Choose **Add content** inside the selected lesson. The picker names the receiving lesson and opens its course project when available. Browse projects, saved creations, library or uploads. Each successful addition updates the item count; choose **Done** when you have gathered the material. **Create or edit** holds the photo, capture and processing shortcuts available on your device.
+
+Content shows source names, available images, saved thumbnails and media controls directly on the canvas. Cached thumbnails are shown only when they predate the course capture; use **Preview course** to check the captured result of a saved tool session. Accessibility explanations stay separate from the source name.
 
 | Material | How to use it |
 | --- | --- |
@@ -57,7 +84,7 @@ The packager accepts PNG, JPEG and WebP images; MP4 and WebM video; MP3, M4A, WA
 
 ## Edit or refresh a source
 
-For a saved tool creation, **Edit source** opens the original editor. Save there to return to the learning module, then choose **Update from source** on the content block. Review the updated content in learner preview.
+Under **Content options** for a saved tool creation, **Edit source** opens the original editor. Save there to return to the learning module, then choose **Update from source** on the content block. Review the updated content in learner preview.
 
 The module keeps a captured copy of a saved creation's inputs. Editing the original does not automatically replace that copy. Referenced asset bytes and the installed tool implementation are resolved when you prepare a preview or build a version, so check the final output after changing your library or tools.
 
@@ -88,7 +115,7 @@ Use keyboard navigation in the preview. Check the reading order, descriptions, c
 
 Choose **Preview as learner**. Lolly prepares the content using the same compiler and player used in the downloadable package. Preparing motion can take longer than preparing still pages.
 
-The preview says **Test preview**. Its progress stays in that preview and is never sent to an LMS. Close and reopen it to start another test.
+The preview says **Test preview**. Its progress stays in that preview and is never sent to an LMS. Close and reopen it to start another test. **Escape** closes the preview even after you have used the learner controls.
 
 Learners can navigate the lesson list freely. Viewing the last lesson, seeking to the end of a video or downloading a resource does not complete the module. The learner must:
 
@@ -101,16 +128,18 @@ In an LMS launch, **Save and exit** saves the current place and ends the session
 
 ## Check and export the course
 
+Review findings name the lesson and content item. Choose **Fix item** to open the relevant field. After a repair, **Export course** returns to **Review**; the updated content must pass a fresh package check.
+
 1. Choose **Export course** at the top of the course editor. The dialog guides you through **Destination**, **Review** and **Download**.
 2. Under **Destination**, select **Website**, a SCORM format, or an experimental xAPI format. You can record the receiving website or LMS name. Enter its upload limit in MB when known, or leave it blank. Choose **Review course** to continue.
-3. Review the lesson counts, required and optional content, language and completion rule. Resolve the items marked **to fix**. **Open lesson** takes you back to the affected lesson. Review accessibility findings in learner preview.
+3. Review the lesson counts, required and optional content, language and completion rule. Resolve the items marked **to fix**. **Fix item** takes you to the affected lesson or content. Review accessibility findings in learner preview.
 4. Choose **Check and prepare package**. Lolly resolves sources, renders their content and checks the exact ZIP size. A missing source, unsupported rendition or size limit stops the check. No content is silently dropped.
 5. A successful check opens **Download** with the exact package size. Review the handoff instructions and enter version notes, then choose **Save version and download ZIP**. Lolly stores that exact checked package on this device before requesting the download.
 6. Keep the ZIP and **Download handoff report** with the delivery record. The report includes the version, checksum, destination, size and remaining review items.
 
 The progress job offers cancellation. **Continue editing** closes the dialog while checking continues; changing the draft invalidates and cancels that check. Leaving the module cancels unfinished checking. Reopen **Export course** to see a completed check. Changing content, format or destination settings requires another check. Cancellation never creates a partial course package.
 
-After a version is saved, the download recovery controls let you retry delivery without rendering again. A browser download request is not proof that a file reached disk; check your download location. Expand **Saved versions** beneath the editor to recover a package after reopening the module.
+After a version is saved, **Download ZIP again** retrieves the same finished package. Expand **Download help** for recovery controls, including choosing a save location where supported, without rendering again. A browser download request is not proof that a file reached disk; check your download location. Expand **Saved versions** beneath the editor to recover a package after reopening the module.
 
 Local builds support up to 200 lessons and 512 MB of distinct prepared content. Large videos can exhaust browser memory before that size. Split large courses or reduce the size of the finished media when needed. The destination limit checks the final ZIP in decimal MB.
 
@@ -197,4 +226,4 @@ pnpm run cli learning build module.json --format=scorm12 --output=course.zip
 pnpm run cli learning build module.json --format=static --output=website.zip
 ```
 
-The input follows the SDK's `learning-module-v1.schema.json`. For this CLI path, export saved tool sources to media first. Set each asset source's `url` to a relative file path beside the module JSON, with its `format` matching the file. The command reads only files within that directory, including when resolving symbolic links. It refuses to overwrite an existing output file. Use `--json` for a machine-readable build result and checksum.
+The input follows the SDK's `learning-module-v1.schema.json` for original courses or `learning-module-v2.schema.json` for formatted text and practice quizzes. The editor upgrades a draft to schema 2 when either feature is added. Existing schema 1 drafts and saved packages remain readable. For this CLI path, export saved tool sources to media first. Set each asset source's `url` to a relative file path beside the module JSON, with its `format` matching the file. The command reads only files within that directory, including when resolving symbolic links. It refuses to overwrite an existing output file. Use `--json` for a machine-readable build result and checksum.

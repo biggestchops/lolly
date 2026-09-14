@@ -9,7 +9,7 @@
  * mobile the standalone history button, language FAB and "Profile" wordmark
  * also fold into it (hidden by CSS at <=640px).
  *
- * The avatar stays an `<a href="#/profile">` for no-JS / middle-click / open-in-
+ * The avatar stays an `<a href="#/settings">` for no-JS / middle-click / open-in-
  * new-tab; the click handler preventDefaults and opens the menu instead, and the
  * full profile page is reachable from the menu's Settings row.
  *
@@ -86,14 +86,14 @@ export function attachProfileMenu(
       <button type="button" class="profile-menu-item" role="menuitem" data-act="lang" aria-haspopup="menu" aria-expanded="false">
         <span>${t('Language')}</span><span class="profile-menu-count">${escape(LANG_META[currentLang()].nativeName)}</span>
       </button>
-      <a class="profile-menu-item" role="menuitem" href="#/profile?focus=design-systems-section" data-act="design-system">
+      <a class="profile-menu-item" role="menuitem" href="#/settings?focus=design-systems-section" data-act="design-system">
         <span>${t('Design system')}</span><span class="profile-menu-count" data-ds-label></span>
       </a>
       <a class="profile-menu-item" role="menuitem" href="#/start" data-act="brand">
         <span>${t('Set up your brand')}</span>
         ${CHEVRON}
       </a>
-      <a class="profile-menu-item" role="menuitem" href="#/profile" data-act="settings">
+      <a class="profile-menu-item" role="menuitem" href="#/settings" data-act="settings">
         <span>${t('Settings')}</span>
         ${CHEVRON}
       </a>`;
@@ -194,7 +194,7 @@ export function attachProfileMenu(
   const onClick = (e: MouseEvent) => {
     // Left-click on every width opens the consolidated menu; a modified click
     // (middle/cmd/ctrl/shift - open in new tab, etc.) falls through to the
-    // anchor's href so #/profile is still directly reachable.
+    // anchor's href so #/settings is still directly reachable.
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     popover.isOpen() ? popover.close(true) : popover.open();
@@ -205,7 +205,7 @@ export function attachProfileMenu(
 }
 
 /**
- * Append the profile FAB (icon-only `#/profile` link, skinned `.profile-fab` -
+ * Append the profile FAB (icon-only `#/settings` link, skinned `.profile-fab` -
  * topbar.css, same box as `.theme-fab`) to a view's fixed top-right cluster and
  * attach the mobile menu to it - the mirror of theme-toggle.ts's mountThemeFab,
  * for the nav-less utility views (Dashboard, Verify, Convert, Spreadsheet,
@@ -221,9 +221,9 @@ export function mountProfileFab(
 ): void {
   if (!cluster) return;
   const link = document.createElement('a');
-  link.href = '#/profile';
+  link.href = '#/settings';
   link.className = opts.className ?? 'profile-fab';
-  link.setAttribute('aria-label', t('Open your profile'));
+  link.setAttribute('aria-label', t('Open settings'));
   link.title = t('Profile');
   // The Lolly mark (then the user's headshot), same as the topbar pill - not a
   // generic person glyph. `.profile-fab svg` centres the mark; `.profile-fab-avatar`
@@ -270,9 +270,9 @@ function paintProfileMark(
  */
 export function createProfileControl(host: ProfileMenuHost, opts: { className?: string } = {}): HTMLAnchorElement {
   const link = document.createElement('a');
-  link.href = '#/profile';
+  link.href = '#/settings';
   link.className = `profile-link${opts.className ? ` ${opts.className}` : ''}`;
-  link.setAttribute('aria-label', t('Open your profile'));
+  link.setAttribute('aria-label', t('Open settings'));
   attachProfileMenu(link, host);   // sets aria-haspopup/expanded + opens the menu on click
   paintProfileMark(link, host, `<span class="profile-link-mark" aria-hidden="true">${LOLLY_MARK_SVG}</span>`, 'profile-link-avatar');
   return link;

@@ -24,7 +24,7 @@ globalThis.localStorage = dom.window.localStorage;
 const { createSettingsProvider } = await import('./settings.ts');
 const { tokenize } = await import('../match.ts');
 const { NAV_SECTIONS } = await import('../../../views/profile.ts');
-const { DASH_SECTIONS } = await import('../../../views/dashboard-registry.ts');
+const { DASH_SECTIONS } = await import('../../dashboard-registry.ts');
 
 const provider = createSettingsProvider();
 const search = (q: string, limit = 50) => provider.search(tokenize(q), limit);
@@ -37,8 +37,8 @@ test("'contrast' surfaces the Accessibility destinations", async () => {
   const hits = await search('contrast');
   // The pref itself (title match) outranks the section (keyword match) - both land
   // on the same deep link, so either row serves the intent.
-  assert.ok(hits.some((h) => h.href === '#/profile?focus=a11y-section'), 'a11y-section hit present');
-  assert.equal(hits[0]!.href, '#/profile?focus=a11y-section');
+  assert.ok(hits.some((h) => h.href === '#/settings?focus=a11y-section'), 'a11y-section hit present');
+  assert.equal(hits[0]!.href, '#/settings?focus=a11y-section');
   assert.equal(hits[0]!.title, 'High contrast');
 });
 
@@ -46,7 +46,7 @@ test("'jelly' surfaces the Jelly flag by name", async () => {
   const hits = await search('jelly');
   const flagHit = hits.find((h) => h.title === 'Jelly effects');
   assert.ok(flagHit, 'the individual flag is a hit');
-  assert.equal(flagHit!.href, '#/profile?focus=feature-flags-section');
+  assert.equal(flagHit!.href, '#/settings?focus=feature-flags-section');
   assert.equal(flagHit!.subtitle, 'Feature flags');
 });
 
@@ -57,38 +57,38 @@ test("'focus music' surfaces Neurospicy Mode (pill match, AND across tokens)", a
 
 test("'palette' surfaces the dashboard colour section, addressed by its unique id", async () => {
   const hits = await search('palette');
-  // Keyword-addressed hrefs ('#/d?color') collided across sections and
+  // Keyword-addressed hrefs ('#/settings?color') collided across sections and
   // applyDeepLink resolved them to the first DOM owner - hrefs are id-keyed now.
   assert.ok(
-    hits.some((h) => h.subtitle === 'Dashboard' && h.href === '#/d?dash-palette'),
+    hits.some((h) => h.subtitle === 'Settings' && h.href === '#/settings?dash-palette'),
     'a Dashboard hit deep-linking the colour palette section by id',
   );
 });
 
 test("'storage' surfaces both the profile card and the dashboard glance", async () => {
   const hits = await search('storage');
-  assert.ok(hits.some((h) => h.href === '#/profile?focus=storage-section'));
-  assert.ok(hits.some((h) => h.href === '#/d?dash-storage'));
+  assert.ok(hits.some((h) => h.href === '#/settings?focus=storage-section'));
+  assert.ok(hits.some((h) => h.href === '#/settings?dash-storage'));
 });
 
 test("'dark mode' reaches Appearance via its keywords (multi-word AND)", async () => {
   const hits = await search('dark mode');
-  assert.ok(hits.some((h) => h.href === '#/profile?focus=appearance-section'));
+  assert.ok(hits.some((h) => h.href === '#/settings?focus=appearance-section'));
 });
 
 test('every NAV_SECTIONS entry round-trips its own label into its focus href', async () => {
   for (const s of NAV_SECTIONS) {
     const hits = await search(s.label);
     assert.ok(
-      hits.some((h) => h.href === `#/profile?focus=${s.id}`),
-      `searching '${s.label}' finds #/profile?focus=${s.id}`,
+      hits.some((h) => h.href === `#/settings?focus=${s.id}`),
+      `searching '${s.label}' finds #/settings?focus=${s.id}`,
     );
   }
 });
 
 test('tab-level dashboard entries deep-link by ?tab=', async () => {
   const hits = await search('capabilities');
-  assert.ok(hits.some((h) => h.href === '#/d?tab=caps'));
+  assert.ok(hits.some((h) => h.href === '#/settings?tab=caps'));
 });
 
 test('hits respect the limit and arrive best-score-first with icon markup', async () => {
@@ -121,9 +121,9 @@ test('every dashboard hit href takes a deep-link form applyDeepLink understands'
   // a flag token, so applyDeepLink resolves it exactly - keyword tokens collide
   // across sections); flagless (tab) entries by ?tab=<key> from a registry tab row.
   const tabKeys = new Set(DASH_SECTIONS.filter((s) => !s.flag).map((s) => s.tab));
-  const dashHits = (await search('a', 500)).filter((h) => h.subtitle === 'Dashboard');
+  const dashHits = (await search('a', 500)).filter((h) => h.subtitle === 'Settings');
   for (const h of dashHits) {
-    const m = /^#\/d\?(tab=)?([a-z-]+)$/.exec(h.href);
+    const m = /^#\/settings\?(tab=)?([a-z-]+)$/.exec(h.href);
     assert.ok(m, `${h.href} is a #/d deep link`);
     if (m![1]) assert.ok(tabKeys.has(m![2]!), `${h.href} names a registry tab`);
     else assert.ok(DASH_SECTIONS.some((s) => s.id === m![2]), `${h.href} names a registry section id`);

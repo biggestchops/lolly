@@ -114,7 +114,7 @@ export function templateCard(template: PickerTemplate, quickAdd = false): string
 // markup (vector tools); SVG is rendered via a data-URL <img> so an embedded script in
 // an imported session cannot execute. No thumb → the tool's icon as a stub.
 export function sessionCard(s: PickerSession): string {
-  const name = s.toolName ?? s.toolId;
+  const name = s.label || s.toolName || s.toolId;
   return `
     <button type="button" class="asset-picker-card asset-picker-sessitem" data-session-slot="${escapeHtml(s.slot)}" title="${escapeHtml(name)}">
       ${sessionThumb(s.thumb, s.toolIcon)}

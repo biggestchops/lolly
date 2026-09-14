@@ -89,6 +89,6 @@ export function installGlobalReveal(): void {
     if (!(d instanceof HTMLDetailsElement) || !d.open) return;
     if (!SECTION_CLASSES.some(c => d.classList.contains(c))) return;
     const items = revealItemsFor(d);
-    if (items.length) staggerReveal(items);
+    if (items.length) staggerReveal(items, { sound: !d.closest('[data-reveal-sound="off"]') });
   }, true);
 }

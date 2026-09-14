@@ -4,6 +4,7 @@ import { escape as esc } from '../utils.ts';
 import { LEARNING_TARGETS } from '../../../../engine/src/learning/delivery.ts';
 
 export const contentLabels: Record<string, string> = {
+  quiz: 'Quiz',
   text: 'Text',
   image: 'Image',
   slides: 'Slides',
@@ -12,6 +13,7 @@ export const contentLabels: Record<string, string> = {
   resource: 'Resource',
 };
 const contentIcons: Record<string, IconName> = {
+  quiz: 'check',
   text: 'font',
   image: 'image',
   slides: 'photos',

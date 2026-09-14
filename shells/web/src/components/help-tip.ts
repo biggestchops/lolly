@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 // On-demand input help. Instead of printing every input's help text as an always-
-// visible line under each control - which lengthens and clutters a long sidebar - 
+// visible line under each control - which lengthens and clutters a long sidebar -
 // each input gets a small info button next to its label that reveals the help on
 // hover (desktop), tap (touch), or keyboard focus. The text stays in the DOM and
 // is wired to its control via aria-describedby (see linkHelpDescriptions), so
@@ -8,6 +8,7 @@
 //
 // Mirrors the colour-field popover lifecycle (Escape closes + refocuses the
 // trigger, outside-click disarms) so it matches the app's escape-to-close idiom.
+import './help-tip.css';
 import { escape } from '../utils.ts';
 import { linkInputLabels } from './input-labels.ts';
 
@@ -36,7 +37,10 @@ interface HelpTipLink {
 // `link` (optional) appends one action link after the text, e.g.
 // { href: '#/verify', text: 'Check a file' }. The text and href are escaped, and
 // an internal `#`/`/` href never opens a new tab; an external http(s) one does.
-export function helpTip(text: string, link: HelpTipLink | null = null): { id: string; button: string; pop: string } {
+export function helpTip(
+  text: string,
+  link: HelpTipLink | null = null
+): { id: string; button: string; pop: string } {
   const id = `helptip-${++_seq}`;
   const button =
     `<button type="button" class="help-tip-btn" aria-label="More info" ` +
@@ -45,7 +49,8 @@ export function helpTip(text: string, link: HelpTipLink | null = null): { id: st
   if (link && link.href) {
     const external = /^https?:/i.test(link.href);
     // nosemgrep: lolly-href-escape-is-not-scheme-validation - every call site passes a literal in-app route ('#/verify', '#/components'); no remote value reaches it
-    linkHtml = ` <a class="help-tip-link" href="${escape(link.href)}"` +
+    linkHtml =
+      ` <a class="help-tip-link" href="${escape(link.href)}"` +
       (external ? ' target="_blank" rel="noopener"' : '') +
       `>${escape(link.text || 'Learn more')}</a>`;
   }
@@ -59,6 +64,8 @@ export function helpTip(text: string, link: HelpTipLink | null = null): { id: st
 type HelpScope = HTMLElement & {
   _helpTipsWired?: boolean;
   _helpTipDismiss?: (e: MouseEvent) => void;
+  _helpTipClick?: (e: MouseEvent) => void;
+  _helpTipKey?: (e: KeyboardEvent) => void;
 };
 
 export function wireHelpTips(scope: HelpScope): void {
@@ -76,20 +83,21 @@ export function wireHelpTips(scope: HelpScope): void {
     });
   };
 
-  scope.addEventListener('click', (e) => {
+  scope._helpTipClick = (e) => {
     const btn = (e.target as Element).closest('.help-tip-btn');
     if (!btn) return;
     e.preventDefault();
-    e.stopPropagation();                 // don't let a wrapping <label> toggle its control
+    e.stopPropagation(); // don't let a wrapping <label> toggle its control
     const pop = btn.closest(HOST_SEL)?.querySelector<HTMLElement>('.help-tip-pop');
     if (!pop) return;
     const willOpen = pop.hidden;
     closeAll(pop);
     pop.hidden = !willOpen;
     btn.setAttribute('aria-expanded', String(willOpen));
-  });
+  };
+  scope.addEventListener('click', scope._helpTipClick);
 
-  scope.addEventListener('keydown', (e) => {
+  scope._helpTipKey = (e) => {
     if (e.key !== 'Escape') return;
     const pop = scope.querySelector<HTMLElement>('.help-tip-pop:not([hidden])');
     if (!pop) return;
@@ -98,7 +106,8 @@ export function wireHelpTips(scope: HelpScope): void {
     btn?.setAttribute('aria-expanded', 'false');
     btn?.focus();
     e.stopPropagation();
-  });
+  };
+  scope.addEventListener('keydown', scope._helpTipKey);
 
   // Outside-click dismiss (capture, like the colour popover) - stored on the scope
   // so the view teardown can drop it and not pin a detached tree alive.
@@ -106,6 +115,17 @@ export function wireHelpTips(scope: HelpScope): void {
     if (!(e.target as Element).closest('.help-tip-btn, .help-tip-pop')) closeAll(null);
   };
   document.addEventListener('click', scope._helpTipDismiss, true);
+}
+
+/** Release delegated help when a persistent view container changes routes. */
+export function unwireHelpTips(scope: HelpScope): void {
+  if (scope._helpTipClick) scope.removeEventListener('click', scope._helpTipClick);
+  if (scope._helpTipKey) scope.removeEventListener('keydown', scope._helpTipKey);
+  if (scope._helpTipDismiss) document.removeEventListener('click', scope._helpTipDismiss, true);
+  delete scope._helpTipClick;
+  delete scope._helpTipKey;
+  delete scope._helpTipDismiss;
+  delete scope._helpTipsWired;
 }
 
 // Point each control at its help text for assistive tech. Runs every render (the
@@ -131,6 +151,7 @@ export function linkHelpDescriptions(scope: HTMLElement): void {
     if (!ctrl) return;
     const existing = ctrl.getAttribute('aria-describedby');
     if (!existing) ctrl.setAttribute('aria-describedby', note.id);
-    else if (!existing.split(/\s+/).includes(note.id)) ctrl.setAttribute('aria-describedby', `${existing} ${note.id}`);
+    else if (!existing.split(/\s+/).includes(note.id))
+      ctrl.setAttribute('aria-describedby', `${existing} ${note.id}`);
   });
 }

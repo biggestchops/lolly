@@ -1,0 +1,87 @@
+@layer views {
+  .help-tip-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin-left: var(--sp-2);
+    width: var(--sp-7);
+    height: var(--sp-7);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-round);
+    background: transparent;
+    color: hsl(var(--muted-foreground));
+    cursor: help;
+    opacity: 0.55;
+    transition:
+      opacity var(--dur-1) ease,
+      color var(--dur-1) ease;
+  }
+  .help-tip-btn:hover,
+  .help-tip-btn:focus-visible {
+    opacity: 1;
+    color: hsl(var(--primary));
+  }
+  .help-tip-btn:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: var(--radius-round);
+  }
+  .help-tip-btn svg {
+    display: block;
+    width: var(--fs-md);
+    height: var(--fs-md);
+  }
+  .help-tip-host {
+    position: relative;
+  }
+  .help-tip-pop {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: var(--sp-2);
+    z-index: var(--ui-layer-overlay);
+    padding: var(--sp-4) var(--sp-5);
+    border-radius: var(--radius);
+    background: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--ui-elevation-floating);
+    font-size: var(--fs-xs);
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+  }
+  .help-tip-pop[hidden] {
+    display: none;
+  }
+  /* Optional action link at the foot of a tip (e.g. "Check a file →" to /verify). */
+  .help-tip-link {
+    display: block;
+    margin-top: var(--sp-3);
+    color: hsl(var(--primary));
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .help-tip-link:hover,
+  .help-tip-link:focus-visible {
+    text-decoration: underline;
+  }
+
+  @media (pointer: coarse) {
+    .help-tip-btn {
+      padding: var(--sp-4);
+      margin: -8px -8px -8px -4px;
+    }
+  }
+  @media (hover: hover) {
+    .help-tip-host:has(.help-tip-btn:hover) > .help-tip-pop,
+    .help-tip-host:has(.help-tip-btn:focus-visible) > .help-tip-pop {
+      display: block;
+    }
+  }
+}

@@ -42,7 +42,6 @@ try {
   for (const text of ['First', 'Second', 'Third', 'Fourth']) {
     await page.getByRole('button', { name: 'Add text', exact: true }).click();
     await page.locator('[data-block]').last().getByLabel('Lesson text', { exact: true }).fill(text);
-    await page.locator('[data-block]').last().locator('summary').first().click();
   }
   const cards = page.locator('[data-block]');
   const ids = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-block')));
@@ -53,7 +52,19 @@ try {
     const box = (await cards.last().boundingBox())!;
     return { x: box.x + box.width / 2, y: box.y + box.height - 8 };
   };
-  await page.getByRole('button', { name: 'Clear selection', exact: true }).click();
+  assert.equal(
+    await page.locator('[data-block-selection]').isVisible(),
+    false,
+    'editing does not select content'
+  );
+  const textField = cards.nth(1).getByLabel('Lesson text', { exact: true });
+  await textField.click();
+  assert.equal(
+    await textField.evaluate((el) => el === document.activeElement),
+    true,
+    'the first click places the caret'
+  );
+  assert.equal(await page.locator('[data-block-selection]').isVisible(), false);
   await cards.first().getByRole('checkbox').check();
   await cards.nth(1).getByRole('checkbox').check();
   assert.equal(await page.locator('[data-block][data-selected=true]').count(), 2);
@@ -112,15 +123,15 @@ try {
   );
   // Chromium provides native touch dispatch; WebKit also verifies the compact keyboard layout.
   await page.setViewportSize({ width: 390, height: 844 });
-  await cards.first().locator('summary').first().click();
   await grip(ids[3]!).scrollIntoViewIfNeeded();
-  const touchStart = (await grip(ids[3]!).boundingBox())!;
+  const touchStart = (await page.locator(`[data-block="${ids[3]}"] [data-block-surface]`).boundingBox())!;
   const secondBox = (await cards.nth(1).boundingBox())!;
   const x = touchStart.x + touchStart.width / 2,
     y = touchStart.y + touchStart.height / 2;
   if (engine === 'chromium') {
     const session = await page.context().newCDPSession(page);
     await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    await page.locator(`[data-block="${ids[3]}"][data-dragging=true]`).waitFor();
     await session.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
       touchPoints: [{ x, y: Math.min(810, secondBox.y + secondBox.height - 5) }],
@@ -197,6 +208,7 @@ try {
       .evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
     true
   );
+  await player.getByRole('button', { name: 'Complete lesson', exact: true }).click();
   await page.keyboard.press('Escape');
   await page.locator('.learning-preview').waitFor({ state: 'detached' });
   assert.deepEqual(errors, []);

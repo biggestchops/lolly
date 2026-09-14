@@ -18,6 +18,7 @@ try {
     true
   );
   await page.getByLabel('Lesson title', { exact: true }).fill('A first lesson');
+  await page.locator('.learning-lesson-options > summary').click();
   await page.getByLabel('Section (optional)', { exact: true }).fill('Getting started');
   await page.getByRole('button', { name: 'Add text', exact: true }).click();
   await page.getByLabel('Lesson text', { exact: true }).fill('First explanation');
@@ -43,43 +44,44 @@ try {
   );
   await page.getByRole('heading', { name: 'Course editor', exact: true }).click();
   assert.match(
-    await page.locator('[data-block] > details > summary').innerText(),
+    await page.getByLabel('Lesson text', { exact: true }).innerText(),
     /First explanation/,
-    'the content summary follows edits without rebuilding the editor'
+    'the lesson canvas follows edits without rebuilding the editor'
   );
   await page.getByRole('button', { name: 'Add text', exact: true }).click();
   const blocks = page.locator('[data-block]');
   assert.equal(await blocks.count(), 2, 'blurring an edit must not swallow Add text');
   await blocks.last().getByLabel('Lesson text', { exact: true }).fill('Second explanation');
   const secondId = await blocks.last().getAttribute('data-block');
-  await blocks.last().getByRole('button', { name: 'Move content up', exact: true }).click();
+  await blocks.last().locator('[data-block-menu]').click();
+  await page.getByRole('menuitem', { name: 'Move content up', exact: true }).click();
   assert.equal(await blocks.first().getAttribute('data-block'), secondId);
   assert.equal(
     await blocks.first().evaluate((el) => el.contains(document.activeElement)),
     true,
     'focus follows reordered content'
   );
+  await blocks.first().locator('[data-block-menu]').click();
   assert.equal(
-    await blocks.first().getByRole('button', { name: 'Move content up', exact: true }).isEnabled(),
-    false
+    await page.getByRole('menuitem', { name: 'Move content up', exact: true }).count(),
+    0
   );
-  await blocks.first().getByRole('button', { name: 'Move content down', exact: true }).click();
-  await blocks.first().locator('summary').first().click();
-  assert.equal(await blocks.first().locator('details').first().getAttribute('open'), null);
+  await page.getByRole('menuitem', { name: 'Move content down', exact: true }).click();
   await page.getByLabel('Required for completion', { exact: true }).uncheck();
   assert.equal(
-    await blocks.first().locator('details').first().getAttribute('open'),
-    null,
-    'editing settings keeps content collapsed'
+    await blocks.first().getByLabel('Lesson text', { exact: true }).isVisible(),
+    true,
+    'lesson settings preserve the visible text canvas'
   );
   await page.getByLabel('Required for completion', { exact: true }).check();
-  await blocks.last().getByRole('button', { name: 'Remove content', exact: true }).click();
+  await blocks.last().locator('[data-block-menu]').click();
+  await page.getByRole('menuitem', { name: 'Remove content', exact: true }).click();
   assert.equal(await blocks.count(), 1);
   await page.getByRole('button', { name: 'Undo edit', exact: true }).click();
   await blocks.nth(1).waitFor();
   assert.equal(await blocks.count(), 2);
   assert.equal(
-    await blocks.last().getByLabel('Lesson text', { exact: true }).inputValue(),
+    await blocks.last().getByLabel('Lesson text', { exact: true }).innerText(),
     'Second explanation'
   );
 
@@ -111,11 +113,20 @@ try {
     false,
     'an empty lesson blocks preparation'
   );
-  await modal.getByRole('button', { name: 'Open lesson', exact: true }).first().click();
+  await modal
+    .getByRole('button', { name: /^Fix Lesson/ })
+    .first()
+    .click();
   assert.equal(await modal.count(), 0);
   await page.getByRole('button', { name: 'Add text', exact: true }).click();
   await page.getByLabel('Lesson text', { exact: true }).fill('A second lesson.');
   await page.getByRole('button', { name: 'Export course', exact: true }).click();
+  assert.equal(
+    await modal.locator('[data-delivery-step="1"]').getAttribute('aria-current'),
+    'step',
+    'return from a fix preserves Review'
+  );
+  await modal.locator('[data-delivery-step="0"]').click();
   await modal.getByLabel('Delivery format').selectOption('static');
   await modal.getByLabel('Website or LMS name (optional)').fill('Partner portal');
   await modal.getByLabel('Upload limit (MB, optional)').fill('20');

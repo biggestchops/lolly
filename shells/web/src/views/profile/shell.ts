@@ -7,6 +7,7 @@
  * function as a value (an event listener), goes through `pv.<module>.<fn>`. Extracted verbatim
  * from mountProfile() by scripts/split-closure.ts.
  */
+import { settingsNavHtml, wireSettingsNav } from '../../components/settings-nav.ts';
 import { THEMES, THEME_ICONS, THEME_LABELS } from '../../theme.ts';
 import { prefersReducedMotion } from '../../lib/a11y-prefs.ts';
 import { fold, scoreHaystack, tokenize } from '../../lib/search/match.ts';
@@ -33,8 +34,8 @@ export function renderShell(pv: ProfileViewCtx): void {
         ${langFabHtml()}
       </div>
     </div>
+    ${settingsNavHtml('preferences')}
     <div class="profile-layout">
-      <h1 class="visually-hidden">${t('Your profile')}</h1>
 
       <aside class="profile-nav" aria-label="${escapeText(t('Settings sections'))}">
         <div class="profile-nav-search">
@@ -279,6 +280,7 @@ export function renderShell(pv: ProfileViewCtx): void {
 /** The settings nav rail: jump, scroll-spy and the search filter. */
 export function wireNav(pv: ProfileViewCtx): void {
   const { viewEl } = pv;
+  wireSettingsNav(viewEl);
   // (The old two-button .profile-footer is retired - the shell's persistent search
   // bar (components/search-bar.ts, plans/99 M1) shows on this route and carries the
   // same Dashboard/Verify links plus the search field. Profile makes no claim, so

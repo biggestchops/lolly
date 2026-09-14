@@ -16,6 +16,7 @@ import type { Profile } from '@lolly-tools/core/host-v1';
 import { syncCatalog, syncCorePrefetch, defaultFavouriteAssetIds, toolIndexChanged, localizeToolIndex, loadSlimToolIndex } from './catalog/sync.ts';
 import { mergeInstalledToolsIntoIndex } from './lib/installed-tools.ts';
 import { saveFavouriteAssets } from './lib/asset-favourites.ts';
+import { settingsRoute } from './views/settings-route.ts';
 import { mountGallery } from './views/gallery.ts';
 import { initTheme, applyTheme, urlThemeOverride } from './theme.ts';
 import { hydrateA11yPrefs, currentA11yPrefs, setA11yPref } from './lib/a11y-prefs.ts';
@@ -195,11 +196,11 @@ const ROUTES: Record<RouteName, RouteSpec> = {
   // mounted markup is styled by nothing and the view renders broken/blank.
   utilities: { label: 'Utilities', tab: 'utilities', viewClasses: ['gallery-view', 'utilities-view'], footer: 'search' },
   tool: { label: 'Tool', viewClasses: ['tool-view'], sigKey: 'toolId', footer: 'none' },
-  profile: { label: 'Profile', viewClasses: ['profile-view'], sigKey: 'params', footer: 'search' },
+  profile: { label: 'Settings', viewClasses: ['profile-view'], sigKey: 'params', footer: 'search' },
   // The dashboard keys on its query too, so a deep link that only changes a flag
   // (#/d → #/d?print, or an old #/platform?x redirect) re-mounts and re-applies
   // the open+scroll, instead of being deduped as the same 'dashboard' route.
-  dashboard: { label: 'Dashboard', viewClasses: ['dashboard-view'], sigKey: 'params', footer: 'search' },
+  dashboard: { label: 'Settings', viewClasses: ['dashboard-view'], sigKey: 'params', footer: 'search' },
   // params-keyed so #/pro?s=slot,slot… ("Edit as sheet") and #/pro?session=… deep
   // links re-seed the grid and survive Back. Safe: /pro never rewrites its own
   // params mid-session (its only location writes navigate AWAY - see index.ts).
@@ -355,6 +356,7 @@ async function navigate(host: WebHost, opts: { force?: boolean } = {}): Promise<
     const colon = sig.indexOf(':');
     if (colon < 0) return sig;
     const name = sig.slice(0, colon);
+    if (name === 'profile' || name === 'dashboard') return 'settings';
     return PARAM_KEYED_ROUTES.has(name as RouteName) ? name : sig;
   };
   if (prevSig && viewIdent(routeSig) !== viewIdent(prevSig)) recordLeave(leftHref);
@@ -1632,6 +1634,7 @@ async function boot(): Promise<void> {
     const catalog = (): void => { void import('./views/catalog.ts').catch(() => {}); };
     // Every hash spelling parseRoute() below accepts for these three, including the
     // ones that land via a redirect (#/b and #/brand → the dashboard's brand tab).
+    warmSecondary.set('settings', () => { void import('./views/profile.ts').catch(() => {}); });
     for (const k of ['d', 'dashboard', 'b', 'brand', 'platform', 'capabilities']) warmSecondary.set(k, dashboard);
     warmSecondary.set('p', projects);
     for (const k of ['c', 'catalog']) warmSecondary.set(k, catalog);
@@ -1765,6 +1768,7 @@ function parseRoute(): Route {
     if (parts[0] === 'design' && !parts[1]) {
       return { name: 'tool', toolId: 'design', params: query || '' };
     }
+    if (parts[0] === 'settings') return settingsRoute(query || '');
     if (parts[0] === 'profile') return { name: 'profile', params: query || '' };
     if (parts[0] === 'history') return { name: 'history', params: query || '' };
     if (parts[0] === 'd' || parts[0] === 'dashboard') return { name: 'dashboard', params: query || '' };
@@ -1867,6 +1871,11 @@ function parseRoute(): Route {
     // retired path spelling of /batch (renamed 2026-08-20) - without this it fell
     // through to /#/tool/pro and 404'd on a tool id that doesn't exist. /platform and
     // /capabilities are retired aliases that fold into the Dashboard.
+    if (pathParts[0] === 'settings') {
+      const params = window.location.search.slice(1);
+      window.location.replace(`/#/settings${window.location.search}`);
+      return settingsRoute(params);
+    }
     if (pathParts[0] === 'batch' || pathParts[0] === 'pro') {
       window.location.replace(`/#/batch${window.location.search}`);
       return { name: 'pro', params: window.location.search.slice(1) };

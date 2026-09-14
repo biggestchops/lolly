@@ -1,0 +1,83 @@
+@layer views {
+  .asset-picker-collection-hint {
+    margin: 0;
+    padding: var(--sp-5) var(--ui-space-panel);
+    color: var(--ui-color-text-muted);
+    font-size: var(--ui-type-label);
+    border-bottom: 1px solid var(--ui-color-border-default);
+  }
+  .asset-picker-guided .asset-picker-footer {
+    gap: var(--sp-4);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .asset-picker-guided .asset-picker-footer :is(button, .asset-picker-upload) {
+    min-height: var(--ui-size-target);
+  }
+  .asset-picker-guided [data-collection-count] {
+    margin-inline-start: auto;
+    font-size: var(--ui-type-label);
+    font-variant-numeric: tabular-nums;
+  }
+  .asset-picker-collection-tools:not([hidden]) {
+    display: grid;
+    gap: var(--sp-3);
+  }
+  .asset-picker-collection-tools .btn {
+    min-height: var(--ui-size-target);
+    justify-content: start;
+  }
+  .learning-picker-error {
+    padding: var(--sp-5) var(--ui-space-panel);
+    margin: 0;
+    color: var(--ui-color-text-default);
+    background: hsl(var(--destructive) / 0.08);
+  }
+  .asset-picker-guided .asset-picker-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 1fr) var(--ui-size-target);
+  }
+  .asset-picker-guided .asset-picker-header h2 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: var(--ui-type-title);
+  }
+  .asset-picker-guided .asset-picker-search {
+    width: 100%;
+    min-height: var(--ui-size-target);
+  }
+  .asset-picker-guided .asset-picker-close {
+    min-width: var(--ui-size-target);
+    min-height: var(--ui-size-target);
+  }
+  .asset-picker-collection-hint {
+    flex: none;
+  }
+  @media (max-width: 640px) {
+    .asset-picker-guided .asset-picker-header {
+      grid-template-columns: minmax(0, 1fr) var(--ui-size-target);
+    }
+    .asset-picker-guided .asset-picker-search {
+      grid-row: 2;
+      grid-column: 1 / -1;
+    }
+    .asset-picker-guided .asset-picker-close {
+      grid-row: 1;
+      grid-column: 2;
+    }
+    .asset-picker-guided .asset-picker-footer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .asset-picker-guided [data-collection-count] {
+      margin: 0;
+    }
+    .asset-picker-guided [data-collection-done] {
+      justify-self: end;
+      min-width: 100px;
+    }
+    .asset-picker-guided .asset-picker-footer-error {
+      grid-column: 1 / -1;
+    }
+  }
+}

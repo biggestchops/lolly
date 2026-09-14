@@ -3,3 +3,6 @@
 # function-detection time. Never hand-edit - CI regenerates and fails on drift.
 # (The sibling .js.map files are gitignored, so no entry for them.)
 api/**/*.js linguist-generated=true
+
+# PDF bytes include fixed-width records and signed content; never normalize them.
+*.pdf binary

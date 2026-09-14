@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import type {
+  LearningBlock,
   LearningModule,
   LearningRelease,
   LearningTarget,
@@ -8,6 +9,14 @@ import type { CompiledLearning } from '../../../../../engine/src/learning/compil
 import type { LearningRendition } from '../../../../../engine/src/learning/delivery.ts';
 import type { PickerHost } from '../picker.ts';
 import type { ModalHandle } from '../../components/modal.ts';
+
+export interface SourceDisplay {
+  name: string;
+  preview?: string;
+  media?: string;
+  detail?: string;
+  unavailable?: boolean;
+}
 
 export interface LearningCtx {
   root: HTMLElement;
@@ -20,9 +29,13 @@ export interface LearningCtx {
   selected: string;
   selectedBlocks: Set<string>;
   flushTyping(): Promise<void>;
+  insertAfter?: string;
+  richText: { mount(): void; destroy(): void; flush(): void; pending(): boolean; editable(): void };
+  quizzes: { change(el: HTMLElement): boolean; action(action: string, id?: string): boolean };
   target: LearningTarget;
   exportSettings: { destination: string; maxMB: number };
   sourceChoices: Record<string, LearningRendition[]>;
+  sourceDisplay: Record<string, SourceDisplay>;
   checking: boolean;
   delivery: { open(releaseId?: string): void; close(): void; invalidate(): void };
   busy: boolean;
@@ -35,7 +48,13 @@ export interface LearningCtx {
   preview: CompiledLearning | null;
   previewModal?: ModalHandle<void>;
   ui: { render(focus?: string): void; checks(): void; status(message: string): void };
-  edit: { change(): void; addLesson(): void; action(action: string, id?: string): Promise<void> };
+  edit: {
+    insert(block: LearningBlock): void;
+    moveBlocks(lessonId: string): void;
+    change(): void;
+    addLesson(): void;
+    action(action: string, id?: string): Promise<void>;
+  };
   sources: {
     pick(): Promise<void>;
     inspect(): Promise<void>;
@@ -46,7 +65,7 @@ export interface LearningCtx {
     preview(): Promise<void>;
     build(): Promise<void>;
     variant(id: string): Promise<void>;
-    download(id: string): Promise<void>;
+    download(id: string, owner?: HTMLElement, surface?: HTMLElement): Promise<void>;
     closePreview(): void;
   };
   persistence: { save(): Promise<void> };

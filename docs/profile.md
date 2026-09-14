@@ -2,9 +2,9 @@
 
 A **profile** is the working identity Lolly creates *as*. It's the small set of details a tool can pull from so you don't retype them every time - your name, contact details, an optional headshot, a few preferences - plus everything you accumulate while you work: saved sessions, uploaded images and the local activity tally.
 
-Everything in a profile lives **on the device**, in the browser's local database (IndexedDB on the web PWA, the filesystem on the Tauri apps). There's no account and nothing is uploaded. You manage it under **Profile** (top-right of the gallery); tools only ever *read* it, and only the specific fields they were built to pre-fill.
+Everything in a profile lives **on the device**, in the browser's local database (IndexedDB on the web PWA, the filesystem on the Tauri apps). There's no account and nothing is uploaded. You manage it under **Settings → Preferences** (in the footer or avatar menu); tools only ever *read* it, and only the specific fields they were built to pre-fill.
 
-> A profile is about *you* (or whoever's creating here). It's distinct from the **Platform** - the brand's colours, fonts and global settings - and from **Capabilities**, the catalogue of what the app can do. See [Profile vs Platform vs Capabilities](#profile-vs-platform-vs-capabilities) at the end.
+> Settings brings your profile and the former Dashboard into one destination. **Preferences** holds your details and personal choices; **This device**, **Design system**, **Capabilities** and **Activity & stats** sit alongside it. See [Settings](/info/dashboard.html) for the full map.
 
 ## What's in a profile
 
@@ -25,7 +25,7 @@ None of this is required. A blank profile is a perfectly good profile; you fill 
 
 Preferences are the one part that changes how the app looks back at you. The theme cards are live previews and apply the moment you pick one, on this device only.
 
-The page is a long one, so it carries its own **settings rail** down the side - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - with a **Search settings** field above it that filters the list as you type. Every section is deep-linkable as `#/profile?focus=<section-id>`, which opens it and scrolls it into view (`#/profile?focus=storage-section`, `?focus=feature-flags-section`, and so on), so a link can point at one setting rather than at the top of the page.
+The page is a long one, so it carries its own **settings rail** down the side - Your details, Appearance, Accessibility, Lolly instance, Your activity, Storage, Available offline, Feature flags, Content Credentials - with a **Search settings** field above it that filters the list as you type. Every section is deep-linkable as `#/settings?focus=<section-id>`, which opens it and scrolls it into view (`#/settings?focus=storage-section`, `?focus=feature-flags-section`, and so on), so a link can point at one setting rather than at the top of the page.
 
 ![Three theme cards, each previewing its own type and colour, with the active one flagged](/t/url-shot?url=%2F%23%2Fprofile&width=1440&height=1400&dpi=192&waitMs=1600&walker=1&format=svg&cropSelector=.profile-card--appearance&dark=1&filename=pd-theme-picker)
 
@@ -55,7 +55,7 @@ At any moment an install has **one active profile** - the details a tool sees ri
 
 So if you genuinely juggle several contexts (you, your team, the event-manager hat), you keep several bundles and load the one you need:
 
-- <!--i:trash--> **Cleanest switch:** **Profile → Storage → Clear all my data**, then **Import** the bundle for the context you're stepping into. You're now creating purely as that profile.
+- <!--i:trash--> **Cleanest switch:** **Settings → Preferences → Storage → Clear all my data**, then **Import** the bundle for the context you're stepping into. You're now creating purely as that profile.
 - <!--i:layers--> **Layering:** importing *without* clearing first **merges** - the imported profile, sessions and images land on top of what's already there, replacing anything with the same name and leaving the rest. Handy for pulling one team's saved sessions into your own setup; not what you want if you need a clean role boundary.
 - <!--i:monitor--> **Side by side:** because everything is device-scoped, a separate browser profile, a separate user account or a second installed PWA each carries its own independent Lolly profile. Run your personal install and the event kiosk install at once, no switching.
 
@@ -67,7 +67,7 @@ Storage is where both halves of that live: the meter accounts for every byte thi
 
 ## Accessibility
 
-**Profile → Accessibility** holds four comfort settings for the app *around* your work. Each is off until you turn it on, and none of them reach inside a tool canvas or an export - a calmer app must not move a pixel of the file you ship.
+**Settings → Preferences → Accessibility** holds four comfort settings for the app *around* your work. Each is off until you turn it on, and none of them reach inside a tool canvas or an export - a calmer app must not move a pixel of the file you ship.
 
 - <!--i:film--> **Reduce motion** - turns off the transitions, slides and animated flourishes in the app. Your tool canvas and any animated export keep moving exactly as designed.
 - <!--i:image--> **Hide colourful previews** - swaps the gallery preview artwork for calm icon-and-text cards, and lowers the colour and contrast of your project thumbnails so they stay recognisable without shouting. Inside a tool everything shows in full colour.
@@ -78,13 +78,13 @@ These live on the profile record itself, which is why they travel in a profile e
 
 ## Your Lolly instance
 
-**Profile → Lolly instance** says where this install gets its tools and catalogue from - the address of the instance, or *Bundled with this app* when everything ships inside the build. Where a deployment offers one, an **Instance console** link opens its admin surface, and **Change** / **Disconnect** re-point the install or cut it loose.
+**Settings → Preferences → Lolly instance** says where this install gets its tools and catalogue from - the address of the instance, or *Bundled with this app* when everything ships inside the build. Where a deployment offers one, an **Instance console** link opens its admin surface, and **Change** / **Disconnect** re-point the install or cut it loose.
 
 Re-pointing at another instance needs the **desktop app**: a browser blocks a page from loading tools and assets across origins, so on the web the section reports where you are and leaves it there.
 
 ## Available offline
 
-Lolly caches as you go, but caching-as-you-go only covers where you've already been. **Profile → Available offline** is for the trip you can see coming: an hour on airport wifi before a flight with none. Download the parts you'll need, watch one progress bar, and everything you took keeps working with the connection gone.
+Lolly caches as you go, but caching-as-you-go only covers where you've already been. **Settings → Preferences → Available offline** is for the trip you can see coming: an hour on airport wifi before a flight with none. Download the parts you'll need, watch one progress bar, and everything you took keeps working with the connection gone.
 
 Seven parts, each with its size stated before you commit:
 
@@ -106,7 +106,7 @@ If the browser hasn't granted persistent storage, the section says so and offers
 
 Because a profile is entirely local, the only way to get it onto a blank install - a new laptop, a freshly reset browser, a colleague's machine, an offline box - is to **carry the file**. No login restores it for you, and that's the point: nothing ever left your device to begin with.
 
-Under **Profile → Storage → Move to another device**:
+Under **Settings → Preferences → Storage → Move to another device**:
 
 - <!--i:download--> **Export my data** downloads one `LollyTools-<First>-<Last>-<YYYY-MM-DD>-<n>.zip` - named for the profile it belongs to, with a per-day sequence number so repeat exports don't collide (name parts are dropped when the profile doesn't have them). It contains your profile, every saved session (with its thumbnail), your uploaded images - your brand tokens and installed fonts ride along as user assets - and your preferences (theme, layout, local activity stats).
 - <!--i:upload--> **Import data…** on the other install reads that file back in and you pick up exactly where you left off.
@@ -151,4 +151,4 @@ The word is overloaded across the project. Neither of these is the personal prof
 
 ## Privacy
 
-Outside the optional identity enrolment above (which sends the email you enrol to the certificate service - see [Server Surface](/info/server-surface.html)), a profile is never transmitted, uploaded or used to identify or track you - there's nothing to consent to, only this notice so you know what's kept. Wipe all of it at any time with **Profile → Clear all my data**. See the [Privacy Policy](/info/privacy.html).
+Outside the optional identity enrolment above (which sends the email you enrol to the certificate service - see [Server Surface](/info/server-surface.html)), a profile is never transmitted, uploaded or used to identify or track you - there's nothing to consent to, only this notice so you know what's kept. Wipe all of it at any time with **Settings → Preferences → Clear all my data**. See the [Privacy Policy](/info/privacy.html).

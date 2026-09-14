@@ -29,7 +29,7 @@
  *   the grids below still offer choosing a different image instead.
  */
 
-import { collectOk, collectLabel, flashCard } from './picker-feedback.ts';
+import { collectOk, collectLabel, flashCard, renderTabCounts, guidedCollection, mountGuidedCollection } from './picker-feedback.ts';
 import '../styles/picker.css';   // async CSS chunk (lazy view - not on the landing)
 import { isHiddenSlot } from '../lib/batch-slots.ts';
 import { archiveBudgetFor, archiveMemberFile, readArchiveMembers, readUploadZip, readUploadArchiveBytes } from '../lib/archive-ingest.ts';
@@ -174,6 +174,8 @@ export interface CollectResult { ok: boolean; label?: string; silent?: boolean }
  *   - onQuickAddTool  a default-settings session for a tool, no editor step
  */
 export interface CollectOpts {
+  /** Compact controls and a persistent added count, for a guided collection flow. */
+  guided?: { hint: string };
   folderName: string;
   /** Tools to list in the Tools tab. Projects passes every non-utility creative tool - 
    *  a superset of the image-embeddable set the slot picker uses. */
@@ -234,6 +236,8 @@ interface PickerOpts extends Omit<AssetPickerOpts, 'type'> {
    * lands on Tools, "add audio" lands on the (already type-filtered) library.
    */
   initialTab?: TabId;
+  /** Open Projects inside this folder when it is available. */
+  initialFolder?: string;
   /** Present → "collect into a folder" mode (see {@link CollectOpts}). */
   collect?: CollectOpts;
 }
@@ -332,7 +336,7 @@ async function render(
 ): Promise<void> {
   // "Collect into a folder" mode (see CollectOpts): a pick ADDS to the caller's folder
   // and the dialog stays open, instead of resolving one asset into a tool slot.
-  const collect = opts.collect;
+  const collect = opts.collect ? guidedCollection(opts.collect, root) : undefined;
   // The personal-image library is offered only when this input accepts uploads.
   const showUserAssets = opts.allowUpload === true;
   let userAssets: AssetRef[] = [];
@@ -358,7 +362,7 @@ async function render(
   let folders: Folder[] = [];
   let foldersLoaded = false;
   // The folder the Projects tab is currently browsing (null = the top level).
-  let projectFolder: string | null = null;
+  let projectFolder: string | null = opts.initialFolder || null;
 
   // "Take a photo" is offered on the same terms as upload (the slot accepts the
   // user's own images) for raster-capable slots, when the browser exposes a camera.
@@ -628,17 +632,7 @@ async function render(
       counts.set('tools', embedTools.filter(t2 => searchMatches(q, t2.name, t2.description ?? '', t2.id)).length);
       if (templatesTab) counts.set('templates', templatesTab.count(q));
     }
-    for (const btn of root.querySelectorAll<HTMLElement>('.asset-picker-tab')) {
-      btn.querySelector('.asset-picker-tabcount')?.remove();
-      const id = btn.dataset.tab as TabId;
-      const n = counts.get(id);
-      if (q && n !== undefined && id !== activeTab) {
-        const badge = document.createElement('span');
-        badge.className = 'asset-picker-tabcount';
-        badge.textContent = String(n);
-        btn.appendChild(badge);
-      }
-    }
+    renderTabCounts(root, counts, activeTab);
   }
 
   // Return focus to whatever opened the picker (the asset-picker trigger button)
@@ -660,9 +654,11 @@ async function render(
   let pendingTrim: (() => void) | null = null;
   let modal: ModalHandle<AssetRef | null> | undefined;
   let closed = false;
+  let cleanupGuided = () => {};
   const close = (value: AssetRef | null): void => {
     if (closed) return;
     closed = true;
+    cleanupGuided();
     stopAudition();
     lottieThumbs?.destroy();
     audioThumbs?.destroy();
@@ -682,6 +678,7 @@ async function render(
   // Native modal lifecycle owns Escape, Back, route teardown and the top layer.
   // A dock's stacking number can never paint over this picker or eat its clicks.
 
+  if (collect?.guided) cleanupGuided = mountGuidedCollection(root, collect, () => close(null));
   root.querySelector('.asset-picker-close')?.addEventListener('click', () => close(null));
   root.querySelector('.asset-picker-backdrop')?.addEventListener('click', () => close(null));
 
@@ -2367,6 +2364,7 @@ async function render(
           : (opts.type ? isAcceptable(t) : isPlaceableAsset({ type: t }));
         userAssets = list.filter(a => keepUpload(a.type)).filter(a => !hiddenSet.has(assetBaseId(a.id)));
         renderUserAssets();
+        if (collect?.guided && !opts.initialFolder && !userTouched && !userAssets.length && activeTab === 'uploads') setTab(sessions?.length ? 'sessions' : 'library');
         markIncompatibleTiles();
         renderFavourites();
         // "Private assets first and default" (plan 216 item 5), resolved now that we
