@@ -128,7 +128,7 @@ try {
     .filter({ hasText: 'above the' })
     .waitFor({ timeout: 120000 });
   assert.equal(await dialog.locator('[data-delivery-save]').count(), 0);
-  await dialog.locator('[data-delivery-step=0]').click();
+  await dialog.locator('[data-delivery-step="0"]').click();
   await dialog.getByLabel('Upload limit (MB, optional)').fill('20');
   await dialog.getByRole('button', { name: 'Review course', exact: true }).click();
   await dialog.locator('[data-delivery-check]').click();

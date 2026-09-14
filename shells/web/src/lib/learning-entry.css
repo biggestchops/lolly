@@ -465,3 +465,24 @@
   max-height: inherit;
   overflow: hidden;
 }
+
+.learning-dialog-content {
+  flex: 1 1 auto;
+}
+.learning-ui .float-cluster > :is(.background-delivery, .job-toast, .undo-toasts) {
+  position: static;
+  width: auto;
+  max-width: 100%;
+  max-height: 170px;
+  min-height: 0;
+  flex: none;
+  overflow: auto;
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 0;
+  border-top: 1px solid hsl(var(--border));
+  box-shadow: none;
+}
+.learning-ui .background-delivery {
+  overflow-wrap: anywhere;
+}

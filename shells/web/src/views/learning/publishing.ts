@@ -36,7 +36,12 @@ async function prepare(ctx: LearningCtx, releaseId: string): Promise<CompiledLea
   );
 }
 export function closePreview(ctx: LearningCtx): void {
-  ctx.root.querySelector('.learning-preview')?.remove();
+  const panel = ctx.root.querySelector<HTMLDialogElement>('.learning-preview');
+  if (panel) {
+    if (panel.open) panel.close();
+    panel.remove();
+    ctx.root.querySelector<HTMLElement>('[data-action=preview]')?.focus({ preventScroll: true });
+  }
   for (const url of ctx.previewUrls) URL.revokeObjectURL(url);
   ctx.previewUrls = [];
 }

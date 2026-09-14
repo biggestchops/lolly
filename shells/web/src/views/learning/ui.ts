@@ -56,7 +56,7 @@ function render(ctx: LearningCtx, state: ViewState, focus?: string): void {
       lesson
         ? `<header class="learning-section-heading"><h2>Lesson ${lessonIndex + 1}</h2><div class="learning-toolbar" role="group" aria-label="Lesson actions">${button('up', 'Move lesson up', '', { icon: 'chevronDown', iconOnly: true, disabled: lessonIndex === 0, className: 'learning-move-up' })}${button('down', 'Move lesson down', '', { icon: 'chevronDown', iconOnly: true, disabled: lessonIndex === ctx.module.lessons.length - 1 })}${button('remove-lesson', 'Remove lesson', '', { icon: 'trash', iconOnly: true, className: 'learning-remove' })}</div></header>
       ${field('learning-lesson-title', 'Lesson title', lesson.title, 'data-lesson="title" maxlength="500"')}
-      <div class="learning-lesson-settings">${field('learning-section', 'Section (optional)', ctx.module.sections.find((s) => s.id === lesson.sectionId)?.title || '', 'data-lesson="section" maxlength="500" list="learning-sections"')}<datalist id="learning-sections">${ctx.module.sections.map((s) => `<option value="${esc(s.title)}"></option>`).join('')}</datalist><label class="learning-check"><input type="checkbox" data-lesson="required" ${lesson.required ? 'checked' : ''}><span>Required for completion<small>Learners acknowledge this lesson.</small></span></label></div>
+      <div class="learning-lesson-settings">${field('learning-section', 'Section (optional)', ctx.module.sections.find((s) => s.id === lesson.sectionId)?.title || '', 'data-lesson="section" maxlength="500" list="learning-sections"')}<datalist id="learning-sections">${ctx.module.sections.map((s) => `<option value="${esc(s.title)}"></option>`).join('')}</datalist><label class="learning-check"><input type="checkbox" aria-label="Required for completion" data-lesson="required" ${lesson.required ? 'checked' : ''}><span>Required for completion<small>Learners acknowledge this lesson.</small></span></label></div>
       <div class="learning-content-heading"><h3>Lesson content <span>${lesson.blocks.length}</span></h3><p class="learning-hint">Open an item to edit it. Use the arrows to change its order.</p></div>
       <div class="learning-content-list">${lesson.blocks.map((block, index) => blockMarkup(block, index, lesson.blocks.length, ctx.sourceChoices[block.source?.toolId || ''] || [], open(`block-${block.id}`, !state.knownBlocks.has(block.id) || index === 0))).join('')}</div>
       ${!lesson.blocks.length ? '<div class="learning-empty"><h3>What should this lesson teach?</h3><p>Add an explanation, choose saved designs or media, or attach a reference file.</p></div>' : ''}
@@ -103,6 +103,19 @@ function refreshChecks(ctx: LearningCtx): void {
       `[data-action=lesson][data-id="${CSS.escape(lesson.id)}"]`
     );
     if (!tab) continue;
+    const section =
+      lesson.sectionId && (i === 0 || ctx.module.lessons[i - 1]?.sectionId !== lesson.sectionId)
+        ? ctx.module.sections.find((s) => s.id === lesson.sectionId)?.title
+        : undefined;
+    let label = tab.parentElement?.querySelector<HTMLElement>('.learning-section-label');
+    if (section) {
+      if (!label) {
+        label = document.createElement('p');
+        label.className = 'learning-section-label';
+        tab.before(label);
+      }
+      label.textContent = section;
+    } else label?.remove();
     tab.querySelector('strong')!.textContent = lesson.title || 'Untitled lesson';
     tab.setAttribute(
       'aria-label',

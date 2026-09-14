@@ -368,6 +368,10 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       ariaLabel: 'Export course',
       onClose: () => {
         modal = undefined;
+        if (!ctx.disposed)
+          ctx.root
+            .querySelector<HTMLElement>('[data-action=build]')
+            ?.focus({ preventScroll: true });
       },
     });
     paint();

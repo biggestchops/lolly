@@ -162,7 +162,6 @@ export async function mountLearning(
     if (
       el.matches('[data-resource]') ||
       el.dataset.blockField === 'render' ||
-      el.dataset.lesson === 'section' ||
       (el instanceof HTMLInputElement && el.type === 'checkbox')
     )
       ctx.ui.render();

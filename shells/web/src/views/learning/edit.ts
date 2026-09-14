@@ -33,6 +33,7 @@ export async function act(ctx: LearningCtx, action: string, id?: string): Promis
   if (ctx.busy) return;
   const lesson = ctx.module.lessons.find((l) => l.id === ctx.selected);
   const index = ctx.module.lessons.findIndex((l) => l.id === ctx.selected);
+  const blockIndex = lesson?.blocks.findIndex((b) => b.id === id) ?? -1;
   if (action === 'undo') {
     const previous = ctx.undo.pop();
     if (previous) {
@@ -123,7 +124,17 @@ export async function act(ctx: LearningCtx, action: string, id?: string): Promis
     ctx.selected = ctx.module.lessons[Math.max(0, index - 1)]?.id || '';
   }
   change(ctx);
-  ctx.ui.render(
-    action === 'add-text' ? '[data-block]:last-child [data-block-field=text]' : undefined
-  );
+  const focus =
+    action === 'add-text'
+      ? '[data-block]:last-child [data-block-field=text]'
+      : action === 'remove-block'
+        ? lesson.blocks.length
+          ? `[data-block]:nth-child(${Math.min(blockIndex + 1, lesson.blocks.length)}) summary`
+          : '[data-action=add-text]'
+        : action === 'remove-lesson'
+          ? ctx.selected
+            ? '[data-action=lesson][aria-current=true]'
+            : '[data-action=add-lesson]'
+          : undefined;
+  ctx.ui.render(focus);
 }

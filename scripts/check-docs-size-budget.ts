@@ -48,8 +48,15 @@ const infoDir = path.join(root, 'shells/web/public/info');
 // (plan 202's CLI install, content-root, renderer-rung, TUI-launch and install-row
 // sections, plus the concurrent design-outcome docs work); checked that nothing new
 // is per-locale - the two largest shots carry only their light and dark copies.
+// 178.0 MB from 2026-09-14: 176.8 MB measured with three new pages in, each written
+// in English and translated into all 26 locales - creative rights and credits
+// (plan 253), training courses and learning integration - which together price at
+// 2.5 MB gz across the whole tree, plus one new shot (43 KB, one copy). Checked the
+// two things this budget is really watching: no image or media file sits inside a
+// locale directory, and no shot carries a per-locale copy (357 files in shots/,
+// light and dark only).
 // NOT a target - see the header.
-const MAX_INFO_GZ = (Number(process.env.LOLLY_DOCS_MAX_GZ_MB) || 173.5) * 1024 * 1024;
+const MAX_INFO_GZ = (Number(process.env.LOLLY_DOCS_MAX_GZ_MB) || 178.0) * 1024 * 1024;
 
 function fail(msg: string): never {
   console.error(`✗ docs size budget FAILED: ${msg}`);

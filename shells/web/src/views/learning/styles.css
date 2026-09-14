@@ -436,3 +436,14 @@
     height: calc(100% - 16px);
   }
 }
+
+.learning-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 12px 0;
+  background: hsl(var(--background) / 0.97);
+}
+.learning-outline {
+  top: 96px;
+}

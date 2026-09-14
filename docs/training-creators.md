@@ -10,9 +10,9 @@ This first version supports ordered lessons, text, images, slides, video, audio 
 
 1. Open **Projects**, then the folder containing your course material.
 2. Choose **Export course**. Review the folder's content and nested folders. Imported files, saved tool creations and batch rows appear together. Existing learning modules contribute their lessons; **Open existing module** lets you export one without copying it.
-3. Use the checkboxes to choose content and **Move up** or **Move down** to set its teaching order. Unavailable content remains listed. Replace it, or explicitly unselect it before continuing. Choose a course title and **Create course from selection**.
+3. Use the checkboxes to choose content and **Move up** or **Move down** to set its teaching order. Unavailable content remains listed. Replace it, unselect it, or choose **Exclude unavailable items**. For a long selection, use **Find content** to locate an item; clear the search before reordering. **Select all** and **Clear selection** apply to the whole list. Choose a course title and **Create course from selection**.
 4. Open **Module details** to add a description, learning objectives and content language. Use a language tag such as `en`, `en-GB` or `de`. The learner controls are currently in English.
-5. Review the assembled outline. Close the export dialog to add explanations, adjust required lessons, or use **Add lesson** for another step. Folder names become section labels. Every imported item is required initially; review that choice.
+5. The course opens in the editor. Review the assembled outline, add explanations, adjust required lessons, or use **Add lesson** for another step. Folder names become section labels. Every imported item is required initially; review that choice.
 
 You can also select a mixture of project items and choose **Export course**, or choose **Export course** in a supported tool's export controls. The tool saves its current inputs before handing them over. **Create learning module** starts an empty outline from Projects. A course started without a folder appears with your unfiled work. Reopen its **Learning module** tile to continue editing.
 
@@ -22,7 +22,9 @@ Changes save when you leave a field or change the outline. Wait for **Saved on t
 
 ## Arrange the course
 
-Each lesson holds one or more pieces of content. The order in the outline is the order learners see.
+Each lesson holds one or more pieces of content. The order in the outline is the order learners see. The outline shows each lesson's content count and marks optional lessons. Select a lesson to edit it.
+
+Content items can be expanded and collapsed. Open an item to edit its text, source or accessibility fields. The arrow buttons move it within the lesson, and the remove button removes it from the draft. **Undo edit** can restore a recent removal. Reordering keeps keyboard focus with the item.
 
 - Use **Move lesson up** and **Move lesson down** to change the teaching order.
 - Enter a **Section (optional)** to group lessons under a heading. Give related lessons the same section name and place them together.
@@ -67,7 +69,7 @@ An existing package contains its own finished files. Later edits to the project,
 
 For images and slides, add a **Description or equivalent explanation**. Use **Decorative image** only when the image adds no information a learner needs. For a dense diagram, put a fuller explanation in **Add text**.
 
-For video and audio, add a written version of the media in **Read as text**. For video captions, paste reviewed WebVTT text into **Captions (WebVTT)**. For example:
+For video and audio, add a written version of the media in **Read as text**. For video captions, expand **Video captions** and paste reviewed WebVTT text into **Captions (WebVTT)**. For example:
 
 ```text
 WEBVTT
@@ -99,16 +101,16 @@ In an LMS launch, **Save and exit** saves the current place and ends the session
 
 ## Check and export the course
 
-1. Choose **Export course** in the module editor. The same dialog opens after creating a course from a project selection.
-2. Under **Destination**, select **Website**, a SCORM format, or an experimental xAPI format. You can record the receiving website or LMS name. Enter its upload limit in MB when known; 0 means no destination limit has been supplied.
-3. Review the lesson counts, required and optional content, language and completion rule. Resolve each **Fix** item. **Open lesson** takes you back to the affected lesson. Review accessibility findings in learner preview.
+1. Choose **Export course** at the top of the course editor. The dialog guides you through **Destination**, **Review** and **Download**.
+2. Under **Destination**, select **Website**, a SCORM format, or an experimental xAPI format. You can record the receiving website or LMS name. Enter its upload limit in MB when known, or leave it blank. Choose **Review course** to continue.
+3. Review the lesson counts, required and optional content, language and completion rule. Resolve the items marked **to fix**. **Open lesson** takes you back to the affected lesson. Review accessibility findings in learner preview.
 4. Choose **Check and prepare package**. Lolly resolves sources, renders their content and checks the exact ZIP size. A missing source, unsupported rendition or size limit stops the check. No content is silently dropped.
-5. Review the result and handoff instructions. Enter version notes, then choose **Save version and download ZIP**. Lolly stores that exact checked package on this device before requesting the download.
+5. A successful check opens **Download** with the exact package size. Review the handoff instructions and enter version notes, then choose **Save version and download ZIP**. Lolly stores that exact checked package on this device before requesting the download.
 6. Keep the ZIP and **Download handoff report** with the delivery record. The report includes the version, checksum, destination, size and remaining review items.
 
 The progress job offers cancellation. **Continue editing** closes the dialog while checking continues; changing the draft invalidates and cancels that check. Leaving the module cancels unfinished checking. Reopen **Export course** to see a completed check. Changing content, format or destination settings requires another check. Cancellation never creates a partial course package.
 
-After a version is saved, the download recovery controls let you retry delivery without rendering again. A browser download request is not proof that a file reached disk; check your download location. **Saved versions** remains available after reopening the module.
+After a version is saved, the download recovery controls let you retry delivery without rendering again. A browser download request is not proof that a file reached disk; check your download location. Expand **Saved versions** beneath the editor to recover a package after reopening the module.
 
 Local builds support up to 200 lessons and 512 MB of distinct prepared content. Large videos can exhaust browser memory before that size. Split large courses or reduce the size of the finished media when needed. The destination limit checks the final ZIP in decimal MB.
 
@@ -163,7 +165,7 @@ Record the package checksum, LMS name and edition, browser, date and results. A 
 
 Edit the draft, preview it, add version notes and choose **Export course**, run the checks and save a new version. The new ZIP gets another saved version. Your customer chooses when and how to replace the package in their LMS; Lolly does not update an imported course automatically.
 
-Under **Saved versions**, use **Download scorm12 ZIP** or the corresponding format button to recover the exact stored file. Expand its checksum when comparing files or recording acceptance results.
+Expand **Saved versions**, then use **Download SCORM 1.2 ZIP** or the corresponding format button to recover the exact stored file. **Package details** shows the checksums for file comparisons and acceptance records.
 
 To supply a different format of an existing version, choose **Export this version for another destination** beside it, select the destination, then check and download. This uses its frozen content, even if the current draft or original source has changed. An already built target downloads its existing artifact again.
 
