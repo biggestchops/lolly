@@ -32,6 +32,12 @@ test('macOS signing preserves the JIT entitlement required by the bundled Node C
   assert.doesNotMatch(entitlements, /disable-library-validation|allow-unsigned-executable-memory/);
 });
 
+test('Flatpak preserves the injected Node executable instead of rewriting its ELF sections', () => {
+  const manifest = readFileSync('shells/tauri-desktop/flatpak/tools.lolly.Desktop.yml', 'utf8');
+  const module = manifest.slice(manifest.indexOf('  - name: lolly\n'));
+  assert.match(module, /build-options:\s+strip: false\s+no-debuginfo: true/);
+});
+
 test('desktop classifier forwards full verbs but reserves native run for rendering', () => {
   for (const verb of ['list', 'describe', 'batch', 'validate', 'completion', 'tui']) {
     assert.match(cli, new RegExp(`\\| \\"${verb}\\"`));

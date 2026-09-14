@@ -75,6 +75,11 @@ modules:
 
   - name: lolly
     buildsystem: simple
+    # Rewriting ELF sections after postject corrupts the Node SEA executable.
+    # Preserve the already-built package bytes, including its embedded launcher.
+    build-options:
+      strip: false
+      no-debuginfo: true
     build-commands:
       # 1) Unpack the Tauri-built .deb (ar archive -> data.tar.gz) and install its app
       #    binary BY NAME as /app/bin/lolly-desktop (matches `command:` above). This used

@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: MPL-2.0
+name: Flatpak repackage
+
+on:
+  workflow_dispatch:
+    inputs:
+      deb_run_id:
+        description: Completed workflow containing the lolly-deb artifact
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      options: --privileged
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: lolly-deb
+          run-id: ${{ inputs.deb_run_id }}
+          github-token: ${{ github.token }}
+          path: shells/tauri-desktop/flatpak
+      - name: Stage and verify the Debian input
+        run: |
+          mv shells/tauri-desktop/flatpak/*.deb shells/tauri-desktop/flatpak/lolly.deb
+          test "$(stat -c%s shells/tauri-desktop/flatpak/lolly.deb)" -gt 80000000
+          ar t shells/tauri-desktop/flatpak/lolly.deb | grep -q '^data\.tar'
+      - name: Build Flatpak bundle
+        uses: flatpak/flatpak-github-actions/flatpak-builder@79327416609af08178ad73b352877e51450790b3 # v6.8
+        with:
+          bundle: Lolly.flatpak
+          manifest-path: shells/tauri-desktop/flatpak/tools.lolly.Desktop.yml
+          cache-key: flatpak-repackage-${{ github.sha }}

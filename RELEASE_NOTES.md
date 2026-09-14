@@ -102,6 +102,10 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   tool would open; the web app was unaffected. The apps now serve the same
   signature-verified catalog as the web, and every tool opens.
 
+- **The desktop CLI travels with the app.** Linux packages include its complete runtime
+  and resources. macOS signing preserves the runtime permission it needs, and Flatpak
+  packaging preserves the embedded executable so command-line tools start correctly.
+
 - **Automatic local history.** A tool can keep an on-device revision history of your work and
   reopen an earlier version, all stored locally. Asset versions can be pinned, so a shared
   link reopens the exact version and format it was made with rather than silently taking a
