@@ -29,7 +29,7 @@
 - **Tokens (.json)** - リポジトリ、ビルドステップ、他のトークンツール向けの、単独のプレーンなdesign-tokensドキュメントです。
 - **Versions** - デザインシステムの名前付きコピーを公開、有効化、復元します。公開すべき独自のものができるまでは非表示です(または`?area=versions`リンクで名指しで要求された場合)。
 
-![スタジオのルームレール - Overview、Colours、Type、Logos、Tokens、Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![スタジオのルームレール - Overview、Colours、Type、Logos、Tokens、Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

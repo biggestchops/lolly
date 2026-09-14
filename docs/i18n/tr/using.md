@@ -8,7 +8,7 @@ Uygulamayı gerçekten *kullanmaya* dair pratik bir rehber - bir araç açmak, k
 
 Ana ekran **galeri**dir - kategoriye göre gruplanmış tüm araçlar. Aracı açmak için bir karta tıkla; daha önce üzerinde çalıştıysan bir **Devam et** düğmesi en son oturumunu sürdürür. İsme göre filtrelemek için arama kutusunu kullan - ya da altı listeleme ekranının (galeri, Yardımcı araçlar, Projeler, Katalog, Panel ve Profil) altındaki çubuktan [Ara](/info/search.html); bu arama, araçların yanı sıra kaydedilmiş işlerine, kataloğa ve ayarlarına da ulaşır. Bir aracın içinde çubuk, aracın kendi arayüzüne yer açmak için kenara çekilir.
 
-![Araç galerisi - kategoriye göre gruplanmış, her biri bir kart olarak tüm araçlar](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Araç galerisi - kategoriye göre gruplanmış, her biri bir kart olarak tüm araçlar](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Her araç bölünmüş bir görünümdür: bir tarafta **kontroller**, diğer tarafta canlı bir **önizleme** (kanvas). Herhangi bir kontrolü değiştir, önizleme anında güncellenir.
 

@@ -8,7 +8,7 @@ En praktisk veiledning i å faktisk *bruke* appen - åpne et verktøy, jobbe på
 
 Hjemskjermen er **galleriet** - alle verktøy, gruppert etter kategori. Klikk på et kort for å åpne verktøyet; har du jobbet med det før, gjenopptar en **Fortsett**-knapp den siste økten din. Bruk søkefeltet for å filtrere etter navn - eller [Søk](/info/search.html) fra linjen nederst på de seks oversiktsskjermene (galleriet, Hjelpeverktøy, Prosjekter, Katalogen, Oversikten og Profil), som når fram til det du har lagret, katalogen og innstillingene dine i tillegg til verktøyene. Inne i et verktøy trer linjen til side for verktøyets eget grensesnitt.
 
-![Verktøygalleriet - hvert verktøy som et kort, gruppert etter kategori](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Verktøygalleriet - hvert verktøy som et kort, gruppert etter kategori](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Hvert verktøy er en delt visning: **kontroller** på den ene siden, en levende **forhåndsvisning** (canvaset) på den andre. Endre en kontroll, så oppdateres forhåndsvisningen umiddelbart.
 

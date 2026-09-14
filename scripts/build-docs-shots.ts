@@ -117,7 +117,9 @@ const FREEZE_CSS =
   // from the walk either - it reports a zero-size box, which lands inside the frame and
   // survives the off-frame cull, so the two states differ in BOTH directions. Forcing
   // it visible costs a build step some layout time and buys an identical DOM every run.
-  '*{content-visibility:visible!important}';
+  '*{content-visibility:visible!important}' +
+  // The local unsigned-build badge is diagnostic chrome, not part of a release.
+  '#lolly-unsigned-catalog{display:none!important}';
 
 const VIEWPORT_DEFAULTS = { width: 1440, height: 900, dpi: 192 };
 // A cold gallery renders every brand-aware look serially, including off-screen

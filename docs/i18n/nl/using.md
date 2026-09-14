@@ -8,7 +8,7 @@ Een praktische gids voor het daadwerkelijk *gebruiken* van de app - een tool ope
 
 Het startscherm is de **galerij** - elke tool, gegroepeerd per categorie. Klik op een kaart om de tool te openen; als je er eerder aan hebt gewerkt, hervat een **Doorgaan**-knop je meest recente sessie. Gebruik het zoekvak om op naam te filteren - of [Zoeken](/info/search.html) via de balk onderaan de zes overzichtsschermen (de galerij, Hulpprogramma's, Projecten, de Catalogus, het Dashboard en Profiel), die naast de tools ook je opgeslagen werk, de catalogus en je instellingen bereikt. Binnen een tool stapt de balk opzij voor de eigen chrome van de tool.
 
-![De toolgalerij - elke tool als kaart, gegroepeerd per categorie](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![De toolgalerij - elke tool als kaart, gegroepeerd per categorie](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Elke tool is een gesplitste weergave: **bedieningselementen** aan de ene kant, een live **voorvertoning** (het canvas) aan de andere. Verander een bedieningselement en de voorvertoning wordt direct bijgewerkt.
 

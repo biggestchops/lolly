@@ -8,7 +8,7 @@ Una guida pratica per *usare* davvero l'app - aprire uno strumento, lavorare sul
 
 La schermata iniziale è la **galleria** - tutti gli strumenti, raggruppati per categoria. Fai clic su una card per aprire lo strumento; se ci hai già lavorato, un pulsante **Continua** riprende la tua sessione più recente. Usa il campo di ricerca per filtrare per nome - oppure la [Ricerca](/info/search.html) dalla barra in fondo alle sei schermate di elenco (la galleria, Utility, Progetti, il Catalogo, la Dashboard e il Profilo), che raggiunge il tuo lavoro salvato, il catalogo e le tue impostazioni oltre agli strumenti. Dentro uno strumento la barra si fa da parte per lasciare spazio ai comandi dello strumento.
 
-![La galleria degli strumenti - ogni strumento come card, raggruppati per categoria](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![La galleria degli strumenti - ogni strumento come card, raggruppati per categoria](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Ogni strumento è una vista divisa: i **controlli** da un lato, un'**anteprima** dal vivo (il canvas) dall'altro. Cambia un controllo qualsiasi e l'anteprima si aggiorna all'istante.
 

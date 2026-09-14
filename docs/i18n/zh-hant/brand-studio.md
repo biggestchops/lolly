@@ -29,7 +29,7 @@
 - **權杖(.json)** - 單獨匯出純文字設計權杖文件,供儲存庫、建置流程或其他權杖工具使用。
 - **版本** - 發布、啟用並還原設計系統的具名副本。除非你已有可發布的內容(或有 `?area=versions` 連結指名要求),否則會保持隱藏。
 
-![工作室房間側邊列 - 總覽、色彩、字體、標誌、權杖與檔案](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![工作室房間側邊列 - 總覽、色彩、字體、標誌、權杖與檔案](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## 總覽
 

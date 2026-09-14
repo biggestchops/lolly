@@ -29,7 +29,7 @@ Fixas no **pé do trilho** ficam as ações que pertencem ao sistema de design i
 - **Tokens (.json)** - o documento simples de design tokens sozinho, para um repositório, um passo de build ou outra ferramenta de tokens.
 - **Versions** - publique, ative e restaure cópias nomeadas do sistema de design. Oculta até haver algo seu para publicar (ou um link `?area=versions` pedir por ela pelo nome).
 
-![O trilho de salas do studio - Overview, Colours, Type, Logos, Tokens e Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![O trilho de salas do studio - Overview, Colours, Type, Logos, Tokens e Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

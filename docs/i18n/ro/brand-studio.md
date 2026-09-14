@@ -29,7 +29,7 @@ Fixate la **baza barei** sunt acțiunile care aparțin întregului sistem de des
 - **Tokens (.json)** - documentul simplu de design tokens de sine stătător, pentru un repo, un pas de build sau o altă unealtă de tokeni.
 - **Versions** - publică, activează și restaurează copii denumite ale sistemului de design. Ascuns până există ceva propriu de publicat (sau până un link `?area=versions` îl cere pe nume).
 
-![Bara camerelor studioului - Overview, Colours, Type, Logos, Tokens și Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Bara camerelor studioului - Overview, Colours, Type, Logos, Tokens și Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

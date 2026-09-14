@@ -8,7 +8,7 @@
 
 首頁就是**工具庫**：所有工具依類別分組。點卡片即可開啟工具；如果你先前用過，**繼續**按鈕會接續你最近一次的工作階段。用搜尋框依名稱篩選，或從六個列表畫面（工具庫、工具程式、專案、目錄、儀表板與個人資料）底部的列來[搜尋](/info/search.html)，它除了工具，也能找到你儲存的成果、目錄與設定。進入工具後，這條列會退開，讓位給工具本身的介面。
 
-![工具庫：每個工具都是一張卡片，依類別分組](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![工具庫：每個工具都是一張卡片，依類別分組](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 每個工具都是分割畫面：一側是**控制項**，另一側是即時**預覽**（畫布）。變更任何控制項，預覽都會立即更新。
 

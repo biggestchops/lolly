@@ -8,7 +8,7 @@ Một hướng dẫn thực tế về việc *dùng* ứng dụng - mở một c
 
 Màn hình chính là **gallery** - mọi công cụ, nhóm theo danh mục. Nhấp vào một thẻ để mở công cụ; nếu bạn đã từng làm việc với nó, nút **Continue** sẽ khôi phục phiên gần nhất của bạn. Dùng ô tìm kiếm để lọc theo tên - hoặc [Tìm kiếm](/info/search.html) từ thanh ở chân sáu màn hình danh sách (gallery, Utilities, Projects, Catalogue, Dashboard và Profile), nơi với tới cả công việc đã lưu, catalogue và các thiết lập của bạn chứ không riêng các công cụ. Bên trong một công cụ, thanh này nhường chỗ cho giao diện riêng của công cụ.
 
-![Gallery công cụ - mỗi công cụ là một thẻ, nhóm theo danh mục](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![Gallery công cụ - mỗi công cụ là một thẻ, nhóm theo danh mục](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Mỗi công cụ là một khung chia đôi: **các điều khiển** ở một bên, **bản xem trước** (canvas) trực tiếp ở bên kia. Thay đổi bất kỳ điều khiển nào và bản xem trước cập nhật ngay lập tức.
 

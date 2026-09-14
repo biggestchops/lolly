@@ -8,7 +8,7 @@
 
 الشاشة الرئيسية هي **المعرض**: كل الأدوات مصنفة حسب الفئة. انقر بطاقة لفتح الأداة؛ وإن سبق أن عملت عليها، استأنف زر **متابعة** أحدث جلسة لك. استخدم مربع البحث للتصفية بالاسم، أو [البحث](/info/search.html) من الشريط أسفل شاشات القوائم الست (المعرض، والأدوات المساعدة، والمشاريع، والكتالوج، ولوحة المعلومات، والملف الشخصي)، وهو يصل إلى أعمالك المحفوظة والكتالوج وإعداداتك إضافة إلى الأدوات. وداخل الأداة يتنحى الشريط لصالح واجهة الأداة نفسها.
 
-![معرض الأدوات: كل أداة كبطاقة، مصنفة حسب الفئة](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![معرض الأدوات: كل أداة كبطاقة، مصنفة حسب الفئة](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 كل أداة عرض مقسوم: **عناصر التحكم** في جهة، و**معاينة** حية (لوحة الرسم) في الجهة الأخرى. وعند تغيير أي عنصر تحكم تظهر النتيجة في المعاينة فورا.
 

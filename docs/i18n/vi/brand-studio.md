@@ -29,7 +29,7 @@ Trên điện thoại, cùng danh sách đó trở thành một dải chip nằm
 - **Tokens (.json)** - tài liệu design-tokens thuần túy, độc lập, dùng cho một repo, một bước build hoặc một công cụ tokens khác.
 - **Versions** - publish, activate và khôi phục các bản sao có tên của hệ thống thiết kế. Ẩn cho đến khi có thứ gì đó của riêng bạn để publish (hoặc một liên kết `?area=versions` yêu cầu đích danh).
 
-![Thanh rail phòng của studio - Overview, Colours, Type, Logos, Tokens và Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Thanh rail phòng của studio - Overview, Colours, Type, Logos, Tokens và Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

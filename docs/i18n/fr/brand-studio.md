@@ -29,7 +29,7 @@ Sur un téléphone, la même liste devient une bande horizontale de puces éping
 - **Tokens (.json)** - le document de design tokens brut à part, pour un repo, une étape de build ou un autre outil de tokens.
 - **Versions** - publie, active et restaure des copies nommées du design system. Cachée tant qu'il n'y a rien de personnel à publier (ou qu'un lien `?area=versions` la demande par son nom).
 
-![Le rail des salles du studio - Overview, Colours, Type, Logos, Tokens et Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Le rail des salles du studio - Overview, Colours, Type, Logos, Tokens et Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

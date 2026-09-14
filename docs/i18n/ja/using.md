@@ -8,7 +8,7 @@
 
 ホーム画面は**ギャラリー**で、すべてのツールがカテゴリー別に並びます。カードをクリックするとツールが開きます。以前に作業したことがあれば、**Continue** ボタンで直近のセッションを再開できます。検索ボックスで名前を絞り込めます。一覧系の 6 画面（ギャラリー、Utilities、Projects、カタログ、ダッシュボード、プロフィール）の下部にあるバーからは[検索](/info/search.html)が使え、ツールだけでなく保存した作業、カタログ、設定にも届きます。ツールの中では、このバーはツール自身の操作領域に場所を譲ります。
 
-![ツールギャラリー。すべてのツールがカードとしてカテゴリー別に並ぶ](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![ツールギャラリー。すべてのツールがカードとしてカテゴリー別に並ぶ](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 どのツールも分割ビューです。一方に**コントロール**、もう一方にライブの**プレビュー**（キャンバス）があります。コントロールを変えると、プレビューは即座に更新されます。
 

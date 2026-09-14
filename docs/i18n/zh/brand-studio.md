@@ -29,7 +29,7 @@
 - **令牌(.json)** - 单独的纯设计令牌文档,供仓库、构建步骤或其他令牌工具使用。
 - **版本** - 发布、启用并恢复设计系统的命名副本。在你有自己的内容可发布之前保持隐藏(或者有 `?area=versions` 链接按名请求它)。
 
-![工作室房间侧栏 - 概览、颜色、字体、标志、令牌和文件](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![工作室房间侧栏 - 概览、颜色、字体、标志、令牌和文件](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## 概览
 

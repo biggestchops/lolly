@@ -8,7 +8,7 @@ Um guia prático para de fato *usar* o app - abrir uma ferramenta, trabalhar na 
 
 A tela inicial é a **galeria** - todas as ferramentas, agrupadas por categoria. Clique em um cartão para abrir a ferramenta; se você já trabalhou nela antes, um botão **Continuar** retoma sua sessão mais recente. Use a caixa de busca para filtrar por nome - ou a [Busca](/info/search.html) na barra ao pé das seis telas de listagem (a galeria, Utilitários, Projetos, o Catálogo, o Painel e o Perfil), que alcança seu trabalho salvo, o catálogo e suas configurações além das ferramentas. Dentro de uma ferramenta, a barra dá lugar aos controles da própria ferramenta.
 
-![A galeria de ferramentas - cada ferramenta como um cartão, agrupadas por categoria](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![A galeria de ferramentas - cada ferramenta como um cartão, agrupadas por categoria](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Cada ferramenta é uma visualização dividida: **controles** de um lado, uma **pré-visualização** ao vivo (a tela) do outro. Altere qualquer controle e a pré-visualização é atualizada instantaneamente.
 

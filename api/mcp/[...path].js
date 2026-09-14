@@ -93678,7 +93678,7 @@ function resolveBrowsersDir() {
   return INSTALL_BROWSERS_DIR;
 }
 var browserPromise = null;
-async function getBrowser() {
+async function getBrowser({ graphics = "software" } = {}) {
   if (!browserPromise) {
     browserPromise = (async () => {
       const channel2 = process.env.LOLLY_BROWSER_CHANNEL;
@@ -93708,9 +93708,11 @@ async function getBrowser() {
           // positioning still differ per-OS, so raster BYTES are not cross-OS
           // identical. Mirrored in services/mcp/src/render.ts and the byte-golden
           // test harnesses (export-format-golden / export-text-emission).
+          // Docs captures render a whole gallery, including 3D examples. They
+          // can use the available GPU; software remains the default for exports.
           args: [
             "--no-sandbox",
-            "--use-angle=swiftshader",
+            ...graphics === "software" ? ["--use-angle=swiftshader"] : [],
             "--enable-unsafe-swiftshader",
             "--force-color-profile=srgb",
             "--font-render-hinting=none"

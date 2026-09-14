@@ -8,7 +8,7 @@ Una guía práctica para *usar* de verdad la aplicación - abrir una herramienta
 
 La pantalla de inicio es la **galería** - todas las herramientas, agrupadas por categoría. Haz clic en una tarjeta para abrir la herramienta; si ya has trabajado en ella antes, un botón **Continuar** retoma tu sesión más reciente. Usa el cuadro de búsqueda para filtrar por nombre - o [Buscar](/info/search.html) desde la barra al pie de las seis pantallas de listado (la galería, Utilidades, Proyectos, el Catálogo, el Panel y Perfil), que llega a tu trabajo guardado, al catálogo y a tus ajustes además de a las herramientas. Dentro de una herramienta, la barra se aparta para dejar sitio a los controles de la propia herramienta.
 
-![La galería de herramientas - cada herramienta como una tarjeta, agrupadas por categoría](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![La galería de herramientas - cada herramienta como una tarjeta, agrupadas por categoría](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 Cada herramienta es una vista dividida: **controles** a un lado, una **vista previa** en vivo (el lienzo) al otro. Cambia cualquier control y la vista previa se actualiza al instante.
 

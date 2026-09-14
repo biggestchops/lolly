@@ -46,6 +46,8 @@ Gallery navigation was exercised with keyboard, native horizontal wheel input an
 
 On the public production build, a QR tool and SVG export were warmed online. With the browser context's networking disabled, its URL was edited and a new 25,070-byte SVG was downloaded. The output parses as SVG, contains rendered geometry and differs from the online output. This establishes that cached edit/export path; it does not establish a cold offline visit or every tool's offline behavior. Files are in the local output directory alongside the earlier walkthrough exports.
 
+The actual cold production gallery was also inspected before any Design preview was ready: all six pending dots and subdued arrows were visible, arrows reported disabled, and the New link remained usable. The settled brand rail, gallery card, Projects, template collection and picker were captured in both themes as signed SVGs. All ten baselines were inspected and repeated without changes; the focused documentation suite passed 69 checks and the built docs remain within their size budget.
+
 ## Remaining observation
 
 Run the external-participant task sheet with people unfamiliar with Lolly. Keep their discovery, completion time, assistance and recoveries separate from these reviewer and automated checks. No external invitations were sent, and the four-journey research plan remains open for that observation.

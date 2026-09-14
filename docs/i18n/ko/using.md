@@ -8,7 +8,7 @@
 
 홈 화면은 **갤러리**예요 - 모든 도구가 분류별로 묶여 있어요. 카드를 클릭하면 도구가 열리고, 전에 작업한 적이 있다면 **Continue** 버튼이 가장 최근 세션을 이어서 열어 줘요. 검색창으로 이름을 걸러 내거나, 여섯 개 목록 화면(갤러리, Utilities, Projects, Catalogue, Dashboard, Profile) 아래쪽 바에서 [검색](/info/search.html)하세요. 이 검색은 도구뿐 아니라 저장한 작업물과 카탈로그, 설정까지 찾아 줘요. 도구 안에서는 이 바가 물러나고 도구 자체의 조작 영역이 그 자리를 차지해요.
 
-![도구 갤러리 - 모든 도구가 분류별로 묶인 카드로 나열된 모습](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![도구 갤러리 - 모든 도구가 분류별로 묶인 카드로 나열된 모습](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 도구마다 화면이 둘로 나뉘어요. 한쪽에는 **컨트롤**, 다른 쪽에는 실시간 **미리보기**(캔버스)가 있어요. 컨트롤을 바꾸면 미리보기가 즉시 갱신돼요.
 

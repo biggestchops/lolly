@@ -69,7 +69,15 @@ test('gallery controls support keyboard and native scrolling past pending previe
         ctx.diagnostic(`${mobile ? 'Touch' : 'Wheel'} navigation at ${mobile ? '390' : '1440'}px with large text and reduced motion`);
         if (mobile) {
           const cdp = await context.newCDPSession(page);
-          await cdp.send('Input.synthesizeScrollGesture', { x: box.x + box.width / 2, y: box.y + box.height / 2, xDistance: -box.width, yDistance: 0, gestureSourceType: 'touch', preventFling: true, speed: 500 });
+          // Start above the overlay arrows so the contact reaches the scroller.
+          const y = box.y + box.height * .3;
+          assert.equal(await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.gcar-track'), { x: box.x + box.width * .85, y }), true);
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + box.width * .85, y }] });
+          for (let step = 1; step <= 8; step++) {
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: box.x + box.width * (.85 - .7 * step / 8), y }] });
+            await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
+          }
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
           await cdp.detach();
         } else {
           await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);

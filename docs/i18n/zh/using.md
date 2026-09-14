@@ -8,7 +8,7 @@
 
 主屏幕就是**工具库**——所有工具按类别分组。点击卡片即可打开工具；如果你之前用过它，**继续**按钮会恢复你最近的一次会话。用搜索框按名称筛选——或者从六个列表页（工具库、实用工具、项目、目录、控制台和个人资料）底部的栏里[搜索](/info/search.html)，它除了工具，还能找到你保存的作品、目录和设置。进入工具后，这条栏会让位给工具自己的界面。
 
-![工具库——每个工具都是一张卡片，按类别分组](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&tolerance=0.03&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&filename=gallery&try=1)
+![工具库——每个工具都是一张卡片，按类别分组](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&localize=1&dark=1&cropSelector=.gtile%5Bdata-tool-id%3D%22design%22%5D&filename=gallery&try=1)
 
 每个工具都是分屏视图：一侧是**控件**，另一侧是实时**预览**（画布）。更改任意控件，预览会立即更新。
 

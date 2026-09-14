@@ -29,7 +29,7 @@ Naka-pin sa **ilalim ng rail** ang mga aksyon na kabilang sa buong design system
 - **Tokens (.json)** - ang plain design-tokens document nang mag-isa, para sa isang repo, build step o ibang tokens tool.
 - **Versions** - i-publish, i-activate at i-restore ang mga pinangalanang kopya ng design system. Nakatago hangga't walang sarili mong ma-publish (o hangga't hindi hiniling ng `?area=versions` link ito sa pangalan).
 
-![Ang studio room rail - Overview, Colours, Type, Logos, Tokens at Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![Ang studio room rail - Overview, Colours, Type, Logos, Tokens at Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 

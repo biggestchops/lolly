@@ -29,7 +29,7 @@
 - **Tokens (.json)** - সাদামাটা design-tokens ডকুমেন্ট নিজে থেকেই, একটি রেপো, বিল্ড স্টেপ বা অন্য কোনো tokens টুলের জন্য।
 - **Versions** - design system-এর নামযুক্ত কপি প্রকাশ, সক্রিয় এবং পুনরুদ্ধার করুন। প্রকাশ করার মতো নিজের কিছু না থাকা পর্যন্ত (অথবা একটি `?area=versions` লিংক নাম ধরে না চাওয়া পর্যন্ত) লুকানো থাকে।
 
-![স্টুডিও room রেল - Overview, Colours, Type, Logos, Tokens এবং Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
+![স্টুডিও room রেল - Overview, Colours, Type, Logos, Tokens এবং Files](/t/url-shot?url=%2F%23%2Fstart&width=1440&height=900&dpi=192&waitMs=1600&cropSelector=.ds-rail&waitSelector=.ds-rail&format=svg&walker=1&localize=1&dark=1&filename=brand-studio&try=1)
 
 ## Overview
 
