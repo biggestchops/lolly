@@ -1854,6 +1854,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
           return;
         }
         const { parseDesignFile } = await import('./design-import.ts');
+        const { showImportedFontNotice } = await import('./design-import-text.ts');
         const res = await parseDesignFile(pendingImport.file, {
           host: host as any,
           log: (m: string) => announce(m),
@@ -1867,11 +1868,8 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
         fc.select.commit(boxes);
         if (setCanvasSize && res.width > 0 && res.height > 0)
           setCanvasSize(res.width, res.height, 'px');
-        announce(
-          boxes.length === 1
-            ? t('Imported 1 object.')
-            : t('Imported {n} objects.', { n: boxes.length })
-        );
+        announce(boxes.length === 1 ? t('Imported 1 object.') : t('Imported {n} objects.', { n: boxes.length }));
+        await showImportedFontNotice(res.fontSubstitutions, canvasEl);
       } catch (err) {
         if (!fc.disposed)
           announce((err as Error)?.message || t('Import failed.'), { assertive: true });

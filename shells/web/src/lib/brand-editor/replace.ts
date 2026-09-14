@@ -249,6 +249,7 @@ export const syncTileMeta = (_bedit: BrandEditorCtx, tile: HTMLElement, s: Brand
   tile.title = label;
   tile.setAttribute('aria-label', label);
   const card = tile.closest('.be-pal-card');
+  card?.querySelector('[data-be-select]')?.setAttribute('aria-label', tRaw('Select {name}', { name: s.name }));
   const name = card?.querySelector('.be-pal-name');
   const hex = card?.querySelector('.be-pal-hex');
   if (name) name.textContent = s.name;

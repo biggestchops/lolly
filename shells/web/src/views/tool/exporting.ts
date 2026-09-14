@@ -76,10 +76,14 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   if (shutter) await tview.designSystem.closeShutter(detail, onCancel);
 
   const prevTransform = canvasEl!.style.transform;
+  const prevOuterTransform = outerEl!.style.transform;
   const prevZoom = canvasEl!.style.zoom; // paged docs fit-to-width via zoom
   const prevW = outerEl!.style.width;
   const prevH = outerEl!.style.height;
   canvasEl!.style.transform = '';
+  // Stage navigation adds another scale on the outer wrapper. Leaving it active
+  // makes export measure zoomed bounds and enlarge the artwork beyond its page.
+  outerEl!.style.transform = '';
   canvasEl!.style.zoom = ''; // export reads pages at true page size
   outerEl!.style.width = canvasEl!.style.width;
   outerEl!.style.height = canvasEl!.style.height;
@@ -87,6 +91,7 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
     return await fn(report);
   } finally {
     canvasEl!.style.transform = prevTransform;
+    outerEl!.style.transform = prevOuterTransform;
     canvasEl!.style.zoom = prevZoom;
     outerEl!.style.width = prevW;
     outerEl!.style.height = prevH;

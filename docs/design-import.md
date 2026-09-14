@@ -43,7 +43,7 @@ The importer maps design layers onto the free canvas's box model, keeping as muc
 
 This is the point of importing rather than pasting a screenshot: the result is a **governed** layout, not a foreign artboard.
 
-- **Type remaps to the brand faces.** Every imported font becomes one of the faces your brand pack ships (monospace families map to your brand's mono face, weights clamp to the cuts that exist). That's intended behaviour - the design arrives already on-brand.
+- **Type remaps to the brand faces.** Imported fonts that are not already available map to your brand faces (monospace families map to the mono face, weights clamp to the cuts that exist). That's intended behaviour - the design arrives already on-brand. Add your company's typeface in **Make it yours → Type** before importing. When an SVG import substitutes fonts, its notice also offers **Add brand fonts**; use Back to return to the imported design.
 - **Colours are guarded.** Every imported fill passes the same colour sanitiser native boxes use; from there you can snap them to brand swatches with the normal pickers.
 - **Everything else is a normal session.** Drag, rotate, snap, group, clip; place [themable icons](/info/authoring-assets.html) and library assets; save it, share it as a URL, run it through [Batch](/info/exporting.html).
 

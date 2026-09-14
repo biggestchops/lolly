@@ -118,6 +118,7 @@ test('colour workspace creates empty groups, moves directly, saves on Enter, pre
     await settle(() => walkSwatches(installed, 'light')[0]?.name === 'Evening ink');
     assert.equal($<HTMLElement>('[data-be-editor]').hidden, true);
     assert.equal(walkSwatches(installed, 'light')[0]?.name, 'Evening ink');
+    assert.equal($('[data-be-select="0"]').getAttribute('aria-label'), 'Select Evening ink');
     assert.ok(root.querySelector('[data-be-group="Campaign"] [data-be-tile]'));
     click('[data-be-select="0"]');
     assert.equal($('[data-be-preview-source]').textContent, '1 selected');

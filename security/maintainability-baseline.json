@@ -56,11 +56,11 @@
       "typeEscapes": 0
     },
     "shells/web/src/views/design-import.ts": {
-      "lines": 1774,
+      "lines": 1739,
       "largestFunctionLines": 145,
       "importFanIn": 4,
-      "importFanOut": 10,
-      "typeEscapes": 69
+      "importFanOut": 11,
+      "typeEscapes": 68
     },
     "shells/web/src/views/gallery.ts": {
       "lines": 1923,
@@ -355,7 +355,7 @@
     "shells/web/src/views/catalog/wiring.ts": 2,
     "shells/web/src/views/convert.ts": 1,
     "shells/web/src/views/dashboard.ts": 3,
-    "shells/web/src/views/design-import.ts": 69,
+    "shells/web/src/views/design-import.ts": 68,
     "shells/web/src/views/doc-editor.ts": 27,
     "shells/web/src/views/emoji-mount.ts": 1,
     "shells/web/src/views/file-result-actions.ts": 1,

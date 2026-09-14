@@ -45,6 +45,10 @@ export const XPREFS_SLOT_PREFIX = '__xprefs__:';
 export const isExportPrefsSlot = (slot: unknown): boolean =>
   typeof slot === 'string' && slot.startsWith(XPREFS_SLOT_PREFIX);
 
-/** A slot no user-facing session list should show: trashed, template-held or a preference. */
+/** Internal design-system records include the import checkpoint ring. */
+export const isDesignSystemSlot = (slot: unknown): boolean =>
+  typeof slot === 'string' && slot.startsWith('design-system.');
+
+/** A slot no user-facing session list should show. */
 export const isHiddenSlot = (slot: unknown): boolean =>
-  isTrashedSlot(slot) || isTemplateSlot(slot) || isExportPrefsSlot(slot);
+  isTrashedSlot(slot) || isTemplateSlot(slot) || isExportPrefsSlot(slot) || isDesignSystemSlot(slot);

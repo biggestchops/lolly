@@ -1,0 +1,14 @@
+{
+  "$description": "Fictional Northstar brand for the public-user walkthrough; no external brand assets.",
+  "color": {
+    "$type": "color",
+    "primary": { "$value": "#0067B1" },
+    "secondary": { "$value": "#FFC72C" },
+    "ink": { "$value": "#172B4D" },
+    "paper": { "$value": "#FFFFFF" }
+  },
+  "font": {
+    "body": { "$type": "fontFamily", "$value": "Arial" },
+    "heading": { "$type": "fontFamily", "$value": "Arial" }
+  }
+}
