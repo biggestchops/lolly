@@ -65,6 +65,7 @@ try {
     return new Uint8Array(await readFile(file));
   };
   await page.getByRole('button', { name: 'Export course', exact: true }).click();
+  await page.getByRole('button', { name: 'Review course', exact: true }).click();
   await page.getByRole('button', { name: 'Check and prepare package', exact: true }).click();
   await page.getByRole('button', { name: 'Save version and download ZIP', exact: true }).waitFor();
   const first = await save(
@@ -77,8 +78,9 @@ try {
   const content = JSON.parse(strFromU8(contents['content.json']!));
   assert.ok(!strFromU8(contents['content.json']!).includes('blob:'));
   await page.reload();
+  await page.locator('[data-disclosure=versions] > summary').click();
   const repeated = await save(
-    () => page.getByRole('button', { name: 'Download scorm12 ZIP', exact: true }).click(),
+    () => page.getByRole('button', { name: 'Download SCORM 1.2 ZIP', exact: true }).click(),
     'repeat.zip'
   );
   assert.deepEqual(repeated, first);
@@ -87,6 +89,7 @@ try {
     .fill('The next draft has different teaching content.');
   await page.getByRole('button', { name: 'Export this version for another destination' }).click();
   await page.locator('[data-delivery-target]').selectOption('scorm2004');
+  await page.getByRole('button', { name: 'Review course', exact: true }).click();
   await page.getByRole('button', { name: 'Check and prepare package', exact: true }).click();
   const variant = await save(
     () => page.getByRole('button', { name: 'Save version and download ZIP', exact: true }).click(),
@@ -110,7 +113,7 @@ try {
     await page
       .getByLabel('Lesson text')
       .fill('Open a terminal and run uname. Read the system name before continuing.');
-    await page.getByRole('heading', { name: 'Learning module', exact: true }).click();
+    await page.getByRole('heading', { name: 'Course editor', exact: true }).click();
     const svg = await page.evaluate(async () => {
       const path = '/src/bridge/export-svg-walker.ts';
       const { renderSvgFromHtml } = await import(/* @vite-ignore */ path);
@@ -126,7 +129,7 @@ try {
     // shots pipeline, so it is stamped here too.
     await writeFile(
       'docs/shots/training-module-outline.svg',
-      await stampLearningShot(new TextEncoder().encode(svg), url),
+      await stampLearningShot(new TextEncoder().encode(svg), url)
     );
   }
   // Run the downloaded player against a browser LMS double, with all network access blocked.

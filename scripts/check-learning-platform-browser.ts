@@ -111,22 +111,30 @@ try {
     .uncheck();
   await review.locator('li').last().getByRole('button', { name: 'Move up', exact: true }).click();
   await review.locator('[data-course-create]').click();
+  await page.getByLabel('Course title', { exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole('dialog', { name: 'Export course', exact: true }).count(),
+    0,
+    'new courses open in the editor'
+  );
+  await page.getByRole('button', { name: 'Export course', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Export course', exact: true });
   await dialog.getByLabel('Delivery format').selectOption('static');
-  await dialog.getByLabel('Destination upload limit in MB (0 if unknown)').fill('0.000001');
-  await dialog.getByRole('heading', { name: '2. Check the course' }).click();
+  await dialog.getByLabel('Upload limit (MB, optional)').fill('0.000001');
+  await dialog.getByRole('button', { name: 'Review course', exact: true }).click();
   await dialog.locator('[data-delivery-check]').click();
   await dialog
     .locator('[data-delivery-status]')
     .filter({ hasText: 'above the' })
     .waitFor({ timeout: 120000 });
-  assert.equal(await dialog.locator('[data-delivery-save]').isEnabled(), false);
-  await dialog.getByLabel('Destination upload limit in MB (0 if unknown)').fill('20');
-  await dialog.getByRole('heading', { name: '2. Check the course' }).click();
+  assert.equal(await dialog.locator('[data-delivery-save]').count(), 0);
+  await dialog.locator('[data-delivery-step=0]').click();
+  await dialog.getByLabel('Upload limit (MB, optional)').fill('20');
+  await dialog.getByRole('button', { name: 'Review course', exact: true }).click();
   await dialog.locator('[data-delivery-check]').click();
   await dialog.locator('[data-delivery-cancel]').click();
   await dialog.locator('[data-delivery-status]').filter({ hasText: 'cancelled' }).waitFor();
-  assert.equal(await dialog.locator('[data-delivery-save]').isEnabled(), false);
+  assert.equal(await dialog.locator('[data-delivery-save]').count(), 0);
   await dialog.locator('[data-delivery-check]').click();
   await dialog.locator('[data-delivery-save]:enabled').waitFor({ timeout: 120000 });
   const downloadEvent = page.waitForEvent('download');

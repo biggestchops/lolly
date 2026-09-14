@@ -72,7 +72,7 @@ export async function preview(ctx: LearningCtx): Promise<void> {
     });
     const close = document.createElement('button');
     close.textContent = 'Close preview';
-    close.className = 'btn';
+    close.className = 'btn btn--ghost';
     close.onclick = () => {
       closePreview(ctx);
       ctx.root.querySelector<HTMLButtonElement>('[data-action=preview]')?.focus();
@@ -84,20 +84,23 @@ export async function preview(ctx: LearningCtx): Promise<void> {
       new Blob([learningPlayerJs(content, 'preview')], { type: 'text/javascript' })
     );
     frame.srcdoc = `<!doctype html><html lang="en"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src blob:; style-src 'unsafe-inline'; img-src blob: data:; media-src blob: data:"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${learningPlayerCss}</style><div id="learning-player"></div><script src="${script}"></script></html>`;
-    panel.append(close, frame);
+    const heading = document.createElement('header');
+    heading.className = 'learning-preview-header';
+    const label = document.createElement('div');
+    const title = document.createElement('strong');
+    title.textContent = 'Learner preview';
+    const hint = document.createElement('span');
+    hint.textContent = 'Test the course. Preview progress is separate from learner records.';
+    label.append(title, hint);
+    heading.append(label, close);
+    panel.append(heading, frame);
     ctx.root.append(panel);
     panel.showModal();
     close.focus();
     ctx.ui.status('Preview ready. Test progress is not sent to an LMS.');
   } finally {
     ctx.busy = false;
-    ctx.root
-      .querySelectorAll<
-        HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >('button,input,textarea,select')
-      .forEach((b) => {
-        b.disabled = false;
-      });
+    ctx.ui.checks();
   }
 }
 export async function build(ctx: LearningCtx): Promise<void> {

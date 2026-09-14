@@ -1564,7 +1564,7 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // here reads a document or a network response.
   'lib/learning-entry.ts': 1,
   'views/learning/delivery.ts': 1,
-  'views/learning/ui.ts': 2,
+  'views/learning/ui.ts': 1,
   // Text surfaces: code uses the engine's escaping highlighter; action/font labels
   // use escapeHtml. Markdown uses the shared safe renderer. Other markup is static.
   'components/code-editor.ts': 1,

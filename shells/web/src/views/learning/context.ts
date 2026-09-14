@@ -29,7 +29,7 @@ export interface LearningCtx {
   saving: Promise<void>;
   previewUrls: string[];
   preview: CompiledLearning | null;
-  ui: { render(): void; checks(): void; status(message: string): void };
+  ui: { render(focus?: string): void; checks(): void; status(message: string): void };
   edit: { change(): void; addLesson(): void; action(action: string, id?: string): Promise<void> };
   sources: {
     pick(): Promise<void>;

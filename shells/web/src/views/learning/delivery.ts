@@ -5,7 +5,9 @@ import type {
   LearningRelease,
   LearningTarget,
 } from '@lolly-tools/core/learning-v1';
-import { LEARNING_TARGETS, learningSummary } from '../../../../../engine/src/learning/delivery.ts';
+import { learningSummary } from '../../../../../engine/src/learning/delivery.ts';
+import { exportMarkup } from './shared.ts';
+import { courseFocus } from '../../lib/learning-ui.ts';
 import {
   checkLearningExportSize,
   learningExportKey,
@@ -18,7 +20,6 @@ import {
 } from '../../../../../engine/src/learning/compile.ts';
 import { buildLearningPackage } from '../../../../../packages/learning-player/src/package.ts';
 import { mountModal, type ModalHandle } from '../../components/modal.ts';
-import { escape as esc } from '../../utils.ts';
 import { resolveLearningBlock } from '../../lib/learning-render.ts';
 import { startJob, cancelJob, type JobHandle } from '../../lib/jobs.ts';
 import { deliverBatchFile } from '../../lib/background-delivery.ts';
@@ -51,6 +52,8 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
   let note = '';
   let saved: LearningRelease | undefined;
   let saving = false;
+  let step = 0;
+  let tone = 'info';
   const snapshot = () => original?.snapshot || ctx.module;
   const key = () => learningExportKey(snapshot(), ctx.target, ctx.exportSettings);
   const ready = () => !!checked && checked.key === key();
@@ -63,6 +66,7 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
     saved = undefined;
     cancel();
     message = 'The course changed. Check the updated version before downloading.';
+    step = Math.min(step, 1);
     paint();
   };
   const close = () => {
@@ -75,43 +79,65 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
   };
   const paint = () => {
     if (!modal || ctx.disposed) return;
-    const focused = modal.el.contains(document.activeElement)
-      ? [...(document.activeElement?.attributes || [])].find((a) =>
-          a.name.startsWith('data-delivery-')
-        )?.name
-      : undefined;
-    const summary = learningSummary(snapshot()),
-      findings = checkLearningModule(snapshot());
-    const blocked = findings.some((f) => f.severity === 'error');
-    const active = ctx.checking || saving;
-    modal.el.innerHTML = `<h2>Export course${original ? ' version' : ''}</h2>
-      <p>${esc(snapshot().title)}${original ? ' · Saved content is used for this export.' : ''}</p>
-      <h3>1. Destination</h3>
-      <label>Delivery format<select data-delivery-target ${active ? 'disabled' : ''}>${LEARNING_TARGETS.map((t) => `<option value="${t.id}" ${ctx.target === t.id ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}</select></label>
-      <p>${esc(LEARNING_TARGETS.find((t) => t.id === ctx.target)!.description)}</p>
-      <label>Website or LMS name (optional)<input data-delivery-name maxlength="200" value="${esc(ctx.exportSettings.destination)}" ${active ? 'disabled' : ''}></label>
-      <label>Destination upload limit in MB (0 if unknown)<input data-delivery-limit type="number" min="0" step="0.1" value="${ctx.exportSettings.maxMB}" ${active ? 'disabled' : ''}></label>
-      <h3>2. Check the course</h3>
-      <dl><dt>Lessons</dt><dd>${summary.lessons}: ${summary.required} required, ${summary.optional} optional</dd><dt>Media</dt><dd>${summary.videos} video, ${summary.audio} audio, ${summary.resources} resources</dd><dt>Language</dt><dd>${esc(summary.language)}; player controls are in English</dd><dt>Completion</dt><dd>${esc(summary.completion)} No score or pass mark.</dd></dl>
-      ${findings.length ? `<ul>${findings.map((f) => `<li>${f.severity === 'error' ? 'Fix' : 'Review'}: ${esc(f.message)}${f.lessonId && !original ? ` <button type="button" data-delivery-lesson="${esc(f.lessonId)}">Open lesson</button>` : ''}</li>`).join('')}</ul>` : '<p>Structure checks passed. Review the learner preview, descriptions, captions and reading order.</p>'}
-      <p role="status" data-delivery-status>${esc(message)}</p>
-      ${ctx.checking ? '<progress aria-label="Preparing course"></progress><p>You can continue editing while this check runs. Changing the course cancels the check.</p><button type="button" data-delivery-cancel>Cancel check</button>' : `<button type="button" class="btn" data-delivery-check ${blocked || saving ? 'disabled' : ''}>${ready() ? 'Check again' : 'Check and prepare package'}</button>`}
-      ${ready() ? `<p><strong>Ready: ${(checked!.bytes.length / 1_000_000).toFixed(2)} MB</strong> (${checked!.bytes.length.toLocaleString()} bytes). ${ctx.exportSettings.maxMB ? 'Within your destination limit.' : 'No destination upload limit was supplied.'}</p><p>These checked files will be saved as one course package. Optional lessons are included.</p>` : ''}
-      <h3>3. Save and download</h3><p>${esc(learningHandoff(ctx.target))}</p>
-      <label>Version notes<textarea data-delivery-note ${active ? 'disabled' : ''}>${esc(note)}</textarea></label>
-      <footer><button type="button" data-delivery-close>${ctx.checking ? 'Continue editing' : 'Close'}</button><button type="button" class="btn btn--primary" data-delivery-save ${!ready() || active || saved ? 'disabled' : ''}>${saving ? 'Saving version...' : 'Save version and download ZIP'}</button>${saved ? '<button type="button" data-delivery-download>Download ZIP again</button><button type="button" data-delivery-report>Download handoff report</button>' : ''}</footer>`;
-    if (focused) modal.el.querySelector<HTMLElement>(`[${focused}]`)?.focus();
+    const focused = courseFocus(modal.el, 'data-delivery-');
+    const scroll = modal.el.querySelector('[data-delivery-body]')?.scrollTop || 0;
+    const expanded = [...modal.el.querySelectorAll<HTMLDetailsElement>('details[open]')].map(
+      (el) =>
+        el.hasAttribute('data-delivery-reviews') ? 'data-delivery-reviews' : 'data-delivery-handoff'
+    );
+    modal.el.querySelector('[data-learning-panel]')!.innerHTML = exportMarkup({
+      module: snapshot(),
+      target: ctx.target,
+      destination: ctx.exportSettings.destination,
+      maxMB: ctx.exportSettings.maxMB,
+      step,
+      active: ctx.checking || saving,
+      checking: ctx.checking,
+      saving,
+      saved: !!saved,
+      original: !!original,
+      ready: ready(),
+      bytes: checked?.bytes.length || 0,
+      note,
+      message,
+      tone,
+    });
+    for (const attr of expanded) {
+      const details = modal.el.querySelector<HTMLDetailsElement>(`[${attr}]`);
+      if (details) details.open = true;
+    }
+    const body = modal.el.querySelector('[data-delivery-body]');
+    if (body) body.scrollTop = scroll;
+    if (focused) modal.el.querySelector<HTMLElement>(focused)?.focus({ preventScroll: true });
   };
-  const status = (text: string) => {
+  const showStep = (next: number) => {
+    if (ctx.checking || saving || (next === 2 && !ready())) return;
+    step = next;
+    paint();
+    const body = modal?.el.querySelector<HTMLElement>('[data-delivery-body]');
+    if (body) body.scrollTop = 0;
+    modal?.el
+      .querySelector<HTMLElement>(`[data-delivery-step="${next}"]`)
+      ?.focus({ preventScroll: true });
+  };
+  const status = (text: string, kind = 'info') => {
     message = text;
-    const el = modal?.el.querySelector('[data-delivery-status]');
-    if (el) el.textContent = text;
+    tone = kind;
+    const el = modal?.el.querySelector<HTMLElement>('[data-delivery-status]');
+    if (el) {
+      el.textContent = text;
+      el.hidden = !text;
+      el.dataset.tone = kind;
+    }
     ctx.ui.status(text);
   };
   const check = async () => {
     if (ctx.checking || saving) return;
     checked = undefined;
     saved = undefined;
+    step = 1;
+    message = 'Preparing course content...';
+    tone = 'info';
     if (exportAffordance(getExportPolicy()) !== 'download')
       throw new Error('Course download is unavailable under the current export policy.');
     checkLearningExportSize(1, ctx.exportSettings.maxMB);
@@ -190,7 +216,8 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
         target,
         settings,
       };
-      status('Checks finished. Review the size and handoff instructions, then save this version.');
+      step = 2;
+      status('', 'success');
       currentJob.finish();
     } catch (error) {
       status(
@@ -198,7 +225,8 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
           ? 'Check cancelled. No package version was saved.'
           : error instanceof Error
             ? error.message
-            : 'The package could not be prepared.'
+            : 'The package could not be prepared.',
+        signal.aborted ? 'info' : 'error'
       );
       if (!signal.aborted) currentJob.fail(error);
     } finally {
@@ -206,6 +234,13 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       controller = undefined;
       ctx.checking = false;
       paint();
+      if (step === 2) {
+        const body = modal?.el.querySelector('[data-delivery-body]');
+        if (body) body.scrollTop = 0;
+        modal?.el
+          .querySelector<HTMLElement>('[data-delivery-save]')
+          ?.focus({ preventScroll: true });
+      }
       if (!ctx.disposed) ctx.ui.render();
     }
   };
@@ -272,6 +307,13 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       saving = false;
       ctx.busy = false;
       paint();
+      if (step === 2) {
+        const body = modal?.el.querySelector('[data-delivery-body]');
+        if (body) body.scrollTop = 0;
+        modal?.el
+          .querySelector<HTMLElement>('[data-delivery-save]')
+          ?.focus({ preventScroll: true });
+      }
       if (!ctx.disposed) ctx.ui.render();
     }
   };
@@ -318,10 +360,11 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       checked = undefined;
       saved = undefined;
     }
+    if (next?.id !== original?.id) note = next?.note || '';
     original = next;
-    note = ctx.root.querySelector<HTMLTextAreaElement>('[data-release-note]')?.value || '';
-    modal = mountModal<void>('', {
-      className: 'learning-export',
+    step = ready() ? 2 : 0;
+    modal = mountModal<void>('<div class="learning-dialog-content" data-learning-panel></div>', {
+      className: 'learning-ui learning-export',
       ariaLabel: 'Export course',
       onClose: () => {
         modal = undefined;
@@ -331,14 +374,16 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
     modal.el.querySelector<HTMLSelectElement>('[data-delivery-target]')?.focus();
     modal.el.addEventListener('change', (event) => {
       const el = event.target as HTMLInputElement;
+      if (ctx.checking || saving) return;
       if (el.matches('[data-delivery-target]')) ctx.target = el.value as LearningTarget;
       else if (el.matches('[data-delivery-name]')) ctx.exportSettings.destination = el.value;
       else if (el.matches('[data-delivery-limit]')) ctx.exportSettings.maxMB = Number(el.value);
       else return;
       checked = undefined;
       saved = undefined;
-      message = 'Destination changed. Check the package for this destination.';
-      paint();
+      message = '';
+      tone = 'info';
+      if (el.matches('[data-delivery-target]')) paint();
       void ctx.persistence
         .save()
         .catch((error) =>
@@ -352,6 +397,19 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
     modal.el.addEventListener('click', (event) => {
       const el = (event.target as Element).closest<HTMLButtonElement>('button');
       if (!el) return;
+      if (el.hasAttribute('data-delivery-next') || el.hasAttribute('data-delivery-step')) {
+        if (
+          !modal?.el.querySelector<HTMLInputElement>('[data-delivery-limit]')?.reportValidity() &&
+          step === 0
+        )
+          return;
+        showStep(el.hasAttribute('data-delivery-next') ? 1 : Number(el.dataset.deliveryStep));
+        return;
+      }
+      if (el.hasAttribute('data-delivery-back')) {
+        showStep(step - 1);
+        return;
+      }
       if (el.hasAttribute('data-delivery-close')) {
         close();
         return;
@@ -377,7 +435,7 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
               : undefined;
       if (action)
         void action().catch((error) => {
-          status(error instanceof Error ? error.message : 'The export failed.');
+          status(error instanceof Error ? error.message : 'The export failed.', 'error');
           paint();
         });
     });

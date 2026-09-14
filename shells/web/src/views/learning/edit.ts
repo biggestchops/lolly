@@ -27,7 +27,7 @@ export function addLesson(ctx: LearningCtx): void {
   ctx.module.lessons.push(lesson);
   ctx.selected = lesson.id;
   change(ctx);
-  ctx.ui.render();
+  ctx.ui.render('[data-lesson="title"]');
 }
 export async function act(ctx: LearningCtx, action: string, id?: string): Promise<void> {
   if (ctx.busy) return;
@@ -82,6 +82,10 @@ export async function act(ctx: LearningCtx, action: string, id?: string): Promis
     ctx.publishing.closePreview();
     return;
   }
+  if (action === 'add-resource') {
+    ctx.root.querySelector<HTMLInputElement>('[data-resource]')?.click();
+    return;
+  }
   if (action === 'add-source') {
     await ctx.sources.pick();
     return;
@@ -119,5 +123,7 @@ export async function act(ctx: LearningCtx, action: string, id?: string): Promis
     ctx.selected = ctx.module.lessons[Math.max(0, index - 1)]?.id || '';
   }
   change(ctx);
-  ctx.ui.render();
+  ctx.ui.render(
+    action === 'add-text' ? '[data-block]:last-child [data-block-field=text]' : undefined
+  );
 }

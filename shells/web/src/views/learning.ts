@@ -162,17 +162,12 @@ export async function mountLearning(
     if (
       el.matches('[data-resource]') ||
       el.dataset.blockField === 'render' ||
+      el.dataset.lesson === 'section' ||
       (el instanceof HTMLInputElement && el.type === 'checkbox')
     )
       ctx.ui.render();
     else {
       ctx.ui.checks();
-      if (lesson && el.dataset.lesson === 'title') {
-        const tab = root.querySelector<HTMLButtonElement>(
-          `[data-action=lesson][data-id="${lesson.id}"]`
-        );
-        if (tab) tab.textContent = `${ctx.module.lessons.indexOf(lesson) + 1}. ${lesson.title}`;
-      }
     }
   };
   const onChange = (event: Event) => {
