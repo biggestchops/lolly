@@ -2,7 +2,7 @@
 
 These synthetic inputs belong to plan 248. Northstar is a fictional brand; the files contain no company assets or personal information.
 
-- QR destination: `https://example.org/welcome`.
+- QR destination: `https://example.org/`.
 - Brand name: Northstar. Primary blue: `#0067B1`. Secondary yellow: `#FFC72C`. Ink: `#172B4D`. Paper: `#FFFFFF`.
 - `brand.tokens.json`: minimal tokens for the import journey.
 - `welcome.svg`: editable text and shapes. Change the headline to `Northstar open day`.

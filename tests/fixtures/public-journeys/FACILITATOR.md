@@ -48,7 +48,7 @@ Use [SESSION-RECORD.md](SESSION-RECORD.md), copied once per participant, and put
 
 | Task | Completion evidence |
 | --- | --- |
-| 1 | Open the downloaded image outside Lolly and scan that file with another device. It must resolve to `https://example.org/welcome`. A correct preview alone is insufficient. |
+| 1 | Open the downloaded image outside Lolly and scan that file with another device. It must resolve to `https://example.org/`. A correct preview alone is insufficient. |
 | 2 | Open the downloaded file outside Lolly: headline is correct, text is readable and supplied colours are present. Compare the restored brand with the recorded initial settings and check the announcement remains. Record whether font substitution and the setup action were understood. |
 | 3 | Same regular profile survives full browser close/reopen. Folder and creation can be found. The second saved creation has the change; reopening the first and inspecting the reusable template confirms they retain their original content. |
 | 4 | Both exact supplied colours are stored and used as intended, rather than silently replaced by a generated accent. Downloaded output is usable. The same brand survives full browser close/reopen and can be used for another creation. Record when a font/logo need becomes apparent; do not introduce that requirement before observing the initial attempt. |
