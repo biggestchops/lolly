@@ -256,7 +256,7 @@ The table is generated. Run `node scripts/gen-engine-modules.ts` after adding, r
 | `jpeg-segments.ts` | 372 | JPEG marker-segment walker and writer - one shared primitive, DOM-free. | no | `tests/jpeg-segments.test.ts` | – |
 | `keyframes.ts` | 1682 |  | yes | `tests/keyframes.test.ts` | yes |
 | `lang.ts` | 171 | Supported UI/content languages, shared by the `lang` reserved URL param (url-mode.ts), `Profile.lang`, tool-manifest i18n sidecars, and every shell's language picker. | yes | indirect | – |
-| `learning/compile.ts` | 176 |  | yes | indirect | – |
+| `learning/compile.ts` | 187 |  | yes | indirect | – |
 | `learning/delivery.ts` | 79 | Portable course targets and source renditions, independent of a shell or provider. | yes | indirect | – |
 | `learning/module.ts` | 222 |  | yes | indirect | – |
 | `learning/preflight.ts` | 33 |  | yes | `tests/preflight.test.ts` | – |

@@ -87589,7 +87589,8 @@ async function compileLearningModule(input, releaseId, resolve5, hash, onProgres
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$/.test(releaseId))
     throw new Error("Invalid release identifier.");
   const failures = checkLearningModule(module).filter((f) => f.severity === "error");
-  if (failures.length) throw new Error(failures.map((f) => f.message).join(" "));
+  if (failures.length && !options2.preview)
+    throw new Error(failures.map((f) => f.message).join(" "));
   const files = {};
   let total = 0;
   const add = async (bytes, mime2, ext) => {
@@ -87623,45 +87624,53 @@ async function compileLearningModule(input, releaseId, resolve5, hash, onProgres
         decorative: block.decorative,
         transcript: block.transcript
       };
-      if (block.kind !== "text") {
-        let parts;
-        try {
-          parts = await resolve5(block);
-          checkCancelled();
-        } catch (error) {
-          throw new Error(
-            `${lesson.title}: ${error instanceof Error ? error.message : "The source could not be prepared."}`
+      if (options2.preview && block.kind === "text" && !block.text?.trim())
+        compiled.previewIssue = "This text block is empty. Add your explanation in the editor.";
+      try {
+        if (block.kind !== "text") {
+          let parts;
+          try {
+            parts = await resolve5(block);
+            checkCancelled();
+          } catch (error) {
+            throw new Error(
+              `${lesson.title}: ${error instanceof Error ? error.message : "The source could not be prepared."}`
+            );
+          }
+          if (!parts.length || block.kind !== "slides" && parts.length !== 1)
+            throw new Error(`${lesson.title}: the source returned an unexpected number of files.`);
+          compiled.files = [];
+          for (const part of parts) {
+            const mime2 = part.mime.split(";")[0].toLowerCase();
+            const family = block.kind === "slides" ? "image" : block.kind;
+            const extension = extensions[mime2];
+            if (!extension || family !== "resource" && !mime2.startsWith(`${family}/`) || family === "resource" && !["text/plain", "application/pdf"].includes(mime2))
+              throw new Error(
+                `${lesson.title}: unsupported ${block.kind} format ${mime2}. Export a supported media file first.`
+              );
+            checkSignature(part.bytes, mime2);
+            compiled.files.push(await add(part.bytes, mime2, extension));
+          }
+        }
+        if (block.captions?.trim()) {
+          if (!/^WEBVTT(?:\s|$)/.test(block.captions.trimStart()))
+            throw new Error(`${lesson.title}: captions must start with WEBVTT.`);
+          compiled.captionFile = await add(
+            new TextEncoder().encode(block.captions),
+            "text/vtt",
+            "vtt"
           );
         }
-        if (!parts.length || block.kind !== "slides" && parts.length !== 1)
-          throw new Error(`${lesson.title}: the source returned an unexpected number of files.`);
-        compiled.files = [];
-        for (const part of parts) {
-          const mime2 = part.mime.split(";")[0].toLowerCase();
-          const family = block.kind === "slides" ? "image" : block.kind;
-          const extension = extensions[mime2];
-          if (!extension || family !== "resource" && !mime2.startsWith(`${family}/`) || family === "resource" && !["text/plain", "application/pdf"].includes(mime2))
-            throw new Error(
-              `${lesson.title}: unsupported ${block.kind} format ${mime2}. Export a supported media file first.`
-            );
-          checkSignature(part.bytes, mime2);
-          compiled.files.push(await add(part.bytes, mime2, extension));
-        }
-      }
-      if (block.captions?.trim()) {
-        if (!/^WEBVTT(?:\s|$)/.test(block.captions.trimStart()))
-          throw new Error(`${lesson.title}: captions must start with WEBVTT.`);
-        compiled.captionFile = await add(
-          new TextEncoder().encode(block.captions),
-          "text/vtt",
-          "vtt"
-        );
+      } catch (error) {
+        checkCancelled();
+        if (!options2.preview) throw error;
+        compiled.previewIssue = error instanceof Error ? error.message : "This content is unavailable.";
       }
       blocks.push(compiled);
     }
     lessons.push({
       id: lesson.id,
-      title: lesson.title,
+      title: lesson.title || "Untitled lesson",
       required: lesson.required,
       sectionId: lesson.sectionId,
       blocks
@@ -87670,10 +87679,11 @@ async function compileLearningModule(input, releaseId, resolve5, hash, onProgres
   return {
     content: {
       schemaVersion: 1,
+      ...options2.preview ? { previewOnly: true } : {},
       moduleId: module.id,
       releaseId,
       objectives: module.objectives,
-      title: module.title,
+      title: module.title || "Untitled course",
       description: module.description,
       language: module.language,
       sections: module.sections,

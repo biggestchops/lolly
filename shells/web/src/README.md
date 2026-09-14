@@ -5,22 +5,22 @@ This file exists so you can find the code for a feature without reading all of i
 The counts below are GENERATED - `pnpm run build:web-src-readme`, checked in CI by `pnpm run check:web-src-readme`, so they cannot rot the way the hand-measured ones did. They convey proportion; don't cite them as an API.
 
 <!-- web-src-dirs:start -->
-Roughly 531,000 lines of TypeScript, tests included, and 46,000 lines of CSS.
+Roughly 542,000 lines of TypeScript, tests included, and 48,000 lines of CSS.
 
 | Directory | Source | Tests | CSS |
 |---|---|---|---|
-| `views/` | 272 files, 145,605 lines | 138 files, 52,948 lines | 3 files, 193 lines |
-| `lib/` | 489 files, 112,193 lines | 296 files, 58,822 lines | 10 files, 1,256 lines |
-| `bridge/` | 129 files, 45,466 lines | 85 files, 20,092 lines | none |
-| `components/` | 64 files, 20,928 lines | 28 files, 9,514 lines | 8 files, 611 lines |
+| `views/` | 288 files, 150,048 lines | 149 files, 55,268 lines | 4 files, 735 lines |
+| `lib/` | 498 files, 113,951 lines | 298 files, 59,175 lines | 11 files, 1,732 lines |
+| `bridge/` | 130 files, 45,825 lines | 87 files, 20,319 lines | none |
+| `components/` | 65 files, 21,578 lines | 30 files, 10,382 lines | 9 files, 685 lines |
 | `collab/` | 20 files, 13,525 lines | 22 files, 14,131 lines | none |
-| `pro/` | 22 files, 8,386 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
-| `org/` | 19 files, 6,020 lines | 15 files, 4,008 lines | none |
-| `catalog/` | 2 files, 859 lines | 1 file, 86 lines | none |
+| `pro/` | 22 files, 8,401 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
+| `org/` | 19 files, 6,063 lines | 15 files, 4,053 lines | none |
+| `catalog/` | 2 files, 860 lines | 1 file, 86 lines | none |
 | `ext/` | 2 files, 136 lines | 1 file, 86 lines | none |
-| `styles/` | none | 4 files, 857 lines | 81 files, 42,794 lines |
+| `styles/` | none | 4 files, 857 lines | 82 files, 43,178 lines |
 
-Plus 45 `.ts`/`.js` files at the top level of `src/`, 15,120 lines all told, of which 20 are tests and 3 are ambient declarations. `main.ts` is 2,051 of that.
+Plus 46 `.ts`/`.js` files at the top level of `src/`, 15,363 lines all told, of which 21 are tests and 3 are ambient declarations. `main.ts` is 2,075 of that.
 <!-- web-src-dirs:end -->
 
 ## How do I find a feature
@@ -58,26 +58,26 @@ Do not be ambushed by these. The largest source files, by line count:
 <!-- web-src-largest:start -->
 | Lines | File | Direct test coverage |
 |---|---|---|
-| 7,409 | `bridge/export.ts` | yes, but mostly gated. `export-audio-bed.test.ts` imports `bedStartOffset` and `connectMusic` directly and always runs; the SVG and PDF emission is covered by ten `chromiumOrSkip()` suites (`export-m3`, `export-paint-order`, `export-stroke-paint`, `export-shadow-fidelity`, `export-pdf-shadow-fidelity`, `export-emf-eps-shadow`, `export-atomic-inline`, `export-backdrop-blur`, `export-form-controls`, `export-text-emission`) that esbuild-bundle the real `renderSvgFromHtml` and drive it in Chromium, and which **self-skip** when no Chromium is installed. `export-text-emission` is the newest and covers the `<path>`-vs-`<text>` decision layer specifically; unlike the SUSE-gated golden suite it is brand-independent, so it runs on `lolly-start` too. |
-| 4,109 | `views/valid.ts` | `valid-verdict.test.ts` only |
-| 4,078 | `views/picker.ts` | partial - the format and embeddability rules are extracted to `picker-formats.ts` and covered by `picker-formats.test.ts`, plus `picker-initial-tab.test.ts`; the 3,000-line panel body is not. |
-| 3,933 | `views/tool-inputs.ts` | none |
+| 7,462 | `bridge/export.ts` | yes, but mostly gated. `export-audio-bed.test.ts` imports `bedStartOffset` and `connectMusic` directly and always runs; the SVG and PDF emission is covered by ten `chromiumOrSkip()` suites (`export-m3`, `export-paint-order`, `export-stroke-paint`, `export-shadow-fidelity`, `export-pdf-shadow-fidelity`, `export-emf-eps-shadow`, `export-atomic-inline`, `export-backdrop-blur`, `export-form-controls`, `export-text-emission`) that esbuild-bundle the real `renderSvgFromHtml` and drive it in Chromium, and which **self-skip** when no Chromium is installed. `export-text-emission` is the newest and covers the `<path>`-vs-`<text>` decision layer specifically; unlike the SUSE-gated golden suite it is brand-independent, so it runs on `lolly-start` too. |
+| 4,423 | `views/valid.ts` | `valid-verdict.test.ts` only |
+| 4,085 | `views/picker.ts` | partial - the format and embeddability rules are extracted to `picker-formats.ts` and covered by `picker-formats.test.ts`, plus `picker-initial-tab.test.ts`; the 3,000-line panel body is not. |
+| 4,000 | `views/tool-inputs.ts` | none |
 | 3,680 | `views/start.ts` | yes |
 | 3,659 | `views/color-lab.ts` | yes |
-| 3,260 | `views/projects.ts` | none |
+| 3,296 | `views/projects.ts` | none |
 | 3,143 | `bridge/sequence-render.ts` | yes |
-| 3,062 | `views/gallery.ts` | none |
-| 3,020 | `bridge/export-svg-walker.ts` | **none** |
+| 3,077 | `views/gallery.ts` | none |
+| 3,029 | `bridge/export-svg-walker.ts` | **none** |
 | 2,674 | `views/deck-editor.ts` | yes |
 | 2,504 | `views/design-import.ts` | **none** |
 | 2,363 | `views/free-canvas-math.ts` | yes |
 | 2,272 | `views/timeline-math.ts` | yes |
-| 2,119 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
-| 2,109 | `components/color-field.ts` | yes |
+| 2,126 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
 | 2,103 | `lib/clip-thumbs.ts` | yes |
+| 2,092 | `components/color-field.ts` | yes |
+| 2,075 | `main.ts` | yes |
 | 2,072 | `pro/index.ts` | yes |
 | 2,062 | `components/collab-ceremony.ts` | yes |
-| 2,051 | `main.ts` | yes |
 <!-- web-src-largest:end -->
 
 The pattern is consistent and worth internalising: the **pure helpers** extracted out of a big view are well covered (`free-canvas-math.ts`, `timeline-math.ts`, `valid-verdict.ts`, `export-css.ts`, `text-svg.ts`, `svg-ir.ts`, `catalog-filter.ts`, `tool-history.ts`, `picker-formats.ts`), while the DOM-mounting bodies of the big views mostly are not. When you change one of the uncovered files, the cheapest way to get coverage is to extract the logic into a sibling pure module and test that, which is how the covered ones came to exist.

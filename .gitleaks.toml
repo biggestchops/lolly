@@ -4,6 +4,16 @@ minVersion = "v8.29.1"
 [extend]
 useDefault = true
 
+# Unicode sequence identifiers are hexadecimal code points joined by hyphens.
+# Restrict this exception to that exact shape in the source table and its bundle.
+[[allowlists]]
+description = "Generated emoji sequence identifiers are not API credentials"
+condition = "AND"
+targetRules = ["generic-api-key"]
+paths = ['''^engine/src/emoji-data/17\.0\.json$''', '''^api/mcp/\[\.\.\.path\]\.js$''']
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{4,6}(?:-[0-9a-f]{4,6}){3,}$''']
+
 # Keep generated/dependency trees out of an explicit whole-checkout scan. The
 # ignored plans/ tree is intentionally NOT excluded: --checkout is the opt-in
 # mode for auditing ignored and untracked personal files as well.

@@ -1619,6 +1619,7 @@ export function sourcesHtml(report: VerifyReport, fileIndex = 0): string {
         ? `<button type="button" class="btn valid-source-act" data-copy-credit="${escape(creditLine)}">${t('Copy credit')}</button>`
         : '',
       safe
+        // nosemgrep: lolly-href-escape-is-not-scheme-validation -- safe is restricted to HTTP(S) immediately above.
         ? `<a class="btn valid-source-act" href="${escape(safe)}" target="_blank" rel="noopener noreferrer">${t('Open source')}</a>`
         : '',
     ].filter(Boolean).join('');
