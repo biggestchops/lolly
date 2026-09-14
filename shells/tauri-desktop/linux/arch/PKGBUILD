@@ -28,7 +28,7 @@
 
 pkgname=lolly-desktop-bin
 pkgver=1.0.7
-pkgrel=1
+pkgrel=2
 pkgdesc="Constraint-first studio for on-brand creative assets (official binary release)"
 arch=('x86_64')
 url="https://lolly.tools"
@@ -46,7 +46,7 @@ conflicts=('lolly-desktop')
 # !strip: keep the shipped binary byte-identical to the canonical build.
 options=('!strip')
 source=("https://lolli.li/lolly-desktop-${pkgver}_amd64.deb")
-sha256sums=('ced524a5378c417d51aa3eec61356bb87e8f0cb552ccb41a9a8b4a3cc787763b')
+sha256sums=('cb954c7be0300350208a322644ebd649da454e88efec8d6059378b427e63e451')
 
 package() {
   # makepkg has already unpacked the .deb (an ar archive bsdtar understands)

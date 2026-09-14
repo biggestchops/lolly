@@ -2549,6 +2549,62 @@
       "reason": "brands/suse is not checked out, so the suse profile cannot be resolved here",
       "capability": "brand:suse",
       "owner": "services/mcp"
+    },
+    {
+      "file": "shells/web/src/asset-index-dev.test.ts",
+      "fullName": "a profile switch is a miss, even though both profiles share the newest input",
+      "reason": "brands/suse is not checked out, so there is no second profile to switch to",
+      "capability": "brand:suse",
+      "owner": "shells/web"
+    },
+    {
+      "file": "shells/web/src/asset-index-dev.test.ts",
+      "fullName": "the dev server serves the same shared pack in the suse asset index",
+      "reason": "brands/suse is not checked out, so the suse profile cannot be resolved here",
+      "capability": "brand:suse",
+      "owner": "shells/web"
+    },
+    {
+      "file": "tests/performance-ui.browser.test.ts",
+      "fullName": "existing Jelly controls stop physics, remain usable, and restore the saved preference",
+      "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/performance-ui.browser.test.ts",
+      "fullName": "gallery searching preserves tile order and identity while sort still reorders",
+      "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/performance-ui.browser.test.ts",
+      "fullName": "Performance UI wins the real CSS cascade while focus and creation surfaces keep their effects",
+      "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/performance-ui.browser.test.ts",
+      "fullName": "template previews reject hover in performance mode and cancel a pending mount on toggle",
+      "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/performance-ui.browser.test.ts",
+      "fullName": "the dock destroys active and late-arriving visualizers without disabling the saved setting",
+      "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/performance-ui.browser.test.ts",
+      "fullName": "the minified production CSS preserves the same performance policy and exclusions",
+      "reason": "set LOLLY_PERF_BUILD_URL to a local production build",
+      "capability": "benchmark",
+      "owner": "tests"
     }
   ]
 }
