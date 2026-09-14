@@ -37,7 +37,8 @@ export interface MaintainabilityBaseline {
    *  pro/ or catalog/ module importing from views/). Views may import anything below them; the
    *  layers below must not reach up. Existing edges are baselined; a new one fails. */
   layerViolations?: string[];
-  /** Type escapes (`any`, `as unknown as`, ts-ignore, biome-ignore) per production module, every
+  /** Type escapes (the `any` type, `as unknown as`, ts-ignore, biome-ignore; counted in code, not
+   *  in comments or strings) per production module, every
    *  module, not only the concentrated ones. A module may only ratchet down; a new module starts
    *  clean or is added deliberately with --write. */
   typeEscapes?: Record<string, number>;
@@ -115,15 +116,36 @@ function largestFunctionLines(filename: string, source: string): number {
   return largest;
 }
 
-function typeEscapeCount(source: string): number {
-  const patterns = [
-    /\bany\b/g,
-    /\bas\s+unknown\s+as\b/g,
+function typeEscapeCount(filename: string, source: string): number {
+  // Counted from the syntax tree, not the raw text: the word "any" inside a comment or a
+  // string is prose, and a metric that counted it made six honest new modules "carry a
+  // type escape" in 2026-09. `any` counts where it is the type; `as unknown as` where it
+  // is an expression; the suppression directives count wherever they appear, since a
+  // comment is where they live.
+  const sourceFile = ts.createSourceFile(
+    filename,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    filename.endsWith('.js') ? ts.ScriptKind.JS : ts.ScriptKind.TS,
+  );
+  let count = 0;
+  const visit = (node: ts.Node): void => {
+    if (node.kind === ts.SyntaxKind.AnyKeyword) count += 1;
+    else if (
+      ts.isAsExpression(node) &&
+      ts.isAsExpression(node.expression) &&
+      node.expression.type.kind === ts.SyntaxKind.UnknownKeyword
+    ) count += 1;
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  const directives = [
     /@ts-(?:ignore|nocheck|expect-error)\b/g,
     /eslint-disable(?:-next-line)?\b/g,
     /biome-ignore\b/g,
   ];
-  return patterns.reduce((total, pattern) => total + [...source.matchAll(pattern)].length, 0);
+  return directives.reduce((total, pattern) => total + [...source.matchAll(pattern)].length, count);
 }
 
 function importSpecifiers(source: string): string[] {
@@ -202,7 +224,7 @@ export function measure(): MaintainabilityBaseline {
   const typeEscapes: Record<string, number> = {};
   for (const filename of files) {
     const relative = path.relative(WEB_ROOT, filename).replaceAll(path.sep, '/');
-    const escapes = typeEscapeCount(sources.get(filename)!);
+    const escapes = typeEscapeCount(filename, sources.get(filename)!);
     if (escapes > 0) typeEscapes[path.relative(repoRoot, filename).replaceAll(path.sep, '/')] = escapes;
     if (!LOWER_LAYERS.some((layer) => relative.startsWith(layer))) continue;
     for (const target of graph.get(filename) ?? []) {
@@ -223,7 +245,7 @@ export function measure(): MaintainabilityBaseline {
       largestFunctionLines: largestFunctionLines(filename, source),
       importFanIn: fanIn.get(filename) ?? 0,
       importFanOut: graph.get(filename)?.size ?? 0,
-      typeEscapes: typeEscapeCount(source),
+      typeEscapes: typeEscapeCount(filename, source),
     };
   }
 
