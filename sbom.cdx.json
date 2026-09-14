@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:a7785a5b-a1db-489a-8344-ce8f1cb232fb",
+  "serialNumber": "urn:uuid:1da1421b-0638-47ad-8c3a-6ce6aab38cd3",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-12T10:08:47.088Z",
+    "timestamp": "2026-09-14T14:05:43.699Z",
     "tools": [
       {
         "vendor": "lolly",
@@ -2707,6 +2707,31 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:cargo/daachorse@3.0.3",
+      "name": "daachorse",
+      "version": "3.0.3",
+      "purl": "pkg:cargo/daachorse@3.0.3",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "5614204febbc33cc07a2806aa6440b904ac012b68eecc37f4493ea4a76455a3d"
+        }
+      ],
+      "properties": [
+        {
+          "name": "lolly:source",
+          "value": "shells/tauri-desktop/src-tauri/Cargo.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:cargo/darling_core@0.20.11",
       "name": "darling_core",
       "version": "0.20.11",
@@ -3968,10 +3993,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/fancy-regex@0.14.0",
+      "bom-ref": "pkg:cargo/fancy-regex@0.17.0",
       "name": "fancy-regex",
-      "version": "0.14.0",
-      "purl": "pkg:cargo/fancy-regex@0.14.0",
+      "version": "0.17.0",
+      "purl": "pkg:cargo/fancy-regex@0.17.0",
       "scope": "required",
       "licenses": [
         {
@@ -3983,7 +4008,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "6e24cb5a94bcae1e5408b0effca5cd7172ea3c5755049c5f3af4cd283a165298"
+          "content": "72cf461f865c862bb7dc573f643dd6a2b6842f7c30b07882b56bd148cc2761b8"
         }
       ],
       "properties": [
@@ -12898,31 +12923,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/tauri-build@2.6.2",
-      "name": "tauri-build",
-      "version": "2.6.2",
-      "purl": "pkg:cargo/tauri-build@2.6.2",
-      "scope": "required",
-      "licenses": [
-        {
-          "expression": "Apache-2.0 OR MIT"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "4aa1f9055fc23919a54e4e125052bed16ed04aef0487086e758fe01a67b451c7"
-        }
-      ],
-      "properties": [
-        {
-          "name": "lolly:source",
-          "value": "shells/tauri-desktop/src-tauri/Cargo.lock"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:cargo/tauri-build@2.6.3",
       "name": "tauri-build",
       "version": "2.6.3",
@@ -12942,7 +12942,7 @@
       "properties": [
         {
           "name": "lolly:source",
-          "value": "shells/tauri-mobile/src-tauri/Cargo.lock"
+          "value": "shells/tauri-desktop/src-tauri/Cargo.lock"
         }
       ]
     },
@@ -13073,10 +13073,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/tauri-plugin-dialog@2.7.2",
+      "bom-ref": "pkg:cargo/tauri-plugin-dialog@2.7.3",
       "name": "tauri-plugin-dialog",
-      "version": "2.7.2",
-      "purl": "pkg:cargo/tauri-plugin-dialog@2.7.2",
+      "version": "2.7.3",
+      "purl": "pkg:cargo/tauri-plugin-dialog@2.7.3",
       "scope": "required",
       "licenses": [
         {
@@ -13086,7 +13086,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b2d3c1dbe38037e7f590cdf2492594d5ceebe031e7bc7e827509b22a999d2940"
+          "content": "61854a36651aa48381e5e209f69a01273b77f3f9f91f0c430b1b98d33bd47229"
         }
       ],
       "properties": [
@@ -13173,10 +13173,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/tauri-plugin-single-instance@2.4.3",
+      "bom-ref": "pkg:cargo/tauri-plugin-single-instance@2.4.4",
       "name": "tauri-plugin-single-instance",
-      "version": "2.4.3",
-      "purl": "pkg:cargo/tauri-plugin-single-instance@2.4.3",
+      "version": "2.4.4",
+      "purl": "pkg:cargo/tauri-plugin-single-instance@2.4.4",
       "scope": "required",
       "licenses": [
         {
@@ -13186,7 +13186,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "b3214becf9ef5783c0ae99a3bb25adf5353a7a16ebf53e74b909e29205735c6c"
+          "content": "5cd0cb5c412a5071b69bab6a6df1583cbb89460d4a83b6a24769b08d15b6b1e1"
         }
       ],
       "properties": [
@@ -13398,31 +13398,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/tauri-utils@2.9.2",
-      "name": "tauri-utils",
-      "version": "2.9.2",
-      "purl": "pkg:cargo/tauri-utils@2.9.2",
-      "scope": "required",
-      "licenses": [
-        {
-          "expression": "Apache-2.0 OR MIT"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "092379df9a707631978e6c56b1bc2401d387f01e2d4a3c123360d167bbb9aa95"
-        }
-      ],
-      "properties": [
-        {
-          "name": "lolly:source",
-          "value": "shells/tauri-desktop/src-tauri/Cargo.lock"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:cargo/tauri-utils@2.9.3",
       "name": "tauri-utils",
       "version": "2.9.3",
@@ -13442,7 +13417,7 @@
       "properties": [
         {
           "name": "lolly:source",
-          "value": "shells/tauri-mobile/src-tauri/Cargo.lock"
+          "value": "shells/tauri-desktop/src-tauri/Cargo.lock"
         }
       ]
     },
@@ -14006,10 +13981,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:cargo/tokenizers@0.21.4",
+      "bom-ref": "pkg:cargo/tokenizers@0.23.2",
       "name": "tokenizers",
-      "version": "0.21.4",
-      "purl": "pkg:cargo/tokenizers@0.21.4",
+      "version": "0.23.2",
+      "purl": "pkg:cargo/tokenizers@0.23.2",
       "scope": "required",
       "licenses": [
         {
@@ -14021,7 +13996,7 @@
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "a620b996116a59e184c2fa2dfd8251ea34a36d0a514758c6f966386bd2e03476"
+          "content": "7afbf6e88718afcc138bad01d6ccc3051dbbc3b2ce9793d8b8a3aeb610969cfc"
         }
       ],
       "properties": [
