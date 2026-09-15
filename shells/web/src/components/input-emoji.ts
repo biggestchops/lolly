@@ -6,6 +6,7 @@ import type { HostV1 } from '@lolly-tools/core/host-v1';
 import { icon } from '../lib/icons.ts';
 import { emojiPickerOptions } from '../lib/emoji-picker-options.ts';
 import { tRaw } from '../i18n.ts';
+import { mountInputEmojiDisplay } from './input-emoji-display.ts';
 import './input-emoji.css';
 
 type TextField = HTMLInputElement | HTMLTextAreaElement;
@@ -37,8 +38,10 @@ export function mountInputEmoji(
   let dismiss: (() => void) | undefined;
   const artwork = emojiPickerOptions(host, runtime).emoji;
   const idScope = `c${chromeScopes++}_`;
+  const displays: ReturnType<typeof mountInputEmojiDisplay>[] = [];
   const off = artwork?.onSetChange?.(() => {
     if (disposed || !root.isConnected) return;
+    for (const display of displays) display.refresh();
     const cells = root.querySelectorAll<HTMLButtonElement>('[data-emoji-cell]');
     if (!cells.length) return;
     for (const cell of cells) cell.textContent = cell.value;
@@ -86,8 +89,11 @@ export function mountInputEmoji(
       });
     });
     wrapper.append(button);
+    const fieldScope = `${idScope}f${displays.length}_`;
+    if (field) displays.push(mountInputEmojiDisplay(field, wrapper,
+      (node) => runtime.applyEmojiToDom(node, { track: false, idScope: fieldScope })));
   }
-  return () => { disposed = true; off?.(); dismiss?.(); };
+  return () => { disposed = true; off?.(); dismiss?.(); for (const display of displays) display.dispose(); };
 }
 
 /** Emoji table columns replace a cell; ordinary text fields insert at the caret. */

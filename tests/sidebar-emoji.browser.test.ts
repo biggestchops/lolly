@@ -47,6 +47,16 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     assert.equal(await heading.inputValue(), `Hello ${emoji}`);
     await page.waitForURL(url => url.searchParams.get('emoji') === chosenSet);
     assert.equal(await heading.evaluate((field: HTMLInputElement) => field.selectionStart), 8);
+    const headingArt = heading.locator('..').locator('.input-emoji-display .lolly-emoji');
+    await headingArt.locator('svg').waitFor();
+    assert.equal(await headingArt.getAttribute('data-emoji'), emoji);
+    assert.match(await headingArt.getAttribute('data-emoji-sum') ?? '', /^[a-f0-9]{16}$/, 'the field must draw verified artwork, not a placeholder');
+    assert.equal(await heading.evaluate(field => getComputedStyle(field).webkitTextFillColor), 'rgba(0, 0, 0, 0)');
+    // The visible artwork leaves native selection and keyboard editing intact.
+    await heading.press('End'); await page.keyboard.type('!');
+    assert.equal(await heading.inputValue(), `Hello ${emoji}!`);
+    await heading.press('Backspace');
+    assert.equal(await heading.inputValue(), `Hello ${emoji}`);
     // An existing emoji table cell uses the same chooser and replaces just that cell.
     const tableCell = page.locator('[data-emoji-cell]').first();
     await tableCell.click();
@@ -66,6 +76,36 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     await page.locator('.emoji-pop unicode-emoji-picker').waitFor();
     await pick();
     assert.equal(await code.inputValue(), `const hello = "${emoji}";`);
+    await code.locator('..').locator('.input-emoji-display .lolly-emoji svg').waitFor();
+    // Wrapped lines must keep the same geometry as native character advances.
+    await code.fill(`A ${emoji} B 👨‍👩‍👧‍👦 C ❤️ D\n${'Words to wrap around the field. '.repeat(12)}${emoji} FINISH`);
+    await page.waitForFunction(() => {
+      const field = document.querySelector<HTMLTextAreaElement>('textarea[data-input-id="code"]')!;
+      return field.parentElement!.querySelector('.input-emoji-display')?.textContent === field.value;
+    });
+    const geometry = await code.evaluate((field: HTMLTextAreaElement) => {
+      const mirror = field.parentElement!.querySelector<HTMLElement>('.input-emoji-display-text')!;
+      const reference = mirror.cloneNode(true) as HTMLElement;
+      reference.style.visibility = 'hidden';
+      for (const glyph of reference.querySelectorAll<HTMLElement>('.lolly-emoji')) glyph.replaceWith(glyph.dataset.emoji!);
+      mirror.parentElement!.append(reference);
+      const bounds = (node: HTMLElement) => {
+        const range = document.createRange(); range.selectNodeContents(node.lastChild!);
+        return range.getBoundingClientRect().toJSON();
+      };
+      const actual = bounds(mirror), expected = bounds(reference);
+      reference.remove();
+      field.style.height = '80px'; field.style.maxHeight = '80px';
+      field.scrollTop = field.scrollHeight;
+      return { actual, expected };
+    });
+    assert.ok(Math.abs(geometry.actual.y - geometry.expected.y) < 1, 'artwork must not change line wrapping');
+    assert.ok(Math.abs(geometry.actual.x - geometry.expected.x) < 1, 'text after emoji must align with native advances');
+    await page.waitForFunction(() => {
+      const field = document.querySelector<HTMLTextAreaElement>('textarea[data-input-id="code"]')!;
+      const mirror = field.parentElement!.querySelector<HTMLElement>('.input-emoji-display-text')!;
+      return field.scrollTop > 0 && mirror.style.transform.includes(`${-field.scrollTop}px`);
+    });
     assert.deepEqual(await page.locator('#tool-inputs .input-section-summary').allTextContents(), ['Text', 'Title bar', 'Look', 'Callouts']);
     assert.equal(await page.locator('#tool-inputs .input-section-icon svg').count(), 4);
 
@@ -81,6 +121,7 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     await page.locator('.emoji-pop unicode-emoji-picker').waitFor();
     await pick();
     assert.equal(await card.inputValue(), `Chief${emoji}`);
+    await card.locator('..').locator('.input-emoji-display .lolly-emoji svg').waitFor();
     assert.equal(await sibling.inputValue(), other);
 
     // A link's set beats the remembered set, including a narrow, large-text display.
@@ -101,5 +142,30 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     await page.locator('.emoji-choice').getByRole('button', { name: 'Cancel', exact: true }).click();
     assert.equal(new URL(page.url()).searchParams.get('emoji'), linkedSet);
     await page.keyboard.press('Escape');
+    const mobileHeading = page.locator('input[data-input-id="heading"]');
+    await mobileHeading.fill(`Hi ${emoji}`);
+    const mobileArt = mobileHeading.locator('..').locator('.input-emoji-display .lolly-emoji');
+    await mobileArt.locator('svg').waitFor();
+    const blackSum = await mobileArt.getAttribute('data-emoji-sum');
+    assert.match(blackSum ?? '', /^[a-f0-9]{16}$/);
+    await mobileHeading.locator('..').getByRole('button', { name: 'Insert emoji', exact: true }).click();
+    await page.locator('.emoji-pop').getByRole('button', { name: 'Change emoji set', exact: true }).click();
+    await choose();
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(sum => {
+      const next = document.querySelector('input[data-input-id="heading"]')?.parentElement?.querySelector('.input-emoji-display .lolly-emoji')?.getAttribute('data-emoji-sum');
+      return next && next !== sum;
+    }, blackSum);
+    assert.equal(await mobileHeading.inputValue(), `Hi ${emoji}`);
+    await mobileHeading.fill(`${'Long text '.repeat(5)}${emoji}`);
+    await mobileHeading.evaluate((field: HTMLInputElement) => {
+      field.style.maxWidth = '160px';
+      field.scrollLeft = field.scrollWidth;
+    });
+    await page.waitForFunction(() => {
+      const field = document.querySelector<HTMLInputElement>('input[data-input-id="heading"]')!;
+      const mirror = field.parentElement!.querySelector<HTMLElement>('.input-emoji-display-text');
+      return field.scrollLeft > 0 && mirror?.style.transform.includes(`${-field.scrollLeft}px`);
+    });
   } finally { await context.close(); await closeBrowser(); }
 });
