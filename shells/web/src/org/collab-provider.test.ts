@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { CanvasOp } from '@lolly-tools/core/canvas-op-v1';
+import { ReferenceCanvasDoc, type CanvasOp } from '@lolly-tools/core/canvas-op-v1';
 import {
   COLLAB_CLOSE,
   MAX_OPS_PER_FRAME,
@@ -37,6 +37,8 @@ import {
   registerWorkCollabFactory,
 } from './collab-provider.ts';
 import type { CollabOutboxStore, WorkCollabEvent, WorkCollabHandle } from './collab-provider.ts';
+import { createOpGuard, type OpGuard } from '../collab/op-guard.ts';
+import { readFileSync } from 'node:fs';
 
 // ── Harness ───────────────────────────────────────────────────────────────────
 
@@ -104,6 +106,7 @@ function memoryStore(seed?: Map<string, CanvasOp[]>): CollabOutboxStore & { data
 }
 
 interface HarnessOptions {
+  guard?: OpGuard;
   clientId?: string;
   store?: CollabOutboxStore & { data: Map<string, CanvasOp[]> };
   outboxLimit?: number;
@@ -128,6 +131,7 @@ async function harness(o: HarnessOptions = {}): Promise<Harness> {
     url: 'wss://example.test/ws/collab/sess-1',
     socket: FakeSocket as unknown as CollabSocketCtor,
     store,
+    guard: o.guard,
     principal: o.principal,
     random: o.random ?? (() => 0),
     outboxLimit: o.outboxLimit,
@@ -159,7 +163,7 @@ function joinNow(h: Harness, ack: Record<string, unknown> = {}): void {
   const s = h.socket();
   s.opened();
   s.deliver({
-    t: 'join-ack',
+    t: 'join-ack', receipts: 1,
     roster: [],
     docState: null,
     serverClock: 0,
@@ -182,10 +186,10 @@ test('join is sent on open, and join-ack takes the session live as a writer', as
 
   h.socket().opened();
   assert.equal(h.handle.state().status, 'joining');
-  assert.deepEqual(h.socket().framesOfType('join'), [{ t: 'join', opVersion: '1.1.0' }]);
+  assert.deepEqual(h.socket().framesOfType('join'), [{ t: 'join', opVersion: '1.1.0', presenceVersion: 1, receipts: 1 }]);
 
   h.socket().deliver({
-    t: 'join-ack', roster: [{ id: 'c1', userId: 'u1', name: 'Priya' }], docState: null,
+    t: 'join-ack', receipts: 1, roster: [{ id: 'c1', userId: 'u1', name: 'Priya' }], docState: null,
     serverClock: 4, opVersion: '1.1.0',
     you: { id: 'c9', userId: 'me', name: 'Me', role: 'writer' },
     unsynced: ['legacy-table'],
@@ -230,11 +234,12 @@ test('a join-ack that declares no role at all seats us as an OBSERVER', async ()
   // worst of both outcomes.
   const h = await harness();
   h.socket().opened();
-  h.socket().deliver({ t: 'join-ack', roster: [], docState: null, serverClock: 0, opVersion: '1.1.0' });
+  h.socket().deliver({ t: 'join-ack', receipts: 1, roster: [], docState: null, serverClock: 0, opVersion: '1.1.0' });
   assert.equal(h.handle.state().role, 'observer');
 
   h.socket().sent.length = 0;
   h.handle.adapter.apply(param('title', 'nope', 'dev-a', 1));
+  await h.handle.persisted();
   assert.deepEqual(h.socket().framesOfType('ops'), []);
   assert.deepEqual(h.handle.outbox(), []);
   h.handle.close();
@@ -246,6 +251,7 @@ test('an observer never sends an ops frame and never queues one', async () => {
   h.socket().sent.length = 0;
 
   h.handle.adapter.apply(param('title', 'nope', 'dev-a', 1));
+  await h.handle.persisted();
   h.handle.adapter.onLocalChange(
     { moved: [], restyled: [], added: ['r1'], removed: [], zChanged: [], frames: [] },
     new Map([['r1', { label: 'x' }]]),
@@ -271,6 +277,7 @@ test('a local op goes out as an ops frame; a remote one lands in the doc and is 
   h.socket().sent.length = 0;
 
   h.handle.adapter.apply(param('title', 'Hello', 'dev-a', 7));
+  await h.handle.persisted();
   const sent = h.socket().framesOfType('ops');
   assert.equal(sent.length, 1);
   assert.deepEqual(sent[0]!.ops, [param('title', 'Hello', 'dev-a', 7)]);
@@ -279,24 +286,25 @@ test('a local op goes out as an ops frame; a remote one lands in the doc and is 
   const remote = param('subtitle', 'From Priya', 'dev-b', 9);
   h.socket().deliver({ t: 'ops', from: 'u2', ops: [remote] });
   assert.equal(h.handle.adapter.state().params.get('subtitle'), 'From Priya');
-  const opsEvents = h.events.filter((e) => e.kind === 'ops');
+  const opsEvents = h.events.filter((e): e is Extract<WorkCollabEvent, { kind: 'ops' }> => e.kind === 'ops' && !e.snapshot);
   assert.equal(opsEvents.length, 1);
   assert.deepEqual(opsEvents[0]!.ops, [remote]);
   assert.equal(opsEvents[0]!.from, 'u2');
   h.handle.close();
 });
 
-test('our own ops echoed back are an ack, never a second apply', async () => {
+test('peer echo does not acknowledge durable storage or apply twice', async () => {
   const h = await harness();
   joinNow(h);
   const mine = param('title', 'Hello', 'dev-a', 7);
   h.handle.adapter.apply(mine);
+  await h.handle.persisted();
   assert.equal(h.handle.outbox().length, 1);
 
   h.socket().deliver({ t: 'ops', from: 'me', ops: [mine] });
-  assert.deepEqual(h.handle.outbox(), []);
+  assert.deepEqual(h.handle.outbox(), [mine]);
   // No inbound `ops` event for our own echo - a local edit must not round-trip.
-  assert.equal(h.events.filter((e) => e.kind === 'ops').length, 0);
+  assert.equal(h.events.filter((e) => e.kind === 'ops' && !e.snapshot).length, 0);
   h.handle.close();
 });
 
@@ -389,7 +397,7 @@ test('join-ack docState seeds local state and reaches the runtime as ops', async
   const h = await harness();
   h.socket().opened();
   h.socket().deliver({
-    t: 'join-ack',
+    t: 'join-ack', receipts: 1,
     you: { id: 'c9', userId: 'me', role: 'writer' },
     serverClock: 3,
     docState: {
@@ -424,7 +432,7 @@ test('the seed never overwrites a key an unacked local op still owns', async () 
   await Promise.resolve();
   h.socket().opened();
   h.socket().deliver({
-    t: 'join-ack', you: { id: 'c9', userId: 'me', role: 'writer' }, serverClock: 50,
+    t: 'join-ack', receipts: 1, you: { id: 'c9', userId: 'me', role: 'writer' }, serverClock: 50,
     docState: { params: { title: 'Stale server value', subtitle: 'Theirs' } },
   });
 
@@ -439,15 +447,17 @@ test('the seed never overwrites a key an unacked local op still owns', async () 
 
 // ── The outbox ────────────────────────────────────────────────────────────────
 
-test('the outbox persists, replays after a reconnect join-ack, and retires on that second delivery', async () => {
+test('the outbox retains stable identities on reconnect until an explicit receipt', async () => {
   const h = await harness();
   joinNow(h);
   const mine = param('title', 'Typed while online', 'dev-a', 5);
   h.handle.adapter.apply(mine);
   await h.handle.persisted();
-  assert.deepEqual(h.store.data.get(KEY()), [mine]);
+  await h.handle.persisted();
+  assert.deepEqual(h.store.data.get(KEY())?.map(({ deliveryId: _id, ...op }: CanvasOp & { deliveryId?: string }) => op), [mine]);
+  const firstIds = h.socket().framesOfType('ops')[0]!.ids;
   // Written to the wire ⇒ nothing is "pending", but the journal still holds it.
-  assert.equal(h.handle.state().pending, 0);
+  assert.equal(h.handle.state().pending, 1);
   assert.equal(h.handle.state().queued, 1);
 
   // The socket drops (not a typed close) → backoff timer armed.
@@ -466,7 +476,10 @@ test('the outbox persists, replays after a reconnect join-ack, and retires on th
   const replay = h.socket().framesOfType('ops');
   assert.equal(replay.length, 1);
   assert.deepEqual(replay[0]!.ops, [mine]);
-  // …and retired by that second delivery. There is no echo and no watermark on this
+  assert.deepEqual(replay[0]!.ids, firstIds);
+  assert.deepEqual(h.handle.outbox(), [mine]);
+  h.socket().deliver({ t: 'receipt', batchId: replay[0]!.batchId, durableRevision: 2, acceptedIds: replay[0]!.ids, rejectedIds: [] });
+  // Retired only by the explicit receipt. There is no echo and no watermark on this
   // wire (the gateway broadcasts ops to PEERS only), so an entry that waited for one
   // would pend forever and re-post on every future join.
   assert.deepEqual(h.handle.outbox(), []);
@@ -482,6 +495,7 @@ test('an entry never yet written to a socket survives its first replay', async (
   h.socket().dropped(1006);
   const mine = param('title', 'Typed while offline', 'dev-a', 5);
   h.handle.adapter.apply(mine);
+  await h.handle.persisted();
   assert.equal(h.handle.state().pending, 1, 'nobody has seen this edit yet');
 
   h.timers[0]!.fire();
@@ -489,13 +503,13 @@ test('an entry never yet written to a socket survives its first replay', async (
   joinNow(h);
   // First delivery - kept, because a first write to a socket is not a receipt.
   assert.deepEqual(h.handle.outbox(), [mine]);
-  assert.equal(h.handle.state().pending, 0);
+  assert.equal(h.handle.state().pending, 1);
 
   h.socket().dropped(1006);
   h.timers[1]!.fire();
   await Promise.resolve();
   joinNow(h);
-  assert.deepEqual(h.handle.outbox(), [], 'retired on the second delivery');
+  assert.deepEqual(h.handle.outbox(), [mine], 'second delivery is still pending');
   h.handle.close();
 });
 
@@ -535,25 +549,15 @@ test('the outbox key is scoped by principal, so a shared device cannot cross-rep
   assert.notEqual(KEY('user-a'), collabOutboxKey('sess-1', { base: 'https://other.test', principal: 'user-a' }));
 });
 
-test('the cap sheds DELIVERED entries silently and undelivered ones with a warning', async () => {
-  // Delivered: shedding costs replay depth, not an edit, so it is silent.
-  const live = await harness({ outboxLimit: 2 });
-  joinNow(live);
-  for (let i = 1; i <= 4; i++) live.handle.adapter.apply(param(`k${i}`, 'v', 'dev-a', i));
-  assert.deepEqual(live.handle.outbox().map((op) => (op.k === 'param' ? op.key : '')), ['k3', 'k4']);
-  assert.deepEqual(live.events.filter((e) => e.kind === 'warning'), []);
-  live.handle.close();
-
-  // Undelivered: this IS the user's work going missing, so it is surfaced.
-  const offline = await harness({ outboxLimit: 2 });
-  joinNow(offline);
-  offline.socket().dropped(1006);
-  for (let i = 1; i <= 4; i++) offline.handle.adapter.apply(param(`k${i}`, 'v', 'dev-a', i));
-  assert.deepEqual(offline.handle.outbox().map((op) => (op.k === 'param' ? op.key : '')), ['k3', 'k4']);
-  const warnings = offline.events.filter((e) => e.kind === 'warning');
-  assert.equal(warnings.length, 2);
-  assert.deepEqual(warnings[0], { kind: 'warning', code: 'outbox-overflow', dropped: 1 });
-  offline.handle.close();
+test('outbox capacity preserves queued edits and pauses further writes', async () => {
+  const h = await harness({ outboxLimit: 2 });
+  joinNow(h);
+  for (let i = 1; i <= 4; i++) h.handle.adapter.apply(param(`k${i}`, 'v', 'dev-a', i));
+  assert.deepEqual(h.handle.outbox().map(op => op.k === 'param' ? op.key : ''), ['k1', 'k2', 'k3']);
+  assert.equal(h.handle.state().role, 'observer');
+  assert.equal(h.handle.state().reason, 'outbox-full');
+  assert.deepEqual(h.events.filter(e => e.kind === 'warning'), [{ kind: 'warning', code: 'outbox-overflow', dropped: 0 }]);
+  h.handle.close();
 });
 
 test('serverClock is a room-wide maximum and can never retire an entry', async () => {
@@ -561,6 +565,7 @@ test('serverClock is a room-wide maximum and can never retire an entry', async (
   joinNow(h);
   const mine = param('title', 'Mine', 'dev-a', 3);
   h.handle.adapter.apply(mine);
+  await h.handle.persisted();
   h.socket().dropped(1006);
   h.timers[0]!.fire();
   await Promise.resolve();
@@ -570,7 +575,7 @@ test('serverClock is a room-wide maximum and can never retire an entry', async (
   // revision under `serverClock` must not retire the entry on its own.
   h.socket().readyState = 3;
   h.socket().deliver({
-    t: 'join-ack', you: { id: 'c9', userId: 'me', role: 'writer' },
+    t: 'join-ack', receipts: 1, you: { id: 'c9', userId: 'me', role: 'writer' },
     serverClock: 999999, docState: null,
   });
   assert.deepEqual(h.handle.outbox(), [mine]);
@@ -623,6 +628,8 @@ test('a replay larger than the gateway cap goes out as several frames, never one
   assert.equal(h.handle.outbox().length, many.length);
 
   joinNow(h);
+  assert.equal(h.socket().framesOfType('ops').length, 1, 'the first second uses one operation budget');
+  h.timers[0]!.fire();
   const frames = h.socket().framesOfType('ops');
   assert.equal(frames.length, 2);
   assert.equal((frames[0]!.ops as unknown[]).length, MAX_OPS_PER_FRAME);
@@ -784,20 +791,22 @@ test('overlapping connect() calls open exactly one socket', async () => {
   handle.close();
 });
 
-test('close() keeps undelivered work and drops what the gateway already has', async () => {
+test('close() preserves all work without a durable receipt', async () => {
   const h = await harness();
   joinNow(h);
   const delivered = param('a', 'sent', 'dev-a', 1);
   h.handle.adapter.apply(delivered);
+  await h.handle.persisted();
   h.socket().dropped(1006);
   const stranded = param('b', 'never sent', 'dev-a', 2);
   h.handle.adapter.apply(stranded);
+  await h.handle.persisted();
 
   h.handle.close();
   await h.handle.persisted();
   // Replaying a finished session's delivered ops into the next mount buys nothing;
   // the edit nobody has seen is exactly what the next mount is meant to recover.
-  assert.deepEqual(h.store.data.get(KEY()), [stranded]);
+  assert.deepEqual(h.store.data.get(KEY())?.map(({ deliveryId: _id, ...op }: CanvasOp & { deliveryId?: string }) => op), [delivered, stranded]);
 });
 
 test('connect() after close() is inert', async () => {
@@ -930,4 +939,129 @@ test('isCrossOriginSocket accepts only the page origin', () => {
   // A downgrade is not "same origin" either, and neither is a URL we cannot parse.
   assert.equal(isCrossOriginSocket('ws://lolly.tools/ws/x', 'https://lolly.tools/'), true);
   assert.equal(isCrossOriginSocket('not a url', 'https://lolly.tools/'), true);
+});
+
+test('join checkpoints preserve field origins when a same-clock gesture arrives in another chunk', async () => {
+  const h = await harness();
+  const doc = new ReferenceCanvasDoc();
+  doc.apply({ k: 'add', col: 'rows', id: 'a', row: { x: 0, fill: 'red' }, orderKey: 'a', origin: { client: 'a', clock: 1 } });
+  doc.apply({ k: 'field', col: 'rows', id: 'a', field: 'fill', value: 'blue', origin: { client: 'a', clock: 100 } });
+  joinNow(h, { checkpoint: doc.checkpoint(), serverClock: 100 });
+  h.socket().deliver({ t: 'ops', from: 'peer', ops: [{ k: 'geom', col: 'rows', id: 'a', fields: { x: 9 }, origin: { client: 'a', clock: 100 } }] });
+  assert.deepEqual(h.handle.adapter.state().collections?.get('rows')?.boxes.get('a'), { fill: 'blue', x: 9 });
+  h.handle.close();
+});
+
+test('a real Design manifest accepts recovered geometry, order and tombstone registers', async () => {
+  const { inputs } = JSON.parse(readFileSync(new URL('../../../../community/design/tool.json', import.meta.url), 'utf8'));
+  const h = await harness({ guard: createOpGuard({ inputs }) });
+  const doc = new ReferenceCanvasDoc();
+  doc.apply({ k: 'add', col: 'boxes', id: 'a', row: { id: 'a', x: 10, y: 20, w: 100, h: 80, text: 'Hello' }, orderKey: 'a', origin: { client: 'peer', clock: 2 } });
+  doc.apply({ k: 'remove', col: 'boxes', id: 'deleted', origin: { client: 'peer', clock: 3 } });
+  joinNow(h, { checkpoint: doc.checkpoint(), serverClock: 3 });
+  assert.equal(h.handle.state().status, 'live');
+  assert.equal(h.handle.adapter.state().collections?.get('boxes')?.boxes.get('a')?.x, 10);
+  assert.ok(h.handle.adapter.state().collections?.get('boxes')?.removed?.has('deleted'));
+  h.handle.close();
+});
+
+test('an unreadable outbox is reported and is never overwritten on close', async () => {
+  const store = memoryStore(); let mutations = 0;
+  store.load = async () => { throw new Error('blocked'); };
+  store.clear = store.save = async () => { mutations++; };
+  const h = await harness({ store });
+  assert.equal(h.handle.state().reason, 'outbox-load-failed');
+  assert.equal(h.handle.state().role, 'observer');
+  assert.equal(h.sockets.length, 0);
+  h.handle.close(); await h.handle.persisted();
+  assert.equal(mutations, 0);
+  assert.ok(h.events.some(e => e.kind === 'error' && e.code === 'outbox-load-failed'));
+});
+
+test('an edit arriving during a local save waits for its own persisted delivery ID', async () => {
+  const store = memoryStore();
+  const releases: (() => void)[] = [];
+  store.save = async (key, ops) => {
+    await new Promise<void>(resolve => releases.push(resolve));
+    store.data.set(key, [...ops]);
+  };
+  const h = await harness({ store }); joinNow(h);
+  const write = (clock: number) => h.handle.adapter.apply({ k:'param', key:'title', value:`edit-${clock}`, origin:{client:'dev-a',clock} });
+  const tick = async () => { for (let i=0;i<10;i++) await Promise.resolve(); };
+  write(1); await tick(); assert.equal(releases.length, 1);
+  write(2);
+  assert.equal(h.socket().framesOfType('ops').length, 0);
+  releases[0]!(); await tick(); assert.equal(releases.length, 2);
+  let sent = h.socket().framesOfType('ops').flatMap(f => f.ops as CanvasOp[]);
+  assert.deepEqual(sent.map(op => op.origin.clock), [1], 'the second ID has not reached IndexedDB yet');
+  releases[1]!(); await h.handle.persisted();
+  sent = h.socket().framesOfType('ops').flatMap(f => f.ops as CanvasOp[]);
+  assert.deepEqual(sent.map(op => op.origin.clock), [1,2]);
+  store.save = async () => {};
+  h.handle.close(); await h.handle.persisted();
+});
+
+test('snapshot projection has schema-valid origins and keeps the recovered Lamport floor', async () => {
+  const { validateCanvasOp } = await import('@lolly-tools/core');
+  const h = await harness();
+  joinNow(h, { serverClock: 900, docState: { params: { title: 'Recovered' } } });
+  const snapshot = h.handle.snapshot!();
+  assert.equal(snapshot.clock, 900);
+  assert.ok(snapshot.ops.length);
+  for (const op of snapshot.ops) assert.equal(validateCanvasOp(op).valid, true);
+  h.handle.close();
+});
+
+test('live demotion updates self and peer seats without confusing two connections of one user', async () => {
+  const h = await harness();
+  joinNow(h, { roster: [{ id: 'other-tab', userId: 'me', name: 'Me', role: 'writer' }] });
+  h.socket().deliver({ t: 'peer-role', id: 'other-tab', role: 'observer' });
+  assert.equal(h.handle.state().role, 'writer');
+  assert.equal(h.handle.state().roster[0]!.role, 'observer');
+  h.socket().deliver({ t: 'peer-role', id: 'conn-me', role: 'observer' });
+  assert.equal(h.handle.state().role, 'observer');
+  assert.equal(h.handle.state().self!.role, 'observer');
+  h.handle.adapter.apply(param('title', 'blocked', 'dev-a', 1));
+  await h.handle.persisted();
+  assert.equal(h.handle.outbox().length, 0);
+  h.socket().deliver({ t: 'peer-role', id: 'conn-me', role: 'writer' });
+  assert.equal(h.handle.state().role, 'observer', 'promotion needs a new seat admission');
+  h.handle.close();
+});
+
+test('a rejoined observer can resolve a saved outbox through durable receipts', async () => {
+  const store = memoryStore();
+  const pending = { ...param('title', 'pending before demotion', 'dev-a', 1), deliveryId: 'saved-op' };
+  await store.save(KEY(), [pending]);
+  const h = await harness({ store });
+  joinNow(h, { you: { id: 'observer', userId: 'me', role: 'observer' } });
+  const frame = h.socket().framesOfType('ops')[0]!;
+  assert.deepEqual(frame.ids, ['saved-op']);
+  h.socket().deliver({ t: 'receipt', batchId: frame.batchId, acceptedIds: ['saved-op'], rejectedIds: [], durableRevision: 2 });
+  await h.handle.persisted();
+  assert.equal(h.handle.outbox().length, 0);
+  h.handle.close();
+});
+
+test('an accepted retry reconciles a newer REST save while retaining other pending edits', async () => {
+  const store = memoryStore();
+  const old = { ...param('title', 'old accepted edit', 'dev-a', 10), deliveryId: 'old-op' };
+  await store.save(KEY(), [old]);
+  const h = await harness({ store });
+  const current = new ReferenceCanvasDoc();
+  current.apply(param('title', 'newer REST save', 'lw:seed', 0));
+  joinNow(h, { checkpoint: current.checkpoint() });
+  assert.equal(h.handle.adapter.state().params.get('title'), 'old accepted edit');
+  const replay = h.socket().framesOfType('ops')[0]!;
+  h.handle.adapter.apply(param('subtitle', 'still pending', 'dev-a', 11));
+  await h.handle.persisted();
+  h.socket().deliver({ t: 'receipt', batchId: replay.batchId, acceptedIds: ['old-op'], rejectedIds: [],
+    durableRevision: 4, checkpoint: current.checkpoint(), serverClock: 0 });
+  await h.handle.persisted();
+  assert.equal(h.handle.adapter.state().params.get('title'), 'newer REST save');
+  assert.equal(h.handle.adapter.state().params.get('subtitle'), 'still pending');
+  assert.equal(h.handle.outbox().length, 1);
+  assert.ok(h.events.findLast(e => e.kind === 'ops' && e.snapshot));
+  assert.equal(h.events.some(e => e.kind === 'error'), false);
+  h.handle.close();
 });

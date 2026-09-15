@@ -1,3 +1,4 @@
+import { collabHistoryStamp } from '../../lib/collab-undo.ts';
 // SPDX-License-Identifier: MPL-2.0
 /**
  * tool view: mount-time setup blocks (session origin, seeding, templates, row ids, sidebar, chrome, canvas observers, live controls).
@@ -13,7 +14,7 @@ import type { InputValue } from '../../../../../engine/src/inputs.js';
 import { createInteractiveToolRuntime as createRuntime } from '../../lib/mount-runtime.ts';
 import { attachCollabPlumbing } from '../../lib/collab-plumbing.ts';
 import { getCollabSessionSource } from '../../lib/collab-session-source.ts';
-import { takeCarriedMountState, takeEphemeralState } from '../../lib/collab-live-mount.ts';
+import { takeCarriedMountState, takeEphemeralState, pendingLiveCollab } from '../../lib/collab-live-mount.ts';
 import { captureNeutralPinned } from '../../lib/capture-neutral.ts';
 import { migrateBlockRowIds } from '../../lib/row-id.ts';
 import { installDocumentSurface } from '../../lib/document-surface.ts';
@@ -378,6 +379,7 @@ export async function templatePick(tview: ToolViewCtx): Promise<void> {
     if (found) await applyTemplateSeed(found.values);
   } else if (
     !slot &&
+    pendingLiveCollab()?.toolId !== toolId &&
     !tview.seededDirect &&
     Object.keys(values).length === 0 &&
     (!reachedViaLink || templateParam === '')
@@ -638,7 +640,7 @@ export function wrapSetInput(tview: ToolViewCtx): void {
       if (
         cur &&
         inputHistory.record(
-          { id, label: tview.history.changeLabel(cur, cur.value, value), before: cur.value, after: value },
+          { id, label: tview.history.changeLabel(cur, cur.value, value), before: cur.value, after: value, collabStamp: collabHistoryStamp(runtime) },
           Date.now()
         ) !== 'ignored'
       ) {

@@ -119,13 +119,14 @@ import type { CanvasOp, CanvasSyncAdapter, Damage } from '@lolly-tools/core/canv
 // A's home, but op-guard is transport-blind by construction - it imports the shared
 // contract and `row-id.ts` and nothing else - so a session may reach for it exactly
 // as `lib/beam-sink.ts` reaches for `collab/beam-protocol.ts`.
-import { ABUSE_REASONS, createOpGuard } from '../collab/op-guard.ts';
+import { ABUSE_REASONS, DEFAULT_OP_GUARD_CAPS, createOpGuard } from '../collab/op-guard.ts';
 import type {
   OpGuard, OpGuardCaps, OpGuardInput, OpRejectReason, OpRejection, RateKind,
 } from '../collab/op-guard.ts';
 import { assignColor, collabPalette } from './collab-colors.ts';
 import type { CollabColor, CollabPaletteEntry } from './collab-colors.ts';
 import { attachCollabPlumbing } from './collab-plumbing.ts';
+import type { CollabDocumentSnapshot } from './collab-plumbing.ts';
 import type { CollabPlumbing, CollabRuntime } from './collab-plumbing.ts';
 import { createPresenceEngine } from './collab-presence.ts';
 import type { PresenceEngine, PresenceFrame, PresencePeer, PresenceState } from './collab-presence.ts';
@@ -172,8 +173,14 @@ export interface CollabSelf {
 /**
  * Everything a transport supplies. See the header for how each track fills it in.
  */
+export interface CollabSaveState { pending: number; message: string }
+
 export interface CollabSessionHandle {
-  /** The convergence document. `ReferenceCanvasDoc` in Track A, Yjs in Track B. */
+  /** A work gateway already meters each authenticated sender. Its combined feed
+   * includes checkpoint projections; still validate every op against this model. */
+  readonly admission?: 'work-room';
+  readonly saveIn?: CollabStream<CollabSaveState>;
+  /** The convergence document, shared by private and work transports. */
   readonly adapter: CanvasSyncAdapter;
   /** This client's own role. */
   readonly role: CollabRole;
@@ -372,11 +379,13 @@ export interface CollabSession {
   setFocus(focus: string | null | undefined): void;
   /** Re-read `getLocation()` and publish it (a slide change, a scene switch). */
   refreshLocation(): void;
+  updateSurface(patch: Partial<PresenceState>): void;
   /** Inbound ops from the transport - the only door they have. Guarded (section 11.21)
    *  and then coalesced per frame by the plumbing: an op the guard drops never
    *  reaches the adapter, and a structurally abusive message takes the whole batch
    *  with it and raises `onAbuse`. */
   applyRemotePatch(ops: readonly CanvasOp[]): void;
+  applySnapshot(snapshot: CollabDocumentSnapshot): void;
   /** Tear everything down: listeners, subscriptions, presence timers, the op
    *  wrapper, and finally the transport. Idempotent - safe as a `_cleanup` hook. */
   close(): void;
@@ -724,9 +733,20 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
     if (ops.length === 0) return ops;
     // The rate lane is charged FIRST and from the batch length alone, so a flood is
     // caught for the cost of a length read even when every op in it is well formed.
-    if (!guard.recordAndCheckRate('ops', ops.length, now())) {
+    if (handle.admission !== 'work-room' && !guard.recordAndCheckRate('ops', ops.length, now())) {
       refuse('ops', [{ reason: 'rate-limited', detail: String(ops.length) }]);
       return [];
+    }
+    if (handle.admission === 'work-room') {
+      const accepted: CanvasOp[] = [];
+      const size = Math.max(1, opts.guardCaps?.opsPerMessage ?? DEFAULT_OP_GUARD_CAPS.opsPerMessage);
+      for (let i = 0; i < ops.length; i += size) {
+        const checked = guard.checkOps(ops.slice(i, i + size));
+        if (checked.rejected.length) refuse('ops', checked.rejected);
+        if (checked.rejected.some(r => ABUSE_REASONS.has(r.reason))) return [];
+        accepted.push(...checked.ok);
+      }
+      return accepted;
     }
     const checked = guard.checkOps(ops);
     if (checked.rejected.length) refuse('ops', checked.rejected);
@@ -750,8 +770,19 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
    * `rtc-handle.ts`'s bare `emitter<PresenceFrame>()`), so `seeded` is always false
    * there and this is a no-op on that track.
    */
+  const presenceRates = new Map<string, { at: number; count: number }>();
+  function presenceWithinRate(from: string): boolean {
+    const at = now();
+    for (const [id, rate] of presenceRates) if (at - rate.at >= 1000 || at < rate.at) presenceRates.delete(id);
+    let rate = presenceRates.get(from);
+    if (!rate) {
+      if (presenceRates.size >= 512) return false;
+      rate = { at, count: 0 }; presenceRates.set(from, rate);
+    }
+    return ++rate.count <= (opts.guardCaps?.presencePerSecond ?? DEFAULT_OP_GUARD_CAPS.presencePerSecond);
+  }
   function admitPresence(frame: PresenceFrame, seeded = false): boolean {
-    if (!seeded && !guard.recordAndCheckRate('presence', 1, now())) {
+    if (!seeded && !presenceWithinRate(frame.from)) {
       refuse('presence', [{ reason: 'rate-limited' }], frame.from);
       return false;
     }
@@ -787,6 +818,7 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
 
   /** This client's presence payload. `userId` is the client id: a private collab
    *  has no account, and section 11.23 says nothing else from the profile ever crosses. */
+  let surfaceState: Partial<PresenceState> = {};
   function localState(): PresenceState {
     const c = selfColor();
     const base: PresenceState = {
@@ -796,6 +828,7 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
     };
     const location = opts.getLocation?.();
     return {
+      ...surfaceState,
       ...base,
       ...(focus !== undefined ? { focus } : {}),
       ...(typeof location === 'string' && location ? { location } : {}),
@@ -908,6 +941,7 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
   const adapter = handle.role === 'observer' ? observerAdapter(handle.adapter) : handle.adapter;
   const plumbing: CollabPlumbing | null = attachCollabPlumbing(runtime, {
     adapter,
+    canEdit: () => handle.role === 'writer',
     clientId: selfId,
     ...(opts.raf ? { raf: opts.raf } : {}),
   });
@@ -928,7 +962,7 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
   }));
   seeding = false;
   teardown.push(handle.events.subscribe((next) => {
-    if (closed || next === connection) return;
+    if (closed || next === connection && cached?.role === handle.role) return;
     connection = next;
     notify();
   }));
@@ -1020,6 +1054,10 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
     setFocus(next) {
       applyFocus(typeof next === 'string' && next ? next : undefined);
     },
+    updateSurface(patch) {
+      surfaceState = { ...surfaceState, ...patch };
+      publish();
+    },
     refreshLocation() {
       if (closed) return;
       publish();
@@ -1031,6 +1069,12 @@ export function createCollabSession(opts: CollabSessionOptions): CollabSession {
       // queues anything, and therefore before `adapter.applyRemotePatch` can put a
       // hostile write into the converging document (where LWW would keep it).
       plumbing?.applyRemotePatch(admitOps(ops));
+    },
+    applySnapshot(snapshot) {
+      if (closed || handle.admission !== 'work-room' || !Number.isSafeInteger(snapshot.clock) || snapshot.clock < 0) return;
+      const ops = admitOps(snapshot.ops);
+      if (ops.length !== snapshot.ops.length) return;
+      plumbing?.applySnapshot({ ops, clock: snapshot.clock });
     },
     close() {
       if (closed) return;

@@ -48,6 +48,7 @@ import {
   statusToConnection,
 } from './collab-handle.ts';
 import type { RosterEntry } from './collab-protocol.ts';
+import { docStateToOps, docStateToWire } from './collab-protocol.ts';
 import type {
   WorkCollabEvent,
   WorkCollabHandle,
@@ -387,7 +388,7 @@ test('the seed can never mask a live frame: seq 0 out, seq 1 to retire', () => {
   assert.equal(seen[2]?.seq, ROSTER_RETIRE_SEQ);
 });
 
-test('a roster row that leaves takes its placeholder with it, and may return', () => {
+test('a roster row that leaves is removed; a new connection can rejoin', () => {
   const fake = fakeProvider();
   const w = session(fake);
   fake.setState({ status: 'live', roster: [member({ id: 'conn-a', userId: 'ada', name: 'Ada' })] });
@@ -398,8 +399,8 @@ test('a roster row that leaves takes its placeholder with it, and may return', (
 
   // A genuine rejoin on the same connection id is seeded again: only a placeholder
   // that a REAL frame replaced is blocked from returning.
-  fake.setState({ roster: [member({ id: 'conn-a', userId: 'ada', name: 'Ada' })] });
-  assert.deepEqual(w.session.state().peers.map(p => p.clientId), ['conn-a']);
+  fake.setState({ roster: [member({ id: 'conn-new', userId: 'ada', name: 'Ada' })] });
+  assert.deepEqual(w.session.state().peers.map(p => p.clientId), ['conn-new']);
   w.session.close();
 });
 
@@ -572,4 +573,73 @@ test('a clean leave discards that sender\'s bookkeeping, so a reload is admitted
   fake.presence('conn-a', { from: 'conn-a', seq: 4, state: null });
   fake.presence('conn-a', { userId: 'ada', name: 'Ada', color: '' });
   assert.equal(seen.at(-1)?.seq, 1);
+});
+
+test('ten participants at 20 Hz have independent presence budgets, including two tabs of one user', () => {
+  const fake = fakeProvider({ status: 'live' });
+  const s = session(fake);
+  for (let seq = 1; seq <= 20; seq++) {
+    for (let peer = 0; peer < 10; peer++) {
+      const id = `cm_${peer}`;
+      fake.presence(id, { v: 1, from: 'spoofed', epoch: id, seq,
+        state: { userId: peer < 2 ? 'same-user' : `user-${peer}`, name: 'Peer', color: '#aa0000', cursor: {x: seq/20, y: .5} } });
+    }
+    s.clock.advance(50);
+  }
+  assert.equal(s.session.presence.roster().length, 10);
+  for (const peer of s.session.presence.roster()) assert.equal(peer.state.cursor?.x, 1);
+  s.session.close();
+});
+
+test('a work checkpoint larger than one message still passes the model guard and reaches the runtime', async () => {
+  const fake = fakeProvider({ status: 'live' });
+  const s = session(fake);
+  s.session.applyRemotePatch(Array.from({length:450}, (_, i) => ({ k:'param' as const, key:'title', value:`value-${i}`, origin:{client:'room',clock:i+1} })));
+  await Promise.resolve();
+  assert.equal(s.runtime.getModel()[0]!.value, 'value-449');
+  s.session.applyRemotePatch([{ k:'param', key:'unknown', value:'refused', origin:{client:'room',clock:451} }]);
+  assert.equal(s.runtime.getModel().length, 1);
+  s.session.close();
+});
+
+test('an older server is described as view-only and never as saved', () => {
+  const fake = fakeProvider({status:'live',role:'observer',reason:'durable-receipts-required'});
+  const handle = createWorkCollabHandle(fake.provider); const messages: string[] = [];
+  handle.saveIn!.subscribe(s => messages.push(s.message));
+  assert.equal(messages.at(-1), 'View only: update the work server');
+  handle.close();
+});
+
+test('two tabs of one account retain their distinct connection roles', () => {
+  const fake = fakeProvider({ status:'live', roster:[
+    {id:'cm_writer',userId:'same',role:'writer'}, {id:'cm_observer',userId:'same',role:'observer'},
+  ] });
+  const handle = createWorkCollabHandle(fake.provider);
+  fake.presence('cm_observer', {v:1,epoch:'cm_observer',from:'cm_observer',seq:1,state:peerState({userId:'same'})});
+  assert.equal(handle.peerRole!('cm_writer'), 'writer');
+  assert.equal(handle.peerRole!('cm_observer'), 'observer');
+  handle.close();
+});
+
+test('a late work mount reads the current snapshot after join and intervening edits', () => {
+  const fake = fakeProvider({ status: 'live' });
+  fake.provider.snapshot = () => ({ ops: docStateToOps(docStateToWire(fake.adapter.state()), { client: 'lw:seed', clock: 0 }), clock: 700 });
+  fake.adapter.doc.apply({ k: 'param', key: 'title', value: 'joined', origin: { client: 'peer', clock: 600 } });
+  const handle = createWorkCollabHandle(fake.provider);
+  fake.adapter.doc.apply({ k: 'param', key: 'title', value: 'after join', origin: { client: 'peer', clock: 700 } });
+  const received: { ops: readonly CanvasOp[]; clock: number }[] = [];
+  const off = handle.snapshotIn.subscribe(snapshot => received.push(snapshot));
+  assert.equal(received.length, 1);
+  assert.equal(received[0]!.clock, 700);
+  assert.deepEqual(received[0]!.ops, [{ k: 'param', key: 'title', value: 'after join', origin: { client: 'lw:seed', clock: 0 } }]);
+  off(); handle.close(); assert.equal(fake.subs(), 0);
+});
+
+test('live demotion notifies the mounted session without a connection-state change', () => {
+  const fake = fakeProvider({ status: 'live', role: 'writer' });
+  const mounted = session(fake);
+  assert.equal(mounted.session.state().role, 'writer');
+  fake.setState({ role: 'observer' });
+  assert.equal(mounted.session.state().role, 'observer');
+  mounted.session.close();
 });

@@ -1,159 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
-/**
- * org/collab-provider - the WORK-COLLAB client (plan 100 section 7, wave 3.1).
- *
- * A thin WebSocket pipe speaking `CanvasOp` and presence frames to the instance's
- * collab gateway, wrapped so it satisfies `CanvasSyncAdapter`. This is the same stable
- * contract type the private-collab (P2P) provider satisfies, so the shell has ONE
- * collab client surface and only the transport object differs (plan 100 section 7, last
- * paragraph: "No yjs in the browser, ever"). Convergence on this side uses the
- * dependency-free `ReferenceCanvasDoc` from `@lolly-tools/core`. The SERVER owns the
- * Yjs document authority.
- *
- * DORMANT BY DEFAULT, and that is the contract. Nothing in this file runs unless an
- * instance's org-config grants `collab.join` AND something opens a team session - see
- * "What the wave-1 integration must call" below. With no instance there is no
- * control plane, no org-config, no registration, and no import: `org/index.ts` reaches
- * this module through a dynamic `import()` inside its member branch, so a build with
- * no control plane never even loads it.
- *
- * ── What the wave-1 integration must call ────────────────────────────────────
- *
- * A collab is per-SESSION, but nothing at boot can yet tell that a given tool mount
- * came from a team project rather than a local slot - so this module registers a
- * FACTORY, not a provider, and the last wire is left for the integration that owns
- * "this mount is a team session". That integration is:
- *
- *   1. `const make = getWorkCollabFactory();`   // undefined ⇒ not offered here
- *   2. `const collab = make(sessionId, { guard: createOpGuard({ inputs: runtime.getModel() }) });`
- *      `await collab.connect();`
- *   3. `const handle = createWorkCollabHandle(collab, { name });`      // org/collab-handle.ts
- *      `const session = createCollabSession({ handle, runtime, … });`  // lib/collab-session.ts
- *      `collab.on(e => { if (e.kind === 'ops') session.applyRemotePatch(e.ops); });`
- *
- * and, on unmount, `session.close()` (which detaches the plumbing and closes the
- * handle, which closes `collab`). The `role` on `session.state()` is what the UI
- * gates writes on ('observer' ⇒ read-only chrome); `session.state().peers` is what
- * the wave-1 presence UI paints from.
- *
- * STEP 3's `collab.on(e => … session.applyRemotePatch(e.ops))`, NEVER
- * `plumbing?.applyRemotePatch(e.ops)` directly, is not a style preference. An
- * earlier revision of this header got it backwards. `session.applyRemotePatch` is
- * where `createCollabSession` runs the manifest-aware op guard (plan 100 section 11.21).
- * `plumbing.applyRemotePatch` is the UNGUARDED door beneath it, and `org/collab-
- * handle.ts`'s own header says the same thing for the same wire ("Those ops are
- * untrusted input and must pass the shared op guard … BEFORE they reach the
- * runtime"). Two contradictory instructions for one wire is worse than either
- * alone, so if you find a THIRD one, this file's header is wrong and `collab-
- * handle.ts`'s is right.
- *
- * STEP 2's `guard` is a SEPARATE, earlier gate: this file's own, over the raw
- * socket frame, before `doc` (this file's `CanvasSyncAdapter`, `=== handle.adapter`
- * verbatim per `org/collab-handle.ts`'s header) can absorb a write step 3's guard
- * would have refused. See `WorkCollabOptions.guard`'s own comment for why a SECOND
- * guard is not redundant with the session's: `doc` is what `lib/collab-plumbing.ts`'s
- * `buildPatch` reads back out (`ConvergedRead`) the moment ANY later op, including
- * one step 3 admits without complaint, touches the same key. So an unguarded write
- * here is promoted into the runtime regardless of what step 3 decided about it.
- * Omitting step 2's `guard` degrades to a floor (schema-valid, safe-integer clock,
- * no forbidden key, no value-size cap, no manifest whitelist) rather than the
- * boundary, exactly as `collab/rtc-handle.ts`'s own optional `guard` does for
- * Track A; it does not remove the vulnerability step 3 alone would still leave.
- *
- * The factory registry lives here rather than in a neutral `lib/` seam on purpose:
- * the tidy-surface rule keeps control-plane awareness inside `org/`, and there is no
- * consumer yet to justify a second registry. When wave 1 wires a consumer, promoting
- * these three functions to a `lib/work-collab.ts` seam (the `lib/session-source.ts`
- * shape) is a rename, not a redesign.
- *
- * ── Reducing to `CollabSessionHandle` (lib/collab-session.ts) ────────────────
- *
- * That module is the composition every collab reduces to, and it names this file as
- * Track B's producer. The map below keeps the integration mechanical rather than a
- * redesign (nothing is imported from it here: it is a sibling wave, and coupling
- * the transport to it would make each churn the other):
- *
- *   adapter       → `handle.adapter`                    (identical type)
- *   role          → `handle.state().role`               (identical union)
- *   presenceIn    → a stream over `on()`'s 'presence' events
- *   sendPresence  → `handle.sendPresence(frame)`         (verbatim pass-through)
- *   events        → a stream over `on()`'s 'state' events, mapping
- *                   'idle'|'connecting'|'joining' → 'connecting', 'live' → 'live',
- *                   'reconnecting' → 'reconnecting', 'closed' → 'closed'
- *   close         → `handle.close()`
- *   self          → the org session's display name (SSO) + this device's clientId
- *   hostClientId  → absent: a work collab has no inviter-owns-it asymmetry; the
- *                   server owns persistence (section 7.10), which is the whole point
- *   peerRole      → look up `state().roster` by userId; undefined is honest
- *
- * Presence deliberately does NOT go through `adapter.presence` on this path: the
- * wave-1 engine's frame carries the per-sender `seq` an unordered lane needs
- * (section 11.5), and `CanvasSyncAdapter.presence` only takes a bare `Awareness`.
- *
- * ── The outbox, and how an entry is retired ──────────────────────────────────
- *
- * Plan 100 section 7.10 is the availability guarantee Track A structurally cannot make:
- * every client can crash at once and the room recovers from the server snapshot plus
- * everyone's outbox. The client half is here: local ops persist to IndexedDB,
- * replay after `join-ack`, and the gateway dedups per client by highest accepted
- * Lamport clock (rooms.ts `applyOps`), so a replay is idempotent.
- *
- * THE GATEWAY SENDS NO RECEIPT. This is the fact the whole design turns on, and it
- * was checked, not assumed:
- *
- *   - `ops` is broadcast to PEERS only (`applyOps`: `if (peer.id === from.id)
- *     continue`), so a writer never sees its own ops come back;
- *   - `join-ack.serverClock` is the ROOM-WIDE maximum accepted clock, not this
- *     client's. A peer alone can carry it past everything we ever minted, so
- *     retiring anything by it would drop ops the gateway never received;
- *   - the per-client `highestClock` map the gateway dedups against is not published.
- *
- * So an entry is retired by one of:
- *
- *   (a) ECHO - an inbound `ops` frame carrying `(origin.client, origin.clock)` of
- *       ours. Exact and needs no interpretation. Inert against today's gateway (see
- *       above); kept because it costs nothing and is the rule the moment a gateway
- *       does echo.
- *
- *   (b) SECOND DELIVERY - the entry was written to a socket on an EARLIER
- *       connection, and this connection's `join-ack` replay has now written it
- *       again, to a room the gateway has just re-hydrated from persistence (plus any
- *       crash recovery). A drop is exactly when a server-side loss becomes visible,
- *       and the replay is exactly what repairs it. Holding the entry past a second
- *       successful delivery defends only against two consecutive losses, and costs
- *       an outbox that never drains and a `pending` count that is never zero.
- *
- * Nothing is retired on its FIRST write to a socket, and nothing is retired by a
- * watermark. An entry never written to a socket (typed while reconnecting, or loaded
- * from a previous run) survives its first replay and drains on the next one.
- *
- * `pending` counts entries not yet written to any socket: the honest "your edits
- * have not reached anyone" number a UI can gate on. `queued` is the whole journal.
- * When the cap bites, DELIVERED entries are shed first and silently (dropping them
- * costs replay depth, not an edit); only shedding an undelivered entry is a loss,
- * and that is what raises `outbox-overflow`.
- *
- * ── What never happens ───────────────────────────────────────────────────────
- *
- *  - An OBSERVER never sends an ops frame and never queues one. Role comes from the
- *    gateway's `join-ack.you.role`, and an ack that declares no role at all seats us
- *    as an observer: absent is never a grant. It is checked again locally against
- *    `isCompatibleOpVersion` so a gateway that forgot still cannot make us write ops
- *    it will reject. Presence is a different lane and stays open to observers (plan
- *    100 section 7.5).
- *  - Our own ops are never re-emitted to the runtime. An echo is used for acking and
- *    then dropped, so a local edit cannot round-trip into a second apply.
- *  - An `ops` frame never exceeds the gateway's per-message cap. Both a live gesture
- *    and a full outbox replay go out through `chunkOps`, because exceeding it does not produce
- *    an error frame; the gateway CLOSES the socket instead (`CLOSE.OPS_RATE`).
- *  - A local edit is never queued after the session has ended. A typed close ends it
- *    as surely as `close()` does.
- *  - This device's Lamport clock never goes backwards across a reconnect. See
- *    `primeClock`: a re-minted `(client, clock)` pair is silently DISCARDED by the
- *    gateway's monotonic dedup, which in a quiet room means the user types and
- *    nothing ever reaches anyone.
- *  - No wall clock touches convergence (plan 100 section 11.7): ordering is `(clock, client)`
- *    only. `Date.now()` appears nowhere in this file.
+/** Work-room provider: reliable edits and durable receipts, plus ephemeral presence.
+ * Each queued operation has a persisted delivery identity. Chunking and reconnect
+ * retain it; only explicit accepted/rejected receipts retire it. Socket writes,
+ * peer echoes and room clocks never mean saved. Legacy servers join read-only.
+ * The adapter and presence interface remain separate from private P2P transport.
  */
 
 import {
@@ -176,15 +26,17 @@ import type { CollabHistoryCapability } from '../lib/collab-history.ts';
 import {
   COLLAB_CLOSE,
   COLLAB_OP_VERSION,
+  MAX_OPS_PER_FRAME,
   COLLAB_WS_PATH,
   SOCKET_OPEN,
   chunkOps,
   collabSocketUrl,
   docStateToOps,
+  docStateToWire,
+  checkpointOps,
   heldKeyIndex,
   isCrossOriginSocket,
   isTerminalClose,
-  originKey,
   parseServerFrame,
   sanitizeOps,
   withoutHeldKeys,
@@ -220,9 +72,9 @@ export interface WorkCollabState {
   readonly self?: RosterEntry;
   /** Consecutive failed connection attempts - the backoff exponent. Reset on join. */
   readonly attempt: number;
-  /** Local ops that have never been written to a socket - the "not delivered to
-   *  anyone yet" count. Zero on a healthy live session; it climbs while offline. */
+  /** Operations waiting for an explicit durable receipt, including socket writes. */
   readonly pending: number;
+  readonly localSaveFailed?: boolean;
   /** The whole durable journal, delivered or not (`pending` ≤ `queued`). */
   readonly queued: number;
   /** Input ids the gateway cannot sync in this session, so a UI can show them
@@ -237,7 +89,7 @@ export type WorkCollabEvent =
   /** Ops for the runtime: remote peers' ops, and the `join-ack` snapshot seed.
    *  Never this device's own ops. Feed straight into `attachCollabPlumbing`'s
    *  `applyRemotePatch` - it coalesces per frame and applies atomically. */
-  | { readonly kind: 'ops'; readonly from: string; readonly ops: readonly CanvasOp[] }
+  | { readonly kind: 'ops'; readonly from: string; readonly ops: readonly CanvasOp[]; readonly snapshot?: boolean }
   /** An inbound presence payload, forwarded verbatim - cast it to whatever the
    *  presence engine expects (`PresenceFrame` in lib/collab-presence.ts). See
    *  `CollabPresencePayload` for why this lane is opaque here. */
@@ -304,8 +156,7 @@ export interface WorkCollabOptions {
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
   store?: CollabOutboxStore;
-  /** Max journal entries held; past it the oldest are shed - delivered ones first
-   *  and silently, undelivered ones with a warning (plan 100 section 7.10). */
+  /** Soft operation cap. Preserve the gesture that crosses it and pause further edits. */
   outboxLimit?: number;
   /** Reconnect automatically after a non-terminal drop. Default true. */
   reconnect?: boolean;
@@ -387,10 +238,13 @@ function floorFilter(ops: readonly CanvasOp[]): CanvasOp[] {
 }
 
 export interface WorkCollabHandle {
+  readonly clientId?: string;
   readonly sessionId: string;
   readonly history?: CollabHistoryCapability;
   /** Register this into `lib/canvas-sync-provider.ts`. */
   readonly adapter: CanvasSyncAdapter;
+  /** Current validated projection, including the Lamport floor for a late mount. */
+  snapshot?(): { ops: readonly CanvasOp[]; clock: number };
   /** Open the socket (loading the persisted outbox first). Resolves once the socket
    *  has been constructed - NOT once joined; watch the state events for that. */
   connect(): Promise<void>;
@@ -405,7 +259,7 @@ export interface WorkCollabHandle {
    *  presence is ephemeral by definition. Open to observers (section 7.5). */
   sendPresence(frame: CollabPresencePayload): void;
   /** The durable journal, oldest first - every local op not yet retired, delivered
-   *  or not (diagnostics + tests). `state().pending` is the undelivered subset. */
+   *  or not (diagnostics + tests). `state().pending` counts work without a durable receipt. */
   outbox(): readonly CanvasOp[];
   /** Resolves when every queued outbox write has hit the store (tests). */
   persisted(): Promise<void>;
@@ -467,11 +321,10 @@ const CLOCK_ANCHOR_ID = '\u0000lolly:clock';
 export const CROSS_ORIGIN_REASON = 'cross-origin-instance';
 
 /**
- * The seed origin's client id. The empty string loses every `(clock, client)`
- * tie-break in `ReferenceCanvasDoc` (`a.client > b.client`), so on an exactly-equal
- * clock a real peer's write always beats the snapshot restating the same key.
+ * A schema-valid origin for projection operations. Checkpoint projections carry
+ * clock zero and do not replace the document's original register origins.
  */
-const SEED_CLIENT = '';
+const SEED_CLIENT = 'lw:seed';
 
 /**
  * Backoff for attempt `n` (1-based): 1s, 2s, 4s, … capped at 30s, with up to 25%
@@ -499,40 +352,49 @@ function clamp01(v: number): number {
  * all - they inject their own). Every method is failure-tolerant: a durability
  * problem must never cost the user their edit, so it degrades to an in-memory outbox.
  */
-function defaultOutboxStore(): CollabOutboxStore {
-  const db = async () => {
-    const { openDB } = await import('../bridge/db.ts');
-    return openDB();
-  };
+/** Merge each tab's pending IDs in one IndexedDB transaction. A tab may only
+ * remove IDs it previously loaded or saved; other tabs' edits remain recoverable. */
+export function defaultOutboxStore(): CollabOutboxStore {
+  const known = new Map<string, Set<string>>();
+  const db = async () => (await import('../bridge/db.ts')).openDB();
+  const read = (value: unknown): Queued['op'][] => sanitizeOps(value).map(op => ({ ...op,
+    deliveryId: (op as Queued['op']).deliveryId ?? globalThis.crypto.randomUUID() }));
+  async function replace(key: string, ops: readonly CanvasOp[]): Promise<void> {
+    const tx = (await db()).transaction('profile', 'readwrite');
+    const previous = read(await tx.store.get(key));
+    const owned = known.get(key) ?? new Set<string>();
+    const merged = new Map(previous.filter(op => !owned.has(op.deliveryId!)).map(op => [op.deliveryId!, op]));
+    const next = read(ops);
+    for (const op of next) merged.set(op.deliveryId!, op);
+    if (merged.size) await tx.store.put([...merged.values()], key);
+    else await tx.store.delete(key);
+    await tx.done;
+    known.set(key, new Set(next.map(op => op.deliveryId!)));
+  }
   return {
     async load(key) {
-      try {
-        const value = await (await db()).get('profile', key);
-        return Array.isArray(value) ? sanitizeOps(value) : null;
-      } catch {
-        return null;
-      }
+      const tx = (await db()).transaction('profile', 'readwrite');
+      const ops = read(await tx.store.get(key));
+      if (ops.length) await tx.store.put(ops, key); // Upgrade legacy IDs atomically.
+      await tx.done;
+      known.set(key, new Set(ops.map(op => op.deliveryId!)));
+      return ops.length ? ops : null;
     },
-    async save(key, ops) {
-      try { await (await db()).put('profile', [...ops], key); } catch { /* in-memory only */ }
-    },
-    async clear(key) {
-      try { await (await db()).delete('profile', key); } catch { /* nothing to drop */ }
-    },
+    save: replace,
+    clear: key => replace(key, []),
   };
 }
 
-// ── The provider ──────────────────────────────────────────────────────────────
 
-/** One journal entry: the op, plus whether it has ever reached a socket. */
 interface Queued {
-  readonly op: CanvasOp;
+  readonly op: CanvasOp & { deliveryId?: string };
   /** Written to an open socket at least once. See the header's retirement rules. */
   sent: boolean;
+  saved: boolean;
 }
 
 export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOptions = {}): WorkCollabHandle {
-  const clientId = opts.clientId ?? getCollabClientId();
+  const clientId = opts.clientId ?? `${getCollabClientId()}:${globalThis.crypto.randomUUID()}`;
   const store = opts.store ?? defaultOutboxStore();
   const limit = Math.max(1, opts.outboxLimit ?? OUTBOX_LIMIT);
   const random = opts.random ?? Math.random;
@@ -545,6 +407,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
   /** Highest clock this device has ever minted or observed - the Lamport floor a
    *  rebuilt document is primed to, so a reconnect cannot re-mint a used pair. */
   let clockCeiling = 0;
+  let durableReceipts = false;
 
   let status: WorkCollabStatus = 'idle';
   let role: CollabRole = 'writer';
@@ -571,6 +434,8 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
 
   let persistChain: Promise<void> = Promise.resolve();
   let dirty = false;
+  let localSaveFailed = false;
+  let outboxReadFailed = false;
   let outboxKey: string | null = null;
 
   // - events - 
@@ -582,11 +447,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
     }
   }
 
-  function pendingCount(): number {
-    let n = 0;
-    for (const e of outbox) if (!e.sent) n++;
-    return n;
-  }
+  function pendingCount(): number { return outbox.length; }
 
   function snapshotState(): WorkCollabState {
     return {
@@ -595,6 +456,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
       roster,
       attempt,
       pending: pendingCount(),
+      ...(localSaveFailed ? { localSaveFailed: true } : {}),
       queued: outbox.length,
       unsynced,
       ...(self ? { self } : {}),
@@ -649,36 +511,27 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
   }
 
   function persist(): void {
+    if (outboxReadFailed) return;
     dirty = true;
     persistChain = persistChain.then(async () => {
       if (!dirty) return;
       dirty = false;
       const key = await keyFor();
-      if (outbox.length) await store.save(key, outbox.map((e) => e.op));
+      const entries = [...outbox];
+      if (entries.length) await store.save(key, entries.map((e) => e.op));
       else await store.clear(key);
-    }).catch(() => { /* durability is best-effort; the in-memory outbox still holds */ });
+      for (const entry of entries) entry.saved = true;
+      if (status === 'live' && !ended) postEntries(outbox.filter(e => !e.sent));
+      if (localSaveFailed) { localSaveFailed = false; emitState(); }
+    }).catch(() => { localSaveFailed = true; emitState(); emit({ kind: 'error', code: 'local-save-failed', message: 'Pending edits could not be saved on this device. Keep the session open or save a copy.' }); });
   }
 
-  /**
-   * Bring the journal back inside its cap. DELIVERED entries go first and silently:
-   * they reached the gateway, so dropping them costs replay depth, not an edit. Only
-   * when every entry is still undelivered is the oldest shed a real loss - that one
-   * is surfaced, never silent.
-   *
-   * Shedding can strand an early `remove` while a later `field` op on the same row
-   * survives. That is inherent to a bounded log, and the reason the lossy branch
-   * warns.
-   */
+  /** Preserve queued work at capacity and stop admitting further local writes. */
   function trim(): void {
-    let over = outbox.length - limit;
-    if (over <= 0) return;
-    for (let i = 0; i < outbox.length && over > 0;) {
-      if (outbox[i]!.sent) { outbox.splice(i, 1); over--; } else i++;
-    }
-    if (over > 0) {
-      outbox.splice(0, over);
-      emit({ kind: 'warning', code: 'outbox-overflow', dropped: over });
-    }
+    if (outbox.length <= limit) return;
+    role = 'observer'; reason = 'outbox-full';
+    emit({ kind: 'warning', code: 'outbox-overflow', dropped: 0 });
+    emitState();
   }
 
   function enqueue(ops: readonly CanvasOp[]): void {
@@ -686,28 +539,10 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
     // would refuse them, so persisting them would only replay a refusal forever.
     // A dead session's writes have nowhere to go at all.
     if (role === 'observer' || dead || !ops.length) return;
-    for (const op of ops) outbox.push({ op, sent: false });
+    for (const op of ops) outbox.push({ op: { ...op, deliveryId: (op as Queued['op']).deliveryId ?? globalThis.crypto.randomUUID() }, sent: false, saved: false });
     trim();
     persist();
   }
-
-  /** Retire the entries whose origin pairs the gateway has echoed back. Returns
-   *  true when any left. */
-  function ack(keys: ReadonlySet<string>): boolean {
-    if (!keys.size || !outbox.length) return false;
-    let write = 0;
-    for (let read = 0; read < outbox.length; read++) {
-      const entry = outbox[read]!;
-      if (keys.has(originKey(entry.op.origin))) continue;
-      outbox[write++] = entry;
-    }
-    if (write === outbox.length) return false;
-    outbox.length = write;
-    persist();
-    return true;
-  }
-
-  // - sending - 
 
   function post(frame: ClientFrame): boolean {
     const s = sock;
@@ -721,23 +556,32 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
     }
   }
 
-  /**
-   * Write `entries` out as `ops` frames within the gateway's per-message caps,
-   * marking each entry delivered as its frame lands, and returning exactly the ones
-   * that made it onto THIS socket. Stops at the first frame that cannot be written,
-   * leaving the rest undelivered (and so still `pending`) - a partial write is a
-   * partial write, not a silent success.
-   *
-   * The return value is what retirement keys on, never the sticky `sent` flag: an
-   * entry delivered on an earlier connection is still `sent` when a replay onto the
-   * NEXT one fails, and retiring it then would drop an op nobody received.
-   */
-  function postEntries(entries: readonly Queued[]): Queued[] {
+  // `sent` tracks this socket delivery only. A durable receipt retires an entry.
+  const wireOp = (op: Queued['op']): CanvasOp => { const { deliveryId: _id, ...value } = op; return value as CanvasOp; };
+  const inflight = new Map<string, Set<string>>();
+  let windowOps = 0, windowUntil = 0;
+  let pumpTimer: unknown = null;
+  const stopPump = (): void => { if (pumpTimer !== null) clearTimer(pumpTimer); pumpTimer = null; };
+  const deferPump = (): void => {
+    if (pumpTimer !== null) return;
+    pumpTimer = setTimer(() => {
+      pumpTimer = null; windowOps = 0; windowUntil = Date.now() + 1050;
+      if (status === 'live' && !ended) postEntries(outbox.filter(e => !e.sent));
+    }, Math.max(1, windowUntil - Date.now()));
+  };
+  function postEntries(pending: readonly Queued[]): Queued[] {
+    const entries = pending.filter(entry => entry.saved);
     const delivered: Queued[] = [];
-    if (!entries.length) return delivered;
+    if (!durableReceipts || !entries.length) return delivered;
     let i = 0;
-    for (const chunk of chunkOps(entries.map((e) => e.op))) {
-      if (!post({ t: 'ops', ops: chunk })) return delivered;
+    if (Date.now() >= windowUntil) { windowOps = 0; windowUntil = Date.now() + 1050; }
+    for (const chunk of chunkOps(entries.map((e) => wireOp(e.op)))) {
+      if (windowOps + chunk.length > MAX_OPS_PER_FRAME) { deferPump(); return delivered; }
+      const ids = entries.slice(i, i + chunk.length).map(e => e.op.deliveryId!);
+      const batchId = `${ids[0]}:${ids[ids.length - 1]}`;
+      inflight.set(batchId, new Set(ids));
+      if (!post({ t: 'ops', batchId, ids, ops: chunk })) { inflight.delete(batchId); return delivered; }
+      windowOps += chunk.length;
       for (let n = 0; n < chunk.length; n++) {
         const entry = entries[i + n]!;
         entry.sent = true;
@@ -753,10 +597,9 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
     for (const op of ops) observe(op.origin.clock);
     if (role === 'observer' || dead) return;
     enqueue(ops);
-    if (status !== 'live') return;
-    // The new entries are the journal's tail - `enqueue` appends, and `trim` only
-    // ever removes, so whatever survived of this batch is the last `ops.length`.
-    postEntries(outbox.slice(Math.max(0, outbox.length - ops.length)));
+    emitState();
+    // Persist owns the send: an edit arriving during an IndexedDB write must
+    // wait for the transaction that actually contains its immutable ID.
   }
 
   function observe(clock: number): void {
@@ -796,41 +639,37 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
 
   function join(): void {
     setStatus('joining');
-    post({ t: 'join', opVersion: COLLAB_OP_VERSION });
+    post({ t: 'join', opVersion: COLLAB_OP_VERSION, presenceVersion: 1, receipts: 1 });
   }
 
-  /**
-   * Raise a rebuilt document's Lamport clock to `floor` without writing anything a
-   * reader can see.
-   *
-   * `ReferenceCanvasDoc` starts at clock 0 and only ever absorbs the clocks of ops
-   * applied to it; it exposes no setter, and it is wave-0 stable contract, so the
-   * floor has to arrive as an op. It rides a `remove` for a box id that never
-   * exists: `aliveIds()` reports only boxes whose `alive` register is TRUE, so a
-   * dead anchor is absent from `state()`, `order`, `boxes`, `canonicalBoxes()` and
-   * the local-change diff base alike, and it is never sent anywhere.
-   *
-   * Why it matters: the gateway's replay dedup is strictly monotonic PER CLIENT
-   * (`op.origin.clock > highestClock[client]`), so a device that re-mints a pair it
-   * has already used has those ops silently DISCARDED. Without this, a reconnect
-   * into a room whose snapshot happens to be empty (or whose seed carries a lower
-   * clock than we minted while away) restarts this device at 1, and in a quiet room
-   * - the ordinary two-person case with an idle peer - every edit after the
-   * reconnect vanishes with no error anywhere.
-   */
+  /** Keep the local Lamport clock above every observed edit after rebuilding. */
   function primeClock(target: ReferenceCanvasDoc, floor: number): void {
     if (!(floor > 0)) return;
     target.apply({ k: 'remove', id: CLOCK_ANCHOR_ID, origin: { client: clientId, clock: floor } });
   }
 
   /**
-   * Rebuild the local document from the gateway snapshot, keeping whatever our
-   * undelivered ops own (see `withoutHeldKeys` for why filtering beats any clock
-   * trick), and hand the surviving seed to the runtime as ordinary inbound ops.
+   * Restore the gateway document and replay remaining outbox operations. The
+   * mounted runtime receives a separate authoritative projection, not a delta.
    */
   function seedFrom(frame: JoinAckFrame): CanvasOp[] {
     const serverClock = Number.isFinite(frame.serverClock) ? Number(frame.serverClock) : 0;
     observe(serverClock);
+    if (frame.checkpoint) {
+      const registers = checkpointOps(frame.checkpoint);
+      if (!registers) throw new Error('Invalid room checkpoint');
+      for (const chunk of chunkOps(registers)) if (admitInbound(chunk).length !== chunk.length) throw new Error('Rejected room checkpoint');
+      const previous = doc.state();
+      doc = new ReferenceCanvasDoc(clientId); doc.restore(frame.checkpoint);
+      primeClock(doc, Math.max(clockCeiling, frame.checkpoint.clock));
+      for (const entry of outbox) doc.apply(entry.op);
+      const state = doc.state(), origin = { client: SEED_CLIENT, clock: 0 };
+      const seed = docStateToOps(docStateToWire(state), origin);
+      for (const [col, old] of previous.collections ?? []) for (const id of old.boxes.keys())
+        if (!state.collections?.get(col)?.boxes.has(id)) seed.push({ k: 'remove', col, id, origin });
+      for (const key of previous.params.keys()) if (!state.params.has(key)) seed.push({ k: 'param', key, value: null, origin });
+      return seed;
+    }
     const held = heldKeyIndex(outbox.map((e) => e.op));
     const rawSeed: CanvasOp[] = [];
     for (const op of docStateToOps(frame.docState, { client: SEED_CLIENT, clock: serverClock })) {
@@ -854,6 +693,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
   }
 
   function onJoinAck(frame: JoinAckFrame): void {
+    durableReceipts = frame.receipts === 1;
     // The gateway assigns the seat, and it says so in `you` (gateway.ts `doJoin`).
     // ABSENT IS NEVER A GRANT: an ack that declares no role at all seats us as an
     // observer, the same fail-closed reading org/collab-config.ts takes on every
@@ -875,38 +715,21 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
       ? frame.unsynced.filter((id): id is string => typeof id === 'string')
       : [];
 
-    const seed = seedFrom(frame);
+    let seed: CanvasOp[];
+    try { seed = seedFrom(frame); }
+    catch { role = 'observer'; reason = 'invalid-room-checkpoint'; dead = true; setStatus('closed'); sock?.close(COLLAB_CLOSE.PROTOCOL); return; }
     attempt = 0;
     status = 'live';
     emitState();
 
-    if (seed.length) emit({ kind: 'ops', from: '', ops: seed });
+    emit({ kind: 'ops', from: '', ops: seed, snapshot: true });
 
-    if (role === 'observer') {
-      if (outbox.length) {
-        // Nothing an observer holds can ever be accepted; keeping it would replay a
-        // refusal on every future join.
-        outbox.length = 0;
-        persist();
-      }
-      emitState();
-      return;
+    if (!durableReceipts) {
+      role = 'observer'; reason = 'durable-receipts-required'; emitState(); return;
     }
-
-    // Rule (b), the header's SECOND DELIVERY: entries already written to a socket
-    // on an EARLIER connection are retired once this connection's replay has landed
-    // them again, in a room the gateway has just re-hydrated (and crash-recovered).
-    // Captured before the replay, because the replay is what marks entries `sent`.
-    const priorSent = new Set(outbox.filter((e) => e.sent));
-    const delivered = new Set(postEntries([...outbox]));
-    if (priorSent.size) {
-      const survivors = outbox.filter((e) => !(priorSent.has(e) && delivered.has(e)));
-      if (survivors.length !== outbox.length) {
-        outbox.length = 0;
-        outbox.push(...survivors);
-        persist();
-      }
-    }
+    stopPump(); windowOps = 0; windowUntil = 0;
+    for (const entry of outbox) entry.sent = false;
+    postEntries([...outbox]);
     emitState();
   }
 
@@ -914,6 +737,30 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
 
   function handle(frame: ServerFrame): void {
     switch (frame.t) {
+      case 'receipt': {
+        if (!Number.isSafeInteger(frame.durableRevision) || frame.durableRevision < 1
+          || !Array.isArray(frame.acceptedIds) || !Array.isArray(frame.rejectedIds)) return;
+        const sent = inflight.get(frame.batchId);
+        if (!sent || frame.acceptedIds.length + frame.rejectedIds.length !== sent.size
+          || [...frame.acceptedIds, ...frame.rejectedIds].some(id => !sent.has(id))) return;
+        const ids = new Set([...frame.acceptedIds, ...frame.rejectedIds]);
+        if (ids.size !== sent.size) return;
+        inflight.delete(frame.batchId);
+        const keep = outbox.filter(e => !ids.has(e.op.deliveryId!));
+        if (keep.length !== outbox.length) {
+          outbox.splice(0, outbox.length, ...keep); persist(); emitState();
+        }
+        if (frame.rejectedIds.length) {
+          emit({ kind: 'error', code: 'edits-rejected', message: 'Some edits were rejected by room policy.' });
+        }
+        if (frame.checkpoint) {
+          try {
+            const seed = seedFrom({ t: 'join-ack', checkpoint: frame.checkpoint, serverClock: frame.serverClock });
+            emit({ kind: 'ops', from: '', ops: seed, snapshot: true });
+          } catch { reason = 'invalid-room-checkpoint'; sock?.close(COLLAB_CLOSE.PROTOCOL); }
+        }
+        return;
+      }
       case 'join-ack':
         onJoinAck(frame);
         return;
@@ -929,15 +776,12 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
         const ops = admitInbound(sanitizeOps(frame.ops));
         if (!ops.length) return;
         for (const op of ops) observe(op.origin.clock);
-        // Our own ops coming back are an ACK, not an edit - they are applied here
-        // (idempotently) and never re-emitted, so a local edit cannot round-trip.
-        const mine = new Set<string>();
+        // Own echoes do not retire durable pending work or re-enter runtime history.
         const theirs: CanvasOp[] = [];
         for (const op of ops) {
-          if (op.origin.client === clientId) mine.add(originKey(op.origin));
-          else theirs.push(op);
+          if (op.origin.client !== clientId) theirs.push(op);
         }
-        if (mine.size && ack(mine)) emitState();
+        // Peer echoes are not durable receipts.
         if (!theirs.length) return;
         doc.applyRemotePatch(theirs);
         emit({ kind: 'ops', from: typeof frame.from === 'string' ? frame.from : '', ops: theirs });
@@ -960,6 +804,15 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
           : null;
         roster = nextRoster(frame.roster, peer, null);
         emit({ kind: 'peer-join', peer, roster });
+        emitState();
+        return;
+      }
+      case 'peer-role': {
+        if (typeof frame.id !== 'string' || frame.role !== 'observer') return;
+        // Live promotion requires a new seat allocation. This frame only revokes.
+        if (frame.id === self?.id) {
+          role = 'observer'; self = { ...self, role }; reason = 'no-edit-grant';
+        } else roster = roster.map(peer => peer.id === frame.id ? { ...peer, role: 'observer' } : peer);
         emitState();
         return;
       }
@@ -1086,6 +939,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
       scheduleReconnect();
       return;
     }
+    inflight.clear();
     sock = s;
     s.onopen = () => { if (sock === s && !ended) join(); };
     s.onmessage = (ev) => {
@@ -1096,6 +950,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
     s.onerror = () => { /* a close always follows; nothing useful to report here */ };
     s.onclose = (ev) => {
       if (sock !== s) return;
+      stopPump();
       detachSocket(s);
       sock = null;
       if (ended) return;
@@ -1105,7 +960,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
         // A terminal close is an answer (see isTerminalClose): stop, and say why.
         // `dead` as well as 'closed', or the adapter would keep taking local edits
         // and persisting them to IndexedDB for a session that can never reconnect - 
-        // climbing to the cap and then shedding the user's oldest work.
+        // climbing to the cap and pausing further edits.
         if (!reason) reason = `close:${code}`;
         dead = true;
         setStatus('closed');
@@ -1162,8 +1017,10 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
 
   return {
     sessionId,
+    clientId,
     history: opts.history,
     adapter,
+    snapshot: () => ({ ops: docStateToOps(docStateToWire(doc.state()), { client: SEED_CLIENT, clock: 0 }), clock: clockCeiling }),
     connect(): Promise<void> {
       if (ended) return Promise.resolve();
       // Memoised: `connect()` yields twice (the store load, then endpoint
@@ -1176,6 +1033,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
       if (ended) return;
       ended = true;
       dead = true;
+      stopPump();
       if (timer !== null) { clearTimer(timer); timer = null; }
       const s = sock;
       sock = null;
@@ -1184,16 +1042,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
         detachSocket(s);
         try { s.close(COLLAB_CLOSE.NORMAL); } catch { /* already closed */ }
       }
-      // Delivered entries have reached the gateway at least once; keeping them past
-      // teardown would replay a whole finished session into the next mount for no
-      // gain. What was never written to a socket stays - that IS the user's unsaved
-      // work, and it is what the next mount of this session is meant to recover.
-      const keep = outbox.filter((e) => !e.sent);
-      if (keep.length !== outbox.length) {
-        outbox.length = 0;
-        outbox.push(...keep);
-        persist();
-      }
+      persist();
       status = 'closed';
       emitState();
       // Subscribers are released last, after the final state has been delivered - 
@@ -1206,7 +1055,7 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
       return () => { listeners.delete(listener); };
     },
     sendPresence,
-    outbox: () => outbox.map((e) => e.op),
+    outbox: () => outbox.map((e) => wireOp(e.op)),
     persisted: () => persistChain,
   };
 
@@ -1215,19 +1064,28 @@ export function createWorkCollabProvider(sessionId: string, opts: WorkCollabOpti
       loaded = true;
       // A store that throws must not stop the session opening - the outbox is a
       // durability nicety, the socket is the feature.
-      const stored = await store.load(await keyFor()).catch(() => null);
+      let stored: CanvasOp[] | null;
+      try { stored = await store.load(await keyFor()); }
+      catch {
+        outboxReadFailed = true; localSaveFailed = true; role = 'observer'; dead = true;
+        reason = 'outbox-load-failed'; setStatus('closed');
+        emit({ kind: 'error', code: reason, message: 'Pending edits could not be recovered on this device. Reopen the session to retry.' });
+        return;
+      }
       if (stored?.length && !ended) {
         for (const op of stored) {
           // `sent: false` - a stored entry was written by a previous run whose
           // delivery nothing here witnessed, so it counts as pending and survives
           // its first replay (the header's rule (b)).
-          outbox.push({ op, sent: false });
+          outbox.push({ op: { ...op, deliveryId: (op as Queued['op']).deliveryId ?? globalThis.crypto.randomUUID() }, sent: false, saved: false });
           observe(op.origin.clock);
           // Applied so `state()` is honest before the first join; the join-ack
           // rebuild re-applies them over the snapshot anyway.
           doc.apply(op);
         }
         trim();
+        persist();
+        await persistChain;
         emitState();
       }
     }

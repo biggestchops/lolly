@@ -52,6 +52,7 @@
 // ships one and users still lose work to it: letting time change the selection
 // destroys work.
 
+import { registerCollabSurface } from '../lib/collab-surface.ts';
 import { sequenceFramesInOrder } from './free-canvas-math.ts';
 import type { Box } from './free-canvas-math.ts';
 import type { ArtboardPort, DesignCanvasPorts, FramePort, InspectorActions, ModelPort, NavigatorActions, SelectionPort } from './design-ports.ts';
@@ -2029,10 +2030,25 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     setColumnWidths: fc.rail.setColumnWidths,
     setInspector: fc.contextBar.setInspector,
   }; fc.designPorts = designPorts;
+  const unregisterCollabSurface = registerCollabSurface(runtime, {
+    id: () => artboardPort.active() || `canvas:${blockId}`,
+    element: () => {
+      const id = artboardPort.active();
+      return id ? canvasEl.querySelector<HTMLElement>(`[data-frame-id="${fc.keys.cssEscape(id)}"]`) : canvasEl;
+    },
+    selection: () => [...selectionPort.get()],
+    viewport: () => {
+      const m = fc.stage.metrics();
+      return { x: (m.sr.left - m.cr.left) / m.scale, y: (m.sr.top - m.cr.top) / m.scale, zoom: m.scale };
+    },
+    subscribe: fn => { const a = selectionPort.onChange(fn); const b = artboardPort.onChange(fn); return () => { a(); b(); }; },
+  });
+
 
   return {
     design: designPorts,
     destroy() {
+      unregisterCollabSurface();
       fc.disposed = true;
       // FIRST, so nothing that throws later in this teardown can leave the stage's
       // bottom band reserved for a panel that no longer exists.

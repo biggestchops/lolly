@@ -931,6 +931,7 @@ test('inbound presence frames arrive unreordered, with their sequence intact', a
   const r = rig('inviter');
   await connect(r);
   const channel = r.rtc.pc().channel('presence');
+  r.rtc.pc().channel('ops').deliver(JSON.stringify({ t: 'hello', c: '01GUEST', v: '1.1.0', p: 1 }));
   // `maxRetransmits: 0` means late and out-of-order frames are the normal case. The
   // transport passes them through untouched - newest-only is the roster's rule (section 11.5),
   // and a transport that buffered to "fix" the order would add exactly the latency the

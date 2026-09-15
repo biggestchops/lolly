@@ -728,6 +728,7 @@ export function parsePresenceFrame(value: unknown): PresenceFrame | null {
   return {
     from,
     seq,
+    ...(typeof value.epoch === 'string' && value.epoch.length <= 256 ? { epoch: value.epoch, v: typeof value.v === 'number' ? value.v : undefined } : {}),
     state: state === null ? null : (state as PresenceState),
     away: away === true,
   };
@@ -865,6 +866,8 @@ export function createRtcTransport(opts: RtcTransportOptions): RtcTransport {
    * duration of the reconnect, not un-greyed and re-greyed.
    */
   let recovering = false;
+  let peerPresenceVersion = 0;
+  let boundPresenceId: string | undefined;
   let presenceSeq = 0;
   let snapshot: RtcTransportState | null = null;
 
@@ -1389,15 +1392,15 @@ export function createRtcTransport(opts: RtcTransportOptions): RtcTransport {
   function sendHello(): void {
     const seed = opts.seed;
     if (seed === undefined) {
-      writeJson('ops', { t: 'hello', c: clientId, v: opVersion, h: historyProtocol });
+      writeJson('ops', { t: 'hello', c: clientId, v: opVersion, h: historyProtocol, p: 1 });
       return;
     }
-    const result = writeJson('ops', { t: 'hello', c: clientId, v: opVersion, h: historyProtocol, s: seed });
+    const result = writeJson('ops', { t: 'hello', c: clientId, v: opVersion, h: historyProtocol, p: 1, s: seed });
     if (result !== 'too-large' && result !== 'unserializable') return;
     log('rtc-transport: session seed did not fit the hello frame', seed.length);
     // The seed is what is dropped, never the op-version or history declarations: an
     // acceptor with no seed asks for state on connect, but one with no hello learns neither.
-    writeJson('ops', { t: 'hello', c: clientId, v: opVersion, h: historyProtocol });
+    writeJson('ops', { t: 'hello', c: clientId, v: opVersion, h: historyProtocol, p: 1 });
   }
 
   function receive(lane: RtcLane, data: unknown): void {
@@ -1433,7 +1436,7 @@ export function createRtcTransport(opts: RtcTransportOptions): RtcTransport {
         log('rtc-transport: malformed presence frame');
         return;
       }
-      emit('message', { lane: 'presence', kind: 'presence', frame });
+      if (boundPresenceId) emit('message', { lane: 'presence', kind: 'presence', frame: { ...frame, from: boundPresenceId } });
       return;
     }
     if (lane === 'beam') {
@@ -1445,7 +1448,9 @@ export function createRtcTransport(opts: RtcTransportOptions): RtcTransport {
       return;
     }
     if (parsed.t === 'hello') {
-      const peerId = typeof parsed.c === 'string' ? parsed.c : undefined;
+      const peerId = typeof parsed.c === 'string' && parsed.c.length <= MAX_CLIENT_ID_CHARS ? parsed.c : undefined;
+      boundPresenceId ??= peerId;
+      peerPresenceVersion = parsed.p === 1 ? 1 : 0;
       const peerOpVersion = typeof parsed.v === 'string' ? parsed.v : undefined;
       const peerHistory = typeof parsed.h === 'string' && parsed.h.length > 0 ? parsed.h : undefined;
       // The seed is a packed URL fragment from a stranger (section 11.21): typed here, and
@@ -1793,7 +1798,9 @@ export function createRtcTransport(opts: RtcTransportOptions): RtcTransport {
       // peers' frames verbatim, and re-numbering those would break the join handshake.
       const from = frame.from ?? clientId;
       const seq = frame.seq ?? (presenceSeq += 1);
-      const out: PresenceFrame = { from, seq, state: frame.state, away: frame.away === true };
+      const state = frame.state?.surface && peerPresenceVersion !== 1
+        ? { ...frame.state, cursor: undefined, surface: undefined } : frame.state;
+      const out: PresenceFrame = { v: frame.v, epoch: frame.epoch, from, seq, state, away: frame.away === true };
       return writeJson('presence', out);
     },
     sendBeam,

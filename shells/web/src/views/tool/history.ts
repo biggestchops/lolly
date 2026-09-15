@@ -1,3 +1,5 @@
+import { collabHistoryValue } from '../../lib/collab-undo.ts';
+import { rowIdField } from '../../lib/row-id.ts';
 // SPDX-License-Identifier: MPL-2.0
 /**
  * tool view: undo/redo history, design intent, toolbar slots.
@@ -104,7 +106,9 @@ export const undoHistory = (tview: ToolViewCtx) => {
     showHistoryToast(tview, { empty: 'undo' });
     return;
   }
-  applyHistory(tview, entry.id, entry.before);
+  const item = tview.runtime.getModel().find(i => i.id === entry.id);
+  applyHistory(tview, entry.id, collabHistoryValue(tview.runtime, entry.id, item?.value, entry.after, entry.before, entry.collabStamp,
+    item ? rowIdField(item) : 'id') as InputValue);
   showHistoryToast(tview, { kind: 'undo', label: entry.label });
   refreshHistoryUI(tview);
 };
@@ -115,7 +119,9 @@ export const redoHistory = (tview: ToolViewCtx) => {
     showHistoryToast(tview, { empty: 'redo' });
     return;
   }
-  applyHistory(tview, entry.id, entry.after);
+  const item = tview.runtime.getModel().find(i => i.id === entry.id);
+  applyHistory(tview, entry.id, collabHistoryValue(tview.runtime, entry.id, item?.value, entry.before, entry.after, entry.collabStamp,
+    item ? rowIdField(item) : 'id') as InputValue);
   showHistoryToast(tview, { kind: 'redo', label: entry.label });
   refreshHistoryUI(tview);
 };

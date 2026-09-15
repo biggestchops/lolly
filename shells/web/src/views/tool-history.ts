@@ -34,6 +34,7 @@ export interface HistoryEntry {
   label: string;
   before: InputValue;
   after: InputValue;
+  collabStamp?: number;
 }
 
 /** Entries kept before the oldest is dropped. */
@@ -151,7 +152,7 @@ export interface HistoryModel {
    * previous gesture, and 'pushed' when it became a new undo step. A push or a
    * coalesce breaks the redo chain.
    */
-  record(edit: { id: string; label: string; before: InputValue; after: InputValue }, now: number): RecordOutcome;
+  record(edit: { id: string; label: string; before: InputValue; after: InputValue; collabStamp?: number }, now: number): RecordOutcome;
   /** Pop the newest undo entry onto the redo stack and return it, or null. */
   undo(): HistoryEntry | null;
   /** Pop the newest redo entry back onto the undo stack and return it, or null. */
@@ -181,7 +182,7 @@ export function createHistory(opts: { limit?: number; coalesceMs?: number } = {}
   let lastRecordTime = 0;
 
   return {
-    record({ id, label, before, after }, now) {
+    record({ id, label, before, after, collabStamp }, now) {
       if (sameValue(before, after)) return 'ignored';
       if (carriesBytes(after) || carriesBytes(before)) return 'ignored';
 
@@ -191,7 +192,7 @@ export function createHistory(opts: { limit?: number; coalesceMs?: number } = {}
         last.after = cloneValue(after);   // extend the gesture, keep its original `before`
         outcome = 'coalesced';
       } else {
-        undoStack.push({ id, label, before: cloneValue(before), after: cloneValue(after) });
+        undoStack.push({ id, label, before: cloneValue(before), after: cloneValue(after), ...(collabStamp !== undefined ? { collabStamp } : {}) });
         if (undoStack.length > limit) undoStack.shift();
         outcome = 'pushed';
       }

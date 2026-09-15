@@ -849,7 +849,13 @@ describe('private collab - real-browser ceremony drills', { skip: GATE ?? false,
     // that can tell the two apart.
     await pageA.goto(`${base}/#/tool/${TOOL_ID}`, { waitUntil: 'domcontentloaded' });
     await pageA.waitForSelector(`[data-input-id="${FIELD}"]`, { timeout: 45_000 });
-    await pageA.fill(`[data-input-id="${FIELD}"]`, SENTINEL);
+    await pageA.waitForLoadState('networkidle');
+    // This assertion is about retaining runtime state across the handoff. Wait
+    // for the mounted runtime and seed through its existing canvas input bridge.
+    await pageA.waitForFunction(() => typeof (window as unknown as { __lollySetInput?: unknown }).__lollySetInput === 'function');
+    await pageA.evaluate(({ field, value }) => (window as unknown as { __lollySetInput: (id: string, value: string) => void }).__lollySetInput(field, value), { field: FIELD, value: SENTINEL });
+    await until(() => pageA.evaluate(() => new URL(location.href).searchParams.get('url')).then(v => v === SENTINEL),
+      10000, 'the sentinel edit to reach the model and its share URL before pairing');
     // Dispatched rather than clicked: the Share button lives in the actions bar, which
     // another floating control overlaps at this viewport, and Playwright refuses an
     // intercepted click. The handler is the same one a real click runs.
@@ -985,35 +991,16 @@ describe('private collab - real-browser ceremony drills', { skip: GATE ?? false,
       pill: document.querySelectorAll('.collab-pill .collab-av').length,
       rtc: (window as unknown as { __rtcDrill?: { trace: string[] }[] }).__rtcDrill?.map(r => r.trace.join(' | ')) ?? [],
     })).catch(() => null);
-    /**
-     * "This side's ceremony completed", per role - and the two roles do NOT look the same.
-     *
-     * The inviter is already in the tool, so its dialog sits on the Connected screen until
-     * a human presses "Start editing": `[data-act="done"]` is a stable state to observe.
-     * The acceptor arrived cold on `#/join`, so `onConnected` hands the pair straight to
-     * `lib/collab-live-mount.ts`, which NAVIGATES to the tool - the route change tears the
-     * join view down and the dialog closes with it (`collab-live-mount.ts`: "one navigates
-     * and one re-mounts"). Its Connected screen therefore exists for less than a frame,
-     * and polling for that button is polling for something the product deliberately does
-     * not leave on screen.
-     *
-     * So the acceptor is judged by what its completion PRODUCES, which is the stronger
-     * evidence anyway: the ceremony dialog gone and a live collab mount in its place. The
-     * only path to that mount is the dialog's `onConnected`, which fires on phase
-     * `connected` and nowhere else - a mounted acceptor is a proof that its machine
-     * completed, where the button was only ever a proxy for it.
-     */
-    const completed = (side: { done: boolean; step: string | null; pill: number } | null, role: 'inviter' | 'acceptor'): boolean => {
-      if (!side) return false;
-      if (side.done) return true;
-      return role === 'acceptor' && side.step === null && side.pill >= 1;
-    };
+    // Either role can hand off before the next poll. A mounted pair with both
+    // participants proves completion even when the Connected screen was transient.
+    const completed = (side: { done: boolean; step: string | null; pill: number } | null): boolean =>
+      !!side && (side.done || side.step === null && side.pill >= 2);
     let connected = false;
     const deadline = Date.now() + 60_000;
     while (Date.now() < deadline) {
       const [a, b] = await Promise.all([peek(pageA), peek(pageB)]);
       timeline.push({ t: Date.now(), a, b });
-      if (completed(a, 'inviter') && completed(b, 'acceptor')) { connected = true; break; }
+      if (completed(a) && completed(b)) { connected = true; break; }
       await new Promise(r => setTimeout(r, 500));
     }
     writeFileSync(join(OUT, 'ceremony-timeline.json'), JSON.stringify(timeline, null, 2));
@@ -1071,6 +1058,11 @@ describe('private collab - real-browser ceremony drills', { skip: GATE ?? false,
         note(`A reached connected but never showed a pill: ${(e as Error).message}`);
       }
     }
+    if (!inviterMounted && await pageA.locator('.collab-pill').count()) {
+      inviterMounted = true;
+      inviterKeptState = await pageA.inputValue(`[data-input-id="${FIELD}"]`).catch(() => '');
+      inviterParticipants = await pageA.locator('.collab-pill .collab-av').count();
+    }
     // Still conditional, and still worth trying: an acceptor whose handoff has not yet
     // navigated (a slow seed) IS on the Connected screen, and pressing the button is what
     // a person would do. The usual case is the other one - the mount got there first - 
@@ -1113,24 +1105,7 @@ describe('private collab - real-browser ceremony drills', { skip: GATE ?? false,
             'gated on the transport `ready` event by design (ICE-connected is not ' +
             'session-usable). Look at whether both descriptions were applied.'
           : '') +
-        (earlyIce
-          ? '\n\nHISTORICAL - the first drill\'s acceptor-side race in shells/web/src/collab/ceremony.ts.\n' +
-            "The acceptor's peer connection reached ICE `connected` BEFORE the answer screen " +
-            'rendered - i.e. while `startAnswer` was still awaiting `effects.createAnswer()` ' +
-            "(which waits for ICE gathering to complete before it can mint the reply blob), so " +
-            'the machine was still in phase `creating-answer`. `onIce` drops BOTH relevant ' +
-            'states in that phase: `checking` only arms the 45s connect watchdog when the ' +
-            'phase is already `awaiting-connection`, and `connected` returns early unless the ' +
-            'phase is `connecting` or `awaiting-connection`. ICE never transitions again, and ' +
-            'nothing re-reads the transport\'s CURRENT state on phase entry - the signal is ' +
-            'edge-triggered only. The acceptor therefore sits on "Step 3 of 3: Send the reply ' +
-            'back" until ANSWER_WAIT_MS (10 minutes) expires, while the inviter is fully live: ' +
-            'all three data channels open on both sides, and the inviter\'s pill shows one ' +
-            'participant forever.\n' +
-            'It is not a flake - on a loopback/LAN pair ICE connects tens of ms after ' +
-            "setLocalDescription, and gathering-complete is always slower.\n" +
-            `Acceptor trace at the moment the answer screen appeared: ${JSON.stringify(bAtAnswer[0]?.trace ?? [])}`
-          : ''),
+        `\nLatest state: ${JSON.stringify(timeline.at(-1))}`,
       );
     }
     ceremonyOk = true;

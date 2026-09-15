@@ -1,106 +1,21 @@
 // SPDX-License-Identifier: MPL-2.0
-/**
- * collab-presence - the roster and the wire cadence for live presence
- * (plan 100 section 4.5–section 4.8, section 11.4, section 11.5; wave 1.1).
- *
- * TRANSPORT-BLIND BY CONSTRUCTION. This module holds who is here, what they are
- * looking at, and WHEN a frame may go out. It owns no socket, no data channel, no
- * DOM and no globals: frames arrive through `receive()` and leave through the
- * injected `send()`, so the same engine drives a WebRTC pair (Track A), a ws room
- * (Track B) and the loopback test harness (section 10) without knowing which it is. The
- * clock and the timers are injected too - tests run it on fake time, and the
- * heartbeat can move into a Worker later (section 11.4) by handing it a different
- * `setTimer`, not by rewriting this.
- *
- * The numbers are the plan's, pinned once here (section 4.7):
- *
- *   • **50 ms send throttle** while peers are present - leading edge plus a trailing
- *     flush, so the last state of a burst always lands.
- *   • **ZERO traffic when alone.** Not "cheap when alone" - nothing sent, and no
- *     timer even scheduled (tldraw's occupancy scaling, radicalised: nothing to say,
- *     nobody to hear). Presence starts costing the moment a first peer appears, and
- *     that arrival flushes our own state so the newcomer sees us immediately.
- *   • **15 s self-refresh**, **30 s eviction**, **3 s sweep** (the Yjs constants).
- *   • **`null` state = clean leave**, applied immediately rather than waiting out
- *     the TTL.
- *
- * TWO SNAGS ARE DESIGNED IN, not left to the transport:
- *
- *  - **section 11.5 - unordered frames arrive stale.** The presence lane is deliberately
- *    lossy (`maxRetransmits: 0`), so a cursor frame can overtake a newer one. Every
- *    frame carries a per-sender sequence number and the roster applies newest-only:
- *    a frame whose `seq` is not strictly greater than the one we hold for that
- *    sender is dropped, not merged. Presence is a whole-value register - there is
- *    no field-level merge to fall back on, which is exactly why the ordering has to
- *    be resolved here.
- *  - **section 11.4 - a background tab is not a dead tab.** Chrome throttles background
- *    timers to ~1/min, so a helper reading their email would look evicted at TTL
- *    while the connection is perfectly healthy. So a peer flagged `away` is EXEMPT
- *    from eviction: the TTL is for silent crashes only, and a closed channel or a
- *    failed ICE connection is removed by the transport calling `remove()`. An away
- *    peer shows as away, never as gone.
- *
- * A leave DISCARDS the sender's sequence bookkeeping, so a device that reloads and
- * rejoins with its counter back at 1 is admitted straight away. The trade, stated
- * rather than hidden: a frame still in flight when the leave overtakes it re-adds
- * that peer, and the TTL is what removes it again. Ghosting for one sweep beats
- * locking a real rejoin out for 30 s. (A per-session epoch alongside `seq` would
- * settle both; it is not in the v1.1 frame shape, so it is not invented here.)
- *
- * A reload with NO leave - the tab that crashed, the phone that slept - is bounded
- * by the same 30 s: a frame whose `seq` is not newer is accepted anyway once the
- * sender has been silent for a whole TTL. Eviction alone cannot carry that, because
- * the away exemption above means an away peer is never evicted, and its stale
- * bookkeeping would otherwise stand for the life of the session.
- *
- * Ordering note for the colour engine (section 4.4, wave 1.4): `roster()` returns peers in
- * FIRST-SEEN order, which is what makes "deterministic first-unused-wins by join
- * order" reproducible on every client. `firstSeen` is carried per peer so a caller
- * can re-derive it after an eviction reshuffles the map.
- *
- * No wall clock: the default clock is `performance.now()` where it exists. Presence
- * never converges (it is not the op path - section 11.7), but a device whose system clock
- * jumps must not evict a peer that is sitting right there, which a monotonic clock
- * gets for free.
+/** Ephemeral presence with 20 Hz latest-state coalescing, connection epochs,
+ * heartbeats and bounded liveness. Hidden peers expire too; a leave retains a
+ * short sequence tombstone so delayed packets cannot resurrect a departed cursor.
  */
 
 // Canonical presence payload - the contract's v1.1 `Presence` (plan 100 section 3).
-import type { Presence } from '@lolly-tools/core/canvas-op-v1';
+import { PRESENCE_VERSION } from '@lolly-tools/core/collab-presence-v1';
+import type { PresenceFrame, PresenceState } from '@lolly-tools/core/collab-presence-v1';
+export type { PresenceFrame, PresenceState } from '@lolly-tools/core/collab-presence-v1';
 
-/**
- * What one client says about itself on the awareness lane.
- *
- * Structurally the contract's `Presence`, with the two canvas-only lanes relaxed to
- * optional: focus presence ships on EVERY tool (section 4.1) while a true x/y cursor is
- * opt-in per tool (section 4.3), so a sidebar-only tool has no cursor and no selection to
- * report. A full `Presence` is assignable to this; the reverse is not, and the test
- * pins that direction so the two cannot drift apart silently.
- */
-export type PresenceState =
-  Omit<Presence, 'cursor' | 'selection'> & Partial<Pick<Presence, 'cursor' | 'selection'>>;
-
-/** One presence frame as it crosses the wire. */
-export interface PresenceFrame {
-  /** The SENDING client's id (the per-device ULID of plan 100 section 5) - the roster key.
-   *  Distinct from `state.userId`, which is the identity a human sees; in a private
-   *  collab they are usually the same value, and nothing here assumes it. */
-  readonly from: string;
-  /** Per-sender sequence number, strictly increasing. Newest-only (section 11.5). */
-  readonly seq: number;
-  /** The sender's presence, or `null` for a clean leave (section 4.7). */
-  readonly state: PresenceState | null;
-  /** The sender's tab is hidden (section 11.4). Away is a display state, never a reason
-   *  to evict. */
-  readonly away?: boolean;
-}
-
-/** A roster entry - one peer as this client currently understands them. */
 export interface PresencePeer {
   /** The peer's client id (the frame's `from`). */
   readonly id: string;
   readonly state: PresenceState;
   /** The sequence number of the newest frame applied for this peer. */
   readonly seq: number;
+  readonly epoch?: string;
   readonly away: boolean;
   /** Engine-clock ms of the first frame that created this entry - the join order
    *  the collaborator-colour assignment keys off (section 4.4). */
@@ -113,7 +28,7 @@ export interface PresencePeer {
 export const PRESENCE_THROTTLE_MS = 50;
 /** Re-broadcast our own state this often so peers' TTLs never expire us (section 4.7). */
 export const PRESENCE_HEARTBEAT_MS = 15_000;
-/** Silence after which a peer is presumed crashed (section 4.7). Away peers are exempt. */
+/** Silence after which a peer is presumed crashed (section 4.7). Away peers have the same liveness bound. */
 export const PRESENCE_TTL_MS = 30_000;
 /** How often the roster is checked for expiries (section 4.7). */
 export const PRESENCE_SWEEP_MS = 3_000;
@@ -183,6 +98,7 @@ interface PeerRecord {
   id: string;
   state: PresenceState;
   seq: number;
+  epoch?: string;
   away: boolean;
   firstSeen: number;
   lastSeen: number;
@@ -196,6 +112,7 @@ function defaultNow(): number {
 
 export function createPresenceEngine(opts: PresenceEngineOptions): PresenceEngine {
   const { clientId } = opts;
+  const epoch = globalThis.crypto.randomUUID();
   const send = opts.send;
   const now = opts.now || defaultNow;
   const setTimer = opts.setTimer || ((fn: () => void, ms: number): unknown => setTimeout(fn, ms));
@@ -204,6 +121,7 @@ export function createPresenceEngine(opts: PresenceEngineOptions): PresenceEngin
 
   /** Insertion-ordered, so `roster()` is join order (section 4.4). */
   const peers = new Map<string, PeerRecord>();
+  const clocks = new Map<string, { epoch?: string; seq: number; at: number; retired: string[] }>();
   const subscribers = new Set<(peers: readonly PresencePeer[]) => void>();
 
   let local: PresenceState | null = null;
@@ -274,7 +192,7 @@ export function createPresenceEngine(opts: PresenceEngineOptions): PresenceEngin
     lastSentAt = now();
     seq += 1;
     try {
-      send?.({ from: clientId, seq, state, away });
+      send?.({ v: PRESENCE_VERSION, from: clientId, epoch, seq, state, away });
     } catch {
       // The lane is lossy by construction (`maxRetransmits: 0`), so a frame the
       // transport refused - a channel that closed between the arm and the flush - is
@@ -328,8 +246,9 @@ export function createPresenceEngine(opts: PresenceEngineOptions): PresenceEngin
   function sweep(): void {
     const t = now();
     let changed = false;
+    for (const [id, clock] of clocks) if (t - clock.at >= PRESENCE_TTL_MS) clocks.delete(id);
     for (const [id, peer] of peers) {
-      if (peer.away) continue;
+
       if (t - peer.lastSeen >= PRESENCE_TTL_MS) { peers.delete(id); changed = true; }
     }
     if (!changed) return;
@@ -339,22 +258,18 @@ export function createPresenceEngine(opts: PresenceEngineOptions): PresenceEngin
 
   function receive(frame: PresenceFrame): boolean {
     // Our own frame looped back by a relay: never our own roster entry.
-    if (destroyed || frame.from === clientId) return false;
+    if (destroyed || frame.from === clientId || !Number.isSafeInteger(frame.seq) || frame.seq < 0 || frame.v !== undefined && frame.v !== PRESENCE_VERSION) return false;
     const t = now();
     const existing = peers.get(frame.from);
-    // Newest-only (section 11.5). `<=` so a duplicate is as inert as a stale one.
-    //
-    // …unless the sender has been silent for a whole TTL, in which case the frame is
-    // read as a RESTART rather than as reordering. `lastSeen` only moves on an
-    // accepted frame, so a device that reloads and starts counting at 1 again can
-    // never climb back over the seq we hold: eviction is the only thing that clears
-    // the bookkeeping, and an away peer is exempt from eviction (section 11.4) - which would
-    // make the lockout permanent for exactly the peer most likely to reload. The
-    // header states the trade as "locking a real rejoin out for 30 s"; this is what
-    // makes 30 s the actual bound, without evicting anyone to get it. Reordering on
-    // the lossy lane spans milliseconds, never half a minute, so nothing real is
-    // misread as a restart.
-    if (existing && frame.seq <= existing.seq && t - existing.lastSeen < PRESENCE_TTL_MS) return false;
+    // Retain recent leave/epoch clocks so delayed lossy samples cannot resurrect a
+    // departed cursor. Legacy senders may restart their sequence after one TTL.
+    const prior = clocks.get(frame.from);
+    if (prior && t - prior.at < PRESENCE_TTL_MS && ((frame.epoch === prior.epoch && frame.seq <= prior.seq)
+      || frame.epoch !== undefined && prior.retired.includes(frame.epoch))) return false;
+    const retired = prior?.retired ?? [];
+    if (prior?.epoch && prior.epoch !== frame.epoch) retired.push(prior.epoch);
+    clocks.set(frame.from, { epoch: frame.epoch, seq: frame.seq, at: t, retired: retired.slice(-8) });
+    if (clocks.size > 512) clocks.delete(clocks.keys().next().value!);
 
     if (frame.state === null) {
       if (!existing) return false;
@@ -369,6 +284,7 @@ export function createPresenceEngine(opts: PresenceEngineOptions): PresenceEngin
       id: frame.from,
       state: frame.state,
       seq: frame.seq,
+      epoch: frame.epoch,
       away: frame.away === true,
       firstSeen: existing ? existing.firstSeen : t,
       lastSeen: t,
@@ -432,11 +348,11 @@ export function createPresenceEngine(opts: PresenceEngineOptions): PresenceEngin
     snapshot(joinerId?: string): PresenceFrame[] {
       const out: PresenceFrame[] = [];
       if (local && clientId !== joinerId) {
-        out.push({ from: clientId, seq, state: local, away });
+        out.push({ v: PRESENCE_VERSION, from: clientId, epoch, seq, state: local, away });
       }
       for (const peer of peers.values()) {
         if (peer.id === joinerId) continue;
-        out.push({ from: peer.id, seq: peer.seq, state: peer.state, away: peer.away });
+        out.push({ v: PRESENCE_VERSION, from: peer.id, epoch: peer.epoch, seq: peer.seq, state: peer.state, away: peer.away });
       }
       return out;
     },

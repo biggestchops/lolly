@@ -68,6 +68,7 @@ import {
   damageToOps,
   opsToDamage,
 } from '@lolly-tools/core/canvas-op-v1';
+import { trackCollabUndo, noteRemoteForUndo } from './collab-undo.ts';
 import type {
   BoxId,
   BoxRow,
@@ -98,6 +99,7 @@ export interface CollabPlumbingOpts {
   /** The adapter to talk to. Defaults to the registered provider; passing one
    *  explicitly is how tests (and a loopback pair, plan 100 section 10) drive this. */
   adapter?: CanvasSyncAdapter;
+  canEdit?: () => boolean;
   /** This device's collab client id. Defaults to the per-device persisted ULID. */
   clientId?: string;
   /** Frame scheduler - injected so tests need no rAF and a Worker-driven variant
@@ -111,8 +113,15 @@ export interface CollabPlumbingOpts {
 export interface CollabPlumbing {
   /** Inbound: queue remote ops, coalesced and applied once per animation frame. */
   applyRemotePatch(ops: readonly CanvasOp[]): void;
+  /** Replace the mounted projection from an already-restored adapter. */
+  applySnapshot(snapshot: CollabDocumentSnapshot): void;
   /** Restore the runtime's setInput and stop applying queued frames. Idempotent. */
   detach(): void;
+}
+
+export interface CollabDocumentSnapshot {
+  readonly ops: readonly CanvasOp[];
+  readonly clock: number;
 }
 
 // ── Per-device identity + the Lamport clock (plan 100 section 5) ──────────────────────
@@ -355,6 +364,8 @@ function defaultRaf(fn: () => void): void {
  */
 interface ConvergedRead {
   param(key: string, raw: unknown): unknown;
+  alive(col: string | undefined, id: BoxId): boolean | undefined;
+  order(col: string | undefined, ids: string[]): string[] | undefined;
   /** `col` is the op's OWN scope: absent means the document's default box store,
    *  which is what a v1.0 op log (and the canvas collection) lands in. */
   field(col: string | undefined, id: BoxId, field: string, raw: unknown): unknown;
@@ -362,6 +373,16 @@ interface ConvergedRead {
 
 function convergedRead(state: CanvasDocState | null): ConvergedRead {
   return {
+    order(col, ids) {
+      const collection = col === undefined ? state : state?.collections?.get(col);
+      if (!collection || ids.some(id => !collection.boxes.has(id))) return undefined;
+      const included = new Set(ids);
+      return collection.order.filter(id => included.has(id));
+    },
+    alive(col, id) {
+      const collection = col === undefined ? state : state?.collections?.get(col);
+      return collection?.boxes.has(id) ? true : collection?.removed?.has(id) ? false : undefined;
+    },
     param(key, raw) {
       if (!state) return raw;
       return state.params.has(key) ? state.params.get(key) : raw;
@@ -396,12 +417,17 @@ export function attachCollabPlumbing(
   // Re-bound as a non-optional const: the emit/flush helpers below are hoisted
   // function declarations, where TS cannot carry the guard's narrowing.
   const adapter: CanvasSyncAdapter = registered;
+  const stopUndoTracking = trackCollabUndo(runtime);
   const client = opts.clientId ?? getCollabClientId();
   const raf = opts.raf ?? defaultRaf;
   let applyingRemote = false;
+  let applyingLocalPatch = false;
   let detached = false;
   let queue: CanvasOp[] = [];
   let scheduled = false;
+  let projectionPending = false;
+  let replacePending = false;
+  let queueBytes = 0;
 
   const warn = (what: string, e: unknown): void => {
     console.warn(`[lolly:collab] ${what}`, e);
@@ -486,13 +512,25 @@ export function attachCollabPlumbing(
   // sees its receiver.
   const inner = runtime.setInput;
   const outer = (id: string, value: InputValue): Promise<void> => {
-    if (!applyingRemote && !detached) {
+    if (!applyingRemote && opts.canEdit?.() === false) return Promise.resolve();
+    if (!applyingRemote && !applyingLocalPatch && !detached) {
       // A sync failure must never cost the user their edit.
       try { emitLocal(id, value); } catch (e) { warn('outbound', e); }
     }
     return inner.call(runtime, id, value);
   };
   runtime.setInput = outer;
+  const innerPatch = runtime.applyPatch;
+  const outerPatch = (values: Record<string, unknown>): Promise<void> => {
+    if (applyingRemote || detached) return innerPatch.call(runtime, values);
+    if (opts.canEdit?.() === false) return Promise.resolve();
+    for (const [id, value] of Object.entries(values)) emitLocal(id, value as InputValue);
+    applyingLocalPatch = true;
+    try { return innerPatch.call(runtime, values); }
+    finally { applyingLocalPatch = false; }
+  };
+  runtime.applyPatch = outerPatch;
+
 
   // ── inbound ─────────────────────────────────────────────────────────────────
 
@@ -541,6 +579,7 @@ export function attachCollabPlumbing(
     for (const op of ops) {
       switch (op.k) {
         case 'add': {
+          if (merged.alive(op.col, op.id) === false) break;
           const existing = rows.get(op.id);
           if (existing) {
             for (const field of Object.keys(op.row)) {
@@ -559,6 +598,7 @@ export function attachCollabPlumbing(
           break;
         }
         case 'remove':
+          if (merged.alive(op.col, op.id) === true) break;
           if (rows.delete(op.id)) changed = true;
           break;
         case 'field':
@@ -587,7 +627,8 @@ export function attachCollabPlumbing(
       // document's own converged order does.
       const seeded = orderKeysFor(ids.length);
       const keyOf = new Map(ids.map((id, i) => [id, orderKeys.get(id) ?? seeded[i]!]));
-      const sorted = [...ids].sort((a, b) => {
+      const first = ops[0];
+      const sorted = merged.order(first && first.k !== 'param' ? first.col : undefined, ids) ?? [...ids].sort((a, b) => {
         const ka = keyOf.get(a)!;
         const kb = keyOf.get(b)!;
         return ka < kb ? -1 : ka > kb ? 1 : a < b ? -1 : a > b ? 1 : 0;
@@ -644,11 +685,36 @@ export function attachCollabPlumbing(
     return out.size ? Object.fromEntries(out) : null;
   }
 
+  function fullProjection(state: CanvasDocState, replace = false): Record<string, unknown> {
+    const values = new Map<string, unknown>();
+    for (const item of model()) {
+      if (SCALAR_INPUT_TYPES.has(item.type) && state.params.has(item.id)) values.set(item.id, state.params.get(item.id));
+      if (item.type !== 'blocks') continue;
+      const col = state.collections?.get(item.id);
+      if (!col) continue;
+      const idField = rowIdField(item);
+      const old = new Map<string, Record<string, unknown>>();
+      for (const row of Array.isArray(item.value) ? item.value : []) {
+        if (row && typeof row === 'object' && typeof (row as Record<string, unknown>)[idField] === 'string')
+          old.set((row as Record<string, unknown>)[idField] as string, row as Record<string, unknown>);
+      }
+      const ids = replace ? col.order : [...col.order, ...[...old.keys()].filter(id => !col.boxes.has(id) && !col.removed?.has(id))];
+      const anonymous = (Array.isArray(item.value) ? item.value : []).filter(row => !row || typeof row !== 'object' || typeof (row as Record<string,unknown>)[idField] !== 'string');
+      values.set(item.id, [...ids.map(id => ({
+        ...(replace ? Object.fromEntries(Object.entries(old.get(id) ?? {}).filter(([, value]) => !isScalar(value))) : old.get(id)),
+        ...col.boxes.get(id), [idField]: id,
+      })), ...(replace ? [] : anonymous)]);
+    }
+    return Object.fromEntries(values);
+  }
+
   async function flush(): Promise<void> {
     if (detached) return;
     const ops = queue;
-    queue = [];
-    if (!ops.length) return;
+    queue = []; queueBytes = 0;
+    const project = projectionPending; projectionPending = false;
+    const replace = replacePending; replacePending = false;
+    if (!ops.length && !project) return;
     for (const op of ops) observeClock(op.origin.clock);
     try { adapter.applyRemotePatch(ops); } catch (e) { warn('adapter apply', e); }
     // Read the document AFTER the apply and BEFORE the patch is built: the ops name
@@ -658,7 +724,7 @@ export function attachCollabPlumbing(
     let snapshot: CanvasDocState | null = null;
     try { snapshot = adapter.state(); } catch (e) { warn('adapter state', e); }
     let values: Record<string, unknown> | null = null;
-    try { values = buildPatch(ops, convergedRead(snapshot)); } catch (e) { warn('inbound', e); }
+    try { values = project && snapshot ? fullProjection(snapshot, replace) : buildPatch(ops, convergedRead(snapshot)); } catch (e) { warn('inbound', e); }
     if (!values) return;
     // The guard is held across the SYNCHRONOUS part of the apply only. That is the
     // whole re-entrancy window - applyPatch lands every value in the model before
@@ -675,14 +741,30 @@ export function attachCollabPlumbing(
   }
 
   return {
+    applySnapshot(snapshot) {
+      if (detached) return;
+      observeClock(snapshot.clock);
+      noteRemoteForUndo(runtime, snapshot.ops);
+      // The provider restored and validated the document before publishing this.
+      // Queued deltas belong to the previous projection and must not re-enter it.
+      queue = []; queueBytes = 0; projectionPending = true; replacePending = true;
+      if (scheduled) return;
+      scheduled = true;
+      raf(() => { scheduled = false; void flush().catch(e => warn('snapshot', e)); });
+    },
     applyRemotePatch(ops) {
       if (detached || !ops.length) return;
-      // Coalesce per frame (section 5): a burst of remote ops is ONE apply, so one hook
-      // pass and one paint. Unbounded by design for now - the hidden-tab queue cap
-      // + full-state resync is section 11.13, and belongs with the transport (wave 2.3).
-      // Appended one at a time, not spread: this is untrusted input, and a spread
-      // of a hostile-sized array is an argument-count crash rather than a queue.
-      for (const op of ops) queue.push(op);
+      noteRemoteForUndo(runtime, ops);
+      for (const op of ops) observeClock(op.origin.clock);
+      if (projectionPending) {
+        adapter.applyRemotePatch(ops);
+      } else {
+        for (const op of ops) { queue.push(op); queueBytes += JSON.stringify(op).length * 2; }
+        if (queue.length > 1000 || queueBytes > 512 * 1024) {
+          adapter.applyRemotePatch(queue);
+          queue = []; queueBytes = 0; projectionPending = true;
+        }
+      }
       if (scheduled) return;
       scheduled = true;
       raf(() => {
@@ -693,9 +775,11 @@ export function attachCollabPlumbing(
     detach() {
       if (detached) return;
       detached = true;
-      queue = [];
+      stopUndoTracking();
+      queue = []; queueBytes = 0; projectionPending = false;
       // Only if nothing wrapped us since - otherwise we would drop their wrapper.
       if (runtime.setInput === outer) runtime.setInput = inner;
+      if (runtime.applyPatch === outerPatch) runtime.applyPatch = innerPatch;
     },
   };
 }

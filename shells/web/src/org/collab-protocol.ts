@@ -63,6 +63,8 @@ import type {
   BoxId,
   BoxRow,
   CanvasOp,
+  CanvasCheckpoint,
+  CanvasDocState,
   GeometryField,
   OpOrigin,
   ParamValue,
@@ -99,6 +101,7 @@ export interface RosterEntry {
   readonly name?: string;
   readonly color?: string;
   readonly role?: CollabRole;
+  readonly presence?: import('../lib/collab-presence.ts').PresenceState;
 }
 
 // ── The document snapshot, in its JSON form ───────────────────────────────────
@@ -133,8 +136,8 @@ export interface WireDocState extends WireBoxes {
  */
 export type CollabPresencePayload = unknown;
 
-export interface JoinFrame { readonly t: 'join'; readonly opVersion: string }
-export interface ClientOpsFrame { readonly t: 'ops'; readonly ops: readonly CanvasOp[] }
+export interface JoinFrame { readonly t: 'join'; readonly opVersion: string; readonly presenceVersion?: number; readonly receipts?: number }
+export interface ClientOpsFrame { readonly t: 'ops'; readonly ops: readonly CanvasOp[]; readonly batchId?: string; readonly ids?: readonly string[] }
 export interface ClientPresenceFrame { readonly t: 'presence'; readonly frame: CollabPresencePayload }
 export interface LeaveFrame { readonly t: 'leave' }
 
@@ -144,6 +147,9 @@ export type ClientFrame = JoinFrame | ClientOpsFrame | ClientPresenceFrame | Lea
 
 export interface JoinAckFrame {
   readonly t: 'join-ack';
+  readonly receipts?: number;
+  readonly checkpoint?: CanvasCheckpoint;
+  readonly presenceVersion?: number;
   /** The OTHER members. The gateway excludes the joiner deliberately (rooms.ts
    *  `join()`: "a new arrival that sees itself in the roster renders an orphan
    *  ghost of itself") - self is `you`. */
@@ -235,7 +241,10 @@ export interface ErrorFrame {
   readonly message?: string;
 }
 
+export interface ReceiptFrame { readonly t: 'receipt'; readonly batchId: string; readonly durableRevision: number; readonly acceptedIds: readonly string[]; readonly rejectedIds: readonly string[]; readonly checkpoint?: CanvasCheckpoint; readonly serverClock?: number }
 export type ServerFrame =
+  | { readonly t: 'peer-role'; readonly id: string; readonly role: CollabRole }
+  | ReceiptFrame
   | JoinAckFrame
   | ServerOpsFrame
   | ServerPresenceFrame
@@ -243,7 +252,7 @@ export type ServerFrame =
   | PeerLeaveFrame
   | ErrorFrame;
 
-const SERVER_FRAME_TYPES = new Set(['join-ack', 'ops', 'presence', 'peer-join', 'peer-leave', 'error']);
+const SERVER_FRAME_TYPES = new Set(['join-ack', 'ops', 'presence', 'peer-join', 'peer-leave', 'peer-role', 'error', 'receipt']);
 
 /**
  * Parse one inbound message. Returns null for anything that is not a JSON object
@@ -677,4 +686,46 @@ export function withoutHeldKeys(op: CanvasOp, held: ReadonlyMap<string, CanvasOp
  *  so it identifies a BATCH, which is exactly the granularity an ack arrives at. */
 export function originKey(origin: OpOrigin): string {
   return `${origin.client}\u0000${origin.clock}`;
+}
+
+/** Validate checkpoint structure, then expose every register through the normal op guard. */
+export function checkpointOps(raw: unknown): CanvasOp[] | null {
+  const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+  if (!record(raw) || raw.version !== 1 || !Number.isSafeInteger(raw.clock) || Number(raw.clock) < 0) return null;
+  const ops: CanvasOp[] = [];
+  const reg = (v: unknown): v is { value: unknown; origin: OpOrigin } => record(v) && record(v.origin);
+  const entries = (v: unknown, max: number): v is [string, unknown][] => Array.isArray(v) && v.length <= max
+    && v.every(e => Array.isArray(e) && e.length === 2 && typeof e[0] === 'string') && new Set(v.map(e => e[0])).size === v.length;
+  const rows = (v: unknown, col?: string): boolean => {
+    if (!entries(v, 2000)) return false;
+    for (const [id, b] of v) {
+      if (!record(b) || !entries(b.fields, 200)) return false;
+      const scope = col === undefined ? {} : { col };
+      if (b.alive !== null) {
+        if (!reg(b.alive) || typeof b.alive.value !== 'boolean') return false;
+        ops.push(b.alive.value ? { k: 'add', id, row: {}, orderKey: '', origin: b.alive.origin, ...scope }
+          : { k: 'remove', id, origin: b.alive.origin, ...scope });
+      }
+      if (b.order !== null) {
+        if (!reg(b.order) || typeof b.order.value !== 'string') return false;
+        ops.push({ k: 'order', id, orderKey: b.order.value, origin: b.order.origin, ...scope });
+      }
+      for (const [field, value] of b.fields) {
+        if (!reg(value) || !isScalar(value.value)) return false;
+        ops.push({ k: 'field', id, field, value: value.value, origin: value.origin, ...scope });
+      }
+    }
+    return true;
+  };
+  if (!rows(raw.boxes) || !entries(raw.collections, 64) || !entries(raw.params, 512)) return null;
+  for (const [col, value] of raw.collections) if (!rows(value, col)) return null;
+  for (const [key, value] of raw.params) {
+    if (!reg(value) || !isParamValue(value.value)) return null;
+    ops.push({ k: 'param', key, value: value.value, origin: value.origin });
+  }
+  return ops.every(op => isCanvasOp(op) && op.origin.clock <= Number(raw.clock)) ? ops : null;
+}
+export function docStateToWire(state: CanvasDocState): WireDocState {
+  return { order: state.order, boxes: Object.fromEntries(state.boxes), params: Object.fromEntries(state.params),
+    collections: Object.fromEntries([...(state.collections ?? [])].map(([id, col]) => [id, { order: col.order, boxes: Object.fromEntries(col.boxes) }])) };
 }

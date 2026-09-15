@@ -40,6 +40,8 @@
  * with the document it decorates.
  */
 
+import { surfaceMapping } from '../lib/collab-surface-geometry.ts';
+import { collabSurface, surfacePresence } from '../lib/collab-surface.ts';
 import type { CanvasOp } from '@lolly-tools/core/canvas-op-v1';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import { createCollabFocus } from '../components/collab-focus.ts';
@@ -51,7 +53,7 @@ import type { CollabPill } from '../components/collab-pill.ts';
 import { attachCollabBeam } from '../lib/collab-live-mount.ts';
 import type { CollabBeamAttachment } from '../lib/collab-live-mount.ts';
 import type { BeamPackHost } from '../lib/beam-pack.ts';
-import type { CollabRuntime } from '../lib/collab-plumbing.ts';
+import type { CollabRuntime, CollabDocumentSnapshot } from '../lib/collab-plumbing.ts';
 import { createCollabSession } from '../lib/collab-session.ts';
 import type {
   CollabRole, CollabSession, CollabSessionHandle, CollabSessionState, CollabStream,
@@ -75,6 +77,7 @@ export const PILL_LANE_GAP_PX = 8;
  */
 interface CollabHandleLanes {
   readonly opsIn?: CollabStream<readonly CanvasOp[]>;
+  readonly snapshotIn?: CollabStream<CollabDocumentSnapshot>;
   readonly roleIn?: CollabStream<CollabRole>;
 }
 
@@ -329,7 +332,48 @@ export async function mountToolCollab(opts: ToolCollabOptions): Promise<ToolColl
     });
     steps.unshift(() => focus.dispose());
 
-    const cursors: CollabCursors = createCollabCursors({ stage: canvas, layer: layer?.el ?? null });
+    let localSurfaceId: string | undefined;
+    const refreshSurface = (): void => {
+      const surface = collabSurface(runtime);
+      session.updateSurface(surface ? { ...surfacePresence(surface), ...(localSurfaceId !== surface.id() ? { cursor: undefined } : {}) } : { cursor: undefined, surface: undefined, location: undefined, selection: [] });
+      localSurfaceId = surface?.id();
+    };
+    const onPointer = (event: PointerEvent): void => {
+      const surface = collabSurface(runtime);
+      localSurfaceId = surface?.id();
+      const el = surface?.element();
+      const point = el && surfaceMapping(el)?.fromClient({ x: event.clientX, y: event.clientY });
+      session.updateSurface(surface ? { ...surfacePresence(surface),
+        cursor: point && point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1 ? point : undefined } : { cursor: undefined });
+    };
+    const clearPointer = (): void => session.updateSurface({ cursor: undefined });
+    canvas.addEventListener('pointermove', onPointer);
+    canvas.addEventListener('pointerleave', clearPointer);
+    canvas.addEventListener('pointercancel', clearPointer);
+    const win = canvas.ownerDocument.defaultView;
+    win?.addEventListener('blur', clearPointer);
+    let subscribedSurface = collabSurface(runtime);
+    let offSurface = subscribedSurface?.subscribe(refreshSurface);
+    refreshSurface();
+    const syncSurface = (): void => {
+      const next = collabSurface(runtime);
+      if (next === subscribedSurface) { if (next?.id() !== localSurfaceId || next && !next.element()) refreshSurface(); return; }
+      offSurface?.(); subscribedSurface = next; offSurface = next?.subscribe(refreshSurface); refreshSurface();
+    };
+    steps.unshift(() => {
+      offSurface?.(); canvas.removeEventListener('pointermove', onPointer);
+      canvas.removeEventListener('pointerleave', clearPointer); canvas.removeEventListener('pointercancel', clearPointer);
+      win?.removeEventListener('blur', clearPointer);
+    });
+    const cursors: CollabCursors = createCollabCursors({ stage: canvas, layer: layer?.el ?? null,
+      mapPoint: (id, point) => {
+        const remote = session.presence.roster().find(p => p.id === id)?.state.surface;
+        const surface = collabSurface(runtime);
+        if (!remote || !surface || remote.id !== surface.id()) return null;
+        const el = surface.element();
+        return el && surfaceMapping(el)?.toClient(point) || null;
+      },
+    });
     steps.unshift(() => cursors.dispose());
 
     /**
@@ -406,6 +450,15 @@ export async function mountToolCollab(opts: ToolCollabOptions): Promise<ToolColl
       ...(beam ? { actions: beam.actions } : {}),
     });
     steps.unshift(() => pill.destroy());
+    if (handle.saveIn) {
+      const status = canvas.ownerDocument.createElement('span');
+      status.className = 'collab-save-status';
+      status.setAttribute('role', 'status');
+      status.style.paddingInline = '0.5em';
+      pill.el.appendChild(status);
+      const stop = handle.saveIn.subscribe(state => { status.textContent = state.message; });
+      steps.unshift(() => { stop(); status.remove(); });
+    }
 
     const syncPillLane = (): void => {
       const next = pillLaneOffset(stage, el => el.getBoundingClientRect().width);
@@ -471,6 +524,10 @@ export async function mountToolCollab(opts: ToolCollabOptions): Promise<ToolColl
         try { session.applyRemotePatch(ops); } catch (e) { console.warn('[lolly:collab] apply ops', e); }
       }));
     }
+    const snapshotIn = lane<CollabDocumentSnapshot>(handle, 'snapshotIn');
+    if (snapshotIn) steps.unshift(snapshotIn.subscribe(snapshot => {
+      try { session.applySnapshot(snapshot); } catch (error) { console.warn('[lolly:collab] apply snapshot', error); }
+    }));
 
     /**
      * THE ROLE WIRE (section 11.19). A downgrade to observer is decided by the transport - an
@@ -505,6 +562,7 @@ export async function mountToolCollab(opts: ToolCollabOptions): Promise<ToolColl
        * stepped over.
        */
       reanchor(): void {
+        syncSurface();
         try { focus.reanchor(); } catch (e) { console.warn('[lolly:collab] focus reanchor', e); }
         try { cursors.reanchor(); } catch (e) { console.warn('[lolly:collab] cursor reanchor', e); }
         try { syncPillLane(); } catch (e) { console.warn('[lolly:collab] pill lane', e); }

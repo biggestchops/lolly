@@ -234,7 +234,7 @@ test('a silent peer is evicted at exactly 30 s, not before', () => {
   assert.equal(PRESENCE_TTL_MS % PRESENCE_SWEEP_MS, 0, 'the 3 s sweep lands on the TTL');
 });
 
-test('an away peer is never evicted - a throttled background tab is not a crash', () => {
+test('away peers expire after bounded silence and can rejoin', () => {
   const { clock, engine } = rig();
 
   engine.setLocal(stateOf('me'));
@@ -242,14 +242,13 @@ test('an away peer is never evicted - a throttled background tab is not a crash'
   assert.equal(engine.roster()[0]?.away, true, 'away passes through to the roster');
 
   clock.advance(PRESENCE_TTL_MS * 2);
-  assert.equal(engine.roster().length, 1, 'silence from an away peer means nothing');
-  assert.equal(engine.roster()[0]?.away, true);
+  assert.equal(engine.roster().length, 0, 'away does not exempt connection liveness');
 
   // Coming back: a frame without the flag clears it, and the TTL applies again.
   const returned = clock.now();
   assert.equal(engine.receive(frameOf('p1', 2)), true);
   assert.equal(engine.roster()[0]?.away, false);
-  assert.equal(engine.roster()[0]?.firstSeen, 0, 'still the same entry, same join order');
+  assert.equal(engine.roster()[0]?.firstSeen, returned, 'a returning connection rejoins the roster');
 
   clock.advanceTo(returned + PRESENCE_TTL_MS);
   assert.deepEqual(engine.roster(), [], 'back to being evictable');
@@ -522,7 +521,7 @@ test('an away peer whose counter restarts is admitted after one TTL, not never',
   assert.equal(peer?.seq, 1, 'the restarted sequence is adopted, not merged');
   assert.equal(peer?.away, false, 'and the peer is live again');
   assert.equal(peer?.state.focus, 'after-reload');
-  assert.equal(peer?.firstSeen, 0, 'a reload is the same person - join order (and colour) survive');
+  assert.equal(peer?.firstSeen, PRESENCE_TTL_MS, 'an expired peer rejoins');
 });
 
 test('a live peer that reloads is the documented evict-then-rejoin, unchanged', () => {

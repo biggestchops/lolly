@@ -1,160 +1,29 @@
 // SPDX-License-Identifier: MPL-2.0
 /**
- * org/collab-handle - the Track B ADAPTER: one work-collab provider, seen as the
- * `CollabSessionHandle` a mounted tool actually needs (plan 100 section 7, wave 3.2).
+ * Adapt a Work provider to the mounted tool's CollabSessionHandle.
  *
- * `org/collab-provider.ts` speaks the gateway's wire; `lib/collab-session.ts`
- * composes presence, colours and op plumbing for a mount. Neither imports the other,
- * deliberately - the provider's header says so, and `collab/rtc-transport.ts` says
- * the same thing for Track A ("a transport must not depend on a session"). THIS is
- * the file where both may legitimately be named at once, and it holds nothing else:
- * no socket, no roster policy, no UI. Everything below is a shape change.
+ * Work owns authorization, persistence and reconnect. This adapter publishes
+ * connection/role changes, save status, roster/presence and document updates.
+ * The session and provider guard operations against the current tool manifest.
  *
- * The map, which the provider's header already wrote down and this file makes real:
+ * Build after admission so the seat and identity are known. Role remains a live
+ * getter, and a role change notifies the session even when the socket stays live.
+ * Snapshots replay the provider's current document to a late subscriber; deltas
+ * do not replay. This prevents a mount after join from retaining tool defaults.
  *
- *   adapter       → `provider.adapter`                         (identical type)
- *   role          → `provider.state().role`, read LIVE         (identical union)
- *   presenceIn    → the provider's `presence` events, plus the roster seed
- *   sendPresence  → `provider.sendPresence`                    (verbatim)
- *   events        → the provider's `state` events, status-mapped
- *   close         → `provider.close()`
- *   self          → this device's collab client id + the SSO display name
- *   hostClientId  → ABSENT, and that is the answer (see below)
- *   peerRole      → the join-ack roster, looked up by principal
+ * Presence uses the gateway-assigned connection identity for both real frames
+ * and roster placeholders. Two tabs of one account therefore remain separate.
+ * Placeholders start at sequence zero; real presence supersedes them and an
+ * explicit leave retires the matching connection. Legacy principal-only frames
+ * retain bounded fallback bookkeeping.
  *
- * ── ROLE IS LIVE, AND WHEN YOU BUILD THE HANDLE MATTERS ───────────────────────
- *
- * The gateway assigns the seat and says so in `join-ack.you.role`; the provider
- * already reads it (and fails closed - absent is never a grant). So `role` here is a
- * GETTER over `provider.state().role`, never a snapshot and never re-derived: there
- * is exactly one place that decides what this client may do, and it is the ack.
- *
- * A handle can be built before the ack (the mount seam,
- * `lib/collab-session-source.ts`, is synchronous), and `state().role` then still
- * reads its pre-join default of `'writer'`. Every LIVE read corrects itself - 
- * `CollabSessionState.role` is rebuilt from `handle.role` on each notify, so the
- * pill's observer banner is right the moment the ack lands. ONE read does not:
- * `createCollabSession` picks its adapter wrapper once, at construction
- * (`handle.role === 'observer' ? observerAdapter(...) : ...`), so a session built
- * before the ack keeps the writer wrapper for its whole life.
- *
- * That is survivable rather than dangerous, and it is worth being precise about why:
- * the provider refuses an observer's ops on its own - `sendOps` and `enqueue` both
- * return early on `role === 'observer'` - so nothing an observer types can reach the
- * wire or the durable outbox by this route. What is left is that their LOCAL
- * convergence doc records edits the room never saw, until the next `join-ack`
- * rebuilds it from the snapshot (`seedFrom`). So: **build the handle, and the
- * session, once the provider reports `'live'`** - which is also when `self.name` is
- * known (below). The wrapper is not duplicated here on purpose; observer semantics
- * have one owner (`collab-session.ts`), and a second suppressor in the transport
- * adapter is how two half-answers to the same question start disagreeing.
- *
- * ── PRESENCE: ALIGN, NEVER RE-STAMP ───────────────────────────────────────────
- *
- * The provider forwards the presence payload verbatim and says why: the lane's SHAPE
- * belongs to the presence engine, not the transport. Two shapes legitimately ride it
- * (`CollabPresencePayload`) and this module is where the choice is finally made:
- *
- *  - a full `PresenceFrame` (`lib/collab-presence.ts`) - what every Lolly shell in a
- *    collab actually sends, carrying the sender's own `from` and per-sender `seq`.
- *    It is passed through UNTOUCHED. Re-stamping `from` with the gateway's frame
- *    `from` would be actively wrong: that is the sender's CONNECTION id, while the
- *    roster key the whole presence engine (and the focus overlay, and the colour
- *    assignment) is built on is the per-device client id. Re-stamping `seq` would be
- *    worse - it is the ONLY thing that resolves an unordered lane (section 11.5), and it is
- *    the sender's counter, not ours.
- *  - a bare `Presence`/`Awareness` (what `CanvasSyncAdapter.presence` takes, which a
- *    handle is explicitly allowed to implement `sendPresence` as). It carries no
- *    envelope, so one is minted: `from` is the gateway's connection id, and `seq` is
- *    a locally minted counter kept strictly above every seq already seen for that
- *    sender. Minting is sound HERE and would not be on Track A: a WebSocket is
- *    ordered and reliable, so arrival order *is* send order and a local counter
- *    carries exactly the information a wire seq would.
- *
- * Anything else - a non-object, an array, an object with neither a `state` envelope
- * nor a `userId` - is dropped. The payload is untrusted input off a socket.
- *
- * ── ROSTER SEEDING, AND THE DEADLOCK IT EXISTS TO BREAK ───────────────────────
- *
- * The `join-ack` roster is the only thing that tells a joiner who is already in the
- * room, and it must reach the presence engine or the room can sit MUTUALLY SILENT:
- * the engine sends nothing at all while its roster is empty (section 4.7 - not "cheap when
- * alone", *nothing*), so a lone incumbent is silent, and a joiner whose engine also
- * knows nobody is silent too. Two people, one room, neither visible, forever.
- *
- * So each roster entry is surfaced through `presenceIn` as a synthetic PLACEHOLDER
- * frame. That gives the engine a peer, which starts its lifecycle and flushes our
- * own state, which the incumbent receives - and now they have a peer, and answer.
- * The handshake completes in one round trip and nobody had to invent a "hello".
- *
- * The wire carries no per-device client id for a roster entry, so a placeholder is
- * keyed by the CONNECTION id (`RosterEntry.id`, the same id `peer-leave` names),
- * falling back to the principal. That is a different key from the one the same
- * person's real frames arrive under, and the seq rules make the difference harmless:
- *
- *  - a placeholder is seeded at `seq` {@link ROSTER_SEED_SEQ} = 0. The engine admits
- *    a frame only when its `seq` is strictly greater than the one it holds, and its
- *    own frames start at 1 - so 0 is the one value that can never mask a live frame,
- *    in either direction. A gateway that ever DID key its roster by device id needs
- *    no special case: the peer's own `seq: 1` frame simply supersedes the
- *    placeholder in place.
- *  - when a real frame arrives from a device we have not linked yet, the placeholder
- *    standing for that principal is retired with a `state: null` leave frame at
- *    {@link ROSTER_RETIRE_SEQ}. The retirement is emitted AFTER the real frame, so
- *    the two rows never both exist across a paint - the engine deletes and adds
- *    inside one synchronous burst, and only the settled roster is ever rendered.
- *  - a placeholder whose roster row disappears is retired the same way, on the state
- *    event that dropped it. That one may be re-seeded later (a genuine rejoin);
- *    a placeholder retired because a real frame replaced it never is.
- *
- * THE SAFETY PROPERTY THAT MAKES ALL OF THIS ACCEPTABLE: a placeholder never
- * refreshes and is never flagged away, so the engine's own TTL sweep evicts it
- * within 30 s no matter what. No bookkeeping mistake here can produce a permanent
- * ghost - the worst case is a stale row for one TTL. That is the bound on every
- * case this file cannot resolve exactly, and there is one: a principal holding
- * several connections (two tabs, a phone - the wire explicitly allows it) is matched
- * by principal alone, so a reconnect that mints a new connection id while the old
- * device is already linked leaves one placeholder standing until the sweep takes it.
- *
- * ── THERE IS NO HOST ──────────────────────────────────────────────────────────
- *
- * `hostClientId` is left ABSENT, and its absence is a statement rather than a gap.
- * Track A is asymmetric by design (section 6.2a: the inviter owns the session, holds the
- * persistence, and is the catch-up source), which is what lets a nameless peer read
- * as "Host". A work collab has no such peer: the SERVER owns persistence and
- * authority (section 7.10 - the availability guarantee Track A structurally cannot make),
- * so every participant is a member of a room. `createCollabSession` reads the
- * absence exactly that way - `isHost` is `hostClientId !== undefined && … === id`,
- * so it is false for everyone and no "Host" tag is rendered. The invitee ordinals
- * fall out the same way and stay unused in practice: identity here comes from SSO
- * (section 7.8), so participants have real names and are never numbered.
- *
- * ── WHAT THIS DELIBERATELY DOES NOT DO ────────────────────────────────────────
- *
- *  - **Guarding the ops lane.** As of 2026-08-09 this adapter DOES republish inbound
- *    ops, as {@link WorkCollabSessionHandle.opsIn} - the same member name and the same
- *    `CollabStream` shape Track A's `RtcCollabHandle` publishes, so `views/tool-collab.ts`
- *    has ONE wire for both tracks instead of a per-track branch. That is a shape change
- *    (this file's whole job) and nothing more: the stream is a verbatim forward of the
- *    provider's `{ kind: 'ops' }` events. What is still emphatically NOT here is the
- *    GUARD. Those ops are untrusted input and must pass the shared op guard
- *    (`collab/op-guard.ts`, plan 100 section 11.21) before they reach the runtime - the
- *    provider's structural gate (`isCanvasOp`) is an envelope check, not the boundary - 
- *    and that happens exactly once, inside `session.applyRemotePatch`, which the MOUNT
- *    calls. Guarding here would mean this file knew about the tool's input model, which
- *    is precisely what it must not know, and would put a second copy of the policy on
- *    one of the two tracks.
- *  - **Colour slots.** `self.colorIndex` stays absent unless a caller supplies one.
- *    The roster carries a `color` HEX from the server's palette and no index, and
- *    inventing a slot from it would be a guess; the session already handles an
- *    unrecognised hex honestly (claim it if it is in our palette, otherwise
- *    re-derive by roster order - section 11.16).
- *  - **Reconnect policy, retries, the outbox.** All the provider's. This adapter
- *    reports states and never acts on them.
+ * Work has no host participant: the server owns the room. Private RTC retains
+ * its own host, identity and persistence contracts.
  */
 
 import type { CanvasOp } from '@lolly-tools/core/canvas-op-v1';
 import { getCollabClientId } from '../lib/collab-plumbing.ts';
+import type { CollabDocumentSnapshot } from '../lib/collab-plumbing.ts';
 import type { PresenceFrame, PresenceState } from '../lib/collab-presence.ts';
 import type {
   CollabConnectionState,
@@ -225,6 +94,7 @@ export function statusToConnection(status: WorkCollabStatus): CollabConnectionSt
 /** One inbound presence payload, read into the parts a `PresenceFrame` needs.
  *  `from`/`seq`/`away` are absent when the payload did not carry them. */
 export interface ReadPresencePayload {
+  epoch?: string;
   readonly from?: string;
   readonly seq?: number;
   readonly state: PresenceState | null;
@@ -260,6 +130,7 @@ export function readPresencePayload(payload: unknown): ReadPresencePayload | nul
       ...(from !== undefined ? { from } : {}),
       ...(seq !== undefined ? { seq } : {}),
       ...(away !== undefined ? { away } : {}),
+      ...(typeof p.epoch === 'string' ? { epoch: p.epoch.slice(0, 256) } : {}),
       state: (p.state ?? null) as PresenceState | null,
     };
   }
@@ -297,6 +168,7 @@ export interface WorkCollabHandleOptions {
  */
 export interface WorkCollabSessionHandle extends CollabSessionHandle {
   readonly opsIn: CollabStream<readonly CanvasOp[]>;
+  readonly snapshotIn: CollabStream<CollabDocumentSnapshot>;
 }
 
 /**
@@ -308,11 +180,22 @@ export function createWorkCollabHandle(
   provider: WorkCollabHandle,
   opts: WorkCollabHandleOptions = {},
 ): WorkCollabSessionHandle {
-  const clientId = opts.clientId ?? getCollabClientId();
+  const clientId = opts.clientId ?? provider.clientId ?? getCollabClientId();
 
+  const saveSubs = new Set<(state: { pending: number; message: string }) => void>();
+  let saveError = '', saveErrorCode = '';
+  const saveState = () => {
+    const state = provider.state();
+    return { pending: state.pending, message: saveError || (state.pending ? 'Edits pending'
+      : state.status !== 'live' ? 'Work disconnected'
+      : state.reason === 'durable-receipts-required' ? 'View only: update the work server'
+      : state.role === 'observer' ? 'View only' : 'Saved to work') };
+  };
+  const publishSave = () => { for (const fn of saveSubs) fn(saveState()); };
   const presenceSubs = new Set<(frame: PresenceFrame) => void>();
   const stateSubs = new Set<(state: CollabConnectionState) => void>();
   const opsSubs = new Set<(ops: readonly CanvasOp[]) => void>();
+  const snapshotSubs = new Set<(snapshot: CollabDocumentSnapshot) => void>();
 
   /** Placeholder key → the principal it stands for, while it is standing. */
   const seeded = new Map<string, string>();
@@ -327,6 +210,7 @@ export function createWorkCollabHandle(
   /** The last connection state published, so three statuses collapsing into
    *  `'connecting'` cost one event rather than three. */
   let connection: CollabConnectionState | null = null;
+  let lastRole = provider.state().role;
   let closing = false;
 
   function warn(what: string, e: unknown): void {
@@ -385,6 +269,7 @@ export function createWorkCollabHandle(
       from: seedKey(entry),
       seq: ROSTER_SEED_SEQ,
       state: {
+        ...entry.presence,
         userId: entry.userId,
         name: typeof entry.name === 'string' ? entry.name : '',
         color: typeof entry.color === 'string' ? entry.color : '',
@@ -425,6 +310,12 @@ export function createWorkCollabHandle(
       seeded.set(key, entry.userId);
       publishPresence(seedFrame(entry));
     }
+    for (const key of [...userOf.keys()]) {
+      if (key.startsWith('cm_') && !present.has(key)) {
+        publishPresence({ from: key, epoch: key, seq: (lastSeq.get(key) ?? 0) + 1, state: null });
+        userOf.delete(key); lastSeq.delete(key); retired.delete(key);
+      }
+    }
     for (const key of [...seeded.keys()]) {
       if (!present.has(key)) retirePlaceholder(key, false);
     }
@@ -458,7 +349,7 @@ export function createWorkCollabHandle(
   function onPresence(gatewayFrom: string, payload: unknown): void {
     const read = readPresencePayload(payload);
     if (!read) return;
-    const from = read.from ?? (gatewayFrom || '');
+    const from = read.epoch ? gatewayFrom : read.from ?? (gatewayFrom || '');
     // Nothing to key a roster row on, or our own frame relayed back: the engine
     // would drop both, and forwarding them would pollute the device→principal map.
     if (!from || from === clientId) return;
@@ -467,6 +358,7 @@ export function createWorkCollabHandle(
       from,
       seq,
       state: read.state,
+      epoch: read.epoch,
       ...(read.away !== undefined ? { away: read.away } : {}),
     });
     if (read.state) {
@@ -487,17 +379,26 @@ export function createWorkCollabHandle(
   }
 
   const stopProvider = provider.on((event) => {
+    if (event.kind === 'error') { saveErrorCode = event.code; saveError = event.message || event.code; publishSave(); return; }
+    if (event.kind === 'warning') { saveError = 'Pending edits are full. Save a copy before continuing.'; publishSave(); return; }
     if (event.kind === 'state') {
+      if (saveErrorCode === 'local-save-failed' && !event.state.localSaveFailed) { saveError = ''; saveErrorCode = ''; }
+      publishSave();
       syncRoster();
       const next = statusToConnection(event.state.status);
-      if (next !== connection) publishConnection(next);
+      if (next !== connection || event.state.role !== lastRole) {
+        lastRole = event.state.role;
+        publishConnection(next);
+      }
       return;
     }
     if (event.kind === 'presence') { onPresence(event.from, event.frame); return; }
-    // Verbatim, including the join-ack snapshot seed the provider delivers on this
-    // same lane - that IS this copy's initial state (section 7.3), so a handle that filtered
-    // it would mount a joiner on an empty document.
-    if (event.kind === 'ops') publishOps(event.ops);
+    // Snapshots replace the runtime projection; ordinary operations are deltas.
+    if (event.kind === 'ops') {
+      const snapshot = event.snapshot ? provider.snapshot?.() : undefined;
+      if (snapshot) { for (const fn of snapshotSubs) fn(snapshot); }
+      else publishOps(event.ops);
+    }
   });
 
   // ── the handle ──────────────────────────────────────────────────────────────
@@ -517,6 +418,8 @@ export function createWorkCollabHandle(
   };
 
   return {
+    admission: 'work-room',
+    saveIn: { subscribe(fn) { saveSubs.add(fn); fn(saveState()); return () => { saveSubs.delete(fn); }; } },
     adapter: provider.adapter,
     history: provider.history,
     self,
@@ -548,22 +451,24 @@ export function createWorkCollabHandle(
       },
     },
 
-    /**
-     * Inbound ops, forwarded exactly as the provider delivered them.
-     *
-     * NO replay on subscribe, unlike `presenceIn` and `events`: an op stream is a log of
-     * CHANGES, and replaying a batch already applied to the converging document would be
-     * at best redundant work and at worst (for anything that is not idempotent under
-     * LWW) a second application. The catch-up story here is the gateway's, not this
-     * adapter's - a joiner is seeded by the `join-ack` snapshot, which arrives on this
-     * same lane as ops, so a subscriber that attaches before `'live'` misses nothing.
-     */
+    /** Inbound deltas do not replay. A late mount catches up through snapshotIn. */
     opsIn: {
       subscribe(fn: (ops: readonly CanvasOp[]) => void): () => void {
         opsSubs.add(fn);
         return () => {
           opsSubs.delete(fn);
         };
+      },
+    },
+
+    snapshotIn: {
+      subscribe(fn) {
+        snapshotSubs.add(fn);
+        // The work opener connects before mounting. Read the CURRENT document,
+        // including any edits received since join, instead of replaying an old event.
+        const snapshot = provider.state().status === 'live' ? provider.snapshot?.() : undefined;
+        if (snapshot) fn(snapshot);
+        return () => { snapshotSubs.delete(fn); };
       },
     },
 
@@ -603,6 +508,8 @@ export function createWorkCollabHandle(
      * direction.
      */
     peerRole(id: string): CollabRole | undefined {
+      const exact = rosterRows().find(entry => entry.id === id);
+      if (exact) return exact.role === 'writer' || exact.role === 'observer' ? exact.role : undefined;
       const principal = userOf.get(id);
       for (const entry of rosterRows()) {
         const match = entry.id === id || entry.userId === id
@@ -628,8 +535,10 @@ export function createWorkCollabHandle(
       if (connection !== 'closed') publishConnection('closed');
       stopProvider();
       presenceSubs.clear();
+      saveSubs.clear();
       stateSubs.clear();
       opsSubs.clear();
+      snapshotSubs.clear();
     },
   };
 }

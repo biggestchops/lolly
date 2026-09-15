@@ -770,21 +770,13 @@ test('presence: silent while alone, one throttled frame carries focus, away cros
     'and B\'s roster shows the focus within one throttle window (section 4.1, section 4.7)',
   );
 
-  // ── away (section 11.4): a hidden tab says so, and is never evicted ─────────────
+  // Away is presentation state; it is still subject to bounded liveness.
   w.a.hide(true);
   clock.advance(PRESENCE_THROTTLE_MS);
   assert.equal(w.b.session.state().peers[0]!.away, true, 'the away flag crossed');
-
-  // …and now the part that makes that flag worth having. A backgrounded tab's
-  // timers are throttled to ~1/min, so ITS heartbeat stops arriving while the
-  // channel is fine and the other direction keeps flowing. Starve A's outbound
-  // lane and run well past the TTL: the away peer must still be there. (Without
-  // this, the assertion proves nothing - A's own 15 s heartbeat would keep
-  // refreshing B's TTL, so no peer could ever be evicted for any reason.)
   w.blackout('a');
   clock.advance(PRESENCE_TTL_MS * 2 + PRESENCE_SWEEP_MS);
-  assert.equal(w.b.session.state().peers.length, 1, 'an away peer is exempt from eviction');
-  assert.equal(w.b.session.state().peers[0]!.away, true, 'and still reads as away, never as gone');
+  assert.equal(w.b.session.state().peers.length, 0, 'a silent away peer expires too');
 
   w.blackout(null);
   w.a.hide(false);

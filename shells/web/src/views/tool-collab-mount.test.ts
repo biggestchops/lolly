@@ -112,6 +112,9 @@ test('nothing but the seam is statically imported from the collab stack', () => 
   assert.deepEqual(
     statics,
     [
+      // Undo shares the already-static plumbing module's WeakMap. It adds no
+      // session, timer, listener or per-runtime state in single-player.
+      '../lib/collab-undo.ts',
       '../lib/collab-plumbing.ts',
       '../lib/collab-session-source.ts',
       // Added 2026-08-09 with the three one-shot hand-offs a live collab arms before this
@@ -135,13 +138,13 @@ test('nothing but the seam is statically imported from the collab stack', () => 
   );
 });
 
-test('the ONLY collab identifiers reaching single-player code are the two null holders', () => {
+test('single-player collaboration references are limited to inert holders and undo lookups', () => {
   const mentions = [...SINGLE_PLAYER.matchAll(/\bcollab[A-Za-z]*\b/g)].map(m => m[0]);
   // `collabHistory` is `collabHandle?.history` - a null-safe read that is null in single-player
   // (the capture around it is behind the runtime collabHandle guard); plan 221 section 9.
   // `collaborating` is the boolean the app-history mount takes (`!!collabHandle || !!ephemeralState`)
   // - two null-checks in single-player, no collab module behind it.
-  const allowed = new Set(['collabReanchor', 'collabTeardown', 'collabHandle', 'collab', 'collabHistory', 'collaborating']);
+  const allowed = new Set(['collabReanchor', 'collabTeardown', 'collabHandle', 'collab', 'collabHistory', 'collaborating', 'collabHistoryValue', 'collabStamp', 'collabHistoryStamp']);
   assert.deepEqual([...new Set(mentions)].filter(n => !allowed.has(n)), [],
     'a new collab-aware statement outside the guard is a cost every single-player mount pays');
   assert.match(CODE, /(?:let collabReanchor: \(\(\) => void\) \| null = null;|tview\.collabReanchor = null;)/);

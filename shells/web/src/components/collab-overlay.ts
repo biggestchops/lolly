@@ -383,6 +383,7 @@ export interface CursorPeer {
 export interface CollabCursorOptions {
   /** The canvas stage. Its live rect is what unit space maps through. */
   stage: HTMLElement;
+  mapPoint?: (id: string, point: { x: number; y: number }) => { x: number; y: number } | null;
   /** An ALREADY-MOUNTED `.collab-canvas-layer` to paint into - how the focus rings
    *  and the cursors share one layer, which is the arrangement the two sheets' internal
    *  z-order assumes (`.collab-focus-box` 1, `.collab-cursor` 2). Omit and this
@@ -434,6 +435,7 @@ interface CursorNode {
 
 /** One tracked peer - its node and the two samples the interpolator walks. */
 interface LiveCursor {
+  id: string;
   node: CursorNode;
   prev: CursorSample | null;
   next: CursorSample;
@@ -559,7 +561,11 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
     const unit = still
       ? { x: entry.next.x, y: entry.next.y }
       : cursorPosition(entry.prev, entry.next, t);
-    const p = mapUnitPoint(unit.x, unit.y, stage, layerRect);
+    const client = opts.mapPoint?.(entry.id, unit);
+    if (opts.mapPoint && !client) { entry.node.root.hidden = true; return; }
+    entry.node.root.hidden = false;
+    const p = client ? { x: client.x - layerRect.left, y: client.y - layerRect.top }
+      : mapUnitPoint(unit.x, unit.y, stage, layerRect);
     // translate3d, never left/top: a compositor move that cannot reflow the page and
     // cannot invalidate the tool render underneath it (rule 4).
     entry.node.root.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
@@ -656,7 +662,8 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
         seen.add(peer.id);
         let entry = live.get(peer.id);
         if (!entry) {
-          entry = { node: acquire(), prev: null, next: { x: c.x, y: c.y, t }, color: '', name: '' };
+          entry = { id: peer.id, node: acquire(), prev: null, next: { x: c.x, y: c.y, t }, color: '', name: '' };
+          entry.node.root.dataset.clientId = peer.id;
           live.set(peer.id, entry);
           arrived = true;
         } else if (c.x !== entry.next.x || c.y !== entry.next.y) {
