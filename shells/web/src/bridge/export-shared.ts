@@ -305,10 +305,10 @@ export interface DtoRenderOpts {
   bgcolor?: string;
 }
 
-// dom-to-image-more ships no types. This is the slice of its surface the export path
-// uses; typing it catches option-key typos at the inline-literal call sites and locks
+// This is the slice of dom-to-image-more's surface the export path uses;
+// typing it catches option-key typos at the inline-literal call sites and locks
 // the three method names. toJpeg additionally takes a `quality`.
-type DtoOpts = DtoRenderOpts & { quality?: number };
+type DtoOpts = Partial<DtoRenderOpts> & { quality?: number; filterUrls?: (url: string) => boolean };
 interface DomToImage {
   toPng(node: Node, opts?: DtoOpts): Promise<string>;
   toJpeg(node: Node, opts?: DtoOpts): Promise<string>;
@@ -347,7 +347,20 @@ export function exportDims(node: Element, opts: ExportOpts): ExportDims {
 export async function getDomToImage(): Promise<DomToImage> {
   if (!domToImageMore) {
     const mod: any = await import('dom-to-image-more');
-    domToImageMore = mod.default ?? mod;
+    const lib: DomToImage = mod.default ?? mod;
+    // Local SVG references already travel with the cloned DOM. Fetching #mask
+    // as an image replaces it with an empty URL and removes Work Avatar's end
+    // fade. Apply this to every capture method, including the canvas path used
+    // for imprints/HDR; external images and fonts still need normal inlining.
+    const options = (opts?: DtoOpts): DtoOpts => ({
+      ...opts,
+      filterUrls: (url) => !url.trim().startsWith('#') && (opts?.filterUrls?.(url) ?? true),
+    });
+    domToImageMore = {
+      toPng: (node, opts) => lib.toPng(node, options(opts)),
+      toJpeg: (node, opts) => lib.toJpeg(node, options(opts)),
+      toCanvas: (node, opts) => lib.toCanvas(node, options(opts)),
+    };
   }
   return domToImageMore!;
 }
