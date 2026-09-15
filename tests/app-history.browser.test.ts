@@ -149,10 +149,37 @@ test('History route supports project filters, milestones, right-panel versions, 
       location.hash = '#/history';
     });
     await page.locator('.app-history-row').first().waitFor(); assert.equal(await page.locator('.app-history-row').count(), 30);
+    const day = page.locator('.app-history-day').first();
+    assert.equal(await day.locator('h2').textContent(), 'Today');
+    assert.equal(await day.locator('.app-history-day-count').textContent(), '30 entries');
+    await day.locator(':scope > summary').focus(); await page.keyboard.press('Enter');
+    await page.waitForFunction(() => !document.querySelector('.app-history-day[open]'));
+    await page.locator('.app-history > header').getByRole('button', { name: 'Refresh', exact: true }).click();
+    await page.locator('.app-history-list[aria-busy="false"]').waitFor();
+    assert.equal(await page.locator('.app-history-day[open]').count(), 0, 'refresh preserves folded dates');
+    await page.getByRole('button', { name: 'Expand dates', exact: true }).click();
+    await page.waitForFunction(() => !!document.querySelector('.app-history-day[open]'));
+    assert.ok(await page.locator('.app-history-row').first().getByRole('button', { name: 'Versions', exact: true }).locator('svg').count());
     await page.getByRole('button', { name: 'Older', exact: true }).click(); await page.waitForFunction(() => document.querySelectorAll('.app-history-row').length === 4);
     await page.getByRole('button', { name: 'Newer', exact: true }).click(); await page.waitForFunction(() => document.querySelectorAll('.app-history-row').length === 30);
-    await page.getByRole('combobox', { name: 'Filter by project' }).selectOption('launch'); await page.waitForFunction(() => document.querySelectorAll('.app-history-row').length === 1);
+    await page.getByRole('button', { name: 'Filter by project', exact: true }).click();
+    const projectOption = page.getByRole('option', { name: 'Autumn campaign', exact: true });
+    await projectOption.locator('img:not([hidden])').waitFor(); await projectOption.click(); await page.waitForFunction(() => document.querySelectorAll('.app-history-row').length === 1);
     assert.equal(await page.locator('.app-history-row h3').textContent(), 'Autumn launch');
+    const toolPicker = page.getByRole('button', { name: 'Filter by tool', exact: true });
+    await toolPicker.click();
+    const toolSearch = page.getByRole('combobox', { name: 'Search tools' });
+    await toolSearch.fill('Design');
+    await page.getByRole('option', { name: 'Design', exact: true }).locator('.app-history-picker-media > svg').waitFor();
+    await toolSearch.press('Enter');
+    await page.waitForURL(/tool=design/); assert.equal(await toolPicker.getAttribute('data-value'), 'design');
+    await toolPicker.click(); await page.getByRole('combobox', { name: 'Search tools' }).fill('no-such-tool');
+    await page.getByText('No matching tools', { exact: true }).waitFor();
+    await page.keyboard.press('Escape'); assert.equal(await toolPicker.getAttribute('aria-expanded'), 'false');
+    assert.ok(await toolPicker.evaluate(el => document.activeElement === el));
+    await toolPicker.press('ArrowDown'); await page.getByRole('option', { name: 'All tools', exact: true }).click();
+    await page.waitForURL(url => !url.hash.includes('tool='));
+
     await page.getByRole('button', { name: 'Milestones', exact: true }).click(); await page.locator('.app-history-row h3', { hasText: 'Ready for review' }).waitFor();
     await page.getByRole('button', { name: 'Versions', exact: true }).click(); await page.locator('.app-history-detail .revision-history-entry').waitFor();
     await page.getByRole('button', { name: 'Rename milestone', exact: true }).click();
@@ -164,16 +191,41 @@ test('History route supports project filters, milestones, right-panel versions, 
     await page.getByRole('button', { name: 'Close', exact: true }).click();
     await page.getByRole('button', { name: 'Recent', exact: true }).click(); await page.getByRole('link', { name: 'Resume', exact: true }).click();
     await page.locator('[data-topbar="history"]').waitFor(); await page.goBack(); await page.locator('.app-history-row').first().waitFor();
-    assert.equal(await page.getByRole('combobox', { name: 'Filter by project' }).inputValue(), 'launch');
+    assert.equal(await page.getByRole('button', { name: 'Filter by project', exact: true }).getAttribute('data-value'), 'launch');
     assert.equal(await page.locator('.app-history-row').count(), 1);
     await page.reload({ waitUntil: 'networkidle' }); await page.locator('.app-history-row').waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     assert.ok(await page.locator('.app-history').evaluate(el => el.scrollWidth <= el.clientWidth));
+    const filters = page.getByRole('button', { name: /^Filters/ });
+    assert.equal(await filters.getAttribute('aria-expanded'), 'true', 'active project filters start expanded');
+    await filters.click();
+    assert.equal(await page.getByRole('button', { name: 'Filter by project', exact: true }).isVisible(), false);
+    await filters.click();
+    assert.equal(await page.getByRole('button', { name: 'Filter by project', exact: true }).getAttribute('data-value'), 'launch');
     await page.screenshot({ path: fileURLToPath(new URL('build-app-history-mobile.png', shots)) });
     await page.getByRole('button', { name: 'Versions', exact: true }).click(); await page.locator('.app-history-detail .revision-history-entry').waitFor();
     assert.ok(await page.locator('.revision-history-panel').evaluate(el => el.scrollWidth <= el.clientWidth));
     await page.keyboard.press('Escape'); assert.equal(await page.locator('.app-history-detail .revision-history-panel').count(), 0);
     assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test('History touch pickers keep their filter when Back dismisses the dropdown', { skip, timeout: 60_000 }, async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  try {
+    await page.goto(`${origin}/#/history`);
+    await page.getByRole('button', { name: 'Filters', exact: true }).click();
+    const picker = page.getByRole('button', { name: 'Filter by tool', exact: true });
+    await picker.click();
+    assert.ok(await page.locator('.app-history-picker-popover').evaluate(el => document.activeElement === el), 'opening on touch leaves the keyboard closed');
+    await page.getByRole('option', { name: 'Design', exact: true }).click();
+    await page.waitForURL(/tool=design/);
+    const workspace = await page.locator('.app-history').elementHandle();
+    await picker.click(); await page.goBack();
+    await page.locator('.app-history-picker-popover').waitFor({ state: 'detached' });
+    assert.ok(await workspace!.evaluate(el => el.isConnected), 'Back keeps the mounted History view');
+    assert.equal(await picker.getAttribute('data-value'), 'design'); assert.match(page.url(), /tool=design/);
   } finally { await browser.close(); }
 });
 

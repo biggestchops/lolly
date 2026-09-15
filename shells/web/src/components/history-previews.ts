@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 /** Only visible history tiles decode images; the timeline holds at most twelve.
  * Detached pages and stale reads cannot retain or repopulate their thumbnails. */
-export function createHistoryPreviews(root: HTMLElement, read: (id: string) => Promise<string | null>) {
+export function createHistoryPreviews(root: HTMLElement, read: (id: string) => Promise<string | null>, { viewport = false } = {}) {
   const rows = new Map<HTMLElement, { id: string; image: HTMLImageElement; visible: boolean; pending: boolean; attempted: boolean }>();
   let generation = 0;
   const fill = (): void => {
@@ -23,7 +23,7 @@ export function createHistoryPreviews(root: HTMLElement, read: (id: string) => P
       if (!row.visible) { row.image.removeAttribute('src'); row.image.hidden = true; row.attempted = false; }
     }
     fill();
-  }, { root, rootMargin: '80px' }) : undefined;
+  }, { root: viewport ? null : root, rootMargin: '80px' }) : undefined;
   const clear = (): void => {
     generation++; observer?.disconnect();
     for (const row of rows.values()) { row.image.removeAttribute('src'); row.image.hidden = true; }

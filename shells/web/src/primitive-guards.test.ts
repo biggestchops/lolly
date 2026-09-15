@@ -1436,7 +1436,8 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   'views/tool/design-system.ts': 1,   // 2026-09-09: moved verbatim out of the parent view by scripts/split-closure.ts
   'views/tool-history-controls.ts': 1, // 2026-09-08: el.innerHTML = icon(glyph), glyph an undo/redo/history literal (icon-registry markup, no user data)
   'views/compare.ts': 1, // Shared backHomeHtml() only; all supplied comparison content uses textContent.
-  'views/history.ts': 2, // 2026-09-08: shared backHomeHtml() escaped navigation chrome, and icon() with fixed registry names; all history captions use textContent
+  'views/history.ts': 1, // Shared backHomeHtml() escaped navigation chrome.
+  'views/history-timeline.ts': 1, // The existing icon() sink moved from history.ts; typed registry names only, captions use textContent.
   // 21 as of 2026-07-31: +2 deep-scan watermark notes (trustmarkNoteHtml,
   // contentSealNoteHtml). Reviewed - every attacker-controlled value on this
   // page (decoded payload/message hex, schema, filenames, hex dumps of file

@@ -584,7 +584,7 @@ async function navigate(host: WebHost, opts: { force?: boolean } = {}): Promise<
     // is removed. ---
     case 'history': {
       const { mountHistory } = await import('./views/history.ts');
-      await mountHistory(view, host, route.params);
+      await mountHistory(view, host, route.params, () => { mountedRouteSig = routeSignature(parseRoute()); });
       break;
     }
     case 'learning': {
