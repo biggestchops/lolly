@@ -16,6 +16,14 @@ export interface GalleryPreviewSource {
   templates?: Array<{ id: string; name: string; galleryCover?: boolean; galleryTheme?: 'light' | 'dark'; values?: Record<string, unknown>; motion?: TemplateMotion }>;
 }
 
+/** Finish covers before nearby extra templates; captures also finish hidden looks. */
+export function galleryPreviewPriority(card: HTMLElement, cover: boolean, capture: boolean): number | null {
+  const rect = (card.closest('.gtile') ?? card).getBoundingClientRect();
+  if (!rect.width || !rect.height) return capture ? 3 : null;
+  const near = rect.bottom >= -250 && rect.top <= window.innerHeight + 250;
+  return cover ? (near ? 0 : 1) : (near || capture || typeof IntersectionObserver === 'undefined' ? 2 : null);
+}
+
 export function galleryPreviewLooks(tool: GalleryPreviewSource): FeaturedVariant[] {
   if (tool.galleryArt === 'icon') return [];
   if (tool.formats && !tool.formats.some(f => ['svg', 'png', 'jpg', 'jpeg', 'webp'].includes(f))) return [];

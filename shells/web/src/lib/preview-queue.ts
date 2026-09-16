@@ -26,12 +26,13 @@ export function createPreviewQueue(
   let cancel: (() => void) | undefined;
   let running = false;
   let destroyed = false;
+  let paused = false;
 
   function wake(): void {
-    if (destroyed || running || cancel || !tasks.length) return;
+    if (destroyed || paused || running || cancel || !tasks.length) return;
     cancel = schedule(() => {
       cancel = undefined;
-      if (destroyed) return;
+      if (destroyed || paused) return;
       // Choose AFTER yielding: a newly queued cover always outranks an extra
       // template, including one that was waiting when this idle was requested.
       tasks = tasks.filter(task => !task.stale?.());
@@ -54,6 +55,11 @@ export function createPreviewQueue(
   return {
     add(task: PreviewTask): void { if (!destroyed) { tasks.push(task); wake(); } },
     wake,
+    setPaused(value: boolean): void {
+      paused = value;
+      if (paused) { cancel?.(); cancel = undefined; }
+      else wake();
+    },
     destroy(): void { destroyed = true; tasks = []; cancel?.(); cancel = undefined; },
   };
 }

@@ -5,6 +5,27 @@ import test from 'node:test';
 import { chromium } from 'playwright';
 
 const origin = process.env.LOLLY_GALLERY_TEST_URL;
+test('welcome defers tool preview rendering until the user enters the gallery', {
+  skip: origin ? false : 'set LOLLY_GALLERY_TEST_URL to a local Vite shell', timeout: 120_000,
+}, async () => {
+  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 420, height: 900 }, serviceWorkers: 'block' });
+  const renders: string[] = [];
+  page.on('request', request => {
+    if (/\/tools\/[^/]+\/(hooks\.js|template\.html)$/.test(request.url())) renders.push(request.url());
+  });
+  try {
+    await page.goto(`${origin}/#/`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.welcome-dialog').waitFor();
+    await page.waitForTimeout(3000);
+    assert.equal(renders.length, 0, 'covered cards must not start tool renderers');
+    await page.locator('.welcome-dialog [data-choice="explore"]').click();
+    await page.locator('.gtile[data-tool-id="design"] .gcar-slide.is-loaded').first().waitFor({ timeout: 90_000 });
+    assert.ok(renders.some(url => url.includes('/tools/design/')), 'the queue resumes after dismissal');
+  } finally { await browser.close(); }
+});
+
 test('gallery renders branded templates, preserves their framing, and invalidates palette caches', {
   skip: origin ? false : 'set LOLLY_GALLERY_TEST_URL to a local Vite shell', timeout: 120_000,
 }, async () => {

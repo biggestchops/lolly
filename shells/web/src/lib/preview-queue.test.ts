@@ -87,3 +87,19 @@ test('a render that never resolves releases the queue after its deadline', async
   assert.match(String(f.errors[0]), /timed out/);
   f.queue.destroy();
 });
+
+test('pausing cancels scheduled work and resumes queued previews after the welcome closes', async () => {
+  const f = fixture(), seen: string[] = [];
+  f.queue.add({ priority: () => 0, run: async () => { seen.push('cover'); } });
+  f.queue.setPaused(true);
+  f.queue.add({ priority: () => 2, run: async () => { seen.push('template'); } });
+  await f.drain();
+  assert.deepEqual(seen, []);
+  assert.equal(f.pending.size, 0);
+  f.queue.setPaused(false);
+  await f.drain();
+  assert.deepEqual(seen, ['cover', 'template']);
+  f.queue.destroy();
+  f.queue.setPaused(false);
+  assert.equal(f.pending.size, 0);
+});

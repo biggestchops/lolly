@@ -152,6 +152,7 @@ if (!runner) {
 // app is measured.
 const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
 const displayTarget = target!.href;
+let pageHtml = '';
 const redactBypass = (text: string): string => BYPASS ? text.replaceAll(BYPASS, '[redacted]').replaceAll(encodeURIComponent(BYPASS), '[redacted]') : text;
 if (BYPASS) {
   target!.searchParams.set('x-vercel-protection-bypass', BYPASS);
@@ -159,7 +160,8 @@ if (BYPASS) {
 {
   const probe = await fetch(target!.href, { redirect: 'follow', headers: { accept: 'text/html' } })
     .catch((e: unknown) => { fail(`could not reach ${displayTarget} - ${(e as Error).message}`); });
-  const body = probe.status === 200 ? (await probe.text().catch(() => '')).slice(0, 4096) : '';
+  pageHtml = probe.status === 200 ? await probe.text().catch(() => '') : '';
+  const body = pageHtml.slice(0, 4096);
   const gated = probe.status === 401 || probe.status === 403
     || new URL(probe.url).hostname === 'vercel.com'
     || /vercel\.com\/sso-api|Authentication Required|_vercel_sso_nonce/i.test(body);
@@ -171,6 +173,7 @@ if (BYPASS) {
       + '  Set VERCEL_AUTOMATION_BYPASS_SECRET (Project Settings, Deployment Protection, Protection Bypass for\n'
       + '  Automation) in the shipping environment, or measure a URL that is publicly readable.');
   }
+  if (!probe.ok) fail(`HTTP ${probe.status} loading ${displayTarget}`);
 }
 
 // --- Run it ------------------------------------------------------------------
@@ -312,10 +315,9 @@ report(
 // all make what ships differ from what `pnpm run build:web` produced. Same regex shape as
 // check-bundle-budget.ts, which counts the same links against the local build.
 try {
-  const res = await fetch(target!.href, { headers: { accept: 'text/html' } });
-  const html = await res.text();
-  if (!res.ok) {
-    report('modulepreload count', false, `HTTP ${res.status} fetching the HTML`);
+  const html = pageHtml;
+  if (!html) {
+    report('modulepreload count', false, 'The deployment returned no HTML');
   } else {
     const document = new JSDOM(html);
     try {

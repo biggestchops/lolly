@@ -43,7 +43,7 @@ import { offlineNudgeMarkup, mountOfflineNudge } from './offline-nudge.ts';
 import { viewTopbarHtml, mountViewTopbar } from '../components/view-topbar.ts';
 import { mountFeaturedRow, resolveExamples } from '../components/featured-row.ts';
 import { armMotionPreviews, playMotionIn, stopMotionIn } from '../lib/preview-media.ts';
-import { galleryPreviewLooks, galleryLookHref, renderGalleryLook } from '../lib/gallery-preview.ts';
+import { galleryPreviewLooks, galleryLookHref, renderGalleryLook, galleryPreviewPriority } from '../lib/gallery-preview.ts';
 import { createPreviewQueue } from '../lib/preview-queue.ts';
 import { loadGalleryLook } from './gallery-look-loader.ts';
 import { renderFeaturedVariant, renderFeaturedPages, displayFormatOf } from '../lib/featured-render.ts';
@@ -962,6 +962,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   // register their teardown here so neither keeps running after the user moves on.
   const cleanups: Array<() => void> = [];
   const previewQueue = createPreviewQueue();
+  previewQueue.setPaused(true); // Wait for the welcome decision before rendering behind it.
   cleanups.push(() => previewQueue.destroy());
   (viewEl as HTMLElement & { _cleanup?: () => void })._cleanup = () => {
     for (const fn of cleanups.splice(0)) { try { fn(); } catch { /* best-effort teardown */ } }
@@ -1249,20 +1250,9 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   let revealObserver: IntersectionObserver | null = null;
   cleanups.push(() => revealObserver?.disconnect());   // render() replaces it; unmount drops the last one
 
-  // Register every cover up front. Visible covers run first, then off-screen
-  // covers, then additional templates near the viewport. Filters park their jobs.
+  // Finish covers before nearby extra templates, across both gallery consumers.
   function previewPriority(gcar: HTMLElement, cover: boolean): number | null {
-    if (perfUiOn()) return null;
-    // Measure the tile: content-visibility may skip its off-screen descendants.
-    const rect = (gcar.closest('.gtile') ?? gcar).getBoundingClientRect();
-    // A tile with no box is display:none - filtered out by a search, or a whole grid
-    // in hide-previews mode. Park its render; nothing is waiting to see it.
-    // Except under a capture: the settle holds the frame until every look has loaded
-    // or failed (lib/capture-neutral.ts), so a parked look would hold it open for
-    // good. Render it last instead - off-screen work, but work that ENDS.
-    if (!rect.width || !rect.height) return captureNeutralPinned() ? 3 : null;
-    const near = rect.bottom >= -250 && rect.top <= window.innerHeight + 250;
-    return cover ? (near ? 0 : 1) : (near || captureNeutralPinned() || typeof IntersectionObserver === 'undefined' ? 2 : null);
+    return perfUiOn() ? null : galleryPreviewPriority(gcar, cover, captureNeutralPinned());
   }
   // A paged tool (multi-page-pdf): render each page and rebuild the strip's slides +
   // dots from them (page count is unknown until rendered). The track element persists,
@@ -1360,8 +1350,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
     if (!masonry) return;
     const cars = [...masonry.querySelectorAll<HTMLElement>('.gcar')];
     cars.forEach(queueCarousel);
-    // Covers are already queued, even below the fold. The observer wakes parked
-    // extra templates when their card approaches the viewport.
+    // The observer wakes parked extra templates as their card approaches.
     if (typeof IntersectionObserver !== 'undefined') {
       carouselObserver = new IntersectionObserver(() => previewQueue.wake(), { rootMargin: '250px 0px' });
       cars.forEach(g => carouselObserver!.observe(g));
@@ -2285,12 +2274,12 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
     // applies, so a locked or already-branded install has already returned and the
     // flag is silently ignored there - a deep link can't nag someone who has a brand.
     if (!welcome.isWelcomeDismissed() || deepLink.has('welcome')) {
-      void welcome.showWelcomeDialog(host.profile, host as unknown as PickerHost);
+      await welcome.showWelcomeDialog(host.profile, host as unknown as PickerHost);
       return;
     }
     if (revealFirstRunBanner()) return;
     welcome.mountBrandTips(viewEl.querySelector<HTMLElement>('.tool-masonry'));
-  })();
+  })().finally(() => previewQueue.setPaused(false));
 
 
 }
