@@ -46,7 +46,13 @@ test('3D Studio imports, reopens a portable model and exports through editor and
       mimeType: 'model/gltf-binary',
       buffer: await readFile('community/3d/assets/duck.glb'),
     });
-    await page.locator('[data-studio-state="ready"]').waitFor();
+    // The SUSE overlay opens on Geeko, so "ready" alone is satisfied before the upload
+    // arrives; wait for the uploaded model to be the one in the scene.
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      const id = marker && JSON.parse(marker.dataset.lollyStudio!).values.modelAsset?.id;
+      return marker?.dataset.studioState === 'ready' && typeof id === 'string' && id.startsWith('user/upload/');
+    });
     const values = await page
       .locator('[data-lolly-studio]')
       .evaluate((el) => JSON.parse((el as HTMLElement).dataset.lollyStudio!).values);
@@ -465,6 +471,332 @@ test('3D Studio imports, reopens a portable model and exports through editor and
     assert.deepEqual(restored.image, collectionPack.image);
     await collectionReader.close();
     step('studio: portable collection reopened with framing and a byte-identical model image');
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
+  }
+});
+
+test('3D Studio arranges several objects: click selects, drags move, keys nudge, undo restores', {
+  skip: !origin && 'Set STUDIO_SHELL_URL to a running web shell.',
+  timeout: 600_000,
+}, async () => {
+  const browser = await chromium.launch({
+    headless: true,
+    ...(process.env.STUDIO_NATIVE
+      ? { executablePath: chromium.executablePath(), args: ['--use-angle=metal'] }
+      : {}),
+  });
+  const errors: string[] = [];
+  try {
+    const page = await browser.newPage({
+      viewport: { width: 1440, height: 1000 },
+      serviceWorkers: 'block',
+    });
+    page.setDefaultTimeout(90000);
+    await page.routeWebSocket(/127\.0\.0\.1/, (socket) => socket.close());
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(
+      `${origin}/t/3d-studio?source=arrangement&samples=8&outputMode=object-shadow&c2pa=0&width=360&height=360`
+    );
+    await page.locator('[data-studio-state="ready"]').waitFor();
+    const objects = () =>
+      page
+        .locator('[data-lolly-studio]')
+        .evaluate((el) => JSON.parse((el as HTMLElement).dataset.lollyStudio!).values.objects);
+    const waitObjects = (check: string) =>
+      page.waitForFunction((check) => {
+        const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+        if (marker?.dataset.studioState !== 'ready') return false;
+        const values = JSON.parse(marker.dataset.lollyStudio!).values;
+        return new Function('objects', 'active', `return ${check}`)(values.objects, values.activeObject);
+      }, check);
+    const initial = await objects();
+    assert.equal(initial.length, 3);
+    assert.match(await page.locator('[data-studio-object-label]').textContent() ?? '', /1 of 3: Badge/);
+    step('arrangement: three default objects mounted');
+
+    // Adding several sources is one gesture: the Objects list takes a pile of files.
+    // Each becomes a row whose kind follows the file, named after it and placed beside
+    // the others; a sample-shape row shows no picker, an artwork row does.
+    const list = page.locator('.blocks-input[data-input-id="objects"]');
+    await list.locator('.blocks-drop-hint').waitFor({ state: 'attached' });
+    assert.equal(await list.locator('[data-block-asset="objects:0:asset"]').count(), 0, 'a sample shape has no file');
+    await list.locator('input[type="file"][multiple]').setInputFiles([
+      { name: 'lock icon.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path fill="#30ba78" d="M20 1a19 19 0 1 1 0 38a19 19 0 1 1 0-38M20 6a14 14 0 1 0 0 28a14 14 0 1 0 0-28"/><path fill="#0c322c" d="M21 8L11 24h7v9l12-17h-9z"/></svg>') },
+      { name: 'duck.glb', mimeType: 'model/gltf-binary', buffer: await readFile('community/3d/assets/duck.glb') },
+    ]);
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      const rows = marker && JSON.parse(marker.dataset.lollyStudio!).values.objects;
+      return marker?.dataset.studioState === 'ready' && rows?.length === 5 && rows[4].kind === 'model' && rows[3].name === 'lock icon';
+    });
+    const added = await objects();
+    assert.equal(added[3].kind, 'artwork');
+    assert.equal(added[4].name, 'duck');
+    assert.notEqual(added[3].x, added[4].x, 'dropped objects take different places');
+    assert.equal(added[0].x, initial[0].x, 'typed positions stay put');
+    assert.match(await page.locator('[data-studio-info]').textContent() ?? '', /5 of 5 objects visible/);
+    assert.equal(await list.locator('[data-block-asset="objects:3:asset"]').count(), 1, 'an artwork row shows its file');
+    step('arrangement: two dropped files became placed objects');
+    await page.evaluate((rows) =>
+      (document.querySelector('[data-lolly-canvas]') as any).__lollyCommit('objects', rows), initial);
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return marker?.dataset.studioState === 'ready' && JSON.parse(marker.dataset.lollyStudio!).values.objects.length === 3;
+    });
+
+    // Frame all fits the whole footprint; undo restores the saved camera.
+    const camera = () =>
+      page
+        .locator('[data-lolly-studio]')
+        .evaluate((el) => JSON.parse((el as HTMLElement).dataset.lollyStudio!).values.camera);
+    const before = await camera();
+    await page.getByRole('button', { name: 'Frame all', exact: true }).click();
+    await page.waitForFunction((camera) => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return (
+        marker?.dataset.studioState === 'ready' &&
+        JSON.stringify(JSON.parse(marker.dataset.lollyStudio!).values.camera) !== JSON.stringify(camera)
+      );
+    }, before);
+    await page.keyboard.press('ControlOrMeta+z');
+    await page.waitForFunction((camera) => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return (
+        marker?.dataset.studioState === 'ready' &&
+        JSON.stringify(JSON.parse(marker.dataset.lollyStudio!).values.camera) === JSON.stringify(camera)
+      );
+    }, before);
+    step('arrangement: frame all and undo passed');
+
+    // The frame offers the library flow and a grouped toolbar; Orbit reads pressed at rest.
+    assert.equal(await page.getByRole('button', { name: 'Add objects', exact: true }).count(), 1);
+    assert.equal(await page.locator('[data-studio-orbit]').getAttribute('aria-pressed'), 'true');
+    // A plain click on the sphere selects it while orbiting; a drag still orbits.
+    const preview = page.locator('.lolly-studio-canvas');
+    const box = (await preview.boundingBox())!;
+    // The default sphere sits right of centre at the default camera.
+    const hitSphere = { x: box.width * 0.68, y: box.height * 0.6 };
+    await preview.click({ position: hitSphere });
+    await waitObjects('active === 2');
+    assert.match(await page.locator('[data-studio-object-label]').textContent() ?? '', /2 of 3: Sphere/);
+    await page.evaluate(() =>
+      (document.querySelector('[data-lolly-canvas]') as any).__lollyCommit('activeObject', 1)
+    );
+    await waitObjects('active === 1');
+    step('arrangement: orbit click selected the sphere');
+    // Move mode: a click on the sphere selects it; a drag on it moves it on the stage.
+    await page.getByRole('button', { name: 'Move objects', exact: true }).click();
+    assert.equal(await preview.getAttribute('data-move-object'), 'true');
+    assert.equal(await page.locator('[data-studio-orbit]').getAttribute('aria-pressed'), 'false');
+    await preview.click({ position: hitSphere });
+    await waitObjects('active === 2');
+    assert.match(await page.locator('[data-studio-object-label]').textContent() ?? '', /2 of 3: Sphere/);
+    step('arrangement: click selected the sphere');
+    const from = (await objects())[1];
+    await page.mouse.move(box.x + hitSphere.x, box.y + hitSphere.y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + hitSphere.x - 40, box.y + hitSphere.y - 10, { steps: 6 });
+    await page.mouse.move(box.x + hitSphere.x - 80, box.y + hitSphere.y - 20, { steps: 6 });
+    await page.mouse.up();
+    await waitObjects(`objects[1].x !== ${JSON.stringify(from.x)}`);
+    const dragged = (await objects())[1];
+    assert.notEqual(dragged.x, from.x);
+    assert.equal((await objects())[0].x, initial[0].x, 'the badge did not move');
+    step('arrangement: drag moved the sphere');
+    await page.keyboard.press('ControlOrMeta+z');
+    await waitObjects(`objects[1].x === ${JSON.stringify(from.x)}`);
+    step('arrangement: undo restored the sphere');
+
+    // Keyboard: arrow nudges, comma turns, bracket selects; each is one undo step.
+    await preview.focus();
+    await preview.press('ArrowRight');
+    await waitObjects(`Math.abs(objects[1].x - (${JSON.stringify(from.x)} + 0.1)) < 1e-6`);
+    await preview.press('Shift+ArrowUp');
+    await waitObjects(`Math.abs(objects[1].z - (${JSON.stringify(from.z ?? 0)} - 0.5)) < 1e-6`);
+    await preview.press('.');
+    await waitObjects('objects[1].rotY === 5');
+    await preview.press(']');
+    await waitObjects('active === 3');
+    assert.match(await page.locator('[data-studio-object-label]').textContent() ?? '', /3 of 3: Box/);
+    await page.keyboard.press('ControlOrMeta+z');
+    await waitObjects('active === 2');
+    await page.keyboard.press('ControlOrMeta+z');
+    await waitObjects('!objects[1].rotY');
+    step('arrangement: keyboard nudges, turn, select and undo passed');
+
+    // Escape leaves move mode and the arrow keys orbit the camera again.
+    await preview.press('Escape');
+    assert.equal(await preview.getAttribute('data-move-object'), 'false');
+    const orbitBefore = await camera();
+    await preview.press('ArrowLeft');
+    await page.waitForFunction((azimuth) => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return (
+        marker?.dataset.studioState === 'ready' &&
+        JSON.parse(marker.dataset.lollyStudio!).values.camera.azimuth === azimuth - 2
+      );
+    }, Number(orbitBefore.azimuth));
+    step('arrangement: escape returned to orbit');
+
+    // A hidden object is reported and Fit selected frames only the selection.
+    await page.evaluate(() =>
+      (document.querySelector('[data-lolly-canvas]') as any).__lollyCommit('activeObject', 1)
+    );
+    await waitObjects('active === 1');
+    const wide = await camera();
+    await page.getByRole('button', { name: 'Fit selected', exact: true }).click();
+    await page.waitForFunction((camera) => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return (
+        marker?.dataset.studioState === 'ready' &&
+        JSON.stringify(JSON.parse(marker.dataset.lollyStudio!).values.camera) !== JSON.stringify(camera)
+      );
+    }, wide);
+    assert.ok(Number((await camera()).zoom) > Number(wide.zoom), 'one object fits closer than the whole group');
+    step('arrangement: fit selected passed');
+
+    // Move lights: the arrow keys orbit the selected preset light and save its role
+    // position; brackets change the selection; Escape returns to orbiting the camera.
+    await page.getByRole('button', { name: 'Move lights', exact: true }).click();
+    assert.equal(await preview.getAttribute('data-move-light'), 'true');
+    assert.match(await page.locator('[data-studio-camera-note]').textContent() ?? '', /Key light selected/);
+    const lightValue = (key: string) =>
+      page.locator('[data-lolly-studio]').evaluate((el, key) => JSON.parse((el as HTMLElement).dataset.lollyStudio!).values[key], key);
+    assert.deepEqual(await lightValue('keyPosition'), { x: -3.6, y: 6.8, z: 4 });
+    await preview.focus();
+    await preview.press('ArrowLeft');
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      const key = marker && JSON.parse(marker.dataset.lollyStudio!).values.keyPosition;
+      return marker?.dataset.studioState === 'ready' && key && (key.x !== -3.6 || key.z !== 4);
+    });
+    const keyMoved = await lightValue('keyPosition');
+    assert.ok(Math.hypot(keyMoved.x + 3.6, keyMoved.z - 4) > 0.2, JSON.stringify(keyMoved));
+    assert.ok(Math.abs(keyMoved.y - 6.8) < 0.01, 'azimuth keys keep the height');
+    await preview.press(']');
+    assert.match(await page.locator('[data-studio-camera-note]').textContent() ?? '', /Fill light selected/);
+    await preview.press('+');
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      const fill = marker && JSON.parse(marker.dataset.lollyStudio!).values.fillPosition;
+      return marker?.dataset.studioState === 'ready' && fill && fill.x !== 5;
+    });
+    const fillMoved = await lightValue('fillPosition');
+    assert.ok(Math.hypot(fillMoved.x, fillMoved.y - 1.5, fillMoved.z) > Math.hypot(5, 1.5, 4) + 0.3, JSON.stringify(fillMoved));
+    await page.keyboard.press('ControlOrMeta+z');
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      const fill = marker && JSON.parse(marker.dataset.lollyStudio!).values.fillPosition;
+      return marker?.dataset.studioState === 'ready' && fill && fill.x === 5 && fill.y === 3 && fill.z === 4;
+    });
+    assert.deepEqual(await lightValue('keyPosition'), keyMoved, 'undo is one light at a time');
+    await preview.press('Escape');
+    assert.equal(await preview.getAttribute('data-move-light'), 'false');
+    assert.equal(await page.locator('[data-studio-orbit]').getAttribute('aria-pressed'), 'true');
+    // Switching modes and leaving them never touches the saved objects.
+    assert.equal((await objects()).length, 3);
+    step('arrangement: move lights passed');
+
+    // Camera path: two keys captured from the live view make a move; Play path turns
+    // the preview into a clip and undo takes the keys away again.
+    const clipMs = () => page.locator('[data-lolly-studio]').evaluate((el) => (el as HTMLElement).dataset.clipMs);
+    await page.getByRole('button', { name: 'Add camera key', exact: true }).click();
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return marker?.dataset.studioState === 'ready' && JSON.parse(marker.dataset.lollyStudio!).values.cameraKeys?.length === 1;
+    });
+    const beforeTurn = Number((await camera()).azimuth);
+    await preview.focus();
+    await preview.press('Shift+ArrowRight');
+    await page.waitForFunction((azimuth) => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return marker?.dataset.studioState === 'ready' && JSON.parse(marker.dataset.lollyStudio!).values.camera.azimuth === azimuth + 10;
+    }, beforeTurn);
+    await page.getByRole('button', { name: 'Add camera key', exact: true }).click();
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return marker?.dataset.studioState === 'ready' && JSON.parse(marker.dataset.lollyStudio!).values.cameraKeys?.length === 2;
+    });
+    const savedKeys = await page.locator('[data-lolly-studio]').evaluate((el) => JSON.parse((el as HTMLElement).dataset.lollyStudio!).values.cameraKeys);
+    assert.deepEqual(savedKeys.map((k: { at: number }) => k.at), [0, 100]);
+    assert.equal(savedKeys[1].azimuth - savedKeys[0].azimuth, 10);
+    assert.equal(await clipMs(), '0', 'keys alone do not make a clip');
+    await page.getByRole('button', { name: 'Play path', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-lolly-studio]')?.dataset.clipMs === '5000');
+    assert.equal(await page.locator('[data-studio-play]').getAttribute('aria-pressed'), 'true');
+    await page.keyboard.press('ControlOrMeta+z');
+    await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-lolly-studio]')?.dataset.clipMs === '0');
+    await page.keyboard.press('ControlOrMeta+z');
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return marker?.dataset.studioState === 'ready' && JSON.parse(marker.dataset.lollyStudio!).values.cameraKeys?.length === 1;
+    });
+    step('arrangement: camera keys passed');
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
+  }
+});
+
+test('3D Studio sets words in the brand font on the live shell, alone and inside an arrangement', {
+  skip: !origin && 'Set STUDIO_SHELL_URL to a running web shell.',
+  timeout: 600_000,
+}, async () => {
+  const browser = await chromium.launch({
+    headless: true,
+    ...(process.env.STUDIO_NATIVE
+      ? { executablePath: chromium.executablePath(), args: ['--use-angle=metal'] }
+      : {}),
+  });
+  const errors: string[] = [];
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
+    page.setDefaultTimeout(90000);
+    await page.routeWebSocket(/127\.0\.0\.1/, (socket) => socket.close());
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(`${origin}/t/3d-studio?source=text&words=SUSE&wordWeight=800&samples=8&outputMode=object&c2pa=0&width=360&height=360`);
+    await page.locator('[data-studio-state="ready"]').waitFor();
+    const info = () => page.locator('[data-studio-info]').textContent();
+    assert.match((await info()) ?? '', /1: paint:words/);
+    step('words: the brand font shaped and extruded');
+    // The frame is the real render: a solid glyph body and clear pixels around it.
+    const alpha = await page.locator('.lolly-studio-canvas').evaluate((canvas) => {
+      const c = canvas as HTMLCanvasElement;
+      const copy = document.createElement('canvas');
+      copy.width = c.width;
+      copy.height = c.height;
+      const ctx = copy.getContext('2d')!;
+      ctx.drawImage(c, 0, 0);
+      const px = ctx.getImageData(0, 0, copy.width, copy.height).data;
+      let solid = 0, clear = 0;
+      for (let i = 3; i < px.length; i += 4) { if (px[i] === 255) solid++; else if (px[i] === 0) clear++; }
+      return { solid, clear };
+    });
+    assert.ok(alpha.solid > 1000 && alpha.clear > 1000, JSON.stringify(alpha));
+    await page.evaluate(() => (document.querySelector('[data-lolly-canvas]') as any).__lollyCommit('words', 'Open\nSource'));
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      return marker?.dataset.studioState === 'ready' && JSON.parse(marker.dataset.lollyStudio!).values.words === 'Open\nSource';
+    });
+    step('words: two lines re-shaped');
+    await page.evaluate(() => (document.querySelector('[data-lolly-canvas]') as any).__lollyCommit('wordFont', 'display'));
+    await page.locator('[data-studio-state="ready"]').waitFor();
+    await page.evaluate(() => (document.querySelector('[data-lolly-canvas]') as any).__lollyCommit('source', 'arrangement'));
+    await page.locator('[data-studio-state="ready"]').waitFor();
+    await page.evaluate(() => {
+      const canvas = document.querySelector('[data-lolly-canvas]') as any;
+      const rows = canvas.__lollyModel().find((i: { id: string }) => i.id === 'objects').value;
+      canvas.__lollyCommit('objects', [...rows, { kind: 'text', text: 'Geeko', scale: 0.6 }]);
+    });
+    await page.waitForFunction(() => {
+      const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+      const rows = marker && JSON.parse(marker.dataset.lollyStudio!).values.objects;
+      return marker?.dataset.studioState === 'ready' && rows?.length === 4 && rows[3].name === 'Geeko';
+    });
+    assert.match((await info()) ?? '', /4 of 4 objects visible/);
+    step('words: a text object joined the arrangement');
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();

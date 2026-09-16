@@ -1,13 +1,25 @@
 // SPDX-License-Identifier: MPL-2.0
 /** Portable studio recipe validation, material finishes and repeatable camera time. */
 import type {
+  StudioCameraKeyV1,
   StudioFinish,
+  StudioFinishSpec,
   StudioLightV1,
+  StudioObjectV1,
   StudioSceneV1,
   StudioSourceV1,
   StudioVector3,
 } from '@lolly-tools/core';
+import { STUDIO_CAMERA_KEY_LIMIT, studioCameraTravels } from './studio3d-camera-path.ts';
+import {
+  STUDIO_ARRANGEMENT_EXTENT,
+  studioActiveObject,
+  studioArrangementRows,
+  studioObjectId,
+  studioObjectName,
+} from './studio3d-arrangement.ts';
 import { studioActiveValues } from './studio3d-collection.ts';
+import { STUDIO_KEY_CARD_OFFSET, STUDIO_PRESET_LIGHT_POSITIONS } from './studio3d-lights.ts';
 
 type Values = Record<string, unknown>;
 function record(value: unknown): Values {
@@ -52,13 +64,25 @@ function asset(value: unknown): { id: string; url: string; name: string } {
     name: String(v.name || v.filename || v.url || ''),
   };
 }
-const FINISHES: StudioFinish[] = ['matte', 'satin', 'enamel', 'metal'];
+export const STUDIO_FINISHES: StudioFinish[] = [
+  'matte',
+  'satin',
+  'enamel',
+  'metal',
+  'chrome',
+  'clay',
+  'velvet',
+  'glow',
+  'neon',
+  'glass',
+  'frosted',
+  'pearl',
+  'iridescent',
+];
+const FINISHES = STUDIO_FINISHES;
 
-export function studioFinish(finish: StudioFinish): {
-  roughness: number;
-  metalness: number;
-  clearcoat: number;
-} {
+/** The physical values behind each finish name; the same table on every host. */
+export function studioFinish(finish: StudioFinish): StudioFinishSpec {
   switch (finish) {
     case 'matte':
       return { roughness: 0.8, metalness: 0, clearcoat: 0 };
@@ -66,21 +90,79 @@ export function studioFinish(finish: StudioFinish): {
       return { roughness: 0.22, metalness: 0, clearcoat: 0.6 };
     case 'metal':
       return { roughness: 0.23, metalness: 1, clearcoat: 0.15 };
+    case 'chrome':
+      return { roughness: 0.04, metalness: 1, clearcoat: 0 };
+    case 'clay':
+      return { roughness: 1, metalness: 0, clearcoat: 0 };
+    case 'velvet':
+      return { roughness: 0.95, metalness: 0, clearcoat: 0, sheen: 1, sheenRoughness: 0.85 };
+    case 'glow':
+      return { roughness: 0.55, metalness: 0, clearcoat: 0, emissive: 1.6 };
+    case 'neon':
+      return { roughness: 0.3, metalness: 0, clearcoat: 0.4, emissive: 4 };
+    case 'glass':
+      return { roughness: 0.05, metalness: 0, clearcoat: 0, transmission: 1, ior: 1.5, thickness: 0.6 };
+    case 'frosted':
+      return { roughness: 0.45, metalness: 0, clearcoat: 0, transmission: 0.9, ior: 1.45, thickness: 0.8 };
+    case 'pearl':
+      return {
+        roughness: 0.32,
+        metalness: 0.05,
+        clearcoat: 1,
+        clearcoatRoughness: 0.1,
+        iridescence: 0.6,
+        iridescenceIOR: 1.25,
+      };
+    case 'iridescent':
+      return { roughness: 0.18, metalness: 0.7, clearcoat: 0.3, iridescence: 1, iridescenceIOR: 1.35 };
     default:
       return { roughness: 0.4, metalness: 0, clearcoat: 0.18 };
   }
 }
 
-/** Normalize user inputs once; the editor, renderer and headless shell share this recipe. */
-export function buildStudioScene(input: unknown): StudioSceneV1 {
-  const wrapper = record(input);
-  if (wrapper.version !== 1) throw new Error('This studio recipe version is not supported.');
-  const v = studioActiveValues(record(wrapper.values));
-  const kind = choice(v.source, ['artwork', 'model', 'primitive'] as const, 'primitive');
-  const uploaded = asset(v.upload);
-  const selected = asset(kind === 'artwork' ? v.artwork : v.modelAsset);
-  const picked = uploaded.url ? uploaded : selected;
-  const modelFormat = choice(v.modelFormat, ['auto', 'glb', 'stl'] as const, 'auto');
+/** The shared typesetting for every text source in a scene. */
+function textSettings(v: Values): NonNullable<StudioSourceV1['text']> {
+  const family = String(v.wordFont || 'sans')
+    .replace(/[^\w -]/g, '')
+    .trim();
+  return {
+    text: '',
+    font: family || 'sans',
+    weight: Math.round(number(v.wordWeight, 700, 100, 900) / 100) * 100,
+    tracking: number(v.wordTracking, 0, -0.2, 1),
+    lineHeight: number(v.wordLineHeight, 1.1, 0.7, 2),
+    align: choice(v.wordAlign, ['left', 'center', 'right'] as const, 'center'),
+  };
+}
+
+function sourceFrom(
+  kindValue: unknown,
+  picked: { id: string; url: string; name: string },
+  modelFormatValue: unknown,
+  primitiveValue: unknown,
+  where: string,
+  allowEmpty = false,
+  words?: { text: unknown; settings: NonNullable<StudioSourceV1['text']> }
+): StudioSourceV1 {
+  const kind = choice(kindValue, ['artwork', 'model', 'primitive', 'text'] as const, 'primitive');
+  const modelFormat = choice(modelFormatValue, ['auto', 'glb', 'stl'] as const, 'auto');
+  if (kind === 'text') {
+    const text = String(words?.text ?? '')
+      .replace(/\r/g, '')
+      .split('\n')
+      .map((line) => line.trim())
+      .join('\n')
+      .trim()
+      .slice(0, 200);
+    if (!text && !allowEmpty) throw new Error(`${where}Type the words to set.`);
+    return {
+      kind: 'text',
+      id: '',
+      url: '',
+      primitive: 'badge',
+      text: { ...(words?.settings ?? textSettings({})), text },
+    };
+  }
   const source: StudioSourceV1 = {
     kind:
       kind === 'artwork'
@@ -93,14 +175,82 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
           : 'primitive',
     id: picked.id,
     url: picked.url,
-    primitive: choice(v.primitive, ['badge', 'sphere', 'box', 'torus'] as const, 'badge'),
+    primitive: choice(primitiveValue, ['badge', 'sphere', 'box', 'torus'] as const, 'badge'),
   };
-  if (source.kind !== 'primitive' && !source.url)
+  if (source.kind !== 'primitive' && !source.url && !allowEmpty)
     throw new Error(
-      kind === 'artwork'
-        ? 'Choose an SVG or upload your artwork.'
-        : 'Choose or upload a GLB or STL model.'
+      `${where}${
+        kind === 'artwork'
+          ? 'Choose an SVG or upload your artwork.'
+          : 'Choose or upload a GLB or STL model.'
+      }`
     );
+  return source;
+}
+
+/** Arrangement rows become placed objects with stable ids; a hidden object keeps its row. */
+function arrangementObjects(v: Values): StudioObjectV1[] {
+  // Rows are normalised below; the shared type settings come from the scene values.
+  const taken = new Set<string>();
+  return studioArrangementRows(v).map((row, index) => {
+    const name = studioObjectName(row, index);
+    const kind = choice(row.kind, ['artwork', 'model', 'primitive', 'text'] as const, 'artwork');
+    // A freshly added row has no file or words yet. It stays in the arrangement so the
+    // other objects keep rendering while the person fills it in; the notes name it.
+    const source = sourceFrom(kind, asset(row.asset), row.modelFormat, row.primitive, `${name}: `, true, {
+      text: row.text,
+      settings: textSettings(v),
+    });
+    const pending =
+      source.kind === 'text' ? !source.text?.text : source.kind !== 'primitive' && !source.url;
+    return {
+      id: studioObjectId(row, index, taken),
+      name,
+      source,
+      ...(pending ? { pending: true } : {}),
+      transform: {
+        rotation: [
+          number(row.rotX, 0, -360, 360),
+          number(row.rotY, 0, -360, 360),
+          number(row.rotZ, 0, -360, 360),
+        ],
+        position: [
+          number(row.x, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT),
+          number(row.y, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT),
+          number(row.z, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT),
+        ],
+        // A row without a scale is a newcomer to a group; 0.6 is the manifest default.
+        scale: number(row.scale, 0.6, 0.1, 5),
+      },
+      grounded: enabled(row.grounded, true),
+      visible: enabled(row.visible, true),
+      bindings: { a: String(row.roleA || '').trim(), b: String(row.roleB || '').trim() },
+    };
+  });
+}
+
+/** Normalize user inputs once; the editor, renderer and headless shell share this recipe. */
+export function buildStudioScene(input: unknown): StudioSceneV1 {
+  const wrapper = record(input);
+  if (wrapper.version !== 1) throw new Error('This studio recipe version is not supported.');
+  const v = studioActiveValues(record(wrapper.values));
+  const arrangement = v.source === 'arrangement';
+  const objects = arrangement ? arrangementObjects(v) : [];
+  if (arrangement && !objects.some((object) => object.visible && !object.pending))
+    throw new Error(
+      objects.some((object) => object.pending)
+        ? 'Choose a file for an object, or add a sample shape, to see the arrangement.'
+        : 'Show at least one object in the arrangement.'
+    );
+  const kind = choice(v.source, ['artwork', 'model', 'primitive', 'text'] as const, 'primitive');
+  const uploaded = asset(v.upload);
+  const selected = asset(kind === 'artwork' ? v.artwork : v.modelAsset);
+  const source: StudioSourceV1 = arrangement
+    ? (objects.find((object) => !object.pending) ?? objects[0]!).source
+    : sourceFrom(kind, uploaded.url ? uploaded : selected, v.modelFormat, v.primitive, '', false, {
+        text: v.words,
+        settings: textSettings(v),
+      });
   const primary = color(v.colorA, '#38b98a'),
     secondary = color(v.colorB, '#173d37');
   const keyColor = color(v.keyColor, '#d9fff1'),
@@ -118,13 +268,16 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
     fill = number(light.fill, 0.7, 0, 20),
     rim = number(light.rim, 3, 0, 20);
   const softness = number(v.softness, 1.5, 0, 5);
+  const placed = (role: 'key' | 'fill' | 'rim'): StudioVector3 =>
+    vector(v[`${role}Position`], ['x', 'y', 'z'], STUDIO_PRESET_LIGHT_POSITIONS[role], 30);
+  const keyPosition = placed('key');
   let lights: StudioLightV1[] = [
     {
       id: 'key',
       kind: 'directional',
       color: preset === 'warm' ? color(v.warmColor, '#ffc196') : keyColor,
       intensity: preset === 'soft' ? intensity * 0.7 : intensity,
-      position: [-3.6, 6.8, 4],
+      position: keyPosition,
       size: softness,
       shadows: true,
     },
@@ -133,7 +286,7 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       kind: 'directional',
       color: preset === 'electric' ? coolColor : fillColor,
       intensity: fill * (preset === 'soft' ? 1.6 : 1 - drama * 0.65),
-      position: [5, 3, 4],
+      position: placed('fill'),
       size: softness,
       shadows: false,
     },
@@ -142,7 +295,7 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       kind: 'directional',
       color: preset === 'warm' ? color(v.warmColor, '#ffc196') : rimColor,
       intensity: rim,
-      position: [3, 5, -3],
+      position: placed('rim'),
       size: softness,
       shadows: false,
     },
@@ -151,7 +304,7 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       kind: 'area',
       color: keyColor,
       intensity: 3,
-      position: [-4, 4, 3],
+      position: keyPosition.map((n, i) => n + STUDIO_KEY_CARD_OFFSET[i]!) as StudioVector3,
       size: Math.max(0.2, softness * 2),
       shadows: false,
     },
@@ -179,6 +332,16 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
     transform = record(v.transform),
     target = record(v.target);
   const backdrop = asset(v.backdropImage);
+  const environmentKind = choice(
+    v.environment,
+    ['room', 'softbox', 'window', 'studio', 'gallery', 'warehouse', 'stage', 'desert', 'synthwave', 'image'] as const,
+    'room'
+  );
+  const environment = asset(v.environmentImage);
+  if (environmentKind === 'image' && !environment.url)
+    throw new Error(
+      'Choose or upload a Radiance .hdr or OpenEXR .exr map for the lighting environment.'
+    );
   const projection = choice(v.projection, ['perspective', 'orthographic'] as const, 'perspective');
   const rows = Array.isArray(v.materials) ? v.materials : [];
   if (rows.length > 32) throw new Error('A studio supports up to 32 material overrides.');
@@ -188,12 +351,14 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       slot = String(m.slot || i + 1).trim();
     if (seen.has(slot)) throw new Error(`Material slot ${slot} has more than one override.`);
     seen.add(slot);
+    const finish = typeof m.finish === 'string' && FINISHES.includes(m.finish as StudioFinish) ? (m.finish as StudioFinish) : undefined;
     return {
       slot,
       color: color(m.color, primary),
       roughness: number(m.roughness, 0.4, 0.04, 1),
       metalness: number(m.metalness, 0, 0, 1),
       clearcoat: number(m.clearcoat, 0.2, 0, 1),
+      ...(finish && finish !== 'satin' ? { finish } : {}),
     };
   });
   return {
@@ -204,11 +369,18 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       bevel: number(shape.bevel, 0.025, 0, 0.15),
       smoothness: Math.round(number(shape.smoothness, 24, 8, 64)),
     },
-    transform: {
-      rotation: vector(v.rotation, ['x', 'y', 'z'], [-6, -16, -7], 360),
-      position: vector(v.position, ['x', 'y', 'z'], [0, 0.1, 0], 10),
-      scale: number(transform.scale, 1, 0.1, 5),
-    },
+    transform: arrangement
+      ? objects[0]!.transform
+      : {
+          // Words read best square to the camera; the studio's tilted default pose is
+          // for objects. A wordmark can still take the scene pose on request.
+          rotation:
+            source.kind === 'text' && choice(v.wordPose, ['front', 'scene'] as const, 'front') === 'front'
+              ? [0, 0, 0]
+              : vector(v.rotation, ['x', 'y', 'z'], [-6, -16, -7], 360),
+          position: vector(v.position, ['x', 'y', 'z'], [0, 0.1, 0], 10),
+          scale: number(transform.scale, 1, 0.1, 5),
+        },
     camera: {
       projection,
       azimuth: number(camera.azimuth, 25, -180, 180),
@@ -261,6 +433,11 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
     environment: {
       intensity: number(v.environmentIntensity, 0.4, 0, 3),
       rotation: number(v.environmentRotation, 0, -180, 180),
+      kind: environmentKind,
+      url: environmentKind === 'image' ? environment.url : '',
+      id: environmentKind === 'image' ? environment.id : '',
+      background: enabled(v.environmentBackground),
+      blur: number(v.environmentBlur, 0.3, 0, 1),
     },
     stage: {
       output: choice(v.outputMode, ['scene', 'object-shadow', 'object'] as const, 'scene'),
@@ -275,10 +452,18 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       backdropStrength: number(v.backdropStrength, 0.5, 0, 1),
       pedestal: v.pedestal === true,
       atmosphere: v.atmosphere === true,
+      atmosphereForms: choice(v.atmosphereForms, ['spheres', 'copies'] as const, 'copies'),
+      atmosphereSpread: number(v.atmosphereSpread, 0.5, 0, 1),
+      atmosphereCount: Math.round(number(v.atmosphereCount, 7, 1, 12)),
       seed: Math.round(number(v.seed, 1, 1, 99999)),
     },
     exposure: number(v.exposure, 1.1, 0.1, 4),
-    quality: { previewSamples: 8, exportSamples: Math.round(number(v.samples, 64, 8, 256)) },
+    quality: {
+      previewSamples: 8,
+      exportSamples: Math.round(number(v.samples, 64, 8, 256)),
+      // Motion hides sampling noise a still would show, and a clip is hundreds of frames.
+      clipSamples: Math.round(number(v.videoSamples, 16, 1, 64)),
+    },
     motion: {
       kind: choice(v.motion, ['still', 'turntable'] as const, 'still'),
       seconds: number(v.duration, 5, 1, 30),
@@ -288,12 +473,42 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       kind: choice(v.lightMotion, ['still', 'orbit', 'breathe'] as const, 'still'),
       amount: number(v.lightMotionAmount, 0.35, 0, 1),
     },
+    ...(arrangement ? { objects, activeObject: studioActiveObject(v) } : {}),
+    cameraMotion: {
+      kind: choice(v.cameraMotion, ['still', 'keys'] as const, 'still'),
+      ease: choice(v.cameraEase, ['linear', 'smooth', 'flow'] as const, 'smooth'),
+      loop: enabled(v.cameraLoop),
+      keys: cameraKeys(v),
+    },
   };
+}
+
+function cameraKeys(v: Values): StudioCameraKeyV1[] {
+  const rows = Array.isArray(v.cameraKeys) ? v.cameraKeys : [];
+  if (rows.length > STUDIO_CAMERA_KEY_LIMIT)
+    throw new Error(`A camera path holds up to ${STUDIO_CAMERA_KEY_LIMIT} keys.`);
+  return rows.map((row, i) => {
+    const k = record(row);
+    return {
+      at: number(k.at, rows.length > 1 ? (i / (rows.length - 1)) * 100 : 0, 0, 100) / 100,
+      azimuth: number(k.azimuth, 25, -720, 720),
+      elevation: number(k.elevation, 14, -60, 80),
+      fov: number(k.fov, 29, 15, 80),
+      zoom: number(k.zoom, 1, 0.05, 3),
+      target: [
+        number(k.panX, 0, -25, 25),
+        number(k.panY, 1.6, -25, 25),
+        number(k.panZ, 0, -25, 25),
+      ],
+      focus: number(k.focusDistance, 0, 0, 500),
+    };
+  });
 }
 
 export function studioAnimated(scene: StudioSceneV1): boolean {
   return (
     scene.motion.kind !== 'still' ||
+    studioCameraTravels(scene) ||
     !!(
       scene.lightAnimation &&
       scene.lightAnimation.kind !== 'still' &&

@@ -1,8 +1,41 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as THREE from 'three';
+import {
+  type StudioObjectBox,
+  studioArrangementPivot,
+} from '../../../../../engine/src/studio3d-arrangement.ts';
 import { studioTime } from '../../../../../engine/src/studio3d.ts';
-import type { StudioSceneV1 } from '../../../../../packages/core/src/studio3d-v1.ts';
+import type {
+  StudioObjectV1,
+  StudioSceneV1,
+} from '../../../../../packages/core/src/studio3d-v1.ts';
 import { studioCamera } from './stage.ts';
+
+function lift(recipe: StudioSceneV1): number {
+  return recipe.stage.pedestal && recipe.stage.output === 'scene' ? 0.3 : 0;
+}
+
+/** Pose one subject: authored rotation and scale, then ground contact or a free pivot. */
+function placeObject(
+  object: THREE.Object3D,
+  spec: StudioObjectV1,
+  recipe: StudioSceneV1,
+  spin: number
+): void {
+  object.visible = spec.visible;
+  object.rotation.set(
+    ...(spec.transform.rotation.map(THREE.MathUtils.degToRad) as [number, number, number])
+  );
+  object.rotation.y += spin;
+  object.scale.setScalar(spec.transform.scale);
+  object.position.set(0, 0, 0);
+  const bounds = new THREE.Box3().setFromObject(object);
+  object.position.set(
+    spec.transform.position[0],
+    (spec.grounded ? -bounds.min.y + lift(recipe) : 0) + spec.transform.position[1],
+    spec.transform.position[2]
+  );
+}
 
 export function placeStudioObject(
   object: THREE.Object3D,
@@ -10,21 +43,59 @@ export function placeStudioObject(
   time = 0,
   seconds?: number
 ): void {
-  object.rotation.set(
-    ...(recipe.transform.rotation.map(THREE.MathUtils.degToRad) as [number, number, number])
-  );
-  object.rotation.y += studioTime(recipe, time, seconds);
-  object.scale.setScalar(recipe.transform.scale);
-  object.position.set(0, 0, 0);
-  const bounds = new THREE.Box3().setFromObject(object);
-  object.position.set(
-    recipe.transform.position[0],
-    -bounds.min.y +
-      recipe.transform.position[1] +
-      (recipe.stage.pedestal && recipe.stage.output === 'scene' ? 0.3 : 0),
-    recipe.transform.position[2]
+  placeObject(
+    object,
+    {
+      id: 'object',
+      name: 'Object',
+      source: recipe.source,
+      transform: recipe.transform,
+      grounded: true,
+      visible: true,
+      bindings: { a: '', b: '' },
+    },
+    recipe,
+    studioTime(recipe, time, seconds)
   );
   object.updateMatrixWorld(true);
+}
+
+/**
+ * Place every subject under one root. A single object spins about its own axis, as before;
+ * an arrangement turns as a group about the centre of its footprint at time zero.
+ */
+export function placeStudioScene(
+  root: THREE.Object3D,
+  placed: { object: THREE.Object3D; spec: StudioObjectV1 }[],
+  recipe: StudioSceneV1,
+  time = 0,
+  seconds?: number
+): StudioObjectBox[] {
+  const spin = studioTime(recipe, time, seconds);
+  const grouped = !!recipe.objects;
+  root.rotation.set(0, 0, 0);
+  root.position.set(0, 0, 0);
+  for (const { object, spec } of placed) placeObject(object, spec, recipe, grouped ? 0 : spin);
+  root.updateMatrixWorld(true);
+  const boxes: StudioObjectBox[] = placed
+    .filter(({ spec }) => spec.visible)
+    .map(({ object, spec }) => {
+      const bounds = new THREE.Box3().setFromObject(object);
+      return {
+        id: spec.id,
+        name: spec.name,
+        min: [bounds.min.x, bounds.min.y, bounds.min.z],
+        max: [bounds.max.x, bounds.max.y, bounds.max.z],
+      };
+    });
+  if (grouped && spin) {
+    const [px, , pz] = studioArrangementPivot(boxes);
+    for (const { object } of placed) object.position.sub(new THREE.Vector3(px, 0, pz));
+    root.position.set(px, 0, pz);
+    root.rotation.y = spin;
+    root.updateMatrixWorld(true);
+  }
+  return boxes;
 }
 
 /** Fit the transformed subject with a ten-percent border at this output aspect ratio. */

@@ -427,6 +427,7 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
               signal.throwIfAborted();
               return bytes;
             },
+            shapeText: studio.studioShaperFor(host),
             setInput: (id, value) => { m.dirty = true; rt.setInput(id, value as InputValue); },
           });
         }).catch(err => console.warn('multi-edit studio mount failed:', err));

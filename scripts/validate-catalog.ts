@@ -822,6 +822,8 @@ const RASTER_PREVIEWS: Record<string, string> = {
     'The generated illustration arrives as one traced shape: 2 <path> elements, one of them a 193,303-char `d`. That is 196,041 B of SVG for a picture WebP stores in 94,254 B, and the path is a tessellation of pixels, not drawn geometry.',
 
   // ── Class 1, the .svg spelling: a bitmap the walker wrapped in an <svg> ─────
+  '3d-studio.svg':
+    'The studio is a WebGL scene: lights, shadows and depth of field are rendered into a <canvas> by three.js and read back as pixels, so there is no DOM geometry for the walker to trace. The tile is the rendered frame, which is the picture the tool makes.',
   // Each of these is one <image href="data:image/…"> plus the few hundred bytes of
   // markup quoted in its reason - an <svg>, the <image>, sometimes a background
   // <rect>. They are here for the SAME reason as the .webp entries above (the tool

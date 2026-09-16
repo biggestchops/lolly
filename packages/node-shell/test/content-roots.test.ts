@@ -85,6 +85,28 @@ function fixtureRoot(): string {
   return root;
 }
 
+test('a tool or overlay created after the first lookup is found without a restart', () => {
+  const root = fixtureRoot();
+  try {
+    const roots = contentRoots({ root, profile: 'brand-x' });
+    assert.equal(toolDirs(roots).get('beta')!.base, undefined);
+    assert.equal(toolFile('beta', 'templates/one.json', roots), null);
+    // The brand adds an overlay for beta, with a templates directory, while the
+    // process keeps running - the way a long-lived dev server sees a new pack commit.
+    write(join(root, 'brands/x/tools/beta/tool.json'),
+      '{\n  "id": "beta",\n  "extends": "community"\n}\n');
+    write(join(root, 'brands/x/tools/beta/templates/one.json'), '{"id":"one"}\n');
+    assert.equal(toolDirs(roots).get('beta')!.base, join(root, 'community/beta'));
+    assert.equal(readFileSync(toolFile('beta', 'templates/one.json', roots)!, 'utf8'), '{"id":"one"}\n');
+    assert.deepEqual(listToolFiles('beta', roots), ['templates/one.json', 'tool.json']);
+    // A brand-new tool appears too.
+    write(join(root, 'community/delta/tool.json'), '{\n  "id": "delta"\n}\n');
+    assert.ok(toolDirs(roots).has('delta'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('an overlay tool is the per-file union, overlay winning', () => {
   const root = fixtureRoot();
   try {

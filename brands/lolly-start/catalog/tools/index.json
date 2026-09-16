@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generatedAt": "2026-09-15T23:44:44.479Z",
+  "generatedAt": "2026-09-16T18:45:05.907Z",
   "tools": [
     {
       "id": "compress-pdf",
@@ -8479,7 +8479,7 @@
       "id": "chart",
       "name": "Chart",
       "description": "Charts from first paste to advanced visualisation - explained data recommendations, explicit field mapping, 35 classic vector families including Pareto, bullet targets and range bars, sixteen statistical and editorial articulations, real-z 3-D scenes, cinematic flights, deterministic motion, accessible descriptions and styles compiled from the active design system.",
-      "version": "1.25.0",
+      "version": "1.26.0",
       "status": "official",
       "category": "designer",
       "tags": [
@@ -13991,8 +13991,8 @@
     {
       "id": "3d-studio",
       "name": "3D Studio",
-      "description": "Turn SVG artwork and 3D models into coordinated images. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
-      "version": "0.3.0",
+      "description": "Turn SVG artwork and 3D models into coordinated images, alone or arranged together in one scene. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
+      "version": "0.4.0",
       "status": "official",
       "category": "designer",
       "tags": [
@@ -14006,7 +14006,9 @@
         "stl",
         "lighting",
         "materials",
-        "product"
+        "product",
+        "arrangement",
+        "scene"
       ],
       "formats": [
         "png",
@@ -14022,7 +14024,21 @@
       "height": 1280,
       "exportable": true,
       "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><title>3D Studio</title><path d=\"M12 3 3 8v9l9 5 9-5V8zM3 8l9 5 9-5M12 13v9\"/><path d=\"m4 2 2 3M20 2l-2 3M22 12h2\"/></svg>",
-      "preview": "/catalog/previews/3d-studio.webp"
+      "preview": "/catalog/previews/3d-studio.svg",
+      "templates": [
+        {
+          "id": "icon-backdrop",
+          "name": "Icon backdrop",
+          "category": "Promotion",
+          "description": "An icon or logo as an extruded object, lit dramatically, with copies drifting in depth and a slow camera move. Swap in your own SVG under Start."
+        },
+        {
+          "id": "wordmark-backdrop",
+          "name": "Wordmark backdrop",
+          "category": "Promotion",
+          "description": "Your words in the brand font, lit dramatically, with copies drifting in depth and a slow camera move. Export as video or GIF for a promotional backdrop."
+        }
+      ]
     }
   ]
 }

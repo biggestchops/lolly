@@ -920,7 +920,7 @@ async function renderRaster(node: Element, format: string, opts: ExportOpts): Pr
   const restoreShadows = bakeWebKitBoxShadows(node);
   // Deterministic base frame (t=0) for a frame-clock tool, so a still of an
   // animating canvas captures the configured pose, not a random rAF moment.
-  const fc = beginFrameClock(node); renderFrameAt(fc, 0);
+  const fc = beginFrameClock(node); renderFrameAt(fc, 0, undefined, { width: dtoOpts.width, height: dtoOpts.height });
   try {
     // HDR (opt-in, ?hdr=): PQ-encode the pixels + tag the container Rec.2100-PQ.
     // Needs canvas pixels, so it forces the canvas path (like imprint/durable).
@@ -1018,7 +1018,7 @@ async function renderBitmap(node: Element, mimeType: string, opts: ExportOpts): 
   const d = exportDims(node, opts);
   const dtoOpts = rasterStyle(d, opts);
   const restore = await swapBlobUrls(node);
-  const fc = beginFrameClock(node); renderFrameAt(fc, 0);
+  const fc = beginFrameClock(node); renderFrameAt(fc, 0, undefined, { width: dtoOpts.width, height: dtoOpts.height });
   let raw: HTMLCanvasElement;
   try {
     raw = await lib.toCanvas(node, dtoOpts);
@@ -5331,7 +5331,11 @@ function canCarrySoftSubtitles(): boolean {
 // maps t onto its own timeline (the audiogram's caption cues) must prefer it over
 // any span of its own, because the export's length is decided here - after a frame
 // plan the tool never sees - and a tool-side guess is what let captions drift.
-type FrameClockCanvas = HTMLCanvasElement & { __lollyFrameRender?: (t: number, clipSec?: number) => void; __lollyFrameDriven?: boolean };
+// The third argument is the export's target pixel size. Also ADDITIVE: a canvas tool
+// that draws at its on-screen size ignores it and the capture scales that bitmap, as
+// before. A tool that can resample (the 3D studio) re-renders at this size so a larger
+// export carries real detail rather than an upscaled preview.
+type FrameClockCanvas = HTMLCanvasElement & { __lollyFrameRender?: (t: number, clipSec?: number, size?: { width: number; height: number }) => void; __lollyFrameDriven?: boolean };
 function frameClockCanvas(node: Element): FrameClockCanvas | null {
   const self = node as FrameClockCanvas;
   if (typeof self.__lollyFrameRender === 'function') return self;
@@ -5345,9 +5349,9 @@ function beginFrameClock(node: Element): FrameClockCanvas | null {
   if (c) c.__lollyFrameDriven = true;   // freeze the tool's own rAF for the capture
   return c;
 }
-function renderFrameAt(c: FrameClockCanvas | null, t: number, clipSec?: number): void {
+function renderFrameAt(c: FrameClockCanvas | null, t: number, clipSec?: number, size?: { width: number; height: number }): void {
   if (!c || typeof c.__lollyFrameRender !== 'function') return;
-  try { c.__lollyFrameRender(t, clipSec); } catch (e) { _host?.log?.('warn', `__lollyFrameRender threw: ${(e as Error)?.message ?? e}`); }
+  try { c.__lollyFrameRender(t, clipSec, size); } catch (e) { _host?.log?.('warn', `__lollyFrameRender threw: ${(e as Error)?.message ?? e}`); }
 }
 function endFrameClock(c: FrameClockCanvas | null): void {
   if (c) c.__lollyFrameDriven = false;
@@ -5611,7 +5615,7 @@ export async function createFrameSource(node: Element, opts: ExportOpts & { fram
     width: targetW,
     height: targetH,
     async frame(t = 0, clipSec?: number): Promise<HTMLCanvasElement> {
-      if (frameClock) renderFrameAt(frameClock, t, clipSec);   // deterministic phase - no settle wait needed
+      if (frameClock) renderFrameAt(frameClock, t, clipSec, { width: targetW, height: targetH });   // deterministic phase - no settle wait needed
       else if (!settled) { await new Promise<void>(r => setTimeout(r, waitMs)); settled = true; }
       // Frame-accurate anim-source drive: a live/onFrame tool (e.g. filter) registers
       // __lollyFrameDrive to re-run its effect over the SOURCE frame at time t - the

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 import { buildStudioScene, studioAnimated } from '../../../../../engine/src/studio3d.ts';
 import {
+  studioActiveObject,
+  studioObjectName,
+} from '../../../../../engine/src/studio3d-arrangement.ts';
+import {
   type StudioValues,
   studioActiveIndex,
   studioActiveValues,
@@ -9,17 +13,88 @@ import {
 import type { StudioSceneV1 } from '../../../../../packages/core/src/studio3d-v1.ts';
 import { syncStudioControls, wireStudioGestures } from './controls.ts';
 import { StudioRenderer } from './renderer.ts';
-import type { StudioRead } from './source.ts';
+import type { StudioRead, StudioShaper } from './source.ts';
+import { parseFontFamilies } from '../../bridge/font-registry.ts';
+import type { TextAPI } from '../../../../../packages/core/src/host-v1/text.ts';
+
+/** Brand roles the studio's font choice may name, each a CSS variable the shell keeps current. */
+const FONT_ROLES: Record<string, string> = {
+  sans: '--font-brand',
+  display: '--font-display',
+  mono: '--font-mono',
+};
+
+/**
+ * A shaper over the host's text API: a brand role or family resolves to a font file the
+ * host knows (brand statics, uploads, on-device Google fonts), then HarfBuzz outlines each
+ * line. Null when the host cannot outline text at all.
+ */
+export function studioShaperFor(host: { text?: TextAPI }): StudioShaper | null {
+  const text = host.text;
+  if (!text?.fontUrl) return null;
+  return async (line, font, fontSize, signal) => {
+    const role = FONT_ROLES[font.font];
+    const variable = (name: string) =>
+      getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    // A brand without a display or mono face falls back to its main face, as the CSS does.
+    const stack = role ? variable(role) || variable(FONT_ROLES.sans!) : font.font;
+    const families = role ? parseFontFamilies(stack) : [font.font];
+    let resolved: { url: string; variations?: string[] } | null = null;
+    let tried = '';
+    for (const family of families) {
+      tried = family;
+      resolved = await text.fontUrl!(family, { weight: font.weight });
+      signal.throwIfAborted();
+      if (resolved) break;
+    }
+    if (!resolved)
+      throw new Error(
+        `The font "${tried || font.font}" is not available on this device. Add it under Brand fonts, or choose another.`
+      );
+    const shaped = await text.toPath({
+      text: line,
+      fontUrl: resolved.url,
+      fontSize,
+      letterSpacing: font.tracking * fontSize,
+      variations: resolved.variations,
+    });
+    signal.throwIfAborted();
+    return { d: shaped.d, advance: shaped.advanceWidth || 0 };
+  };
+}
 
 type FrameCanvas = HTMLCanvasElement & {
-  __lollyFrameRender?: (t: number, seconds?: number) => void;
+  __lollyFrameRender?: (
+    t: number,
+    seconds?: number,
+    size?: { width: number; height: number }
+  ) => void;
   __lollyFrameDriven?: boolean;
 };
+/** The capture's hard limits; a larger request renders at the cap and the capture scales the rest. */
+const MAX_SIDE = 4096;
+const MAX_PIXELS = 12_000_000;
+function boundedSize(width: number, height: number): { width: number; height: number } {
+  let w = Math.max(1, Math.round(width)),
+    h = Math.max(1, Math.round(height));
+  const factor = Math.min(1, MAX_SIDE / w, MAX_SIDE / h, Math.sqrt(MAX_PIXELS / (w * h)));
+  if (factor < 1) {
+    w = Math.max(1, Math.floor(w * factor));
+    h = Math.max(1, Math.floor(h * factor));
+  }
+  return { width: w, height: h };
+}
 export interface StudioMountOptions {
   read: StudioRead;
   isCurrent?: () => boolean;
   setInput?: (id: string, value: unknown) => void;
   reviewCollection?: () => void;
+  /** Open the library to add several sources at once to the arrangement or collection. */
+  addObjects?: () => void;
+  /** Outlines words in a brand font; without it a text source reports that it cannot. */
+  shapeText?: StudioShaper | null;
+  /** Quality of the frames the export clock asks for: a tile takes preview samples. */
+  frameQuality?: 'preview' | 'export';
   endGesture?: () => void;
 }
 interface Entry {
@@ -36,7 +111,12 @@ interface Entry {
   generation: number;
   frame: number;
   observer: ResizeObserver;
-  render(quality: 'preview' | 'export', time?: number, seconds?: number): void;
+  render(
+    quality: 'preview' | 'export' | 'clip',
+    time?: number,
+    seconds?: number,
+    size?: { width: number; height: number }
+  ): void;
 }
 const registry = new Map<Element, Entry>();
 
@@ -125,7 +205,7 @@ export async function mountToolStudio(
           }
         }
       }),
-      render: (quality, time = 0, seconds) => {
+      render: (quality, time = 0, seconds, size) => {
         if (current.error) throw current.error;
         if (!current.ready) throw new Error('Wait for the studio preview to finish loading.');
         const bounds = current.marker.getBoundingClientRect();
@@ -135,14 +215,17 @@ export async function mountToolStudio(
         );
         const max = Math.max(bounds.width, bounds.height),
           scale = quality === 'preview' ? Math.min(1, 800 / Math.max(1, max)) : 1;
+        // An export names its pixel size; the frame is resampled at that size (within
+        // the capture limits) so a larger output is not an enlarged preview.
+        const target =
+          quality !== 'preview' && size && size.width > 0 && size.height > 0
+            ? boundedSize(size.width, size.height)
+            : {
+                width: Math.max(1, Math.round(bounds.width * scale)),
+                height: Math.max(1, Math.round(bounds.height * scale)),
+              };
         try {
-          handle.render(
-            Math.max(1, Math.round(bounds.width * scale)),
-            Math.max(1, Math.round(bounds.height * scale)),
-            quality,
-            time,
-            seconds
-          );
+          handle.render(target.width, target.height, quality, time, seconds);
         } catch (error) {
           current.error = error instanceof Error ? error : new Error(String(error));
           current.ready = false;
@@ -154,8 +237,19 @@ export async function mountToolStudio(
     entry = current;
     registry.set(container, entry);
     wireStudioGestures(entry);
-    canvas.__lollyFrameRender = (t, seconds) => current.render('export', t, seconds);
+    // The export clock names a clip length only for video and GIF frames; those take the
+    // clip sample count, a still keeps the full export count, and a tile stays a preview.
+    canvas.__lollyFrameRender = (t, seconds, size) =>
+      current.render(
+        current.options.frameQuality === 'preview' ? 'preview' : seconds !== undefined ? 'clip' : 'export',
+        t,
+        seconds,
+        size
+      );
     let last = 0;
+    // Only an interactive mount plays motion: a template preview, a batch stage or a
+    // contact sheet renders its first frame once, otherwise every preview of an
+    // animated scene would run a full WebGL loop and starve the page.
     const tick = (now: number) => {
       if (!container.isConnected) {
         destroy(current);
@@ -164,6 +258,7 @@ export async function mountToolStudio(
       if (
         current.ready &&
         !canvas.__lollyFrameDriven &&
+        current.options.setInput !== undefined &&
         studioAnimated(current.recipe) &&
         now - last > 50
       ) {
@@ -218,6 +313,22 @@ export async function mountToolStudio(
       };
     }
   }
+  if (entry.inputValues.source === 'arrangement') {
+    const label = marker.querySelector('[data-studio-object-label]');
+    if (label) {
+      try {
+        const index = studioActiveObject(entry.inputValues);
+        const row = (entry.inputValues.objects as StudioValues[])[index] ?? {};
+        const count = (entry.inputValues.objects as StudioValues[]).length;
+        const missing =
+          (row.kind === 'artwork' || row.kind === 'model') &&
+          !(row.asset && (typeof row.asset === 'string' || (row.asset as { url?: string }).url));
+        label.textContent = `${index + 1} of ${count}: ${studioObjectName(row, index)}${row.visible === false ? ' (hidden)' : missing ? ' (no file yet)' : ''}`;
+      } catch (error) {
+        label.textContent = (error as Error).message;
+      }
+    }
+  }
   const generation = ++entry.generation;
   marker.appendChild(entry.canvas);
   entry.observer.observe(marker);
@@ -226,7 +337,7 @@ export async function mountToolStudio(
   entry.error = null;
   status(entry, 'Preparing the studio...', 'loading');
   try {
-    const info = await entry.handle.update(recipe, options.read);
+    const info = await entry.handle.update(recipe, options.read, options.shapeText ?? undefined);
     if (generation !== entry.generation || options.isCurrent?.() === false) return;
     entry.ready = true;
     syncStudioControls(entry);
@@ -234,7 +345,11 @@ export async function mountToolStudio(
     status(entry, '', 'ready');
     const details = marker.querySelector<HTMLElement>('[data-studio-info]');
     if (details) {
-      details.textContent = `${info.slots.map((slot, i) => `${i + 1}: ${slot.id}`).join(' / ')}${info.warnings.length ? '\n' + info.warnings.join('\n') : ''}`;
+      const prefix =
+        recipe.objects
+          ? `${recipe.objects.filter((object) => object.visible && !object.pending).length} of ${recipe.objects.length} objects visible, ${Math.round(info.triangles).toLocaleString()} triangles. Selected object slots: `
+          : '';
+      details.textContent = `${prefix}${info.slots.map((slot, i) => `${i + 1}: ${slot.id}`).join(' / ')}${info.warnings.length ? '\n' + info.warnings.join('\n') : ''}`;
     }
   } catch (error) {
     if (generation !== entry.generation || options.isCurrent?.() === false) return;
@@ -245,11 +360,31 @@ export async function mountToolStudio(
   }
 }
 
-export function prepareToolStudio(container: Element): void {
+export function prepareToolStudio(container: Element, quality: 'preview' | 'export' = 'export'): void {
   if (!container.querySelector('[data-lolly-studio]')) return;
   const entry = registry.get(container);
   if (!entry) throw new Error('The studio renderer is unavailable.');
-  entry.render('export');
+  entry.render(quality);
+}
+
+/** Frame every object once the studio is ready, as the Frame all button would (one undo step). */
+export function frameToolStudio(container: Element, timeoutMs = 15_000): Promise<boolean> {
+  const started = Date.now();
+  return new Promise((resolve) => {
+    const tick = () => {
+      const entry = registry.get(container);
+      if (!entry || !container.isConnected || Date.now() - started > timeoutMs) return resolve(false);
+      if (entry.ready && !entry.error) {
+        const fit = entry.marker.querySelector<HTMLButtonElement>('[data-studio-fit]');
+        if (fit && !fit.disabled) {
+          fit.click();
+          return resolve(true);
+        }
+      }
+      setTimeout(tick, 120);
+    };
+    tick();
+  });
 }
 
 export function destroyToolStudio(container?: Element): void {

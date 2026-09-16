@@ -10,20 +10,40 @@
   },
   "rows": [
     {
-      "file": "3d.svg",
-      "bytes": 117027,
-      "sha": "fc245f50b3d9a5cb",
-      "stddev": 60.708,
-      "inkRatio": 0.29292,
+      "file": "3d-studio.svg",
+      "bytes": 15308,
+      "sha": "b7f371030f889031",
+      "stddev": 27.469,
+      "inkRatio": 0.2341,
       "ground": "white",
       "grounds": {
         "white": {
-          "stddev": 60.708,
-          "inkRatio": 0.29292
+          "stddev": 27.469,
+          "inkRatio": 0.2341
         },
         "black": {
-          "stddev": 89.019,
-          "inkRatio": 0.20874
+          "stddev": 27.469,
+          "inkRatio": 0.2341
+        }
+      },
+      "blank": false,
+      "sparse": false
+    },
+    {
+      "file": "3d.svg",
+      "bytes": 132267,
+      "sha": "c614cf71e2cca185",
+      "stddev": 51.185,
+      "inkRatio": 0.24255,
+      "ground": "white",
+      "grounds": {
+        "white": {
+          "stddev": 51.185,
+          "inkRatio": 0.24255
+        },
+        "black": {
+          "stddev": 98.595,
+          "inkRatio": 0.22583
         }
       },
       "blank": false,

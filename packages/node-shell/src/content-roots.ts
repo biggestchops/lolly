@@ -313,15 +313,35 @@ function readExtends(manifestPath: string): string | null {
 
 /** Resolved per ContentRoots object, which contentRoots() itself caches, so the
  *  pack walk and the one-time exclude warning happen once per process. */
-const plans = new WeakMap<ContentRoots, Map<string, { dir: string; base?: string }>>();
+const plans = new WeakMap<
+  ContentRoots,
+  { stamp: string; plan: Map<string, { dir: string; base?: string }> }
+>();
+
+/**
+ * What the plan was built from: the entries of every tool root and whether each one
+ * carries a manifest. A dev server runs for days; a tool or a brand overlay created
+ * after it started must be answered without a restart, and this is the cheapest
+ * question that notices one - a few directory reads, no manifest parsing.
+ */
+function planStamp(roots: ContentRoots): string {
+  const parts: string[] = [];
+  for (const rootAbs of roots.toolRoots) {
+    let names: string[] = [];
+    try { names = readdirSync(rootAbs).sort(); } catch { names = ['<missing>']; }
+    parts.push(rootAbs + ':' + names.map((n) => n + (existsSync(join(rootAbs, n, 'tool.json')) ? '+' : '-')).join(','));
+  }
+  return parts.join('|');
+}
 
 /** id -> { dir, base? }. `base` is set when the tool is a brand overlay of a community tool. */
 export function toolDirs(r?: ContentRoots): Map<string, { dir: string; base?: string }> {
   const roots = r ?? contentRoots();
+  const stamp = planStamp(roots);
   const memo = plans.get(roots);
-  if (memo) return new Map(memo);
+  if (memo && memo.stamp === stamp) return new Map(memo.plan);
   const plan = buildPlan(roots);
-  plans.set(roots, plan);
+  plans.set(roots, { stamp, plan });
   return new Map(plan);
 }
 

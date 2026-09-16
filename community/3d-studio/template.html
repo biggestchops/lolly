@@ -1,16 +1,37 @@
 <div class="studio-frame" data-lolly-studio="{{_studioState}}" data-studio-state="loading" data-clip-ms="{{_clipMs}}">
   <div class="studio-collection-actions" data-export-hide>
     <div class="studio-camera-actions" data-studio-camera-actions>
-      <button type="button" data-studio-fit>Fit object</button>
-      <button type="button" data-studio-reset>Reset camera</button>
-      <button type="button" data-studio-focus aria-pressed="false" title="Enable depth of field, then click the subject">Pick focus</button>
-      <button type="button" data-studio-auto-focus>Auto focus</button>
+      <div class="studio-group" role="group" aria-label="Pointer mode">
+        <button type="button" data-studio-orbit aria-pressed="true" title="Drag to orbit the camera; arrow keys turn it">Orbit</button>
+        {{#if _arrangement}}<button type="button" data-studio-move aria-pressed="false" title="Drag objects to move them; arrow keys nudge, comma and full stop turn, brackets select">Move objects</button>{{/if}}
+        <button type="button" data-studio-lights aria-pressed="false" title="Drag a light around the subject; arrow keys turn it, plus and minus change its distance, brackets select">Move lights</button>
+      </div>
+      <div class="studio-group" role="group" aria-label="Framing">
+        <button type="button" data-studio-fit>{{#if _arrangement}}Frame all{{else}}Fit object{{/if}}</button>
+        {{#if _arrangement}}<button type="button" data-studio-fit-selected>Fit selected</button>{{/if}}
+        <button type="button" data-studio-reset>Reset camera</button>
+      </div>
+      <div class="studio-group" role="group" aria-label="Camera path">
+        <button type="button" data-studio-add-key title="Save the current view as the next key of the camera path">Add camera key</button>
+        {{#if _cameraKeys}}<button type="button" data-studio-play aria-pressed="{{#if _cameraPlays}}true{{else}}false{{/if}}" title="Play the camera path in the preview; off to compose the next view">Play path</button>{{/if}}
+      </div>
+      {{#if depthOfField}}
+      <div class="studio-group" role="group" aria-label="Focus">
+        <button type="button" data-studio-focus aria-pressed="false" title="Click the subject to focus there">Pick focus</button>
+        <button type="button" data-studio-auto-focus>Auto focus</button>
+      </div>
+      {{/if}}
       <span data-studio-camera-note role="status" aria-live="polite"></span>
     </div>
   {{#if _collection}}
-    <span data-studio-item-label></span>
+    <span class="studio-status-pill" data-studio-item-label></span>
+    <button type="button" data-studio-add>Add items</button>
     <button type="button" data-studio-review>Review collection</button>
     <button type="button" data-studio-shared-camera>Use shared framing</button>
+  {{/if}}
+  {{#if _arrangement}}
+    <span class="studio-status-pill" data-studio-object-label></span>
+    <button type="button" data-studio-add title="Choose several SVG or model files from the library or your uploads">Add objects</button>
   {{/if}}
   </div>
   <p class="studio-status" data-studio-status data-export-hide role="status">Preparing the studio...</p>

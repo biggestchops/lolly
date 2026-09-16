@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { buildStudioScene } from '../engine/src/studio3d.ts';
+import { buildStudioScene, STUDIO_FINISHES, studioFinish } from '../engine/src/studio3d.ts';
 import { applyStudioMaterials } from '../shells/web/src/lib/studio3d/materials.ts';
 import type { StudioAsset } from '../shells/web/src/lib/studio3d/source.ts';
 
@@ -153,4 +153,24 @@ test('face, bevel and side finishes retain both source colours and restore origi
     mesh.geometry.dispose();
   }
   for (const material of originals) material.dispose();
+});
+
+test('every finish resolves to a physical description and the new ones set what they promise', () => {
+  for (const finish of STUDIO_FINISHES) {
+    const spec = studioFinish(finish);
+    assert.ok(spec.roughness >= 0 && spec.roughness <= 1 && spec.metalness >= 0 && spec.metalness <= 1, finish);
+  }
+  assert.ok(studioFinish('glow').emissive! > 0 && studioFinish('neon').emissive! > studioFinish('glow').emissive!);
+  assert.equal(studioFinish('velvet').sheen, 1);
+  assert.equal(studioFinish('glass').transmission, 1);
+  assert.ok(studioFinish('frosted').roughness > studioFinish('glass').roughness);
+  assert.equal(studioFinish('chrome').metalness, 1);
+  assert.ok(studioFinish('iridescent').iridescence === 1 && studioFinish('pearl').clearcoat === 1);
+  assert.equal(studioFinish('matte').emissive, undefined);
+  const scene = buildStudioScene({
+    version: 1,
+    values: { materialMode: 'custom', materials: [{ slot: '1', color: '#ff0000', finish: 'glow' }, { slot: '2', color: '#00ff00', finish: 'satin' }, { slot: '3', finish: 'nope' }] },
+  });
+  assert.deepEqual(scene.materials.overrides.map((o) => o.finish), ['glow', undefined, undefined]);
+  assert.equal(buildStudioScene({ version: 1, values: { finishA: 'velvet', finishB: 'glass' } }).materials.finishA, 'velvet');
 });

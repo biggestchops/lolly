@@ -3,14 +3,15 @@
 import { buildStudioScene } from '../../../../../engine/src/studio3d.ts';
 import type { StudioCollectionRow } from '../../../../../engine/src/studio3d-collection.ts';
 import { StudioRenderer } from './renderer.ts';
-import type { StudioRead } from './source.ts';
+import type { StudioRead, StudioShaper } from './source.ts';
 
 export async function renderStudioCollection(
   rows: StudioCollectionRow[],
   read: StudioRead,
   signal: AbortSignal,
   size: { width: number; height: number },
-  onItem: (row: StudioCollectionRow, result: Blob | Error) => void
+  onItem: (row: StudioCollectionRow, result: Blob | Error) => void,
+  shaper?: StudioShaper | null
 ): Promise<void> {
   signal.throwIfAborted();
   const canvas = document.createElement('canvas');
@@ -21,7 +22,11 @@ export async function renderStudioCollection(
       signal.throwIfAborted();
       try {
         const recipe = buildStudioScene({ version: 1, values: { ...row.values, samples: 8 } });
-        await renderer.update(recipe, (url, inner) => read(url, AbortSignal.any([signal, inner])));
+        await renderer.update(
+          recipe,
+          (url, inner) => read(url, AbortSignal.any([signal, inner])),
+          shaper ?? undefined
+        );
         signal.throwIfAborted();
         renderer.render(
           Math.round(size.width * scale),

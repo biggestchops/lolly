@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 /** Review a saved collection and deliver it through the existing batch job. */
 import './studio3d-collection.css';
-import { type InputModelItem, matchesShowIf } from '../../../../engine/src/inputs.ts';
+import { type InputModelItem, type InputValue, matchesShowIf } from '../../../../engine/src/inputs.ts';
 import type { Runtime } from '../../../../engine/src/runtime.ts';
+import type { AssetRef } from '../../../../packages/core/src/host-v1.ts';
 import {
   type StudioValues,
   studioCollectionRows,
@@ -11,6 +12,7 @@ import {
 import { mountModal } from '../components/modal.ts';
 import { isBatchRunActive, startBatchExport } from '../lib/batch-job.ts';
 import { renderStudioCollection } from '../lib/studio3d/collection-preview.ts';
+import { studioShaperFor } from '../lib/studio3d/mount.ts';
 import type { PanelEl, WebToolHost } from './tool.ts';
 import { syncInputs } from './tool-inputs.ts';
 
@@ -32,6 +34,73 @@ const controls = new Set([
   'collectionSize',
 ]);
 const open = new WeakSet<Runtime>();
+
+/**
+ * Add several sources in one visit to the library: the picker stays open in collect
+ * mode and every vector or model chosen becomes one row of the arrangement (or the
+ * collection), named after the asset. The tool's hook sets the kind from the asset
+ * and places new objects beside the others.
+ */
+export async function addStudioSources(
+  runtime: Runtime,
+  host: WebToolHost,
+  endGesture: () => void
+): Promise<number> {
+  const values = () => Object.fromEntries(runtime.getModel().map((item) => [item.id, item.value]));
+  const list = values().source === 'collection' ? 'subjects' : 'objects';
+  const limit = list === 'subjects' ? 24 : 16;
+  let added = 0;
+  if (!host.assets.pick) return 0;
+  // The host's picker takes the web-only collect options; the core type names the rest.
+  const options: Record<string, unknown> = {
+    title: list === 'subjects' ? 'Add items to the collection' : 'Add objects to the scene',
+    types: ['vector', 'model'],
+    allowUpload: true,
+    initialTab: 'library',
+    collect: {
+      assetsOnly: true,
+      folderName: list === 'subjects' ? 'the collection' : 'the scene',
+      guided: {
+        hint:
+          list === 'subjects'
+            ? 'Choose SVG artwork or 3D models; each becomes an item of the collection. Select Done when you have them all.'
+            : 'Choose SVG artwork or 3D models; each becomes an object placed beside the others. Select Done when you have them all.',
+      },
+      tools: [],
+      onAsset: async (ref: AssetRef) => {
+        if (ref.type !== 'vector' && ref.type !== 'model')
+          return { ok: false, label: 'Only SVG artwork and 3D models can join the scene.' };
+        const rows = Array.isArray(values()[list]) ? (values()[list] as InputValue[]) : [];
+        if (rows.length >= limit) return { ok: false, label: `The ${list === 'subjects' ? 'collection' : 'scene'} holds up to ${limit}.` };
+        const name = String(ref.meta?.name ?? ref.id.replace(/^.*\//, '')).replace(/\.[a-z0-9]+$/i, '');
+        // A newcomer matches the size of what is already there, so the group stays a group.
+        const scales = rows
+          .map((row) => Number((row as Record<string, unknown>).scale))
+          .filter((n) => Number.isFinite(n) && n > 0)
+          .sort((a, b) => a - b);
+        const scale = list === 'objects' ? (scales[Math.floor(scales.length / 2)] ?? 0.6) : undefined;
+        endGesture();
+        await runtime.setInput(list, [
+          ...rows,
+          {
+            name,
+            kind: ref.type === 'model' ? 'model' : 'artwork',
+            asset: ref.id,
+            ...(scale ? { scale } : {}),
+          } as InputValue,
+        ]);
+        endGesture();
+        added++;
+        return { ok: true, label: `Added ${name}` };
+      },
+      onSession: async () => false,
+      onOpenTool: () => {},
+      onQuickAddTool: async () => false,
+    },
+  };
+  await host.assets.pick(options as Parameters<NonNullable<typeof host.assets.pick>>[0]);
+  return added;
+}
 
 export function openStudioCollection(runtime: Runtime, host: WebToolHost): void {
   if (open.has(runtime)) return;
@@ -143,7 +212,7 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
                 card.image.append(img);
               }
               status.textContent = `Rendered ${++done} of ${rows.length}`;
-            });
+            }, studioShaperFor(host));
             if (closed || gen !== generation) return;
             status.textContent = failed
               ? `${failed} item(s) need attention before export.`

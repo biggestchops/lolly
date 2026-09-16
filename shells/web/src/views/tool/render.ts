@@ -252,10 +252,20 @@ export function paint(tview: ToolViewCtx): void {
               const bytes = await tview.host.assets.bytes(url); signal.throwIfAborted(); return bytes;
             },
             endGesture: () => tview.inputHistory.endGesture(),
+            shapeText: m.studioShaperFor(tview.host),
             setInput: (id, value) => tview.runtime.setInput(id, value as Parameters<typeof tview.runtime.setInput>[1]),
             reviewCollection: () => {
               void import('../studio3d-collection.ts').then(m => {
                 if (tview.contentEl.isConnected) m.openStudioCollection(tview.runtime, tview.host);
+              });
+            },
+            addObjects: () => {
+              void import('../studio3d-collection.ts').then(async m => {
+                if (!tview.contentEl.isConnected) return;
+                const added = await m.addStudioSources(tview.runtime, tview.host, () => tview.inputHistory.endGesture());
+                // Objects that joined from the library are framed once they have loaded, so
+                // the group is in view; the fit is an ordinary camera step in the history.
+                if (added > 0 && tview.contentEl.isConnected) void tview.studioModule?.frameToolStudio(tview.contentEl);
               });
             },
           }))

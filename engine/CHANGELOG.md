@@ -6,6 +6,23 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.205.0
+
+- Add 3D studio arrangements: several SVG, GLB, STL or sample objects photographed in one scene, each with a stable id, pose, ground contact, visibility and material slot bindings.
+- Add `studio3d-arrangement.ts`: selection, numerical object edits, overlap guidance and the footprint pivot a group turntable turns about.
+- The web shell shares loaded sources between objects, drags and nudges the selected object, and reports the visible triangle budget.
+- Add saved key, fill and rim light positions to preset rigs; `studio3d-lights.ts` orbits a light about the subject and routes a moved light to its rig's field. The web shell's Move lights mode drags handles in the preview only.
+- The web export frame clock passes the export's pixel size as an additive third argument so a canvas tool can resample; the studio renders at that size within its capture limits.
+- Add camera paths: keys captured from the live view, sampled deterministically over the loop with per-leg easing, a flowing spline or constant speed, and an optional closed loop (`studio3d-camera-path.ts`).
+- Add six generated environments (photo studio, white gallery, warehouse, main stage, desert chrome, synthwave chrome): painted panoramas plus bright light panels prefiltered on device, tinted by the brand colours, and showable crisp behind a scene image at zero blur.
+- Add finishes: chrome, clay, velvet (sheen), glow and neon (emissive), glass and frosted (transmission), pearl and iridescent; `studioFinish` returns the full physical description and a material override may name a finish. Transparent outputs show glass as solid crystal with a note.
+- Video and GIF frames take their own sample count (`clipSamples`, from `videoSamples`, default 16): an eight-second backdrop export fell from 50 s to 19 s on an M4 at the same 1280 px, 24 fps.
+- Words face the camera by default (`wordPose`), and the bevel note for letters is one calm line.
+- The content resolver rescans its tool plan when a pack directory changes, so a long-running dev server serves a tool or overlay created after it started (its stale plan is why SUSE studio templates once fell through to the app page).
+- Add words as a studio source: text set in a brand role or any host font, outlined on the host and extruded like artwork; arrangements take text rows with shared type settings.
+- Depth forms can be copies of the subject (sharing its geometry and materials) or spheres, with a depth spread and count; the seeded arrangement reproduces exactly and stays out of transparent outputs.
+- Add lighting environments to the studio recipe: generated room, soft box and window studios, or an imported equirectangular radiance map (.hdr/.exr) with rotation, brightness and an optional blurred visible background. Display images are refused by content.
+
 ## 1.204.0
 
 - Add independent face, bevel and side finishes within each SVG paint region.

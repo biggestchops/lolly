@@ -170,7 +170,7 @@ function withToolNet(host: HostV1, manifest: ToolManifest): HostV1 {
 async function mountToolCanvas(
   styles: string | null | undefined,
   hydrated: string,
-  { layoutW, fixedHeight, composeStack, host, settleMs, getModel, mountEmoji }: { layoutW: number; fixedHeight?: number; composeStack?: readonly string[]; host: HostV1; settleMs?: number; getModel?: () => InputModelItem[]; mountEmoji?: (canvas: HTMLElement) => Promise<unknown> },
+  { layoutW, fixedHeight, composeStack, host, settleMs, getModel, mountEmoji, thumbnail }: { layoutW: number; fixedHeight?: number; composeStack?: readonly string[]; host: HostV1; settleMs?: number; getModel?: () => InputModelItem[]; mountEmoji?: (canvas: HTMLElement) => Promise<unknown>; thumbnail?: boolean },
 ): Promise<{ stage: ExportStage; canvas: HTMLDivElement }> {
   const stage: ExportStage = document.createElement('div');
   stage.setAttribute('aria-hidden', 'true');
@@ -253,14 +253,17 @@ async function mountToolCanvas(
       const studio = await import('../lib/studio3d/mount.ts');
       const cleanup = stage._lottieCleanup;
       stage._lottieCleanup = () => { studio.destroyToolStudio(canvas); cleanup?.(); };
+      // A gallery or chooser tile is a small picture: preview quality keeps a scene with
+      // many samples from holding the page for seconds per tile. Exports keep full quality.
+      const frameQuality = thumbnail ? 'preview' : 'export';
       await studio.mountToolStudio(canvas, { read: async (url, signal) => {
         signal.throwIfAborted();
         if (!host.assets.bytes) throw new Error('This shell cannot read studio source bytes.');
         const bytes = await host.assets.bytes(url);
         signal.throwIfAborted();
         return bytes;
-      } });
-      studio.prepareToolStudio(canvas);
+      }, shapeText: studio.studioShaperFor(host), frameQuality });
+      studio.prepareToolStudio(canvas, frameQuality);
     }
     return { stage, canvas };
   } catch (e) {
@@ -334,7 +337,7 @@ export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, wid
   let stage: ExportStage | undefined;
   let posterClock: ReturnType<typeof import('../bridge/sequence-dom.ts').createSequenceTime> | null = null;
   try {
-    const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, fixedHeight: layoutH, composeStack, host, settleMs, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el) });
+    const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, fixedHeight: layoutH, composeStack, host, settleMs, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el), thumbnail });
     stage = mounted.stage;
     const canvas = mounted.canvas;
     posterClock = previewTimeMs !== undefined && Number.isFinite(previewTimeMs)

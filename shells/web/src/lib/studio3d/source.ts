@@ -17,6 +17,61 @@ export interface StudioAsset {
   dispose(): void;
 }
 export type StudioRead = (url: string, signal: AbortSignal) => Promise<Uint8Array>;
+/** One shaped line: an SVG path with the baseline at y=0, plus its advance, at `fontSize` px. */
+export type StudioShaper = (
+  line: string,
+  font: NonNullable<StudioSceneV1['source']['text']>,
+  fontSize: number,
+  signal: AbortSignal
+) => Promise<{ d: string; advance: number }>;
+
+/** Words become one filled SVG: each line shaped by the host, stacked and aligned, then extruded like artwork. */
+export async function studioTextSvg(
+  spec: NonNullable<StudioSceneV1['source']['text']>,
+  color: string,
+  shaper: StudioShaper,
+  signal: AbortSignal
+): Promise<string> {
+  const size = 100;
+  const lines = spec.text.split('\n');
+  if (lines.length > 8) throw new Error('Set up to eight lines of words.');
+  const shaped: { d: string; advance: number }[] = [];
+  for (const line of lines) {
+    shaped.push(line ? await shaper(line, spec, size, signal) : { d: '', advance: 0 });
+    signal.throwIfAborted();
+  }
+  const widest = Math.max(...shaped.map((line) => line.advance), 1);
+  const paths = shaped.map((line, i) => {
+    if (!line.d) return '';
+    const dx =
+      spec.align === 'left' ? 0 : spec.align === 'right' ? widest - line.advance : (widest - line.advance) / 2;
+    const dy = size * 0.8 + i * size * spec.lineHeight;
+    return `<path fill="${color}" transform="translate(${dx.toFixed(3)} ${dy.toFixed(3)})" d="${line.d}"/>`;
+  });
+  if (!paths.some(Boolean)) throw new Error('The words have no visible letters in this font.');
+  return `<svg xmlns="http://www.w3.org/2000/svg">${paths.join('')}</svg>`;
+}
+
+/**
+ * A placed copy of a loaded source. Geometry and textures stay owned by the shared asset;
+ * the copy owns only its transform and its material assignments, which it restores on dispose.
+ */
+export function instantiateStudioAsset(asset: StudioAsset): StudioAsset {
+  const object = asset.object.clone(true);
+  const originals = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+  object.traverse((node) => {
+    if (node instanceof THREE.Mesh) originals.set(node, node.material);
+  });
+  return {
+    object,
+    originals,
+    info: asset.info,
+    dispose: () => {
+      for (const [mesh, material] of originals) mesh.material = material;
+      object.removeFromParent();
+    },
+  };
+}
 const geom = makeGeomApi();
 const MAX_BYTES = 32 * 1024 * 1024;
 const MAX_TRIANGLES = 1_000_000;
@@ -280,12 +335,31 @@ function inspectGlb(bytes: Uint8Array): void {
 export async function loadStudioSource(
   scene: StudioSceneV1,
   read: StudioRead,
-  signal: AbortSignal
+  signal: AbortSignal,
+  shaper?: StudioShaper
 ): Promise<StudioAsset> {
   let raw = new THREE.Group();
   let info: StudioSourceInfo = { slots: [], triangles: 0, warnings: [] };
   try {
-    if (scene.source.kind === 'primitive') {
+    if (scene.source.kind === 'text') {
+      if (!scene.source.text?.text) throw new Error('Type the words to set.');
+      if (!shaper) throw new Error('This app cannot outline text; open the studio in the web app.');
+      const svg = await studioTextSvg(scene.source.text, scene.materials.colorA, shaper, signal);
+      signal.throwIfAborted();
+      ({ object: raw, info } = svgObject(svg, scene));
+      info.slots = [{ id: 'paint:words', label: '1: words', color: scene.materials.colorA }];
+      // Letters are thin next to the whole word, so the bevel check nearly always trims
+      // them. One plain note replaces the per-colour report artwork gets.
+      if (info.warnings.some((warning) => /bevel reduced/.test(warning)))
+        info.warnings = [
+          ...info.warnings.filter((warning) => !/bevel reduced/.test(warning)),
+          'Words: the letters take a finer bevel than requested so their counters keep their shape. Reduce Bevel under Shape to silence this, or raise Depth for a chunkier edge.',
+        ];
+      for (const mesh of raw.children)
+        if (mesh instanceof THREE.Mesh)
+          for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material])
+            material.name = 'paint:words';
+    } else if (scene.source.kind === 'primitive') {
       if (scene.source.primitive === 'badge') {
         const example = `<svg xmlns="http://www.w3.org/2000/svg"><path fill="${scene.materials.colorA}" d="M20 0a20 20 0 1 1 0 40a20 20 0 1 1 0-40M20 5a15 15 0 1 0 0 30a15 15 0 1 0 0-30"/><path fill="${scene.materials.colorB}" d="M21 9L12 23h7v9l9-15h-7z"/></svg>`;
         ({ object: raw, info } = svgObject(example, scene));

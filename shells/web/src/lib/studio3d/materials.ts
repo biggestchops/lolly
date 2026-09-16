@@ -1,8 +1,64 @@
 // SPDX-License-Identifier: MPL-2.0
 import * as THREE from 'three';
 import { studioFinish } from '../../../../../engine/src/studio3d.ts';
-import type { StudioSceneV1 } from '../../../../../packages/core/src/studio3d-v1.ts';
+import type {
+  StudioFinishSpec,
+  StudioSceneV1,
+} from '../../../../../packages/core/src/studio3d-v1.ts';
 import type { StudioAsset } from './source.ts';
+
+/** Glass over a transparent output has nothing to see through, so it shows as solid crystal. */
+export function cutoutFinish(spec: StudioFinishSpec, output: StudioSceneV1['stage']['output']): StudioFinishSpec {
+  if (!spec.transmission || output === 'scene') return spec;
+  return {
+    ...spec,
+    transmission: 0,
+    thickness: 0,
+    clearcoat: 1,
+    clearcoatRoughness: 0.04,
+    roughness: Math.max(0.08, spec.roughness),
+    metalness: 0.1,
+  };
+}
+
+/** True when any finish in play lets light through, which a transparent output cannot show. */
+export function studioHasTransmission(scene: StudioSceneV1): boolean {
+  const finishes = [
+    scene.materials.finishA,
+    scene.materials.finishB,
+    ...Object.values(scene.materials.surfaces?.a ?? {}),
+    ...Object.values(scene.materials.surfaces?.b ?? {}),
+    ...scene.materials.overrides.map((o) => o.finish),
+  ];
+  return finishes.some((f) => f && f !== 'inherit' && (studioFinish(f).transmission ?? 0) > 0);
+}
+
+/** Write a finish onto a physical material; members a finish leaves out fall back to plain. */
+export function applyFinish(physical: THREE.MeshPhysicalMaterial, spec: StudioFinishSpec): void {
+  physical.roughness = spec.roughness;
+  physical.metalness = spec.metalness;
+  physical.clearcoat = spec.clearcoat;
+  physical.clearcoatRoughness = spec.clearcoatRoughness ?? 0.05;
+  physical.transmission = spec.transmission ?? 0;
+  physical.ior = spec.ior ?? 1.5;
+  physical.thickness = spec.thickness ?? 0;
+  physical.sheen = spec.sheen ?? 0;
+  physical.sheenRoughness = spec.sheenRoughness ?? 1;
+  physical.sheenColor.copy(physical.color).lerp(new THREE.Color('#ffffff'), 0.5);
+  physical.iridescence = spec.iridescence ?? 0;
+  physical.iridescenceIOR = spec.iridescenceIOR ?? 1.3;
+  if (spec.emissive) {
+    physical.emissive.copy(physical.color);
+    physical.emissiveIntensity = spec.emissive;
+  } else {
+    physical.emissive.set('#000000');
+    physical.emissiveIntensity = 1;
+  }
+  // Glass and frosted bodies keep their alpha solid: transmission is light through a
+  // surface that still exists, so a cutout export holds the object, not a hole.
+  physical.transparent = false;
+  physical.opacity = 1;
+}
 
 export function applyStudioMaterials(asset: StudioAsset, scene: StudioSceneV1): () => void {
   const changed = new Set<THREE.Material>();
@@ -78,28 +134,40 @@ export function applyStudioMaterials(asset: StudioAsset, scene: StudioSceneV1): 
     }
     physical.name = original.name;
     const useB = explicit ? roles.get(index) === 'b' : index % 2 !== 0;
-    const finish = studioFinish(useB ? scene.materials.finishB : scene.materials.finishA);
-    physical.roughness = finish.roughness;
-    physical.metalness = finish.metalness;
-    physical.clearcoat = finish.clearcoat;
     if (scene.materials.mode === 'pair') {
       physical.color.set(useB ? scene.materials.colorB : scene.materials.colorA);
       physical.map = null;
       physical.roughnessMap = null;
       physical.metalnessMap = null;
     }
+    const finish = studioFinish(useB ? scene.materials.finishB : scene.materials.finishA);
+    // A finish replaces the whole physical description on materials the studio owns and in
+    // colour-pair mode; a GLB's authored material under a numeric override keeps its own
+    // transmission, sheen and the rest and takes only the finish's three numbers.
+    if (scene.materials.mode === 'pair' || scene.source.kind !== 'glb')
+      applyFinish(physical, cutoutFinish(finish, scene.stage.output));
+    else {
+      physical.roughness = finish.roughness;
+      physical.metalness = finish.metalness;
+      physical.clearcoat = finish.clearcoat;
+    }
     if (override) {
       physical.color.set(override.color);
-      physical.roughness = override.roughness;
-      physical.metalness = override.metalness;
-      physical.clearcoat = override.clearcoat;
       physical.map = null;
       physical.roughnessMap = null;
       physical.metalnessMap = null;
+      // The numbers alone leave the source's other physical features (a GLB's own
+      // transmission or sheen) intact; a named finish replaces them as a whole.
+      if (override.finish) applyFinish(physical, cutoutFinish(studioFinish(override.finish), scene.stage.output));
+      else {
+        physical.roughness = override.roughness;
+        physical.metalness = override.metalness;
+        physical.clearcoat = override.clearcoat;
+      }
     }
     const surfaceFinish = surface && scene.materials.surfaces?.[useB ? 'b' : 'a'][surface];
     if (surfaceFinish && surfaceFinish !== 'inherit')
-      Object.assign(physical, studioFinish(surfaceFinish));
+      applyFinish(physical, cutoutFinish(studioFinish(surfaceFinish), scene.stage.output));
     cache.set(key, physical);
     changed.add(physical);
     return physical;

@@ -111,10 +111,43 @@ function coveGeometry(): THREE.BufferGeometry {
   return geometry;
 }
 
+/**
+ * The seeded arrangement of depth forms: the first seven are the reviewed layout from the
+ * sample gate, later ones fill the remaining frame edges. Screen x, screen y, distance, size.
+ */
+export function studioDepthForms(seed: number, count: number): [number, number, number, number][] {
+  const base: [number, number, number, number][] = [
+    [-0.8, 0.68, 18, 0.23],
+    [0.72, 0.64, 24, 0.32],
+    [0.82, -0.23, 16, 0.14],
+    [-0.44, 0.88, 36, 0.085],
+    [0.14, 1.01, 28, 0.18],
+    [-1.04, -0.62, 3.4, 0.4],
+    [1, -0.74, 4.3, 0.32],
+    [-0.95, 0.15, 30, 0.12],
+    [0.55, -0.95, 5.2, 0.26],
+    [0.3, 0.75, 44, 0.07],
+    [-0.6, -0.25, 5.8, 0.2],
+    [0.95, 0.9, 21, 0.11],
+  ];
+  return base.slice(0, Math.max(1, Math.min(base.length, count))).map(([x, y, d, size], i) => [
+    x + Math.sin(seed * 17 + i * 3) * 0.08,
+    y + Math.cos(seed * 11 + i * 7) * 0.05,
+    d,
+    size,
+  ]);
+}
+
 export function buildStudioStage(
   recipe: StudioSceneV1,
   camera: THREE.Camera,
-  backdrop: THREE.Texture
+  backdrop: THREE.Texture,
+  /** Half-width of the shadowed area; a wide arrangement needs a wider shadow frustum. */
+  extent = 7,
+  /** False when the lighting environment itself is the visible background. */
+  backplate = true,
+  /** The placed subject; depth forms can be copies of it that share its geometry. */
+  subject?: THREE.Object3D
 ): StudioStage {
   RectAreaLightUniformsLib.init();
   const group = new THREE.Group(),
@@ -160,10 +193,10 @@ export function buildStudioStage(
       light.shadow.normalBias = 0.008;
       if (light instanceof THREE.DirectionalLight)
         Object.assign(light.shadow.camera, {
-          left: -7,
-          right: 7,
-          top: 7,
-          bottom: -7,
+          left: -extent,
+          right: extent,
+          top: extent,
+          bottom: -extent,
           near: 0.1,
           far: 60,
         });
@@ -203,12 +236,14 @@ export function buildStudioStage(
       camera instanceof THREE.PerspectiveCamera
         ? distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
         : 3 / recipe.camera.zoom;
-    const plane = mesh(
-      new THREE.PlaneGeometry(half(60) * 5, half(60) * 5),
-      new THREE.MeshBasicMaterial({ map: backdrop })
-    );
-    plane.position.copy(camera.position).addScaledVector(forward, 60);
-    plane.quaternion.copy(camera.quaternion);
+    if (backplate) {
+      const plane = mesh(
+        new THREE.PlaneGeometry(half(60) * 5, half(60) * 5),
+        new THREE.MeshBasicMaterial({ map: backdrop })
+      );
+      plane.position.copy(camera.position).addScaledVector(forward, 60);
+      plane.quaternion.copy(camera.quaternion);
+    }
     if (recipe.stage.pedestal) {
       const pedestal = mesh(
         new THREE.CylinderGeometry(1.6, 1.7, 0.3, 96),
@@ -223,36 +258,66 @@ export function buildStudioStage(
       pedestal.receiveShadow = true;
     }
     if (recipe.stage.atmosphere) {
-      const forms = [
-        [-0.8, 0.68, 18, 0.23],
-        [0.72, 0.64, 24, 0.32],
-        [0.82, -0.23, 16, 0.14],
-        [-0.44, 0.88, 36, 0.085],
-        [0.14, 1.01, 28, 0.18],
-        [-1.04, -0.62, 3.4, 0.4],
-        [1, -0.74, 4.3, 0.32],
-      ];
-      const geometry = new THREE.SphereGeometry(1, 32, 24);
+      const subjectDistance = camera.position.distanceTo(new THREE.Vector3(...recipe.camera.target));
+      const spread = recipe.stage.atmosphereSpread;
+      // Screen x, screen y, distance along the view and size as a share of the frame.
+      // Spread stretches the distances away from the subject: nearer in front, further behind.
+      const forms = studioDepthForms(recipe.stage.seed, recipe.stage.atmosphereCount).map(
+        ([x, y, d, size]) => [
+          x,
+          y,
+          d < subjectDistance ? d * (1 - 0.55 * spread) : d * (1 + 1.6 * spread),
+          size,
+        ]
+      );
+      const copies = recipe.stage.atmosphereForms === 'copies' && subject;
+      const bounds = copies ? new THREE.Box3().setFromObject(subject) : null;
+      const subjectRadius = bounds ? bounds.getBoundingSphere(new THREE.Sphere()).radius : 0;
+      const centre = bounds ? bounds.getCenter(new THREE.Vector3()) : new THREE.Vector3();
+      const geometry = copies ? null : new THREE.SphereGeometry(1, 32, 24);
       for (const [i, form] of forms.entries()) {
         const [x, y, d, radius] = form as [number, number, number, number];
-        const shift = Math.sin(recipe.stage.seed * 17 + i * 3) * 0.08;
-        const sphere = mesh(
-          geometry,
-          new THREE.MeshPhysicalMaterial({
-            color: [recipe.materials.colorA, recipe.materials.colorB, recipe.stage.background2][
-              i % 3
-            ],
-            roughness: 0.48,
-            metalness: 0.06,
-            clearcoat: 0.15,
-          })
-        );
-        sphere.position
-          .copy(camera.position)
-          .addScaledVector(forward, d)
-          .addScaledVector(right, (x + shift) * half(d))
-          .addScaledVector(up, y * half(d));
-        sphere.scale.setScalar(radius * half(d));
+        const place = (node: THREE.Object3D, scale: number) => {
+          node.position
+            .copy(camera.position)
+            .addScaledVector(forward, d)
+            .addScaledVector(right, x * half(d))
+            .addScaledVector(up, y * half(d));
+          node.scale.setScalar(scale);
+        };
+        if (copies && subjectRadius > 1e-6) {
+          // A copy shares the subject's geometry and materials; only its pose is its own.
+          const pivot = new THREE.Group();
+          const copy = subject.clone(true);
+          copy.position.sub(centre);
+          pivot.add(copy);
+          // Words must stay readable: copies of a text scene only tilt, never turn
+          // their back or flip, where an icon may tumble freely.
+          const gentle =
+            recipe.source.kind === 'text' ||
+            !!recipe.objects?.some((object) => object.source.kind === 'text');
+          const turn = Math.sin(recipe.stage.seed * 7 + i * 5) * (gentle ? 0.55 : Math.PI);
+          pivot.rotation.set(
+            Math.sin(recipe.stage.seed * 3 + i * 11) * (gentle ? 0.25 : 0.7),
+            turn,
+            Math.cos(recipe.stage.seed * 5 + i * 13) * (gentle ? 0.18 : 0.5)
+          );
+          place(pivot, (radius * half(d)) / subjectRadius);
+          group.add(pivot);
+        } else if (geometry) {
+          const sphere = mesh(
+            geometry,
+            new THREE.MeshPhysicalMaterial({
+              color: [recipe.materials.colorA, recipe.materials.colorB, recipe.stage.background2][
+                i % 3
+              ],
+              roughness: 0.48,
+              metalness: 0.06,
+              clearcoat: 0.15,
+            })
+          );
+          place(sphere, radius * half(d));
+        }
       }
     }
   }

@@ -1,12 +1,12 @@
 {
   "id": "3d-studio",
   "name": "3D Studio",
-  "version": "0.3.0",
-  "engineVersion": ">=1.204.0",
+  "version": "0.4.0",
+  "engineVersion": ">=1.205.0",
   "status": "official",
   "singleInstance": true,
   "category": "designer",
-  "description": "Turn SVG artwork and 3D models into coordinated images. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
+  "description": "Turn SVG artwork and 3D models into coordinated images, alone or arranged together in one scene. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
   "a11yLabel": "3D studio rendering with {{studio}} lighting",
   "tags": [
     "3d",
@@ -19,7 +19,9 @@
     "stl",
     "lighting",
     "materials",
-    "product"
+    "product",
+    "arrangement",
+    "scene"
   ],
   "render": {
     "width": 1280,
@@ -55,7 +57,9 @@
       "Lighting": "box",
       "Materials": "paintbrush",
       "Output": "download",
-      "Lights": "sunburst"
+      "Lights": "sunburst",
+      "Arrangement": "box",
+      "Motion": "play"
     }
   },
   "hooks": {
@@ -100,8 +104,16 @@
           "label": "A 3D model"
         },
         {
+          "value": "text",
+          "label": "Words in the brand font"
+        },
+        {
           "value": "collection",
           "label": "A collection"
+        },
+        {
+          "value": "arrangement",
+          "label": "Several objects together"
         }
       ]
     },
@@ -183,6 +195,150 @@
       }
     },
     {
+      "id": "words",
+      "label": "Words",
+      "type": "longtext",
+      "default": "Hello",
+      "section": "Start",
+      "showIf": {
+        "source": "text"
+      },
+      "rows": 2,
+      "help": "Up to eight lines and 200 characters, set in the brand font and extruded like artwork."
+    },
+    {
+      "id": "wordFont",
+      "label": "Font",
+      "type": "select",
+      "default": "sans",
+      "section": "Start",
+      "brandFonts": true,
+      "showIf": {
+        "source": [
+          "text",
+          "arrangement"
+        ]
+      },
+      "options": [
+        {
+          "value": "sans",
+          "label": "Brand sans"
+        },
+        {
+          "value": "display",
+          "label": "Display"
+        },
+        {
+          "value": "mono",
+          "label": "Mono"
+        }
+      ],
+      "help": "A brand role, or any font added under Brand fonts. Shared by every text object in an arrangement."
+    },
+    {
+      "id": "wordWeight",
+      "label": "Weight",
+      "type": "number",
+      "default": 700,
+      "min": 100,
+      "max": 900,
+      "step": 100,
+      "display": "slider",
+      "section": "Start",
+      "showIf": {
+        "source": [
+          "text",
+          "arrangement"
+        ]
+      }
+    },
+    {
+      "id": "wordPose",
+      "label": "Pose",
+      "type": "select",
+      "default": "front",
+      "section": "Start",
+      "showIf": {
+        "source": "text"
+      },
+      "options": [
+        {
+          "value": "front",
+          "label": "Face the camera"
+        },
+        {
+          "value": "scene",
+          "label": "Use the object rotation"
+        }
+      ],
+      "help": "Words read best square to the lens. The object rotation under Camera applies when you choose it."
+    },
+    {
+      "id": "wordTracking",
+      "label": "Letter spacing",
+      "type": "number",
+      "default": 0,
+      "min": -0.2,
+      "max": 1,
+      "step": 0.01,
+      "display": "slider",
+      "section": "Start",
+      "showIf": {
+        "source": [
+          "text",
+          "arrangement"
+        ],
+        "controls": "expert"
+      },
+      "help": "In em."
+    },
+    {
+      "id": "wordLineHeight",
+      "label": "Line height",
+      "type": "number",
+      "default": 1.1,
+      "min": 0.7,
+      "max": 2,
+      "step": 0.05,
+      "display": "slider",
+      "section": "Start",
+      "showIf": {
+        "source": [
+          "text",
+          "arrangement"
+        ],
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "wordAlign",
+      "label": "Alignment",
+      "type": "select",
+      "default": "center",
+      "section": "Start",
+      "showIf": {
+        "source": [
+          "text",
+          "arrangement"
+        ],
+        "controls": "expert"
+      },
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Centre"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ]
+    },
+    {
       "id": "collectionName",
       "label": "Collection name",
       "type": "text",
@@ -216,7 +372,7 @@
       },
       "labelledFields": true,
       "rowActions": true,
-      "help": "Up to 24 items. All use this studio; each can keep its own framing and material slots.",
+      "help": "Up to 24 items. Drop several SVG, GLB or STL files here to add them at once. All use this studio; each can keep its own framing and material slots.",
       "default": [
         {
           "name": "Badge",
@@ -461,6 +617,293 @@
       "addMenu": {
         "field": "kind",
         "label": "Add item"
+      },
+      "dropToAdd": {
+        "field": "asset",
+        "accept": "image/svg+xml,model/*,application/octet-stream"
+      }
+    },
+    {
+      "id": "activeObject",
+      "label": "Selected object",
+      "type": "number",
+      "default": 1,
+      "min": 1,
+      "max": 16,
+      "step": 1,
+      "section": "Arrangement",
+      "showIf": {
+        "source": "arrangement"
+      },
+      "help": "The object that Move objects, Fit selected and the material slot notes refer to. Click an object in Move objects mode to select it."
+    },
+    {
+      "id": "objects",
+      "label": "Objects",
+      "type": "blocks",
+      "section": "Arrangement",
+      "showIf": {
+        "source": "arrangement"
+      },
+      "labelledFields": true,
+      "rowActions": true,
+      "help": "Drop several SVG, GLB or STL files here, or choose them at once; each becomes an object placed beside the others. Up to 16 objects share the lighting, colours, finishes, stage and camera.",
+      "default": [
+        {
+          "name": "Badge",
+          "kind": "primitive",
+          "primitive": "badge",
+          "x": -1.2,
+          "z": 0.3,
+          "rotY": 12,
+          "scale": 0.55
+        },
+        {
+          "name": "Sphere",
+          "kind": "primitive",
+          "primitive": "sphere",
+          "x": 1.05,
+          "z": -0.2,
+          "scale": 0.4
+        },
+        {
+          "name": "Box",
+          "kind": "primitive",
+          "primitive": "box",
+          "x": 0.15,
+          "z": -1.7,
+          "rotY": 28,
+          "scale": 0.45
+        }
+      ],
+      "fields": [
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "text",
+          "default": "",
+          "help": "Blank rows take the name of their file, or their position."
+        },
+        {
+          "id": "kind",
+          "label": "Source",
+          "type": "select",
+          "default": "artwork",
+          "options": [
+            {
+              "value": "artwork",
+              "label": "SVG artwork",
+              "repeatable": true
+            },
+            {
+              "value": "model",
+              "label": "3D model",
+              "repeatable": true
+            },
+            {
+              "value": "primitive",
+              "label": "Sample shape",
+              "repeatable": true
+            },
+            {
+              "value": "text",
+              "label": "Words",
+              "repeatable": true
+            }
+          ]
+        },
+        {
+          "id": "asset",
+          "label": "Artwork or model",
+          "type": "asset",
+          "assetType": "any",
+          "allowUpload": true,
+          "showFor": [
+            "artwork",
+            "model"
+          ],
+          "help": "Pick or upload one file. To add many at once, drop them on this list or use its choose-files button."
+        },
+        {
+          "id": "primitive",
+          "label": "Sample shape",
+          "type": "select",
+          "default": "badge",
+          "options": [
+            {
+              "value": "badge",
+              "label": "Two-colour badge"
+            },
+            {
+              "value": "sphere",
+              "label": "Sphere"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "torus",
+              "label": "Ring"
+            }
+          ],
+          "showIf": {
+            "kind": "primitive"
+          }
+        },
+        {
+          "id": "modelFormat",
+          "label": "Model format",
+          "type": "select",
+          "default": "auto",
+          "options": [
+            {
+              "value": "auto",
+              "label": "Detect from filename"
+            },
+            {
+              "value": "glb",
+              "label": "GLB"
+            },
+            {
+              "value": "stl",
+              "label": "STL"
+            }
+          ],
+          "showIf": {
+            "kind": "model",
+            "controls": "expert"
+          }
+        },
+        {
+          "id": "x",
+          "label": "Position X",
+          "type": "number",
+          "min": -6,
+          "max": 6,
+          "step": 0.05,
+          "help": "Studio units. A new object starts at the centre and moves to the next free place if another object is already there; drag it in Move objects mode, or type here.",
+          "default": 0
+        },
+        {
+          "id": "y",
+          "label": "Lift Y",
+          "type": "number",
+          "default": 0,
+          "min": -6,
+          "max": 6,
+          "step": 0.05,
+          "help": "Height above the stage when resting on it; the pivot height when free."
+        },
+        {
+          "id": "z",
+          "label": "Position Z",
+          "type": "number",
+          "min": -6,
+          "max": 6,
+          "step": 0.05,
+          "default": 0
+        },
+        {
+          "id": "rotX",
+          "label": "Rotation X",
+          "type": "number",
+          "default": 0,
+          "min": -360,
+          "max": 360,
+          "step": 1
+        },
+        {
+          "id": "rotY",
+          "label": "Rotation Y",
+          "type": "number",
+          "default": 0,
+          "min": -360,
+          "max": 360,
+          "step": 1
+        },
+        {
+          "id": "rotZ",
+          "label": "Rotation Z",
+          "type": "number",
+          "default": 0,
+          "min": -360,
+          "max": 360,
+          "step": 1
+        },
+        {
+          "id": "scale",
+          "label": "Scale",
+          "type": "number",
+          "default": 0.6,
+          "min": 0.1,
+          "max": 5,
+          "step": 0.05,
+          "help": "Every source is normalised to about the same size first; a scale near 0.6 suits a group, 1 fills the frame alone."
+        },
+        {
+          "id": "grounded",
+          "label": "Rest on the stage",
+          "type": "boolean",
+          "default": true,
+          "help": "Off keeps the object centred at its own pivot so it can float or sink."
+        },
+        {
+          "id": "visible",
+          "label": "Visible",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "roleA",
+          "label": "Material A slot",
+          "type": "text",
+          "default": "",
+          "showIf": {
+            "materialMode": "pair",
+            "controls": "expert"
+          },
+          "help": "Exact slot name or number in this object. Leave both empty for alternating finishes."
+        },
+        {
+          "id": "roleB",
+          "label": "Material B slot",
+          "type": "text",
+          "default": "",
+          "showIf": {
+            "materialMode": "pair",
+            "controls": "expert"
+          },
+          "help": "Exact slot name or number in this object. Leave both empty for alternating finishes."
+        },
+        {
+          "id": "id",
+          "label": "Stable id",
+          "type": "text",
+          "default": "",
+          "showIf": {
+            "controls": "expert"
+          },
+          "help": "Optional name that survives reordering, for automation and saved overrides. Letters, digits, dots, dashes."
+        },
+        {
+          "id": "text",
+          "label": "Words",
+          "type": "text",
+          "default": "",
+          "showFor": [
+            "text"
+          ],
+          "help": "Set in the shared font under Start. Up to 200 characters."
+        }
+      ],
+      "addMenu": {
+        "field": "kind",
+        "label": "Add object"
+      },
+      "dropToAdd": {
+        "field": "asset",
+        "accept": "image/svg+xml,model/*,application/octet-stream"
       }
     },
     {
@@ -517,7 +960,8 @@
             "controls": "expert"
           }
         }
-      ]
+      ],
+      "help": "Words are one region and take colour A."
     },
     {
       "id": "colorA",
@@ -555,6 +999,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": [
@@ -570,8 +1050,15 @@
         },
         {
           "source": "collection"
+        },
+        {
+          "source": "arrangement"
+        },
+        {
+          "source": "text"
         }
-      ]
+      ],
+      "help": "Glow and Neon light the region itself in its colour; Velvet is soft fuzz; Glass and Frosted let light through; Chrome, Pearl and Iridescent are for reflections."
     },
     {
       "id": "finishB",
@@ -595,6 +1082,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": [
@@ -610,6 +1133,12 @@
         },
         {
           "source": "collection"
+        },
+        {
+          "source": "arrangement"
+        },
+        {
+          "source": "text"
         }
       ]
     },
@@ -629,6 +1158,12 @@
         },
         {
           "source": "collection"
+        },
+        {
+          "source": "arrangement"
+        },
+        {
+          "source": "text"
         }
       ],
       "help": "For SVG artwork and the sample badge. Source colour regions stay separate."
@@ -642,7 +1177,7 @@
       "options": [
         {
           "value": "inherit",
-          "label": "Use region finish"
+          "label": "Same as the region"
         },
         {
           "value": "matte",
@@ -659,6 +1194,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": {
@@ -675,7 +1246,7 @@
       "options": [
         {
           "value": "inherit",
-          "label": "Use region finish"
+          "label": "Same as the region"
         },
         {
           "value": "matte",
@@ -692,6 +1263,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": {
@@ -708,7 +1315,7 @@
       "options": [
         {
           "value": "inherit",
-          "label": "Use region finish"
+          "label": "Same as the region"
         },
         {
           "value": "matte",
@@ -725,6 +1332,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": {
@@ -741,7 +1384,7 @@
       "options": [
         {
           "value": "inherit",
-          "label": "Use region finish"
+          "label": "Same as the region"
         },
         {
           "value": "matte",
@@ -758,6 +1401,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": {
@@ -774,7 +1453,7 @@
       "options": [
         {
           "value": "inherit",
-          "label": "Use region finish"
+          "label": "Same as the region"
         },
         {
           "value": "matte",
@@ -791,6 +1470,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": {
@@ -807,7 +1522,7 @@
       "options": [
         {
           "value": "inherit",
-          "label": "Use region finish"
+          "label": "Same as the region"
         },
         {
           "value": "matte",
@@ -824,6 +1539,42 @@
         {
           "value": "metal",
           "label": "Metal"
+        },
+        {
+          "value": "chrome",
+          "label": "Chrome"
+        },
+        {
+          "value": "clay",
+          "label": "Clay"
+        },
+        {
+          "value": "velvet",
+          "label": "Velvet (fluffy)"
+        },
+        {
+          "value": "glow",
+          "label": "Glow"
+        },
+        {
+          "value": "neon",
+          "label": "Neon"
+        },
+        {
+          "value": "glass",
+          "label": "Glass"
+        },
+        {
+          "value": "frosted",
+          "label": "Frosted glass"
+        },
+        {
+          "value": "pearl",
+          "label": "Pearl"
+        },
+        {
+          "value": "iridescent",
+          "label": "Iridescent"
         }
       ],
       "showIf": {
@@ -944,9 +1695,15 @@
         },
         {
           "source": "collection"
+        },
+        {
+          "source": "arrangement"
+        },
+        {
+          "source": "text"
         }
       ],
-      "help": "SVG and badge depth and bevel in studio units. The studio reduces a bevel that would fold or erase narrow details and reports the applied size in Source notes."
+      "help": "SVG and badge depth and bevel in studio units, shared by every object in an arrangement. The studio reduces a bevel that would fold or erase narrow details and reports the applied size in Source notes."
     },
     {
       "id": "rotation",
@@ -980,7 +1737,13 @@
         }
       ],
       "showIf": {
-        "controls": "expert"
+        "controls": "expert",
+        "source": [
+          "primitive",
+          "artwork",
+          "model",
+          "collection"
+        ]
       }
     },
     {
@@ -1015,7 +1778,13 @@
         }
       ],
       "showIf": {
-        "controls": "expert"
+        "controls": "expert",
+        "source": [
+          "primitive",
+          "artwork",
+          "model",
+          "collection"
+        ]
       }
     },
     {
@@ -1034,7 +1803,13 @@
         }
       ],
       "showIf": {
-        "controls": "expert"
+        "controls": "expert",
+        "source": [
+          "primitive",
+          "artwork",
+          "model",
+          "collection"
+        ]
       }
     },
     {
@@ -1201,7 +1976,57 @@
       "type": "boolean",
       "default": false,
       "section": "Depth",
-      "help": "Opaque forms at varied distances. They appear only in the scene image."
+      "help": "Opaque forms in front of and behind the subject that depth of field softens. Scene images only."
+    },
+    {
+      "id": "atmosphereForms",
+      "label": "Depth forms",
+      "type": "select",
+      "default": "copies",
+      "section": "Depth",
+      "showIf": {
+        "atmosphere": true
+      },
+      "options": [
+        {
+          "value": "copies",
+          "label": "Copies of the subject"
+        },
+        {
+          "value": "spheres",
+          "label": "Soft spheres"
+        }
+      ],
+      "help": "Copies reuse the geometry, materials and colours of the subject at other sizes and angles; spheres use the brand colours."
+    },
+    {
+      "id": "atmosphereSpread",
+      "label": "Depth spread",
+      "type": "number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "display": "slider",
+      "section": "Depth",
+      "showIf": {
+        "atmosphere": true
+      },
+      "help": "How far the forms sit from the subject: near it at 0, far in front of and behind it at 1."
+    },
+    {
+      "id": "atmosphereCount",
+      "label": "Number of forms",
+      "type": "number",
+      "default": 7,
+      "min": 1,
+      "max": 12,
+      "step": 1,
+      "section": "Depth",
+      "showIf": {
+        "atmosphere": true,
+        "controls": "expert"
+      }
     },
     {
       "id": "seed",
@@ -1416,8 +2241,218 @@
       }
     },
     {
+      "id": "keyPosition",
+      "label": "Key light position",
+      "type": "vector",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert",
+        "studio": [
+          "soft",
+          "dramatic",
+          "electric",
+          "warm"
+        ]
+      },
+      "help": "Studio units around the subject. Drag the light in Move lights mode, or type here; the key reflection card follows it.",
+      "fields": [
+        {
+          "id": "x",
+          "label": "X",
+          "default": -3.6,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "y",
+          "label": "Y",
+          "default": 6.8,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "z",
+          "label": "Z",
+          "default": 4,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "fillPosition",
+      "label": "Fill light position",
+      "type": "vector",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert",
+        "studio": [
+          "soft",
+          "dramatic",
+          "electric",
+          "warm"
+        ]
+      },
+      "help": "Studio units around the subject. Drag the light in Move lights mode, or type here.",
+      "fields": [
+        {
+          "id": "x",
+          "label": "X",
+          "default": 5,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "y",
+          "label": "Y",
+          "default": 3,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "z",
+          "label": "Z",
+          "default": 4,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "rimPosition",
+      "label": "Rim light position",
+      "type": "vector",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert",
+        "studio": [
+          "soft",
+          "dramatic",
+          "electric",
+          "warm"
+        ]
+      },
+      "help": "Studio units around the subject. Drag the light in Move lights mode, or type here.",
+      "fields": [
+        {
+          "id": "x",
+          "label": "X",
+          "default": 3,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "y",
+          "label": "Y",
+          "default": 5,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "z",
+          "label": "Z",
+          "default": -3,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "environment",
+      "label": "Lighting environment",
+      "type": "select",
+      "default": "room",
+      "section": "Lighting",
+      "options": [
+        {
+          "value": "room",
+          "label": "Studio room"
+        },
+        {
+          "value": "studio",
+          "label": "Photo studio"
+        },
+        {
+          "value": "gallery",
+          "label": "White gallery"
+        },
+        {
+          "value": "softbox",
+          "label": "Soft box"
+        },
+        {
+          "value": "window",
+          "label": "Window light"
+        },
+        {
+          "value": "warehouse",
+          "label": "Warehouse"
+        },
+        {
+          "value": "stage",
+          "label": "Main stage"
+        },
+        {
+          "value": "desert",
+          "label": "Desert chrome"
+        },
+        {
+          "value": "synthwave",
+          "label": "Synthwave chrome"
+        },
+        {
+          "value": "image",
+          "label": "Imported radiance map"
+        }
+      ],
+      "help": "Reflections and soft illumination. Generated environments are built on this device and the coloured ones take colour A, colour B, the background and the accent; an imported equirectangular .hdr or .exr map lights the scene with its own radiance."
+    },
+    {
+      "id": "environmentImage",
+      "label": "Radiance map",
+      "type": "asset",
+      "section": "Lighting",
+      "assetType": "any",
+      "allowUpload": true,
+      "showIf": {
+        "environment": "image"
+      },
+      "help": "Upload a Radiance .hdr or OpenEXR .exr panorama. A PNG or JPEG is a display image and is refused: it cannot light a scene."
+    },
+    {
+      "id": "environmentBackground",
+      "label": "Show the environment behind the scene",
+      "type": "boolean",
+      "default": false,
+      "section": "Lighting",
+      "help": "Scene images only. Transparent outputs keep the environment for lighting and reflections and never draw it. A painted environment shows crisp at zero blur."
+    },
+    {
+      "id": "environmentBlur",
+      "label": "Background blur",
+      "type": "number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "display": "slider",
+      "section": "Lighting",
+      "showIf": {
+        "environmentBackground": true
+      }
+    },
+    {
       "id": "environmentIntensity",
-      "label": "Reflection environment",
+      "label": "Environment brightness",
       "type": "number",
       "default": 0.4,
       "section": "Lighting",
@@ -1425,9 +2460,7 @@
       "max": 3,
       "step": 0.05,
       "display": "slider",
-      "showIf": {
-        "controls": "expert"
-      }
+      "help": "Strength of the environment on illumination and reflections together; this renderer does not split them."
     },
     {
       "id": "environmentRotation",
@@ -1439,9 +2472,7 @@
       "max": 180,
       "step": 1,
       "display": "slider",
-      "showIf": {
-        "controls": "expert"
-      }
+      "help": "Turn the environment to place its highlights; the visible map turns with it."
     },
     {
       "id": "lights",
@@ -1607,6 +2638,67 @@
           "min": 0,
           "max": 1,
           "step": 0.05
+        },
+        {
+          "id": "finish",
+          "label": "Finish",
+          "type": "select",
+          "default": "satin",
+          "options": [
+            {
+              "value": "matte",
+              "label": "Matte"
+            },
+            {
+              "value": "satin",
+              "label": "Satin"
+            },
+            {
+              "value": "enamel",
+              "label": "Polished enamel"
+            },
+            {
+              "value": "metal",
+              "label": "Metal"
+            },
+            {
+              "value": "chrome",
+              "label": "Chrome"
+            },
+            {
+              "value": "clay",
+              "label": "Clay"
+            },
+            {
+              "value": "velvet",
+              "label": "Velvet (fluffy)"
+            },
+            {
+              "value": "glow",
+              "label": "Glow"
+            },
+            {
+              "value": "neon",
+              "label": "Neon"
+            },
+            {
+              "value": "glass",
+              "label": "Glass"
+            },
+            {
+              "value": "frosted",
+              "label": "Frosted glass"
+            },
+            {
+              "value": "pearl",
+              "label": "Pearl"
+            },
+            {
+              "value": "iridescent",
+              "label": "Iridescent"
+            }
+          ],
+          "help": "Applied on top of the numbers; Satin keeps them as typed."
         }
       ],
       "tableColumns": [
@@ -1716,11 +2808,25 @@
       "help": "More samples smooth shadows and depth of field. Preview uses fewer samples."
     },
     {
+      "id": "videoSamples",
+      "label": "Clip samples",
+      "type": "number",
+      "default": 16,
+      "min": 1,
+      "max": 64,
+      "step": 1,
+      "section": "Output",
+      "showIf": {
+        "controls": "expert"
+      },
+      "help": "Samples per frame of a video or GIF. Motion hides the noise a still would show; 16 keeps an eight-second clip to well under a minute on a laptop."
+    },
+    {
       "id": "motion",
       "label": "Motion",
       "type": "select",
       "default": "still",
-      "section": "Output",
+      "section": "Motion",
       "options": [
         {
           "value": "still",
@@ -1733,11 +2839,160 @@
       ]
     },
     {
+      "id": "cameraMotion",
+      "label": "Camera",
+      "type": "select",
+      "default": "still",
+      "section": "Motion",
+      "options": [
+        {
+          "value": "still",
+          "label": "Hold the current view"
+        },
+        {
+          "value": "keys",
+          "label": "Travel through the camera keys"
+        }
+      ],
+      "help": "Orbit to a view and choose Add camera key on the preview; two keys make a move, more make a path. Hold the view to compose the next key."
+    },
+    {
+      "id": "cameraKeys",
+      "label": "Camera keys",
+      "type": "blocks",
+      "section": "Motion",
+      "labelledFields": true,
+      "rowActions": true,
+      "showIf": {
+        "cameraMotion": "keys"
+      },
+      "help": "Each key is a saved view; At is the moment in the loop it is reached, as a percentage. Keys are spaced evenly when added.",
+      "default": [],
+      "fields": [
+        {
+          "id": "at",
+          "label": "At %",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 100,
+          "step": 1
+        },
+        {
+          "id": "azimuth",
+          "label": "Azimuth",
+          "type": "number",
+          "default": 25,
+          "min": -720,
+          "max": 720,
+          "step": 1
+        },
+        {
+          "id": "elevation",
+          "label": "Elevation",
+          "type": "number",
+          "default": 14,
+          "min": -60,
+          "max": 80,
+          "step": 1
+        },
+        {
+          "id": "fov",
+          "label": "Field of view",
+          "type": "number",
+          "default": 29,
+          "min": 15,
+          "max": 80,
+          "step": 1
+        },
+        {
+          "id": "zoom",
+          "label": "Zoom",
+          "type": "number",
+          "default": 1,
+          "min": 0.05,
+          "max": 3,
+          "step": 0.05
+        },
+        {
+          "id": "panX",
+          "label": "Target X",
+          "type": "number",
+          "default": 0,
+          "min": -25,
+          "max": 25,
+          "step": 0.05
+        },
+        {
+          "id": "panY",
+          "label": "Target Y",
+          "type": "number",
+          "default": 1.6,
+          "min": -25,
+          "max": 25,
+          "step": 0.05
+        },
+        {
+          "id": "panZ",
+          "label": "Target Z",
+          "type": "number",
+          "default": 0,
+          "min": -25,
+          "max": 25,
+          "step": 0.05
+        },
+        {
+          "id": "focusDistance",
+          "label": "Focus distance (0 = automatic)",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 500,
+          "step": 0.1
+        }
+      ]
+    },
+    {
+      "id": "cameraEase",
+      "label": "Camera easing",
+      "type": "select",
+      "default": "smooth",
+      "section": "Motion",
+      "showIf": {
+        "cameraMotion": "keys"
+      },
+      "options": [
+        {
+          "value": "smooth",
+          "label": "Ease each move"
+        },
+        {
+          "value": "flow",
+          "label": "Flow through the keys"
+        },
+        {
+          "value": "linear",
+          "label": "Constant speed"
+        }
+      ]
+    },
+    {
+      "id": "cameraLoop",
+      "label": "Return to the first key",
+      "type": "boolean",
+      "default": false,
+      "section": "Motion",
+      "showIf": {
+        "cameraMotion": "keys"
+      },
+      "help": "Closes the loop for a GIF or a looping clip."
+    },
+    {
       "id": "duration",
       "label": "Loop seconds",
       "type": "number",
       "default": 5,
-      "section": "Output",
+      "section": "Motion",
       "min": 1,
       "max": 30,
       "step": 0.5,
@@ -1751,6 +3006,9 @@
             "orbit",
             "breathe"
           ]
+        },
+        {
+          "cameraMotion": "keys"
         }
       ]
     },
@@ -1759,7 +3017,7 @@
       "label": "Turn angle",
       "type": "number",
       "default": 360,
-      "section": "Output",
+      "section": "Motion",
       "min": -720,
       "max": 720,
       "step": 5,

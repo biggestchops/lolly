@@ -1,0 +1,59 @@
+{
+  "id": "wordmark-backdrop",
+  "name": "Wordmark backdrop",
+  "category": "Promotion",
+  "description": "Your words in the brand font, lit dramatically, with copies drifting in depth and a slow camera move. Export as video or GIF for a promotional backdrop.",
+  "values": {
+    "studio": "dramatic",
+    "drama": 0.75,
+    "outputMode": "scene",
+    "depthOfField": true,
+    "aperture": 0.1,
+    "atmosphere": true,
+    "atmosphereForms": "copies",
+    "atmosphereSpread": 0.7,
+    "atmosphereCount": 8,
+    "lightMotion": "orbit",
+    "lightMotionAmount": 0.3,
+    "duration": 8,
+    "cameraMotion": "keys",
+    "cameraEase": "smooth",
+    "cameraLoop": true,
+    "cameraKeys": [
+      {
+        "at": 0,
+        "azimuth": -18,
+        "elevation": 8,
+        "fov": 29,
+        "zoom": 0.9,
+        "panX": 0,
+        "panY": 1.6,
+        "panZ": 0
+      },
+      {
+        "at": 50,
+        "azimuth": 16,
+        "elevation": 18,
+        "fov": 29,
+        "zoom": 1.1,
+        "panX": 0,
+        "panY": 1.6,
+        "panZ": 0
+      },
+      {
+        "at": 100,
+        "azimuth": -18,
+        "elevation": 8,
+        "fov": 29,
+        "zoom": 0.9,
+        "panX": 0,
+        "panY": 1.6,
+        "panZ": 0
+      }
+    ],
+    "source": "text",
+    "words": "Hello",
+    "wordWeight": 800,
+    "wordPose": "front"
+  }
+}

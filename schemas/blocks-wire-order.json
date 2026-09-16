@@ -441,7 +441,8 @@
       "color",
       "roughness",
       "metalness",
-      "clearcoat"
+      "clearcoat",
+      "finish"
     ],
     "3d-studio:subjects": [
       "name",
@@ -460,6 +461,37 @@
       "panY",
       "panZ",
       "ownFocus",
+      "focusDistance"
+    ],
+    "3d-studio:objects": [
+      "name",
+      "kind",
+      "asset",
+      "primitive",
+      "modelFormat",
+      "x",
+      "y",
+      "z",
+      "rotX",
+      "rotY",
+      "rotZ",
+      "scale",
+      "grounded",
+      "visible",
+      "roleA",
+      "roleB",
+      "id",
+      "text"
+    ],
+    "3d-studio:cameraKeys": [
+      "at",
+      "azimuth",
+      "elevation",
+      "fov",
+      "zoom",
+      "panX",
+      "panY",
+      "panZ",
       "focusDistance"
     ]
   }

@@ -75,6 +75,14 @@
 .studio-collection-actions [hidden] {
   display: none;
 }
+/* The toolbar floats over the picture and wraps as it grows; only its controls take the
+   pointer, so a click in a gap or on the status text reaches the canvas underneath. */
+.studio-collection-actions {
+  pointer-events: none;
+}
+.studio-collection-actions button {
+  pointer-events: auto;
+}
 
 .studio-camera-actions {
   display: flex;
@@ -104,4 +112,28 @@
 }
 [data-studio-camera-note]:empty {
   display: none;
+}
+
+.studio-group {
+  display: inline-flex;
+  border: 1px solid #86a99b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.studio-collection-actions .studio-group button {
+  border: 0;
+  border-radius: 0;
+  min-height: calc(32px * var(--studio-ui-scale, 1));
+}
+.studio-collection-actions .studio-group button + button {
+  border-left: 1px solid #86a99b;
+}
+.studio-collection-actions .studio-status-pill {
+  border: 0;
+  background: #10251ea0;
+  font-weight: 600;
+}
+.studio-collection-actions [data-studio-add] {
+  border-color: #dff7eb;
+  background: #1c4a3a;
 }

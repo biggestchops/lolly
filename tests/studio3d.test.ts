@@ -126,4 +126,11 @@ describe('3D Studio scene contract', () => {
     runtime.destroy();
     reopened.destroy();
   });
+  it('keeps separate sample counts for stills and clip frames', () => {
+    const scene = buildStudioScene({ version: 1, values: { samples: 120, videoSamples: 4 } });
+    assert.deepEqual(scene.quality, { previewSamples: 8, exportSamples: 120, clipSamples: 4 });
+    const defaults = buildStudioScene({ version: 1, values: {} }).quality;
+    assert.equal(defaults.clipSamples, 16);
+    assert.equal(buildStudioScene({ version: 1, values: { videoSamples: 0 } }).quality.clipSamples, 1);
+  });
 });

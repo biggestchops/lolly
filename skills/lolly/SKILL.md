@@ -67,6 +67,18 @@ This skill is enough on its own. The reference files carry the exhaustive detail
    reopens the exact state in the app. Return bytes when the asset is final or the
    caller is a machine.
 
+## Handing over a set of documents
+
+When the work is several documents a person will keep editing (a chart per survey
+question plus the deck that shows them), hand it over as one **project `.lolly`**:
+a folder of saved sessions that opens back into Projects. Write a spec of tool ids,
+labels and input values, then run
+`node scripts/pack-project.ts project.json --output=name.lolly`; it warns about any
+tool or input id the active profile does not declare. In the app, a folder's menu
+offers the same file as **Download project (.lolly)**. To put one tool's render on a
+slide, give the slide's media slot the tool's embed link
+(`{ "id": "https://lolly.tools/tool/chart.svg?..." }`); it re-renders on open.
+
 ## Reproducible output
 
 A default render embeds a fresh timestamp (Content Credentials and the pixel
