@@ -15,7 +15,7 @@ name = "Lolly"
 description.en = "Make on-brand images, PDFs, video, audio and documents on your own device, from your own brand"
 description.fr = "Créez des visuels, PDF, vidéos, sons et documents à votre marque, sur votre appareil"
 
-version = "1.0.7~ynh2"
+version = "1.0.8~ynh1"
 
 maintainers = ["Andy Fitzsimon"]
 
@@ -63,8 +63,8 @@ ram.runtime = "50M"
     # docs, and the on-device ML models served from lolli.li rather than bundled -
     # the same shape the desktop app ships. Built and published by
     # scripts/yunohost-release.ts; see deploy/yunohost/README.md.
-    url = "https://lolli.li/lolly-web-1.0.7.tar.gz"
-    sha256 = "87abdf5dddcfce899cd313f6c2cf669b2581a1a10356e08f089f5469c5072158"
+    url = "https://lolli.li/lolly-web-1.0.8.tar.gz"
+    sha256 = "036d5e04692149b4fbe8e42c761216bc8e78ce0807533c27839706e36fe554d4"
     format = "tar.gz"
     in_subdir = false
 
