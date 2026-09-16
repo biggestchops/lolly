@@ -4,7 +4,7 @@
  * Deploy every target in scripts/data/ship-targets.json, gate first.
  *
  *   pnpm run ship              # PREVIEW -> first-load check -> promote what passed
- *   pnpm run ship --preview    # stop at the preview URL: no check, no promote
+ *   pnpm run ship --preview    # stop at the staged URL: no check, no promote
  *   pnpm run ship --prod       # straight to production, no preview (hotfix hatch)
  *   pnpm run ship --no-gate    # only when the gate already passed on this exact code
  *
@@ -169,7 +169,7 @@ const vercelDriver: Driver = {
   // Point the production domain at an ALREADY-BUILT deployment - the one that just
   // passed the first-load check - rather than deploying again, so the bytes that
   // were measured are the bytes that go live. The build being promoted resolved the
-  // project's PREVIEW environment, which is why every brand-critical variable is
+  // project's PRODUCTION environment, and every brand-critical variable is
   // pinned per-deploy in publish() (--build-env for the build, --env for the
   // function's own runtime) instead of being trusted from the dashboard; verifyDeploy
   // still asserts the live brand on the domain afterwards, and ship() only calls this
@@ -192,8 +192,11 @@ const vercelDriver: Driver = {
     const snapshot = mode === 'prod' ? newestProdUrl() : '';
     for (let attempt = 1; attempt <= DEPLOY_UPLOAD_TRIES; attempt++) {
       step(`uploading + building on Vercel (LOLLY_PROFILE=${target.profile} · ${mode} · upload ${attempt}/${DEPLOY_UPLOAD_TRIES})`);
-      const args = ['--yes', 'vercel', 'deploy'];
-      if (mode === 'prod') args.push('--prod');
+      // A preview-environment promotion rebuilds with production variables. Stage
+      // a production build instead, so promotion keeps the deployment we checked.
+      // https://vercel.com/docs/cli/deploy#skip-domain
+      const args = ['--yes', 'vercel', 'deploy', '--prod'];
+      if (mode === 'preview') args.push('--skip-domain');
       // No --archive by default, the same choice loldev's vercel_publish made on purpose:
       // an archive is one blob Vercel cannot content-dedupe, so the ~1.3 GB of gitignored
       // ONNX models under shells/web/public/models would re-upload in full on every
