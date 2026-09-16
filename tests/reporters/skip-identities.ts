@@ -30,6 +30,10 @@ export function capabilityFor(reason: string): string {
   if (/macos|windows|linux|platform/.test(value)) return 'platform';
   if (/bench|timing|perf/.test(value)) return 'benchmark';
   if (/built \/info|build:info|page seals|linked chrome/.test(value)) return 'docs-build';
+  // A live service whose token only a person signing in can grant: no variable enables it.
+  if (/oauth|signing in|sign in|credential/.test(value)) return 'credentials';
+  // The store under test does not offer what the case checks, on any machine.
+  if (/no write precondition/.test(value)) return 'service-limit';
   if (/env|set |opt-in|enabled/.test(value)) return 'environment';
   return 'unspecified';
 }
@@ -51,7 +55,11 @@ export default async function* skipIdentityReporter(source: AsyncIterable<Record
   const tee = async function* (): AsyncGenerator<Record<string, any>> {
     for await (const event of source) {
       const data = event.data ?? {};
-      const file = normalizedFile(data.file);
+      // `file` is where test() was called, which can be a shared helper imported by
+      // several test files. `entryFile` (Node 24.20+) is the test file that ran, so
+      // the identity names the file a shard actually runs, and test ids, which are
+      // only unique within one file's process, cannot collide across files.
+      const file = normalizedFile(data.entryFile ?? data.file);
       const key = `${file}\0${String(data.testId ?? '')}`;
       if (event.type === 'test:start') {
         nodes.set(key, { file, name: String(data.name ?? ''), parentId: data.parentId });

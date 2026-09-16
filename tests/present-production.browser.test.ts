@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 
 const origin = process.env.LOLLY_PRESENT_TEST_URL;
 const output = process.env.LOLLY_PRESENT_TEST_OUTPUT ?? '/tmp/lolly-presentation-260';
-const skip = origin ? false : 'LOLLY_PRESENT_TEST_URL not set; serve the web shell to exercise presentation output';
+const skip = origin ? false : 'set LOLLY_PRESENT_TEST_URL to a local Vite shell to exercise presentation output';
 
 test('Countdown publishes one live timer into clean output and private preview', { skip, timeout: 90_000 }, async () => {
   const browser = await chromium.launch({ headless: true });

@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 const origin = process.env.LOLLY_PRESENT_TEST_URL;
 const output = process.env.LOLLY_PRESENT_TEST_OUTPUT ?? '/tmp/lolly-presentation-260';
 test('cursor tips stay anchored while labels swing and reduced motion clears the decoration', {
-  skip: origin ? false : 'LOLLY_PRESENT_TEST_URL not set', timeout: 30_000,
+  skip: origin ? false : 'set LOLLY_PRESENT_TEST_URL to a local Vite shell', timeout: 30_000,
 }, async () => {
   await mkdir(output, { recursive: true });
   const browser = await chromium.launch({ headless: true });

@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getBrowser, closeBrowser } from '../packages/node-shell/src/browsers.ts';
 const origin = process.env.LOLLY_COLLAB_TEST_URL;
+const skip = origin ? false : 'set LOLLY_COLLAB_TEST_URL to a local Vite shell';
 test('real-browser surface projection, pointer publication, focus merging, clear and export exclusion', {
-  skip: !origin, timeout: 60_000,
+  skip, timeout: 60_000,
 }, async () => {
   const browser = await getBrowser();
   const context = await browser.newContext({ viewport: { width: 1200, height: 900 } });
@@ -71,7 +72,7 @@ test('real-browser surface projection, pointer publication, focus merging, clear
   } finally { await context.close(); await closeBrowser(); }
 });
 
-test('two tabs retain each other’s pending edits in the real IndexedDB outbox', { skip: !origin, timeout: 60_000 }, async () => {
+test('two tabs retain each other’s pending edits in the real IndexedDB outbox', { skip, timeout: 60_000 }, async () => {
   const browser = await getBrowser();
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -96,7 +97,7 @@ test('two tabs retain each other’s pending edits in the real IndexedDB outbox'
   } finally { await context.close(); await closeBrowser(); }
 });
 
-test('the actual Design mount registers its active artboard for pointer presence', { skip: !origin, timeout: 90_000 }, async () => {
+test('the actual Design mount registers its active artboard for pointer presence', { skip, timeout: 90_000 }, async () => {
   const browser = await getBrowser();
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage();

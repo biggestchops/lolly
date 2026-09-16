@@ -255,7 +255,7 @@ export function runSyncRemoteConformance(name: string, factory: RemoteFactory, o
     {
       name: 'two writes naming the same rev: exactly one is kept',
       skip: opts.preconditions !== 'store'
-        && (noPreconditions || 'the adapter compares a fresh read, so a write in between is not caught'),
+        && (noPreconditions || 'the store has no write precondition, so the adapter compares a fresh read and a write in between is not caught'),
       run: async () => {
         const [a, b] = [await remote(), await remote()];
         const base = await a.put(patternBytes(300, 13));

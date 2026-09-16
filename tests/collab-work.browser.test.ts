@@ -11,6 +11,14 @@ const viteOrigin = process.env.LOLLY_COLLAB_TEST_URL;
 const ossDir = new URL('..', import.meta.url).pathname;
 const workDir = process.env.LOLLY_WORK_DIR ?? resolve(ossDir, '../lolly-work');
 const fixturePath = resolve(workDir, 'tests/collab/browser-fixture.ts');
+// The origin is checked first, so a run without it always gives the same reason
+// whether or not a lolly-work checkout is present.
+function skipReason(): string | false {
+  if (!viteOrigin) return 'set LOLLY_COLLAB_TEST_URL to a local Vite shell (the run also needs a lolly-work checkout)';
+  if (!existsSync(fixturePath)) return 'the lolly-work collab fixture is missing; set LOLLY_WORK_DIR to a lolly-work checkout';
+  return false;
+}
+const skip = skipReason();
 type Row = { id: string; [key: string]: unknown };
 interface Fixture {
   base: string; sessionId: string; inputs: { boxes: Row[] };
@@ -21,7 +29,7 @@ interface Fixture {
 }
 
 test('authenticated work Design: cursors, edits, reconnect, duplicate tabs, viewer and revocation', {
-  skip: !viteOrigin || !existsSync(fixturePath), timeout: 180_000,
+  skip, timeout: 180_000,
 }, async () => {
   const { createWorkBrowserFixture } = await import(pathToFileURL(fixturePath).href) as {
     createWorkBrowserFixture(oss: string, vite: string): Promise<Fixture>;
