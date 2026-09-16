@@ -67,7 +67,8 @@ import { listCreateBtns as createButtonsHtml, emptyFolderHtml } from './projects
 import { mountProjectsViewOptions } from './projects-view-options.ts';
 import type { BodyPopoverHandle } from '../components/body-popover.ts';
 import { shareProjectSession } from './projects-sharing.ts';
-import { serializeUrlState, ENGINE_VERSION } from '@lolly/engine';
+import { downloadOriginals, downloadProject, type ProjectDownloadHost, type ProjectDownloadView } from './projects-download.ts';
+import { serializeUrlState } from '@lolly/engine';
 import { createToolRuntime as createRuntime } from '../lib/mount-runtime.ts';
 import { getTool } from '../bridge/tool-loader.ts';
 import type { ProjectedUserTool } from '../lib/user-tools.ts';   // type-only (erased) - the store is lazy-imported
@@ -1410,7 +1411,7 @@ export async function mountProjects(
     if (action === 'course') { void exportCourse(); return; }
     if (action === 'render') { renderSelection(); return; }
     if (action === 'cut' || action === 'copy') { setClipboard(action, [...selected.keys()]); return; }
-    if (action === 'download') { void downloadOriginals(t('Selection'), selectedByKind('session'), selectedByKind('image'), topLevelSelectedFolders()); return; }
+    if (action === 'download') { void downloadOriginals(downloadView(), t('Selection'), selectedByKind('session'), selectedByKind('image'), topLevelSelectedFolders()); return; }
     if (action === 'edit') { editSelection(); return; }
     if (action === 'sheet') { editAsSheet(); return; }
     if (action === 'duplicate') { duplicateSelection(); return; }
@@ -1649,8 +1650,8 @@ export async function mountProjects(
     else if (act === 'info') openInfoSheet(ref);
     else if (act === 'cut' || act === 'copy') setClipboard(act, selected.has(ref) ? [...selected.keys()] : [ref]);
     else if (act === 'paste-into') await pasteClipboard(ref);
-    else if (act === 'download-project') await downloadProject(ref);
-    else if (act === 'download-folder') await downloadOriginals(folders.find(f => f.id === ref)?.name || t('Folder'), [], [], [ref]);
+    else if (act === 'download-project') await downloadProject(downloadView(), ref);
+    else if (act === 'download-folder') await downloadOriginals(downloadView(), folders.find(f => f.id === ref)?.name || t('Folder'), [], [], [ref]);
     else if (act === 'save-template') await saveAsBlueprint(ref);
     else if (act === 'open-folder') { window.location.hash = '#/p/' + ref; }
     else if (act === 'move-folder') {
@@ -3009,148 +3010,15 @@ export async function mountProjects(
     return { imagesStayed };
   }
 
-  // ── Download originals (plans/133 WP-6) ─────────────────────────────────────
-  // The stored files as they are, zipped: every single-tool session as a `.lolly`
-  // (the same file Share builds - inputs, carried user assets, thumb), a batch
-  // session as its stored JSON, every folder image as its bytes. Nothing is
-  // rendered - that is what Render is for. Folders recurse into zip paths.
-  // Leading dots are stripped too, so a folder named ".." can never mint a `../`
-  // zip path (zip-slip) - it falls back to the 'folder' default like an empty name.
-  const slug = (s: string): string => s.trim().replace(/[^\w.-]+/g, '-').replace(/^[-.]+|-+$/g, '');
-  async function downloadOriginals(label: string, sessionSlots: readonly string[], imageIds: readonly string[], folderIds: readonly string[]): Promise<void> {
-    closeMenu();
-    const items: Array<{ dir: string; kind: 'session' | 'image'; ref: string }> = [];
-    const seen = new Set<string>();
-    const add = (dir: string, kind: 'session' | 'image', ref: string): void => { if (!seen.has(ref)) { seen.add(ref); items.push({ dir, kind, ref }); } };
-    const walk = (fid: string, dir: string): void => {
-      const f = folders.find(x => x.id === fid);
-      if (!f) return;
-      const d = `${dir}${slug(f.name) || 'folder'}/`;
-      for (const it of f.items) add(d, it.type, it.ref);
-      for (const c of childFolders(folders, fid)) walk(c.id, d);
+  // ── Downloads (plans/133 WP-6, and the project file) ────────────────────────
+  // Download originals and Download project live in ./projects-download.ts. This hands
+  // them the view: the folder list as it is now, and getters for the rows, image refs
+  // and profile, which reload() replaces while a job may still be packing.
+  function downloadView(): ProjectDownloadView {
+    return {
+      host: host as ProjectsHost & ProjectDownloadHost, folders, entries: entryBySlot,
+      imageRefs: () => imageRefs, profile: () => profile, toolName, closeMenu, startJob: startRenderJob,
     };
-    for (const s of sessionSlots) add('', 'session', s);
-    for (const i of imageIds) add('', 'image', i);
-    for (const fid of folderIds) walk(fid, '');
-    if (!items.length) return;
-    const zipName = `${slug(label) || 'lolly'}-originals.zip`;
-    startRenderJob(tRaw('Packing {name}', { name: label }), async (job) => {
-      const [{ zipAsync }, { buildLollyFile, creatorFromProfile }] = await Promise.all([import('../lib/zip.ts'), import('../lib/lolly-pack.ts')]);
-      const h = host as ProjectsHost & { assets: { _exportUserAssets(): Promise<Parameters<typeof buildLollyFile>[0]['userAssets']>; _getBlob(id: string): Promise<Blob | null> } };
-      const userAssets = await h.assets._exportUserAssets();
-      const appVersion = `Lolly ${ENGINE_VERSION}`;
-      const creator = creatorFromProfile(profile, { appVersion });
-      const entries: Record<string, Uint8Array> = {};
-      const taken = new Set<string>();
-      // Two same-named members never collide: name-2.ext, name-3.ext…
-      const unique = (p: string): string => {
-        const dot = p.lastIndexOf('.');
-        let q = p;
-        for (let n = 2; taken.has(q.toLowerCase()); n++) q = dot > p.lastIndexOf('/') ? `${p.slice(0, dot)}-${n}${p.slice(dot)}` : `${p}-${n}`;
-        taken.add(q.toLowerCase());
-        return q;
-      };
-      let done = 0, skipped = 0;
-      // The exporter's own design system rides in every .lolly of the batch (see tool.ts's
-      // share path); read once, not per session.
-      const designSystem = await import('../bridge/tokens.ts')
-        .then(m => m.readUserDesignSystem(h as unknown as Parameters<typeof m.readUserDesignSystem>[0]))
-        .catch(() => null);
-      for (const it of items) {
-        if (job.cancelled) return;
-        try {
-          if (it.kind === 'session') {
-            const e = entryMap.get(it.ref);
-            const data = await h.state.load(it.ref);
-            if (!e || !data) { skipped++; continue; }
-            const name = e.label || e.filename || toolName(e.toolId) || it.ref;
-            if (isBatchSlot(it.ref)) {
-              entries[unique(`${it.dir}${slug(name) || 'batch'}.json`)] = new TextEncoder().encode(JSON.stringify(data, null, 2));
-            } else {
-              const { blob } = await buildLollyFile({ session: data, toolId: e.toolId, name, thumb: e.thumb, userAssets, creator, appVersion, engineVersion: ENGINE_VERSION, ...(designSystem ? { designSystem } : {}) });
-              entries[unique(`${it.dir}${slug(name) || 'session'}.lolly`)] = new Uint8Array(await blob.arrayBuffer());
-            }
-          } else {
-            // A catalog ref may carry a ?theme= / ?treatment= modifier; the byte
-            // store is keyed by the plain base id (folders.ts's catalogBaseId rule).
-            const baseId = it.ref.startsWith('user/') ? it.ref : it.ref.split('?')[0]!.split('#')[0]!;
-            const blob = await h.assets._getBlob(baseId);
-            if (!blob) { skipped++; host.log?.('warn', 'projects: originals member has no bytes', { ref: it.ref }); continue; }
-            const ref = imageRefs.get(it.ref);
-            const base = String(ref?.meta?.name ?? it.ref.split('/').pop() ?? 'image');
-            const file = /\.[a-z0-9]{1,5}$/i.test(base) || !ref?.format ? base : `${base}.${ref.format}`;
-            entries[unique(`${it.dir}${slug(file) || 'image'}`)] = new Uint8Array(await blob.arrayBuffer());
-          }
-        } catch (err) { skipped++; host.log?.('warn', 'projects: originals member skipped', { ref: it.ref, error: String(err) }); }
-        job.progress(++done, items.length);
-      }
-      if (!Object.keys(entries).length) throw new Error(t('Nothing could be packed.'));
-      const bytes = await zipAsync(entries);
-      await host.export.file(new Blob([bytes as BlobPart], { type: 'application/zip' }), { filename: zipName });
-      if (skipped) announce(skipped === 1 ? t('1 file could not be packed and was left out') : t('{n} files could not be packed and were left out', { n: skipped }));
-      return { zipName };
-    });
-  }
-
-  // ── Download project ─────────────────────────────────────────────────────────
-  // The folder as ONE `.lolly` a recipient opens back into Projects: its subtree, every
-  // saved session in it (values, tile, carried uploads and the catalog bytes that may
-  // travel) and the pictures filed in it. Batch sessions are not tool sessions and stay
-  // behind, which the toast says. Opening the file rebuilds the tree with fresh ids
-  // (lib/drop-router.ts openLollyProject).
-  async function downloadProject(id: string): Promise<void> {
-    closeMenu();
-    const root = folders.find(f => f.id === id);
-    if (!root) return;
-    const inside = new Set(descendantFolderIds(folders, id));
-    const tree = [root, ...folders.filter(f => inside.has(f.id))];
-    startRenderJob(tRaw('Packing {name}', { name: root.name }), async (job) => {
-      const [lp, { lollyLibraryResolver }] = await Promise.all([import('../lib/lolly-pack.ts'), import('./tool-lolly-vehicle.ts')]);
-      type VehicleAssets = Parameters<typeof lollyLibraryResolver>[0];
-      const h = host as ProjectsHost & { assets: VehicleAssets };
-      const userAssets = await h.assets._exportUserAssets();
-      const appVersion = `Lolly ${ENGINE_VERSION}`;
-      const designSystem = await import('../bridge/tokens.ts')
-        .then(m => m.readUserDesignSystem(h as unknown as Parameters<typeof m.readUserDesignSystem>[0]))
-        .catch(() => null);
-      const keys = new Map<string, string>();
-      const sessions: import('../lib/lolly-pack.ts').LollyProjectSessionInput[] = [];
-      const members = tree.flatMap(f => f.items.filter(it => it.type === 'session').map(it => it.ref));
-      let skipped = 0;
-      for (const slot of members) {
-        if (job.cancelled) return;
-        const e = entryMap.get(slot);
-        const data = isBatchSlot(slot) || !e ? null : await h.state.load(slot).catch(() => null);
-        if (!e || !data) { skipped++; job.progress(sessions.length + skipped, members.length); continue; }
-        const key = `s${sessions.length + 1}`;
-        keys.set(slot, key);
-        sessions.push({
-          key, toolId: e.toolId, data,
-          ...(e.toolVersion ? { toolVersion: e.toolVersion } : {}),
-          ...(e.label || e.filename ? { label: e.label || e.filename || '' } : {}),
-          ...(e.thumb ? { thumb: e.thumb } : {}),
-        });
-        job.progress(sessions.length + skipped, members.length);
-      }
-      const projectFolders = tree.map(f => ({
-        id: f.id, name: f.name, parentId: f.id === id ? null : (f.parentId ?? null),
-        items: f.items.flatMap((it): FolderItem[] => it.type === 'image' ? [{ type: 'image', ref: it.ref }]
-          : keys.has(it.ref) ? [{ type: 'session', ref: keys.get(it.ref)! }] : []),
-        ...(f.color ? { color: f.color } : {}),
-        ...(f.emoji ? { emoji: f.emoji } : {}),
-        ...(f.tags?.length ? { tags: f.tags } : {}),
-      }));
-      const { blob, filename } = await lp.buildLollyFile({
-        kind: 'project', toolId: lp.LOLLY_PROJECT_TOOL_ID, session: null, name: root.name,
-        project: { name: root.name, folders: projectFolders, sessions },
-        userAssets, resolveLibrary: lollyLibraryResolver(h.assets),
-        creator: lp.creatorFromProfile(profile, { appVersion }), appVersion, engineVersion: ENGINE_VERSION,
-        ...(designSystem ? { designSystem } : {}),
-      });
-      await host.export.file(blob, { filename });
-      if (skipped) announce(skipped === 1 ? t('1 file could not be packed and was left out') : t('{n} files could not be packed and were left out', { n: skipped }));
-      return { zipName: filename };
-    });
   }
 
   // ── Blueprints, formerly "project templates" (plans/133 WP-11a; renamed by

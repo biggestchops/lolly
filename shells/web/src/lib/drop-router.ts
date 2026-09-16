@@ -55,6 +55,7 @@ import { deepLinkToHash } from './deep-link.ts';
 import { tauriInvoke } from './nearby-boot.ts';
 import type { PickerHost } from '../views/picker.ts';
 import type { BeamPackHost } from './beam-pack.ts';
+import type { FolderHost } from '../folders.ts';
 import type { Unzipped } from 'fflate';
 import type { LollyPreview, LollySessionPreview } from './lolly-intake.ts';
 import type { LollyFileContents } from './lolly-pack.ts';
@@ -989,6 +990,11 @@ export async function openLollyFile(
 // Backwards-compatible private spelling for the existing drop/open call sites.
 const importLollyDrop = openLollyFile;
 
+/** The web host as a project file arrives on it: the picker surface, plus the folder
+ *  store's profile writes and the pack reader's asset rows. The web host carries all
+ *  three, so the one downcast in openLollyProject names exactly what it reads. */
+type ProjectIntakeHost = PickerHost & FolderHost & BeamPackHost;
+
 /**
  * Land a project file: its assets and sessions, then its folder tree in Projects, and
  * open the folder it brought. A session whose tool is not installed here is still saved;
@@ -997,11 +1003,12 @@ const importLollyDrop = openLollyFile;
 async function openLollyProject(contents: LollyFileContents, host: PickerHost, lp: typeof import('./lolly-pack.ts')): Promise<void> {
   const project = contents.project!;
   const { createFolderStore } = await import('../folders.ts');
-  const store = createFolderStore(host as unknown as Parameters<typeof createFolderStore>[0]);
+  const intake = host as ProjectIntakeHost;
+  const store = createFolderStore(intake);
   announce(contents.manifest.counts.assets
     ? t('Importing {n} files…', { n: contents.manifest.counts.assets })
     : tRaw('Adding {name} to your projects…', { name: project.name }));
-  const res = await lp.ingestLollyFile(contents, host as unknown as BeamPackHost, {
+  const res = await lp.ingestLollyFile(contents, intake, {
     onProgress: (progress) => announce(progress.phase === 'assets'
       ? t('Importing file {current} of {total}…', { current: progress.current, total: progress.total })
       : tRaw('Saving session {current} of {total}…', { current: progress.current, total: progress.total })),

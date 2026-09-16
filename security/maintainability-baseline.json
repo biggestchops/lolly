@@ -21,17 +21,17 @@
   ],
   "modules": {
     "shells/web/src/bridge/export-svg-walker.ts": {
-      "lines": 1709,
+      "lines": 1711,
       "largestFunctionLines": 1875,
       "importFanIn": 1,
       "importFanOut": 16,
       "typeEscapes": 19
     },
     "shells/web/src/bridge/export.ts": {
-      "lines": 4653,
+      "lines": 4589,
       "largestFunctionLines": 647,
       "importFanIn": 26,
-      "importFanOut": 47,
+      "importFanOut": 48,
       "typeEscapes": 60
     },
     "shells/web/src/bridge/sequence-render.ts": {
@@ -70,18 +70,18 @@
       "typeEscapes": 8
     },
     "shells/web/src/views/picker.ts": {
-      "lines": 2608,
-      "largestFunctionLines": 2182,
+      "lines": 2600,
+      "largestFunctionLines": 2169,
       "importFanIn": 27,
-      "importFanOut": 52,
+      "importFanOut": 53,
       "typeEscapes": 3
     },
     "shells/web/src/views/projects.ts": {
-      "lines": 2328,
-      "largestFunctionLines": 2995,
+      "lines": 2267,
+      "largestFunctionLines": 2925,
       "importFanIn": 1,
-      "importFanOut": 49,
-      "typeEscapes": 9
+      "importFanOut": 47,
+      "typeEscapes": 8
     },
     "shells/web/src/views/tool-inputs.ts": {
       "lines": 2900,
@@ -383,7 +383,7 @@
     "shells/web/src/views/profile/rows.ts": 1,
     "shells/web/src/views/profile/shared.ts": 1,
     "shells/web/src/views/profile/storage.ts": 9,
-    "shells/web/src/views/projects.ts": 9,
+    "shells/web/src/views/projects.ts": 8,
     "shells/web/src/views/record-control.ts": 1,
     "shells/web/src/views/screen-capture-control.ts": 1,
     "shells/web/src/views/sequence-clock.ts": 5,

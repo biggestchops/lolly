@@ -63,7 +63,7 @@ import { libCategory, LIB_GROUPS, loadAssetCategories, categoryLabel } from '../
 import type { LibGroup } from '../lib/asset-category.ts';
 import { categoryGlyph } from '../lib/category-icons.ts';
 import { icon } from '../lib/icons.ts';
-import { fetchImageUrlAsFile } from '../lib/add-via-url.ts';
+import { createUrlEntry } from '../lib/add-via-url-entry.ts';
 import { isChromium } from '../capabilities.ts';
 import { loadFavouriteAssets, loadHiddenAssets, assetBaseId } from '../lib/asset-favourites.ts';
 import { matchesType as pickerMatchesType, type TypeFilter as PickerTypeFilter } from './catalog-filter.ts';
@@ -1416,12 +1416,27 @@ async function render(
     });
   }
 
+  // "Add from URL": reveal the URL-entry card (reuses the toolcard takeover). The same
+  // entry routes a URL typed into the search box (lib/add-via-url-entry.ts); a fetched
+  // image takes the upload ingest (storeUserUpload) and is picked or collected.
+  const urlEntry = createUrlEntry<ToolUrlDescription>({
+    takeoverEl: toolcardHost,
+    showTakeover,
+    dismissTakeover,
+    describeUrl: allowToolUrl ? (url) => host.compose._describeUrl(url).catch(() => null) : null,
+    showToolCard: (desc, url) => showToolCard(desc, url, { editUrl: url }),
+    useImage: async (file) => {
+      const ref = await storeUserUpload(host, file, { sourceHint: 'url' });
+      if (collect) { dismissTakeover(); collectToast(await collect.onAsset(ref)); return; }
+      close(ref);
+    },
+    showFallback: showUrlFallback,
+  });
+  root.querySelector('.asset-picker-addurl')?.addEventListener('click', () => urlEntry.showCard());
+
   // "Take a photo": open a live webcam preview, capture one frame, and store it as an
   // ordinary raster user asset (same path + AssetRef as an upload). Camera teardown is
   // handled inside openWebcamCapture so no track outlives the dialog.
-  // "Add from URL": reveal the URL-entry card (reuses the toolcard takeover).
-  root.querySelector('.asset-picker-addurl')?.addEventListener('click', () => showUrlEntryCard());
-
   root.querySelector('.asset-picker-webcam')?.addEventListener('click', async () => {
     const ref = await openWebcamCapture(file => storeUserUpload(host, file), host.log);
     if (!ref) return;
@@ -2177,25 +2192,6 @@ async function render(
     renderPreview();
   }
 
-  // A pasted URL that points STRAIGHT AT AN IMAGE FILE (…/logo.png, …/photo.svg,
-  // a data: URI) becomes the asset itself - fetched, ingested through
-  // storeUserUpload (same validation/provenance as an upload), and picked
-  // (Andy, 2026-08-28: asset inputs accept URLs, not only files). The reach is
-  // lib/add-via-url.ts's: a data:/same-origin URL and the Tauri shells fetch
-  // directly; the deployed web PWA, whose CSP refuses arbitrary origins, routes
-  // it through the app's own same-origin image proxy (/api/fetch-image). Any
-  // failure (not an image, a blocked host, a refusal) returns false so the
-  // page-capture / can't-open fallback keeps its turn.
-  async function tryDirectUrlAsset(url: string): Promise<boolean> {
-    try {
-      const file = await fetchImageUrlAsFile(url);
-      const ref = await storeUserUpload(host, file, { sourceHint: 'url' });
-      if (collect) { dismissTakeover(); collectToast(await collect.onAsset(ref)); return true; }
-      close(ref);
-      return true;
-    } catch { return false; }
-  }
-
   // A pasted https URL that ISN'T a Lolly link. Where the shell can capture pages
   // (extension / Tauri) and a raster screenshot would serve this slot, offer to
   // screenshot it; on a Chromium browser WITHOUT capture, point at the extension
@@ -2257,50 +2253,6 @@ async function render(
         errEl.hidden = false;
       }
     });
-  }
-
-  // Route a URL the user pasted or typed: a Lolly tool link opens the render
-  // card; a direct image (or a remote image proxied through /api/fetch-image on
-  // the web) becomes the asset; anything else offers the screenshot-capture
-  // fallback. Shared by the search box and the footer "Add from URL" button;
-  // detectSeq drops a stale async detection when a newer entry supersedes it.
-  let detectSeq = 0;
-  async function handleUrlEntry(raw: string): Promise<void> {
-    const url = raw.trim();
-    if (!url) return;
-    const seq = ++detectSeq;
-    showTakeover(`<div class="asset-picker-loading">${t('Checking link…')}</div>`);
-    const desc = allowToolUrl ? await host.compose._describeUrl(url).catch(() => null) : null;
-    if (seq !== detectSeq) return;                    // superseded by a newer entry
-    if (desc) { showToolCard(desc, url, { editUrl: url }); return; }
-    if (await tryDirectUrlAsset(url)) return;          // a direct / proxied image → stored + picked
-    if (seq !== detectSeq) return;                    // the fetch attempt took a while - re-check
-    showUrlFallback(url);
-  }
-
-  // The footer "Add from URL" affordance: reveal-on-click, so it costs no space
-  // until asked for. Reuses the toolcard takeover chrome (no new layout), the
-  // back arrow / Escape close it, Enter or Add submits through handleUrlEntry.
-  function showUrlEntryCard(): void {
-    showTakeover(`
-      <div class="asset-picker-toolcard">
-        <div class="asset-picker-toolcard-head">
-          <button type="button" class="asset-picker-toolcard-back" aria-label="${escapeHtml(t('Back to list'))}">←</button>
-          ${icon('link', { size: 16 })}
-          <span>${t('Add an image from a web address')}</span>
-        </div>
-        <input type="url" class="asset-picker-urlinput field-input" inputmode="url" autocomplete="off" spellcheck="false"
-          placeholder="${escapeHtml(t('Paste an image URL or a Lolly link…'))}" aria-label="${escapeHtml(t('Image or Lolly link'))}" />
-        <div class="asset-picker-toolcard-actions">
-          <button type="button" class="tc-use url-go">${t('Add')}</button>
-        </div>
-      </div>`);
-    const input = toolcardHost.querySelector<HTMLInputElement>('.asset-picker-urlinput');
-    toolcardHost.querySelector('.asset-picker-toolcard-back')?.addEventListener('click', dismissTakeover);
-    const submit = (): void => { const v = input?.value.trim(); if (v) void handleUrlEntry(v); };
-    toolcardHost.querySelector('.url-go')?.addEventListener('click', submit);
-    input?.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); submit(); } });
-    input?.focus();
   }
 
   // Open a saved single-tool session as an image: reconstruct its canonical embed
@@ -2486,11 +2438,11 @@ async function render(
       userTouched = true; // the user is driving now - don't auto-switch the pane out
       const raw = searchInput.value.trim();
       if (allowToolUrl && /^https?:\/\//i.test(raw)) {
-        // detectSeq (shared with the footer "Add from URL" card) drops a stale run.
-        await handleUrlEntry(raw);
+        // The URL entry (shared with the footer "Add from URL" card) drops a stale run.
+        await urlEntry.handle(raw);
         return;
       }
-      detectSeq++; // invalidate any in-flight detection now that it's not a URL
+      urlEntry.invalidate(); // invalidate any in-flight detection now that it's not a URL
       const q = raw.toLowerCase();
       // Resuming typing after a paste/embed takeover returns to the active pane - 
       // without stealing focus out of the search field (so don't go via setTab).

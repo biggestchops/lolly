@@ -31,11 +31,15 @@ export class AddViaUrlError extends Error {
   constructor(message: string) { super(message); this.name = 'AddViaUrlError'; }
 }
 
+/** The window as the Tauri shells extend it: their runtime marker is a global that a
+ *  browser never defines. */
+type TauriWindow = Window & { __TAURI_INTERNALS__?: unknown };
+
 /** Tauri (no CSP) or a localhost dev build (no CSP headers) can fetch any origin
  *  directly; a deployed web PWA cannot and must use the proxy. */
 function canFetchAnyOrigin(): boolean {
   try {
-    if ((window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__) return true;
+    if ((window as TauriWindow).__TAURI_INTERNALS__) return true;
     const h = location.hostname;
     return h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || h === '';
   } catch { return false; }
