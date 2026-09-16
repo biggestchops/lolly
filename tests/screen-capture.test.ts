@@ -78,7 +78,7 @@ test('the sensor capabilities still validate (screen is additive, not a replacem
 
 // ─── version ─────────────────────────────────────────────────────────────────
 
-test('ENGINE_VERSION is 1.205.0', () => {
+test('ENGINE_VERSION is 1.206.0', () => {
   // A literal pin: the screencap surface shipped at 1.54, and tools declare
   // ^1.54.0 to require it. session-record only checks the stamp equals whatever
   // ENGINE_VERSION happens to be (tautological) - this catches an errant bump.
@@ -490,7 +490,8 @@ test('ENGINE_VERSION is 1.205.0', () => {
   //          export; source provenance is additive and capture stays unchanged.
   // 1.204.0: studio collections, surface finishes and framing are additive; capture is unchanged.
   // 1.205.0: studio arrangements (several objects in one scene) are additive; capture is unchanged.
-  assert.equal(ENGINE_VERSION, '1.205.0');
+  // 1.206.0: the studio glow halo (materials.glow) is additive; capture is unchanged.
+  assert.equal(ENGINE_VERSION, '1.206.0');
 });
 
 // ─── loadTool: a ^1.54.0 tool loads against this engine ───────────────────────

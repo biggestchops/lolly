@@ -6,6 +6,10 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.206.0
+
+- Add a glow halo: a bright-pass and blur in the capture, added at output with `materials.glow`, drawn only when a self-lit finish is in use; a cutout keeps the halo as alpha.
+
 ## 1.205.0
 
 - Add 3D studio arrangements: several SVG, GLB, STL or sample objects photographed in one scene, each with a stable id, pose, ground contact, visibility and material slot bindings.
@@ -14,7 +18,6 @@ Moved verbatim from the comment block that used to live in `src/index.ts`.
 - Add saved key, fill and rim light positions to preset rigs; `studio3d-lights.ts` orbits a light about the subject and routes a moved light to its rig's field. The web shell's Move lights mode drags handles in the preview only.
 - The web export frame clock passes the export's pixel size as an additive third argument so a canvas tool can resample; the studio renders at that size within its capture limits.
 - Add camera paths: keys captured from the live view, sampled deterministically over the loop with per-leg easing, a flowing spline or constant speed, and an optional closed loop (`studio3d-camera-path.ts`).
-- Add a glow halo: a bright-pass and blur in the capture, added at output with `materials.glow`, drawn only when a self-lit finish is in use; a cutout keeps the halo as alpha.
 - Add six generated environments (photo studio, white gallery, warehouse, main stage, desert chrome, synthwave chrome): painted panoramas plus bright light panels prefiltered on device, tinted by the brand colours, and showable crisp behind a scene image at zero blur.
 - Add finishes: chrome, clay, velvet (sheen), glow and neon (emissive), glass and frosted (transmission), pearl and iridescent; `studioFinish` returns the full physical description and a material override may name a finish. Transparent outputs show glass as solid crystal with a note.
 - Video and GIF frames take their own sample count (`clipSamples`, from `videoSamples`, default 16): an eight-second backdrop export fell from 50 s to 19 s on an M4 at the same 1280 px, 24 fps.
