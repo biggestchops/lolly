@@ -166,7 +166,11 @@ fn validate_method(raw: &str) -> Result<Method, String> {
             | Method::PATCH
             | Method::DELETE
             | Method::OPTIONS
-    ) {
+    ) || matches!(method.as_str(), "MKCOL" | "PROPFIND")
+    {
+        // MKCOL and PROPFIND are the two WebDAV methods a personal Nextcloud or
+        // WebDAV connection needs: create its folder and test the sign-in. The
+        // rest of that traffic is GET, HEAD and PUT.
         Ok(method)
     } else {
         Err("The request method is not allowed.".into())
@@ -346,5 +350,23 @@ mod tests {
         assert!(validate_url("https://example.com/path").is_ok());
         assert!(validate_headers(vec![("Host".into(), "elsewhere.test".into())]).is_err());
         assert!(validate_headers(vec![("authorization".into(), "Bearer test".into())]).is_ok());
+    }
+
+    #[test]
+    fn method_boundary_allows_the_webdav_pair_and_nothing_else_new() {
+        for raw in ["GET", "HEAD", "PUT", "MKCOL", "PROPFIND"] {
+            assert!(validate_method(raw).is_ok(), "{raw}");
+        }
+        for raw in [
+            "TRACE",
+            "CONNECT",
+            "PROPPATCH",
+            "MOVE",
+            "COPY",
+            "LOCK",
+            "bad method",
+        ] {
+            assert!(validate_method(raw).is_err(), "{raw}");
+        }
     }
 }

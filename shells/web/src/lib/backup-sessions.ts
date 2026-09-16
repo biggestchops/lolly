@@ -10,10 +10,13 @@ export interface BackupState {
   list(): Promise<readonly SessionRow[]>;
   load(slot: string): Promise<unknown>;
   save(slot: string, data: unknown, thumb?: string | null): Promise<unknown>;
+  /** Needed only by a replace import (device sync), which removes sessions the
+   *  applied copy no longer holds. */
+  delete?(slot: string): Promise<unknown>;
 }
 export interface BackupHistoryMode { mode?: 'manual' | 'sync' }
 
-export async function packBackupSessions(state: BackupState, entries: Record<string, BundleEntry>, options: BackupHistoryMode): Promise<{ sessions: number; revisions?: number; recoveryDrafts?: number }> {
+export async function packBackupSessions(state: BackupState, entries: Record<string, BundleEntry>, options: BackupHistoryMode): Promise<{ sessions: number; slots: string[]; revisions?: number; recoveryDrafts?: number }> {
   const history = options.mode !== 'sync' && state.history ? await state.history.backup.export() : null;
   if (history) {
     const bytes = strToU8(JSON.stringify(history));
@@ -31,7 +34,7 @@ export async function packBackupSessions(state: BackupState, entries: Record<str
       label: row.label ?? null, thumb: row.thumb ?? null, updatedAt: row.updatedAt ?? null, data });
   }
   entries['sessions.json'] = strToU8(JSON.stringify(sessions, null, 2));
-  return { sessions: sessions.length, ...(history ? { revisions: history.revisions.length, recoveryDrafts: history.recoveries.length } : {}) };
+  return { sessions: sessions.length, slots: sessions.map(row => row.slot), ...(history ? { revisions: history.revisions.length, recoveryDrafts: history.recoveries.length } : {}) };
 }
 
 /** Called before profile/assets/preferences writes. History validates the complete

@@ -25,8 +25,10 @@ import {
   getConnection, saveConnection, removeConnection, hasConnection,
 } from './provider-connections.ts';
 import type { SendTarget } from './send-target.ts';
-import type { SyncRemote, SnapshotMeta } from './sync-remote.ts';
-import { metaFromHeaders } from './sync-remote.ts';
+import type { SyncRemote, SnapshotMeta, PutOpts } from './sync-remote.ts';
+import { metaFromHeaders, preconditionHeaders, SyncConflictError } from './sync-remote.ts';
+import { providerFetch } from './provider-auth.ts';
+import { isTauriShell } from './instance-choice.ts';
 
 const KIND = 's3';
 
@@ -155,7 +157,7 @@ export async function disconnectS3(): Promise<void> {
 
 /** A signed HEAD on a key that should not exist: 404 = credentials + CORS both
  *  work; 403 = bad keys or clock; a thrown TypeError = CORS/CSP in the way. */
-export async function testS3(config: S3Config, fetchFn: typeof fetch = fetch): Promise<{ ok: boolean; note: string }> {
+export async function testS3(config: S3Config, fetchFn: typeof fetch = providerFetch): Promise<{ ok: boolean; note: string }> {
   const probe = `${config.prefix ?? ''}.lolly-connection-test-${crypto.getRandomValues(new Uint32Array(1))[0]}`;
   const url = objectUrl(config, probe);
   try {
@@ -186,7 +188,7 @@ export function s3SendTarget(): SendTarget {
       const headers = await sigV4Headers(cfg, 'PUT', url, await sha256Hex(bytes), mime || 'application/octet-stream');
       let res: Response;
       try {
-        res = await fetch(url.toString(), { method: 'PUT', headers, body: bytes as unknown as BodyInit });
+        res = await providerFetch(url.toString(), { method: 'PUT', headers, body: bytes as unknown as BodyInit });
       } catch {
         throw new Error(t('Could not reach the bucket - its CORS config (and this deploy\'s security policy) must allow this origin'));
       }
@@ -221,19 +223,25 @@ const s3Meta = (res: Response, fallbackSize: number): SnapshotMeta => metaFromHe
 /** An S3-backed SyncRemote over the user's connected bucket. `objectKey` (under the
  *  bucket prefix) defaults to the device-sync snapshot; the collab rendezvous
  *  (plans/138 Tier C) points it at other keys to read/write signalling blobs.
- *  `fetchFn` is injectable for tests; production uses the global fetch. */
-export function s3SyncRemote(fetchFn: typeof fetch = fetch, objectKey: string = SYNC_KEY): SyncRemote {
+ *  `fetchFn` is injectable for tests; production uses providerFetch, which is the
+ *  browser fetch on the web and the native request command in the Tauri apps (so
+ *  the apps need no bucket CORS). */
+export function s3SyncRemote(fetchFn: typeof fetch = providerFetch, objectKey: string = SYNC_KEY): SyncRemote {
   const requireCfg = async (): Promise<{ cfg: S3Config; url: URL }> => {
     const cfg = await s3Config();
     if (!cfg) throw new Error(t('Set up your bucket in Profile first'));
     return { cfg, url: objectUrl(cfg, `${cfg.prefix ?? ''}${objectKey}`) };
   };
   const emptyHash = (): Promise<string> => sha256Hex(new Uint8Array(0));
+  const unreachable = t('Could not reach the bucket - its CORS config (and this deploy\'s security policy) must allow this origin');
+  const request = async (url: URL, init: RequestInit): Promise<Response> => {
+    try { return await fetchFn(url.toString(), init); } catch { throw new Error(unreachable); }
+  };
 
   const head = async (): Promise<SnapshotMeta | null> => {
     const { cfg, url } = await requireCfg();
     const headers = await sigV4Headers(cfg, 'HEAD', url, await emptyHash(), null);
-    const res = await fetchFn(url.toString(), { method: 'HEAD', headers });
+    const res = await request(url, { method: 'HEAD', headers });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(t('The bucket answered {status}', { status: res.status }));
     return s3Meta(res, 0);
@@ -242,21 +250,36 @@ export function s3SyncRemote(fetchFn: typeof fetch = fetch, objectKey: string = 
   const get = async (): Promise<{ bytes: Uint8Array; meta: SnapshotMeta } | null> => {
     const { cfg, url } = await requireCfg();
     const headers = await sigV4Headers(cfg, 'GET', url, await emptyHash(), null);
-    const res = await fetchFn(url.toString(), { method: 'GET', headers });
+    const res = await request(url, { method: 'GET', headers });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(t('The bucket answered {status}', { status: res.status }));
     const bytes = new Uint8Array(await res.arrayBuffer());
     return { bytes, meta: s3Meta(res, bytes.length) };
   };
 
-  const put = async (bytes: Uint8Array): Promise<SnapshotMeta> => {
+  const put = async (bytes: Uint8Array, opts?: PutOpts): Promise<SnapshotMeta> => {
     const { cfg, url } = await requireCfg();
     const headers = await sigV4Headers(cfg, 'PUT', url, await sha256Hex(bytes), 'application/octet-stream');
+    // The precondition headers stay out of the signature: SigV4 only requires the
+    // x-amz-* headers to be signed.
+    const conditional = preconditionHeaders(opts);
+    const send = (extra: Record<string, string>): Promise<Response> =>
+      fetchFn(url.toString(), { method: 'PUT', headers: { ...headers, ...extra }, body: bytes as unknown as BodyInit });
     let res: Response;
     try {
-      res = await fetchFn(url.toString(), { method: 'PUT', headers, body: bytes as unknown as BodyInit });
+      res = await send(conditional);
     } catch {
-      throw new Error(t('Could not reach the bucket - its CORS config (and this deploy\'s security policy) must allow this origin'));
+      // In a browser, a bucket whose CORS rule predates sync does not allow the
+      // If-Match header, and the preflight fails before any request is made. Try
+      // once more without it: the engine already compared revisions just before.
+      if (!Object.keys(conditional).length || isTauriShell()) throw new Error(unreachable);
+      try { res = await send({}); } catch { throw new Error(unreachable); }
+    }
+    // 412: the stored copy changed. 409: S3's answer when two conditional writes race.
+    // 404 with If-Match: the object this device last saw was deleted since.
+    if (Object.keys(conditional).length
+      && (res.status === 412 || res.status === 409 || (res.status === 404 && 'If-Match' in conditional))) {
+      throw new SyncConflictError();
     }
     if (!res.ok) throw new Error(t('Bucket upload failed ({status})', { status: res.status }));
     // Some buckets don't CORS-expose ETag on the PUT response; a follow-up HEAD

@@ -67,6 +67,9 @@ interface BackupHost {
   assets: {
     _exportUserAssets(): Promise<readonly BackupAssetRecord[]>;
     _importUserAsset(record: Record<string, unknown>): Promise<unknown>;
+    /** Needed only by a replace import (device sync). */
+    _listUserAssets?(): Promise<ReadonlyArray<{ id: string }>>;
+    _deleteUserAsset?(id: string): Promise<unknown>;
   };
   log?: (level: string, message: string, meta?: unknown) => void;
 }
@@ -75,6 +78,42 @@ interface BackupHost {
 interface BackupStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  /** Needed only by a replace import (device sync). */
+  removeItem?(key: string): void;
+}
+
+/**
+ * The ids a bundle holds, per kind. Device sync keeps the ids of the last copy it
+ * pushed or applied (plans/138 Tier D, WP-S2), so a later replace import removes
+ * only what another device deleted, never something made here since.
+ */
+export interface BackupIds {
+  sessions: string[];
+  assets: string[];
+  designSystems: string[];
+  prefs: string[];
+}
+
+export const EMPTY_BACKUP_IDS: BackupIds = { sessions: [], assets: [], designSystems: [], prefs: [] };
+
+/**
+ * What a replace import may remove from this device after writing the bundle:
+ * `{ removable }` removes items listed there that the bundle does not hold (the
+ * sync case); 'all' removes every item the bundle does not hold (restoring an
+ * earlier copy, where a copy of this device was saved first).
+ */
+export type ReplaceScope = { removable: BackupIds } | 'all';
+
+export interface ImportOptions extends BackupHistoryMode {
+  replace?: ReplaceScope;
+}
+
+/** Byte counts of an export, checked against the restore limits before a sync upload. */
+export interface BackupSize {
+  /** Sum of every part's bytes before zipping. */
+  total: number;
+  /** The biggest single part. */
+  largest: { name: string; bytes: number };
 }
 
 interface BackupSummary {
@@ -95,6 +134,11 @@ interface ImportSummary extends BackupSummary {
    *  from `skipped` (parts a newer writer produced that this build can't read). */
   failedAssets: number;
   failedHistory?: number;
+  /** The ids the imported bundle holds. */
+  ids?: BackupIds;
+  /** Items a replace import removed, and removals that failed. */
+  removed?: number;
+  failedRemovals?: number;
 }
 
 interface BackupManifest {
@@ -119,7 +163,7 @@ interface BackupManifest {
 // restore should never balloon a small hostile zip into gigabytes of memory.
 // Real backups are images stored uncompressed, far under these; they're far
 // LARGER than lib/zip.ts's default (brand-pack-sized) caps, hence explicit.
-const MAX_RESTORE_ENTRY_BYTES = 512 * 1024 * 1024;
+export const MAX_RESTORE_ENTRY_BYTES = 512 * 1024 * 1024;
 // Exported so a fetched-from-a-URL backup (components/instance-sheet.ts) can cap
 // the COMPRESSED download itself at the same ceiling, before the per-entry/total
 // checks on the inflated contents ever get a chance to run.
@@ -271,9 +315,10 @@ function backupFilename(profile: Record<string, unknown>, storage: BackupStorage
 export async function exportBackup(
   { host, storage }: { host: BackupHost; storage: BackupStorage },
   options: BackupHistoryMode = {},
-): Promise<{ blob: Blob; filename: string; summary: BackupSummary }> {
+): Promise<{ blob: Blob; filename: string; summary: BackupSummary; ids: BackupIds; size: BackupSize }> {
   const entries: Record<string, BundleEntry> = {};
-  const sessionSummary = await packBackupSessions(host.state, entries, options);
+  const { slots, ...sessionSummary } = await packBackupSessions(host.state, entries, options);
+  const ids: BackupIds = { sessions: slots, assets: [], designSystems: [], prefs: [] };
   // Read/history-budget first: a large result library must fail before we copy
   // hundreds of unrelated asset blobs into the ZIP's in-memory entry map.
   const history = host.fileHistory ? await host.fileHistory.export() : null;
@@ -295,6 +340,7 @@ export async function exportBackup(
     if (registry) {
       const [records, activeId] = await Promise.all([registry.list(), registry.activeId()]);
       const own = records.filter(r => r.source.kind !== 'shipped');
+      ids.designSystems = own.map(r => r.id);
       if (own.length) entries['design-systems.json'] = strToU8(JSON.stringify({ active: activeId, records: own }, null, 2));
     }
   } catch { /* no registry on this host - the assets still carry the material */ }
@@ -308,6 +354,7 @@ export async function exportBackup(
     assetMeta.push(await packBackupAsset(userAssets[i]!, `assets/blobs/${i}`, entries));
   }
   entries['assets.json'] = strToU8(JSON.stringify(assetMeta, null, 2));
+  ids.assets = userAssets.map(r => String(r.id ?? '')).filter(Boolean);
 
   // Preferences / local metrics - only the user-owned keys.
   const prefs: Record<string, string> = {};
@@ -316,6 +363,7 @@ export async function exportBackup(
     if (v != null) prefs[key] = v;
   }
   entries['prefs.json'] = strToU8(JSON.stringify(prefs, null, 2));
+  ids.prefs = Object.keys(prefs);
 
   const summary: BackupSummary = {
     profile: hasProfile,
@@ -353,9 +401,15 @@ export async function exportBackup(
   // and recognised as a known part on import so it never counts as `skipped`.
   entries[README_NAME] = strToU8(backupReadme({ summary, profile, filename }));
 
+  const size: BackupSize = { total: 0, largest: { name: '', bytes: 0 } };
+  for (const [name, entry] of Object.entries(entries)) {
+    const bytes = (Array.isArray(entry) ? entry[0] : entry).byteLength;
+    size.total += bytes;
+    if (bytes > size.largest.bytes) size.largest = { name, bytes };
+  }
   const zipped = await zipAsync(entries); // off-thread in the browser; sync fallback elsewhere
   const blob = new Blob([zipped as BlobPart], { type: 'application/zip' });
-  return { blob, filename, summary };
+  return { blob, filename, summary, ids, size };
 }
 
 /**
@@ -379,7 +433,7 @@ export async function exportBackup(
 export async function importBackup(
   { host, storage }: { host: BackupHost; storage: BackupStorage },
   bytes: ArrayBuffer | Uint8Array,
-  options: BackupHistoryMode = {},
+  options: ImportOptions = {},
 ): Promise<ImportSummary> {
   const files = await unzipBundle(bytes, {
     maxEntryBytes: MAX_RESTORE_ENTRY_BYTES,
@@ -482,5 +536,76 @@ export async function importBackup(
   // to restore. Reported (not hidden) so the UI can be honest: "imported X, skipped Y".
   summary.skipped = Object.keys(files).filter(p => !isKnownPart(p, Boolean(host.fileHistory), options.mode !== 'sync' && Boolean(host.state.history))).length;
 
+  const sessionsPart: unknown = readJson(files, 'sessions.json');
+  const bundleIds: BackupIds = {
+    sessions: Array.isArray(sessionsPart) ? sessionsPart.map(row => (row as { slot?: unknown })?.slot).filter((s): s is string => typeof s === 'string') : [],
+    assets: assetRecords.map(r => String(r.id ?? '')).filter(Boolean),
+    designSystems: dsPart && Array.isArray(dsPart.records) ? dsPart.records.map((r: { id?: unknown }) => r?.id).filter((s: unknown): s is string => typeof s === 'string') : [],
+    prefs: PREF_KEYS.filter(key => prefs[key] != null),
+  };
+  summary.ids = bundleIds;
+
+  // A replace import removes what the bundle no longer holds, but only after every
+  // write above succeeded: a partial restore must leave this device as it was
+  // apart from the additions, so nothing is lost when the person retries.
+  if (options.replace && !summary.failedAssets && !summary.failedHistory && !summary.skipped) {
+    Object.assign(summary, await removeAbsent({ host, storage }, bundleIds, options.replace, dsPart));
+  }
+
   return summary;
+}
+
+/** The replace half of importBackup: remove local items the bundle does not hold. */
+async function removeAbsent(
+  { host, storage }: { host: BackupHost; storage: BackupStorage },
+  bundle: BackupIds,
+  scope: ReplaceScope,
+  dsPart: { active?: unknown } | null | undefined,
+): Promise<{ removed: number; failedRemovals: number }> {
+  let removed = 0;
+  let failedRemovals = 0;
+  const keep = {
+    sessions: new Set(bundle.sessions), assets: new Set(bundle.assets),
+    designSystems: new Set(bundle.designSystems), prefs: new Set(bundle.prefs),
+  };
+  const allowed = scope === 'all' ? null : {
+    sessions: new Set(scope.removable.sessions), assets: new Set(scope.removable.assets),
+    designSystems: new Set(scope.removable.designSystems), prefs: new Set(scope.removable.prefs),
+  };
+  const mayRemove = (kind: keyof BackupIds, id: string): boolean =>
+    !keep[kind].has(id) && (allowed === null || allowed[kind].has(id));
+  const attempt = async (fn: () => Promise<unknown> | unknown): Promise<void> => {
+    try { await fn(); removed++; } catch (error) {
+      failedRemovals++;
+      host.log?.('warn', 'Could not remove an item the synced copy no longer holds', { error: String(error) });
+    }
+  };
+
+  if (host.state.delete) {
+    for (const row of await host.state.list()) {
+      if (mayRemove('sessions', row.slot)) await attempt(() => host.state.delete!(row.slot));
+    }
+  }
+  if (host.assets._listUserAssets && host.assets._deleteUserAsset) {
+    for (const ref of await host.assets._listUserAssets()) {
+      if (mayRemove('assets', ref.id)) await attempt(() => host.assets._deleteUserAsset!(ref.id));
+    }
+  }
+  const registry = (host as { designSystems?: { list(): Promise<Array<{ id: string; source: { kind: string } }>>; remove?(id: string): Promise<void>; setActive(id: string): Promise<void> } }).designSystems;
+  if (registry?.remove) {
+    const own = (await registry.list().catch(() => [])).filter(r => r.source.kind !== 'shipped');
+    for (const rec of own) {
+      if (mayRemove('designSystems', rec.id)) await attempt(() => registry.remove!(rec.id));
+    }
+    // In a replace, the applied copy's choice of active design system wins.
+    if (typeof dsPart?.active === 'string') {
+      try { await registry.setActive(dsPart.active); } catch { /* the pointer stays */ }
+    }
+  }
+  if (storage.removeItem) {
+    for (const key of PREF_KEYS) {
+      if (storage.getItem(key) != null && mayRemove('prefs', key)) await attempt(() => storage.removeItem!(key));
+    }
+  }
+  return { removed, failedRemovals };
 }

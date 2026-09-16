@@ -102,7 +102,7 @@ test('failed history imports are counted and legacy credential JSON restores as 
 
 test('partial history recovery does not advance the cloud revision or hide a retry', async () => {
   const remote = new MemoryRemote();
-  await pushSnapshot({ host: host(), storage }, remote);
+  await pushSnapshot({ host: host(), storage }, remote, { state: INITIAL_SYNC_STATE });
   const target = host();
   target.fileHistory.restore = async () => ({ assetVersions: 0, fileOperations: 0, failedHistory: 2 });
   await assert.rejects(pullAndApply({ host: target, storage }, remote), /only partly restored/);

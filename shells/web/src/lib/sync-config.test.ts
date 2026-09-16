@@ -24,7 +24,10 @@ const S3: S3Config = {
 test('config: defaults, merge, and the SyncState view', async () => {
   resetSyncConfigForTests();
   const def = await getSyncConfig();
-  assert.deepEqual(def, { enabled: false, providerKind: '', lastSyncedRev: null, lastSyncedAt: null });
+  assert.deepEqual(def, {
+    enabled: false, providerKind: '', lastSyncedRev: null, lastSyncedAt: null,
+    dirty: false, conflict: null, conflictCount: 0, lastError: null,
+  });
 
   await saveSyncConfig({ enabled: true, providerKind: 's3', passphrase: 'pw' });
   const one = await getSyncConfig();

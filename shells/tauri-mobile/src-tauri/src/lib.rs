@@ -208,6 +208,7 @@ fn mobile_take_open_file(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_lolly_auth::init())
         .manage(MobileEvents::default())
         // The website source for the Design System studio (plans/97 section 9)
         // was the first command of this shell's own, because it has to enforce
@@ -238,6 +239,28 @@ pub fn run() {
                         "file" => events.push_open_file(u),
                         _ => {}
                     }
+                }
+            }
+            // Tell the page when the app goes to the background or comes back, so
+            // device sync can push waiting changes while it still may (plans/138
+            // Tier D, WP-M2). A polled queue cannot do this: the page's timers stop
+            // with the app. Android sends these from onPause/onResume, iOS from
+            // applicationWillResignActive/DidBecomeActive. iOS may still stop the
+            // page a few seconds after it leaves the screen.
+            #[cfg(mobile)]
+            if let tauri::RunEvent::WindowEvent {
+                label,
+                event: window_event,
+                ..
+            } = &event
+            {
+                let name = match window_event {
+                    tauri::WindowEvent::Suspended => Some("lolly:app-suspended"),
+                    tauri::WindowEvent::Resumed => Some("lolly:app-resumed"),
+                    _ => None,
+                };
+                if let (Some(name), Some(webview)) = (name, app.get_webview_window(label)) {
+                    let _ = webview.eval(format!("window.dispatchEvent(new Event('{name}'))"));
                 }
             }
             #[cfg(not(any(target_os = "ios", target_os = "macos")))]

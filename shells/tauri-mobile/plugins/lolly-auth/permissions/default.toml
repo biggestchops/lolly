@@ -1,0 +1,7 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = """
+Allows the app to open the system sign-in sheet with `authenticate`.
+"""
+permissions = ["allow-authenticate"]

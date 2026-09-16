@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:7a939424-f327-49a1-87f2-35acd3fe9458",
+  "serialNumber": "urn:uuid:f4221af5-9397-4a1f-8345-7edf8e2499c3",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-15T20:21:22.659Z",
+    "timestamp": "2026-09-16T19:37:17.138Z",
     "tools": [
       {
         "vendor": "lolly",
@@ -13339,6 +13339,27 @@
         {
           "name": "lolly:source",
           "value": "shells/tauri-desktop/src-tauri/Cargo.lock"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:cargo/tauri-plugin-lolly-auth@0.1.0",
+      "name": "tauri-plugin-lolly-auth",
+      "version": "0.1.0",
+      "purl": "pkg:cargo/tauri-plugin-lolly-auth@0.1.0",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "lolly:source",
+          "value": "shells/tauri-mobile/src-tauri/Cargo.lock"
         }
       ]
     },

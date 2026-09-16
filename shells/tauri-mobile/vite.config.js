@@ -126,6 +126,10 @@ export default defineConfig({
   // worker build needs injectModelsBase too (top-level `define`/plugins are not
   // forwarded to worker bundles) or the speech workers 404 for /models/.
   worker: { format: 'es', plugins: () => [injectModelsBase(MODELS_HOST)] },
+  // Tells the shared web code it runs in the mobile app (isTauriMobileShell in
+  // shells/web/src/lib/instance-choice.ts), where some desktop-only paths, such as
+  // the loopback sign-in, cannot work.
+  define: { 'import.meta.env.VITE_LOLLY_APP_SHELL': JSON.stringify('tauri-mobile') },
   // The dev server pre-bundles deps with esbuild, whose default target rejects
   // harfbuzzjs's top-level await (text-to-path WASM). Without this the dev server
   // boots then crashes as soon as a module pulls in harfbuzz.

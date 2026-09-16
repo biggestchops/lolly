@@ -34,6 +34,35 @@ export interface SnapshotMeta {
   size: number;
 }
 
+export interface PutOpts {
+  /** See `SyncRemote.put`. */
+  ifRev?: string | null;
+}
+
+/** The stored copy changed since this device last read it, so a conditional
+ *  write was refused. The engine turns this into a conflict for the person to
+ *  settle; it is never retried on its own. */
+export class SyncConflictError extends Error {
+  constructor(message = 'Your synced data changed on another device.') {
+    super(message);
+    this.name = 'SyncConflictError';
+  }
+}
+
+/**
+ * HTTP precondition headers for a conditional write. A rev read from an ETag is
+ * sent back as `If-Match`; `null` becomes `If-None-Match: *`. A weak ETag or a
+ * rev that fell back to Last-Modified cannot be matched strongly, so it sends
+ * nothing and the engine's head check is the only guard.
+ */
+export function preconditionHeaders(opts?: PutOpts): Record<string, string> {
+  if (!opts || opts.ifRev === undefined) return {};
+  if (opts.ifRev === null) return { 'If-None-Match': '*' };
+  const rev = opts.ifRev;
+  if (!rev || rev.startsWith('W/') || /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} /.test(rev)) return {};
+  return { 'If-Match': `"${rev}"` };
+}
+
 export interface SyncRemote {
   /** A short id for this backend (the provider kind), for logs/UI. */
   readonly kind: string;
@@ -42,8 +71,14 @@ export interface SyncRemote {
   head(): Promise<SnapshotMeta | null>;
   /** Download the current snapshot + its meta, or null if none exists. */
   get(): Promise<{ bytes: Uint8Array; meta: SnapshotMeta } | null>;
-  /** Upload (overwrite) the snapshot; resolves to the new meta carrying the fresh rev. */
-  put(bytes: Uint8Array): Promise<SnapshotMeta>;
+  /** Upload the snapshot; resolves to the new meta carrying the fresh rev.
+   *  `opts.ifRev` makes the write conditional (plans/138 Tier D, WP-S1): a string
+   *  means "only if the stored rev is still this one", `null` means "only if
+   *  nothing is stored yet", and absent means an unconditional overwrite. A store
+   *  that can check the condition itself does so and throws `SyncConflictError`
+   *  when it fails; a store that cannot (Drive) compares a fresh read instead,
+   *  which leaves a short window. The engine's own head check runs first either way. */
+  put(bytes: Uint8Array, opts?: PutOpts): Promise<SnapshotMeta>;
   /** Whether this remote can operate WITHOUT an interactive sign-in right now.
    *  Credential remotes (S3, WebDAV) are always silent and omit this. OAuth remotes
    *  (Drive, Dropbox) return true only with a live/refreshable token - so the AUTO
@@ -91,7 +126,10 @@ export class MemoryRemote implements SyncRemote {
     return { bytes: this.bytes.slice(), meta: { ...this.meta } };
   }
 
-  async put(bytes: Uint8Array): Promise<SnapshotMeta> {
+  async put(bytes: Uint8Array, opts?: PutOpts): Promise<SnapshotMeta> {
+    if (opts && opts.ifRev !== undefined && opts.ifRev !== (this.meta?.rev ?? null)) {
+      throw new SyncConflictError();
+    }
     this.bytes = bytes.slice();
     this.meta = { rev: `r${++this.seq}`, updatedAt: this.now(), size: bytes.length };
     return { ...this.meta };

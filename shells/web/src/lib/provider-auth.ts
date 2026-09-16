@@ -25,7 +25,7 @@
 
 import { t } from '../i18n.ts';
 import { instanceFetch } from './instance.ts';
-import { isTauriShell } from './instance-choice.ts';
+import { isTauriShell, isTauriMobileShell } from './instance-choice.ts';
 
 /** Provider API fetch: plain fetch on the web (the provider must answer CORS,
  *  noted per driver), the CORS-free Tauri HTTP client on the desktop shells -
@@ -193,6 +193,10 @@ export interface LoopbackOptions {
   ports?: number[];
 }
 
+/** The sentence shown where a mobile app would need a browser sign-in. */
+export const MOBILE_SIGN_IN_UNAVAILABLE = (): string =>
+  t('Signing in to this service does not work in the mobile app yet. On this device, connect Nextcloud / WebDAV or an S3 bucket instead.');
+
 /**
  * The desktop authorize leg: bind the loopback port FIRST (the redirect URI
  * needs it), open the provider page in the system browser, then wait for the
@@ -202,6 +206,10 @@ export interface LoopbackOptions {
 export async function loopbackVia(
   transport?: LoopbackTransport, opts: LoopbackOptions = {},
 ): Promise<AuthorizeVia> {
+  // The mobile apps have no loopback listener, and a phone may suspend the app
+  // while the browser is open, so this leg cannot work there (plans/138 Tier D,
+  // H9). Fail with a readable sentence, not on a missing native command.
+  if (!transport && isTauriMobileShell()) throw new Error(MOBILE_SIGN_IN_UNAVAILABLE());
   const inv = transport ?? tauriTransport();
   // No list = the Rust side binds :0 exactly as before; a list makes it try
   // each in order and FAIL rather than fall back, because an unregistered port
@@ -213,6 +221,55 @@ export async function loopbackVia(
       await inv.invoke('oauth_open', { raw: url });
       const search = await inv.invoke<string>('oauth_wait', { port, timeoutMs: AUTH_TIMEOUT_MS });
       return { hash: '', search };
+    },
+  };
+}
+
+/** The callback scheme the mobile apps use with Dropbox and Microsoft: a
+ *  reverse domain the app controls, as RFC 8252 section 7.1 asks. It is the
+ *  iOS bundle id and the Android application id. */
+export const MOBILE_CALLBACK_SCHEME = 'tools.lolly.mobile';
+/** The redirect URI to register for the mobile apps (single slash, per RFC 8252). */
+export const MOBILE_REDIRECT_URI = `${MOBILE_CALLBACK_SCHEME}:/oauth2redirect`;
+
+export interface MobileViaOptions {
+  /** The provider's callback scheme; defaults to MOBILE_CALLBACK_SCHEME. Google's
+   *  iOS clients use their reversed client id instead. */
+  scheme?: string;
+  /** Defaults to `<scheme>:/oauth2redirect`. */
+  redirectUri?: string;
+  /** Do not share the browser's cookies with the sign-in sheet (iOS). */
+  ephemeral?: boolean;
+}
+
+/**
+ * The mobile authorize leg (plans/138 Tier D, WP-M1): the in-app lolly-auth
+ * plugin (shells/tauri-mobile/plugins/lolly-auth) opens the system sign-in
+ * sheet (ASWebAuthenticationSession on iOS, Auth Tab or a Custom Tab on
+ * Android) and returns the callback URL, which carries the code and state the
+ * shared grant code checks. PKCE and the token exchange stay in codeGrant.
+ * Known limit: if Android ends the app while the sheet is open, the sign-in
+ * is lost and the person starts it again.
+ */
+export function mobileVia(opts: MobileViaOptions = {}, transport?: LoopbackTransport): AuthorizeVia {
+  const scheme = opts.scheme ?? MOBILE_CALLBACK_SCHEME;
+  return {
+    redirectUri: opts.redirectUri ?? `${scheme}:/oauth2redirect`,
+    async run(url: string): Promise<OAuthReturn> {
+      const inv = transport ?? tauriTransport();
+      let res: { url?: unknown } | null;
+      try {
+        res = await inv.invoke<{ url?: unknown }>('plugin:lolly-auth|authenticate',
+          { url, callbackScheme: scheme, ephemeral: opts.ephemeral ?? false });
+      } catch (err) {
+        if (/cancel/i.test(String((err as Error)?.message ?? err))) throw new Error(t('Sign-in was cancelled.'));
+        throw err;
+      }
+      const back = typeof res?.url === 'string' ? res.url : '';
+      let parsed: URL;
+      try { parsed = new URL(back); } catch { throw new Error(t('The sign-in did not come back to Lolly.')); }
+      if (parsed.protocol !== `${scheme.toLowerCase()}:`) throw new Error(t('The sign-in did not come back to Lolly.'));
+      return { hash: parsed.hash, search: parsed.search };
     },
   };
 }

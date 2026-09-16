@@ -24,8 +24,10 @@ import {
   getConnection, saveConnection, removeConnection, hasConnection,
 } from './provider-connections.ts';
 import type { SendTarget } from './send-target.ts';
-import type { SyncRemote, SnapshotMeta } from './sync-remote.ts';
-import { metaFromHeaders } from './sync-remote.ts';
+import type { SyncRemote, SnapshotMeta, PutOpts } from './sync-remote.ts';
+import { metaFromHeaders, preconditionHeaders, SyncConflictError } from './sync-remote.ts';
+import { providerFetch } from './provider-auth.ts';
+import { isTauriShell } from './instance-choice.ts';
 
 const KIND = 'webdav';
 
@@ -68,7 +70,7 @@ export async function disconnectWebdav(): Promise<void> {
 }
 
 /** PROPFIND depth 0 on the target folder (root when none). */
-export async function testWebdav(cfg: WebdavConfig, fetchFn: typeof fetch = fetch): Promise<{ ok: boolean; note: string }> {
+export async function testWebdav(cfg: WebdavConfig, fetchFn: typeof fetch = providerFetch): Promise<{ ok: boolean; note: string }> {
   try {
     const res = await fetchFn(davUrl(cfg, cfg.folder ?? ''), {
       method: 'PROPFIND',
@@ -102,10 +104,10 @@ export function nextcloudSendTarget(): SendTarget {
       if (!cfg) throw new Error(t('Set up your server in Profile first'));
       const filename = name.toLowerCase().endsWith(`.${format}`) ? name : `${name}.${format}`;
       const path = cfg.folder ? `${cfg.folder}/${filename}` : filename;
-      await ensureFolder(cfg, fetch);
+      await ensureFolder(cfg, providerFetch);
       let res: Response;
       try {
-        res = await fetch(davUrl(cfg, path), {
+        res = await providerFetch(davUrl(cfg, path), {
           method: 'PUT',
           headers: { Authorization: basic(cfg), 'Content-Type': mime || 'application/octet-stream' },
           body: bytes as unknown as BodyInit,
@@ -147,8 +149,9 @@ function ancestorDirs(path: string): string[] {
 /** A WebDAV-backed SyncRemote over the user's connected server. `relPath` (under
  *  the user's chosen folder) defaults to the device-sync snapshot; the collab
  *  rendezvous (plans/138 Tier C) points it at signalling paths. `fetchFn` is
- *  injectable for tests; production uses the global fetch. */
-export function webdavSyncRemote(fetchFn: typeof fetch = fetch, relPath: string = SYNC_REL): SyncRemote {
+ *  injectable for tests; production uses providerFetch (the browser fetch on the
+ *  web, the native request command in the Tauri apps, which needs no CORS). */
+export function webdavSyncRemote(fetchFn: typeof fetch = providerFetch, relPath: string = SYNC_REL): SyncRemote {
   const requireCfg = async (): Promise<{ cfg: WebdavConfig; path: string }> => {
     const cfg = await config();
     if (!cfg) throw new Error(t('Set up your server in Profile first'));
@@ -177,21 +180,29 @@ export function webdavSyncRemote(fetchFn: typeof fetch = fetch, relPath: string 
     return { bytes, meta: metaFromHeaders(res.headers, bytes.length) };
   };
 
-  const put = async (bytes: Uint8Array): Promise<SnapshotMeta> => {
+  const put = async (bytes: Uint8Array, opts?: PutOpts): Promise<SnapshotMeta> => {
     const { cfg, path } = await requireCfg();
     // MKCOL each ancestor (201 created / 405 exists both fine; errors surface at PUT).
     for (const dir of ancestorDirs(path)) {
       try { await fetchFn(davUrl(cfg, dir), { method: 'MKCOL', headers: { Authorization: basic(cfg) } }); }
       catch { /* best-effort; the PUT below is the real check */ }
     }
+    const conditional = preconditionHeaders(opts);
+    const send = (extra: Record<string, string>): Promise<Response> => fetchFn(davUrl(cfg, path), {
+      method: 'PUT',
+      headers: { Authorization: basic(cfg), 'Content-Type': 'application/octet-stream', ...extra },
+      body: bytes as unknown as BodyInit,
+    });
     let res: Response;
     try {
-      res = await fetchFn(davUrl(cfg, path), {
-        method: 'PUT',
-        headers: { Authorization: basic(cfg), 'Content-Type': 'application/octet-stream' },
-        body: bytes as unknown as BodyInit,
-      });
-    } catch { throw new Error(reach); }
+      res = await send(conditional);
+    } catch {
+      // A server whose CORS rule does not allow If-Match fails the browser
+      // preflight. Try once more without it; the engine compared revisions just before.
+      if (!Object.keys(conditional).length || isTauriShell()) throw new Error(reach);
+      try { res = await send({}); } catch { throw new Error(reach); }
+    }
+    if (Object.keys(conditional).length && res.status === 412) throw new SyncConflictError();
     if (!res.ok) throw new Error(t('Server upload failed ({status})', { status: res.status }));
     // Some servers don't CORS-expose ETag on the PUT response; a follow-up HEAD
     // recovers the rev so another device's newer-detection stays correct.

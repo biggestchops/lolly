@@ -29,12 +29,16 @@
 import { t, tRaw } from '../i18n.ts';
 import { escape } from '../utils.ts';
 import {
-  driveAvailable, driveDesktopAvailable, connectDriveDesktop, disconnectDriveDesktop,
+  driveAvailable, connectDriveDesktop, disconnectDriveDesktop,
+  connectDriveWeb, disconnectDriveWeb, driveNativeAvailable,
 } from '../lib/google-drive.ts';
-import { isTauriShell } from '../lib/instance-choice.ts';
+import { BROWSER_SIGN_IN_KINDS, mobileSignInReady } from '../lib/mobile-sign-in.ts';
+import { MOBILE_REDIRECT_URI } from '../lib/provider-auth.ts';
+import { isTauriShell, isTauriMobileShell } from '../lib/instance-choice.ts';
 import { dropboxAvailable, connectDropbox, disconnectDropbox } from '../lib/dropbox-send.ts';
 import {
-  oneDriveAvailable, oneDriveDesktopAvailable, connectOneDrive, connectOneDriveDesktop, disconnectOneDrive,
+  oneDriveAvailable, oneDriveDesktopAvailable, oneDriveMobileAvailable, connectOneDrive, connectOneDriveDesktop,
+  disconnectOneDrive,
 } from '../lib/onedrive-send.ts';
 import { linkedInAvailable, connectLinkedIn, disconnectLinkedIn } from '../lib/linkedin-send.ts';
 import { connectS3, disconnectS3, testS3, type S3Config } from '../lib/s3-send.ts';
@@ -62,15 +66,23 @@ const OAUTH_ROWS: Array<{
   setup?: () => string;
 }> = [
   {
-    // Desktop only (plans/129 WP4): system-browser sign-in + refresh custody.
-    // On the web, Google Drive keeps its session-only implicit grant and shows
-    // the static row below instead.
+    // Desktop (plans/129 WP4): system-browser sign-in + refresh custody.
+    // Web (plans/138 Tier D, WP-P3): the session-only popup grant, plus a
+    // connection record so Drive can be the sync home, and a bring-your-own
+    // client id for a deploy that registered none. The web row always exists,
+    // like Dropbox's.
     kind: 'gdrive',
     label: () => t('Google Drive'),
-    scopesNote: () => t('Signs in through your own browser. Lolly can only see files it created.'),
-    available: () => isTauriShell() && driveDesktopAvailable(),
-    connect: connectDriveDesktop,
-    disconnect: disconnectDriveDesktop,
+    scopesNote: () => (isTauriShell()
+      ? t('Signs in through your own browser. Lolly can only see files it created.')
+      : t('Lolly can only see files it created. In the browser, the sign-in lasts for one visit, so automatic sync with Drive starts after you sign in.')),
+    available: () => (isTauriShell() ? driveNativeAvailable() : true),
+    connect: (persist) => (isTauriShell() ? connectDriveDesktop(persist) : connectDriveWeb(persist)),
+    disconnect: () => (isTauriShell() ? disconnectDriveDesktop() : disconnectDriveWeb()),
+    setup: () => (isTauriShell() || driveAvailable()) ? '' : `
+      ${field('clientId', t('Client ID'), '', 'text', '…apps.googleusercontent.com')}
+      <p class="pconn-note">${t('This site ships no Google app, so connect with your own. In Google Cloud: create a project, turn on the Google Drive API, set the OAuth consent screen to External and add yourself as a test user, then create an OAuth client of type Web application with {origin} as an authorised JavaScript origin and {redirect} as an authorised redirect URI. Paste its Client ID above. It is kept with the connection on this device.', { origin: location.origin, redirect: `${location.origin}/oauth-return.html` })}</p>
+      <span class="pconn-status" data-pconn-status="gdrive" role="status"></span>`,
   },
   {
     kind: 'dropbox',
@@ -87,7 +99,9 @@ const OAUTH_ROWS: Array<{
     disconnect: disconnectDropbox,
     setup: () => dropboxAvailable() ? '' : `
       ${field('clientId', t('App key'), '', 'text', '')}
-      <p class="pconn-note">${isTauriShell()
+      <p class="pconn-note">${isTauriMobileShell()
+        ? t('This app has no Dropbox app for phones, so connect with your own: create an app in the Dropbox App Console (scoped access, App folder type), add {redirect} as a redirect URI, and paste its App key above. It is kept with the connection on this device.', { redirect: MOBILE_REDIRECT_URI })
+        : isTauriShell()
         ? t('This build ships no Dropbox app, so connect with your own: create an app in the Dropbox App Console (scoped access, App folder type) and paste its App key above. No redirect URI needs registering - Dropbox allows localhost, which is where this app receives the sign-in. The key is kept with the connection on this device.')
         : t('This site ships no Dropbox app, so connect with your own: create an app in the Dropbox App Console (scoped access, App folder type), add {redirect} as a redirect URI, and paste its App key above. It is kept with the connection on this device.', { redirect: `${location.origin}/oauth-return.html` })}</p>
       <span class="pconn-status" data-pconn-status="dropbox" role="status"></span>`,
@@ -102,7 +116,8 @@ const OAUTH_ROWS: Array<{
       : t('Can only see the Lolly app folder in your OneDrive.')),
     // Two registrations, one row: the SPA client on the web, the mobile-and-
     // desktop-platform client in Tauri (plans/129 WP4b).
-    available: () => (isTauriShell() ? oneDriveDesktopAvailable() : oneDriveAvailable()),
+    available: () => (isTauriMobileShell() ? oneDriveMobileAvailable()
+      : isTauriShell() ? oneDriveDesktopAvailable() : oneDriveAvailable()),
     connect: (persist) => (isTauriShell() ? connectOneDriveDesktop(persist) : connectOneDrive(persist)),
     disconnect: disconnectOneDrive,
   },
@@ -143,7 +158,9 @@ function oauthRowHtml(kind: string, label: string, scopesNote: string, conn: Pro
     <div class="store-manage--row pconn-row" data-pconn="${escape(kind)}">
       <span class="store-manage-name">${escape(label)}
         <span class="pconn-account">${escape(conn.account)}</span>
-        <span class="pconn-note">${escape(conn.persist ? t('Stays connected on this device') : t('Connected for this session only'))}</span>
+        <span class="pconn-note">${escape(!conn.persist ? t('Connected for this session only')
+          : kind === 'gdrive' && !isTauriShell() ? t('Remembered on this device; signs in again on each visit')
+            : t('Stays connected on this device'))}</span>
         ${homeToggleHtml(kind, home, conn.persist)}
       </span>
       <button type="button" class="btn-link-danger" data-pconn-disconnect="${escape(kind)}">${t('Disconnect')}</button>
@@ -163,6 +180,11 @@ function oauthRowHtml(kind: string, label: string, scopesNote: string, conn: Pro
 /** Drop a provider's whole block when its connector kill switch is off (the note
  *  in mountConnectionsBody says where it went). */
 const gate = (kind: string, html: string): string => (connectorEnabled(kind) ? html : '');
+
+/** In the mobile apps, hide a browser-sign-in service that is not connected and
+ *  cannot sign in there: its Connect button could only fail. */
+const signInPossible = (kind: string, connected: boolean): boolean =>
+  connected || !BROWSER_SIGN_IN_KINDS.has(kind) || !isTauriMobileShell() || mobileSignInReady(kind);
 
 function credentialRowsHtml(conns: Map<string, ProviderConnection>, home: string | undefined): string {
   const s3 = conns.get('s3');
@@ -253,7 +275,7 @@ function publishRowsHtml(conns: Map<string, ProviderConnection>): string {
   const bskyCfg = (bsky?.config ?? {}) as Partial<BlueskyConfig>;
   const discord = conns.get('discord');
   return `
-    ${gate('mastodon', `<details class="pconn-cred" data-pconn="mastodon">
+    ${signInPossible('mastodon', !!masto) ? gate('mastodon', `<details class="pconn-cred" data-pconn="mastodon">
       <summary><span class="store-manage-name">${t('Mastodon')}
         ${masto ? `<span class="pconn-account">${escape(masto.account)}</span>` : `<span class="pconn-note">${t('Post to any Mastodon server - no central app, your server issues the sign-in')}</span>`}
       </span></summary>
@@ -268,7 +290,7 @@ function publishRowsHtml(conns: Map<string, ProviderConnection>): string {
           <span class="pconn-status" data-pconn-status="mastodon" role="status"></span>
         </div>
       </div>
-    </details>`)}
+    </details>`) : ''}
     ${gate('bluesky', `<details class="pconn-cred" data-pconn="bluesky">
       <summary><span class="store-manage-name">${t('Bluesky')}
         ${bsky ? `<span class="pconn-account">${escape(bsky.account)}</span>` : `<span class="pconn-note">${t('Image posts with an app password - no OAuth, revocable any time')}</span>`}
@@ -317,7 +339,7 @@ const kindLabel = (kind: string): string => ({
 export async function mountConnectionsBody(body: HTMLElement, host: ConnHost, onSummary?: (text: string) => void): Promise<void> {
   const conns = new Map((await listConnections()).map((c) => [c.kind, c]));
   const home = (await host.profile.get().catch(() => ({}) as Profile)).exportHome;
-  const oauthRows = OAUTH_ROWS.filter((r) => connectorEnabled(r.kind) && r.available())
+  const oauthRows = OAUTH_ROWS.filter((r) => connectorEnabled(r.kind) && r.available() && signInPossible(r.kind, conns.has(r.kind)))
     .map((r) => oauthRowHtml(r.kind, r.label(), r.scopesNote(), conns.get(r.kind) ?? null, home, r.setup?.() ?? '')).join('');
   // Names what a kill switch is hiding, so a vanished Drive row reads as a choice
   // the user made rather than a missing feature.
@@ -325,17 +347,16 @@ export async function mountConnectionsBody(body: HTMLElement, host: ConnHost, on
   const offNote = switchedOff.length
     ? `<p class="pconn-note">${t('Turned off in Feature flags: {names}', { names: switchedOff.map((f) => t(f.label)).join(', ') })}</p>`
     : '';
-  const gdriveRow = connectorEnabled('gdrive') && driveAvailable() && !isTauriShell()
-    ? `<div class="store-manage--row pconn-row" data-pconn="gdrive">
-        <span class="store-manage-name">${t('Google Drive')}
-          <span class="pconn-note">${t('Signs in when you send; nothing is remembered between sessions.')}</span>
-        </span>
-       </div>`
+  const notHere = isTauriMobileShell()
+    ? [...BROWSER_SIGN_IN_KINDS].filter((k) => connectorEnabled(k) && !mobileSignInReady(k) && !conns.has(k)).map(kindLabel)
+    : [];
+  const mobileNote = notHere.length
+    ? `<p class="pconn-note">${t('Not available in the mobile app yet: {names}. Signing in to them needs a registration this app does not have.', { names: notHere.join(', ') })}</p>`
     : '';
   body.innerHTML = `
     <p class="storage-hint-text">${t('Send finished exports straight to your own places. Every send goes from this device to the provider directly - no Lolly server ever holds your files or your sign-ins - and what is remembered on this device is your choice, wiped by Disconnect and never included in backups.')}</p>
     ${offNote}
-    ${gdriveRow}
+    ${mobileNote}
     ${oauthRows}
     ${credentialRowsHtml(conns, home)}`;
 
@@ -383,6 +404,14 @@ export async function mountConnectionsBody(body: HTMLElement, host: ConnHost, on
             return;
           }
           await connectDropbox(persist, undefined, key);
+        } else if (connectKind === 'gdrive' && !isTauriShell() && !driveAvailable()) {
+          // Bring-your-own client id (plans/138 Tier D, WP-P3), as for Dropbox.
+          const id = readForm('gdrive').clientId;
+          if (!id) {
+            status('gdrive', t('Paste your Google Client ID first'));
+            return;
+          }
+          await connectDriveWeb(persist, id);
         } else if (row) await row.connect(persist);
       } else if (disconnectKind) {
         if (disconnectKind === 's3') await disconnectS3();

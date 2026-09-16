@@ -11,6 +11,13 @@ import assert from 'node:assert/strict';
 
 import { driveSyncRemote, seedDriveTokenForTests, resetDriveToken } from './google-drive.ts';
 import { pushSnapshot, checkForNewer, pullAndApply, INITIAL_SYNC_STATE } from './sync-engine.ts';
+import { runSyncRemoteConformance, OAUTH_LIVE_SKIP } from './sync-remote-conformance.ts';
+
+/** The pushed half of a push result, or a failed assertion. */
+function pushed<T extends { status: string }>(result: T): Extract<T, { status: 'pushed' }> {
+  assert.equal(result.status, 'pushed');
+  return result as Extract<T, { status: 'pushed' }>;
+}
 
 interface Call { url: string; method: string }
 function mockFetch(handler: (call: Call) => Response): { fetch: typeof fetch; calls: Call[] } {
@@ -73,34 +80,62 @@ test('head: no file → null, file → meta; get downloads media', async () => {
   assert.equal(got!.meta.rev, 'h2');
 });
 
-// Extract the octet-stream content from a multipart/related create body the way
-// real Drive does. Uses a TRUE Latin-1 binary string (String.fromCharCode is 1:1
-// for bytes 0-255; TextDecoder('latin1') is windows-1252 and mangles 0x80-0x9F),
-// so the zip round-trips byte-exact.
-function multipartContent(body: Uint8Array): Uint8Array {
+// Split a multipart/related create body the way real Drive does: the JSON
+// metadata part and the octet-stream content part. Offsets are found in a TRUE
+// Latin-1 string (String.fromCharCode is 1:1 for bytes 0-255; TextDecoder('latin1')
+// is windows-1252 and mangles 0x80-0x9F), so string offsets are byte offsets and
+// the content is sliced from the bytes unchanged. The content ends before the
+// closing delimiter, found from the end, so body bytes can never cut it short.
+function multipartParts(body: Uint8Array): { metadata: { name?: string }; content: Uint8Array } {
   let s = '';
-  for (let i = 0; i < body.length; i++) s += String.fromCharCode(body[i]!);
+  for (let i = 0; i < body.length; i += 8192) s += String.fromCharCode(...body.subarray(i, i + 8192));
   const boundary = s.slice(2, s.indexOf('\r\n'));        // leading "--<boundary>"
-  const part = s.split(`--${boundary}`)[2] ?? '';         // ['', jsonPart, contentPart, '--']
-  const content = part.slice(part.indexOf('\r\n\r\n') + 4, part.length - 2); // drop trailing CRLF
-  const out = new Uint8Array(content.length);
-  for (let i = 0; i < content.length; i++) out[i] = content.charCodeAt(i) & 0xff;
-  return out;
+  const delimiter = `\r\n--${boundary}`;
+  const jsonStart = s.indexOf('\r\n\r\n') + 4;
+  const jsonEnd = s.indexOf(delimiter, jsonStart);
+  const contentStart = s.indexOf('\r\n\r\n', jsonEnd) + 4;
+  const contentEnd = s.lastIndexOf(`${delimiter}--`);
+  return {
+    metadata: JSON.parse(new TextDecoder().decode(body.subarray(jsonStart, jsonEnd))) as { name?: string },
+    content: body.slice(contentStart, contentEnd),
+  };
 }
 
-// Stateful fake Drive: one file, list/create(multipart)/update(media)/media-download.
+// Stateful fake Drive. Files are stored by id and found by name, as drive.file
+// does: files.list by name, create (multipart), and update (media PATCH) and
+// media download by id, so two names are two separate files. Every content write
+// gets a new headRevisionId. It keeps no write precondition, because Drive v3 has
+// none; the adapter compares a fresh list instead.
 function fakeDrive(): typeof fetch {
-  let file: { id: string; rev: number; bytes: Uint8Array } | null = null;
+  const files = new Map<string, { id: string; name: string; rev: number; bytes: Uint8Array; modified: string }>();
+  let ids = 0;
+  let revs = 0;
+  const meta = (f: { id: string; rev: number; bytes: Uint8Array; modified: string }) =>
+    ({ id: f.id, headRevisionId: `h${f.rev}`, size: String(f.bytes.length), modifiedTime: f.modified });
+  const stamp = (): string => new Date(Date.UTC(2025, 0, 1, 0, 0, revs)).toISOString();
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input); const method = init?.method ?? 'GET';
-    if (method === 'GET' && url.includes('/drive/v3/files?q=')) {
-      return new Response(JSON.stringify({ files: file ? [{ id: file.id, headRevisionId: `h${file.rev}`, size: String(file.bytes.length) }] : [] }));
+    const url = new URL(String(input)); const method = init?.method ?? 'GET';
+    if (method === 'GET' && url.pathname === '/drive/v3/files') {
+      const name = /^name='([^']*)'/.exec(url.searchParams.get('q') ?? '')?.[1];
+      return new Response(JSON.stringify({ files: [...files.values()].filter((f) => f.name === name).map(meta) }));
     }
-    if (method === 'GET' && /alt=media/.test(url)) {
-      return new Response((file?.bytes ?? new Uint8Array()) as unknown as BodyInit);
+    const id = decodeURIComponent(url.pathname.slice(url.pathname.lastIndexOf('/') + 1));
+    if (method === 'GET' && url.searchParams.get('alt') === 'media') {
+      const f = files.get(id);
+      return f ? new Response(f.bytes as unknown as BodyInit) : new Response(null, { status: 404 });
     }
-    if (method === 'POST') { file = { id: 'f1', rev: 1, bytes: multipartContent(new Uint8Array(init!.body as Uint8Array)) }; return new Response(JSON.stringify({ id: 'f1', headRevisionId: 'h1' })); }
-    if (method === 'PATCH') { file = { id: 'f1', rev: (file?.rev ?? 0) + 1, bytes: new Uint8Array(init!.body as Uint8Array) }; return new Response(JSON.stringify({ id: 'f1', headRevisionId: `h${file.rev}` })); }
+    if (method === 'POST' && url.pathname === '/upload/drive/v3/files') {
+      const { metadata, content } = multipartParts(new Uint8Array(init!.body as Uint8Array));
+      const f = { id: `f${++ids}`, name: metadata.name ?? '', rev: ++revs, bytes: content, modified: stamp() };
+      files.set(f.id, f);
+      return new Response(JSON.stringify(meta(f)));
+    }
+    if (method === 'PATCH') {
+      const f = files.get(id);
+      if (!f) return new Response(null, { status: 404 });
+      Object.assign(f, { rev: ++revs, bytes: new Uint8Array(init!.body as Uint8Array), modified: stamp() });
+      return new Response(JSON.stringify(meta(f)));
+    }
     return new Response(null, { status: 404 });
   }) as unknown as typeof fetch;
 }
@@ -123,13 +158,48 @@ test('end-to-end: engine push→detect→pull through driveSyncRemote against a 
   const a = makeHost({ 's1': { v: 1 } });
   const b = makeHost();
 
-  const { state: aState } = await pushSnapshot(a.deps, driveSyncRemote(fetch));
+  const { state: aState } = pushed(await pushSnapshot(a.deps, driveSyncRemote(fetch), { state: INITIAL_SYNC_STATE }));
   assert.equal((await checkForNewer(driveSyncRemote(fetch), INITIAL_SYNC_STATE)).hasNewer, true);
   const { summary } = await pullAndApply(b.deps, driveSyncRemote(fetch));
   assert.equal(summary.sessions, 1);
   assert.deepEqual(b.sess.get('s1')!.data, { v: 1 });
 
   assert.equal((await checkForNewer(driveSyncRemote(fetch), aState)).hasNewer, false);
-  await pushSnapshot(a.deps, driveSyncRemote(fetch));   // update → new headRevisionId
+  pushed(await pushSnapshot(a.deps, driveSyncRemote(fetch), { state: aState }));   // update → new headRevisionId
   assert.equal((await checkForNewer(driveSyncRemote(fetch), aState)).hasNewer, true, 'a second push bumps the rev');
+});
+
+// ── Conditional writes (plans/138 Tier D, WP-S1) ────────────────────────────────
+
+test('put with ifRev compares against a fresh lookup and uploads nothing on a mismatch', async () => {
+  seedDriveTokenForTests('tok');
+  const { fetch, calls } = mockFetch((c) =>
+    isList(c) ? new Response(JSON.stringify({ files: [{ id: 'f9', headRevisionId: 'h2' }] }))
+    : new Response(JSON.stringify({ id: 'f9', headRevisionId: 'h3' })));
+  const remote = driveSyncRemote(fetch);
+
+  await assert.rejects(() => remote.put(new Uint8Array([1]), { ifRev: 'h1' }), { name: 'SyncConflictError' });
+  await assert.rejects(() => remote.put(new Uint8Array([1]), { ifRev: null }), { name: 'SyncConflictError' });
+  assert.equal(calls.filter((c) => !isList(c)).length, 0, 'no upload after a failed condition');
+
+  const meta = await remote.put(new Uint8Array([1]), { ifRev: 'h2' });
+  assert.equal(meta.rev, 'h3');
+});
+
+// ── Conformance (plans/138 Tier D, WP-S6) ───────────────────────────────────────
+
+/** A slot path as sync-service.ts names it for Drive: drive.file has no folders,
+ *  so the name is flat. */
+const driveName = (path?: string): string | undefined => path?.replace('/', '-');
+
+let conformanceDrive = fakeDrive();
+runSyncRemoteConformance('driveSyncRemote conformance (fake Drive)', (path) => driveSyncRemote(conformanceDrive, driveName(path)), {
+  preconditions: 'read-compare',
+  silent: true,
+  setup: () => { seedDriveTokenForTests('tok'); conformanceDrive = fakeDrive(); },
+});
+
+runSyncRemoteConformance('driveSyncRemote conformance (live Drive)', (path) => driveSyncRemote(undefined, driveName(path)), {
+  preconditions: 'read-compare',
+  skip: `live Google Drive run: ${OAUTH_LIVE_SKIP}`,
 });

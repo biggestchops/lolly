@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MPL-2.0
+[package]
+name = "tauri-plugin-lolly-auth"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77.2"
+description = "System browser sign-in sheet for the Lolly mobile app (ASWebAuthenticationSession on iOS, Auth Tab or a Custom Tab on Android)."
+license = "MPL-2.0"
+publish = false
+# tauri-plugin's build step requires `links` to match the package name.
+links = "tauri-plugin-lolly-auth"
+exclude = ["/.tauri", "/android/.tauri", "/android/build", "/ios/.build"]
+
+[lib]
+name = "tauri_plugin_lolly_auth"
+path = "src/lib.rs"
+
+[dependencies]
+tauri = { version = "2.11", default-features = false }
+serde = { version = "1", features = ["derive"] }
+
+# register_ios_plugin is only compiled with the wry runtime.
+[target.'cfg(target_os = "ios")'.dependencies]
+tauri = { version = "2.11", default-features = false, features = ["wry"] }
+
+[dev-dependencies]
+serde_json = "1"
+
+[build-dependencies]
+tauri-plugin = { version = "2.6", features = ["build"] }

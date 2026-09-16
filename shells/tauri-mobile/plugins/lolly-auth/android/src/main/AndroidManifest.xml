@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: MPL-2.0 -->
+<!-- Merged into the Lolly app manifest. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Android 11 and later hide other apps unless the manifest names them.
+         These two queries let the plugin find the default browser and ask
+         whether it supports Custom Tabs and Auth Tab. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+    </queries>
+
+    <application>
+        <!-- Receives the provider redirect when the sign-in runs in a Custom
+             Tab (browsers without Auth Tab). It passes the address to the
+             plugin, brings the app back over the tab and closes at once.
+             Auth Tab returns the address as an activity result instead, so it
+             never comes here. The second scheme comes from the Gradle property
+             lollyAuthExtraScheme and defaults to tools.lolly.mobile. -->
+        <activity
+            android:name="tools.lolly.auth.RedirectActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tools.lolly.mobile" />
+                <data android:scheme="${lollyAuthExtraScheme}" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

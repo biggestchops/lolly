@@ -44,13 +44,14 @@
  */
 
 import type { SendTarget } from './send-target.ts';
-import type { SyncRemote, SnapshotMeta } from './sync-remote.ts';
-import { codeGrant, loopbackVia, popupOAuth, refreshGrant, type TokenSet } from './provider-auth.ts';
+import type { SyncRemote, SnapshotMeta, PutOpts } from './sync-remote.ts';
+import { SyncConflictError } from './sync-remote.ts';
+import { codeGrant, loopbackVia, mobileVia, popupOAuth, refreshGrant, type AuthorizeVia, type TokenSet } from './provider-auth.ts';
 import {
-  cachedToken, cacheToken, dropToken, getConnection, removeConnection, saveConnection,
+  cachedToken, cacheToken, dropToken, getConnection, removeConnection, saveConnection, cachedConnection,
 } from './provider-connections.ts';
 import { instanceFetch } from './instance.ts';
-import { isTauriShell } from './instance-choice.ts';
+import { isTauriShell, isTauriMobileShell } from './instance-choice.ts';
 import { t } from '../i18n.ts';
 
 export interface DriveUploadResult {
@@ -82,7 +83,10 @@ export function setDriveClientId(id: string | null): void { clientIdOverride = i
 export function driveClientId(): string {
   if (clientIdOverride !== null) return clientIdOverride;
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-  return env?.VITE_GOOGLE_CLIENT_ID || '';
+  // The deploy's id first, else the person's own client id saved with their
+  // connection (plans/138 Tier D, WP-P3), the same rule as Dropbox's app key.
+  // Sync read of the primed cache, same rule as hasConnection().
+  return env?.VITE_GOOGLE_CLIENT_ID || cachedConnection(KIND)?.config?.clientId || '';
 }
 
 /** Whether the Send-to-Drive affordance should exist at all (web shells). */
@@ -124,6 +128,41 @@ function driveDesktopClientSecret(): string {
 /** Whether the desktop Send-to-Drive affordance exists (Tauri shells). */
 export function driveDesktopAvailable(): boolean { return !!driveDesktopClientId(); }
 
+// ─── iOS client (plans/138 Tier D, WP-M1) ────────────────────────────────────
+//
+// The iOS app signs in through the system sign-in sheet (provider-auth
+// mobileVia) with a Google "iOS" client: code + PKCE, no secret, refresh tokens,
+// and the reversed client id as the callback scheme. Android has no equivalent:
+// Google no longer accepts custom URI schemes for Android clients and blocks
+// loopback for them, so Drive stays unavailable in the Android app.
+
+let iosClientOverride: string | null = null;
+
+/** Runtime override (an instance config or a test); null restores the env value. */
+export function setDriveIosClientId(id: string | null): void { iosClientOverride = id; }
+
+export function driveIosClientId(): string {
+  if (iosClientOverride !== null) return iosClientOverride;
+  return import.meta.env?.VITE_GOOGLE_IOS_CLIENT_ID || '';
+}
+
+/** `1234-abc.apps.googleusercontent.com` → `com.googleusercontent.apps.1234-abc`. */
+export function reversedClientScheme(clientId: string): string {
+  return clientId.split('.').reverse().join('.');
+}
+
+const isAndroid = (): boolean => typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
+
+/** Whether Drive sign-in can work in the mobile app on this device. */
+export function driveMobileAvailable(): boolean {
+  return isTauriMobileShell() && !isAndroid() && !!driveIosClientId();
+}
+
+/** Whether Drive sign-in can work in this Tauri app (desktop or mobile). */
+export function driveNativeAvailable(): boolean {
+  return isTauriMobileShell() ? driveMobileAvailable() : driveDesktopAvailable();
+}
+
 /** googleapis fetches ride the CORS-free Tauri HTTP client on desktop. */
 const driveFetch: typeof fetch = (input, init) =>
   isTauriShell() ? instanceFetch(String(input), init) : fetch(input, init);
@@ -131,14 +170,23 @@ const driveFetch: typeof fetch = (input, init) =>
 const desktopGrantCfg = () => ({
   authorizeUrl: AUTH_URL,
   tokenUrl: TOKEN_URL,
-  clientId: driveDesktopClientId(),
-  clientSecret: driveDesktopClientSecret(),
+  // The iOS app uses its own client, which has no secret (see above).
+  clientId: isTauriMobileShell() ? driveIosClientId() : driveDesktopClientId(),
+  clientSecret: isTauriMobileShell() ? '' : driveDesktopClientSecret(),
   scopes: SCOPE,
   // offline = a refresh token; consent forces Google to re-issue one on a
   // repeat grant (it otherwise omits it); whether it PERSISTS is the user's
   // custody choice, same as every other provider.
   extraAuthParams: { access_type: 'offline', prompt: 'consent select_account', include_granted_scopes: 'true' },
 });
+
+/** The sign-in leg in the Tauri apps: the system sign-in sheet on iOS, the
+ *  system browser with a loopback return on the desktop. */
+async function nativeVia(): Promise<AuthorizeVia> {
+  if (!isTauriMobileShell()) return loopbackVia();
+  const scheme = reversedClientScheme(driveIosClientId());
+  return mobileVia({ scheme });
+}
 
 /** A valid desktop access token: cache → refresh (stored connection) →
  *  interactive system-browser sign-in. The dropbox custody pattern verbatim. */
@@ -149,14 +197,14 @@ async function desktopToken(): Promise<string> {
   if (conn?.refreshToken) {
     try {
       const set = await refreshGrant(
-        { tokenUrl: TOKEN_URL, clientId: driveDesktopClientId(), clientSecret: driveDesktopClientSecret() },
+        { tokenUrl: TOKEN_URL, clientId: desktopGrantCfg().clientId, clientSecret: desktopGrantCfg().clientSecret },
         conn.refreshToken, driveFetch,
       );
       cacheToken(KIND, set.accessToken, set.expiresAt);
       return set.accessToken;
     } catch { /* refresh revoked/expired - fall through to interactive */ }
   }
-  const set = await codeGrant(desktopGrantCfg(), driveFetch, await loopbackVia());
+  const set = await codeGrant(desktopGrantCfg(), driveFetch, await nativeVia());
   cacheToken(KIND, set.accessToken, set.expiresAt);
   if (conn) await saveConnection({ ...conn, ...(conn.persist && set.refreshToken ? { refreshToken: set.refreshToken } : {}) });
   return set.accessToken;
@@ -164,7 +212,7 @@ async function desktopToken(): Promise<string> {
 
 /** Interactive connect from /profile (desktop): grant, identity, custody. */
 export async function connectDriveDesktop(persist: boolean): Promise<string> {
-  const set: TokenSet = await codeGrant(desktopGrantCfg(), driveFetch, await loopbackVia());
+  const set: TokenSet = await codeGrant(desktopGrantCfg(), driveFetch, await nativeVia());
   cacheToken(KIND, set.accessToken, set.expiresAt);
   let account = t('Google account');
   try {
@@ -194,6 +242,41 @@ export async function disconnectDriveDesktop(): Promise<void> {
       await driveFetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`, { method: 'POST' });
     } catch { /* revocation is a courtesy; the wipe below is the guarantee */ }
   }
+  await removeConnection(KIND);
+}
+
+/**
+ * Interactive connect from /profile (web). The sign-in is the same session-only
+ * popup grant as a send, and the token still never leaves memory; what this adds
+ * is a connection record, so Drive can be picked as the sync home and an own
+ * client id is remembered (plans/138 Tier D, WP-P3). `persist` decides whether
+ * that record outlives the visit. There is never a refresh token on the web, so
+ * automatic sync with Drive starts only after a sign-in in the same visit.
+ */
+export async function connectDriveWeb(persist: boolean, ownClientId?: string): Promise<string> {
+  const token = await requestToken(ownClientId);
+  let account = t('Google account');
+  try {
+    const res = await fetch(ABOUT_URL, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) {
+      const about = await res.json() as { user?: { emailAddress?: string; displayName?: string } };
+      account = about.user?.emailAddress || about.user?.displayName || account;
+    }
+  } catch { /* identity is cosmetic; the connection stands */ }
+  await saveConnection({
+    kind: KIND,
+    account,
+    persist,
+    scopes: SCOPE,
+    ...(ownClientId ? { config: { clientId: ownClientId } } : {}),
+    connectedAt: new Date().toISOString(),
+  });
+  return account;
+}
+
+/** Disconnect (web): forget the session token and the connection record. */
+export async function disconnectDriveWeb(): Promise<void> {
+  resetDriveToken();
   await removeConnection(KIND);
 }
 
@@ -239,8 +322,8 @@ export function seedDriveTokenForTests(token: string, ttlMs = 60_000): void {
   cached = { token, expiresAt: Date.now() + ttlMs };
 }
 
-async function requestToken(): Promise<string> {
-  const clientId = driveClientId();
+async function requestToken(ownClientId?: string): Promise<string> {
+  const clientId = ownClientId || driveClientId();
   if (!clientId) throw new Error('Google Drive is not configured on this build');
   const state = crypto.getRandomValues(new Uint32Array(4)).join('-');
   const redirectUri = `${location.origin}/oauth-return.html`;
@@ -337,7 +420,7 @@ export function googleDriveSendTarget(): SendTarget {
   return {
     kind: 'gdrive',
     label: t('Google Drive'),
-    available: () => (isTauriShell() ? driveDesktopAvailable() : driveAvailable()),
+    available: () => (isTauriShell() ? driveNativeAvailable() : driveAvailable()),
     actionLabel: () => t('Send to Google Drive'),
     hint: t('Uploads this file to your Google Drive. Lolly can only see files it created (drive.file scope), and the sign-in token is kept in memory for this session only. An EMF lands as a Google Drawing, ready for Slides.'),
     send: async ({ bytes, name, format, mime }) => {
@@ -414,8 +497,15 @@ export function driveSyncRemote(fetchFn: typeof fetch = driveFetch, fileName: st
     return { bytes, meta: driveMeta(f, bytes.length) };
   };
 
-  const put = async (bytes: Uint8Array): Promise<SnapshotMeta> => {
+  const put = async (bytes: Uint8Array, opts?: PutOpts): Promise<SnapshotMeta> => {
     const existing = await findFile();
+    // Drive v3 has no write precondition, so the condition is checked against
+    // this fresh read. A write from another device in the moment between this
+    // read and the upload below is not caught; the UI says Drive is the weaker
+    // choice for that reason (plans/138 Tier D, WP-S1).
+    if (opts?.ifRev !== undefined && (existing ? driveMeta(existing, 0).rev : null) !== opts.ifRev) {
+      throw new SyncConflictError();
+    }
     const fields = encodeURIComponent(SYNC_FIELDS);
     let res: Response;
     if (existing) {

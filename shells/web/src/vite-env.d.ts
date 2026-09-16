@@ -19,6 +19,15 @@ interface ImportMetaEnv {
   readonly VITE_CATALOG_PUBLIC_KEY_JWK?: string;
   // `verified` on deployable builds; `unsigned-dev` on local build/preview.
   readonly VITE_CATALOG_TRUST_MODE?: 'verified' | 'unsigned-dev';
+  // Which app build this is; set by shells/tauri-mobile/vite.config.js, unset on
+  // the web. Read only by lib/instance-choice.ts isTauriMobileShell().
+  readonly VITE_LOLLY_APP_SHELL?: 'tauri-mobile';
+  // Mobile sign-in registrations (plans/138 Tier D, WP-M1), each unset until the
+  // provider app lists the mobile redirect. Read by lib/google-drive.ts,
+  // lib/onedrive-send.ts and lib/dropbox-send.ts.
+  readonly VITE_GOOGLE_IOS_CLIENT_ID?: string;
+  readonly VITE_MS_MOBILE_CLIENT_ID?: string;
+  readonly VITE_DROPBOX_MOBILE?: string;
 }
 
 interface ImportMeta {

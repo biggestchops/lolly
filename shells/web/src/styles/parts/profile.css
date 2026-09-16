@@ -881,6 +881,15 @@
 .profile-view .pconn-form > .pconn-note, .profile-view .pconn-form > .pconn-actions { grid-column: 1 / -1; }
 .profile-view .pconn-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .profile-view .pconn-status { font-size: var(--fs-md); opacity: .85; }
+/* Device sync: the choice a conflict or a first join asks for, and the list of
+   earlier copies (views/profile-sync.ts). */
+.profile-view .pconn-sync-choice { margin-block: .6rem; }
+.profile-view .pconn-sync-choice > p { margin: 0 0 .5rem; }
+.profile-view .pconn-restore { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .4rem; }
+.profile-view .pconn-restore > li { justify-content: space-between; font-size: var(--fs-md); }
+.profile-view .pconn-choices { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.profile-view .pconn-choice { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; font-size: var(--fs-md); }
+.profile-view .pconn-choice[data-state="unavailable"] .pconn-choice-text { opacity: .7; }
 
 }
 

@@ -122,7 +122,12 @@ test('export → import reproduces all user data on a fresh device', async () =>
   // Fresh, empty "other device".
   const dst = { host: makeHost(), storage: makeStorage() };
   const isum = await importBackup(dst, await blob.arrayBuffer());
-  assert.deepEqual(isum, { profile: true, sessions: 2, userAssets: 2, prefs: 3, skipped: 0, failedAssets: 0 });
+  const { ids, ...counts } = isum;
+  assert.deepEqual(counts, { profile: true, sessions: 2, userAssets: 2, prefs: 3, skipped: 0, failedAssets: 0 });
+  assert.deepEqual(ids, {
+    sessions: ['my-qr', 'chart-1'], assets: ['user/headshot', 'user/upload/1700-pic.jpg'],
+    designSystems: [], prefs: ['theme', 'sidebarWidth', 'ct-metrics'],
+  }, 'the import reports the ids the bundle holds (device sync keeps them)');
 
   // Profile.
   const profile = await dst.host.profile.get();

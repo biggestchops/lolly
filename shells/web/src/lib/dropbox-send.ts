@@ -29,17 +29,18 @@
  */
 
 import { t } from '../i18n.ts';
-import { isTauriShell } from './instance-choice.ts';
+import { isTauriShell, isTauriMobileShell } from './instance-choice.ts';
 import {
-  codeGrant, loopbackVia, popupVia, providerFetch, refreshGrant,
+  codeGrant, loopbackVia, mobileVia, popupVia, providerFetch, refreshGrant,
   type AuthorizeVia, type TokenSet,
 } from './provider-auth.ts';
 import {
   getConnection, saveConnection, removeConnection,
-  cachedToken, cacheToken, dropToken, cachedConnection,
+  cachedToken, cacheToken, dropToken, cachedConnection, hasConnection,
 } from './provider-connections.ts';
 import type { SendTarget } from './send-target.ts';
-import type { SyncRemote, SnapshotMeta } from './sync-remote.ts';
+import type { SyncRemote, SnapshotMeta, PutOpts } from './sync-remote.ts';
+import { SyncConflictError } from './sync-remote.ts';
 
 const KIND = 'dropbox';
 const AUTHORIZE_URL = 'https://www.dropbox.com/oauth2/authorize';
@@ -56,10 +57,14 @@ export function setDropboxClientId(id: string | null): void { clientIdOverride =
 export function dropboxClientId(): string {
   if (clientIdOverride !== null) return clientIdOverride;
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  // In the mobile apps the build's key counts only when its Dropbox app also
+  // lists the mobile redirect (VITE_DROPBOX_MOBILE=1, plans/138 Tier D, M1);
+  // otherwise the person brings their own key, registered for that redirect.
+  const deployKey = isTauriMobileShell() && env?.VITE_DROPBOX_MOBILE !== '1' ? '' : env?.VITE_DROPBOX_CLIENT_ID;
   // Deploy id first, else the user's OWN app key saved with their connection -
   // the /profile bring-your-own path for deploys with no Dropbox registration.
   // Sync read of the primed cache, same rule as hasConnection().
-  return env?.VITE_DROPBOX_CLIENT_ID || cachedConnection(KIND)?.config?.clientId || '';
+  return deployKey || cachedConnection(KIND)?.config?.clientId || '';
 }
 
 export function dropboxAvailable(): boolean { return !!dropboxClientId(); }
@@ -78,8 +83,10 @@ const grantCfg = () => ({
 });
 
 /** The authorize leg for this shell: the browser popup on the web, the system
- *  browser + a localhost loopback listener on the desktop. */
+ *  browser + a localhost loopback listener on the desktop, and the system
+ *  sign-in sheet with the tools.lolly.mobile redirect in the mobile apps. */
 async function authorizeVia(): Promise<AuthorizeVia> {
+  if (isTauriMobileShell()) return mobileVia();
   return isTauriShell()
     ? await loopbackVia(undefined, { host: 'localhost' })
     : popupVia('lolly-dropbox-auth');
@@ -203,7 +210,9 @@ export function dropboxSendTarget(): SendTarget {
     kind: KIND,
     label: t('Dropbox'),
     // No formats list: every export format Lolly makes is welcome.
-    available: () => dropboxAvailable(),
+    // In the mobile apps a send needs a connection: without one, the key alone
+    // does not prove the mobile redirect was registered (plans/138 Tier D, M1).
+    available: () => dropboxAvailable() && (!isTauriMobileShell() || hasConnection(KIND)),
     hint: t('Uploads this file to the Lolly app folder in your Dropbox. Lolly can only see that folder, and whether your sign-in is remembered on this device is your choice in Profile.'),
     send: async ({ bytes, name, format }) => {
       const filename = name.toLowerCase().endsWith(`.${format}`) ? name : `${name}.${format}`;
@@ -238,7 +247,7 @@ const dbxMeta = (m: DropboxMeta, fallbackSize: number): SnapshotMeta => ({
 
 /** A Dropbox-backed SyncRemote over the user's app folder. `path` defaults to the
  *  device-sync snapshot; the collab rendezvous (plans/138 Tier C) points it at
- *  signalling paths. `fetchFn` is injectable for tests; production uses global fetch. */
+ *  signalling paths. `fetchFn` is injectable for tests; production uses providerFetch. */
 export function dropboxSyncRemote(fetchFn: typeof fetch = providerFetch, path: string = SYNC_PATH): SyncRemote {
   // One 401 retry through a fresh token, like rpc()/dropboxUpload().
   const withToken = async (call: (tok: string) => Promise<Response>): Promise<Response> => {
@@ -271,16 +280,31 @@ export function dropboxSyncRemote(fetchFn: typeof fetch = providerFetch, path: s
     return { bytes, meta: dbxMeta(meta, bytes.length) };
   };
 
-  const put = async (bytes: Uint8Array): Promise<SnapshotMeta> => {
+  const put = async (bytes: Uint8Array, opts?: PutOpts): Promise<SnapshotMeta> => {
+    // Dropbox checks the condition itself: `update` writes only over that exact
+    // rev, and `add` without autorename writes only where nothing exists yet.
+    const ifRev = opts?.ifRev;
+    const mode = ifRev === undefined ? 'overwrite'
+      : ifRev === null ? 'add'
+        : { '.tag': 'update', update: ifRev };
     const res = await withToken((tok) => fetchFn(`${CONTENT}/files/upload`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${tok}`,
-        'Dropbox-API-Arg': dropboxApiArg({ path, mode: 'overwrite', mute: true }),
+        // strict_conflict: an `update` naming a rev also conflicts when the file
+        // was deleted since, and a write of identical bytes still reports the
+        // conflict, so the engine always learns that the stored copy moved on.
+        'Dropbox-API-Arg': dropboxApiArg({
+          path, mode, autorename: false, mute: true, ...(ifRev === undefined ? {} : { strict_conflict: true }),
+        }),
         'Content-Type': 'application/octet-stream',
       },
       body: bytes as unknown as BodyInit,
     }));
+    if (res.status === 409 && ifRev !== undefined) {
+      const summary = String(((await res.json().catch(() => ({}))) as { error_summary?: string }).error_summary ?? '');
+      if (summary.includes('conflict')) throw new SyncConflictError();
+    }
     if (!res.ok) throw new Error(t('Dropbox upload failed ({status})', { status: res.status }));
     return dbxMeta(await res.json() as DropboxMeta, bytes.length);
   };

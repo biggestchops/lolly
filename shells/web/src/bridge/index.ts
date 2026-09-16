@@ -19,6 +19,7 @@ import { createStateAPI } from './state.ts';
 import { createRevisionStore } from './revision-history.ts';
 import { REVISION_STORES } from './revision-records.ts';
 import { createProfileAPI } from './profile.ts';
+import { trackHostChanges } from '../lib/sync-changes.ts';
 import { createPreviewsAPI } from './previews.ts';
 import { createAssetsAPI } from './assets.ts';
 import { createTokensAPI, USER_TOKENS_ID } from './tokens.ts';
@@ -644,6 +645,9 @@ export async function createBridge(): Promise<WebHost> {
   // failed migration leaves the store empty and the tokens bridge on its legacy
   // discovery, which is today's behaviour.
   await host.designSystems.ensure().catch(() => { /* legacy discovery stands */ });
+  // Device sync (plans/138 Tier D): every write the person makes through the bridge
+  // from here on marks this device as having changes the synced copy lacks.
+  trackHostChanges(host);
   return host;
 }
 

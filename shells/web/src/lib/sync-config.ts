@@ -17,6 +17,8 @@
 
 import { openDB } from '../bridge/db.ts';
 import type { SyncState } from './sync-engine.ts';
+import type { SnapshotMeta } from './sync-remote.ts';
+import type { BackupIds } from '../data-transfer.ts';
 
 export interface SyncConfig {
   /** Master switch. Off = no auto-push, no boot check, byte-identical to no sync. */
@@ -30,10 +32,22 @@ export interface SyncConfig {
   lastSyncedRev: string | null;
   /** ISO time of that last push/apply, for the "Last synced …" line. */
   lastSyncedAt: string | null;
+  /** This device has changes the synced copy does not hold yet (plans/138 Tier D,
+   *  WP-S1). Set by any local write, cleared by a push or an apply. While it is
+   *  set, a synced copy never replaces this device without the person choosing. */
+  dirty?: boolean;
+  /** The synced copy changed on another device while this one had changes of its
+   *  own. Automatic pushes pause until the person chooses what to keep. */
+  conflict?: SnapshotMeta | null;
+  /** How many conflicts this device has met (plans/138 Tier D, R10). */
+  conflictCount?: number;
+  /** The last sync failure, in words, for the status line; null after a success. */
+  lastError?: string | null;
 }
 
 const KEY = 'sync-config';
-const DEFAULT: SyncConfig = { enabled: false, providerKind: '', lastSyncedRev: null, lastSyncedAt: null };
+const BASE_KEY = 'sync-base';
+const DEFAULT: SyncConfig = { enabled: false, providerKind: '', lastSyncedRev: null, lastSyncedAt: null, dirty: false, conflict: null, conflictCount: 0, lastError: null };
 
 let cache: SyncConfig | null = null;
 
@@ -69,7 +83,32 @@ export function syncStateOf(cfg: SyncConfig): SyncState {
   return { lastSyncedRev: cfg.lastSyncedRev, lastSyncedAt: cfg.lastSyncedAt };
 }
 
-/** Test seam: drop the in-memory cache (never touches IndexedDB). */
+/**
+ * The ids in the copy this device last pushed or applied. A replace apply may
+ * remove only these, so work made here since then always survives (WP-S2).
+ * Stored under its own key because it can be long; device-local like the rest.
+ */
+let baseCache: BackupIds | null = null;
+
+export async function getSyncBase(): Promise<BackupIds | null> {
+  if (baseCache) return baseCache;
+  try {
+    const db = await openDB();
+    baseCache = ((await db.get('profile', BASE_KEY)) as BackupIds | undefined) ?? null;
+  } catch { /* no IDB - memory only */ }
+  return baseCache;
+}
+
+export async function saveSyncBase(ids: BackupIds): Promise<void> {
+  baseCache = ids;
+  try {
+    const db = await openDB();
+    await db.put('profile', ids, BASE_KEY);
+  } catch { /* no IDB - the memory cache already holds it */ }
+}
+
+/** Test seam: drop the in-memory caches (never touches IndexedDB). */
 export function resetSyncConfigForTests(): void {
   cache = null;
+  baseCache = null;
 }

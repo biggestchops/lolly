@@ -1251,11 +1251,12 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // dynamic value (labels, provider kind, account names, scopes notes, field values)
   // goes through escape() in oauthRowHtml/credentialRowsHtml, the rest is t() output.
   'views/profile-connections.ts': 1,
-  // Device sync (plans/138 B1): two sinks, the no-provider state and the form.
-  // Reviewed - every dynamic value is escape()d (provider kind + label, the stored
-  // passphrase) or t() output; the rest is static markup. The section is a sub-block
-  // of Connected services since 2026-08-23, but it kept its own module and sinks.
-  'views/profile-sync.ts': 2,
+  // Device sync (plans/138 B1, Tier D): four sinks - the no-provider state, the form,
+  // and the restore list with its empty state (2026-09-16). Reviewed - every dynamic
+  // value is escape()d (provider kind + label, the stored passphrase, dates, sizes,
+  // slot names, the last error) or t() output; the rest is static markup. The section
+  // is a sub-block of Connected services since 2026-08-23, but it kept its own module.
+  'views/profile-sync.ts': 4,
   // The profile view's 19 sinks, unchanged in content but spread over the feature modules by the
   // 2026-09-12 closure split (scripts/split-closure.ts): the same writes, each in the module that
   // owns its card. History of the count, which the split preserved exactly: +1 2026-07-31 the
