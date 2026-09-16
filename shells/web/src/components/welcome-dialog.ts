@@ -61,7 +61,7 @@ import { createScope } from '../lib/dispose.ts';
 import { icon } from '../lib/icons.ts';
 import type { WebProfileAPI } from '../bridge/profile.ts';
 import type { PickerHost } from '../views/picker.ts';
-import { openDropFilePicker } from '../lib/drop-router.ts';
+import { openDropFilePicker } from '../lib/drop-file-picker.ts';
 import { ackPrivacyNotice } from '../views/privacy-notice.ts';
 import { mountModal } from './modal.ts';
 

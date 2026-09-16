@@ -17,7 +17,8 @@ import { syncCatalog, syncCorePrefetch, defaultFavouriteAssetIds, toolIndexChang
 import { mergeInstalledToolsIntoIndex } from './lib/installed-tools.ts';
 import { saveFavouriteAssets } from './lib/asset-favourites.ts';
 import { settingsRoute } from './views/settings-route.ts';
-import { mountGallery } from './views/gallery.ts';
+import { mountGallery, showGalleryWelcome } from './views/gallery.ts';
+import { openDropFilePicker } from './lib/drop-file-picker.ts';
 import { initTheme, applyTheme, urlThemeOverride } from './theme.ts';
 import { hydrateA11yPrefs, currentA11yPrefs, setA11yPref } from './lib/a11y-prefs.ts';
 import { hydrateChromeFollow } from './lib/chrome-follow.ts';
@@ -1284,6 +1285,9 @@ async function boot(): Promise<void> {
   // the base for good. Correctness costs Tauri nothing measurable - the sheet is one
   // fast IndexedDB read on every boot after the first.
   const coldGallery = !window.__toolIndex;
+  if (coldGallery && parseRoute().name === 'gallery') {
+    void import('./components/welcome-dialog.ts');
+  }
   let slimIndexReady = coldGallery && !isTauriShell() ? loadSlimToolIndex() : null;
 
   // First-run instance choice (Tauri shells only, once): gate BEFORE the first
@@ -1319,7 +1323,12 @@ async function boot(): Promise<void> {
   // Sideloaded tools (installed from a .lolly) are spliced into the tool index the moment
   // the catalog lands, so they appear in the galleries/pickers and pass the tool view's
   // existence check. Part of catalogReady so the first gallery paint already includes them.
-  const catalogReady = syncCatalog(host as unknown as Parameters<typeof syncCatalog>[0])
+  const catalogHost = host as unknown as Parameters<typeof syncCatalog>[0] & Parameters<typeof showGalleryWelcome>[0];
+  const catalogReady = syncCatalog(catalogHost, () => {
+    if (coldGallery && parseRoute().name === 'gallery') {
+      void showGalleryWelcome(catalogHost, () => parseRoute().name === 'gallery').catch(console.error);
+    }
+  })
     .then(async () => { try { await mergeInstalledToolsIntoIndex(); } catch { /* no installed tools / no index yet */ } });
   // Core-asset warming: 32 fetches / ~787 KB, fire-and-forget, and nothing on screen
   // waits for any of it. Firing at catalog-land put it in direct competition with the
@@ -1526,11 +1535,8 @@ async function boot(): Promise<void> {
   // boot skeleton; runs regardless of which view mounted (the chooser is
   // body-mounted). A feature-detected no-op everywhere but the Android WebView.
   // drop-router (the sniff + chooser module) is itself dynamic-imported off the boot
-  // path now - its heavy import/ingest deps were already lazy. Hold the resolved module
-  // so the footer "Open" button below can call it SYNCHRONOUSLY inside the click gesture.
-  let dropRouterMod: typeof import('./lib/drop-router.ts') | null = null;
-  const dropRouterReady = import('./lib/drop-router.ts').then((m) => {
-    dropRouterMod = m;
+  // path now; its heavy import/ingest dependencies are also lazy.
+  void import('./lib/drop-router.ts').then((m) => {
     m.initShareTargetIngest(host as unknown as Parameters<typeof m.initShareTargetIngest>[0]);
     // App Links (plan 171): a tapped https://lolly.tools/t/… link that opened the
     // Android app resolves to its in-app route. Feature-detected no-op elsewhere.
@@ -1576,14 +1582,10 @@ async function boot(): Promise<void> {
   // .lolly / design / image can be imported without a drag. Delegated at the document so
   // it survives the footer's between-view re-renders. CAPTURE phase, so a jelly-button's
   // own click handling can't preempt it; and the picker is opened SYNCHRONOUSLY (the
-  // module is pre-warmed above) because a file chooser only opens under live user
-  // activation, which a `.then` microtask after a cold import would forfeit.
+  // lightweight picker is already loaded) because it needs live user activation.
   document.addEventListener('click', (e) => {
     if (!(e.target instanceof Element) || !e.target.closest('[data-open-file]')) return;
-    const openPicker = (m: typeof import('./lib/drop-router.ts')) =>
-      m.openDropFilePicker(host as unknown as Parameters<typeof m.openDropFilePicker>[0]);
-    if (dropRouterMod) openPicker(dropRouterMod);           // warm: same-gesture, picker opens
-    else void dropRouterReady.then(openPicker);             // cold first click only (rare)
+    openDropFilePicker(host as unknown as Parameters<typeof openDropFilePicker>[0]);
   }, true);
 
   // Warm the likely-next view chunks so the first tap doesn't pay a cold dynamic-import.

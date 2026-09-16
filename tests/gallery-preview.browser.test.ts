@@ -5,6 +5,24 @@ import test from 'node:test';
 import { chromium } from 'playwright';
 
 const origin = process.env.LOLLY_GALLERY_TEST_URL;
+test('welcome opens the native import picker before loading import handlers', {
+  skip: origin ? false : 'set LOLLY_GALLERY_TEST_URL to a local Vite shell', timeout: 60_000,
+}, async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ serviceWorkers: 'block' });
+  try {
+    await page.goto(`${origin}/#/`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.welcome-dialog').waitFor();
+    const chooserReady = page.waitForEvent('filechooser');
+    await page.locator('.welcome-dialog [data-choice="import"]').click();
+    const chooser = await chooserReady;
+    assert.equal(chooser.isMultiple(), true);
+    assert.match(await chooser.element().getAttribute('accept') ?? '', /\.lolly/);
+    await chooser.setFiles([]);
+    assert.equal(await page.locator('.welcome-dialog').count(), 0);
+  } finally { await browser.close(); }
+});
+
 test('welcome defers tool preview rendering until the user enters the gallery', {
   skip: origin ? false : 'set LOLLY_GALLERY_TEST_URL to a local Vite shell', timeout: 120_000,
 }, async () => {
@@ -12,18 +30,22 @@ test('welcome defers tool preview rendering until the user enters the gallery', 
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 420, height: 900 }, serviceWorkers: 'block' });
   const renders: string[] = [];
+  let releaseTools!: () => void;
+  const toolsReady = new Promise<void>(resolve => { releaseTools = resolve; });
   page.on('request', request => {
     if (/\/tools\/[^/]+\/(hooks\.js|template\.html)$/.test(request.url())) renders.push(request.url());
   });
   try {
+    await page.route('**/catalog/tools/index.json', async route => { await toolsReady; await route.continue(); });
     await page.goto(`${origin}/#/`, { waitUntil: 'domcontentloaded' });
     await page.locator('.welcome-dialog').waitFor();
     await page.waitForTimeout(3000);
     assert.equal(renders.length, 0, 'covered cards must not start tool renderers');
     await page.locator('.welcome-dialog [data-choice="explore"]').click();
+    releaseTools();
     await page.locator('.gtile[data-tool-id="design"] .gcar-slide.is-loaded').first().waitFor({ timeout: 90_000 });
     assert.ok(renders.some(url => url.includes('/tools/design/')), 'the queue resumes after dismissal');
-  } finally { await browser.close(); }
+  } finally { releaseTools(); await browser.close(); }
 });
 
 test('gallery renders branded templates, preserves their framing, and invalidates palette caches', {

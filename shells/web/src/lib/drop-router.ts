@@ -63,12 +63,6 @@ import type { DesignSystemRegistry } from './design-system/registry.ts';
 
 type PickerModule = typeof import('../views/picker.ts');
 
-/** Everything the file-picker fallback should let through - a superset of the
- *  picker's UPLOAD_ACCEPT (that list deliberately excludes design formats). */
-const UNIVERSAL_ACCEPT =
-  '.fig,.penpot,.zip,.tar,.tgz,.gz,.svg,.idml,.indd,.pdf,.ai,.pptx,.docx,.xlsx,.csv,.tsv,.psd,.psb,.xcf,image/*,video/*,audio/*,' +
-  '.mov,.json,.lottie,.mp3,.wav,.ogg,.m4a,.flac,.bmp,.ico,.cur,.svgz,.lolly';
-
 // Extension fallbacks for files whose MIME type the OS didn't fill in.
 const DESIGN_EXT_RE = /\.(fig|penpot|idml|indd|svg|zip)$/i;
 // .bmp/.ico usually arrive with an image/* MIME (already accepted); the ext entries are
@@ -1544,28 +1538,6 @@ export function attachDropRouter(rootEl: HTMLElement, host: PickerHost, hooks: D
   NAV_EVENTS.forEach((ev) => window.addEventListener(ev, teardown));
   ATTACHED.set(rootEl, teardown);
   return teardown;
-}
-
-/**
- * No-drag fallback (the welcome dialog's "Bring your design" tile): a native
- * file picker that feeds the same chooser. The input is parked on <body> and
- * removed on change/cancel.
- */
-export function openDropFilePicker(host: PickerHost): void {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.multiple = true;
-  input.accept = UNIVERSAL_ACCEPT;
-  input.style.display = 'none';
-  document.body.appendChild(input);
-  const done = (): void => input.remove();
-  input.addEventListener('change', () => {
-    const files = [...(input.files ?? [])];
-    done();
-    if (files.length) void openDropChooser(files, host);
-  });
-  input.addEventListener('cancel', done);
-  input.click();
 }
 
 // ── Android share-target ingest (ACTION_SEND → the same chooser) ──────────────

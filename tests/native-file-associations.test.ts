@@ -121,7 +121,8 @@ test('foreign formats are alternate openers with a real universal-import route',
       'raw .indd is not importable; only its exported .idml form may be registered');
   }
 
-  const router = readFileSync(path.join(ROOT, 'shells/web/src/lib/drop-router.ts'), 'utf8');
+  const router = ['drop-router.ts', 'drop-file-picker.ts']
+    .map(file => readFileSync(path.join(ROOT, 'shells/web/src/lib', file), 'utf8')).join('\n');
   for (const ext of ['xlsx', 'csv', 'tsv']) assert.match(router, new RegExp(`UNIVERSAL_ACCEPT[\\s\\S]{0,300}\\.${ext}`));
   assert.match(router, /id: 'spreadsheet', label: t\('Open in Spreadsheet'\)/);
   assert.match(router, /case 'spreadsheet':[\s\S]*pendingSpreadsheetFile = first;[\s\S]*#\/data/);

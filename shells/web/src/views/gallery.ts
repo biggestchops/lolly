@@ -214,6 +214,33 @@ export type GalleryHost = HostV1 & {
   previews?: PreviewsAPI;
 };
 
+async function galleryNeedsWelcome(host: GalleryHost, isCurrent: () => boolean): Promise<boolean> {
+  try {
+    if (await host.tokens?.isLocked?.()) return false;
+    const source = await activeDesignSystemSource(host);
+    if (source) return source === 'shipped';
+    let tokensId = (await host.assets._findMetaByType('tokens'))?.id;
+    if (tokensId === undefined && isCurrent()) {
+      const response = await instanceFetch(instancePath('/catalog/assets/index.json'));
+      if (response.ok) {
+        const index = await response.json() as { assets?: Array<{ id?: string; type?: string }> };
+        tokensId = index.assets?.find(asset => asset.type === 'tokens')?.id;
+      }
+    }
+    return tokensId === 'lolly/tokens/brand';
+  } catch { return false; }
+}
+
+/** First-run guidance can open once the brand assets arrive, before tool metadata. */
+export async function showGalleryWelcome(host: GalleryHost & PickerHost, isCurrent: () => boolean): Promise<void> {
+  const [unbranded, welcome] = await Promise.all([
+    galleryNeedsWelcome(host, isCurrent), import('../components/welcome-dialog.ts'),
+  ]);
+  if (unbranded && isCurrent() && !welcome.isWelcomeDismissed()) {
+    void welcome.showWelcomeDialog(host.profile, host);
+  }
+}
+
 // Section order for the filter pills. 'utility' is intentionally absent: the
 // on-device Offline Utilities pill always sorts last (see categoryRank()).
 const CATEGORY_ORDER = ['everyone', 'designer', 'event', 'product'];
@@ -2212,40 +2239,14 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   // post-sync re-mount keeps it open without a flash.
   const galleryRoot = viewEl.querySelector<HTMLElement>('.gallery');
   void (async () => {
-    let locked = false;
-    let tokensId: string | undefined;
-    let source: string | null = null;
-    try {
-      // A LOCKED brand (brandLock - e.g. the SUSE build) is branded by decree:
-      // there's no brand question to settle, so never greet it with the welcome
-      // or the tips strip, whatever the placeholder check below resolves to.
-      locked = !!(await host.tokens?.isLocked?.());
-      if (!locked) {
-        // With a design-system registry the answer is simply which system is
-        // active: the SHIPPED one means nothing of the person's is here yet
-        // (plans/186 section 3.3). Without one there is no record to read and
-        // the placeholder id below decides, exactly as it always has.
-        source = await activeDesignSystemSource(host);
-        if (!source) {
-          tokensId = (await host.assets._findMetaByType('tokens'))?.id;
-          if (tokensId === undefined && galleryRoot?.isConnected) {
-            const resp = await instanceFetch(instancePath('/catalog/assets/index.json'));
-            if (resp.ok) {
-              const idx = await resp.json() as { assets?: Array<{ id?: string; type?: string }> };
-              tokensId = idx.assets?.find(a => a.type === 'tokens')?.id;
-            }
-          }
-        }
-      }
-    } catch { /* IDB unavailable / offline - treat as branded; never block or nag here */ }
+    const unbranded = await galleryNeedsWelcome(host, () => !!galleryRoot?.isConnected);
     if (!galleryRoot?.isConnected) return;
-    const unbranded = source ? source === 'shipped' : tokensId === 'lolly/tokens/brand';
     // Branded (or locked): no welcome to wait for, so the banner slot is free.
     // When no banner claims it, a first-run install gets the branded intro strip
     // (plans/140 S4) - same slot discipline, still one surface per visit. The
     // strip module gates itself out for installs with saved work and settles
     // when any tool opens.
-    if (locked || !unbranded) {
+    if (!unbranded) {
       // Orientation FIRST on a branded install (plans/170 WP-4, audit 167
       // F-A16): a colleague's very first visit reads "Your brand is loaded…"
       // before any banner rung - the privacy one-liner is one line and keeps

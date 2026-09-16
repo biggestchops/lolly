@@ -223,7 +223,7 @@ function setCatalogMeta(key: string, value: CatalogMeta): void {
 // syncCorePrefetch can consume the core subset without re-fetching index.json.
 let cachedAssetIndex: AssetIndex | null = null;
 
-export async function syncCatalog(host: SyncHost): Promise<void> {
+export async function syncCatalog(host: SyncHost, onAssetsReady?: () => void): Promise<void> {
   // Load the persisted instance base BEFORE the first fetch. Wired here (not in
   // main.ts) so the sync bootstrap is self-contained: every entry point that
   // syncs gets the right base with no boot-order coordination. Never throws.
@@ -232,7 +232,7 @@ export async function syncCatalog(host: SyncHost): Promise<void> {
   try {
     await Promise.all([
       syncTools(host),
-      syncAssets(host),
+      syncAssets(host).then(() => { onAssetsReady?.(); }),
     ]);
   } catch (e) {
     setOffline(true);

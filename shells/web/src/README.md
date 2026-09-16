@@ -9,8 +9,8 @@ Roughly 556,000 lines of TypeScript, tests included, and 49,000 lines of CSS.
 
 | Directory | Source | Tests | CSS |
 |---|---|---|---|
-| `views/` | 357 files, 156,289 lines | 160 files, 56,629 lines | 6 files, 1,427 lines |
-| `lib/` | 535 files, 117,865 lines | 306 files, 59,702 lines | 11 files, 1,780 lines |
+| `views/` | 357 files, 156,290 lines | 160 files, 56,629 lines | 6 files, 1,427 lines |
+| `lib/` | 536 files, 117,869 lines | 306 files, 59,702 lines | 11 files, 1,780 lines |
 | `bridge/` | 139 files, 46,197 lines | 96 files, 20,962 lines | none |
 | `components/` | 72 files, 22,184 lines | 36 files, 10,712 lines | 11 files, 796 lines |
 | `collab/` | 20 files, 13,532 lines | 22 files, 14,132 lines | none |
@@ -20,7 +20,7 @@ Roughly 556,000 lines of TypeScript, tests included, and 49,000 lines of CSS.
 | `ext/` | 2 files, 136 lines | 1 file, 86 lines | none |
 | `styles/` | none | 4 files, 857 lines | 87 files, 43,886 lines |
 
-Plus 46 `.ts`/`.js` files at the top level of `src/`, 15,449 lines all told, of which 21 are tests and 3 are ambient declarations. `main.ts` is 2,084 of that.
+Plus 46 `.ts`/`.js` files at the top level of `src/`, 15,451 lines all told, of which 21 are tests and 3 are ambient declarations. `main.ts` is 2,086 of that.
 <!-- web-src-dirs:end -->
 
 ## How do I find a feature
@@ -65,7 +65,7 @@ Do not be ambushed by these. The largest source files, by line count:
 | 3,659 | `views/color-lab.ts` | yes |
 | 3,253 | `views/projects.ts` | none |
 | 3,143 | `bridge/sequence-render.ts` | yes |
-| 3,068 | `views/gallery.ts` | none |
+| 3,069 | `views/gallery.ts` | none |
 | 3,029 | `bridge/export-svg-walker.ts` | **none** |
 | 2,674 | `views/deck-editor.ts` | yes |
 | 2,462 | `views/design-import.ts` | **none** |
@@ -75,7 +75,7 @@ Do not be ambushed by these. The largest source files, by line count:
 | 2,103 | `lib/clip-thumbs.ts` | yes |
 | 2,092 | `components/color-field.ts` | yes |
 | 2,089 | `views/design-inspector.ts` | yes |
-| 2,084 | `main.ts` | yes |
+| 2,086 | `main.ts` | yes |
 | 2,077 | `views/tool/session.ts` | yes |
 | 2,075 | `pro/index.ts` | yes |
 <!-- web-src-largest:end -->
