@@ -1,6 +1,6 @@
 # Lolly 1.0.8
 
-_Release notes: **1.0.8** (2026-09-15). Builds and release verification are in progress. First public release was 1.0.1 (2026-08-30). Free
+_Release notes: **1.0.8** (2026-09-16). Builds and release verification are in progress. First public release was 1.0.1 (2026-08-30). Free
 software under the **Mozilla Public License 2.0**; the content below is brand-agnostic and
 reflects the current platform._
 
@@ -47,8 +47,36 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   Turntables and orbiting or breathing lights use repeatable animation timing.
 - **More dependable 3D shaping and framing.** Unsafe bevels are reduced with a
   source note. Fit the object, reset the camera, orbit with the keyboard or click
-  the subject to focus. Camera actions use undo and redo. Imported HDR lighting
-  environments and larger multi-object scenes remain planned work.
+  the subject to focus. Camera actions use undo and redo.
+- **Whole scenes, not just one object.** Place several SVG files, 3D models and
+  words in one scene, then select, move, nudge and turn each object, or add a
+  group from the library at once. Light a scene with a generated studio, one of
+  six painted environments, or your own `.hdr` or `.exr` radiance map, shown
+  crisp or blurred behind the subject. Save camera paths from the live view,
+  move key, fill and rim lights in the preview, and choose finishes such as
+  chrome, clay, velvet, glass, pearl and neon. Larger exports are re-rendered at
+  the requested size rather than enlarged from the preview.
+- **Share a whole project folder.** "Download project (.lolly)" in a Projects
+  folder writes the folder, its sub-folders, every saved session and its
+  pictures into one file. Opening it rebuilds the folder with fresh copies, so
+  nothing you already have is replaced.
+- **Sync your own devices, safely.** Sync through Dropbox, Google Drive,
+  OneDrive, WebDAV (including Nextcloud) or S3, or move a file yourself; syncing
+  through a folder or straight to another device is planned. A sync checks the copy
+  before writing and asks when both sides changed, instead of overwriting
+  either. Deletions sync, a copy is kept before every change, and seven daily
+  copies can be restored. Encryption is available and off by default. In the
+  mobile apps, Drive and OneDrive sign-in stay hidden until their app
+  registrations are set up, and the new mobile sign-in component has not yet
+  been tested on a device.
+- **Add pictures from a web address.** The image picker and the catalogue accept
+  an image URL; the web app fetches it through its own server so the image can
+  be used like an upload.
+- **Charts keep long titles readable.** Chart 1.26 wraps long titles and
+  subtitles, keeps wrapped category labels inside their rows, and narrows the
+  plot so value labels stay on the canvas.
+- **Emoji buttons on every text field.** A text field in a tool that opens with
+  a template choice now keeps its emoji button after the choice is made.
 - **Share your design with your rules.** Turn a Design document, saved session or
   template into a portable tool. Choose the editable text, images and options;
   keep the rest fixed. Set character limits, text fitting, font-size ranges,
@@ -320,3 +348,4 @@ carry a PREVIEW watermark for testing until graduated).
   web; the bare web shell and the CLI stub it until they are deployed with access to chromium.
 - Hosted rendering of hook-heavy / HTML-heavy tools needs the optional Chromium worker tier;
   the fast path refuses them by default.
+- New interface text in 1.0.8 is in English only until the next translation update.
