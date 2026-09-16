@@ -18,6 +18,7 @@
  * the template) means the CLI produces the same styles as the browser.
  */
 
+// === lolly:shared design-renderer-1 - generated from community/_shared/design-renderer.js; edit there and run pnpm run sync:shared ===
 function inputsFrom(model) {
   var o = {};
   (model || []).forEach(function (i) { o[i.id] = i.value; });
@@ -28,14 +29,19 @@ function num(v, d) {
   var x = typeof v === 'number' ? v : parseFloat(v);
   return isFinite(x) ? x : d;
 }
+// === /lolly:shared design-renderer-1 ===
+
 // === lolly:shared clamp - generated from community/_shared/math.js; edit there and run npm run sync:shared ===
 function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 // === /lolly:shared clamp ===
 
+// === lolly:shared design-renderer-2 - generated from community/_shared/design-renderer.js; edit there and run pnpm run sync:shared ===
 // Only let a value through if it's a shape CSS colour can't be smuggled past -
 // box fill/text colour come from colour inputs, but a hand-edited URL could carry
 // anything, and these land inside a style="" attribute, so guard against
 // property-injection via a stray ';'.
+// === /lolly:shared design-renderer-2 ===
+
 // === lolly:shared safeColor - generated from community/_shared/math.js; edit there and run npm run sync:shared ===
 function safeColor(v, fallback) {
   var s = String(v == null ? '' : v).trim();
@@ -53,6 +59,7 @@ function safeColor(v, fallback) {
 }
 // === /lolly:shared safeColor ===
 
+// === lolly:shared design-renderer-3 - generated from community/_shared/design-renderer.js; edit there and run pnpm run sync:shared ===
 // Coerce a manifest/URL boolean (real boolean, or "true"/"1"/"on" string) to a
 // boolean, falling back to `dflt` for empty/unknown values.
 function boolVal(v, dflt) {
@@ -65,6 +72,8 @@ function boolVal(v, dflt) {
 }
 
 // Escape a string for safe inclusion in raw HTML output ({{{ }}} in the template).
+// === /lolly:shared design-renderer-3 ===
+
 // === lolly:shared esc - generated from community/_shared/text.js; edit there and run npm run sync:shared ===
 function esc(s) {
   return String(s == null ? '' : s)
@@ -72,6 +81,7 @@ function esc(s) {
 }
 // === /lolly:shared esc ===
 
+// === lolly:shared design-renderer-4 - generated from community/_shared/design-renderer.js; edit there and run pnpm run sync:shared ===
 // JSON safe to drop verbatim into <script type="application/json">: kill the only
 // tag-closing sequence ("</script") by escaping '<', plus the two JS line
 // terminators U+2028/U+2029. esc() above is HTML-escaping and would corrupt the
@@ -398,6 +408,13 @@ function boxCss(b, grad) {
 
 function imgCss(b) {
   var fit = FITS[String(b.fit)] ? String(b.fit) : 'contain';
+  if (b.imageFraming && typeof b.imageFraming === 'object') {
+    var f = b.imageFraming;
+    var x = clamp(num(f.x, 50), 0, 100);
+    var y = clamp(num(f.y, 50), 0, 100);
+    var zoom = Math.max(1, num(f.zoom, 100)) / 100;
+    return 'object-fit:' + fit + ';object-position:' + x + '% ' + y + '%;transform-origin:' + x + '% ' + y + '%;transform:scale(' + zoom + ');';
+  }
   var pos = String(b.imgpos == null ? '' : b.imgpos).trim();
   return 'object-fit:' + fit + ';' +
     (OBJPOS[pos] && pos !== 'center' ? 'object-position:' + pos + ';' : '');
@@ -2703,6 +2720,7 @@ function compute(model) {
   // input - and a hook that blanks `boxes` on every render empties the whole document.
   return out;
 }
+// === /lolly:shared design-renderer-4 ===
 
 function onInit(ctx) { return compute(ctx.model); }
 function onInput(ctx) { return compute(ctx.model); }

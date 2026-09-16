@@ -440,6 +440,17 @@ export function buildPrintAndRows(ta: ActionsCtx): void {
       // selected format (hidden for png/jpg/etc). Other export options are global.
       const vectorOnly = i.id === 'convertPaths';
       const hide = vectorOnly && !ta.formatRules.isVectorFmt(initialFmt);
+      if (vectorOnly) {
+        const tip = helpTip(t('Embeds supported fonts when possible. Text that cannot be embedded faithfully stays outlined.'));
+        return `
+        <label class="export-option help-tip-host" data-vector-only${hide ? ' style="display:none"' : ''}>
+          <span>${t('Text')}</span>${tip.button}${tip.pop}
+          <select class="field-select" data-input-id="convertPaths" aria-label="${escapeText(t('Export text'))}">
+            <option value="outline"${i.value ? ' selected' : ''}>${t('Outline')}</option>
+            <option value="embed"${i.value ? '' : ' selected'} data-embed-label>${initialFmt === 'pdf' ? t('Embed (subset)') : t('Keep text')}</option>
+          </select>
+        </label>`;
+      }
       const tip = i.help ? helpTip(i.help) : null;
       return `
         <label class="export-option${tip ? ' help-tip-host' : ''}"${vectorOnly ? ' data-vector-only' : ''}${hide ? ' style="display:none"' : ''}>
@@ -892,7 +903,7 @@ export function paintBar(ta: ActionsCtx): void {
       ${actions.includes('download') ? `<p class="export-degraded-note" data-export-degraded role="status" hidden style="margin:.2rem 0 0;color:hsl(var(--muted-foreground));font-size:12px;text-align:center"></p>` : ''}
       ${actions.includes('download') ? `<p class="export-delivery" data-export-delivery role="status" hidden></p>` : ''}
     </div>
-    ${actions.includes('download') ? `${recordingRow}${filenameRow}${dimsRow}${timingRow}${aspectWarnRow}${fidelityWarnRow}${notesHandoutRow}${hdrRow}${cmykRow}${printRow}${pkgRow}${protectionRow}<div class="export-ingredient-note" data-ingredient-note hidden></div>${ta.rights.rowHtml()}${audioRow}${loudnessRow}${captionsRow}${settingsRow}${videoQualityRow}${sendRow}${preflightRow}${costRow}` : ''}
+    ${actions.includes('download') ? `${recordingRow}${filenameRow}${dimsRow}${timingRow}${aspectWarnRow}${fidelityWarnRow}${notesHandoutRow}${cmykRow}${printRow}${pkgRow}${protectionRow}<div class="export-ingredient-note" data-ingredient-note hidden></div>${ta.rights.rowHtml()}${captionsRow}${settingsRow}${videoQualityRow}<details class="section-card export-video-options" data-video-options open><summary hidden>${escapeText(t('Audio and colour settings'))}</summary>${audioRow}${loudnessRow}${hdrRow}</details>${sendRow}${preflightRow}${costRow}` : ''}
   `;
   void ta.notes.fillIngredientNote();
 
@@ -949,7 +960,7 @@ export function paintBar(ta: ActionsCtx): void {
   exportOpts.forEach((i) => {
     el.querySelector<HTMLInputElement>(`[data-input-id="${escapeText(i.id)}"]`)?.addEventListener(
       'change',
-      ({ target }) => runtime.setInput(i.id, (target as HTMLInputElement).checked)
+      ({ target }) => runtime.setInput(i.id, i.id === 'convertPaths' ? (target as HTMLSelectElement).value === 'outline' : (target as HTMLInputElement).checked)
     );
   });
 

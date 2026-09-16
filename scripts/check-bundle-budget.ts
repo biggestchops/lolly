@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const distDir = path.join(root, 'shells/web/dist');
+const distDir = path.resolve(process.env.LOLLY_WEB_DIST ?? path.join(root, 'shells/web/dist'));
 const indexHtml = path.join(distDir, 'index.html');
 
 // --- Budget knobs (tune here) ------------------------------------------------
@@ -34,7 +34,7 @@ const indexHtml = path.join(distDir, 'index.html');
 // one on the boot path means a static import pulled it back in.
 // `engine-c2pa` is anchored (the `-` suffix) so it matches the c2pa/verify/CBOR
 // chunk but NOT the tiny `engine-x509` chunk that legitimately boots (pemToDer).
-const FORBIDDEN_BOOT_CHUNK = /(engine-render|engine-c2pa|handlebars|ajv|html2canvas)-/;
+const FORBIDDEN_BOOT_CHUNK = /(engine-render|engine-c2pa|handlebars|ajv|html2canvas|scan|font-subset|skera)-/;
 // Total gzipped size ceiling for entry + modulepreload JS. The 115 KB figure came
 // from a ~95 KB post-perf baseline plus headroom. Raised to 135 KB on 2026-07-29
 // after boot drifted to 200.8 KB and a dedicated pass took it back to 129.7:

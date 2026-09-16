@@ -93,7 +93,7 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ui-type-tracking-label);
   color: var(--ui-color-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -152,7 +152,7 @@
   font: inherit;
   font-size: var(--fs-sm);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ui-type-tracking-label);
   text-transform: uppercase;
   text-align: start;
   cursor: pointer;
@@ -253,6 +253,16 @@ html[data-a11y-motion="reduce"] .fc-insp-caret { transition: none; }
 /* The mini button beside a colour swatch (Gradient) stays on the row. */
 .fc-insp-mini { flex: none; }
 
+.fc-insp-document-options > summary {
+  cursor: pointer;
+  color: var(--ui-color-text-default);
+  font-size: var(--ui-type-label);
+  padding-block: var(--ui-space-control-block);
+}
+.fc-insp-document-options > summary:focus-visible {
+  outline: 2px solid var(--ui-color-focus-ring);
+  outline-offset: 2px;
+}
 .fc-insp-hint {
   margin: 0;
   padding: var(--sp-4);
@@ -315,14 +325,7 @@ html[data-a11y-motion="reduce"] .fc-insp-caret { transition: none; }
 
 .fc-insp-chips { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
 .fc-insp-chip {
-  display: inline-flex;
   align-items: baseline;
-  gap: 4px;
-  padding: 2px var(--sp-2);
-  border-radius: var(--ui-radius-pill);
-  background: var(--ui-color-surface-muted);
-  color: var(--ui-color-text-default);
-  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
 }
 .fc-insp-chip > i {
@@ -366,3 +369,47 @@ html[data-a11y-motion="reduce"] .fc-insp-caret { transition: none; }
    column, so this cannot reach it - hiding the whole sidebar is the dock's own
    business, not this sheet's. */
 .tool-view.is-chrome-hidden .fc-insp { display: none !important; }
+
+.modal.fc-insp-sheet {
+  width: min(calc(100vw - var(--sp-8)), 420px);
+  height: min(90dvh, 840px);
+  max-height: calc(100dvh - var(--sp-8));
+  padding: 0;
+  overflow: hidden;
+}
+.fc-insp-sheet .fc-insp-tools,
+.fc-insp-sheet .panel-grip { display: none; }
+
+/* Option groups reuse the editor component, with room for labels and touch. */
+.fc-insp .fc-seg:not(.fc-posgrid) {
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  padding: 0;
+  background: none;
+}
+.fc-insp .fc-seg-btn {
+  min-height: var(--sp-8);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-color-surface-muted);
+  color: var(--ui-color-text-muted);
+  box-shadow: none;
+}
+.fc-insp .fc-seg-btn:not(.fc-seg-ic) {
+  flex: 1 0 auto;
+  padding-inline: var(--sp-3);
+  white-space: normal;
+}
+.fc-insp .fc-seg-btn:hover { color: var(--ui-color-text-default); }
+.fc-insp .fc-seg-btn.is-on {
+  background: var(--ui-color-selection-surface);
+  color: var(--ui-color-text-default);
+}
+.fc-insp .fc-pos-btn { min-height: 0; border-radius: var(--ui-radius-control); }
+.fc-insp-head { min-height: var(--ui-size-target); }
+@media (pointer: coarse) {
+  .fc-insp .fc-seg-btn,
+  .fc-insp-arr,
+  .fc-insp-tool,
+  .fc-insp-close { min-width: var(--ui-size-target); min-height: var(--ui-size-target); }
+  .fc-insp .fc-posgrid { grid-template-columns: repeat(3, var(--ui-size-target)); grid-auto-rows: var(--ui-size-target); }
+}

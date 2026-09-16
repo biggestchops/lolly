@@ -27,6 +27,7 @@ import type { ToolManifest } from '../../../../engine/src/loader.ts';
 /** A batch row read from / written into by the CSV bridge. */
 export interface IoRow {
   toolId: string;
+  artifactDigest?: string;
   manifest: ToolManifest | null;
   values: Record<string, InputValue>;
   format?: string;

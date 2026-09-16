@@ -31,6 +31,7 @@ export { BATCH_SLOT_PREFIX, isBatchSlot };
 export interface SessionRow {
   kitOutputId?: string;
   toolId: string;
+  artifactDigest?: string;
   values: Record<string, InputValue>;
   manifest: ToolManifest | null;
   format?: string;
@@ -73,6 +74,7 @@ export interface SessionStateInput {
 export interface SnapshotRow {
   kitOutputId?: string;
   toolId: string;
+  artifactDigest?: string;
   values: Record<string, InputValue>;
   format?: string;
   filename?: string;
@@ -152,6 +154,7 @@ export function snapshotFromState(state: SessionStateInput): BatchSnapshot {
       .map(r => ({
         ...(r.kitOutputId ? { kitOutputId: r.kitOutputId } : {}),
         toolId: r.toolId,
+        artifactDigest: r.artifactDigest,
         values: r.values ?? {},
         format: r.format,
         filename: r.filename,
@@ -189,6 +192,7 @@ export async function rowsFromSnapshot<R extends SessionRow>(
   for (const r of data.rows ?? []) {
     const row = newRow();
     row.toolId = r.toolId;
+    row.artifactDigest = r.artifactDigest;
     if (r.kitOutputId) row.kitOutputId = r.kitOutputId;
     row.values = r.values ?? {};
     if (r.format) row.format = r.format;
@@ -202,7 +206,7 @@ export async function rowsFromSnapshot<R extends SessionRow>(
     if (r.bleed) row.bleed = r.bleed;
     if (r.marks) row.marks = r.marks;
     try {
-      const manifest = (await getTool(r.toolId)).manifest;
+      const manifest = (await getTool(r.toolId, r.artifactDigest)).manifest;
       if (isExportable(manifest)) row.manifest = manifest;
       else { if (!r.kitOutputId) row.toolId = ''; row.manifest = null; }
     } catch {

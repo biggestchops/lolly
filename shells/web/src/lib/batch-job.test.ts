@@ -60,20 +60,28 @@ test('the lock follows the JOB: it is held while the run is live and freed when 
   assert.equal(isBatchRunActive(), false, 'a finished run must free the slot');
 });
 
-test('REGRESSION: a run stranded by a view teardown is freed by cancelling the job', async () => {
+test('cancelled batches keep the render slot until their active work settles', async () => {
   __resetJobsForTest();
-  // A run that never settles - the old boolean lock was cleared ONLY by this
-  // function returning, so a stranded run (or a /pro remount, whose `_cleanup`
-  // never touched the flag) refused every later export for the rest of the session.
-  const job = startBatchExport('Rendering Selection', async () => new Promise(() => { /* never settles */ }));
+  // Hold one render open after cancellation to expose overlap with the next run.
+  const gate = deferred<void>();
+  const job = startBatchExport('Rendering Selection', async () => gate.promise);
   await tick();
   assert.equal(isBatchRunActive(), true);
 
   // The toast's ✕ - the only handle a user has once the view is gone.
   cancelJob(job.id);
   assert.equal(jobsSnapshot().find(j => j.id === job.id)!.status, 'cancelled');
-  assert.equal(isBatchRunActive(), false, 'cancel frees the slot even though the run never returned');
+  assert.equal(isBatchRunActive(), true, 'active work still owns the offscreen stage');
   assert.equal(job.cancelled, true, 'and the runner sees it, so it stops between rows');
+  let nextStarted = false;
+  startBatchExport('Next selection', async () => { nextStarted = true; });
+  await tick();
+  assert.equal(nextStarted, false);
+  gate.resolve();
+  await tick();
+  assert.equal(nextStarted, true);
+  assert.equal(isBatchRunActive(), false);
+  assert.equal(jobsSnapshot().find(j => j.id === job.id)!.status, 'cancelled');
 });
 
 test('a view teardown leaves the run alive, still reporting, and still able to finish', async () => {

@@ -66,6 +66,8 @@
     "index:plans": "node scripts/index-plans.ts",
     "validate:catalog:all": "node scripts/build-catalog-all.ts --check",
     "sync:shared": "node scripts/sync-shared-hooks.ts",
+    "build:design-renderer": "node scripts/build-design-tool-renderer.ts",
+    "check:design-renderer": "node scripts/build-design-tool-renderer.ts --check",
     "check:bundle": "node scripts/check-bundle-budget.ts",
     "check:docs-size": "node scripts/check-docs-size-budget.ts",
     "check:mcp": "node scripts/check-mcp-live.ts",

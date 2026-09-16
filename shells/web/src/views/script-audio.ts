@@ -426,9 +426,9 @@ export async function generateSpeechAsJob(
   // A heavy job behind another heavy job waits its turn, and a silent panel
   // would read as a stall - report it before awaiting.
   if (jobsSnapshot().some(j => j.id === job.id && j.status === 'queued')) surface.onQueued?.();
-  await job.started;
-  if (job.cancelled) return null;
   try {
+    await job.started;
+    if (job.cancelled) return null;
     const result = await speech.synthesize(req.spokenText, {
       voice: req.voice || undefined,
       speed: req.speed,
@@ -447,6 +447,7 @@ export async function generateSpeechAsJob(
     // concatenating (plans/181 section 5.1). The v1 contract has no field for
     // it, so it is read structurally; a shell whose bridge does not report it
     // leaves buildTtsRecord to derive the seams from the word timings.
+    if (job.cancelled) return null;
     const reported = (result as { segments?: TtsSegment[] }).segments;
     const clip: TtsClip = {
       result,
@@ -465,12 +466,16 @@ export async function generateSpeechAsJob(
     const name = ttsAssetName(clip.spokenText);
     job.progress(100, 100, tRaw('Saving “{name}”', { name }));
     const ref = await saveTtsClip(host, clip);
+    if (job.cancelled) return null;
     job.finish(ref);
     announce(tRaw('Speech saved to your uploads: {name}', { name }));
     return null;
   } catch (err) {
+    if (job.cancelled) return null;
     job.fail(err);
     throw err;
+  } finally {
+    job.settle();
   }
 }
 

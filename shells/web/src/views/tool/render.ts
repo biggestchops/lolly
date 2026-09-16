@@ -1,3 +1,4 @@
+import { designSelection } from '@lolly-tools/core/design-tool-v1';
 import { wireSyntaxRequests } from '../../lib/syntax-preview.ts';
 // SPDX-License-Identifier: MPL-2.0
 /**
@@ -10,7 +11,7 @@ import { wireSyntaxRequests } from '../../lib/syntax-preview.ts';
  */
 import { C2PA_FORMATS, DEFAULT_CMYK_CONDITION, VIDEO_CODEC_STRINGS, hasVideoParams, normalizeTableValue } from '@lolly/engine';
 import { t } from '../../i18n.ts';
-import { cssEscape } from '../../lib/util/escape.ts';
+import { patchCanvasTranslations } from '../canvas-translation.ts';
 import { livePalette } from '../../lib/live-palette.ts';
 import { patchLivePreview } from '../../lib/live-preview.ts';
 import { scopeTemplateStyles } from '../../lib/scope-css.ts';
@@ -94,6 +95,13 @@ export function paint(tview: ToolViewCtx): void {
   tview.rafId = 0;
   if (!tview.pendingFrame) return;
   const { model, hydrated } = tview.pendingFrame;
+  if (tview.tool.manifest.designTool) {
+    const policy = tview.tool.manifest.designTool;
+    const values = Object.fromEntries(model.map(i => [i.id, i.value]));
+    const variantId = designSelection(policy, values).variantId;
+    const variant = policy.variants.find(v => v.id === variantId);
+    if (variant && canvasEl) { canvasEl.style.width = `${variant.width}px`; canvasEl.style.height = `${variant.height}px`; tview.nativeW = variant.width; tview.nativeH = variant.height; }
+  }
   tview.pendingFrame = null;
   // Skip the expensive canvas rebuild when the hydrated output is byte-identical to
   // the last clean paint. refresh() and the coalesced double-emit re-emit unchanged
@@ -103,18 +111,9 @@ export function paint(tview: ToolViewCtx): void {
   // have moved on an input that doesn't touch the template (e.g. an export-dimension
   // select), so URL sync / size-driver / auto-export below always run. lastPainted
   // is recorded only after a CLEAN paint, so a throwing render retries next emit.
-  // ── Geometry fast-skip (plans/98 section 9, opt-in) ────────────────────────────────
-  // A proven pure-translation move whose DOM free-canvas already positioned (applyLiveRect
-  // during the drag) needs no rebuild - export parity holds via COMPUTED style (the export
-  // walker reads getComputedStyle, so raw-attribute formatting is irrelevant). paint()
-  // derives the damage itself from consecutive box models (no hint channel), and VERIFIES
-  // each moved node is already at committed geometry before skipping; anything unproven
-  // (resize/rotate, cross-box, or a non-drag commit that didn't pre-position the DOM) falls
-  // through to the full paint below.
-  // lastPaintedBoxes advances ONLY after a clean skip or clean full paint (mirroring
-  // lastPainted), NEVER unconditionally - so a throwing full paint leaves the baseline at
-  // the last cleanly-painted boxes and a later move still diffs against it (catching the
-  // un-healed change and forcing a full repaint), preserving the throwing-render self-heal.
+  // A translation preserves mounted media and text only when the complete
+  // template differs by the planned left/top changes. Other changes repaint.
+  // Advance the model baseline only after the patch or full paint succeeds.
   const prevBoxes = tview.lastPaintedBoxes;
   const curBoxes: Box[] | null =
     fastCfgPaint && canvasEditInput
@@ -131,20 +130,7 @@ export function paint(tview: ToolViewCtx): void {
         kindField: fastCfgPaint.kindField,
       }),
     });
-    const esc = cssEscape;
-    if (
-      plan?.every((pt) => {
-        // A frame patch targets the artboard PAGE element - its inline left/top are
-        // global, exactly what the live drag wrote (plans/141 WP-A item 6). Members
-        // that rode the frame have no patch: their frame-local style is unchanged.
-        const el = contentEl.querySelector(
-          pt.frame
-            ? '.lolly-frame-page[data-frame-id="' + esc(pt.id) + '"]'
-            : '.lolly-box[data-box-id="' + esc(pt.id) + '"]'
-        ) as HTMLElement | null;
-        return !!el && parseFloat(el.style.left) === pt.x && parseFloat(el.style.top) === pt.y;
-      })
-    ) {
+    if (plan && patchCanvasTranslations(contentEl, tview.lastPainted, hydrated, plan)) {
       tview.lastPainted = hydrated;
       tview.lastPaintedBoxes = curBoxes;
       geomSkipped = true;
@@ -252,6 +238,28 @@ export function paint(tview: ToolViewCtx): void {
         )
           .then((m) => { const { contentEl } = tview; return m.mountToolViz(contentEl, { isCurrent: () => gen === tview.renderGen }); })
           .catch((err) => console.warn('viz mount failed:', err));
+      }
+      if (tview.studioModule || contentEl.querySelector('[data-lolly-studio]')) {
+        tview.studioError = null;
+        tview.studioPending = (tview.studioModule
+          ? Promise.resolve(tview.studioModule)
+          : import('../../lib/studio3d/mount.ts').then(m => (tview.studioModule = m)))
+          .then(m => m.mountToolStudio(tview.contentEl, {
+            isCurrent: () => gen === tview.renderGen,
+            read: async (url, signal) => {
+              signal.throwIfAborted();
+              if (!tview.host.assets.bytes) throw new Error('Asset bytes are unavailable in this app.');
+              const bytes = await tview.host.assets.bytes(url); signal.throwIfAborted(); return bytes;
+            },
+            endGesture: () => tview.inputHistory.endGesture(),
+            setInput: (id, value) => tview.runtime.setInput(id, value as Parameters<typeof tview.runtime.setInput>[1]),
+            reviewCollection: () => {
+              void import('../studio3d-collection.ts').then(m => {
+                if (tview.contentEl.isConnected) m.openStudioCollection(tview.runtime, tview.host);
+              });
+            },
+          }))
+          .catch(error => { if (gen === tview.renderGen) tview.studioError = error instanceof Error ? error : new Error(String(error)); });
       }
       clearCanvasError(tview);
       tview.lastPainted = hydrated;
@@ -634,6 +642,9 @@ export function wireRenderLoop(tview: ToolViewCtx): void {
   // renders a placeholder and the shell owns the WebGL canvas inside it, across paints.
   tview.vizPending = Promise.resolve();
   tview.vizModule = null;
+  tview.studioPending = Promise.resolve();
+  tview.studioModule = null;
+  tview.studioError = null;
 
   // On-canvas table-cell editing for paginated tools (render.paginate): cells the
   // template stamped data-cell / data-cell-pick become editable / pickable, and

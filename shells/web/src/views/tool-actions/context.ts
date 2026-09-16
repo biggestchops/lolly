@@ -217,6 +217,8 @@ export interface ActionsCtx {
   sizeUserSet: boolean;
   FROST_OK_FORMATS: Set<string>;
   VECTOR_FORMATS: Set<string>;
+  fidelityWarningOpen: boolean;
+  disposeFidelityWarning: Disposer;
   palette: Fact<readonly PreflightSwatch[]>;
   preflightManifest: PreflightManifest;
   designAuditRows: readonly PreflightRow[];

@@ -25,7 +25,7 @@ const MANIFEST_MAX_BYTES = 1024 * 1024;
 export type LollySizeBand = 'small' | 'medium' | 'large';
 
 export interface LollySessionPreview {
-  kind: 'session';
+  kind: 'session' | 'tool';
   format: 'lolly-share';
   label: string;
   fileBytes: number;
@@ -120,7 +120,7 @@ export function classifyLollyManifest(
     const creator = record(manifest.creator);
     const creatorName = text(creator?.name) ?? text(creator?.org);
     return {
-      kind: 'session',
+      kind: manifest.kind === 'tool' ? 'tool' : 'session',
       format,
       label: fallback,
       fileBytes,
@@ -266,7 +266,7 @@ export async function peekLollyFile(file: File): Promise<LollyPreview> {
 
 export type LoadedLolly =
   | {
-      kind: 'session';
+      kind: 'session' | 'tool';
       preview: LollySessionPreview;
       contents: import('./lolly-pack.ts').LollyFileContents;
     }
@@ -275,9 +275,9 @@ export type LoadedLolly =
 /** Full guarded read, chosen after preflight and performed exactly once. */
 export async function loadLollyFile(file: File, preview: LollyPreview): Promise<LoadedLolly> {
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (preview.kind === 'session') {
+  if (preview.format === 'lolly-share') {
     const { readLollyFile } = await import('./lolly-pack.ts');
-    return { kind: 'session', preview, contents: await readLollyFile(bytes) };
+    return { kind: preview.kind, preview, contents: await readLollyFile(bytes) };
   }
   const { unzipBrandBytes } = await import('../brand-transfer.ts');
   return { kind: preview.kind, preview, files: await unzipBrandBytes(bytes) };

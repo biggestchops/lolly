@@ -1,0 +1,14 @@
+{
+  "id": "brand-starter-dark",
+  "name": "Brand type \u00b7 dark",
+  "category": "Brand",
+  "description": "A short, clear type specimen on transparency.",
+  "values": {
+    "text": "Open possibilities",
+    "weight": 600,
+    "color": "{color.semantic.on-primary}",
+    "tracking": -2
+  },
+  "galleryCover": true,
+  "galleryTheme": "dark"
+}

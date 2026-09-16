@@ -817,6 +817,11 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             values: plainValues(),
           });
         },
+        shareWithRules: tview.tool.manifest.designTool ? undefined : () => {
+          void import('../../lib/rules-launch.ts').then(({ shareCurrentWithRules }) =>
+            shareCurrentWithRules(runtime, toolId, snapshot(), String(snapshot().__label || tview.tool.manifest.name))
+          ).catch(error => announce((error as Error).message));
+        },
         shareLolly: () => {
           const lolly = makeLollyVehicle(
             tview.host,
@@ -1068,6 +1073,8 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
       });
   }
 
+  tview.presentation.mountCountdown();
+
   // WYSIWYG editor overlay (render.layout:'editor'): mount the direct-manipulation
   // layer over the live canvas. Dynamically imported (gated, never static) so it's
   // only pulled in for editor-layout tools - the engine and every other tool are
@@ -1141,8 +1148,19 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
      * Both optional, so every existing caller - the rail's Present action, the `?present`
      * auto-entry - keeps its no-argument call and its behaviour.
      */
-    const openPresenter = async (o?: { at?: string; speaker?: boolean }): Promise<void> => {
+    const openPresenter = async (o?: { at?: string; speaker?: boolean; production?: boolean }): Promise<void> => {
       if (presenter) return;
+      // Reserve the private window in the menu gesture, before imports or hydration await.
+      let controlsWindow: Window | null = null;
+      if (o?.production) {
+        try { controlsWindow = window.open('about:blank', 'lolly-speaker', 'popup=yes,width=1280,height=900'); } catch { /* unavailable in this host */ }
+      }
+      if (o?.production && !controlsWindow) {
+        const { showUndoToast } = await import('../../lib/undo-toast.ts');
+        showUndoToast({ message: t('Allow popups to open private presentation controls.'), actionLabel: t('Dismiss'), undo: () => {} });
+        return;
+      }
+      try {
       const { openPresentMode } = await import('../present-mode.ts');
       // `varsFrom` is read ONCE, at open, off `contentEl`'s inline `--brand-*` slots -
       // and `applyBrandVars` writes those asynchronously (seven awaited token resolves).
@@ -1183,6 +1201,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             .filter(Boolean)
         );
       presenter = openPresentMode({
+        ...(controlsWindow ? { production: tview.presentation.productionOptions(controlsWindow) } : {}),
         source: presentSource,
         // A frame id IS an `s=` address (present-mode resolves position / id / `h.f`), so
         // "from this slide" needs no second entry point - it just addresses the open.
@@ -1224,6 +1243,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
       // than as an option on openPresentMode because the controller's own `s` key toggles
       // the very same function - one implementation, two doors.
       if (o?.speaker) presenter?.speaker();
+      } finally { if (!presenter) controlsWindow?.close(); }
     };
 
     // The document name lives in ONE place - the export sheet's filename field - and three
@@ -1755,6 +1775,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
               // settings. Absent means neither is drawn (plans/180 section 8).
               narration: design.narrationActions,
               narrationEnabled: () => designNarrationEnabled(tview.designIntent),
+              videoWorkspace: () => tview.designIntent === 'video' || tview.designIntent === 'screencast',
               fonts: design.fonts,
               // Document health asks the SAME registry vector export uses whether a
               // rendered run has real font bytes. Kept lazy: opening Design without

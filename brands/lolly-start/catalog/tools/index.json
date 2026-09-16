@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generatedAt": "2026-09-14T21:27:08.171Z",
+  "generatedAt": "2026-09-15T23:44:44.479Z",
   "tools": [
     {
       "id": "compress-pdf",
@@ -573,6 +573,7 @@
           "name": "Website link",
           "category": "Utility",
           "description": "A clean scannable link to any web page.",
+          "galleryCover": true,
           "presets": [
             {
               "id": "brand",
@@ -1462,12 +1463,13 @@
       "id": "voice-recorder",
       "name": "Voice Recorder",
       "description": "Record a voice note with a live level meter and gentle coaching, then save it as MP3.",
-      "version": "1.1.1",
+      "version": "1.1.2",
       "status": "experimental",
       "category": "everyone",
       "capabilities": [
         "microphone"
       ],
+      "galleryArt": "icon",
       "tags": [
         "audio",
         "voice",
@@ -2546,6 +2548,24 @@
           "theme": "dark"
         }
       ],
+      "templates": [
+        {
+          "id": "brand-starter-dark",
+          "name": "Brand type · dark",
+          "category": "Brand",
+          "description": "A short, clear type specimen on transparency.",
+          "galleryCover": true,
+          "galleryTheme": "dark"
+        },
+        {
+          "id": "brand-starter",
+          "name": "Brand type",
+          "category": "Brand",
+          "description": "A short, clear type specimen on transparency.",
+          "galleryCover": true,
+          "galleryTheme": "light"
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "شعار نصي",
@@ -2756,6 +2776,15 @@
             "layout": "overlay",
             "vizLook": "stock:geiss-thumb-drum"
           }
+        }
+      ],
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Brand waveform",
+          "category": "Brand",
+          "description": "A clear waveform on transparency, ready for a recording.",
+          "galleryCover": true
         }
       ],
       "i18n": {
@@ -3097,6 +3126,15 @@
             "threshold": 62,
             "plateView": true
           }
+        }
+      ],
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Type in foil",
+          "category": "Brand",
+          "description": "A restrained foil specimen using live brand typography.",
+          "galleryCover": true
         }
       ],
       "i18n": {
@@ -3480,6 +3518,15 @@
           }
         }
       ],
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Brand halftone",
+          "category": "Brand",
+          "description": "A halftone study generated from a brand-colour gradient.",
+          "galleryCover": true
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "الفلتر",
@@ -3648,6 +3695,15 @@
       "exportable": true,
       "anim": "/tools/flythrough/card.webm",
       "preview": "/catalog/previews/flythrough.svg",
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Open in motion",
+          "category": "Brand",
+          "description": "An editable brand code window lifted into a camera move.",
+          "galleryCover": true
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "التحليق عبر المشهد",
@@ -3759,7 +3815,7 @@
       "id": "design",
       "name": "Design",
       "description": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system.",
-      "version": "1.27.0",
+      "version": "1.29.0",
       "status": "community",
       "category": "designer",
       "tags": [
@@ -3946,6 +4002,13 @@
         }
       ],
       "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Open possibilities",
+          "category": "Slides",
+          "description": "A clear opening slide in your brand colours.",
+          "galleryCover": true
+        },
         {
           "id": "carousel",
           "name": "Carousel",
@@ -4585,6 +4648,15 @@
       "exportable": true,
       "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"3.5\" rx=\"1\"/><path d=\"M4.5 6.5V20\"/><path d=\"M19.5 6.5V20\"/><rect x=\"7\" y=\"9\" width=\"10\" height=\"6.5\" rx=\"1\"/><path d=\"M2 20h20\"/><rect x=\"13.5\" y=\"15.5\" width=\"5\" height=\"4.5\" rx=\"1\"/></svg>",
       "preview": "/catalog/previews/booth-studio.svg",
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Open exhibition",
+          "category": "Brand",
+          "description": "An exhibition scene with editable branded panels.",
+          "galleryCover": true
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "الجناح",
@@ -4876,6 +4948,15 @@
       "exportable": true,
       "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12.296 3.464 3.02 3.956\" /><path d=\"M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z\" /><path d=\"M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" /><path d=\"m6.18 5.276 3.1 3.899\" /></svg>",
       "preview": "/catalog/previews/lottie-digi-ad.svg",
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Open possibilities",
+          "category": "Brand",
+          "description": "A simple brand message ready for your animation.",
+          "galleryCover": true
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "إعلان Lottie",
@@ -5414,6 +5495,15 @@
             "lutSource": "preset",
             "lutPreset": "slide-vivid"
           }
+        }
+      ],
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Brand duotone",
+          "category": "Brand",
+          "description": "A tonal study using your brand colours. Replace the sample with any image.",
+          "galleryCover": true
         }
       ],
       "i18n": {
@@ -6322,6 +6412,13 @@
               "description": "Four rows of two on US Letter stock."
             }
           ]
+        },
+        {
+          "id": "brand-starter",
+          "name": "Brand stickers",
+          "category": "Brand",
+          "description": "A ready-to-print sheet of six brand-colour type stickers.",
+          "galleryCover": true
         },
         {
           "id": "stickers",
@@ -7552,6 +7649,24 @@
           "theme": "light"
         }
       ],
+      "templates": [
+        {
+          "id": "brand-starter-dark",
+          "name": "Ink on transparency · dark",
+          "category": "Brand",
+          "description": "A sample pen stroke in your brand ink. Draw your own to replace it.",
+          "galleryCover": true,
+          "galleryTheme": "dark"
+        },
+        {
+          "id": "brand-starter",
+          "name": "Ink on transparency",
+          "category": "Brand",
+          "description": "A sample pen stroke in your brand ink. Draw your own to replace it.",
+          "galleryCover": true,
+          "galleryTheme": "light"
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "التوقيع",
@@ -7745,6 +7860,24 @@
             "weight": 2,
             "seed": 7
           }
+        }
+      ],
+      "templates": [
+        {
+          "id": "brand-starter-dark",
+          "name": "Brand contours · dark",
+          "category": "Brand",
+          "description": "Organic linework with space around it and no background.",
+          "galleryCover": true,
+          "galleryTheme": "dark"
+        },
+        {
+          "id": "brand-starter",
+          "name": "Brand contours",
+          "category": "Brand",
+          "description": "Organic linework with space around it and no background.",
+          "galleryCover": true,
+          "galleryTheme": "light"
         }
       ],
       "i18n": {
@@ -8042,9 +8175,10 @@
       "id": "spatial-photo",
       "name": "Spatial Photo",
       "description": "Drop in one photo and move a camera through it: depth is read on your device, so a flat picture becomes a scene with real parallax, atmosphere and focus.",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "status": "experimental",
       "category": "designer",
+      "galleryArt": "icon",
       "tags": [
         "photo",
         "depth",
@@ -8495,6 +8629,27 @@
         }
       ],
       "templates": [
+        {
+          "id": "brand-bars",
+          "name": "Brand bars",
+          "category": "Brand",
+          "description": "A clean palette study: colourful bars on transparency, ready for your data.",
+          "galleryCover": true,
+          "presets": [
+            {
+              "id": "donut",
+              "name": "Donut"
+            },
+            {
+              "id": "areas",
+              "name": "Area"
+            },
+            {
+              "id": "annotated",
+              "name": "With labels"
+            }
+          ]
+        },
         {
           "id": "brand-terrain",
           "name": "Brand terrain",
@@ -9304,6 +9459,13 @@
       ],
       "templates": [
         {
+          "id": "brand-starter",
+          "name": "Brand window",
+          "category": "Brand",
+          "description": "A floating browser window with a brand-colour composition.",
+          "galleryCover": true
+        },
+        {
           "id": "browser",
           "name": "Browser window",
           "category": "Screenshot",
@@ -9623,6 +9785,13 @@
       ],
       "templates": [
         {
+          "id": "brand-starter",
+          "name": "Brand blend",
+          "category": "Brand",
+          "description": "A quiet blend of your primary and secondary brand colours.",
+          "galleryCover": true
+        },
+        {
           "id": "ocean",
           "name": "Ocean",
           "category": "Background",
@@ -9833,6 +10002,15 @@
       "exportable": true,
       "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"4\"/><circle cx=\"12\" cy=\"9.5\" r=\"2.4\"/><path d=\"M7.5 16h9\"/></svg>",
       "preview": "/catalog/previews/icon.svg",
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Brand monogram",
+          "category": "Brand",
+          "description": "A simple letterform in your brand typeface.",
+          "galleryCover": true
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "الأيقونة",
@@ -10301,6 +10479,15 @@
       "featured": {
         "order": 5
       },
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Hello, open world",
+          "category": "Brand",
+          "description": "A small, readable code window on transparency.",
+          "galleryCover": true
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "المقتطف",
@@ -10412,7 +10599,7 @@
       "id": "backdrop",
       "name": "Backdrop",
       "description": "Living backdrops from your design system's colours: sixteen GPU effects - flowing silk, prismatic blooms, liquid contours, metaballs, god rays and more. Tune, freeze the exact moment you want, and export stills or motion loops for heroes, walls and meeting backgrounds.",
-      "version": "1.1.1",
+      "version": "1.1.2",
       "status": "official",
       "category": "everyone",
       "tags": [
@@ -10517,6 +10704,15 @@
             "density": 40,
             "speed": 70
           }
+        }
+      ],
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Brand flow",
+          "category": "Brand",
+          "description": "Generous flowing shapes in your primary and secondary brand colours.",
+          "galleryCover": true
         }
       ],
       "i18n": {
@@ -10848,6 +11044,15 @@
         "order": 12,
         "blurb": "Turn cards or text into on-brand diagrams"
       },
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Open workflow",
+          "category": "Brand",
+          "description": "A simple three-step workflow on transparency.",
+          "galleryCover": true
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "الرسوم التخطيطية",
@@ -11026,6 +11231,24 @@
       "exportable": true,
       "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"5\" height=\"6\" rx=\"1\"/><rect x=\"9.5\" y=\"4\" width=\"5\" height=\"6\" rx=\"1\"/><rect x=\"16\" y=\"4\" width=\"5\" height=\"6\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"5\" height=\"6\" rx=\"1\"/><rect x=\"9.5\" y=\"14\" width=\"5\" height=\"6\" rx=\"1\"/><rect x=\"16\" y=\"14\" width=\"5\" height=\"6\" rx=\"1\"/></svg>",
       "preview": "/catalog/previews/logo-wall.svg",
+      "templates": [
+        {
+          "id": "brand-starter-dark",
+          "name": "Type collection · dark",
+          "category": "Brand",
+          "description": "A balanced collection of editable wordmarks in your brand typeface.",
+          "galleryCover": true,
+          "galleryTheme": "dark"
+        },
+        {
+          "id": "brand-starter",
+          "name": "Type collection",
+          "category": "Brand",
+          "description": "A balanced collection of editable wordmarks in your brand typeface.",
+          "galleryCover": true,
+          "galleryTheme": "light"
+        }
+      ],
       "i18n": {
         "ar": {
           "name": "جدار الشعارات",
@@ -11454,7 +11677,7 @@
       "id": "work-avatar",
       "name": "Work Avatar",
       "description": "A round profile photo with a treatment and a ring of text - the campaign badge for LinkedIn and every other place your face goes, in your design system's colours and type.",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "status": "community",
       "category": "everyone",
       "tags": [
@@ -11520,6 +11743,15 @@
             "textPosition": 50,
             "textSize": 70
           }
+        }
+      ],
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Brand avatar",
+          "category": "Brand",
+          "description": "A monogram portrait framed by a clear brand ring.",
+          "galleryCover": true
         }
       ],
       "i18n": {
@@ -12423,6 +12655,15 @@
       "exportable": true,
       "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"14.5 17.5 3 6 3 3 6 3 17.5 14.5\"/><line x1=\"13\" y1=\"19\" x2=\"19\" y2=\"13\"/><line x1=\"16\" y1=\"16\" x2=\"20\" y2=\"20\"/><line x1=\"19\" y1=\"21\" x2=\"21\" y2=\"19\"/></svg>",
       "preview": "/catalog/previews/battlecards.svg",
+      "templates": [
+        {
+          "id": "brand-starter",
+          "name": "Conversation cards",
+          "category": "Brand",
+          "description": "A short, editable set of cards for a product conversation.",
+          "galleryCover": true
+        }
+      ],
       "paged": true,
       "i18n": {
         "ar": {
@@ -13746,6 +13987,42 @@
           "description": "把地点和时区变成遵循设计系统的图像作品。可以旋转矢量地图集，或使用精细的 WebGL 地球仪，展开各种投影方式，为你的人员和地点添加标签，再导出图像、镜头巡游动画或结构化时间表。"
         }
       }
+    },
+    {
+      "id": "3d-studio",
+      "name": "3D Studio",
+      "description": "Turn SVG artwork and 3D models into coordinated images. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
+      "version": "0.3.0",
+      "status": "official",
+      "category": "designer",
+      "tags": [
+        "3d",
+        "studio",
+        "icons",
+        "logo",
+        "svg",
+        "extrusion",
+        "glb",
+        "stl",
+        "lighting",
+        "materials",
+        "product"
+      ],
+      "formats": [
+        "png",
+        "jpg",
+        "webp",
+        "avif",
+        "tiff",
+        "webm",
+        "mp4",
+        "gif"
+      ],
+      "width": 1280,
+      "height": 1280,
+      "exportable": true,
+      "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><title>3D Studio</title><path d=\"M12 3 3 8v9l9 5 9-5V8zM3 8l9 5 9-5M12 13v9\"/><path d=\"m4 2 2 3M20 2l-2 3M22 12h2\"/></svg>",
+      "preview": "/catalog/previews/3d-studio.webp"
     }
   ]
 }

@@ -47,6 +47,7 @@ import { designSystemOps } from './tool/design-system.ts';
 import { stageLayoutOps } from './tool/stage-layout.ts';
 import { exportingOps } from './tool/exporting.ts';
 import { sessionOps } from './tool/session.ts';
+import { presentationOps } from './tool/presentation.ts';
 import { popoversOps } from './tool/popovers.ts';
 import { renderOps } from './tool/render.ts';
 import { setupOps } from './tool/setup.ts';
@@ -125,6 +126,7 @@ export async function mountTool(
   tview.stageLayout = stageLayoutOps(tview);
   tview.exporting = exportingOps(tview);
   tview.session = sessionOps(tview);
+  tview.presentation = presentationOps(tview);
   tview.popovers = popoversOps(tview);
   tview.render = renderOps(tview);
   tview.setup = setupOps(tview);
@@ -172,7 +174,11 @@ export async function mountTool(
     return;
   }
 
-  const fetchFile = installed ? installedFetchFile(toolId) : makeFetchFile(toolId); tview.fetchFile = fetchFile;
+  const requestedSlot = new URLSearchParams(urlParams || '').get('slot');
+  const savedPin = requestedSlot && installed ? (await host.state.load(requestedSlot) as { __toolArtifact?: string } | null)?.__toolArtifact : undefined;
+  const { getInstalledTool } = await import('../lib/installed-tools.ts');
+  const selectedRevision = installed ? await getInstalledTool(toolId, typeof savedPin === 'string' ? savedPin : undefined) : null;
+  const fetchFile = installed ? installedFetchFile(toolId, typeof savedPin === 'string' ? savedPin : selectedRevision?.artifactDigest) : makeFetchFile(toolId); tview.fetchFile = fetchFile;
 
   // Defer the loading screen so prefetched tools don't flash the gallery out.
   // The gallery stays visible until the tool is ready (or 400ms passes).
@@ -204,6 +210,7 @@ export async function mountTool(
         }),
         timeout,
       ]);
+      if (selectedRevision?.artifactDigest) tview.tool.artifactDigest = selectedRevision.artifactDigest;
     } finally {
       clearTimeout(loadTimer);
     }
@@ -366,6 +373,11 @@ export async function mountTool(
   tview.setup.wireBulkRows();
 
   await tview.session.wireLiveEditing();
+  if(tview.canvasEl) {
+    const {openPendingRules}=await import('./session-rules.ts');
+    const closeRules=await openPendingRules({tool:tview.tool,runtime:tview.runtime,host:tview.host,canvas:tview.canvasEl,size:{width:tview.nativeW,height:tview.nativeH},saveMaster:()=>{void tview.openSaveAs?.();}});
+    if(closeRules)tview.mountLifecycle.add('session rules',closeRules);
+  }
 
   tview.setup.wireBackPill();
 

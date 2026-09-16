@@ -42,10 +42,12 @@ async function preferCompactQuery(query: string): Promise<string> {
   const packed = token && `${PACK_PARAM}=${token}`;
   return packed && packed.length < query.length ? packed : query;
 }
+import { designSelection } from '@lolly-tools/core/design-tool-v1';
 import { getTool, chooseFormat, isExportable } from '../bridge/tool-loader.ts';
 import { neutralizeEmbeds, hydrateEmbeds } from '../bridge/embed.ts';
 import { createNetAPI } from '../bridge/net.ts';
 import { applyBrandVars } from '../brand-vars.ts';
+import { withThumbAssets } from '../lib/preview-assets.ts';
 import { scopeCss, scopeTemplateStyles } from '../lib/scope-css.ts';
 import { runTemplateScripts, waitForQuiescence } from '../lib/render-lifecycle.ts';
 import { c2paDefaultOn } from '../lib/c2pa-policy.ts';
@@ -79,6 +81,7 @@ const SETTLE_MS = 350;
  *  added here too or it is silently dropped at the render boundary). */
 interface BatchRow {
   toolId: string;
+  artifactDigest?: string;
   values?: Record<string, InputValue>;
   /** CMYK press condition (the `profile` URL param), for pdf-cmyk / cmyk-tiff. */
   profile?: string;
@@ -133,26 +136,6 @@ interface RenderRowOpts {
    * that media time to decode, and a short settle would capture it blank.
    */
   settleMs?: number;
-}
-
-/**
- * A shallow host wrapper whose asset resolver defaults raster lookups to the `thumb`
- * derivative format. The engine runtime resolves example photos via host.assets.get
- * during hydration; wrapping it here means a preview render ingests a ~30 KB thumbnail
- * instead of a 400 KB original - cutting both the fetch weight and the main-thread
- * rasterise cost of the gallery's featured row. host.assets methods are closures (not
- * `this`-bound), so a spread copy is safe.
- */
-function withThumbAssets(host: HostV1): HostV1 {
-  const assets = host.assets;
-  return {
-    ...host,
-    assets: {
-      ...assets,
-      get: (id: string, opts: { format?: string; version?: string } = {}) =>
-        assets.get(id, { ...opts, format: opts.format ?? 'thumb' }),
-    },
-  } as HostV1;
 }
 
 /**
@@ -266,6 +249,19 @@ async function mountToolCanvas(
       const { mountVideoPlayers } = await import('../views/video-mount.ts');
       await mountVideoPlayers(canvas);
     }
+    if (canvas.querySelector('[data-lolly-studio]')) {
+      const studio = await import('../lib/studio3d/mount.ts');
+      const cleanup = stage._lottieCleanup;
+      stage._lottieCleanup = () => { studio.destroyToolStudio(canvas); cleanup?.(); };
+      await studio.mountToolStudio(canvas, { read: async (url, signal) => {
+        signal.throwIfAborted();
+        if (!host.assets.bytes) throw new Error('This shell cannot read studio source bytes.');
+        const bytes = await host.assets.bytes(url);
+        signal.throwIfAborted();
+        return bytes;
+      } });
+      studio.prepareToolStudio(canvas);
+    }
     return { stage, canvas };
   } catch (e) {
     stage._lottieCleanup?.();
@@ -299,13 +295,15 @@ type ExportStage = HTMLDivElement & { _lottieCleanup?: () => void };
  *        `dpi` sets raster resolution for physical units.
  */
 export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, width, height, unit = 'px', dpi, composeStack, watermark, embedMeta, thumbnail, previewPage, previewTimeMs, thumbAssets, strongPassword, c2pa, imprint, settleMs, signal }: RenderRowOpts = {}): Promise<RenderRowResult> {
-  const tool = await getTool(row.toolId);
+  const tool = await getTool(row.toolId, row.artifactDigest);
   if (!isExportable(tool.manifest)) {
     throw new Error(`"${tool.manifest.name}" is render-only and cannot be exported.`);
   }
 
-  const nativeW = tool.manifest.render.width;
-  const nativeH = tool.manifest.render.height;
+  const policy = tool.manifest.designTool;
+  const variant = policy?.variants.find(v => v.id === designSelection(policy, row.values || {}).variantId);
+  const nativeW = variant?.width ?? tool.manifest.render.width;
+  const nativeH = variant?.height ?? tool.manifest.render.height;
 
   // Establish the requested ASPECT at canvas creation - not at export. When both
   // dimensions are given we render the (responsive) tool into a box of that
@@ -452,7 +450,7 @@ export async function mountTemplateMotion(host: HostV1, toolId: string, values: 
  * declares no page boxes.
  */
 export async function renderToolPages(row: BatchRow, host: HostV1, { format, thumbnail, thumbAssets, signal }: RenderRowOpts = {}): Promise<RenderPagesResult> {
-  const tool = await getTool(row.toolId);
+  const tool = await getTool(row.toolId, row.artifactDigest);
   if (!isExportable(tool.manifest)) {
     throw new Error(`"${tool.manifest.name}" is render-only and cannot be exported.`);
   }

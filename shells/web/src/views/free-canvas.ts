@@ -52,6 +52,7 @@
 // ships one and users still lose work to it: letting time change the selection
 // destroys work.
 
+import { mountDesignRules } from './design-rules.ts';
 import { registerCollabSurface } from '../lib/collab-surface.ts';
 import { sequenceFramesInOrder } from './free-canvas-math.ts';
 import type { Box } from './free-canvas-math.ts';
@@ -1820,7 +1821,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     void (async () => {
       announce(t('Importing…'));
       try {
-        let mode: ImportMode = pendingImport.scenes && importSceneCapable ? 'scenes' : 'board';
+        let mode: ImportMode = pendingImport.rules && importArtboardCapable ? 'artboards' : pendingImport.scenes && importSceneCapable ? 'scenes' : 'board';
         if (mode === 'board' && (importArtboardCapable || importSceneCapable)) {
           // The "Edit in Design" door with a document of several pages: ask how they
           // should come in, the way the Import panel's radios do - artboards (the deck
@@ -1852,6 +1853,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
           const n = await fc.menus.importAsArtboards(pendingImport.file, (m: string) => announce(m));
           if (fc.disposed) return;
           announce(n === 1 ? t('Added 1 artboard.') : t('Added {n} artboards.', { n }));
+          if (pendingImport.rules) { await fc.rules?.rememberSource(pendingImport.file); fc.rules?.open(); }
           return;
         }
         const { parseDesignFile } = await import('./design-import.ts');
@@ -1860,7 +1862,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
           host: host as any,
           log: (m: string) => announce(m),
           interactive: true,
-          map: importMap,
+          map: pendingImport.rules ? { ...importMap, fonts: { ...importMap?.fonts, preserveSource: true } } : importMap,
         });
         if (fc.disposed) return;
         const boxes = (Array.isArray(res.boxes) ? res.boxes : []) as Box[];
@@ -1871,6 +1873,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
           setCanvasSize(res.width, res.height, 'px');
         announce(boxes.length === 1 ? t('Imported 1 object.') : t('Imported {n} objects.', { n: boxes.length }));
         await showImportedFontNotice(res.fontSubstitutions, canvasEl);
+        if (pendingImport.rules) { await fc.rules?.rememberSource(pendingImport.file); fc.rules?.open(); }
       } catch (err) {
         if (!fc.disposed)
           announce((err as Error)?.message || t('Import failed.'), { assertive: true });
@@ -2030,6 +2033,13 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     setColumnWidths: fc.rail.setColumnWidths,
     setInspector: fc.contextBar.setInspector,
   }; fc.designPorts = designPorts;
+  if (blockId === 'boxes') fc.rules = mountDesignRules({
+    ports: designPorts, runtime: runtime as import('../../../../engine/src/runtime.ts').Runtime,
+    host: host as HostV1, view: viewEl, stage: stageEl, canvas: canvasEl,
+    size: () => ({ width: fc.nativeW, height: fc.nativeH }),
+    dirty: () => onDirty?.('__designTool'),
+    saveMaster: () => fc.actions?.save?.(),
+  });
   const unregisterCollabSurface = registerCollabSurface(runtime, {
     id: () => artboardPort.active() || `canvas:${blockId}`,
     element: () => {
@@ -2048,6 +2058,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
   return {
     design: designPorts,
     destroy() {
+      fc.rules?.destroy();
       unregisterCollabSurface();
       fc.disposed = true;
       // FIRST, so nothing that throws later in this teardown can leave the stage's

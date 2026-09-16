@@ -29,6 +29,8 @@ import type { AudioEncodingConfig, VideoEncodingConfig } from 'mediabunny';
 import { pickWebCodecsAudio, pickWebCodecsVideo } from './video-shared.ts';
 import { mapAudioCodec, mapVideoCodec } from './mediabunny-mux.ts';
 import { codecAdjustedBitrate, LIVE_BITS_PER_PIXEL, videoBitrate } from './video-mime.ts';
+import type { RecordEngine } from './recorder-session.ts';
+import type { RecordingStorage } from './recorder-storage.ts';
 
 /**
  * The encode+mux seam recorder.ts drives both engines through, structurally identical to
@@ -36,11 +38,7 @@ import { codecAdjustedBitrate, LIVE_BITS_PER_PIXEL, videoBitrate } from './video
  * container mime the finished Blob carries - known UP FRONT here; `produceBlob()` finalizes
  * the container (promise-driven, vs MediaRecorder's onstop event); `abort()` discards it.
  */
-export interface RecordEngine {
-  readonly type: string;
-  produceBlob(): Promise<Blob>;
-  abort(): void;
-}
+export type { RecordEngine } from './recorder-session.ts';
 
 const hasGlobal = (name: string): boolean =>
   typeof (globalThis as Record<string, unknown>)[name] !== 'undefined';
@@ -79,6 +77,8 @@ export interface WebCodecsRecorderOpts {
   format?: 'webm' | 'mp4';
   /** A display capture, not a sensor - biases the video contentHint to 'text' for sharp screen text. */
   screen?: boolean;
+  /** Shell-only temporary storage for long composed recordings. Ordinary captures retain their format layout. */
+  storage?: RecordingStorage | null;
 }
 
 /**
@@ -139,15 +139,25 @@ export async function createWebCodecsRecorder(stream: MediaStream, opts: WebCode
   }
 
   // ── One Output, container known ──────────────────────────────────────────────
+  const storage = opts.storage;
   const format = container === 'mp4'
-    ? new MB.Mp4OutputFormat({ fastStart: 'in-memory' })   // the exact writer/layout the export path stamps AV1-in-mp4 through
+    ? new MB.Mp4OutputFormat({ fastStart: storage ? false : 'in-memory' })
     : new MB.WebMOutputFormat();
-  const target = new MB.BufferTarget();
+  const target = storage ? new MB.StreamTarget(storage.writable) : new MB.BufferTarget();
   const output = new MB.Output({ format, target });
+  let report!: (error: unknown) => void;
+  const sourceFailure = new Promise<unknown>(resolve => { report = resolve; });
+  const sources: Array<InstanceType<typeof MB.MediaStreamVideoTrackSource> | InstanceType<typeof MB.MediaStreamAudioTrackSource>> = [];
   // getVideoTracks/getAudioTracks hand back the generic MediaStreamTrack; the sources want the
   // kind-narrowed subtype, which the wantVideo/wantAudio gating already guarantees.
-  if (videoTrack && videoConfig) output.addVideoTrack(new MB.MediaStreamVideoTrackSource(videoTrack as MediaStreamVideoTrack, videoConfig));
-  if (audioTrack && audioConfig) output.addAudioTrack(new MB.MediaStreamAudioTrackSource(audioTrack as MediaStreamAudioTrack, audioConfig));
+  if (videoTrack && videoConfig) {
+    const source = new MB.MediaStreamVideoTrackSource(videoTrack as MediaStreamVideoTrack, videoConfig);
+    void source.errorPromise.catch(report); sources.push(source); output.addVideoTrack(source);
+  }
+  if (audioTrack && audioConfig) {
+    const source = new MB.MediaStreamAudioTrackSource(audioTrack as MediaStreamAudioTrack, audioConfig);
+    void source.errorPromise.catch(report); sources.push(source); output.addAudioTrack(source);
+  }
 
   try {
     await output.start();   // capture begins now, runs until finalize()/cancel()
@@ -159,15 +169,19 @@ export async function createWebCodecsRecorder(stream: MediaStream, opts: WebCode
   const containerMime = webCodecsContainerMime(wantVideo ? 'video' : 'audio', container);
   return {
     type: containerMime,
+    failure: storage ? Promise.race([sourceFailure, storage.failure]) : sourceFailure,
     async produceBlob(): Promise<Blob> {
-      // ponytail: a rejected finalize() loses the whole take (no partial recovery from a
-      // half-muxed Output); recorder.ts settles empty on reject, matching MediaRecorder's
-      // cancel-on-throw. Acceptable for a Chromium-first spike behind a passed gate;
-      // upgrade path is errorPromise-driven partial flush if a field failure shows up.
-      await output.finalize();   // flush encoders + write the container
-      const buf = (target as unknown as { buffer: ArrayBuffer }).buffer;
-      return new Blob([buf], { type: containerMime });
+      try {
+        await output.finalize();
+        const blob = storage ? await storage.result() : new Blob([(target as InstanceType<typeof MB.BufferTarget>).buffer!]);
+        return blob.slice(0, blob.size, containerMime);
+      } catch (error) { await storage?.discard(); throw error; }
     },
-    abort(): void { output.cancel().catch(() => { /* already finalizing / canceled */ }); },
+    abort(): void {
+      for (const source of sources) source.close();
+      void output.cancel().catch(() => {}).finally(() => storage?.discard());
+      // Also discard directly: output.cancel can wait for a stalled encoder or writable.
+      void storage?.discard();
+    },
   };
 }

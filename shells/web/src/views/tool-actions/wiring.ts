@@ -221,6 +221,8 @@ export function wireFormatChange(ta: ActionsCtx): void {
   if (formatEl) {
     formatEl.addEventListener('change', () => {
       const fmt = formatEl.value;
+      const embedLabel = el.querySelector('[data-embed-label]');
+      if (embedLabel) embedLabel.textContent = fmt === 'pdf' ? t('Embed (subset)') : t('Keep text');
       ta.audio.syncCaptionsUi(fmt);
       if (animParamsEl) animParamsEl.style.display = ta.formatRules.isAnimatedFmt(fmt) ? 'flex' : 'none';
       if (ditherEl) ditherEl.style.display = fmt === 'gif' ? 'flex' : 'none';
@@ -260,6 +262,7 @@ export function wireFormatChange(ta: ActionsCtx): void {
       el.querySelectorAll<HTMLElement>('[data-printmarks-only]').forEach((c) => {
         c.style.display = isPrintFmt(fmt) ? 'flex' : 'none';
       });
+      ta.sequence.syncSequenceUi();
       ta.audio.syncBarsDefault(fmt);
       ta.audio.syncPrintDefault(fmt); // open the marks card for a CMYK press format, close it otherwise
       ta.dims.updateFidelityWarning(); // only SVG/HTML keep a frosted panel

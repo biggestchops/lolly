@@ -1,0 +1,11 @@
+{
+  "id": "brand-starter",
+  "name": "Ink on transparency",
+  "category": "Brand",
+  "description": "A sample pen stroke in your brand ink. Draw your own to replace it.",
+  "values": {
+    "color": "{color.semantic.text}"
+  },
+  "galleryCover": true,
+  "galleryTheme": "light"
+}

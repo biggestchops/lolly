@@ -19,46 +19,9 @@
 
 import type { ScanAPI, ScanHit } from '@lolly-tools/core/host-v1';
 
-// Minimal shapes for the platform BarcodeDetector (not in lib.dom yet).
-interface DetectedBarcode {
-  rawValue: string;
-  format: string;
-  cornerPoints?: Array<{ x: number; y: number }>;
-}
-interface BarcodeDetectorInstance {
-  detect(source: ImageData): Promise<DetectedBarcode[]>;
-}
-interface BarcodeDetectorCtor {
-  new (opts?: { formats?: string[] }): BarcodeDetectorInstance;
-  getSupportedFormats?: () => Promise<string[]>;
-}
+import { nativeBarcodeDetector, ZXING_TO_BD, ZXING_NAMES, ZXING_BD_NAMES, type BarcodeDetectorInstance, type DetectedBarcode } from './scan-support.ts';
+export { nativeBarcodeDetector, scanAvailable } from './scan-support.ts';
 
-/** The platform BarcodeDetector constructor, or null where the shell lacks it. */
-export function nativeBarcodeDetector(): BarcodeDetectorCtor | null {
-  const g = globalThis as unknown as { BarcodeDetector?: BarcodeDetectorCtor };
-  return typeof g.BarcodeDetector === 'function' ? g.BarcodeDetector : null;
-}
-
-/**
- * Always true: with the zxing-wasm fallback the web shell can decode on any
- * browser (native BarcodeDetector where present, wasm otherwise). Kept as a
- * function so the attach site reads the same as media/recorder.
- */
-export function scanAvailable(): boolean {
-  return true;
-}
-
-// zxing canonical name -> BarcodeDetector naming (mirror of node-shell/scan.ts).
-const ZXING_TO_BD: Record<string, string> = {
-  QRCode: 'qr_code', MicroQRCode: 'micro_qr_code', RMQRCode: 'rm_qr_code',
-  DataMatrix: 'data_matrix', Aztec: 'aztec', PDF417: 'pdf417',
-  EAN13: 'ean_13', EAN8: 'ean_8', UPCA: 'upc_a', UPCE: 'upc_e',
-  Code39: 'code_39', Code93: 'code_93', Code128: 'code_128',
-  Codabar: 'codabar', ITF: 'itf', DataBar: 'databar', DataBarExp: 'databar_expanded',
-  MaxiCode: 'maxi_code',
-};
-const ZXING_NAMES = Object.keys(ZXING_TO_BD);
-const ZXING_BD_NAMES = Object.values(ZXING_TO_BD);
 function zxToBd(z: string): string { return ZXING_TO_BD[z] ?? z.toLowerCase(); }
 
 /** True when `text` is exactly the UTF-8 decoding of `bytes` (a clean round-trip). */
@@ -91,6 +54,8 @@ async function zxingDetect(
   frame: { data: Uint8ClampedArray; width: number; height: number },
   formats?: string[],
 ): Promise<ScanHit[]> {
+  // Take ownership before loading the decoder; live-frame buffers are reusable.
+  const imageData = { data: new Uint8ClampedArray(frame.data), width: frame.width, height: frame.height, colorSpace: 'srgb' as const };
   let zxFormats: string[] = [];
   if (formats && formats.length) {
     zxFormats = ZXING_NAMES.filter((z) => formats.includes(zxToBd(z)));
@@ -100,7 +65,6 @@ async function zxingDetect(
   try { mod = await loadZxing(); } catch { return []; }
   let results;
   try {
-    const imageData = { data: new Uint8ClampedArray(frame.data), width: frame.width, height: frame.height, colorSpace: 'srgb' as const };
     results = await mod.readBarcodes(imageData as ImageData, { formats: zxFormats as never, tryHarder: true, maxNumberOfSymbols: 20 });
   } catch { return []; }
   const hits: ScanHit[] = [];

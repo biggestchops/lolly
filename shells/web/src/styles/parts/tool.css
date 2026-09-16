@@ -847,6 +847,27 @@
 }
 .input-data-src:hover, .input-data-src:focus-visible { opacity: 1; color: hsl(var(--primary)); }
 .input-data-src:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+/* Textarea actions have their own row, clear of the editable text. */
+.input-row--multiline > .input-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  margin-bottom: 6px;
+  pointer-events: auto;
+}
+.input-row--multiline > .input-label > .input-label-text {
+  min-width: 0;
+  white-space: normal;
+}
+.input-row--multiline > .input-label > :is(.help-tip-btn, .input-data-src) {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  opacity: .8;
+}
 /* 16px is a fingertip miss. Padding grows the box to a 32px target; the matching
    negative margin pulls it back to its original 16px footprint (and 4px gap from
    the label text) in the flow, so no input row grows or reflows on every tool. */

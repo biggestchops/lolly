@@ -37,7 +37,9 @@ The importer maps design layers onto the free canvas's box model, keeping as muc
 - **Shapes stay shapes.** Rectangles, rounded rects, ellipses and pills become native shape boxes with their fills, opacity, rotation and corner radii.
 - **Images are extracted.** Bitmaps land in **My images** (your on-device library) and are placed as image boxes.
 - **Complex vector art is flattened faithfully.** Paths, gradients and other paint Lolly's box model can't express are baked into crisp standalone SVG image boxes, so the visual result survives even where editability can't.
-- **Geometry is exact.** Positions, sizes and rotations are resolved by the browser itself (the same maths that rendered the original), so the imported layout lines up with the source.
+- **Geometry follows the source.** SVG positions, sizes and rotations use browser geometry. PDF imports read page coordinates and character advances; source effects and font availability can still change their appearance. Compare the imported artwork with the original before sharing.
+
+PDF imports preserve clipping and supported effects inside transparent SVG artwork. Source text uses character-code advances to join compatible fragments; separate styles and distant columns stay separate. Cropped text, missing full fonts, approximate CMYK colours and unsupported effects need review. The **Share with rules** route preserves source font names and offers explicit repair; it does not silently substitute brand fonts. See [Create a tool](create-a-tool.md) for source comparison and font replacement.
 
 ## It conforms to the brand
 
@@ -68,11 +70,11 @@ Each frame is baked through the Design tool's own renderer into a crisp vector s
 
 This is where import stops being a conversion and starts being *authoring*. An imported layout is an ordinary [Design](/info/using.html) session, so it inherits everything a native session can do:
 
-- **It's a template anyone can reuse.** Save it and the layout lives at a URL. Anyone with Lolly can open that URL, change the words, swap an image and render their own version - no design app, no design skill and the parts the author locked stay locked. The person who imported the artboard becomes its author; everyone else just fills in the blanks.
+- **Make a reusable tool with explicit rules.** An imported Design document remains editable. Layer locks help the designer while editing; they do not establish recipient permissions. Use [Share with rules](create-a-tool.md) to choose the text, images and approved choices recipients may change, then share one portable `.lolly` tool.
 - **It mixes with tools.** Any box can hold another Lolly tool as a live asset - a badge that renders its own QR code, a card with a live chart, another render dropped in through the asset picker. Those stay live and re-render on load; they're never flattened pictures. So an imported poster can carry generated, always-current content the original file never could.
 - **It scales like any session.** Drive it from the [batch grid](/info/exporting.html) (one finished asset per spreadsheet row), keep it in a [Projects folder](/info/using.html) or render a whole folder as one zip. A single imported design turns into a whole run of consistent variants.
 
-For a *fully declarative* tool - sidebar inputs, hard-coded constraints, the works - you'd still author a `tool.json` by hand (see [Authoring Tools](/info/authoring-tools.html)). Import gets you the fast, visual 90%: a governed, shareable, tool-embedding layout without writing a manifest.
+For a portable tool with declared inputs and fixed artwork, continue with [Share with rules](create-a-tool.md). For custom input models and behavior, see [Authoring Tools](authoring-tools.md).
 
 ## Round-tripping the brand itself
 

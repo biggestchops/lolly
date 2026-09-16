@@ -1,0 +1,21 @@
+<div class="studio-frame" data-lolly-studio="{{_studioState}}" data-studio-state="loading" data-clip-ms="{{_clipMs}}">
+  <div class="studio-collection-actions" data-export-hide>
+    <div class="studio-camera-actions" data-studio-camera-actions>
+      <button type="button" data-studio-fit>Fit object</button>
+      <button type="button" data-studio-reset>Reset camera</button>
+      <button type="button" data-studio-focus aria-pressed="false" title="Enable depth of field, then click the subject">Pick focus</button>
+      <button type="button" data-studio-auto-focus>Auto focus</button>
+      <span data-studio-camera-note role="status" aria-live="polite"></span>
+    </div>
+  {{#if _collection}}
+    <span data-studio-item-label></span>
+    <button type="button" data-studio-review>Review collection</button>
+    <button type="button" data-studio-shared-camera>Use shared framing</button>
+  {{/if}}
+  </div>
+  <p class="studio-status" data-studio-status data-export-hide role="status">Preparing the studio...</p>
+  <details class="studio-info" data-export-hide>
+    <summary>{{#if _expert}}Material slots and source notes{{else}}Source notes{{/if}}</summary>
+    <p data-studio-info></p>
+  </details>
+</div>

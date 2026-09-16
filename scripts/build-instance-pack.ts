@@ -56,6 +56,9 @@ import { zipSync, strToU8 } from 'fflate';
 import { CATALOG_SIG_ALG, jwkThumbprint } from '../engine/src/catalog-integrity.ts';
 import { pemToDer } from '../engine/src/x509.ts';
 import { ENGINE_VERSION } from '../engine/src/version.ts';
+import {
+  listToolFiles, readToolManifestText, toolFile, type ContentRoots,
+} from '../packages/node-shell/src/content-roots.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const subtle = webcrypto.subtle;
@@ -314,12 +317,24 @@ async function main(): Promise<void> {
     .filter(a => recipe.excludeAssetFamilies.some(p => a.id.startsWith(p)))
     .map(a => a.id));
   const danglingRefs: string[] = [];
+  const packRoots: ContentRoots = {
+    profile: args.brand,
+    toolRoots: [join(ROOT, 'community'), toolsDir],
+    catalogRoot: catalogDir,
+    assetRoots: [],
+    exclude: new Set(),
+  };
   for (const id of toolIds) {
-    const files = walkFiles(join(toolsDir, id)).sort();
+    // Installed tools read their own cached files. Resolve an overlay before
+    // packaging so its inherited template and hooks travel with its manifest.
+    const files = listToolFiles(id, packRoots)
+      .filter(f => !f.split('/').some(part => part.startsWith('.') || part === 'node_modules'));
     toolFiles[id] = [];
     for (const f of files) {
       if (AUDIO_EXT.test(f)) throw new Error(`audio may never ship in a pack: tools/${id}/${f}`);
-      const bytes = readFileSync(join(toolsDir, id, f));
+      const bytes = f === 'tool.json'
+        ? Buffer.from(readToolManifestText(id, packRoots))
+        : readFileSync(toolFile(id, f, packRoots)!);
       const reuseKey = `${id}/${f}`;
       if (reuseCommunity.has(reuseKey)) {
         if (!f.startsWith('assets/')) {
@@ -369,7 +384,7 @@ async function main(): Promise<void> {
   // ── envelope: README, integrity-mapped manifest, signature ────────────────
   const counts = {
     tokens: true,
-    fontFamilies: 1,
+    fontFamilies: new Set(fontRows.map(row => row.meta.family)).size,
     fontFiles: fontRows.length,
     logos: logoRows.length,
     prefs: 0,

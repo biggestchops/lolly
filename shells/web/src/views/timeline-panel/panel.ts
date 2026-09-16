@@ -159,9 +159,20 @@ export function openShortcuts(tp: TpCtx): void {
   done.focus();
 }
 export function onKey(tp: TpCtx, e: KeyboardEvent): void {
+  if(e.target===tp.tracks && !e.altKey && !e.ctrlKey && !e.metaKey && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','PageUp','PageDown','Home','End'].includes(e.key)){
+    e.stopPropagation();
+    return;
+  }
   const { bars, clock, onionMenu, root, selection } = tp;
   if (!tp.open) return;
   if (!panelKeysActive(root, document.activeElement, tp.hovered)) return;
+  if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'a'
+    && root.contains(document.activeElement)) {
+    e.preventDefault();
+    e.stopPropagation();
+    tp.selectionActions.selectAll();
+    return;
+  }
   // UNMODIFIED ONLY (Shift excepted - several bindings below read it deliberately).
   // Every binding here is a bare letter or punctuation chosen BECAUSE no browser
   // fights for it; that reasoning only holds if the handler also declines the chord.
@@ -402,6 +413,8 @@ export function onKey(tp: TpCtx, e: KeyboardEvent): void {
   }
 }
 export function onWheel(tp: TpCtx, e: WheelEvent): void {
+  // Keep native panel scrolling from reaching the canvas pan and zoom handler.
+  e.stopPropagation();
   if (!(e.ctrlKey || e.altKey || e.metaKey)) return;
   e.preventDefault();
   const cursorPx = e.clientX - tp.syncing.tracksRectLeft();
@@ -503,6 +516,11 @@ export function setOpen(tp: TpCtx, next: boolean): void {
     // shrunk behind a hidden panel until the tool is destroyed.
     tp.gestures.endGesture(tp.gesture);
     // The menus are body-mounted, so hiding the panel does not hide them.
+    tp.recordMenu.close();
+    tp.editMenu.close();
+    tp.guideMenu.close();
+    tp.layout.close();
+    tp.staggerPop.close();
     addMenu.close();
     ctxMenu.close();
     onionMenu.close();
@@ -552,6 +570,11 @@ export function destroy(tp: TpCtx): void {
   tp.gestures.endGesture(tp.gesture);
   // Body-mounted: these outlive root.remove() unless they are closed explicitly.
   try {
+    tp.recordMenu.close();
+    tp.editMenu.close();
+    tp.guideMenu.close();
+    tp.layout.close();
+    tp.staggerPop.close();
     addMenu.close();
   } catch {
     /* never opened */

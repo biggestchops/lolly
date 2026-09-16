@@ -140,6 +140,8 @@ test('the deterministic `?template=` seed stays awaited - export remounts depend
     '?template= must remain a pre-createRuntime seed, unlike the chooser');
   const named = CODE.indexOf('await resolveTemplateSeed(');
   assert.ok(named < CODE.indexOf('await createRuntime('), '…and it must resolve before the mount');
+  assert.ok(named < CODE.indexOf('} else if (captureNeutralPinned())'),
+    'a pinned capture must honour its explicit template before skipping the chooser');
 });
 
 test('the chooser yields the main thread around every preview render', () => {
@@ -211,7 +213,7 @@ test('a navigate-away before the pick lands cannot patch a torn-down runtime', (
 test('the chooser gate opens on built-in OR user templates', () => {
   assert.match(
     CODE,
-    /else if \(\s*!(?:tview\.)?slot\s*&&\s*!(?:tview\.)?seededDirect\s*&&\s*Object\.keys\((?:tview\.)?values\)\.length === 0\s*&&\s*\(!(?:tview\.)?reachedViaLink \|\| (?:tview\.)?templateParam === ''\)\s*\) \{/,
+    /else if \(\s*!(?:tview\.)?slot\s*&&\s*pendingLiveCollab\(\)\?\.toolId !== toolId\s*&&\s*!(?:tview\.)?seededDirect\s*&&\s*Object\.keys\((?:tview\.)?values\)\.length === 0\s*&&\s*\(!(?:tview\.)?reachedViaLink \|\| (?:tview\.)?templateParam === ''\)\s*\) \{/,
     'the gate condition dropped the hard hasTemplates requirement so a user-template-only tool reaches it'
     + ' (an EMPTY ?template= - the gallery card + New button - is an explicit chooser ask that overrides reachedViaLink)',
   );
@@ -229,7 +231,7 @@ test('the built-in fast path skips the user-template store read before mount', (
   // A tool WITH built-in templates always opens, so it must not pay the async store read on
   // the mount path - the count is guarded behind `if (!hasTemplates)`, and the chooser
   // promise below still fetches the user templates off the mount path as it always did.
-  const head = CODE.match(/else if \(\s*!(?:tview\.)?slot\s*&&\s*!(?:tview\.)?seededDirect\s*&&\s*Object\.keys\((?:tview\.)?values\)\.length === 0\s*&&\s*\(!(?:tview\.)?reachedViaLink \|\| (?:tview\.)?templateParam === ''\)\s*\)/)?.[0];
+  const head = CODE.match(/else if \(\s*!(?:tview\.)?slot\s*&&\s*pendingLiveCollab\(\)\?\.toolId !== toolId\s*&&\s*!(?:tview\.)?seededDirect\s*&&\s*Object\.keys\((?:tview\.)?values\)\.length === 0\s*&&\s*\(!(?:tview\.)?reachedViaLink \|\| (?:tview\.)?templateParam === ''\)\s*\)/)?.[0];
   assert.ok(head, 'the blank-fresh-open chooser branch exists');
   const branch = bodyAfter(CODE, head!);
   const countAt = branch.indexOf('hasUserTemplates = mine.length > 0;');
@@ -261,7 +263,7 @@ test('the built-in fast path skips the user-template store read before mount', (
 
 /** The blank-fresh-open branch body - the ladder's home. */
 function ladderBranch(): string {
-  const head = CODE.match(/else if \(\s*!(?:tview\.)?slot\s*&&\s*!(?:tview\.)?seededDirect\s*&&\s*Object\.keys\((?:tview\.)?values\)\.length === 0\s*&&\s*\(!(?:tview\.)?reachedViaLink \|\| (?:tview\.)?templateParam === ''\)\s*\)/)?.[0];
+  const head = CODE.match(/else if \(\s*!(?:tview\.)?slot\s*&&\s*pendingLiveCollab\(\)\?\.toolId !== toolId\s*&&\s*!(?:tview\.)?seededDirect\s*&&\s*Object\.keys\((?:tview\.)?values\)\.length === 0\s*&&\s*\(!(?:tview\.)?reachedViaLink \|\| (?:tview\.)?templateParam === ''\)\s*\)/)?.[0];
   assert.ok(head, 'the blank-fresh-open branch exists');
   return bodyAfter(CODE, head!);
 }

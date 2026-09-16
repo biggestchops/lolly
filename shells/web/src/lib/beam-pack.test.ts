@@ -688,6 +688,17 @@ test('provenance is read out of the received bytes, never off the manifest', asy
   assert.equal(noCred.aiGenerated, undefined);
 });
 
+test('oversized source identity is refused before storing an asset', async () => {
+  const to = makeHost(), payload = pngOf(128, 55);
+  const checksum = await sriSha256(payload);
+  const ctx = await manifestOnly(to, [{ kind: 'asset', itemId: '1/x', sourceId: 'user/' + 'x'.repeat(16_384),
+    label: 'x.png', bytes: payload.length, checksum, type: 'raster', format: 'png', mime: 'image/png' }]);
+  await assert.rejects(ingestBeamItem({ id: '1/x', label: 'x.png', bytes: payload.length, checksum },
+    new Blob([payload as unknown as BlobPart]), ctx), /Source asset ID is too long/);
+  assert.equal(to.records.size, 0);
+  assert.equal(ctx.rekey.size, 0);
+});
+
 test('meta cannot smuggle Lolly’s own keys, or an outbound URL, onto a local row', async () => {
   const to = makeHost();
   const payload = pngOf(128, 55);

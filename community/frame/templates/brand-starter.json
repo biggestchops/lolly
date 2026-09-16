@@ -1,0 +1,24 @@
+{
+  "id": "brand-starter",
+  "name": "Brand window",
+  "category": "Brand",
+  "description": "A floating browser window with a brand-colour composition.",
+  "values": {
+    "image": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/gradient.svg?count=3&blend=normal&grain=0",
+      "_unresolved": true
+    },
+    "frame": "browser",
+    "windowStyle": "nuremberg",
+    "url": "",
+    "title": "",
+    "backdrop": "transparent",
+    "padding": 80,
+    "scale": 82,
+    "radius": 16,
+    "shadow": 24,
+    "dark": false
+  },
+  "galleryCover": true
+}

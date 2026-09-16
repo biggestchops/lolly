@@ -85,6 +85,8 @@ export type { BatchRow } from './batch.ts';
 export { buildExportMeta } from './metadata.ts';
 export { extractFileMetadata, extractXmpPacket, readMpfIndex, appendedIsExpected, META_GROUP_ORDER, META_GROUP_LABEL } from './file-metadata.ts';
 export type { FileMetadata, MetaField, MetaGroup } from './file-metadata.ts';
+export { softwareName, softwareOrigins, xmlProvenanceFields } from './software-origin.ts';
+export type { SoftwareOrigin, SoftwareEvidence, SoftwareRole } from './software-origin.ts';
 // Image-metadata byte stampers + the metadata carry (plans/144 Wave 1). The
 // stampers graduated here from the web shell's bridge/export-image-meta.ts
 // (now a thin re-export) so the transform path and the CLI share them.
@@ -868,3 +870,11 @@ export { LEARNING_TARGETS, learningRenditions, learningSummary } from './learnin
 export type { LearningRenderable, LearningRendition } from './learning/delivery.ts';
 export { learningExportKey, checkLearningExportSize, learningHandoff } from './learning/preflight.ts';
 export type { LearningExportSettings } from './learning/preflight.ts';
+
+export { compileDesignTool } from './design-tool/compiler.ts';
+export type { CompiledDesignTool } from './design-tool/compiler.ts';
+export { compileSessionTool } from './design-tool/session-compiler.ts';
+export type { SessionToolSource } from './design-tool/session-compiler.ts';
+export { designExportSize, assertDesignValues } from './design-tool/policy.ts';
+export { buildStudioScene, studioFinish, studioTime, studioAnimated, studioLightMotion } from './studio3d.ts';
+export { studioActiveIndex, studioActiveValues, studioCameraEdit, studioFocusEdit, studioCollectionRows, studioCollectionSize, STUDIO_COLLECTION_LIMIT } from './studio3d-collection.ts';

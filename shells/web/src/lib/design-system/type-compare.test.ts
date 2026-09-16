@@ -1039,28 +1039,33 @@ test('pressing Preview never parks the keyboard on Remove', async () => {
 
 test('a card that finishes loading says so, whether or not anyone is looking at it', async () => {
   // announce() defers to requestAnimationFrame, so a frame has to pass.
-  const spoken = async (): Promise<string> => {
-    await new Promise((r) => { setTimeout(r, 40); });
+  const spoken = async (expected: string): Promise<string> => {
+    const deadline = Date.now() + 2000;
+    while (Date.now() < deadline) {
+      const actual = document.querySelector('[data-a11y-live]')?.textContent ?? '';
+      if (actual === expected) return actual;
+      await new Promise((r) => { setTimeout(r, 10); });
+    }
     return document.querySelector('[data-a11y-live]')?.textContent ?? '';
   };
 
   const el = stage();
   const ui = mountTypeCompare(el, ctxFor({ consentGoogle: async () => true }));
   ui.addCandidate({ kind: 'upload', family: 'Acme Sans', bytes: sfnt(0) });
-  assert.equal(await spoken(), 'Acme Sans is ready to compare.');
+  assert.equal(await spoken('Acme Sans is ready to compare.'), 'Acme Sans is ready to compare.');
 
   // A failure is the outcome most worth hearing: the visible answer is a
   // sentence in a subtree that was just replaced wholesale, which no live region
   // covers, so silence here would mean a press that returns nothing at all.
   ui.addCandidate({ kind: 'google', family: 'Inter' });
-  assert.equal(await spoken(), 'Inter: Could not fetch this face from Google Fonts.');
+  assert.equal(await spoken('Inter: Could not fetch this face from Google Fonts.'), 'Inter: Could not fetch this face from Google Fonts.');
 
   // A decline is an outcome too - nothing broke, and saying nothing would read
   // as nothing happening.
   const el2 = stage();
   const ui2 = mountTypeCompare(el2, ctxFor({ consentGoogle: async () => false }));
   ui2.addCandidate({ kind: 'google', family: 'Outfit' });
-  assert.equal(await spoken(), 'Outfit: Not fetched. Nothing was sent to Google.');
+  assert.equal(await spoken('Outfit: Not fetched. Nothing was sent to Google.'), 'Outfit: Not fetched. Nothing was sent to Google.');
 
   ui.teardown();
   ui2.teardown();

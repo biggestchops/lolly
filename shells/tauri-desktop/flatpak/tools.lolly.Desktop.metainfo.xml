@@ -85,6 +85,17 @@
   <url type="homepage">https://lolly.tools</url>
 
   <releases>
+    <release version="1.0.8" date="2026-09-15">
+      <description>
+        <p>Share designs as portable tools with editable inputs and fixed artwork.</p>
+        <ul>
+          <li>Create a restricted tool from Design, a saved session or a template.</li>
+          <li>Preview input limits, linked choices and artboard variants before sharing.</li>
+          <li>Navigate artboard groups in Layers and scroll sequence tracks in both directions.</li>
+          <li>Use a clearer inspector with design-system controls and a phone sheet.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.7" date="2026-09-05">
       <description>
         <p>Lolly files now use one manifest-led opening flow across the app and

@@ -602,7 +602,7 @@ test('the Present split: the main half presents, each menu row calls its own ver
   click(f.at('present-menu'));
   let rows = f.rows();
   assert.deepEqual(rows.map(r => r.textContent), [
-    'Present from this slide', 'Speaker view', 'Auto-advance slides', 'Loop the deck (kiosk)', 'Export slides as video',
+    'Present from this slide', 'Speaker view', 'Present with camera', 'Auto-advance slides', 'Loop the deck (kiosk)', 'Export slides as video',
   ]);
   click(rows[0]!);
   assert.deepEqual(f.calls.present[1], { at: 'frame-2' }, 'starts on the active frame');
@@ -624,24 +624,34 @@ test('the Present split: the main half presents, each menu row calls its own ver
   // The two checkbox rows are one open: a checkbox keeps the menu up so both can be set.
   click(f.at('present-menu'));
   rows = f.rows();
-  assert.equal(rows[2]!.getAttribute('role'), 'menuitemcheckbox');
-  assert.equal(rows[2]!.getAttribute('aria-checked'), 'false');
-  click(rows[2]!);
-  assert.deepEqual(f.calls.inputs, [['autoAdvance', true]]);
-  assert.equal(rows[2]!.getAttribute('aria-checked'), 'true');
-  assert.ok(f.menu(), 'a checkbox row keeps the menu open');
+  assert.equal(rows[3]!.getAttribute('role'), 'menuitemcheckbox');
+  assert.equal(rows[3]!.getAttribute('aria-checked'), 'false');
   click(rows[3]!);
+  assert.deepEqual(f.calls.inputs, [['autoAdvance', true]]);
+  assert.equal(rows[3]!.getAttribute('aria-checked'), 'true');
+  assert.ok(f.menu(), 'a checkbox row keeps the menu open');
+  click(rows[4]!);
   assert.deepEqual(f.calls.loop, [true]);
 
   // Re-opening reads the values back out of the ports, not out of the old DOM.
   click(f.at('present-menu'));   // the trigger toggles: this shuts the still-open menu
   click(f.at('present-menu'));   // and this builds a fresh one
   rows = f.rows();
-  assert.equal(rows[2]!.getAttribute('aria-checked'), 'true', 'autoAdvance round-tripped through the model');
-  assert.equal(rows[3]!.getAttribute('aria-checked'), 'true', 'and the loop flag through its own port');
-  click(rows[2]!);
+  assert.equal(rows[3]!.getAttribute('aria-checked'), 'true', 'autoAdvance round-tripped through the model');
+  assert.equal(rows[4]!.getAttribute('aria-checked'), 'true', 'and the loop flag through its own port');
+  click(rows[3]!);
   assert.deepEqual(f.calls.inputs, [['autoAdvance', true], ['autoAdvance', false]], 'the checkbox is a toggle');
   f.bar.destroy();
+});
+
+test('Present with camera opens clean output and requires a frame', () => {
+  const f = fixture(); click(f.at('present-menu'));
+  click(f.rows().find(row => row.textContent === 'Present with camera')!);
+  assert.deepEqual(f.calls.present, [{ production: true }]); f.bar.destroy();
+  const empty = fixture({ hasFrames: () => false }); click(empty.at('present-menu'));
+  const row = empty.rows().find(row => row.textContent === 'Present with camera')!;
+  assert.equal(row.getAttribute('aria-disabled'), 'true'); click(row);
+  assert.equal(empty.calls.present.length, 0); empty.bar.destroy();
 });
 
 test('a checkbox row reports the PORT after the write, not a blind flip of its own tick', () => {
@@ -654,14 +664,14 @@ test('a checkbox row reports the PORT after the write, not a blind flip of its o
   });
   click(f.at('present-menu'));
   const rows = f.rows();
-  assert.equal(rows[2]!.getAttribute('aria-checked'), 'false');
-  click(rows[2]!);
-  assert.deepEqual(asked, [true], 'the row still asked for the change');
-  assert.equal(rows[2]!.getAttribute('aria-checked'), 'false',
-    'but the tick reports the port, which refused - a blind flip would read the opposite of the truth');
+  assert.equal(rows[3]!.getAttribute('aria-checked'), 'false');
   click(rows[3]!);
+  assert.deepEqual(asked, [true], 'the row still asked for the change');
+  assert.equal(rows[3]!.getAttribute('aria-checked'), 'false',
+    'but the tick reports the port, which refused - a blind flip would read the opposite of the truth');
+  click(rows[4]!);
   assert.deepEqual(asked, [true, true]);
-  assert.equal(rows[3]!.getAttribute('aria-checked'), 'false', 'same for the kiosk flag');
+  assert.equal(rows[4]!.getAttribute('aria-checked'), 'false', 'same for the kiosk flag');
   assert.ok(f.menu(), 'and the menu stays open, showing it, which is the whole interaction');
   f.bar.destroy();
 });
@@ -674,7 +684,7 @@ test('the Present menu grows a Narrate row that calls the port once, and only wi
   const plain = fixture();
   click(plain.at('present-menu'));
   assert.deepEqual(plain.rows().map(r => r.textContent), [
-    'Present from this slide', 'Speaker view', 'Auto-advance slides', 'Loop the deck (kiosk)', 'Export slides as video',
+    'Present from this slide', 'Speaker view', 'Present with camera', 'Auto-advance slides', 'Loop the deck (kiosk)', 'Export slides as video',
   ], 'no narration port, no row');
   plain.bar.destroy();
 
@@ -689,10 +699,10 @@ test('the Present menu grows a Narrate row that calls the port once, and only wi
   click(f.at('present-menu'));
   const rows = f.rows();
   assert.deepEqual(rows.map(r => r.textContent), [
-    'Present from this slide', 'Speaker view', 'Narrate', 'Auto-advance slides', 'Loop the deck (kiosk)', 'Export slides as video',
+    'Present from this slide', 'Speaker view', 'Present with camera', 'Narrate', 'Auto-advance slides', 'Loop the deck (kiosk)', 'Export slides as video',
   ], 'Narrate sits with the other present-time verbs');
-  assert.equal(rows[2]!.getAttribute('role'), 'menuitem', 'a verb, not a checkbox');
-  click(rows[2]!);
+  assert.equal(rows[3]!.getAttribute('role'), 'menuitem', 'a verb, not a checkbox');
+  click(rows[3]!);
   assert.deepEqual(calls, ['all'], 'the deck-wide verb, exactly once');
   assert.equal(f.menu(), null, 'and an action row closes the menu');
   f.bar.destroy();
@@ -759,11 +769,11 @@ test('Narrate is greyed when there is nothing to narrate, and when there are no 
   });
   click(f.at('present-menu'));
   let rows = f.rows();
-  assert.equal(rows[2]!.getAttribute('aria-disabled'), 'true', 'no slide carries notes yet');
-  assert.equal(rows[2]!.disabled, false, 'and it is still focusable, so the keyboard can find it');
-  assert.ok(rows[2]!.textContent?.includes('No slide has speaker notes yet.'),
+  assert.equal(rows[3]!.getAttribute('aria-disabled'), 'true', 'no slide carries notes yet');
+  assert.equal(rows[3]!.disabled, false, 'and it is still focusable, so the keyboard can find it');
+  assert.ok(rows[3]!.textContent?.includes('No slide has speaker notes yet.'),
     'a greyed control that gives no reason reads as broken');
-  click(rows[2]!);
+  click(rows[3]!);
   // `.length`, not deepEqual against a literal: node's strict deepEqual is an assertion
   // signature, so comparing to `[]` narrows the array to never[] for the rest of the test.
   assert.equal(calls.length, 0, 'a disabled row runs nothing');
@@ -772,8 +782,8 @@ test('Narrate is greyed when there is nothing to narrate, and when there are no 
   click(f.at('present-menu'));   // shut
   click(f.at('present-menu'));   // and re-read the port
   rows = f.rows();
-  assert.equal(rows[2]!.getAttribute('aria-disabled'), null, 'notes exist now: the row is live');
-  assert.ok(!rows[2]!.textContent?.includes('speaker notes yet'), 'and the reason goes with it');
+  assert.equal(rows[3]!.getAttribute('aria-disabled'), null, 'notes exist now: the row is live');
+  assert.ok(!rows[3]!.textContent?.includes('speaker notes yet'), 'and the reason goes with it');
   f.bar.destroy();
 
   const noFrames = fixture({
@@ -781,7 +791,7 @@ test('Narrate is greyed when there is nothing to narrate, and when there are no 
     narrate: { narrateAll: () => { calls.push('all'); }, narrateFrame: () => {}, status: () => 'none' as const },
   });
   click(noFrames.at('present-menu'));
-  assert.equal(noFrames.rows()[2]!.getAttribute('aria-disabled'), 'true',
+  assert.equal(noFrames.rows()[3]!.getAttribute('aria-disabled'), 'true',
     'a frame-less document has no slide to narrate');
   noFrames.bar.destroy();
 });
@@ -795,9 +805,9 @@ test('a checkbox row reports a NORMALISED write too, not the value it sent', () 
   });
   click(f.at('present-menu'));
   const rows = f.rows();
-  click(rows[2]!);
+  click(rows[3]!);
   assert.equal(stored.get('autoAdvance'), 'yes');
-  assert.equal(rows[2]!.getAttribute('aria-checked'), 'false', 'the tick re-reads rather than assuming');
+  assert.equal(rows[3]!.getAttribute('aria-checked'), 'false', 'the tick re-reads rather than assuming');
   f.bar.destroy();
 });
 
@@ -917,7 +927,7 @@ test('menus: only one is open at a time, and a second click on the trigger close
   click(f.at('zoom-level'));
   assert.equal(f.rows().length, 6);
   click(f.at('present-menu'));
-  assert.equal(f.rows().length, 5, 'opening the second closed the first');
+  assert.equal(f.rows().length, 6, 'opening the second closed the first');
   assert.equal(f.at('zoom-level').getAttribute('aria-expanded'), 'false');
   click(f.at('present-menu'));
   assert.equal(f.menu(), null, 'the trigger is a toggle');

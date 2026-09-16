@@ -55,6 +55,8 @@ export type InstalledToolTrust = 'signed-catalog' | 'custom';
 /** Per-tool metadata - everything the listing + loader need without touching the
  *  Cache Storage bucket. The parsed manifest drives the tool-index entry. */
 export interface InstalledToolMeta {
+  /** Immutable artifact identity for a generated Design tool. */
+  artifactDigest?: string;
   id: string;
   /** ISO timestamp of the install (or last reinstall). */
   at: string;
@@ -191,8 +193,62 @@ export async function installedToolMetas(): Promise<InstalledToolMeta[]> {
 }
 
 /** One installed tool's metadata, or null. */
-export async function getInstalledTool(id: string): Promise<InstalledToolMeta | null> {
+export async function getInstalledTool(id: string, digest?: string): Promise<InstalledToolMeta | null> {
+  if (digest) {
+    const db = await openDB();
+    const revisions = await db.get('profile', `${INSTALLED_KEY}:revisions`) as InstalledMap | undefined;
+    return revisions?.[`${id}@${digest}`] ?? null;
+  }
   return (await readMap())[id] ?? null;
+}
+
+/** Resolve an old saved manifest to its immutable bytes when it is shared again. */
+export async function getInstalledToolVersion(id: string, version: string): Promise<InstalledToolMeta | null> {
+  const current = await getInstalledTool(id);
+  if (current?.version === version) return current;
+  const db = await openDB();
+  const revisions = await db.get('profile', `${INSTALLED_KEY}:revisions`) as InstalledMap | undefined;
+  return Object.values(revisions || {}).find(meta => meta.id === id && meta.version === version) || null;
+}
+
+/** Stable artifact identity includes every safe relative file path and its bytes. */
+export async function toolArtifactDigest(files: Record<string,Uint8Array>): Promise<string> {
+  const hashes: Array<[string, string]> = [];
+  for (const path of Object.keys(files).sort()) {
+    if (safeToolRelPath(path) !== path || !path || path.startsWith('/')) throw new UnsupportedToolError('The tool contains an invalid file path.');
+    const hash = await crypto.subtle.digest('SHA-256', files[path] as BufferSource);
+    hashes.push([path, [...new Uint8Array(hash)].map(n => n.toString(16).padStart(2, '0')).join('')]);
+  }
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(hashes)));
+  return [...new Uint8Array(hash)].map(n => n.toString(16).padStart(2, '0')).join('');
+}
+
+/** Stage an immutable revision, then atomically publish its discovery pointer. */
+async function installDesignRevision(input: InstallToolInput): Promise<InstalledToolMeta> {
+  const id = input.manifest.id;
+  const digest = await toolArtifactDigest(input.files);
+  const db = await openDB();
+  const prior = await db.get('profile', `${INSTALLED_KEY}:revisions`) as InstalledMap | undefined;
+  const conflict = Object.values(prior ?? {}).find(m => m.id === id && m.version === input.manifest.version && m.artifactDigest !== digest);
+  if (conflict) throw new UnsupportedToolError('This version already exists with different contents. Ask the designer for a new revision.');
+  const cache = await caches.open(INSTALLED_CACHE);
+  const written: string[] = [];
+  const meta: InstalledToolMeta = { id, at: new Date().toISOString(), trust: input.trust, version: input.manifest.version, artifactDigest: digest, bytes: Object.values(input.files).reduce((sum, bytes) => sum + bytes.length, 0), fileCount: Object.keys(input.files).length, manifest: input.manifest };
+  try {
+    if (!prior?.[`${id}@${digest}`]) for (const [path, bytes] of Object.entries(input.files)) {
+      const url = `/tools/${id}/.revisions/${digest}/${path}`;
+      await cache.put(url, new Response(new Blob([bytes as BlobPart], { type: contentTypeFor(path) })));
+      written.push(url);
+    }
+    const tx = db.transaction('profile', 'readwrite');
+    const revisions = ((await tx.store.get(`${INSTALLED_KEY}:revisions`)) ?? {}) as InstalledMap;
+    const map = ((await tx.store.get(INSTALLED_KEY)) ?? {}) as InstalledMap;
+    revisions[`${id}@${digest}`] = meta; map[id] = meta;
+    await tx.store.put(revisions, `${INSTALLED_KEY}:revisions`);
+    await tx.store.put(map, INSTALLED_KEY);
+    await tx.done;
+    return meta;
+  } catch (error) { for (const url of written) await cache.delete(url); throw error; }
 }
 
 // ── Install / uninstall (Cache Storage + metadata) ─────────────────────────────
@@ -217,7 +273,13 @@ export class UnsupportedToolError extends Error {
  * and record its metadata. Refuses a module-hooks tool (not yet sideloadable) and a
  * malformed id. A reinstall of the same id replaces the prior copy in place.
  */
-export async function installTool(input: InstallToolInput): Promise<InstalledToolMeta> {
+let installQueue: Promise<unknown> = Promise.resolve();
+export function installTool(input: InstallToolInput): Promise<InstalledToolMeta> {
+  const next = installQueue.catch(() => undefined).then(() => performInstall(input));
+  installQueue = next;
+  return next;
+}
+async function performInstall(input: InstallToolInput): Promise<InstalledToolMeta> {
   const id = input.manifest?.id;
   if (!id || !/^[a-z0-9][\w.-]*(?:\/[a-z0-9][\w.-]*)*$/i.test(id)) {
     throw new UnsupportedToolError(`Cannot install a tool with an invalid id: ${String(id)}`, 'bad-id');
@@ -228,6 +290,7 @@ export async function installTool(input: InstallToolInput): Promise<InstalledToo
   if (!('caches' in globalThis)) {
     throw new UnsupportedToolError('This browser cannot store an installed tool (Cache Storage unavailable).', 'no-cache');
   }
+  if (input.manifest.designTool) return installDesignRevision(input);
   const cache = await caches.open(INSTALLED_CACHE);
   await evictToolFiles(cache, id);   // clean slate for a reinstall
 
@@ -276,6 +339,10 @@ export async function uninstallTool(id: string): Promise<void> {
   }
   const map = await readMap();
   if (map[id]) { delete map[id]; await writeMap(map); }
+  const db = await openDB();
+  const revisions = ((await db.get('profile', `${INSTALLED_KEY}:revisions`)) ?? {}) as InstalledMap;
+  for (const [key, meta] of Object.entries(revisions)) if (meta.id === id) delete revisions[key];
+  await db.put('profile', revisions, `${INSTALLED_KEY}:revisions`);
 }
 
 // ── Load path ───────────────────────────────────────────────────────────────
@@ -286,9 +353,18 @@ export async function uninstallTool(id: string): Promise<void> {
  * (`<id>/template.html`), exactly as the loader passes it. A miss throws the same
  * `tool-not-found` the network fetchFile does, so an optional file degrades identically.
  */
-export function installedFetchFile(toolId: string): (path: string) => Promise<string> {
+export function installedFetchFile(toolId: string, digest?: string): (path: string) => Promise<string> {
+  const selected = getInstalledTool(toolId, digest);
   return async (path: string) => {
     if (!('caches' in globalThis)) throw new Error('tool-not-found');
+    const meta = await selected;
+    if (digest && !meta) throw new Error('This saved tool revision is missing. Import its original .lolly file.');
+    if (meta?.artifactDigest) {
+      const relative = path.slice(toolId.length + 1);
+      const response = await caches.match(`/tools/${toolId}/.revisions/${meta.artifactDigest}/${relative}`, { cacheName: INSTALLED_CACHE });
+      if (!response) throw new Error('tool-not-found');
+      return response.text();
+    }
     // Bare key first; then the base-prefixed key a tool installed before the keys
     // went bare was written under, so an existing sideload keeps working until it
     // is reinstalled.

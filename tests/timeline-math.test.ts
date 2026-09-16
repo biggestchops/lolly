@@ -25,7 +25,7 @@ import {
   boxTiming, deriveDuration, dropIndexAt, edgeZonePx, fmtDelta, fmtDur,
   fmtTime, indexOfId, isTimed, moveOverlay,
   moveSeqClip, packSeq,
-  removeAndRipple, rippleOverlays, seqBoxes, setClipIn, setDuration, setSpeed,
+  removeAndRipple, removeManyAndRipple, rippleOverlays, seqBoxes, setClipIn, setDuration, setSpeed,
   detachAudio, isThroughEdit, joinClips, reattachAudio, restackOverlay, splitAll,
   onionNeighbours, ONION_MAX_STEPS,
   snapTime, splitBox, trimClip, trimClips,
@@ -341,6 +341,45 @@ test('removeAndRipple: deleting an overlay touches no timing; unknown id is a no
   const miss = removeAndRipple(before, cfg, 'nope');
   assert.notEqual(miss, before);
   assert.deepEqual(miss, before);
+});
+
+test('batch removal resolves overlay anchors once, independent of selection order', () => {
+  const before = [
+    clip('a', { start: 0, dur: 2 }), clip('b', { start: 2, dur: 2 }),
+    clip('c', { start: 4, dur: 2 }), clip('d', { start: 6, dur: 2 }),
+    overlay('on-b', 3), overlay('on-c', 5), overlay('on-d', 7),
+  ];
+  const snapshot = structuredClone(before);
+  const after = removeManyAndRipple(before, cfg, ['c', 'a']);
+  assert.deepEqual(after, removeManyAndRipple(before, cfg, ['a', 'c', 'a']));
+  assert.deepEqual(after.map(b => [b.id, b.start]), [
+    ['b', 0], ['d', 2], ['on-b', 1], ['on-c', 5], ['on-d', 3],
+  ]);
+  assert.deepEqual(before, snapshot);
+  assert.equal(removeManyAndRipple(before, cfg, ['missing']), before);
+});
+
+test('batch removal cleans surviving audio links and preserves unrelated mute and style', () => {
+  const linkedCfg = { ...cfg, linkField: 'linked' };
+  const before = [
+    { ...clip('picture', { start: 0, dur: 2 }), linked: 'sound', mute: true, font: '{brand.font}' },
+    { ...overlay('sound', 0), linked: 'picture' },
+    { ...overlay('unrelated', 0), mute: true },
+  ];
+  const after = removeManyAndRipple(before, linkedCfg, ['sound']);
+  assert.equal(byId(after, 'picture').linked, '');
+  assert.equal(byId(after, 'picture').mute, '');
+  assert.equal(byId(after, 'picture').font, '{brand.font}');
+  assert.equal(byId(after, 'unrelated'), before[2]);
+  assert.deepEqual(removeManyAndRipple(before, linkedCfg, ['picture', 'sound', 'unrelated']), []);
+});
+
+test('overlay ripple keeps first-match anchors for overlapping imported clips', () => {
+  const before = [clip('a', { start: 0, dur: 4 }), clip('b', { start: 2, dur: 4 }), overlay('title', 3)];
+  const after = rippleOverlays(before, [
+    { ...before[0], start: 5 }, { ...before[1], start: 0 }, before[2]!,
+  ], cfg);
+  assert.equal(byId(after, 'title').start, 8, 'the first matching clip stays the anchor');
 });
 
 // ── 6. trimClip ────────────────────────────────────────────────────────────────

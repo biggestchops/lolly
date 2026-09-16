@@ -26,6 +26,12 @@ const REPO = new URL('..', import.meta.url).pathname;
 const DOCS = join(REPO, 'docs');
 const BUILT = join(REPO, 'shells/web/public/info');
 
+/** Resolve published pages before their old flat redirect stubs. */
+function builtPage(slug: string, ext = 'html', lang = ''): string {
+  const root = join(BUILT,lang);
+  return ['start','create','build','operate','trust',''].map(door => join(root,door,`${slug}.${ext}`)).find(path => existsSync(path)) || join(root,`${slug}.${ext}`);
+}
+
 /** The exact marker shapes docs/build.ts matches (post-esc) and strips from twins:
  *  the inline one, and the whole-line block that opens a major section. */
 const MARKER = /<!--l:([a-z0-9-]+)-->/g;
@@ -123,8 +129,8 @@ const linked = (html: string, ext: 'css' | 'js'): string => {
 // must be present (a concurrent build can momentarily leave a page pointing at a file
 // its own next write has not laid down yet).
 const built = (() => {
-  if (!existsSync(join(BUILT, 'build-guide.html'))) return 'no built /info on disk - run `pnpm run build:info`';
-  const g = readFileSync(join(BUILT, 'build-guide.html'), 'utf-8');
+  if (!existsSync(builtPage('build-kubernetes'))) return 'no built /info on disk - run `pnpm run build:info`';
+  const g = readFileSync(builtPage('build-kubernetes'), 'utf-8');
   try { linked(g, 'css'); linked(g, 'js'); }
   catch { return 'built /info is mid-rebuild (linked chrome file absent) - rerun `pnpm run build:info`'; }
   return false;
@@ -136,7 +142,7 @@ test('the built pages render their markers as .doc-logo spans, with none left ov
     if (name.includes('/')) continue; // English pages carry the built HTML twin
     const markers = [...src.matchAll(MARKER)];
     if (!markers.length) continue;
-    const page = join(BUILT, `${name.replace(/\.md$/, '')}.html`);
+    const page = builtPage(name.replace(/\.md$/, ''));
     if (!existsSync(page)) continue; // a doc that is not a published page
     pagesChecked++;
     const body = bodyOf(readFileSync(page, 'utf-8'));
@@ -182,8 +188,9 @@ test('no heading in the built docs carries a technology mark', { skip: built }, 
   // words a reader scans to navigate by. (Style stripped first: the stylesheet's own
   // comments talk about h1s and markers, and that is documentation, not markup.)
   const offenders: string[] = [];
-  for (const f of readdirSync(BUILT).filter((n) => n.endsWith('.html'))) {
-    const body = bodyOf(readFileSync(join(BUILT, f), 'utf-8'));
+  for (const {name:f} of sourceMarkdown().filter(({name}) => !name.includes('/'))) {
+    const path = builtPage(f.replace(/\.md$/, '')); if (!existsSync(path)) continue;
+    const body = bodyOf(readFileSync(path, 'utf-8'));
     for (const h of body.matchAll(/<h[1-4][^>]*>[\s\S]*?<\/h[1-4]>/g)) {
       if (/class="doc-logo"|class="doc-logo-mark"/.test(h[0])) offenders.push(`${f}: ${h[0].slice(0, 70)}…`);
     }
@@ -192,7 +199,7 @@ test('no heading in the built docs carries a technology mark', { skip: built }, 
 });
 
 test('the build guide ships the Kubernetes block, decorative and unannounced', { skip: built }, () => {
-  const body = bodyOf(readFileSync(join(BUILT, 'build-guide.html'), 'utf-8'));
+  const body = ['build-guide','build-desktop','build-mobile','build-kubernetes'].map(slug => bodyOf(readFileSync(builtPage(slug),'utf-8'))).join('\n');
   const block = /<div class="doc-logo-block" aria-hidden="true">([\s\S]*?)<\/div>/.exec(body);
   assert.ok(block, 'the <!--lb:kubernetes helm--> block did not render (or lost aria-hidden)');
   const keys = [...block[1]!.matchAll(/class="doc-logo-mark" data-logo="([a-z0-9-]+)"/g)].map(m => m[1]);
@@ -204,7 +211,7 @@ test('the build guide ships the Kubernetes block, decorative and unannounced', {
 });
 
 test('the built build-guide carries the marks it is the flagship for', { skip: built }, () => {
-  const body = bodyOf(readFileSync(join(BUILT, 'build-guide.html'), 'utf-8'));
+  const body = ['build-guide','build-desktop','build-mobile','build-kubernetes'].map(slug => bodyOf(readFileSync(builtPage(slug),'utf-8'))).join('\n');
   for (const key of ['helm', 'kubernetes', 'k3s', 'nginx', 'suse', 'rust', 'node']) {
     assert.match(body, new RegExp(`data-logo="${key}"`), `build-guide.html lost the ${key} mark`);
   }
@@ -214,7 +221,7 @@ test('the built build-guide carries the marks it is the flagship for', { skip: b
 });
 
 test('the markdown twin carries no logo markers', { skip: built }, () => {
-  const twin = readFileSync(join(BUILT, 'build-guide.md'), 'utf-8');
+  const twin = ['build-guide','build-kubernetes'].map(slug => readFileSync(builtPage(slug,'md'),'utf-8')).join('\n');
   assert.ok(!/<!--l:/.test(twin), 'the agent-readable twin ships marker noise');
   assert.ok(!/<!--lb:/.test(twin), 'the twin ships a block marker');
   // …and the prose the marker sat in survives it.
@@ -225,25 +232,26 @@ test('the markdown twin carries no logo markers', { skip: built }, () => {
 // ─── the jump nav ────────────────────────────────────────────────────────────
 
 test('a long page gets the jump nav and a short one does not', { skip: built }, () => {
-  const long = readFileSync(join(BUILT, 'build-guide.html'), 'utf-8');
-  assert.match(long, /id="docJumpBtn"/, 'build-guide qualifies on both thresholds but has no jump nav');
+  const long = readFileSync(builtPage('host-api'), 'utf-8');
+  assert.match(long, /id="docJumpBtn"/, 'host-api qualifies on both thresholds but has no jump nav');
   assert.match(long, /aria-controls="docJumpNav"/);
   assert.match(long, /aria-expanded="false"/);
   assert.match(long, /<nav class="doc-jump-nav" id="docJumpNav"[^>]*hidden>/);
-  assert.match(long, /href="#web-shell-on-kubernetes-helm"/, 'the nav does not list the page h2 anchors');
+  assert.match(long, /href="#rules-of-the-contract"/, 'the nav does not list the page h2 anchors');
   assert.match(long, /class="doc-jump-top" href="#top"/, 'no Back to top entry');
 
   // trust.html: 3 h2s, ~8 KB of rendered body - under both thresholds.
-  const short = readFileSync(join(BUILT, 'trust.html'), 'utf-8');
+  const short = readFileSync(builtPage('trust'), 'utf-8');
   assert.ok(!/id="docJumpBtn"/.test(short), 'a short page grew a jump nav - the threshold slipped');
 });
 
 test('the jump nav ships on locale pages too', { skip: built }, () => {
-  const de = join(BUILT, 'de/build-guide.html');
+  const de = builtPage('host-api','html','de');
   if (!existsSync(de)) return; // a checkout with no locale build
   const html = readFileSync(de, 'utf-8');
   assert.match(html, /id="docJumpBtn"/);
-  assert.match(html, /<span class="doc-logo"/, 'the marks do not survive the locale build');
+  const marks = readFileSync(builtPage('build-kubernetes','html','de'),'utf-8');
+  assert.match(marks, /<span class="doc-logo"/, 'the marks do not survive the locale build');
 });
 
 test('the jump nav is exempted from the rules that own every other <nav>', { skip: built }, () => {
@@ -254,7 +262,7 @@ test('the jump nav is exempted from the rules that own every other <nav>', { ski
   // colour, and below 1100px they are `display:none`d out of existence. Both shipped
   // once, and neither shows up in markup-only assertions. (The landing page's
   // quicknav opts out of the same rules the same way.)
-  const css = linked(readFileSync(join(BUILT, 'build-guide.html'), 'utf-8'), 'css');
+  const css = linked(readFileSync(builtPage('build-kubernetes'), 'utf-8'), 'css');
   assert.ok(css.length > 1000, 'the linked stylesheet is missing or empty');
   const panel = /\.doc-jump-nav\{([^}]*)\}/.exec(css)?.[1] ?? '';
   for (const reset of ['display:block', 'top:auto', 'width:auto', 'height:auto']) {
@@ -269,7 +277,7 @@ test('the jump nav is exempted from the rules that own every other <nav>', { ski
 });
 
 test('the jump nav script closes on Escape and returns focus', { skip: built }, () => {
-  const html = readFileSync(join(BUILT, 'build-guide.html'), 'utf-8');
+  const html = readFileSync(builtPage('build-kubernetes'), 'utf-8');
   // The jump-nav script rides the shared bundle (plan 131 B.1); each script is its own
   // IIFE joined by `\n;\n`, so pull out the one that owns the docJumpBtn.
   const script = linked(html, 'js').split('\n;\n').find((seg) => seg.includes("getElementById('docJumpBtn')"));

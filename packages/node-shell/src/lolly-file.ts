@@ -38,6 +38,7 @@ export interface LollyFont {
  *  nothing here needs them, and typing only what is used keeps the two copies honest. */
 export interface LollyFileManifest {
   format: string;
+  kind?: 'session' | 'tool';
   formatVersion?: number;
   minReader?: number;
   app?: string;
@@ -59,7 +60,7 @@ export interface LollyFileContents {
 
 /** The format tag and reader gate, kept identical to lolly-pack.ts's constants. */
 const LOLLY_FILE_FORMAT = 'lolly-share';
-const LOLLY_MIN_READER = 1;
+const LOLLY_READER_VERSION = 2;
 
 /** SRI `sha256-<base64>` of some bytes, spelled exactly as the writer spells it. */
 export function sriSha256(bytes: Uint8Array): string {
@@ -71,15 +72,15 @@ export function sriSha256(bytes: Uint8Array): string {
  * not the format, written by a newer Lolly than this reader admits to understanding, or
  * a part that fails its digest.
  */
-export function readLollyFile(bytes: Uint8Array): LollyFileContents {
+export function readLollyFile(bytes: Uint8Array, opts: { allowTool?: boolean } = {}): LollyFileContents {
   const files = new Map<string, Uint8Array>();
-  for (const entry of readZip(bytes)) files.set(entry.name, entry.bytes);
+  for (const entry of readZip(bytes)) { if (files.has(entry.name)) throw new Error('This .lolly file contains duplicate paths.'); files.set(entry.name, entry.bytes); }
 
   const manifest = parseJson(files.get('manifest.json')) as LollyFileManifest | null;
   if (!manifest || manifest.format !== LOLLY_FILE_FORMAT) {
     throw new Error('This does not look like a .lolly file (no lolly-share manifest.json).');
   }
-  if (typeof manifest.minReader === 'number' && manifest.minReader > LOLLY_MIN_READER) {
+  if (typeof manifest.minReader === 'number' && manifest.minReader > LOLLY_READER_VERSION) {
     throw new Error(`This .lolly file needs a newer reader (minReader ${manifest.minReader}).`);
   }
   if (manifest.integrity) {
@@ -90,6 +91,20 @@ export function readLollyFile(bytes: Uint8Array): LollyFileContents {
         throw new Error(`This .lolly file failed its integrity check - "${path}" does not match the manifest.`);
       }
     }
+  }
+  if (manifest.kind === 'tool') {
+    if (!opts.allowTool) throw new Error('This is a reusable tool. Use lolly run file.lolly to render it.');
+    const bundle = manifest.bundledTool;
+    if (manifest.minReader !== 2 || !manifest.integrity || !bundle?.files?.length || bundle.id !== manifest.tool.id || files.has('session.json')) throw new Error('This tool file has an invalid payload.');
+    const paths = new Set<string>();
+    for (const entry of bundle.files) {
+      if (!/^tool\/[\w./-]+$/.test(entry.path) || entry.path.split('/').some(p => p === '.' || p === '..') || paths.has(entry.path) || !files.has(entry.path) || !manifest.integrity[entry.path]) throw new Error('This tool file has an invalid or unverified part.');
+      paths.add(entry.path);
+    }
+    if ([...files.keys()].some(path => path.startsWith('tool/') && !paths.has(path)) || !paths.has('tool/tool.json') || !paths.has('tool/template.html')) throw new Error('This tool file has an incomplete inventory.');
+    const tool = parseJson(files.get('tool/tool.json')) as {id?:string;version?:string} | null;
+    if (tool?.id !== bundle.id || bundle.version && tool.version !== bundle.version) throw new Error('This tool file has inconsistent identity.');
+    return {manifest,session:{},files};
   }
   const session = parseJson(files.get('session.json'));
   if (!session || typeof session !== 'object') {

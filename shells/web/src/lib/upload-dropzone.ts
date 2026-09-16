@@ -47,6 +47,7 @@ export interface DropzoneOpts {
 const FORMAT_GROUPS: ReadonlyArray<{ label: string; formats: string }> = [
   { label: 'Images', formats: 'PNG, JPG, WEBP, GIF' },
   { label: 'SVG', formats: 'SVG vector' },
+  { label: '3D', formats: 'GLB, STL' },
   { label: 'PDF & AI', formats: 'PDF, Illustrator' },
   { label: 'Slides', formats: 'PowerPoint' },
   { label: 'Audio', formats: 'MP3, WAV, OGG, M4A, FLAC' },

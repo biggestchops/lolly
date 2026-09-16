@@ -11,7 +11,7 @@ export function surfaceMapping(el: HTMLElement): { toClient(p: Point): Point; fr
   const css = win.getComputedStyle(el);
   const w = el.offsetWidth || parseFloat(css.width) || rect.width;
   const h = el.offsetHeight || parseFloat(css.height) || rect.height;
-  const Matrix = (win as unknown as { DOMMatrix?: typeof DOMMatrix }).DOMMatrix;
+  const Matrix = (win as Window & { DOMMatrix?: typeof DOMMatrix }).DOMMatrix;
   if (!Matrix) return css.transform && css.transform !== 'none' ? null : {
     toClient: p => ({ x: rect.left + p.x * rect.width, y: rect.top + p.y * rect.height }),
     fromClient: p => ({ x: (p.x - rect.left) / rect.width, y: (p.y - rect.top) / rect.height }),

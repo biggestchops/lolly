@@ -9,7 +9,7 @@
  */
 import { t, tRaw } from '../../i18n.ts';
 import { announce } from '../../a11y.ts';
-import { boxTiming, fmtDelta, fmtDur, indexOfId, removeAndRipple } from '../timeline-math.ts';
+import { boxTiming, fmtDelta, fmtDur, indexOfId, removeManyAndRipple } from '../timeline-math.ts';
 import type { Box } from '../timeline-math.ts';
 import { TAKE_TIMING } from '../timeline-config.ts';
 import type { TakePhase } from './shared.ts';
@@ -34,52 +34,28 @@ export function mintId(tp: TpCtx, rows: Box[] = tp.getBoxes()): string {
   }
   return id;
 }
-/**
- * Remove one box, rippling the row behind it. `target` names it (the context menu);
- * with no argument it is the focused/selected bar (the Delete key). Scenery is
- * deletable too - it has a chip rather than a bar, and no reason to be undeletable.
- */
-/**
- * Delete one half of an A/V pair and the other half is left holding a link to an id
- * that no longer exists. `partnerOf` reads a dangling id as '' (so Detach is offered
- * again, and then refuses - `detachAudio` re-reads the raw field and returns null),
- * while the bar paint reads the RAW field and keeps the link chip: the two disagree
- * about whether the clip is linked, and the picture is left silent with nothing in the
- * panel saying why. So the delete sweeps the link off every survivor pointing at the
- * clip that went - and un-mutes it too when it was MUTED, because the only reason it
- * was silent was that its sound lived on the clip just deleted.
- */
-export function sweepLinksTo(tp: TpCtx, rows: Box[], goneId: string): Box[] {
-  const { cfg } = tp;
-  const link = cfg.linkField;
-  if (!link || !goneId) return rows;
-  let touched = false;
-  const out = rows.map((b) => {
-    if (!b || String(b[link] ?? '') !== goneId) return b;
-    touched = true;
-    const muted = b[cfg.muteField] === true || b[cfg.muteField] === 'true';
-    return muted ? { ...b, [link]: '', [cfg.muteField]: '' } : { ...b, [link]: '' };
-  });
-  // Identity when nothing was linked: the commonest delete by far, and it must not
-  // look like a change to anything downstream that compares by reference.
-  return touched ? out : rows;
-}
+/** Delete the selection, or one explicitly targeted item, in one undo step. */
 export function deleteBox(tp: TpCtx, target?: string): void {
   const { bars, cfg, chips, getBoxes, selection } = tp;
-  const id = target || tp.focusedId || selection.get()[0] || '';
-  if (!id || !(bars.has(id) || chips.has(id))) return;
+  const selected = selection.get();
+  const ids = (target ? [target] : selected.length ? selected : [tp.focusedId])
+    .filter(id => bars.has(id) || chips.has(id));
+  if (!ids.length) return;
+  const gone = new Set(ids);
   // Hand focus to a neighbour rather than nowhere: `updateRovingTabindex` re-picks
   // when the id is gone, and rebuild() restores focus onto whatever it picked.
-  const order = Array.from(bars.keys());
-  const at = order.indexOf(id);
-  if (at >= 0) tp.focusedId = order[at + 1] || order[at - 1] || '';
+  const order = [...bars.keys(), ...chips.keys()];
+  const at = order.findIndex(id => gone.has(id));
+  tp.focusedId = order.slice(at + 1).find(id => !gone.has(id))
+    || order.slice(0, at).reverse().find(id => !gone.has(id)) || '';
   // Say what was actually removed. Scenery has a chip, not a bar, and the panel's own
   // UI never calls it a clip - announcing "Clip removed" for an always-on image is the
   // one place the vocabulary would slip, and it slips only for screen-reader users.
-  const wasClip = bars.has(id);
-  tp.helpers.write(sweepLinksTo(tp, removeAndRipple(getBoxes(), cfg, id, tp.helpers.mediaDur), id));
+  const wasClip = ids.every(id => bars.has(id));
+  tp.helpers.write(removeManyAndRipple(getBoxes(), cfg, ids, tp.helpers.mediaDur));
   tp.rows.selectAndReveal(tp.focusedId ? [tp.focusedId] : []);
-  announce(wasClip ? t('Clip removed') : t('Removed'));
+  announce(ids.length > 1 ? t('{n} items removed', { n: String(ids.length) })
+    : wasClip ? t('Clip removed') : t('Removed'));
 }
 /** Every row's resolved timing, as one string - "did this edit change anything?". */
 export function timingSig(tp: TpCtx, rows: Box[]): string {
@@ -194,7 +170,6 @@ export const now = (_tp: TpCtx): number =>
 export function editOps(tp: TpCtx) {
   return {
     mintId: bindOp(tp, mintId),
-    sweepLinksTo: bindOp(tp, sweepLinksTo),
     deleteBox: bindOp(tp, deleteBox),
     timingSig: bindOp(tp, timingSig),
     trimTargetId: bindOp(tp, trimTargetId),

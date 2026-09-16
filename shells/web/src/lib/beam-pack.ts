@@ -1465,7 +1465,10 @@ export async function ingestBeamItem(
   // The disclosed label wins. `buildBeamOffer` keeps the two equal; a hostile sender
   // could offer "cat.png" and name the stored row something else entirely.
   const label = safeText(item.label, PACK_MAX_LABEL_CHARS, safeText(entry.label, PACK_MAX_LABEL_CHARS, tRaw(STRINGS.untitledAsset)));
-  const sourceId = safeText(entry.sourceId, PACK_MAX_ID_CHARS * 2, '');
+  // Source IDs include version pins and must match document dependencies exactly.
+  // Transport item IDs have a smaller budget; truncating a source breaks re-keying.
+  const sourceId = typeof entry.sourceId === 'string' ? entry.sourceId : '';
+  if (sourceId.length > 8192) throw new BeamPackError('bad-manifest', 'Source asset ID is too long.');
 
   if (entry.kind === 'asset') {
     // What this file IS, read out of it - never what the manifest says it is.

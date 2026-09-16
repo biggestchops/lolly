@@ -71,6 +71,9 @@ import { clipsOps } from './timeline-panel/clips.ts';
 import { editOps } from './timeline-panel/edit.ts';
 import { recordingOps } from './timeline-panel/recording.ts';
 import { subtitlesOps } from './timeline-panel/subtitles.ts';
+import { toolbarOps } from './timeline-panel/toolbar.ts';
+import { selectionActionsOps } from './timeline-panel/selection-actions.ts';
+import { layoutOps } from './timeline-panel/layout.ts';
 import { panelOps } from './timeline-panel/panel.ts';
 export { canPlayOnce, playOnce, timeToPx, pxToTime, clientToTime, clampPxPerSec, fitPxPerSec, zoomAbout, tracksKey, snapCandidates, isTextControl, panelKeysActive, clampPanelH, tickStep, frameCountFor, isCoarsePointer, edgeBase, MAX_NODE_RASTERS_PER_PASS, MAX_THUMB_PASSES, isPaintedColor, thumbMode, canRasterBox, appearanceSig } from './timeline-panel/shared.ts';
 export type { TimelineRuntime, TimelineHost, TimelineSelection, TimelineAddKind, TimelineAddDetail, TimelinePanelOpts, ThumbMode } from './timeline-panel/shared.ts';
@@ -335,6 +338,9 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   tp.recording = recordingOps(tp);
   tp.subtitles = subtitlesOps(tp);
   tp.panel = panelOps(tp);
+  tp.toolbar = toolbarOps(tp);
+  tp.selectionActions = selectionActionsOps(tp);
+  tp.layout = layoutOps(tp);
   tp.opts = opts;
 
   const {
@@ -579,6 +585,7 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
 
   const tracks = document.createElement('div'); tp.tracks = tracks;
   tracks.className = 'tl-tracks';
+  tracks.tabIndex = 0; tracks.setAttribute('role','region'); tracks.setAttribute('aria-label',t('Sequence tracks'));
   const inner = document.createElement('div'); tp.inner = inner;
   inner.className = 'tl-tracks-inner';
   const laneWrap = document.createElement('div'); tp.laneWrap = laneWrap;
@@ -626,10 +633,10 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   marquee.className = 'tl-marquee';
   marquee.hidden = true;
   marquee.setAttribute('aria-hidden', 'true');
-  inner.append(laneWrap, scenery, extent, playhead, snapline, trimBadge, marquee);
+  inner.append(laneWrap, extent, playhead, snapline, trimBadge, marquee);
   tracks.appendChild(inner);
 
-  root.append(handle, bar, ruler, tracks);
+  root.append(handle, bar, ruler, tracks, scenery);
   stageEl.appendChild(root);
 
   const clock: SequenceClock = createSequenceClock({ canvasEl, host }); tp.clock = clock;
@@ -850,8 +857,10 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
       const go = (): void => {
         const ms = Math.max(0, Math.round(finite(input.value, tp.lastStaggerMs)));
         tp.lastStaggerMs = ms;
-        tp.helpers.write(staggerOverlays(getBoxes(), cfg, tp.staggerIds, ms / 1000));
-        staggerPop.close();
+        const before = getBoxes();
+        const next = staggerOverlays(before, cfg, tp.staggerIds, ms / 1000);
+        if (tp.edit.timingSig(next) !== tp.edit.timingSig(before)) tp.helpers.write(next);
+        staggerPop.close(true);
       };
       apply.addEventListener('click', go);
       input.addEventListener('keydown', (e) => {
@@ -875,9 +884,7 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   /** A virtual anchor at the right-click point; `delegate` carries the keyboard route. */
   const ctxPoint = pointAnchor(); tp.ctxPoint = ctxPoint;
   tp.ctxId = '';
-  /** Non-null while the menu is acting on a KEPT multi-selection (plans/175 WP-C):
-   *  the staggerable members, decided once in openCtxMenu so the open decision and
-   *  the render can never disagree. */
+  /** Non-null while the context menu acts on the current multi-selection. */
   tp.ctxMulti = null;
 
   const ctxMenu = mountBodyPopover(
@@ -904,21 +911,7 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
       // nothing else: mixing per-box rows in would act on one bar while several stay
       // painted selected - the exact state the collapse rule below exists to prevent.
       if (tp.ctxMulti && tp.ctxMulti.length >= 2) {
-        const n = tp.ctxMulti.length;
-        el.appendChild(
-          tp.menus.menuItem(
-            t('Offset starts by…'),
-            'layers',
-            act(() => tp.menus.openStaggerPop(tp.ctxMulti ?? [])),
-            {
-              sub: t(
-                'Deals the {n} selected clips an even gap, each starting after the one before.',
-                { n: String(n) }
-              ),
-            }
-          )
-        );
-        return el.querySelector<HTMLElement>('.folder-menu-item');
+        return tp.selectionActions.render(el, pop);
       }
       if (timed) {
         // Exactly the writers that already exist - the context menu is a second DOOR onto
@@ -1423,9 +1416,8 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
 
   // ── Pinch to zoom ───────────────────────────────────────────────────────────
   // TOUCH events, not pointer events, deliberately. `.tl-tracks` keeps `touch-action:
-  // pan-x pan-y` so ONE finger still pans a long sequence natively (the panel itself is
-  // `touch-action: none`, so without that opt-out a phone cannot reach past the fold at
-  // all). Under that value the browser claims a TWO-finger gesture as a pan and fires
+  // pan-x pan-y` so one finger pans a long sequence natively. Under that value
+  // the browser claims a two-finger gesture as a pan and fires
   // pointercancel on both pointers, which would kill a pointer-based pinch part-way
   // through; a non-passive touchmove can preventDefault that pan and keep the gesture,
   // without giving up single-finger scrolling. The zoom itself goes through the same
@@ -1574,6 +1566,8 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
     void tp.recording.openScriptVoiceover();
   });
   scriptBtn.hidden = !tp.recording.canScriptVoiceover();
+  tp.toolbar.wire();
+  tp.layout.wire();
   transcriptBtn.addEventListener('click', () => {
     void tp.subtitles.openTranscript();
   });
@@ -1612,11 +1606,15 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
     // first and then find a field. One commit, exactly like the inspector route.
     const add = target?.closest<HTMLElement>('.tl-chip-add');
     if (add?.dataset.id) {
+      tp.alwaysMenu.close(true);
       tp.rows.promote(add.dataset.id);
       return;
     }
     const chip = target?.closest<HTMLElement>('.tl-chip');
-    if (chip?.dataset.id) tp.rows.selectAndReveal([chip.dataset.id]);
+    if (chip?.dataset.id) {
+      tp.alwaysMenu.close(true);
+      tp.rows.selectAndReveal([chip.dataset.id]);
+    }
   });
   laneWrap.addEventListener('dblclick', (e) => {
     // On a bar: rename in place. The junction affordance keeps the seams (a
@@ -1667,6 +1665,7 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   const unsubSelection = selection.onChange(() => {
     if (tp.disposed || !tp.open) return;
     tp.rows.restyle(getBoxes());
+    tp.toolbar.sync();
   }); tp.unsubSelection = unsubSelection;
   /**
    * `tl-time` - the panel→canvas half of the one rule's seam (free-canvas.ts's header).

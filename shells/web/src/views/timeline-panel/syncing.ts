@@ -30,6 +30,7 @@ export function sync(tp: TpCtx): void {
   const { cfg, clock, getBoxes, tracks } = tp;
   if (!tp.open || tp.disposed) return;
   tp.syncMissed = false;
+  tp.toolbar.sync();
   const boxes = getBoxes();
   const key = tracksKey(boxes, cfg);
   // What a bar's PICTURE depends on, which is a different question from what its
@@ -54,6 +55,7 @@ export function sync(tp: TpCtx): void {
     tp.rows.restyle(boxes);
     tp.thumbs.scheduleThumbs();
   }
+  tp.layout.sync();
   tp.rows.updatePlayhead(clock.t());
   // A MODEL change can move the ghosts without moving the clock (a split, a trim, a
   // reorder), and a paused timeline emits no ticks at all. Gated by the same signature

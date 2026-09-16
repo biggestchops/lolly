@@ -120,3 +120,38 @@ test('dispose cancels pending timers and revokes every outstanding URL', async (
   assert.equal(renders, 1, 'the debounced-but-undisposed render fired once; the post-dispose one did not');
   assert.ok(revoked.length > revokedBefore, 'the outstanding preview URL was revoked on dispose');
 });
+
+test('live activation drains rendering and discards old previews across pause and resume', async () => {
+  let finish!: (blob: Blob) => void;
+  let started!: () => void;
+  const began = new Promise<void>(resolve => { started = resolve; });
+  let renders = 0;
+  const p = createSinglePreviewer(fakeHost, {
+    debounceMs: 0,
+    render: async () => {
+      renders++;
+      if (renders > 1) return new dom.window.Blob();
+      started();
+      return new Promise<Blob>(resolve => { finish = resolve; });
+    },
+  });
+  const el = cell();
+  p.schedule('a', '3d-studio', {}, el);
+  p.schedule('b', '3d-studio', {}, cell());
+  await began;
+  let drained = false;
+  const pausing = p.pause().then(() => { drained = true; });
+  el.innerHTML = '<canvas></canvas>';
+  await Promise.resolve();
+  assert.equal(drained, false);
+  p.resume();
+  finish(new dom.window.Blob());
+  await pausing;
+  assert.equal(renders, 1);
+  assert.ok(el.querySelector('canvas'), 'the old render cannot replace the live cell');
+  p.schedule('a', '3d-studio', {}, el);
+  await tick(20);
+  assert.equal(renders, 2);
+  assert.ok(el.querySelector('img.me-preview'), 'new still previews resume normally');
+  p.dispose();
+});

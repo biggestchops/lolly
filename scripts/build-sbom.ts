@@ -298,6 +298,7 @@ const cargoLicenseNotes: Record<string, string> = cargoLicenseDoc?.licenseFileNo
 
 addCargoCrates('shells/tauri-desktop/src-tauri/Cargo.lock');
 addCargoCrates('shells/tauri-mobile/src-tauri/Cargo.lock');
+addCargoCrates('packages/node-shell/wasm/skera/Cargo.lock');
 
 const components = [...byPurl.values()].sort((a, b) => a.purl.localeCompare(b.purl));
 

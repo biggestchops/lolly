@@ -384,6 +384,9 @@ export async function faceSourceBytes(face: VectorFontFace): Promise<Uint8Array 
   } catch { return null; }
 }
 
+/** Discover newly mounted font faces without revoking URLs an export is using. */
+export function refreshFontRegistry(): void { registryPromise = null; }
+
 /** Drop the cached registry (and every decoded face) after an install/removal. */
 export function bustFontRegistry(): void {
   registryPromise = null;

@@ -47,8 +47,8 @@ test('negative playheads clamp to zero, both doors', () => {
 
 // The RESERVED test's pattern (tests/engine.test.ts): the documented list and the
 // parsed one must be the same set.
-test('docs/url-mode.md names exactly the editor-state params the shell parses', () => {
-  const doc = readFileSync(new URL('../../../../docs/url-mode.md', import.meta.url), 'utf8');
+test('docs/url-app-links.md names exactly the editor-state params the shell parses', () => {
+  const doc = readFileSync(new URL('../../../../docs/url-app-links.md', import.meta.url), 'utf8');
   const para = doc.split('\n').find((l) => l.includes('EDITOR state')) ?? '';
   const documented = new Set([...para.matchAll(/`(_[a-z]+)[=`]/g)].map((m) => m[1]));
   assert.deepEqual(documented, new Set(EDITOR_STATE_PARAMS));

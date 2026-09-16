@@ -31,7 +31,7 @@ const sidebarSlugs = [...new Set(
 const iconBlock = sliceDeclaration(BUILD_TS, 'SIDEBAR_ICON')
   .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
 const iconMap = new Map(
-  [...iconBlock.matchAll(/'?([a-z][a-z0-9-]*)'?:\s*'([a-z][a-zA-Z0-9-]*)'/g)]
+  [...iconBlock.matchAll(/'?([a-z0-9][a-z0-9-]*)'?:\s*'([a-z][a-zA-Z0-9-]*)'/g)]
     .map((m) => [m[1]!, m[2]!] as const),
 );
 
@@ -49,7 +49,7 @@ const iconKeys = new Set([
  */
 const footerSlugs = [...new Set([
   ...[...sliceDeclaration(BUILD_TS, 'FOOTER_SECTIONS').matchAll(/slugs:\s*\[([^\]]*)\]/g)]
-    .flatMap((m) => [...m[1]!.matchAll(/'([a-z-]+)'/g)].map((x) => x[1]!)),
+    .flatMap((m) => [...m[1]!.matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1]!)),
   ...[...sliceDeclaration(BUILD_TS, 'PATHWAY_HUB').matchAll(/:\s*'([a-z-]+)'/g)].map((m) => m[1]!),
 ])];
 

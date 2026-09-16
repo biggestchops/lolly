@@ -134,7 +134,7 @@
        exactly as the old hint behaved. A key-pinned release never reaches slim at
        all (catalog/integrity.ts), so vite.config.js's slimIndexWarm() strips this
        whole script from such a build rather than fetching a file nothing reads. -->
-  <script>
+  <script id="lolly-slim-index-warm">
     (() => {
       try {
         if ('sbt-tool-index' in localStorage) return;   // cached index → main.ts never fetches slim

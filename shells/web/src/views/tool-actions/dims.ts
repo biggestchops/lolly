@@ -7,6 +7,7 @@
  * a value (an event listener), goes through `ta.<module>.<fn>`. Extracted verbatim
  * from renderActions() by scripts/split-closure.ts.
  */
+import { designSelection } from '@lolly-tools/core/design-tool-v1';
 import { isNonAffineTransform, toCssPx } from '@lolly/engine';
 import type { Unit } from '../../../../../engine/src/units.js';
 import { announce } from '../../a11y.js';
@@ -52,6 +53,11 @@ export function rawDims(ta: ActionsCtx): { w: number | undefined; h: number | un
 // units) so the engine converts per format. Vector ignores DPI; raster uses it.
 export function exportDims(ta: ActionsCtx): { width?: number | string; height?: number | string; dpi?: number } {
   const { manifest } = ta;
+  if (manifest.designTool) {
+    const selection = designSelection(manifest.designTool, Object.fromEntries(ta.runtime.getModel().map(i => [i.id,i.value])));
+    const variant = manifest.designTool.variants.find(v => v.id === selection.variantId)!;
+    return {width:variant.width,height:variant.height};
+  }
   if (manifest.render.dims === false) {
     return { width: manifest.render.width, height: manifest.render.height };
   }
@@ -118,7 +124,7 @@ export function canvasHasPerspectivePose(ta: ActionsCtx): boolean {
 }
 export function updateFidelityWarning(ta: ActionsCtx): void {
   const { FROST_OK_FORMATS, VECTOR_FORMATS, fidelityWarnEl, formatEl, formats, initialFmt } = ta;
-  if (!fidelityWarnEl) return;
+  if (!ta.fidelityWarningOpen || !fidelityWarnEl) return;
   const fmt = formatEl?.value || initialFmt || formats[0] || '';
   // Both guards can fire at once (a frosted panel on a tilted stage), so the row
   // carries whichever sentences apply rather than the first one that matched.
@@ -138,6 +144,28 @@ export function updateFidelityWarning(ta: ActionsCtx): void {
   const msg = parts.join(' ');
   fidelityWarnEl.querySelector<HTMLElement>('[data-fidelity-warning-text]')!.textContent = msg;
   fidelityWarnEl.hidden = !msg;
+}
+export function wireFidelityWarning(ta: ActionsCtx): void {
+  ta.fidelityWarningOpen = false;
+  const open = () => {
+    ta.fidelityWarningOpen = true;
+    ta.dims.updateFidelityWarning();
+  };
+  const close = () => {
+    ta.fidelityWarningOpen = false;
+    if (ta.fidelityWarnEl) ta.fidelityWarnEl.hidden = true;
+  };
+  ta.el.addEventListener('lolly:export-open', open);
+  ta.el.addEventListener('lolly:export-close', close);
+  // Model notifications precede the DOM update. Read the finished canvas while
+  // Export is visible, so warnings are current without scanning during every edit.
+  ta.canvasEl?.addEventListener('lolly-canvas-painted', ta.dims.updateFidelityWarning);
+  ta.disposeFidelityWarning = () => {
+    close();
+    ta.el.removeEventListener('lolly:export-open', open);
+    ta.el.removeEventListener('lolly:export-close', close);
+    ta.canvasEl?.removeEventListener('lolly-canvas-painted', ta.dims.updateFidelityWarning);
+  };
 }
 // Print marks & bleed export opts (pdf / pdf-cmyk / cmyk-tiff). Empty when the card is off,
 // so an ordinary PDF stays trim-sized with no marks.
@@ -247,6 +275,7 @@ export function dimsOps(ta: ActionsCtx) {
     canvasUsesBackdropFilter: bindOp(ta, canvasUsesBackdropFilter),
     canvasHasPerspectivePose: bindOp(ta, canvasHasPerspectivePose),
     updateFidelityWarning: bindOp(ta, updateFidelityWarning),
+    wireFidelityWarning: bindOp(ta, wireFidelityWarning),
     printOpts: bindOp(ta, printOpts),
     brandBarRadiusPt: bindOp(ta, brandBarRadiusPt),
     wireUnitSelect: bindOp(ta, wireUnitSelect),

@@ -86,14 +86,16 @@ test('progress/finish/fail are no-ops after a terminal state', () => {
   assert.equal(rec.error, undefined);
 });
 
-test('cancel fires the callback, marks cancelled, and pumps the next heavy job', () => {
+test('cancel fires the callback and keeps capacity until the driver settles', () => {
   let cancelled = 0;
   const a = startJob({ title: 'A', cancel: () => { cancelled++; } });
   const b = startJob({ title: 'B' });
   cancelJob(a.id);
   assert.equal(cancelled, 1);
   assert.equal(jobsSnapshot().find(j => j.id === a.id)!.status, 'cancelled');
-  assert.equal(jobsSnapshot().find(j => j.id === b.id)!.status, 'running', 'cancelling A frees the slot for B');
+  assert.equal(jobsSnapshot().find(j => j.id === b.id)!.status, 'queued');
+  a.settle();
+  assert.equal(jobsSnapshot().find(j => j.id === b.id)!.status, 'running');
   // A second cancel is inert - the callback fires once.
   cancelJob(a.id);
   assert.equal(cancelled, 1);
@@ -165,4 +167,52 @@ test('runJob fails the job and rethrows when the work throws', async () => {
   const rec = jobsSnapshot().find(j => j.title === 'boom')!;
   assert.equal(rec.status, 'failed');
   assert.equal(rec.error, 'nope');
+});
+
+test('cancelled async work retains its slot through prune time and a late rejection', async () => {
+  jobs.RETENTION.ms = 0;
+  let reject!: (error: Error) => void;
+  const work = runJob({ title: 'first', cancel: () => {} }, () => new Promise<void>((_resolve, no) => { reject = no; }));
+  const rejected = assert.rejects(work, /stopped/);
+  await flush();
+  const first = jobsSnapshot()[0]!;
+  const next = startJob({ title: 'next' });
+  cancelJob(first.id);
+  await flush();
+  assert.equal(jobsSnapshot().find(job => job.id === next.id)!.status, 'queued');
+  assert.ok(jobs.resourceJobs().some(job => job.id === first.id));
+  reject(new Error('stopped'));
+  await rejected;
+  assert.equal(jobsSnapshot().find(job => job.id === next.id)!.status, 'running');
+  next.finish();
+});
+
+test('cancellation before an async wrapper starts work releases its reservation', async () => {
+  let called = false;
+  const work = runJob({ title: 'first', cancel: () => {} }, () => { called = true; });
+  cancelJob(jobsSnapshot()[0]!.id);
+  const next = startJob({ title: 'next' });
+  await work;
+  assert.equal(called, false);
+  assert.equal(jobsSnapshot().find(job => job.id === next.id)!.status, 'running');
+});
+
+test('runJob suppresses a result that arrives after cancellation', async () => {
+  let complete!: (value: string) => void;
+  const result = runJob({ title: 'slow', cancel() {} }, () => new Promise<string>(resolve => { complete = resolve; }));
+  await new Promise(resolve => setImmediate(resolve));
+  cancelJob(jobsSnapshot()[0]!.id);
+  complete('late result');
+  assert.equal(await result, undefined);
+});
+
+test('pending heavy admission is bounded; cancelling queued work admits a retry', () => {
+  startJob({ title: 'active' });
+  const pending = Array.from({ length: jobs.MAX_QUEUED_HEAVY_JOBS }, () => startJob({ title: 'waiting' }));
+  assert.throws(() => startJob({ title: 'overflow' }), jobs.JobQueueFullError);
+  assert.equal(jobsSnapshot().length, jobs.MAX_QUEUED_HEAVY_JOBS + 1);
+  const light = startJob({ title: 'small', heavy: false });
+  assert.equal(jobsSnapshot().find(job => job.id === light.id)!.status, 'running');
+  cancelJob(pending[0]!.id);
+  assert.doesNotThrow(() => startJob({ title: 'retry' }));
 });

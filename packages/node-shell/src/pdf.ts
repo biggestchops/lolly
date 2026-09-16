@@ -25,7 +25,8 @@
  * makeCanvas and canvasToJpeg through it unchanged.
  */
 import type { PDFDocument as PDFDocumentType, PDFName as PDFNameType } from 'pdf-lib';
-import { buildEncryptDictValues, encryptObjectBytes, preparePassword } from '@lolly/engine';
+import { buildEncryptDictValues, encryptObjectBytes, preparePassword, xmlProvenanceFields } from '@lolly/engine';
+import { unzlibSync } from 'fflate';
 import type {
   PdfAPI, PdfCompressOpts, PdfCompressResult, PdfFinding,
   PdfOrganizeOpts, PdfOrganizeResult, PdfStampOpts, PdfStampResult,
@@ -53,17 +54,17 @@ const INFO_FIELDS: InfoField[] = [
 ];
 
 function isoDate(d: Date | undefined): string | null {
-  try { return d instanceof Date && !Number.isNaN(Number(d)) ? d.toISOString().slice(0, 10) : null; }
+  try { return d instanceof Date && !Number.isNaN(Number(d)) ? d.toISOString() : null; }
   catch { return null; }
 }
 
 // A pdf-lib stream object as accessed by the best-effort duck-typing below: either
 // exposes a getContents() method or a raw `contents` byte array.
-type StreamLike = { getContents?: () => Uint8Array | undefined; contents?: Uint8Array };
+type StreamLike = { getContents?: () => Uint8Array | undefined; contents?: Uint8Array; dict?: { get(key: PDFNameType): unknown } };
 
 // Read the catalog's XMP metadata stream as text, if present. Best-effort: the
-// stream is usually an uncompressed XML packet; if it's compressed/odd we still
-// detect its presence, we just can't quote from it.
+// Common Flate-compressed packets are decoded with a fixed output ceiling.
+// Unsupported filters still report the packet's presence.
 function readXmpText(doc: PDFDocumentType, PDFName: typeof PDFNameType): string | null {
   const ref = doc.catalog.get(PDFName.of('Metadata'));
   if (!ref) return null;
@@ -71,7 +72,14 @@ function readXmpText(doc: PDFDocumentType, PDFName: typeof PDFNameType): string 
   try { stream = doc.context.lookup(ref); } catch { return ''; }
   if (!stream) return '';
   try {
-    const bytes = typeof (stream as StreamLike).getContents === 'function' ? (stream as StreamLike).getContents!() : (stream as StreamLike).contents;
+    let bytes = typeof (stream as StreamLike).getContents === 'function' ? (stream as StreamLike).getContents!() : (stream as StreamLike).contents;
+    if (bytes && bytes.length > 1024 * 1024) return '';
+    const filter = (stream as StreamLike).dict?.get(PDFName.of('Filter'));
+    if (filter && bytes) {
+      if (!/^\/?FlateDecode$|^\[\s*\/FlateDecode\s*\]$/.test(String(filter))) return '';
+      bytes = unzlibSync(bytes, { out: new Uint8Array(1024 * 1024 + 1) });
+      if (bytes.length > 1024 * 1024) return '';
+    }
     return bytes ? new TextDecoder('utf-8').decode(bytes) : '';
   } catch { return ''; }
 }
@@ -100,6 +108,13 @@ export async function analyzePdf(bytes: Uint8Array): Promise<{ findings: PdfFind
     const who = xmpField(xmp, /<dc:creator>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/i)
       || xmpField(xmp, /<xmp:CreatorTool>([\s\S]*?)<\/xmp:CreatorTool>/i);
     add('XMP metadata', who ? `XMP packet - ${who}` : 'embedded XMP packet', 'warn');
+    for (const field of xmlProvenanceFields(xmp)) add(field.source ?? field.label, field.value);
+  }
+  const header = new TextDecoder('latin1').decode(bytes.subarray(0, 64 * 1024));
+  let commentCount = 0;
+  for (const match of header.matchAll(/^%{1,2}\s*((?:Creator|Producer|Generator)\s*:\s*[^\r\n]+|(?:Created|Made|Generated|Exported)\s+(?:with|by|using)\s+[^\r\n]+)/gim)) {
+    if (commentCount++ >= 8) break;
+    add('PDF generator comment', match[1]!.slice(0, 2048));
   }
 
   // Structural findings - what the document CARRIES and DOES, as opposed to what

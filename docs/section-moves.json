@@ -1,0 +1,705 @@
+{
+  "authoring-tools": {
+    "the-manifest-tool-json": {
+      "slug": "tool-manifest",
+      "anchor": "the-manifest-tool-json",
+      "label": "The manifest (tool.json)"
+    },
+    "the-render-block": {
+      "slug": "tool-manifest",
+      "anchor": "the-render-block",
+      "label": "The render block"
+    },
+    "example-looks-examples": {
+      "slug": "tool-manifest",
+      "anchor": "example-looks-examples",
+      "label": "Example looks (examples)"
+    },
+    "a-short-walkthrough-guide": {
+      "slug": "tool-manifest",
+      "anchor": "a-short-walkthrough-guide",
+      "label": "A short walkthrough (guide)"
+    },
+    "input-types": {
+      "slug": "tool-inputs",
+      "anchor": "input-types",
+      "label": "Input types"
+    },
+    "blocks-repeating-groups": {
+      "slug": "tool-structured-inputs",
+      "anchor": "blocks-repeating-groups",
+      "label": "blocks - repeating groups"
+    },
+    "editor-canvas-connectors-grid-fixed-size-canvas-connect-grid-fixedcanvas": {
+      "slug": "tool-structured-inputs",
+      "anchor": "editor-canvas-connectors-grid-fixed-size-canvas-connect-grid-fixedcanvas",
+      "label": "Editor canvas: connectors, grid & fixed size (canvas.connect / grid / fixedCanvas)"
+    },
+    "vector-a-group-of-numbers-as-one-control": {
+      "slug": "tool-structured-inputs",
+      "anchor": "vector-a-group-of-numbers-as-one-control",
+      "label": "vector - a group of numbers as one control"
+    },
+    "framing-an-image-one-pattern-every-tool": {
+      "slug": "tool-structured-inputs",
+      "anchor": "framing-an-image-one-pattern-every-tool",
+      "label": "Framing an image: one pattern, every tool"
+    },
+    "asset-library-or-device-upload": {
+      "slug": "tool-files",
+      "anchor": "asset-library-or-device-upload",
+      "label": "asset - library or device upload"
+    },
+    "file-the-user-s-own-file-on-device-utilities": {
+      "slug": "tool-files",
+      "anchor": "file-the-user-s-own-file-on-device-utilities",
+      "label": "file - the user's own file (on-device utilities)"
+    },
+    "producing-output-the-exportfile-hook-privacy-on-device": {
+      "slug": "tool-files",
+      "anchor": "producing-output-the-exportfile-hook-privacy-on-device",
+      "label": "Producing output: the exportFile hook + privacy: \"on-device\""
+    },
+    "showif": {
+      "slug": "tool-inputs",
+      "anchor": "showif",
+      "label": "showIf"
+    },
+    "bindtoprofile": {
+      "slug": "tool-inputs",
+      "anchor": "bindtoprofile",
+      "label": "bindToProfile"
+    },
+    "canonical-inputs-reuse-shared-ids": {
+      "slug": "tool-inputs",
+      "anchor": "canonical-inputs-reuse-shared-ids",
+      "label": "Canonical inputs (reuse shared ids)"
+    },
+    "the-template-template-html": {
+      "slug": "tool-rendering",
+      "anchor": "the-template-template-html",
+      "label": "The template (template.html)"
+    },
+    "canvas-tools-readiness-the-frame-clock-and-gpu-rendering": {
+      "slug": "tool-rendering",
+      "anchor": "canvas-tools-readiness-the-frame-clock-and-gpu-rendering",
+      "label": "Canvas tools: readiness, the frame clock and GPU rendering"
+    },
+    "styles-styles-css": {
+      "slug": "tool-rendering",
+      "anchor": "styles-styles-css",
+      "label": "Styles (styles.css)"
+    },
+    "what-the-vector-export-keeps": {
+      "slug": "tool-rendering",
+      "anchor": "what-the-vector-export-keeps",
+      "label": "What the vector export keeps"
+    },
+    "letting-the-document-bring-its-own-css": {
+      "slug": "tool-rendering",
+      "anchor": "letting-the-document-bring-its-own-css",
+      "label": "Letting the DOCUMENT bring its own CSS"
+    },
+    "templates-presets-templates": {
+      "slug": "tool-starters",
+      "anchor": "templates-presets-templates",
+      "label": "Templates & presets (templates/)"
+    },
+    "templates-people-save": {
+      "slug": "tool-starters",
+      "anchor": "templates-people-save",
+      "label": "Templates people save"
+    },
+    "hiding-a-starter-by-default": {
+      "slug": "tool-starters",
+      "anchor": "hiding-a-starter-by-default",
+      "label": "Hiding a starter by default"
+    },
+    "curated-design-motion": {
+      "slug": "tool-starters",
+      "anchor": "curated-design-motion",
+      "label": "Curated Design motion"
+    },
+    "data-formats-json-csv-ics-vcf": {
+      "slug": "tool-rendering",
+      "anchor": "data-formats-json-csv-ics-vcf",
+      "label": "Data formats (json / csv / ics / vcf)"
+    },
+    "hooks-hooks-js": {
+      "slug": "tool-hooks",
+      "anchor": "hooks-hooks-js",
+      "label": "Hooks (hooks.js)"
+    },
+    "shared-helper-regions-community-shared": {
+      "slug": "tool-hooks",
+      "anchor": "shared-helper-regions-community-shared",
+      "label": "Shared helper regions (community/_shared/)"
+    },
+    "motion-reactive-tools-onframe": {
+      "slug": "tool-hooks",
+      "anchor": "motion-reactive-tools-onframe",
+      "label": "Motion-reactive tools (onFrame)"
+    },
+    "recording-tools-render-capture-onlevel": {
+      "slug": "tool-hooks",
+      "anchor": "recording-tools-render-capture-onlevel",
+      "label": "Recording tools (render.capture + onLevel)"
+    },
+    "transcribing-audio-render-transcribe": {
+      "slug": "tool-hooks",
+      "anchor": "transcribing-audio-render-transcribe",
+      "label": "Transcribing audio (render.transcribe)"
+    },
+    "newer-optional-host-apis-feature-detect": {
+      "slug": "tool-hooks",
+      "anchor": "newer-optional-host-apis-feature-detect",
+      "label": "Newer optional host APIs (feature-detect)"
+    },
+    "network-access-host-net": {
+      "slug": "tool-hooks",
+      "anchor": "network-access-host-net",
+      "label": "Network access (host.net)"
+    },
+    "composition-composes": {
+      "slug": "tool-composition",
+      "anchor": "composition-composes",
+      "label": "Composition (composes)"
+    },
+    "composition-depth-and-baking": {
+      "slug": "tool-composition",
+      "anchor": "composition-depth-and-baking",
+      "label": "Composition depth and baking"
+    },
+    "brand-logo-auto-switching": {
+      "slug": "tool-composition",
+      "anchor": "brand-logo-auto-switching",
+      "label": "Brand logo (auto-switching)"
+    },
+    "brand-overlays-extends": {
+      "slug": "tool-composition",
+      "anchor": "brand-overlays-extends",
+      "label": "Brand overlays (extends)"
+    },
+    "publishing": {
+      "slug": "tool-publishing",
+      "anchor": "publishing",
+      "label": "Publishing"
+    },
+    "try-it-without-the-monorepo": {
+      "slug": "tool-publishing",
+      "anchor": "try-it-without-the-monorepo",
+      "label": "Try it without the monorepo"
+    },
+    "sharing-a-tool-without-a-catalog-lolly": {
+      "slug": "tool-publishing",
+      "anchor": "sharing-a-tool-without-a-catalog-lolly",
+      "label": "Sharing a tool without a catalog (.lolly)"
+    },
+    "localizing-a-tool": {
+      "slug": "tool-publishing",
+      "anchor": "localizing-a-tool",
+      "label": "Localizing a tool"
+    },
+    "example-tools": {
+      "slug": "tool-publishing",
+      "anchor": "example-tools",
+      "label": "Example tools"
+    }
+  },
+  "url-mode": {
+    "setting-tool-inputs": {
+      "slug": "url-inputs",
+      "anchor": "setting-tool-inputs",
+      "label": "Setting tool inputs"
+    },
+    "string-text-longtext-url": {
+      "slug": "url-inputs",
+      "anchor": "string-text-longtext-url",
+      "label": "String, text, longtext, url"
+    },
+    "select": {
+      "slug": "url-inputs",
+      "anchor": "select",
+      "label": "Select"
+    },
+    "number": {
+      "slug": "url-inputs",
+      "anchor": "number",
+      "label": "Number"
+    },
+    "boolean": {
+      "slug": "url-inputs",
+      "anchor": "boolean",
+      "label": "Boolean"
+    },
+    "color": {
+      "slug": "url-inputs",
+      "anchor": "color",
+      "label": "Color"
+    },
+    "asset": {
+      "slug": "url-inputs",
+      "anchor": "asset",
+      "label": "Asset"
+    },
+    "blocks": {
+      "slug": "url-inputs",
+      "anchor": "blocks",
+      "label": "Blocks"
+    },
+    "vector": {
+      "slug": "url-inputs",
+      "anchor": "vector",
+      "label": "Vector"
+    },
+    "file": {
+      "slug": "url-inputs",
+      "anchor": "file",
+      "label": "File"
+    },
+    "table": {
+      "slug": "url-inputs",
+      "anchor": "table",
+      "label": "Table"
+    },
+    "keyframe-tracks": {
+      "slug": "url-inputs",
+      "anchor": "keyframe-tracks",
+      "label": "Keyframe tracks"
+    },
+    "compact-encoding-opt-in": {
+      "slug": "url-inputs",
+      "anchor": "compact-encoding-opt-in",
+      "label": "Compact encoding (opt-in)"
+    },
+    "reserved-parameters": {
+      "slug": "url-parameters",
+      "anchor": "reserved-parameters",
+      "label": "Reserved parameters"
+    },
+    "packed-links-z": {
+      "slug": "url-parameters",
+      "anchor": "packed-links-z",
+      "label": "Packed links (z)"
+    },
+    "encrypted-links-zx": {
+      "slug": "url-parameters",
+      "anchor": "encrypted-links-zx",
+      "label": "Encrypted links (zx)"
+    },
+    "physical-units-unit-dpi": {
+      "slug": "url-parameters",
+      "anchor": "physical-units-unit-dpi",
+      "label": "Physical units (unit= + dpi=)"
+    },
+    "print-marks-bleed-bleed-marks": {
+      "slug": "url-parameters",
+      "anchor": "print-marks-bleed-bleed-marks",
+      "label": "Print marks & bleed (bleed= + marks=)"
+    },
+    "contact-sheets-cuts": {
+      "slug": "url-parameters",
+      "anchor": "contact-sheets-cuts",
+      "label": "Contact sheets (cuts=)"
+    },
+    "format-with-format": {
+      "slug": "url-export",
+      "anchor": "format-with-format",
+      "label": "Format with format="
+    },
+    "download-with-export": {
+      "slug": "url-export",
+      "anchor": "download-with-export",
+      "label": "Download with export"
+    },
+    "download-filename-with-filename": {
+      "slug": "url-export",
+      "anchor": "download-filename-with-filename",
+      "label": "Download filename with filename="
+    },
+    "copy-to-clipboard-with-copy": {
+      "slug": "url-export",
+      "anchor": "copy-to-clipboard-with-copy",
+      "label": "Copy to clipboard with copy"
+    },
+    "canvas-dimensions-with-width-height": {
+      "slug": "url-export",
+      "anchor": "canvas-dimensions-with-width-height",
+      "label": "Canvas dimensions with width= / height="
+    },
+    "fullscreen-with-full": {
+      "slug": "url-export",
+      "anchor": "fullscreen-with-full",
+      "label": "Fullscreen with full"
+    },
+    "land-on-the-export-panel-with-options": {
+      "slug": "url-export",
+      "anchor": "land-on-the-export-panel-with-options",
+      "label": "Land on the export panel with options"
+    },
+    "transparent-background": {
+      "slug": "url-export",
+      "anchor": "transparent-background",
+      "label": "Transparent background"
+    },
+    "loading-saved-state-with-slot": {
+      "slug": "url-export",
+      "anchor": "loading-saved-state-with-slot",
+      "label": "Loading saved state with slot="
+    },
+    "app-links": {
+      "slug": "url-app-links",
+      "anchor": "app-links",
+      "label": "App links"
+    },
+    "the-lolly-scheme": {
+      "slug": "url-app-links",
+      "anchor": "the-lolly-scheme",
+      "label": "The lolly:// scheme"
+    },
+    "app-wide": {
+      "slug": "url-app-links",
+      "anchor": "app-wide",
+      "label": "App-wide"
+    },
+    "gallery-and-u-for-utilities": {
+      "slug": "url-app-links",
+      "anchor": "gallery-and-u-for-utilities",
+      "label": "Gallery (#/, and #/u for utilities)"
+    },
+    "catalogue-c": {
+      "slug": "url-app-links",
+      "anchor": "catalogue-c",
+      "label": "Catalogue (#/c)"
+    },
+    "projects-p-p-folderid": {
+      "slug": "url-app-links",
+      "anchor": "projects-p-p-folderid",
+      "label": "Projects (#/p, #/p/<folderId>)"
+    },
+    "batch-batch": {
+      "slug": "url-app-links",
+      "anchor": "batch-batch",
+      "label": "Batch (#/batch)"
+    },
+    "multi-edit-multi": {
+      "slug": "url-app-links",
+      "anchor": "multi-edit-multi",
+      "label": "Multi-edit (#/multi)"
+    },
+    "design-system-studio-start": {
+      "slug": "url-app-links",
+      "anchor": "design-system-studio-start",
+      "label": "Design system studio (#/start)"
+    },
+    "dashboard-d": {
+      "slug": "url-app-links",
+      "anchor": "dashboard-d",
+      "label": "Dashboard (#/d)"
+    },
+    "profile-profile": {
+      "slug": "url-app-links",
+      "anchor": "profile-profile",
+      "label": "Profile (#/profile)"
+    },
+    "the-remaining-views": {
+      "slug": "url-app-links",
+      "anchor": "the-remaining-views",
+      "label": "The remaining views"
+    },
+    "on-a-tool-route": {
+      "slug": "url-app-links",
+      "anchor": "on-a-tool-route",
+      "label": "On a tool route"
+    }
+  },
+  "cli": {
+    "flags": {
+      "slug": "cli-rendering",
+      "anchor": "flags",
+      "label": "Flags"
+    },
+    "what-the-cli-can-render": {
+      "slug": "cli-rendering",
+      "anchor": "what-the-cli-can-render",
+      "label": "What the CLI can render"
+    },
+    "when-the-browser-tier-fails-ask-it-why-tier-b-debug": {
+      "slug": "cli-rendering",
+      "anchor": "when-the-browser-tier-fails-ask-it-why-tier-b-debug",
+      "label": "When the browser tier fails, ask it why (--tier-b-debug)"
+    },
+    "video-and-timelines": {
+      "slug": "cli-rendering",
+      "anchor": "video-and-timelines",
+      "label": "Video and timelines"
+    },
+    "the-soundtrack-with-no-browser-lolly-mix": {
+      "slug": "cli-rendering",
+      "anchor": "the-soundtrack-with-no-browser-lolly-mix",
+      "label": "The soundtrack, with no browser (lolly mix)"
+    },
+    "file-inputs-on-device-utilities": {
+      "slug": "cli-files",
+      "anchor": "file-inputs-on-device-utilities",
+      "label": "File inputs & on-device utilities"
+    },
+    "redaction-instructions-one-string-many-files": {
+      "slug": "cli-files",
+      "anchor": "redaction-instructions-one-string-many-files",
+      "label": "Redaction instructions: one string, many files"
+    },
+    "speech": {
+      "slug": "cli-files",
+      "anchor": "speech",
+      "label": "Speech"
+    },
+    "the-models-and-who-decides-they-download": {
+      "slug": "cli-files",
+      "anchor": "the-models-and-who-decides-they-download",
+      "label": "The models, and who decides they download"
+    },
+    "on-device-ml": {
+      "slug": "cli-files",
+      "anchor": "on-device-ml",
+      "label": "On-device ML"
+    },
+    "composed-tools": {
+      "slug": "cli-rendering",
+      "anchor": "composed-tools",
+      "label": "Composed tools"
+    },
+    "batch": {
+      "slug": "cli-automation",
+      "anchor": "batch",
+      "label": "Batch"
+    },
+    "render-check-the-catalog-lolly-smoke": {
+      "slug": "cli-automation",
+      "anchor": "render-check-the-catalog-lolly-smoke",
+      "label": "Render-check the catalog (lolly smoke)"
+    },
+    "preflight-an-export-lolly-preflight": {
+      "slug": "cli-automation",
+      "anchor": "preflight-an-export-lolly-preflight",
+      "label": "Preflight an export (lolly preflight)"
+    },
+    "scripting-ci": {
+      "slug": "cli-automation",
+      "anchor": "scripting-ci",
+      "label": "Scripting & CI"
+    },
+    "what-provenance-costs": {
+      "slug": "cli-automation",
+      "anchor": "what-provenance-costs",
+      "label": "What provenance costs"
+    },
+    "how-far-the-same-goes-byte-for-byte": {
+      "slug": "cli-automation",
+      "anchor": "how-far-the-same-goes-byte-for-byte",
+      "label": "How far \"the same\" goes, byte for byte"
+    },
+    "exit-codes": {
+      "slug": "cli-automation",
+      "anchor": "exit-codes",
+      "label": "Exit codes"
+    },
+    "machine-interface-json": {
+      "slug": "cli-automation",
+      "anchor": "machine-interface-json",
+      "label": "Machine interface (--json)"
+    },
+    "discovery-for-an-agent": {
+      "slug": "cli-automation",
+      "anchor": "discovery-for-an-agent",
+      "label": "Discovery, for an agent"
+    },
+    "run-a-share-link": {
+      "slug": "cli-rendering",
+      "anchor": "run-a-share-link",
+      "label": "Run a share link"
+    },
+    "verify-a-file-lolly-validate": {
+      "slug": "cli-reference",
+      "anchor": "verify-a-file-lolly-validate",
+      "label": "Verify a file (lolly validate)"
+    },
+    "which-anchors-produced-the-verdict": {
+      "slug": "cli-reference",
+      "anchor": "which-anchors-produced-the-verdict",
+      "label": "Which anchors produced the verdict"
+    },
+    "metadata-what-else-is-in-this-file": {
+      "slug": "cli-reference",
+      "anchor": "metadata-what-else-is-in-this-file",
+      "label": "--metadata: what else is in this file"
+    },
+    "shell-completion-lolly-completion": {
+      "slug": "cli-reference",
+      "anchor": "shell-completion-lolly-completion",
+      "label": "Shell completion (lolly completion)"
+    },
+    "point-it-at-another-brand-pack-lolly-root": {
+      "slug": "cli-reference",
+      "anchor": "point-it-at-another-brand-pack-lolly-root",
+      "label": "Point it at another brand pack (LOLLY_ROOT)"
+    },
+    "where-saved-sessions-live": {
+      "slug": "cli-reference",
+      "anchor": "where-saved-sessions-live",
+      "label": "Where saved sessions live"
+    }
+  },
+  "build-guide": {
+    "cli": {
+      "slug": "build-terminal",
+      "anchor": "cli",
+      "label": "CLI"
+    },
+    "development-use-no-build-needed": {
+      "slug": "build-terminal",
+      "anchor": "development-use-no-build-needed",
+      "label": "Development use (no build needed)"
+    },
+    "standalone-binary": {
+      "slug": "build-terminal",
+      "anchor": "standalone-binary",
+      "label": "Standalone binary"
+    },
+    "tui": {
+      "slug": "build-terminal",
+      "anchor": "tui",
+      "label": "TUI"
+    },
+    "browser-render-tier-raster-pdf-video-url-capture": {
+      "slug": "build-terminal",
+      "anchor": "browser-render-tier-raster-pdf-video-url-capture",
+      "label": "Browser render tier (raster / PDF / video / URL capture)"
+    },
+    "desktop-app-macos-windows-linux": {
+      "slug": "build-desktop",
+      "anchor": "desktop-app-macos-windows-linux",
+      "label": "Desktop app (macOS / Windows / Linux)"
+    },
+    "prerequisites": {
+      "slug": "build-desktop",
+      "anchor": "prerequisites",
+      "label": "Prerequisites"
+    },
+    "icons": {
+      "slug": "build-desktop",
+      "anchor": "icons",
+      "label": "Icons"
+    },
+    "development": {
+      "slug": "build-desktop",
+      "anchor": "development",
+      "label": "Development"
+    },
+    "production-build": {
+      "slug": "build-desktop",
+      "anchor": "production-build",
+      "label": "Production build"
+    },
+    "cross-compilation": {
+      "slug": "build-desktop",
+      "anchor": "cross-compilation",
+      "label": "Cross-compilation"
+    },
+    "mobile-apps-ios-android": {
+      "slug": "build-mobile",
+      "anchor": "mobile-apps-ios-android",
+      "label": "Mobile apps (iOS / Android)"
+    },
+    "android": {
+      "slug": "build-mobile",
+      "anchor": "android",
+      "label": "Android"
+    },
+    "ios-macos-only": {
+      "slug": "build-mobile",
+      "anchor": "ios-macos-only",
+      "label": "iOS (macOS only)"
+    },
+    "first-time-platform-init": {
+      "slug": "build-mobile",
+      "anchor": "first-time-platform-init",
+      "label": "First-time platform init"
+    },
+    "icons-mobile": {
+      "slug": "build-mobile",
+      "anchor": "icons-mobile",
+      "label": "Icons (mobile)"
+    },
+    "open-build-service-obs": {
+      "slug": "build-obs",
+      "anchor": "open-build-service-obs",
+      "label": "Open Build Service (OBS)"
+    },
+    "what-obs-can-build-for-lolly": {
+      "slug": "build-obs",
+      "anchor": "what-obs-can-build-for-lolly",
+      "label": "What OBS can build for Lolly"
+    },
+    "how-it-fits-lolly-s-artifacts": {
+      "slug": "build-obs",
+      "anchor": "how-it-fits-lolly-s-artifacts",
+      "label": "How it fits Lolly's artifacts"
+    },
+    "build-environment-constraints": {
+      "slug": "build-obs",
+      "anchor": "build-environment-constraints",
+      "label": "Build-environment constraints"
+    },
+    "illustrative-project-layout": {
+      "slug": "build-obs",
+      "anchor": "illustrative-project-layout",
+      "label": "Illustrative project layout"
+    },
+    "web-shell-on-kubernetes-helm": {
+      "slug": "build-kubernetes",
+      "anchor": "web-shell-on-kubernetes-helm",
+      "label": "Web shell on Kubernetes (Helm)"
+    },
+    "why-the-suse-application-collection": {
+      "slug": "build-kubernetes",
+      "anchor": "why-the-suse-application-collection",
+      "label": "Why the SUSE Application Collection"
+    },
+    "1-build-the-image": {
+      "slug": "build-kubernetes",
+      "anchor": "1-build-the-image",
+      "label": "1. Build the image"
+    },
+    "2-swapping-in-a-suse-nginx-base-optional": {
+      "slug": "build-kubernetes",
+      "anchor": "2-swapping-in-a-suse-nginx-base-optional",
+      "label": "2. Swapping in a SUSE nginx base (optional)"
+    },
+    "3-what-the-nginx-config-already-handles": {
+      "slug": "build-kubernetes",
+      "anchor": "3-what-the-nginx-config-already-handles",
+      "label": "3. What the nginx config already handles"
+    },
+    "4-the-chart": {
+      "slug": "build-kubernetes",
+      "anchor": "4-the-chart",
+      "label": "4. The chart"
+    },
+    "5-install": {
+      "slug": "build-kubernetes",
+      "anchor": "5-install",
+      "label": "5. Install"
+    },
+    "6-the-optional-services": {
+      "slug": "build-kubernetes",
+      "anchor": "6-the-optional-services",
+      "label": "6. The optional services"
+    },
+    "tls-the-suse-curated-way-optional": {
+      "slug": "build-kubernetes",
+      "anchor": "tls-the-suse-curated-way-optional",
+      "label": "TLS, the SUSE-curated way (optional)"
+    }
+  }
+}

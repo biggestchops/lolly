@@ -218,6 +218,8 @@ export interface DesignInspectorOpts {
   /** Live outcome gate. Unlike omitting `narration`, this may change while the
    * document is mounted when the user changes the workspace outcome. */
   narrationEnabled?(): boolean;
+  /** Prioritise clip content in a video workspace; all precision sections stay available. */
+  videoWorkspace?(): boolean;
   /** The speech bridge's voice list, for the narration voice picker (Andy, 2026-09-03:
    *  "the voice should be a select like in the utility and Script audio"). Absent on a
    *  host with no speech bridge; the picker then holds only the current value. */
@@ -521,6 +523,13 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
    * closed on purpose must stay closed.
    */
   const sectionPrefs = readSectionPrefs();
+  let documentOptionsOpen = false;
+  scroll.addEventListener('toggle', (event) => {
+    const target = event.target as HTMLDetailsElement;
+    if (!target.matches?.('[data-document-options]')) return;
+    documentOptionsOpen = target.open;
+    if (target.open && !emojiMounted) mountEmojiControl();
+  }, true);
   /** The number cells built for the CURRENT markup, and the sliders they mirror. */
   let numSpecs: NumSpec[] = [];
   let numMounted: NumFieldHandle[] = [];
@@ -579,16 +588,24 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     // as mixed instead of as the first box's.
     if (ids.length > 1) return { kind: 'multi', ids, box, rows, secs: paintSecs(false) };
     if (frame && kindOf(box) === frame.frameKind) return { kind: 'frame', ids, box, rows, secs: ['artboard', 'present', 'motion'] };
-    const secs: InspectorSection[] = ['object', ...paintSecs(true)];
+    const secs: InspectorSection[] = [];
     const hasText = kindOf(box) === 'text' || (!!cfg.textField && String(box[cfg.textField] ?? '') !== '');
     if (hasText) secs.push('text');
     if (cfg.imageField && box[cfg.imageField]) secs.push('image');
+    secs.push('object', ...paintSecs(true));
     secs.push('motion');
     // …and Present LAST, for the three per-box fields only a box can carry (see
     // presentBody). One box at a time: `build` and `matchOf` are per-object answers,
     // and stamping one box's build step across a multi-selection is not an edit anyone
     // asked for. Collapsed away by the section head for a document that never presents.
     secs.push('present');
+    if (opts.videoWorkspace?.()) {
+      const first: InspectorSection[] = ['text', 'image', 'motion'];
+      secs.sort((a, b) => {
+        const rank = (s: InspectorSection) => first.includes(s) ? first.indexOf(s) : first.length;
+        return rank(a) - rank(b);
+      });
+    }
     return { kind: 'object', ids, box, rows, secs };
   }
 
@@ -650,6 +667,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   function isExpanded(sec: InspectorSection, g: Gate): boolean {
     const said = sectionPrefs[sec];
     if (typeof said === 'boolean') return said;
+    if (opts.videoWorkspace?.() && ['object', 'fill', 'appearance'].includes(sec)) return false;
     return DEFAULT_OPEN[sec] || autoOpens(sec, g.box);
   }
 
@@ -813,7 +831,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     `<div class="fc-row fc-insp-door"><button type="button" class="fc-cbtn" data-act="${escape(act)}">${icon(glyph)}<span>${label}</span></button></div>`;
 
   const chip = (label: string, value: string): string =>
-    `<span class="fc-insp-chip"><i>${label}</i>${escape(value)}</span>`;
+    `<span class="chip fc-insp-chip"><i>${label}</i>${escape(value)}</span>`;
 
   const docToggleRow = (label: string, input: string): string =>
     `<label class="fc-row fc-row-toggle field-toggle"><span>${label}</span>`
@@ -978,9 +996,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     const unit = documentUnit();
     const scale = CSS_PX_PER_UNIT[unit];
     const fmt = (n: number): string => String(Math.round(n / scale * 1000) / 1000);
-    return designHealthHtml(size)
-      + readRow(t('Canvas size'), `${fmt(size.w)} x ${fmt(size.h)} ${unit}`)
-      + docSelectRow(t('Document unit'), 'documentUnit', DOCUMENT_UNITS.map((u) => [u, u]))
+    const options = docSelectRow(t('Document unit'), 'documentUnit', DOCUMENT_UNITS.map((u) => [u, u]))
       + docNumRow(t('Document DPI'), 'documentDpi', 300, {
         min: 36, max: 2400, step: 1, precision: 0, unit: 'dpi',
         onCommit: (dpi) => {
@@ -988,10 +1004,13 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
           model.setInput('documentDpi', next);
           canvasEl.dispatchEvent(new CustomEvent('fc-document-dpi', { detail: next }));
         },
-      })
+      }) + emojiDocRows() + narrationDocRows();
+    return designHealthHtml(size)
+      + readRow(t('Canvas size'), `${fmt(size.w)} x ${fmt(size.h)} ${unit}`)
       + `<div class="fc-row"><span>${t('Background')}</span><span class="fc-cfield">${colorField('fc-insp-bg', model.getInput('background'), t('Background'))}</span></div>`
-      + emojiDocRows()
-      + narrationDocRows()
+      + (opts.videoWorkspace?.()
+        ? `<details class="fc-insp-document-options" data-document-options${documentOptionsOpen ? ' open' : ''}><summary>${t('More document settings')}</summary>${options}</details>`
+        : options)
       + `<p class="fc-insp-hint">${t('Select something to edit its properties.')}</p>`;
   }
 
@@ -1011,6 +1030,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
 
   /** Put the shared control in the slot the Document section left for it. */
   function mountEmojiControl(): void {
+    if (scroll.querySelector('[data-document-options]:not([open])')) return;
     const port = opts.emoji;
     const slot = scroll.querySelector<HTMLElement>('[data-emoji-slot]');
     if (!port || !slot) return;
@@ -1110,7 +1130,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
             { name: t('Rotation'), min: -180, max: 180, unit: 'deg' })
           + '</div>'
         : '')
-      + textRow(t('CSS class'), 'cls', b['cls'], 'callout hero')
+      + `<details class="fc-insp-document-options"${b.cls ? ' open' : ''}><summary>${t('Advanced')}</summary>`
+      + textRow(t('CSS class'), 'cls', b['cls'], 'callout hero') + '</details>'
       // The two layer flags (M4). They live here rather than in a section of their own
       // because they are properties of the OBJECT, and because the canvas cannot offer
       // them: a hidden box is not drawn, and a locked one refuses every pointer - so the
@@ -1504,11 +1525,12 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     colTitle.textContent = g.kind === 'multi' ? t('{n} selected', { n: g.ids.length }) : t('Inspector');
     scroll.innerHTML = g.secs.map((sec) => {
       const openSec = isExpanded(sec, g);
+      const deferred = opts.videoWorkspace?.() && !openSec;
       return `<section class="fc-insp-sec" data-sec="${sec}">`
         + `<button type="button" class="fc-insp-head" data-head="${sec}" aria-expanded="${openSec}">`
         + `${icon(SECTION_META[sec].glyph)}<span>${escape(SECTION_META[sec].title())}</span>`
         + `<i class="fc-insp-caret" aria-hidden="true"></i></button>`
-        + `<div class="fc-insp-rows" data-rows="${sec}"${openSec ? '' : ' hidden'}>${bodyFor(sec, g)}</div>`
+        + `<div class="fc-insp-rows" data-rows="${sec}"${deferred ? ' data-deferred' : ''}${openSec ? '' : ' hidden'}>${deferred ? '' : bodyFor(sec, g)}</div>`
         + '</section>';
     }).join('') || `<p class="fc-insp-hint">${t('Nothing selected')}</p>`;
     mountNums();
@@ -1733,6 +1755,10 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   function paintSectionState(sec: InspectorSection, openSec: boolean): void {
     const head = scroll.querySelector<HTMLElement>(`[data-head="${sec}"]`);
     const rows = scroll.querySelector<HTMLElement>(`[data-rows="${sec}"]`);
+    if (openSec && rows?.hasAttribute('data-deferred')) {
+      render(gate());
+      return;
+    }
     head?.setAttribute('aria-expanded', String(openSec));
     if (rows) rows.hidden = !openSec;
   }
@@ -1746,7 +1772,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
    * the control shows a stale value until the next selection change.
    */
   function signature(g: Gate): string {
-    const watched: unknown[] = [g.kind === 'guide' ? g.guide : null, model.getInput('documentUnit')];
+    const watched: unknown[] = [opts.videoWorkspace?.() === true, g.kind === 'guide' ? g.guide : null, model.getInput('documentUnit')];
     for (const sec of g.secs) {
       // EVERY selected row, not just the first. A paint group's cells read them all to
       // decide whether to show a number or "Mixed", so a change to the second box's
@@ -1914,6 +1940,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   function onRootKey(ev: KeyboardEvent): void {
     if (ev.metaKey || ev.ctrlKey) return;
     if (ev.key === 'Escape') {
+      if (el.closest('dialog')) { ev.stopPropagation(); return; }
       // Escape here must NOT reach the editor's ladder. With the column mounted the
       // object bar's buttons open no floating panel, so `dismissFloating()` finds
       // nothing and the ladder falls through to "clear the selection" - which threw the

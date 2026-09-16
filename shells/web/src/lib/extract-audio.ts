@@ -471,9 +471,9 @@ export function startExtractAudioJob(
   const controller = new AbortController();
   const job = startJob({ title: t('Extracting audio'), cancel: () => controller.abort() });
   void (async (): Promise<void> => {
-    await job.started;
-    if (job.cancelled) return;
     try {
+      await job.started;
+      if (job.cancelled) return;
       const ref = await extractAudioToAsset(host, opts, {
         signal: controller.signal,
         isCancelled: () => job.cancelled,
@@ -490,6 +490,8 @@ export function startExtractAudioJob(
       host.log?.('error', 'Extract audio failed', { error: String(err) });
       job.fail(err);
       hooks.onError?.(err);
+    } finally {
+      job.settle();
     }
   })();
   return job;

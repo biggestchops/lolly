@@ -16,6 +16,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { encodeAssetVersion } from '../../../../engine/src/asset-version.ts';
+import { readScene } from '../views/present-production/scene.ts';
 import type { BeamAssetRecord, BeamPackHost, BeamSessionRow } from './beam-pack.ts';
 import type { UserTemplateRecord } from '@lolly-tools/core/host-v1';
 import {
@@ -56,6 +57,35 @@ function memHost() {
 }
 
 const PNG = (tag: number) => new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, tag, 0, 0]);
+
+test('.lolly preserves current and saved presentation logos through receiver version changes', async () => {
+  const id = 'user/uploads/presentation/logo-primary.png';
+  const openingVersion = 'a'.repeat(64), currentVersion = 'b'.repeat(64);
+  const record = (version: string, tag: number): BeamAssetRecord => ({ id, type: 'raster', format: 'png', version,
+    blob: new Blob([PNG(tag)], { type: 'image/png' }) });
+  const older = record(openingVersion, 1), current = record(currentVersion, 2);
+  const settings = (version: string) => readScene({ version: 1,
+    logo: { asset: { id, source: 'user', format: 'png', version } } });
+  const scene = readScene({ ...settings(currentVersion), prepared: [
+    { id: 'opening', name: 'Opening', scene: settings(openingVersion) },
+  ] });
+  const built = await buildLollyFile({ toolId: 'design', session: { __toolId: 'design', __presentation: scene },
+    userAssets: [current], resolveUser: async (asked, version) => asked === id && version === openingVersion ? older : null });
+  assert.equal(built.manifest.counts.assets, 2, 'each composition carries its exact logo bytes');
+  assert.ok(built.manifest.assets.every(asset => asset.id.length > 128), 'real versioned dependencies exceed short transport item IDs');
+  const target = memHost();
+  const imported = await ingestLollyFile(await built.blob.arrayBuffer(), target.host);
+  const restored = readScene((imported.session as { __presentation: unknown }).__presentation);
+  for (const [logo, tag] of [[restored.logo.asset, 2], [restored.prepared[0]!.scene.logo.asset, 1]] as const) {
+    assert.ok(logo);
+    const stored = target.userStore.get(logo.id)!;
+    assert.ok(stored);
+    assert.equal(logo.version, stored.version, 'Apply resolves the version held on the receiving device');
+    assert.equal(logo.pin?.version, stored.version, 'another share preserves the imported version');
+    assert.deepEqual(new Uint8Array(await stored.blob!.arrayBuffer()), PNG(tag));
+  }
+  assert.notEqual(restored.logo.asset!.id, restored.prepared[0]!.scene.logo.asset!.id);
+});
 
 test('.lolly carries two exact versions of one upload and pins each imported copy', async () => {
   const id = 'user/upload/versioned';

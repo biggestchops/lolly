@@ -555,6 +555,7 @@ pub fn run(mut context: tauri::Context) {
         .invoke_handler(tauri::generate_handler![
             crate::capture::capture_page,
             crate::capture::capture_page_pdf,
+            crate::remote_fetch::remote_fetch,
             cli_write,
             cli_done,
             cli_fail,

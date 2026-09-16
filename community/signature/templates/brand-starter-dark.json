@@ -1,0 +1,11 @@
+{
+  "id": "brand-starter-dark",
+  "name": "Ink on transparency \u00b7 dark",
+  "category": "Brand",
+  "description": "A sample pen stroke in your brand ink. Draw your own to replace it.",
+  "values": {
+    "color": "{color.semantic.on-primary}"
+  },
+  "galleryCover": true,
+  "galleryTheme": "dark"
+}

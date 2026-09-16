@@ -7,26 +7,43 @@
     "url": "https://example.com",
     "ecl": "M",
     "padding": 4,
-    "join": true
+    "join": true,
+    "color": "{color.semantic.secondary}",
+    "background": "transparent",
+    "transparentBg": true
   },
   "presets": [
     {
       "id": "brand",
       "name": "Brand colours",
       "description": "Modules in your brand primary on the brand surface.",
-      "values": { "color": "{color.semantic.primary}", "background": "{color.semantic.surface}" }
+      "values": {
+        "color": "{color.semantic.primary}",
+        "background": "{color.semantic.surface}",
+        "transparentBg": false
+      }
     },
     {
       "id": "ink",
       "name": "Ink on paper",
       "description": "Near-black on warm white for print.",
-      "values": { "color": "#1a1a2e", "background": "#faf7f2" }
+      "values": {
+        "color": "#1a1a2e",
+        "background": "#faf7f2",
+        "transparentBg": false
+      }
     },
     {
       "id": "night",
       "name": "Night mode",
       "description": "Light modules on a dark ground for screens and slides.",
-      "values": { "color": "#93c5fd", "background": "#0b1021", "padding": 6 }
+      "values": {
+        "color": "#93c5fd",
+        "background": "#0b1021",
+        "padding": 6,
+        "transparentBg": false
+      }
     }
-  ]
+  ],
+  "galleryCover": true
 }

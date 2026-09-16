@@ -253,8 +253,8 @@ export interface DesignArtboardsResult {
  */
 export async function parseDesignArtboards(
   file: File | Blob,
-  { host, log, interactive, map }: {
-    host?: HostV1; log?: (msg: string) => void; interactive?: boolean; map?: DesignMapOptions;
+  { host, log, interactive, map, pages }: {
+    host?: HostV1; log?: (msg: string) => void; interactive?: boolean; map?: DesignMapOptions; pages?: number[];
   } = {},
 ): Promise<DesignArtboardsResult> {
   const warn: (msg: string) => void = typeof log === 'function' ? log : () => {};
@@ -280,7 +280,7 @@ export async function parseDesignArtboards(
 
   if (isPdf(buf)) {
     const { parsePdfPages } = await import('./pdf-import.ts');
-    const frames = await parsePdfPages(file, { host: host as HostV1, warn, interactive, map });
+    const frames = await parsePdfPages(file, { host: host as HostV1, warn, interactive, map, pages });
     return { frames, background: '#ffffff' };
   }
 

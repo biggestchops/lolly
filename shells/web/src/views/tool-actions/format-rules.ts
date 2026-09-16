@@ -214,7 +214,7 @@ export function readDeepExport(ta: ActionsCtx): void {
   const baseFormats = mp4BeforeWebm(orgNarrowed.length ? orgNarrowed : capFormats); ta.baseFormats = baseFormats;
   const packageChoice = packageFormatChoice(baseFormats); ta.packageChoice = packageChoice;
   const { innerFormat: pkgInner, enabled: canPackage } = packageChoice; ta.pkgInner = pkgInner; ta.canPackage = canPackage;
-  const formats = experience.portable && canExportLolly(manifest.id)
+  const formats = manifest.designTool ? baseFormats.filter(f => manifest.designTool!.formats.includes(f as 'png' | 'svg' | 'pdf')) : experience.portable && canExportLolly(manifest.id)
     ? [...packageChoice.formats, 'lolly'] : packageChoice.formats; ta.formats = formats;
   const hasAnimated = formats.some(ta.formatRules.isAnimatedFmt); ta.hasAnimated = hasAnimated;
   // matchExportFormat: default the export to a dropped file's OWN format (a JPEG →

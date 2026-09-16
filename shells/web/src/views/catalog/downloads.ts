@@ -929,9 +929,9 @@ export async function openVideoDownloadDialog(cat: CatCtx, ref: AssetRef): Promi
     closeDownloadDialog(cat);
     const job = startJob({ title: t('Converting video'), cancel: () => controller.abort() });
     void (async () => {
-      await job.started;
-      if (job.cancelled) return;
       try {
+        await job.started;
+        if (job.cancelled) return;
         const [{ videoBitrateValue }, { transcodeVideo }] = await Promise.all([
           import('../../lib/catalog-download.ts'), import('../../lib/video-jobs.ts'),
         ]);
@@ -942,7 +942,8 @@ export async function openVideoDownloadDialog(cat: CatCtx, ref: AssetRef): Promi
           isCancelled: () => job.cancelled || controller.signal.aborted,
           onProgress: (done, total) => job.progress(done, total, t('Encoding frames')),
         });
-        if (!result || job.cancelled) return;
+        if (job.cancelled) return;
+        if (!result) { job.finish(); return; }
         await downloadSigned(cat, ref, result.blob, result.format, downloadName(ref, result.format), {
           edits: [{ action: 'c2pa.converted', description: `Transcoded to ${result.format.toUpperCase()} at ${Number(result.fps.toFixed(2))} fps and ${(result.bitrate / 1_000_000).toFixed(1)} Mbps` }],
           detail: { format: result.format.toUpperCase(), frameRate: `${Number(result.fps.toFixed(2))} fps`, bitrate: `${(result.bitrate / 1_000_000).toFixed(1)} Mbps` },
@@ -951,8 +952,11 @@ export async function openVideoDownloadDialog(cat: CatCtx, ref: AssetRef): Promi
         });
         job.finish();
       } catch (err) {
+        if (job.cancelled) return;
         host.log?.('error', 'Catalog video conversion failed', { id: ref.id, error: String(err) });
         job.fail(err);
+      } finally {
+        job.settle();
       }
     })();
   });

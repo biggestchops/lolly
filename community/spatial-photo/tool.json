@@ -1,7 +1,8 @@
 {
   "id": "spatial-photo",
+  "galleryArt": "icon",
   "name": "Spatial Photo",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "engineVersion": "^1.152.0",
   "status": "experimental",
   "singleInstance": true,

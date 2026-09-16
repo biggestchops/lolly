@@ -40,7 +40,14 @@
       "lockfile": "shells/tauri-mobile/src-tauri/Cargo.lock",
       "exposure": "shipped-runtime",
       "owner": "shells/tauri-mobile"
+    },
+    {
+      "id": "font-subset-cargo",
+      "ecosystem": "cargo",
+      "directory": "packages/node-shell/wasm/skera",
+      "lockfile": "packages/node-shell/wasm/skera/Cargo.lock",
+      "exposure": "shipped-runtime",
+      "owner": "packages/node-shell"
     }
   ]
 }
-

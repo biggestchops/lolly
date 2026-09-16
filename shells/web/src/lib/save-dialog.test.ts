@@ -197,3 +197,13 @@ test('Create a tool: a blank name surfaces an inline error and never calls creat
   assert.ok(err && !err.hidden && (err.textContent ?? '').length > 0, 'an inline error is shown beside the card');
   cleanup();
 });
+
+
+test('Share with rules is distinct from sharing a session and invokes its handoff after closing', () => {
+  let called = 0;
+  openSaveDialog(baseDeps({ shareLolly() {}, shareWithRules() { assert.equal(q('dialog.save-dialog'), null); called++; } }));
+  assert.match(q('[data-card="rules"]')!.textContent!, /other settings stay fixed/);
+  assert.equal(q('[data-act="share"]')!.textContent, 'Share session (.lolly)');
+  q<HTMLButtonElement>('[data-act="share-rules"]')!.click();
+  assert.equal(called, 1);
+});

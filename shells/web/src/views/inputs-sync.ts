@@ -176,3 +176,9 @@ export function canSkipInputsRebuild(el: HTMLElement, model: SyncableInput[], pr
   }
   return true;
 }
+
+
+/** Compound controls and textareas keep their caption above the field. */
+export function staticInputControl(control: InputControl): boolean {
+  return ['textarea', 'datetime-local-input', 'table', 'file-picker', 'blocks', 'time-input', 'vector'].includes(control);
+}

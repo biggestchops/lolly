@@ -19,6 +19,7 @@
  *
  * HOW A CALLER DRIVES ONE (the WP-G contract)
  *   const job = startJob({ title: t('Removing background'), cancel: () => abort() });
+ *   try {
  *   await job.started;               // your turn in the serial queue (immediate if idle)
  *   if (job.cancelled) return;       // cancelled while still queued
  *   for (…each frame…) {
@@ -26,6 +27,7 @@
  *     job.progress(i, frameCount);   // 0 total ⇒ indeterminate bar
  *   }
  *   job.finish(outputAsset);         // or job.fail(err)
+ *   } finally { job.settle(); }
  *
  * `runJob(opts, work)` wraps that await-started / finish / fail dance for the
  * common case; the raw handle stays for a worker-callback driver that reports
@@ -78,10 +80,12 @@ export interface JobHandle {
   readonly cancelled: boolean;
   /** Report progress. `total <= 0` ⇒ indeterminate. A no-op after a terminal state. */
   progress(done: number, total: number, note?: string): void;
-  /** Mark done and free the heavy slot. A no-op if already terminal. */
+  /** Mark done and free the heavy slot; preserve cancelled status on late completion. */
   finish(result?: unknown): void;
-  /** Mark failed and free the heavy slot. A no-op if already terminal. */
+  /** Mark failed and free the heavy slot; preserve cancelled status on late failure. */
   fail(err: unknown): void;
+  /** Release resources after cancelled work has actually stopped. Call from finally. */
+  settle(): void;
 }
 
 export interface StartJobOpts {
@@ -91,6 +95,14 @@ export interface StartJobOpts {
   cancel?: () => void;
   /** Serialize this job against other heavy jobs. Default true. */
   heavy?: boolean;
+  /** Keep a cancelled active job's slot until finish/fail/settle. Default true. */
+  retainSlotOnCancel?: boolean;
+}
+
+/** Bound waiting work independently of the single active heavy job. */
+export const MAX_QUEUED_HEAVY_JOBS = 32;
+export class JobQueueFullError extends Error {
+  constructor() { super('Too many jobs are waiting. Wait for one to finish and try again.'); this.name = 'JobQueueFullError'; }
 }
 
 /** A change listener - receives an immutable snapshot of every live job. */
@@ -113,6 +125,8 @@ interface JobEntry {
   resolveStarted: () => void;
   startedSettled: boolean;
   cancelled: boolean;
+  ownsSlot: boolean;
+  retainSlotOnCancel: boolean;
   pruneTimer?: ReturnType<typeof setTimeout>;
 }
 
@@ -134,7 +148,7 @@ function emit(): void {
 
 /** Is a heavy job currently occupying the single slot? */
 function heavyBusy(): boolean {
-  return entries.some(e => e.job.heavy && e.job.status === 'running');
+  return entries.some(e => e.job.heavy && e.ownsSlot);
 }
 
 /**
@@ -146,6 +160,7 @@ function pump(): void {
   const next = entries.find(e => e.job.heavy && e.job.status === 'queued');
   if (!next) return;
   next.job.status = 'running';
+  next.ownsSlot = true;
   settleStarted(next);
   emit();
 }
@@ -157,16 +172,26 @@ function settleStarted(e: JobEntry): void {
   e.resolveStarted();
 }
 
-/** Move a job to a terminal state, free the slot, schedule its prune, pump. */
+/** Mark terminal; retained cancellation keeps its slot until the driver settles. */
 function terminate(e: JobEntry, status: 'done' | 'failed' | 'cancelled'): void {
   if (isTerminal(e.job.status)) return;
   e.job.status = status;
   e.job.endedAt = Date.now();
   // A queued job that never ran still needs its awaiter released.
   settleStarted(e);
+  if (status !== 'cancelled' || !e.retainSlotOnCancel) e.ownsSlot = false;
+  if (!e.ownsSlot) scheduleprune(e);
+  // A retained cancellation still owns its slot even with a terminal status.
+  pump();
+  emit();
+}
+
+/** A cancellation changes status immediately; resource release follows completion. */
+function settle(e: JobEntry): void {
+  if (!isTerminal(e.job.status)) terminate(e, 'done');
+  if (!e.ownsSlot) return;
+  e.ownsSlot = false;
   scheduleprune(e);
-  // Freeing the slot may let the next heavy job in - but only after this
-  // status write is visible, so heavyBusy() sees this job as terminal.
   pump();
   emit();
 }
@@ -188,9 +213,13 @@ function scheduleprune(e: JobEntry): void {
 /**
  * Register a job and get its lifecycle handle. A heavy job (default) waits its
  * turn in the serial queue - await `handle.started` before doing the work.
+ * Throws JobQueueFullError before registration when the pending limit is reached.
  */
 export function startJob(opts: StartJobOpts): JobHandle {
   const heavy = opts.heavy !== false;
+  if (heavy && heavyBusy() && entries.filter(e => e.job.heavy && e.job.status === 'queued').length >= MAX_QUEUED_HEAVY_JOBS) {
+    throw new JobQueueFullError();
+  }
   const id = `job-${++seq}`;
   let resolveStarted!: () => void;
   const started = new Promise<void>(res => { resolveStarted = res; });
@@ -204,12 +233,13 @@ export function startJob(opts: StartJobOpts): JobHandle {
     progress: null,
     createdAt: Date.now(),
   };
-  const entry: JobEntry = { job, cancel: opts.cancel, resolveStarted, startedSettled: false, cancelled: false };
+  const entry: JobEntry = { job, cancel: opts.cancel, resolveStarted, startedSettled: false, cancelled: false, ownsSlot: false, retainSlotOnCancel: opts.retainSlotOnCancel !== false };
   entries.push(entry);
 
   // A light job never queues; a heavy job runs now only if the slot is idle.
   if (!heavy) {
     job.status = 'running';
+    entry.ownsSlot = true;
     settleStarted(entry);
     emit();
   } else {
@@ -227,15 +257,16 @@ export function startJob(opts: StartJobOpts): JobHandle {
       emit();
     },
     finish(result?: unknown): void {
-      if (isTerminal(job.status)) return;
+      if (isTerminal(job.status)) { settle(entry); return; }
       if (result !== undefined) job.result = result;
       terminate(entry, 'done');
     },
     fail(err: unknown): void {
-      if (isTerminal(job.status)) return;
+      if (isTerminal(job.status)) { settle(entry); return; }
       job.error = errText(err);
       terminate(entry, 'failed');
     },
+    settle(): void { settle(entry); },
   };
   return handle;
 }
@@ -248,12 +279,12 @@ export function cancelJob(id: string): void {
   const e = entries.find(x => x.job.id === id);
   if (!e || isTerminal(e.job.status)) return;
   e.cancelled = true;
+  terminate(e, 'cancelled');
   if (e.cancel) {
     const cb = e.cancel;
     e.cancel = undefined;   // once only
     try { cb(); } catch { /* a cancel callback must not strand the registry */ }
   }
-  terminate(e, 'cancelled');
 }
 
 /**
@@ -276,6 +307,11 @@ export function activeJobs(): readonly Job[] {
   return entries.filter(e => e.job.status === 'queued' || e.job.status === 'running').map(e => e.job);
 }
 
+/** Jobs with a booked turn or resources still owned while cancellation settles. */
+export function resourceJobs(): readonly Job[] {
+  return entries.filter(e => e.job.status === 'queued' || e.ownsSlot).map(e => e.job);
+}
+
 /**
  * Convenience driver: start a job, wait its turn, run `work`, then finish with
  * its result (or fail on a throw). Returns the work's result, or undefined if
@@ -283,16 +319,18 @@ export function activeJobs(): readonly Job[] {
  * the job, so a caller's own catch still sees it.
  */
 export async function runJob<T>(opts: StartJobOpts, work: (handle: JobHandle) => Promise<T> | T): Promise<T | undefined> {
-  const handle = startJob(opts);
-  await handle.started;
-  if (handle.cancelled) return undefined;
+  const handle = startJob({ ...opts, retainSlotOnCancel: true });
   try {
+    await handle.started;
+    if (handle.cancelled) return undefined;
     const result = await work(handle);
     handle.finish(result);
-    return result;
+    return handle.cancelled ? undefined : result;
   } catch (err) {
     handle.fail(err);
     throw err;
+  } finally {
+    handle.settle();
   }
 }
 

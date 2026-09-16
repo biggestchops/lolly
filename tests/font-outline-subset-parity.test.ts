@@ -6,14 +6,13 @@
  * or SKERA_BIN=… - so `pnpm test` stays green on a machine with nothing extra.
  *
  * What it proves when it runs: a font subset by skera (fontations' Rust
- * subsetter - Dave Crossland's steer for Font Outliner, adopt at v1.0.0,
- * likely EoY 2026) shapes IDENTICALLY through the CURRENT text→outline
+ * subsetter, under renewed evaluation at v0.7.0) shapes IDENTICALLY through the CURRENT text→outline
  * pipeline - packages/node-shell/src/text.ts, the faithful Node port of the
  * web bridge (shells/web/src/bridge/text.ts), same HarfBuzz WASM - for both
  * the default instance and a wght=700 variation (i.e. gvar survives the
  * subset). Identical path bytes + advance + coverage means skera output is
- * drop-in drawable for us. When skera hits 1.0 this suite is the first
- * yes/no on whether it is safe to build Font Outliner on.
+ * drawable for this corpus. Broader scripts, font formats and embedding
+ * still need their own checks before production adoption.
  *
  * Perf is deliberately NOT asserted here (timing assertions flake - see
  * BENCH=1 in tests/README.md); scripts/bench-font-outline.ts measures it.
@@ -90,4 +89,6 @@ test('skera subset still reports uncovered characters as notdef', { skip: SKIP ?
   const sub = await api.toPath({ ...probe, fontUrl: pathToFileURL(subsetPath).href });
   assert.ok((orig.notdef ?? 0) > 0, 'probe must miss Outfit coverage');
   assert.equal(sub.notdef ?? 0, orig.notdef ?? 0, 'subset must report the same coverage misses');
+  assert.equal(sub.d, orig.d, '--notdef-outline preserves visible missing-glyph output too');
+  assert.equal(sub.advanceWidth, orig.advanceWidth);
 });

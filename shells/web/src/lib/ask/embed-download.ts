@@ -107,6 +107,7 @@ export function downloadEmbedModel(
       job.fail(err);
       fanOut((h) => h.onError?.(err));
     } finally {
+      job.settle();
       active = null;
       lastProgress = null;
       mirrors.clear();

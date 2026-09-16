@@ -238,7 +238,7 @@ test('cancel really aborts the synthesis, and a cancelled run persists nothing',
   cancelJob(jobsSnapshot()[0]!.id);
   assert.equal(signal.aborted, true, 'the ✕ aborts the real request, it is not decoration');
 
-  await assert.rejects(p, (e: Error) => e.name === 'AbortError');
+  assert.equal(await p, null, 'cancellation has no clip to paint or persist');
   assert.equal(jobsSnapshot()[0]!.status, 'cancelled', 'cancelled, not failed');
   assert.equal(uploads.length, 0, 'a cancelled take is never written to the catalogue');
 });

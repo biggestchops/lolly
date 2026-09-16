@@ -5,9 +5,9 @@
  * shared by the gated parity suite (tests/font-outline-subset-parity.test.ts)
  * and the benchmark harness (scripts/bench-font-outline.ts).
  *
- * Context (plan 88 - Font Outliner): Dave Crossland's steer is to adopt skera
- * once it reaches v1.0.0 (likely end of 2026). Until then it stays optional:
- * nothing here runs unless a binary is present. Install with
+ * Optional evaluation harness (plans 88 and 262): nothing here runs unless a
+ * binary is present. Version 0.7.0 is under renewed evaluation; production
+ * adoption depends on output coverage and integration cost. Install with
  *   cargo install skera --features cli
  * or point SKERA_BIN at a build. CLI shape per its README:
  *   skera --path <in> --unicodes <hex,list> --output-file <out>
@@ -58,7 +58,7 @@ export function unicodesArg(text: string): string {
 export function skeraSubset(bin: string, fontPath: string, text: string, outPath: string): number {
   const t0 = performance.now();
   try {
-    execFileSync(bin, ['--path', fontPath, '--unicodes', unicodesArg(text), '--output-file', outPath], {
+    execFileSync(bin, ['--path', fontPath, '--unicodes', unicodesArg(text), '--notdef-outline', '--output-file', outPath], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (e) {

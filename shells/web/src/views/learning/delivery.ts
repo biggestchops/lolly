@@ -258,6 +258,7 @@ export function deliveryOps(ctx: LearningCtx): LearningCtx['delivery'] {
       );
       if (!signal.aborted) currentJob.fail(error);
     } finally {
+      currentJob.settle();
       job = undefined;
       controller = undefined;
       ctx.checking = false;

@@ -11,7 +11,9 @@
  * every format (raster, SVG walker, PDF) sees the identical mark.
  */
 
-import { sfntKind, LOSSLESS_STRENGTH, C2PA_FORMATS, embedWavInfo, writeDocx, writeOdt, hdrBoostToPQ, pqBt2020IccProfile, iccProfileBytes, HDR_PQ_CICP, packTiff, CSS_DPI, encodeBmp, rgbToCmyk, cmykCondition, toPixels, parseDimension, toCssLength, gzip, emitEmf, emitWmf, emitEps, emitDxf, toPoints, computePrintGeometry, buildEncryptDictValues, preparePassword, encryptObjectBytes, exportActionSteps, embedC2pa, ENGINE_VERSION, buildExportMeta, SCREEN_SOURCE_TYPE, CAPTURE_SOURCE_TYPE, extractC2paStore, roundedRectPath, splitCssArgs, insetCorners, uniformRadius, parseCssMatrix, isAxisAlignedMat, isNonAffineTransform, parseClipShape, parseBoxShadow, gaussianShadowBands, parseTextShadow, videoProvenanceTags, embedMp4Meta, embedWebmMeta, crc32, buildEncryptedZip, hdrViewTransform, fromU8Srgb, pqToI420P10, pqEncodeFrame, packApng, packWebpAnim } from '@lolly/engine';
+import { embedResolvedFont, loadFontBase64 } from './export-font-data.ts';
+import { canEmbedPdfSubset } from './pdf-font-policy.ts';
+import { LOSSLESS_STRENGTH, C2PA_FORMATS, embedWavInfo, writeDocx, writeOdt, hdrBoostToPQ, pqBt2020IccProfile, iccProfileBytes, HDR_PQ_CICP, packTiff, CSS_DPI, encodeBmp, rgbToCmyk, cmykCondition, toPixels, parseDimension, toCssLength, gzip, emitEmf, emitWmf, emitEps, emitDxf, toPoints, computePrintGeometry, buildEncryptDictValues, preparePassword, encryptObjectBytes, exportActionSteps, embedC2pa, ENGINE_VERSION, buildExportMeta, SCREEN_SOURCE_TYPE, CAPTURE_SOURCE_TYPE, extractC2paStore, roundedRectPath, splitCssArgs, insetCorners, uniformRadius, parseCssMatrix, isAxisAlignedMat, isNonAffineTransform, parseClipShape, parseBoxShadow, gaussianShadowBands, parseTextShadow, videoProvenanceTags, embedMp4Meta, embedWebmMeta, crc32, buildEncryptedZip, hdrViewTransform, fromU8Srgb, pqToI420P10, pqEncodeFrame, packApng, packWebpAnim } from '@lolly/engine';
 import type { HdrBoostOptions, Mat2D } from '@lolly/engine';
 import { letterSpacingPx, featureSettingsToHb, canVectoriseText, textBaselineY, textStrokeAttrs, suseFontFile, SUSE_FONT_DIR } from './text-svg.ts';
 import { resolveVectorFont } from './font-registry.ts';
@@ -40,7 +42,7 @@ import { buildAudioTags } from '../lib/audio-tags.ts';
 import { createStaticChromeGuard, staticChromeVerdict, chromePaintsOverLive, countToolMutations, staticChromeFrameAction } from './frame-static.ts';
 import type { Box, ChromeEl } from './frame-static.ts';
 import { buildExportPack, renderLinuxPackage } from './export-linux-package.ts';
-import { createDownload } from './download.ts';
+import { createDownload, fileDeliveryBlob } from './download.ts';
 import { packIco } from './ico-pack.ts';
 import type { ExportMeta, IngredientCredential, SourceIngredient, HostV1, C2paSignOpts } from '@lolly-tools/core/host-v1';
 import { checkAttributionReadback, sha256Hex, verifyC2pa } from '@lolly/engine';
@@ -135,6 +137,10 @@ export function anchorSaveUrl(url: string, filename: string): void {
 export function createExportAPI(host: WebHost) {
   setExportHost(host);
   return {
+    async checkLayout(node: Element) {
+      const { checkTextLayout } = await import('../lib/text-layout-check.ts');
+      return checkTextLayout(node, host.text);
+    },
     async render(node: Element, format: string, opts: ExportOpts = {}): Promise<Blob> {
       const unavailable = node.matches('[data-export-error]') ? node : node.querySelector('[data-export-error]');
       if (unavailable) throw new Error(unavailable.getAttribute('data-export-error') || 'The tool is not ready to export.');
@@ -212,20 +218,8 @@ export function createExportAPI(host: WebHost) {
     // provenance metadata are ever applied, because the bytes are the user's own
     // content. (Tauri/CLI route this to a real save target.)
     async file(blob: Blob, opts: ExportOpts = {}): Promise<void> {
-      let out = blob;
-      // export.file's one legal container change: fonts. When a transform's bytes are an
-      // sfnt/WOFF and the requested name asks for a DIFFERENT font container, convert it
-      // (TTF/OTF <-> WOFF, glyph outlines untouched) so the download matches the name - 
-      // the font-convert tool's path. Never re-encodes anything else.
       const name = opts.filename || 'file';
-      const de = name.match(/\.(ttf|otf|woff)$/i)?.[1]?.toLowerCase();
-      if (de) {
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        if (sfntKind(bytes)) {
-          const { convertFontContainer } = await import('@lolly/engine');
-          out = new Blob([convertFontContainer(bytes, de) as BlobPart], { type: `font/${de}` });
-        }
-      }
+      const out = await fileDeliveryBlob(blob,name);
       await this.download(out, name);
     },
 
@@ -2007,7 +2001,9 @@ async function renderArtworkPdf(node: Element, opts: ExportOpts, geo: PrintGeome
   const encryption = (opts.password && !geo)
     ? { userPassword: opts.password, ownerPassword: opts.password, userPermissions: ['print'] }
     : undefined;
-  const pdf = await createPdfDoc({ format: [pageW, pageH], orientation, encryption });
+  const pdf = await createPdfDoc({ format: [pageW, pageH], orientation, encryption,
+    fontSubset: async (bytes, glyphs) => (await import('./font-subset.ts')).subsetFont(bytes, glyphs, opts.signal),
+  });
   applyPdfMeta(pdf, opts.meta);
 
   // SVG-rooted canvas (the node IS an <svg>, or its only meaningful child is) →
@@ -2617,7 +2613,9 @@ async function renderMultiPagePdf(pageEls: Element[], opts: ExportOpts, prepare?
   geos.push(g0);
   const p0w = g0 ? g0.page.w : first.w;
   const p0h = g0 ? g0.page.h : first.h;
-  const pdf = await createPdfDoc({ format: [p0w, p0h], orientation: orientOf(p0w, p0h), encryption });
+  const pdf = await createPdfDoc({ format: [p0w, p0h], orientation: orientOf(p0w, p0h), encryption,
+    fontSubset: async (bytes, glyphs) => (await import('./font-subset.ts')).subsetFont(bytes, glyphs, opts.signal),
+  });
   applyPdfMeta(pdf, opts.meta);
 
   for (let i = 0; i < pageEls.length; i++) {
@@ -3057,11 +3055,11 @@ async function drawSvgVectorsInRegion(pdf: any, svgEl: Element, ox: number, oy: 
         // as the x/y attributes. Before this branch existed the toggle was inert
         // here - SVG-rooted tools' PDFs embedded what substring-matched 'suse' and
         // silently fell back to base-14 fonts for everything else.
-        if (convertPaths && _host?.text) {
+        const vf = _host?.text ? await resolveVectorFont(
+          { fontFamily: familyRaw, fontWeight: String(fw), fontStyle: italic ? 'italic' : 'normal' }, t) : null;
+        const embedUrl = convertPaths ? null : await pdfFontEmbed(vf);
+        if ((convertPaths || (vf && !embedUrl)) && _host?.text) {
           try {
-            const vf = await resolveVectorFont(
-              { fontFamily: familyRaw, fontWeight: String(fw), fontStyle: italic ? 'italic' : 'normal' },
-              t);
             if (vf) {
               const shaped = await _host.text.toPath({ text: t, fontUrl: vf.url, fontSize: fsUser, variations: vf.variations, fallbackFonts: vf.fallbacks });
               if (shaped?.d && !shaped.notdef) {
@@ -3083,7 +3081,11 @@ async function drawSvgVectorsInRegion(pdf: any, svgEl: Element, ox: number, oy: 
         }
         pdf.setFontSize(Math.max(1, fs));
         let fontSet = false;
-        if (family.includes('suse') && registeredFonts) {
+        if (embedUrl && registeredFonts) {
+          const name = await embedResolvedFont(pdf, registeredFonts, embedUrl);
+          if (name) { pdf.setFont(name, 'normal'); fontSet = true; }
+        }
+        if (!fontSet && family.includes('suse') && registeredFonts) {
           const mono = family.includes('mono');
           const suseStyle = await embedSuseFont(pdf, registeredFonts, fw, italic, mono);
           if (suseStyle) { pdf.setFont(suseFontName(mono), suseStyle); fontSet = true; }
@@ -4208,14 +4210,14 @@ async function renderInlineContent(
       // BOTH modes - live text needs it to choose embed-vs-outline too.
       const vf = _host?.text ? await resolveVectorFont(nodeStyle, text) : null;
       const fontUrl = vf?.url ?? null;
-      const embedUrl = await pdfUserFontEmbed(vf);
-      const isUserFont = Boolean(vf?.url.startsWith('blob:'));
+      const embedUrl = convertPaths ? null : await pdfFontEmbed(vf);
+      const hasResolvedFont = Boolean(vf);
       // Outline when converting paths, OR when a user font can't be faithfully
       // embedded as live text (variable off-weight / needs the subset chain) - so
       // weight and coverage never silently break in live-text mode either.
       // A faithfully-embeddable user run stays live (pdf.text below).
       const outline = canVectoriseText(nodeStyle, fontUrl, Boolean(_host?.text))
-        && (convertPaths || (isUserFont && !embedUrl));
+        && (convertPaths || (hasResolvedFont && !embedUrl));
       // Set the font for the pdf.text path (live text, and the notdef fallback):
       // the embeddable user font when we have one, else SUSE/Helvetica.
       await applyPdfTextStyle(pdf, nodeStyle, cssToPt, registeredFonts, embedUrl);
@@ -4393,8 +4395,8 @@ async function pdfPseudoContent(pdf: any, el: Element, rootRect: { left: number;
     const fontSizePx = parseFloat(ds.ps.fontSize) || 16;
     const vf = _host?.text ? await resolveVectorFont(ds.ps, ds.text) : null;
     const fontUrl = vf?.url ?? null;
-    const embedUrl = await pdfUserFontEmbed(vf);
-    const isUserFont = Boolean(vf?.url.startsWith('blob:'));
+    const embedUrl = convertPaths ? null : await pdfFontEmbed(vf);
+    const hasResolvedFont = Boolean(vf);
     const textRgb = parseCssColor(ds.ps.color) || ([0, 0, 0] as Rgb);
     // Baseline within the marker's line box (half-leading + ascent), matching the SVG
     // pseudo path's textBaselineY - so a bullet/arrow lines up with the main text (which
@@ -4404,7 +4406,7 @@ async function pdfPseudoContent(pdf: any, el: Element, rootRect: { left: number;
     const baselinePt = textBaselineY(ds.y - rootRect.top, lineHPx, pAsc, pDesc) * scaleY;
     let drawn = false;
     // Outline in convert-paths mode, or for a user font live text can't carry faithfully.
-    if (canVectoriseText(ds.ps, fontUrl, Boolean(_host?.text)) && (convertPaths || (isUserFont && !embedUrl))) {
+    if (canVectoriseText(ds.ps, fontUrl, Boolean(_host?.text)) && (convertPaths || (hasResolvedFont && !embedUrl))) {
       try {
         const { d, notdef } = await _host!.text!.toPath({ text: ds.text, fontUrl: fontUrl!, fontSize: fontSizePx, variations: vf!.variations, fallbackFonts: vf!.fallbacks });
         if (d && !notdef) {
@@ -4424,7 +4426,7 @@ async function pdfPseudoContent(pdf: any, el: Element, rootRect: { left: number;
 
 // Sets the text color, font size, and the font to draw pdf.text() with. The
 // font is chosen in order: a faithfully-embeddable user font (its sfnt URL,
-// pre-decided by pdfUserFontEmbed) → the SUSE static for the weight/style →
+// pre-decided by pdfFontEmbed) → the SUSE static for the weight/style →
 // Helvetica. Embeds whichever it picks into the PDF (once) as a side effect.
 async function applyPdfTextStyle(pdf: any, style: CSSStyleDeclaration, cssToPt: number, registeredFonts: Set<unknown>, userEmbedUrl: string | null = null): Promise<void> {
   const textRgb = parseCssColor(style.color) || ([0, 0, 0] as Rgb);
@@ -4435,7 +4437,7 @@ async function applyPdfTextStyle(pdf: any, style: CSSStyleDeclaration, cssToPt: 
   const italic  = style.fontStyle === 'italic' || style.fontStyle === 'oblique';
   const family  = (style.fontFamily || '').toLowerCase();
   if (userEmbedUrl) {
-    const name = await embedUserFont(pdf, registeredFonts, userEmbedUrl);
+    const name = await embedResolvedFont(pdf, registeredFonts, userEmbedUrl);
     if (name) { pdf.setFont(name, 'normal'); return; }
   }
   if (family.includes('suse')) {
@@ -4470,27 +4472,6 @@ async function circularClipImage(imgEl: any, dataUrl: string): Promise<string> {
 
 // ── SUSE font embedding ───────────────────────────────────────────────────────
 
-// Module-level cache: font URL → base64 string. Survives across export calls
-// within a session so the TTF files are fetched at most once.
-const _fontBase64Cache = new Map<string, string>();
-
-async function loadFontBase64(url: string): Promise<string> {
-  if (_fontBase64Cache.has(url)) return _fontBase64Cache.get(url)!;
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`Font fetch failed: ${url}`);
-  const buf = await resp.arrayBuffer();
-  // FileReader is the safest way to base64-encode arbitrary binary in a browser.
-  // btoa(String.fromCharCode(...uint8)) blows the stack on large font files.
-  const b64 = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(',')[1]!);
-    reader.onerror = reject;
-    reader.readAsDataURL(new Blob([buf]));
-  });
-  _fontBase64Cache.set(url, b64);
-  return b64;
-}
-
 // Embeds a SUSE weight+style variant into the document and returns the
 // fontStyle key to use with pdf.setFont(suseFontName(mono), key).
 // registeredFonts is a per-PDF-instance Set that avoids re-registering.
@@ -4514,47 +4495,22 @@ async function embedSuseFont(pdf: any, registeredFonts: Set<unknown>, weight: nu
   return style;
 }
 
-// Embeds a decompressed USER font (a blob: sfnt URL minted by the font registry
-// from a stored Google woff2) into the document and returns the font
-// name to setFont with. The name is derived from the url so it's stable and
-// unique per face across a PDF; registeredFonts embeds each at most once.
-// Unlike SUSE (per-weight static files), a user font is a single variable file,
-// so pdfUserFontEmbed only offers it up when the default-instance render is
-// actually faithful - see there.
-async function embedUserFont(pdf: any, registeredFonts: Set<unknown>, url: string): Promise<string | null> {
-  const name = `uf_${url}`;
-  if (!registeredFonts.has(name)) {
-    try {
-      const b64 = await loadFontBase64(url); // blob: URLs are fetchable
-      const file = `${name}.ttf`;
-      pdf.addFileToVFS(file, b64);
-      pdf.addFont(file, name, 'normal'); // slant is baked into the embedded file
-      registeredFonts.add(name);
-    } catch {
-      return null;
-    }
-  }
-  return name;
-}
-
-// Decide whether a resolved run font can be FAITHFULLY embedded as live text in
-// live text, returning its sfnt URL if so, else null (the caller outlines instead - 
-// the outline path has the variable axis and per-subset fallback an embed lacks).
-// Only decompressed USER faces (blob: URLs) are candidates; SUSE stays on its
-// own per-weight-static path, and the platform face isn't embedded here.
-// Embeddable requires a single face covering the whole run (an embed can't chain
-// subsets) rendering at the requested weight: a static face always does; a
-// variable face only when the request equals its default instance (an embedded
-// file can't move the axis). axisDefaults is additive - without it, don't risk a variable
-// face.
-async function pdfUserFontEmbed(vf: VectorFont | null): Promise<string | null> {
-  if (!vf || !vf.url.startsWith('blob:') || vf.fallbacks?.length) return null;
+// Live PDF text needs one permitted TrueType face at its default instance.
+// Other runs use the outline path, which supports variations and fallback faces.
+async function pdfFontEmbed(vf: VectorFont | null): Promise<string | null> {
+  if (!vf || vf.fallbacks?.length) return null;
+  try {
+    const bytes = Uint8Array.from(atob(await loadFontBase64(vf.url)), char => char.charCodeAt(0));
+    if (!canEmbedPdfSubset(bytes)) return null;
+  } catch { return null; }
   if (!vf.variations?.length) return vf.url; // static face → its own weight
-  const wanted = Number(/wght=(\d+(?:\.\d+)?)/.exec(vf.variations[0] ?? '')?.[1]);
-  if (!Number.isFinite(wanted)) return vf.url;
   const defs = await _host?.text?.axisDefaults?.(vf.url).catch(() => null);
-  const def = defs?.wght;
-  return def != null && Math.abs(def - wanted) < 1 ? vf.url : null;
+  return vf.variations.every(setting => {
+    const match = /^([A-Za-z0-9]{4})=(-?\d+(?:\.\d+)?)$/.exec(setting);
+    if (!match) return false;
+    const wanted = Number(match[2]), def = defs?.[match[1]!];
+    return def != null && Math.abs(def - wanted) < 0.001;
+  }) ? vf.url : null;
 }
 
 // ── CMYK PDF export ───────────────────────────────────────────────────────────

@@ -1,0 +1,16 @@
+{
+  "id": "brand-starter",
+  "name": "Hello, open world",
+  "category": "Brand",
+  "description": "A small, readable code window on transparency.",
+  "galleryCover": true,
+  "values": {
+    "code": "const future = {\n  open: true,\n  possibilities: Infinity\n};",
+    "language": "javascript",
+    "transparentBg": true,
+    "lineNumbers": false,
+    "shadow": true,
+    "scale": 200,
+    "lineHeight": 1.5
+  }
+}

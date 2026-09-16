@@ -66,7 +66,7 @@ import { announce } from '../a11y.ts';
 import { listCreateBtns as createButtonsHtml, emptyFolderHtml } from './projects-create.ts';
 import { mountProjectsViewOptions } from './projects-view-options.ts';
 import type { BodyPopoverHandle } from '../components/body-popover.ts';
-import { openShareDialog } from '../components/share-dialog.ts';
+import { shareProjectSession } from './projects-sharing.ts';
 import { serializeUrlState, ENGINE_VERSION } from '@lolly/engine';
 import { createToolRuntime as createRuntime } from '../lib/mount-runtime.ts';
 import { getTool } from '../bridge/tool-loader.ts';
@@ -1566,6 +1566,7 @@ export async function mountProjects(
       fav(),
       menuItem('move', MOVE_ICON, t('Move to…')),
       clip(),
+      canShare ? menuItem('share-with-rules', SHARE_ICON, t('Share with rules')) : '',
       canShare ? menuItem('share', SHARE_ICON, t('Share link')) : '',
       menuItem('info', INFO_ICON, t('Get info')),
       menuItem('course-session', RENDER_ICON, t('Export course')),
@@ -1659,6 +1660,7 @@ export async function mountProjects(
       });
     }
     else if (act === 'open') resumeSession(ref);
+    else if (act === 'share-with-rules') { armReturn(); await shareProjectSession(host, sessionSource(ref), true, announce); }
     else if (act === 'rename-session') startRenameSession(tileEl, ref);
     else if (act === 'duplicate-session') duplicateSession(ref);
     else if (act === 'save-session-template') await tpl.saveSessions([sessionSource(ref)], { ask: true });
@@ -1670,7 +1672,7 @@ export async function mountProjects(
     }
     else if (act.startsWith('course-')) await exportCourse(act.slice(7), ref);
     else if (act === 'render-session') renderSession(ref);
-    else if (act === 'share') shareSession(ref);
+    else if (act === 'share') { closeMenu(); await shareProjectSession(host, sessionSource(ref), false, announce); }
     else if (act === 'delete-session') { await trashSessions([ref]); }
     else if (act === 'open-image') openImagePreview(ref);
     else if (act === 'move-image') {
@@ -2736,35 +2738,10 @@ export async function mountProjects(
     });
   }
 
-  // ── share a saved session as a link (same dialog as the tool view's Share) ──
-  // Reconstruct the tool's URL state from the saved values (createRuntime →
-  // serializeUrlState, the picker's recipe) and hand it to the shared Share dialog.
-  async function shareSession(slot: string): Promise<void> {
-    closeMenu();
-    const entry = entryBySlot().get(slot);
-    if (!entry || isBatchSlot(slot)) return;   // batch sessions have no single tool URL
-    try {
-      const data = await (host as ProjectsHost).state.load(slot);
-      if (!data) throw new Error('This saved session could not be loaded.');
-      const tool = await getTool(entry.toolId);
-      const runtime = await createRuntime(tool, host, data as Parameters<typeof createRuntime>[2]);
-      const query = serializeUrlState(runtime.getModel());
-      const baseParts = query ? query.split('&') : [];
-      // Carry the session's export format so the recipient's link opens on the same one.
-      if (data.__export_format) baseParts.push(`format=${encodeURIComponent(data.__export_format as string)}`);
-      openShareDialog({
-        toolId: entry.toolId, baseParts, manifest: tool.manifest,
-        currentFormat: (data.__export_format as string) || '', title: t('Share this creation'),
-      });
-    } catch (err) {
-      host.log?.('warn', 'projects: share session failed', { slot, error: String(err) });
-    }
-  }
-
   // ── team projects (control-plane session source; dormant without one) ───────
   // A self-contained modal: browse the instance's shared projects → their
   // sessions → open one into its tool. Opening reuses the SAME reconstruction
-  // shareSession() uses (createRuntime → serializeUrlState → navigate), so a team
+  // shareProjectSession() uses (createRuntime → serializeUrlState → navigate), so a team
   // session opens as a fresh working copy at full fidelity (blocks included), with
   // no local slot written. The source is pure data (see lib/session-source.ts).
   const teamRowStyle = 'display:flex;justify-content:space-between;gap:1rem;width:100%;padding:.55rem .7rem;background:none;border:0;border-radius:var(--radius);color:inherit;text-align:left;cursor:pointer;font:inherit';

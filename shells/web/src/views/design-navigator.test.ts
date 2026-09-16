@@ -554,7 +554,8 @@ test('two selected boards are honest: aria-selected on both, in a multiselectabl
   const f = mount(THREE, { active: 'f1' });
   const list = f.nav.el.querySelector('.fc-nav-list')!;
   assert.equal(list.getAttribute('aria-multiselectable'), 'true');
-  assert.equal(f.nav.el.querySelector('.fc-nav-layer-list')!.getAttribute('aria-multiselectable'), 'true');
+  assert.equal(f.nav.el.querySelector('.fc-nav-layer-list')!.getAttribute('role'), 'region');
+  for (const group of f.nav.el.querySelectorAll('[data-layer-group]')) assert.equal(group.getAttribute('aria-multiselectable'), 'true');
   f.selection.set(['f1', 'f3']);
   assert.deepEqual(
     f.rowEls().map((r) => r.getAttribute('aria-selected')),
@@ -651,13 +652,14 @@ test('layers: Alt+ArrowDown hands back PAINT order (the reverse of the list)', (
   f.nav.destroy();
 });
 
-test('layers: the section is absent when the active board has no children', () => {
+test('layers: artboard parents remain available and expanded boards retain their children', () => {
   const f = mount(WITH_KIDS, { active: 'f2' });
   assert.deepEqual(f.layerIds(), ['c9']);
   f.artboard.focus('f1');
-  assert.deepEqual(f.layerIds(), ['c3', 'c2', 'c1'], 'the list follows the active board');
+  assert.deepEqual(f.layerIds(), ['c3', 'c2', 'c1', 'c9'], 'both visited artboards stay expanded');
   const empty = mount(THREE, { active: 'f1' });
-  assert.equal(empty.nav.el.querySelector<HTMLElement>('.fc-nav-layers')!.hidden, true);
+  assert.equal(empty.nav.el.querySelector<HTMLElement>('.fc-nav-layers')!.hidden, false);
+  assert.equal(empty.nav.el.querySelectorAll('[data-artboard]').length, 3);
   empty.nav.destroy();
   f.nav.destroy();
 });
@@ -1526,5 +1528,32 @@ test('with an artboard the loose-layer verbs are gone and the empty text is the 
   assert.equal(f.nav.el.querySelector<HTMLElement>('.fc-nav-make-all')!.hidden, true);
   assert.equal(f.nav.el.querySelector('[data-nav-verb="make-artboard"]'), null);
   assert.equal(f.nav.el.querySelector<HTMLElement>('.fc-nav-subhead')!.textContent, 'Layers');
+  f.nav.destroy();
+});
+
+
+test('artboard parent buttons focus the board and expose its own layers', () => {
+  const f=mount(WITH_KIDS,{active:'f1'});
+  const parent=f.nav.el.querySelector<HTMLButtonElement>('[data-jump-artboard="f2"]')!;
+  click(parent);
+  assert.equal(f.artboard.active(),'f2');
+  assert.equal(f.nav.el.querySelector<HTMLDetailsElement>('[data-artboard="f2"]')!.open,true);
+  assert.equal(f.nav.el.querySelector('[data-jump-artboard="f2"]')!.getAttribute('aria-current'),'true');
+  assert.deepEqual(f.layerIds(),['c3','c2','c1','c9']);
+  const first=f.layerEls().find(row=>row.dataset.id==='c3')!;
+  key(first,'ArrowDown',{altKey:true});
+  assert.deepEqual(f.c.reorderChildren.at(-1),{frameId:'f1',ids:['c1','c3','c2']});
+  f.nav.destroy();
+});
+
+test('Layers and Pages switch the same document navigation without duplicating visible lists', () => {
+  const f=mount(WITH_KIDS,{active:'f1'});
+  const buttons=[...f.nav.el.querySelectorAll<HTMLButtonElement>('.fc-nav-modes button')];
+  assert.equal(f.nav.el.querySelector<HTMLElement>('.fc-nav-list')!.hidden,true);
+  click(buttons.find(button=>button.textContent==='Pages')!);
+  assert.equal(f.nav.el.querySelector<HTMLElement>('.fc-nav-list')!.hidden,false);
+  assert.equal(f.nav.el.querySelector<HTMLElement>('.fc-nav-layers')!.hidden,true);
+  click(buttons.find(button=>button.textContent==='Layers')!);
+  assert.equal(f.nav.el.querySelector<HTMLElement>('.fc-nav-layers')!.hidden,false);
   f.nav.destroy();
 });

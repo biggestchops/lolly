@@ -282,6 +282,7 @@ export function showExtent(tp: TpCtx, g: Gesture): void {
   extent.hidden = false;
 }
 export function onPointerDown(tp: TpCtx, e: PointerEvent): void {
+  e.stopPropagation();
   const { cfg, getBoxes, handle, marquee, ruler, selection, tracks } = tp;
   if (e.button !== 0) return;
   const target = e.target as HTMLElement | null;
@@ -328,6 +329,7 @@ export function onPointerDown(tp: TpCtx, e: PointerEvent): void {
     // Empty lane space inside the tracks scroller → rubber-band select. The ruler,
     // handle and chrome were all handled above, so this is genuinely empty timeline.
     if (target.closest('.tl-tracks')) {
+      if (e.pointerType === 'touch') return;
       e.preventDefault();
       const additive = e.shiftKey || e.metaKey || e.ctrlKey;
       if (!additive) tp.rows.selectAndReveal([], { reveal: false });

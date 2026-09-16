@@ -23,14 +23,19 @@
  */
 
 import '../styles/parts/valid.css';   // async CSS chunk (lazy view - not on the landing)
-import { verifyC2pa, verifySeal, pemToDer, c2paTrustAnchors, extractFileMetadata, appendedIsExpected, META_GROUP_ORDER, META_GROUP_LABEL, stripMetadata, isStrippableFormat, detectWatermark, detectWatermarkSearch, analyzeLsb, isPptx, pptxMediaImages, evaluateReuse, licenceDisplayName, normaliseLicence, rightsReportFromC2pa } from '@lolly/engine';
-import type { FileMetadata, MetaField, MetaGroup, StripFormat, SealVerifyResult } from '@lolly/engine';
+import '../styles/parts/valid-report.css';
+import { verifyC2pa, verifySeal, pemToDer, c2paTrustAnchors, extractFileMetadata, appendedIsExpected, stripMetadata, detectWatermark, detectWatermarkSearch, analyzeLsb, isPptx, pptxMediaImages, evaluateReuse, licenceDisplayName, normaliseLicence, rightsReportFromC2pa } from '@lolly/engine';
+import type { FileMetadata, StripFormat, SealVerifyResult } from '@lolly/engine';
 import type { CreativeOperationV1, CreativeUseRoleV1, DeliveryRouteV1 } from '@lolly-tools/core/rights-v1';
 import { looksLikePptxFile, inflatePptx, PPTX_MIME } from '../bridge/pptx.ts';
 // The docx sniff only (a name/type test plus its MIME). The reader itself is loaded
 // lazily where it is used, so a drop that is not a Word file never pays for it.
 import { looksLikeDocxFile, DOCX_MIME } from '../lib/office-text.ts';
-import { WORLD_VIEWBOX, WORLD_LAND_PATH, projectLatLon } from './world-map.ts';
+import { contextCardsHtml, journeyEvidenceLabel } from './valid-context.ts';
+import { readVerifyMetadata } from './valid-read-metadata.ts';
+import { renderMetadata } from './valid-metadata.ts';
+import { vendorMark } from './valid-vendors.ts';
+import { checkingHtml, updateVerifyProgress } from './valid-progress.ts';
 import { CA_ROOT_PEM } from '../ca-root.ts';
 import { escape } from '../utils.ts';
 import { textSignalLabels } from './valid-text-labels.ts';
@@ -60,6 +65,14 @@ import {isExpectedRow, pipStatusWord, scorecardModel, resolveState, sourceTypeLa
   stateTone, STATE_COPY, hashFailed, rightsReportOf, rightsSourceReport,
 } from './valid-verdict.ts';
 import type { Check, SignerIdentity, Signer, Claim, VerifyReport, Watermark, ScorecardItem } from './valid-verdict.ts';
+import { provenanceOverviewHtml, provenanceSummaryHtml } from './valid-provenance.ts';
+import { pdfPreviewFor, pdfPageCountFor, mediaPreviewHtml, wireVerifyPreviews, type VerifyPreview as Preview } from './valid-preview.ts';
+import { softwareName } from '@lolly/engine';
+import { auxiliaryMetadataHtml } from './valid-auxiliary.ts';
+import { metadataValueHtml, metadataLinkHtml, metadataUrl, wireMetadataLinks, visibleLinkedTextHtml } from './valid-links.ts';
+import { wireVerifyActions } from './valid-actions.ts';
+import { wireAddressRequests } from './valid-location.ts';
+import { saveReportCard } from './valid-report-card.ts';
 // The C2PA 2.4 text-binding models - same pure-module rule as valid-verdict.ts.
 // The copy for every carrier state, the snippet cap, and the ONE url gate both
 // the paste path and the external-manifest fetch go through, all testable
@@ -78,9 +91,6 @@ import { wmNoteSlot } from '../lib/wm-note.ts';
 // estimate row and honesty copy for the classifier check, re-rendering this
 // panel through its own builder on a conclusive estimate.
 import { aiModelSlot } from './tsig-model-note.ts';
-// Invisible characters rendered as named chips in the extract - shared with
-// the catalog so both surfaces show identical evidence.
-import { visibleTextHtml } from '../lib/invisible-chars.ts';
 // The Document facts census section (shared with the catalog panel).
 import { tsigFactsHtml } from './tsig-facts.ts';
 import type { DocReadNotes } from './doc-read.ts';
@@ -97,7 +107,6 @@ import { rewordAvailable } from '../lib/reworder.ts';
 // there to prevent. `sniffFormat` names a PASTED payload's file (pasted.html /
 // pasted.txt); the verification itself always re-sniffs the bytes.
 import { sniffFormat } from '../../../../engine/src/c2pa-extract.ts';
-import { LOLLY_MARK_SVG } from '../lib/lolly-mark.ts';
 import { appendScoreToggle } from './valid-score-toggle.ts';
 
 // Trust anchors: the pinned Lolly CA root (identity for Lolly-signed assets)
@@ -167,17 +176,17 @@ function miniScorePipHtml(it: ScorecardItem): string {
 
 function scorecardHtml(report: VerifyReport, watermark?: Watermark, extra?: ScorecardItem[]): string {
   const items = scorecardModel(report, watermark, extra);
+  const priority: IconName[] = ['hash', 'pen', 'userCheck', 'cpu', 'clock'];
+  const rank = (item: ScorecardItem): number => item.status === 'fail' ? -1 : priority.includes(item.icon) ? priority.indexOf(item.icon) : 10;
+  items.sort((a, b) => rank(a) - rank(b));
   const more = items.length > 4
     ? `<button type="button" class="valid-score-more" data-score-toggle data-score-count="${items.length}" aria-expanded="false">${t('Show all {n} checks', { n: items.length })}</button>`
     : '';
   return `<div class="valid-score-wrap"><ul class="valid-score" aria-label="${escape(t('Verification checks at a glance'))}">${items.map(scorecardPipHtml).join('')}</ul>${more}</div>`;
 }
 
-// Evidence cards arrive open when the display can comfortably hold a report,
-// but start as labelled disclosure rows on a phone. The content remains ordinary
-// <details>, so a reader can always reverse that default.
-const disclosureOpenAttr = (): string =>
-  typeof window !== 'undefined' && window.matchMedia('(min-width: 700px)').matches ? ' open' : '';
+// Key findings lead the report; technical evidence starts collapsed at every size.
+const disclosureOpenAttr = (): string => '';
 
 function checkRow(c: Check, i = 0): string {
   const cls = c.ok ? 'ok' : isExpectedRow(c) ? 'info' : 'bad';
@@ -222,10 +231,10 @@ export function inputsDigestHtml(
     return `<div class="valid-input-row"><dt>${escape(k)}</dt><dd>${sw}<span>${escape(v)}</span></dd></div>`;
   }).join('');
   const cta = recreate ? `
-      <a class="btn valid-recreate" style="margin-top:.65rem" href="#/tool/${escape(recreate.toolId)}"
+      <a class="btn valid-recreate" href="#/tool/${escape(recreate.toolId)}"
          data-recreate="${recreate.fileIndex}" data-recreate-tool="${escape(recreate.toolId)}">${t('Recreate with these settings in {tool}', { tool: recreate.toolName })}</a>` : missingTool ? `
-      <p class="valid-recreate-absent" style="margin:.65rem 0 0;font-size:.9em;color:hsl(var(--muted-foreground))">${t('Made with the {tool} tool, which is not in this catalogue.', { tool: missingTool })}</p>
-      <a class="btn valid-recreate" style="margin-top:.5rem" href="/">${t('Explore the tools here')}</a>` : '';
+      <p class="valid-recreate-absent">${t('Made with the {tool} tool, which is not in this catalogue.', { tool: missingTool })}</p>
+      <a class="btn valid-recreate" href="/">${t('Explore the tools here')}</a>` : '';
   return `
     <div class="valid-inputs valid-panel">
       <h3>${svgIcon('sparkle')}<span>${t('Made from')}</span></h3>
@@ -337,30 +346,6 @@ function miniScoreHtml(report: VerifyReport, watermark?: Watermark, extra?: Scor
   return `<ul class="valid-score valid-score--mini" aria-hidden="true">${scorecardModel(report, watermark, extra).map(miniScorePipHtml).join('')}</ul>`;
 }
 
-// The always-visible summary row of a collapsible report: state badge, filename,
-// signer identity (when CA-verified), and the mini scorecard glance.
-// The maker(s) behind a report - the active manifest's generator first, then any
-// distinct upstream makers from the provenance chain (preserved ingredients),
-// as short brand names. `lolly` when Lolly is anywhere in the mix. null when the
-// generator can't be read.
-function reportMaker(report: VerifyReport): { names: string[]; lolly: boolean } | null {
-  const gi = report.claim?.generatorInfo;
-  const primaryRaw = (gi && typeof gi.name === 'string' && gi.name)
-    || (typeof report.claim?.claimGenerator === 'string' && report.claim.claimGenerator) || '';
-  const primary = primaryRaw ? shortAgent(String(primaryRaw)) : (report.madeWithLolly ? 'Lolly' : '');
-  if (!primary) return null;
-  const names = [primary];
-  const seen = new Set([primary.toLowerCase()]);
-  for (const s of report.history ?? []) {
-    const raw = (typeof s.softwareAgent === 'string' && s.softwareAgent)
-      || (typeof s.generator === 'string' && s.generator) || '';
-    if (!raw) continue;
-    const v = shortAgent(String(raw));
-    if (!seen.has(v.toLowerCase())) { seen.add(v.toLowerCase()); names.push(v); }
-  }
-  return { names, lolly: report.madeWithLolly || names.some((n) => /lolly/i.test(n)) };
-}
-
 // The strongest POSITIVE signal to lead the summary badge / hero verdict with
 // when a file carries NO C2PA credential: an exact local-export match ("Made on
 // this device") or a detected Lolly Imprint. A bare "No Content Credentials"
@@ -392,21 +377,10 @@ function summaryInner(fileName: string, report: VerifyReport, meta?: FileMetadat
   // organisation (Google, Adobe…). Only when the chain reached a pinned anchor.
   const who = identity ? (identity.email || report.signer?.organization || report.signer?.commonName) : null;
   const tone = stateTone(report);
-  const maker = reportMaker(report);
-  // An intact credential leads with WHO made it - "Made with Google" (grey),
-  // "Made with Lolly" (green), several vendors joined when a chain preserved
-  // ingredients - matching the timeline's maker pills. A broken / expired / no-
-  // credential file leads with the verdict badge instead: the problem is the
-  // headline, and its maker isn't something to vouch for.
-  // A no-credential file with a strong positive signal (made on this device / a
-  // Lolly Imprint) leads with THAT, in green - not the grey "No Content
-  // Credentials" that reads as "nothing here".
   const signal = noCredentialSignal(report, watermark, mine);
   const lead = signal
     ? `<span class="valid-item-maker is-lolly" title="${escape(signal)}">${escape(signal)}</span>`
-    : (tone === 'good' && maker)
-      ? `<span class="valid-item-maker ${maker.lolly ? 'is-lolly' : 'is-other'}" title="${escape(t(state.title))}">${t('Made with {names}', { names: maker.names.join(' · ') })}</span>`
-      : `<span class="valid-item-badge is-${tone}">${escape(t(state.title))}</span>`;
+    : `<span class="valid-item-badge is-${tone}">${escape(t(state.title))}</span>`;
   const aiDecl = report.aiGenerated ? t('Content Credential declares AI-generated content')
     : meta?.ai ? t('Embedded metadata declares AI-generated content') : null;
   // The fingerprint tier gets its own softer chip ("AI?"): the container merely
@@ -417,102 +391,13 @@ function summaryInner(fileName: string, report: VerifyReport, meta?: FileMetadat
   const isVideo = PREVIEW_VID.has((report.format || fileName.split('.').pop() || '').toLowerCase());
   return `
     ${lead}
+    ${provenanceSummaryHtml(report, meta)}
     ${aiDecl ? `<span class="valid-item-ai" title="${escape(aiDecl)}">${svgIcon('aiSpark')}<span>${t('AI')}</span></span>` : ''}
     ${aiHint ? `<span class="valid-item-ai is-likely" title="${escape(aiHint)}">${svgIcon('aiSpark')}<span>${t('AI?')}</span></span>` : ''}
     <span class="valid-item-name">${escape(fileName)}${formatChip(report.format)}</span>
     ${who ? `<span class="valid-item-signer" title="${escape(tRaw('Signed by {who}', { who }))}">${svgIcon('mail')}<span>${escape(who)}</span></span>` : ''}
     ${miniScoreHtml(report, watermark, [...extraPips(origin, makerHint, isVideo, meta), ...(sealPip(seal) ? [sealPip(seal)!] : [])])}
     <span class="valid-item-chev" aria-hidden="true">${ICON_CHEVRON}</span>`;
-}
-
-// Which glyph heads each metadata section.
-const META_GROUP_ICON: Record<MetaGroup, IconName> = {
-  location: 'mapPin', device: 'cpu', capture: 'camera', software: 'tool',
-  authorship: 'user', timestamps: 'calendar', description: 'document',
-  structure: 'package', technical: 'hash',
-};
-
-// An offline world locator: the photo's GPS fix plotted on an embedded land
-// outline (no tile server - the coordinates never leave the device). Rendered
-// full-width above the sections when a file records a position.
-function renderLocator(lat: number, lon: number): string {
-  const { x, y } = projectLatLon(lat, lon);
-  return `<svg class="valid-locator" viewBox="${WORLD_VIEWBOX}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escape(t('World map with a pin at the recorded location'))}">
-      <rect class="valid-locator-sea" x="151.67" y="242.58" width="656.66" height="288.84" rx="7"/>
-      <path class="valid-locator-land" d="${WORLD_LAND_PATH}"/>
-      <g class="valid-locator-pin" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">
-        <path class="valid-locator-tick" d="M0,-15V-7 M0,7V15 M-15,0H-7 M7,0H15"/>
-        <circle class="valid-locator-halo" r="9"/>
-        <circle class="valid-locator-dot" r="3"/>
-      </g>
-    </svg>`;
-}
-
-// Formats the Redact tool can rebuild (image and PDF only - it repaints pixels,
-// so it has nothing to offer video or audio containers). Peer of the strip-data
-// link below: strip-data removes what the file carries, redact removes what the
-// pixels show.
-const REDACTABLE_FORMATS = new Set(['JPEG', 'PNG', 'WEBP', 'SVG', 'PDF']);
-const isRedactableFormat = (format: string | undefined): boolean =>
-  !!format && REDACTABLE_FORMATS.has(format.toUpperCase());
-
-// The embedded-metadata reveal - everything the file discloses about the device,
-// place, person, and software behind it, read on-device from its own bytes and
-// laid out clinically by section. Independent of the C2PA verdict: a file with no
-// credential can still be dense with EXIF. Empty in → nothing rendered.
-function renderMetadata(meta: FileMetadata | undefined, preview: Preview | undefined, fileIndex: number): string {
-  if (!meta || !meta.fields.length) return '';
-  const loc = meta.fields.filter((f) => f.group === 'location');
-  const groups = META_GROUP_ORDER
-    .filter((g) => g !== 'location')
-    .map((g) => ({ g, items: meta.fields.filter((f) => f.group === g) }))
-    .filter((x) => x.items.length);
-  const sensitive = meta.fields.some((f) => f.sensitive);
-  const n = meta.fields.length;
-  const section = (g: MetaGroup, label: string, icon: IconName, rows: string): string => `
-    <section class="valid-meta-group${g === 'description' ? ' valid-meta-group--desc' : ''}">
-      <h4>${svgIcon(icon)}<span>${escape(label)}</span></h4>
-      <dl>${rows}</dl>
-    </section>`;
-  const row = (f: { label: string; value: string; sensitive?: boolean }): string =>
-    `<div class="valid-meta-row${f.sensitive ? ' is-sensitive' : ''}"><dt>${escape(f.label)}</dt><dd>${escape(f.value)}</dd></div>`;
-  const locationBlock = meta.gps ? `
-    <section class="valid-meta-location">
-      <h4>${svgIcon('mapPin')}<span>${t('Location')}</span></h4>
-      <div class="valid-meta-location-layout">
-        ${renderLocator(meta.gps.lat, meta.gps.lon)}
-        <div class="valid-meta-loc-read">
-          <span class="valid-meta-location-warning">${svgIcon('eye')}<span>${t('This file contains a precise location')}</span></span>
-          ${loc.map((f) => `<span class="valid-meta-loc-item"><span class="k">${escape(f.label)}</span><span class="v">${escape(f.value)}</span></span>`).join('')}
-          ${/* nosemgrep: lolly-href-escape-is-not-scheme-validation - engine file-metadata.ts builds mapUrl as a literal 'https://www.openstreetmap.org/…' prefix over numeric EXIF lat/lon (toFixed), so no EXIF string reaches the scheme */ ''}
-          ${meta.mapUrl ? `<a class="valid-meta-map" href="${escape(meta.mapUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap ↗</a>` : ''}
-        </div>
-      </div>
-    </section>` : '';
-  return `
-    <details class="valid-meta valid-panel-disclosure${meta.gps ? ' has-map' : ''}"${disclosureOpenAttr()}>
-      <summary class="valid-meta-head">
-        <h3>${svgIcon('eye')}<span>${t('Embedded metadata')}</span></h3>
-        ${meta.gps ? `<span class="valid-meta-sensitive">${svgIcon('mapPin')}<span>${t('GPS recorded')}</span></span>` : ''}
-        <span class="valid-meta-count">${n === 1 ? t('1 field') : t('{n} fields', { n })}${meta.format ? ` · ${escape(meta.format)}` : ''}</span>
-        <span class="valid-disclosure-chev" aria-hidden="true">${ICON_CHEVRON}</span>
-      </summary>
-      <div class="valid-meta-body">
-        ${mediaPreviewHtml(preview, 'sm')}
-        <p class="valid-meta-note">${t("Read on this device from the file's own bytes - the EXIF, XMP and container data it carries wherever it travels.")}${sensitive ? ` ${t('Values that can identify a person, place or device are marked.')}` : ''} ${isStrippableFormat(meta.format)
-    ? tRaw('{button} or use the {link} tool for more control.', {
-        button: `<button type="button" class="valid-clean-link" data-clean-copy="${fileIndex}" data-clean-format="${escape(meta.format)}">${t('Download a cleaned copy')}</button>`,
-        link: `<a href="#/tool/strip-data">${t('Hidden Data')}</a>`,
-      })
-    : tRaw('Remove it with the {link} tool.', { link: `<a href="#/tool/strip-data">${t('Hidden Data')}</a>` })}${isRedactableFormat(meta.format)
-    ? ` ${tRaw('To remove content the pixels themselves show, use the {link} tool.', { link: `<a href="#/tool/redact">${t('Redact')}</a>` })}`
-    : ''}</p>
-        <div class="valid-meta-grid">
-          ${locationBlock}
-          ${groups.map((x) => section(x.g, t(META_GROUP_LABEL[x.g]), META_GROUP_ICON[x.g], x.items.map(row).join(''))).join('')}
-        </div>
-      </div>
-    </details>`;
 }
 
 // ── AI-generated flag ───────────────────────────────────────────────────────
@@ -714,18 +599,6 @@ const TSIG_KIND_TITLE: Record<string, string> = {
   'spelling-variant-mix': 'Mixed US/British spelling',
 };
 
-/** The verifier's loading state: the message prominent and centred ABOVE the
- *  spinning Lolly mark. The mark is the inlined icon.svg (lib/lolly-mark.ts, a
- *  trusted generated constant) - inline because SVG-as-<img> never runs CSS
- *  keyframes in Chromium; valid.css spins its three layers and stills them
- *  under both motion prefs. Message is t() copy, escape()d anyway. */
-function checkingHtml(message: string): string {
-  return `<div class="valid-loading" role="status">`
-    + `<p class="valid-loading-text">${escape(message)}</p>`
-    + `<span class="valid-loading-mark" aria-hidden="true">${LOLLY_MARK_SVG}</span>`
-    + '</div>';
-}
-
 /** The hero donut gauge for the 0-100 signal score - the "how full is the dial"
  *  read, centred in the panel with the rating INSIDE the ring. Colour follows
  *  the BAND (a state, not a series); the number wears text tokens, so colour is
@@ -754,15 +627,15 @@ function heatGradeWord(bucket: 1 | 2 | 3 | 4 | 5): string {
 /** The extracted text with its flagged spans wrapped in <mark>, coloured by its
  *  confidence temperature (cool amber = a soft style hint, hot red = a hard
  *  byte-level artifact) so the reader sees at a glance what is ignorable.
- *  Every run renders through visibleTextHtml (escape()d, with each invisible
+ *  Every run renders through visibleLinkedTextHtml (escape()d, with each invisible
  *  character surfaced as a named chip - a zero-width character inside a mark
  *  is otherwise a hairline nobody can see). */
 function highlightExtractHtml(text: string, marks: TextSignalMark[]): string {
   const runs = buildHighlightSegments(text, marks).map((s) => {
-    if (!s.tier) return visibleTextHtml(s.text, 'valid-invis');
+    if (!s.tier) return visibleLinkedTextHtml(s.text);
     const title = TSIG_KIND_TITLE[s.kind ?? ''] ?? (s.kind ?? '');
     const bucket = heatBucket(s.heat ?? 0);
-    return `<mark class="valid-hl valid-hl--${escape(s.tier)} valid-hl--t${bucket}" title="${escape(`${t(title)} · ${heatGradeWord(bucket)}`)}">${visibleTextHtml(s.text, 'valid-invis')}</mark>`;
+    return `<mark class="valid-hl valid-hl--${escape(s.tier)} valid-hl--t${bucket}" title="${escape(`${t(title)} · ${heatGradeWord(bucket)}`)}">${visibleLinkedTextHtml(s.text)}</mark>`;
   }).join('');
   const legend = marks.length > 0
     ? `<span class="valid-tsig-legend">${escape(t('Cooler marks are weak hints you can freely ignore. Hotter marks are harder evidence. Everything here is a signal, not a verdict.'))}</span>`
@@ -881,7 +754,7 @@ function textSignalsHtml(panel: TextSignalPanel | undefined): string {
           </summary>
           <div class="valid-tsig-details-body">
             ${heatbar}
-            ${openText}${extract}
+            <details class="valid-text-extract-disclosure"><summary>${svgIcon('document')}<span>${t('Extracted text')}</span>${ICON_CHEVRON}</summary>${openText}${extract}</details>
             ${rows ? `<ul class="valid-aidecl-list">${rows}</ul>` : ''}
             ${guess}
             ${cands}
@@ -889,7 +762,7 @@ function textSignalsHtml(panel: TextSignalPanel | undefined): string {
             ${panel.facts ? tsigFactsHtml(panel.facts) : ''}
           </div>
         </details>
-        <span class="valid-aidecl-note${panel.band === 'strong' ? ' guide-warn' : panel.band === 'notable' ? ' guide-hint' : ''}">${escape(panel.summary)} ${t('It reads the text for tells; it cannot see a declaration, and a declaration in the credential is the stronger signal.')}</span>
+        <span class="valid-aidecl-note${panel.band === 'strong' ? ' guide-warn' : panel.band === 'notable' ? ' guide-hint' : ''}">${t('Writing patterns are hints, not proof of AI use.')}</span>
       </div>
       <span class="valid-aidecl-tag" aria-hidden="true">${t('AI?')}</span>
     </div>`;
@@ -937,7 +810,7 @@ function imprintRescanBlock(fileIndex: number, format: string | null, fileName: 
       <span class="valid-wm-ic" aria-hidden="true">${svgIcon('imprint')}</span>
       <div class="valid-wm-text">
         <strong>${t('Was this image resized or cropped?')}</strong>
-        <span>${t('No Lolly Imprint was found in the pixels as they are. If this image was cropped or moderately resized, a deeper pixel search can still recover the Imprint. It runs entirely on this device and won’t survive an aggressive social-media downscale.')}</span>
+        <span>${t('Search for a Lolly Imprint after cropping or resizing. Runs on this device.')}</span>
         <div data-imprint-rescan-result="${fileIndex}"></div>
       </div>
       <button type="button" class="btn valid-wm-rescan" data-imprint-rescan="${fileIndex}">${t('Search for a resized Imprint')}</button>
@@ -1039,9 +912,10 @@ export function appendedPayloadHtml(meta: FileMetadata | undefined, fileIndex: n
       <div class="valid-wm-text">
         <strong>${expected ? t('Appended image or video data') : t('Appended data found')}</strong>
         <span>${escape(detail)}</span>
+        ${auxiliaryMetadataHtml(meta)}
         <div class="valid-payload-actions">
-          <button type="button" class="valid-clean-link" data-payload-view="${fileIndex}">${t('View')}</button>
-          <button type="button" class="valid-clean-link" data-payload-download="${fileIndex}">${t('Download')}</button>
+          <button type="button" class="btn valid-payload-button" data-payload-view="${fileIndex}">${svgIcon('code')}<span>${t('Raw bytes')}</span></button>
+          <button type="button" class="btn valid-payload-button" data-payload-download="${fileIndex}">${svgIcon('download')}<span>${t('Download')}</span></button>
         </div>
         <div class="valid-payload-view" data-payload-panel="${fileIndex}" hidden></div>
       </div>
@@ -1344,6 +1218,7 @@ export function startScanJob(
       if (!job.cancelled) job.fail(err);
       hooks.onError?.(err);
     } finally {
+      job.settle();
       liveScanJobs.delete(key);
     }
   })();
@@ -1459,19 +1334,13 @@ const AI_SOURCE_SLUGS: Record<string, 'generated' | 'composite'> = {
 const sourceSlug = (a: { digitalSourceType?: unknown }): string =>
   (typeof a.digitalSourceType === 'string' ? a.digitalSourceType : '').split('/').pop() ?? '';
 
-// Tidy a verbose generator string into a short pill label. Known makers collapse
-// to their brand; anything else keeps its first token (truncated), so the pill
-// stays legible ("Google", "Lolly", "Adobe" - not "Google C2PA Core Generator…").
-const AGENT_BRANDS = ['Lolly', 'Nano Banana', 'Gemini', 'Google', 'Adobe', 'Photoshop', 'Firefly', 'OpenAI', 'DALL·E', 'Microsoft', 'Meta', 'Midjourney', 'Canva', 'Figma', 'Leica', 'Sony', 'Nikon', 'Canon'];
-function shortAgent(name: string): string {
-  const s = name.trim();
-  for (const b of AGENT_BRANDS) if (new RegExp(b.replace(/[.·]/g, '.?').replace(/\s+/g, '\\s*'), 'i').test(s)) return b;
-  const first = s.split(/[\s/,]/)[0] || s;
-  return first.length > 15 ? first.slice(0, 14) + '…' : first;
-}
+// Keep the product name in history pills and the full version in their detail.
+const shortAgent = softwareName;
 // The "who did this step": the action's softwareAgent if set, else the recording
 // manifest's generator. null when neither is present.
 const stepAgent = (a: { softwareAgent?: unknown; generator?: unknown }): string | null => {
+  const agent = a.softwareAgent;
+  if (agent && typeof agent === 'object' && 'name' in agent && typeof agent.name === 'string') return `${agent.name}${'version' in agent && typeof agent.version === 'string' ? ` ${agent.version}` : ''}`;
   const raw = (typeof a.softwareAgent === 'string' && a.softwareAgent) || (typeof a.generator === 'string' && a.generator) || '';
   return raw ? String(raw) : null;
 };
@@ -1526,7 +1395,7 @@ export function stepsHtml(report: VerifyReport): string {
     const railLolly = firstLolly !== undefined && i >= firstLolly && i < lastLolly!;
     return `
       <li class="valid-step is-${r.agentCls}${railLolly ? ' valid-step--rail-lolly' : ''}">
-        <span class="valid-step-agent" title="${r.agent ? escape(r.agent) : escape(t('Unknown source'))}">${escape(r.agent ? shortAgent(r.agent) : '-')}</span>
+        <span class="valid-step-agent" title="${r.agent ? escape(r.agent) : escape(t('Unknown source'))}">${r.agent ? vendorMark(shortAgent(r.agent)) : ''}<span>${escape(r.agent ? shortAgent(r.agent) : '-')}</span></span>
         <div class="valid-step-main">
           <span class="valid-step-label"><span class="valid-step-ic" aria-hidden="true">${svgIcon(r.icon)}</span>${escape(r.label)}</span>
           ${r.meta ? `<span class="valid-step-meta">${r.meta}</span>` : ''}
@@ -1535,13 +1404,13 @@ export function stepsHtml(report: VerifyReport): string {
       </li>`;
   }).join('');
   return `
-    <details class="valid-steps valid-panel valid-panel-disclosure"${disclosureOpenAttr()}>
+    <details class="valid-steps valid-panel valid-panel-disclosure" open>
       <summary class="valid-panel-summary">
-        <span class="valid-panel-summary-title">${svgIcon('clock')}<span>${t('Change history')}</span></span>
+        <span class="valid-panel-summary-title">${svgIcon('clock')}<span>${t('Credential journey')}</span></span>
         <span class="valid-panel-summary-meta">${t('{n} steps', { n: acts.length })}</span>
         <span class="valid-disclosure-chev" aria-hidden="true">${ICON_CHEVRON}</span>
       </summary>
-      <ol class="valid-steps-list">${rows}</ol>
+      <p class="valid-origin-note">${escape(journeyEvidenceLabel(report))}</p><ol class="valid-steps-list">${rows}</ol>
     </details>`;
 }
 
@@ -1580,7 +1449,7 @@ export function sourcesHtml(report: VerifyReport, fileIndex = 0): string {
     const link = rights?.sourceUrl || source.data?.url || source.informationalUri || '';
     // http(s) only: a credential is a file somebody sent you, so its links are
     // untrusted input and must never be able to name a javascript: target.
-    const safe = /^https?:\/\//i.test(link) ? link : '';
+    const safe = metadataUrl(link);
     // The canonical licence NAME, with the exact declaration kept in the title so
     // nothing a source wrote is replaced by a tidier spelling of it. The name is
     // read whenever the identifier resolves, not only when it differs from the
@@ -1591,7 +1460,7 @@ export function sourcesHtml(report: VerifyReport, fileIndex = 0): string {
     const canonical = declared ? normaliseLicence(declared) : null;
     const licenceText = canonical?.id ? licenceDisplayName(canonical.id) : declared;
     const licenceCell = declared
-      ? `<span title="${escape(declared)}">${escape(licenceText)}</span>`
+      ? `<span title="${escape(declared)}">${metadataLinkHtml(rights?.licenseUrl || declared, licenceText)}</span>`
       : '';
     const facts: Array<[string, string]> = [
       [t('Used'), useText(source.relationship)],
@@ -1603,7 +1472,7 @@ export function sourcesHtml(report: VerifyReport, fileIndex = 0): string {
       [t('Source revision'), rights?.revision ?? ''],
     ];
     const factRows = facts.filter(([, value]) => value).map(([label, value]) =>
-      `<div class="valid-input-row"><dt>${escape(label)}</dt><dd><span>${escape(value)}</span></dd></div>`).join('')
+      `<div class="valid-input-row"><dt>${escape(label)}</dt><dd><span>${metadataValueHtml(value)}</span></dd></div>`).join('')
       + (licenceCell ? `<div class="valid-input-row"><dt>${escape(t('Licence'))}</dt><dd>${licenceCell}</dd></div>` : '');
     const changes = rights?.modifications?.length
       ? `<p class="valid-source-changes">${t('Changed on the way in: {list}', { list: rights.modifications.join(', ') })}</p>`
@@ -1620,7 +1489,7 @@ export function sourcesHtml(report: VerifyReport, fileIndex = 0): string {
         : '',
       safe
         // nosemgrep: lolly-href-escape-is-not-scheme-validation -- safe is restricted to HTTP(S) immediately above.
-        ? `<a class="btn valid-source-act" href="${escape(safe)}" target="_blank" rel="noopener noreferrer">${t('Open source')}</a>`
+        ? metadataLinkHtml(safe, t('Open source'))
         : '',
     ].filter(Boolean).join('');
     return `
@@ -1647,7 +1516,7 @@ export function sourcesHtml(report: VerifyReport, fileIndex = 0): string {
           <div class="valid-sources-reuse-out" data-reuse-out="${fileIndex}" aria-live="polite"></div>
         </div>`;
   return `
-    <details class="valid-sources valid-panel valid-panel-disclosure"${disclosureOpenAttr()}>
+    <details class="valid-sources valid-panel valid-panel-disclosure" open>
       <summary class="valid-panel-summary">
         <span class="valid-panel-summary-title">${svgIcon('layersStack')}<span>${t('Sources')}</span></span>
         <span class="valid-panel-summary-meta">${t('{n} recorded', { n: sources.length })}</span>
@@ -1740,7 +1609,7 @@ function checksHtml(report: VerifyReport): string {
 // MARKUP (in an iframe, say) would be showing the reader a browser's
 // interpretation of an unverified document rather than its bytes.
 type PreviewKind = 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'none';
-interface Preview { url?: string; kind: PreviewKind; format: string; name: string; snippet?: { body: string; more: boolean }; }
+
 const PREVIEW_IMG = new Set(['png', 'apng', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif']);
 const PREVIEW_VID = new Set(['mp4', 'm4v', 'mov', 'webm']);
 // Audio-only formats get an <audio> player. The m4a/opus entries matter twice
@@ -1777,30 +1646,6 @@ export function previewKind(format: string | null, name: string): PreviewKind {
   if (PREVIEW_TEXT.has(f) || (!format && TEXT_EXT.has(f))) return 'text';
   return 'none';
 }
-function mediaPreviewHtml(p: Preview | undefined, size: 'lg' | 'sm'): string {
-  if (!p) return '';
-  const cls = `valid-preview valid-preview--${size} is-${p.kind}`;
-  if (p.kind === 'image' && p.url)
-    return `<figure class="${cls}"><img src="${escape(p.url)}" alt="${escape(tRaw('Preview of {name}', { name: p.name }))}" decoding="async"></figure>`;
-  if (p.kind === 'video' && p.url)
-    return `<figure class="${cls}"><video src="${escape(p.url)}#t=0.1" preload="metadata" playsinline muted${size === 'lg' ? ' controls' : ''}></video></figure>`;
-  if (p.kind === 'audio' && p.url)
-    return `<figure class="${cls}"><audio src="${escape(p.url)}" preload="metadata" controls></audio></figure>`;
-  if (p.kind === 'pdf' && p.url && size === 'lg')
-    return `<figure class="${cls}"><embed src="${escape(p.url)}#toolbar=0&view=FitH" type="application/pdf"></figure>`;
-  // SECURITY: the payload reaches the page as ESCAPED text inside a <pre> and
-  // nowhere else - never parsed, never rendered as markup, never given a URL. A
-  // pasted document written to look like a credential cannot execute here.
-  if (p.kind === 'text' && p.snippet && size === 'lg')
-    return `<figure class="${cls}"><pre class="valid-preview-text">${escape(p.snippet.body)}</pre>${p.snippet.more
-      ? `<figcaption>${t('Only the first {n} characters are shown here.', { n: p.snippet.body.length })}</figcaption>`
-      : ''}</figure>`;
-  // Not inline-previewable at this size - a quiet labelled placeholder (large only).
-  if (size === 'lg')
-    return `<figure class="${cls} is-placeholder"><span class="valid-preview-ic" aria-hidden="true">${svgIcon('image')}</span><figcaption>${t('No inline preview for {format}', { format: (p.format || t('this format')).toUpperCase() })}</figcaption></figure>`;
-  return '';
-}
-
 // `notes` is the resolved text-binding/paste model (valid-text.ts), built by the
 // caller because it needs the page origin, the address the file was read from
 // and whether it arrived through the clipboard - none of which this renderer
@@ -1879,7 +1724,7 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
           ${fact(t('Manifest'), claim.manifestLabel, 'document')}
           ${fact(t('C2PA version'), report.specVersion ?? null, 'checklist')}
         </dl>` : '';
-  const summaryBlock = `
+  const summaryBlock = report.found ? `
       <details class="valid-summary valid-panel valid-panel-disclosure"${disclosureOpenAttr()}>
         <summary class="valid-panel-summary">
           <span class="valid-panel-summary-title">${svgIcon('document')}<span>${t('File & credential details')}</span></span>
@@ -1891,14 +1736,8 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
           ${selfnoteBlock}
           ${factsBlock}
         </div>
-      </details>`;
-  // Metadata normally joins the flowing evidence cards. A GPS-bearing file earns
-  // a full-width feature surface below them: on wide displays its offline map can
-  // sit beside the rest of the EXIF readout instead of shrinking into a column.
-  const metaBlock = renderMetadata(meta, preview, fileIndex);
-  const metaInMasonry = meta?.gps ? '' : metaBlock;
-  const mappedMeta = meta?.gps ? `<div class="valid-meta-feature">${metaBlock}</div>` : '';
-  const panelsBlock = `<div class="valid-panels">${summaryBlock}${madeFromBlock}${scriptBlock}${sourcesBlock}${stepsBlock}${checksBlock}${metaInMasonry}</div>${mappedMeta}`;
+      </details>` : '';
+  const panelsBlock = `<div class="valid-panels">${madeFromBlock}${scriptBlock}${sourcesBlock}${summaryBlock}${checksBlock}${renderMetadata(meta, fileIndex)}</div>`;
   // The two "key validations" + the signed-by caption shown under the "Made with
   // Lolly" pill - only for the flagship lolly hero; every other good state keeps
   // the single prose sub + identityLine above.
@@ -1971,8 +1810,8 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
     sealValid: !!seal?.valid,
     aiLikely: !!makerHint,
     ...(textSignals ? { panel: textSignals } : {}),
-  }).map((c) => ({ id: c.id, label: t(c.label), state: c.state, word: t(c.word), ...(c.detail ? { detail: t(c.detail) } : {}) }));
-  const lampStrip = lampStripHtml(lamps);
+  }).map((c) => ({ id: c.id, label: t(c.id === 'provenance' ? 'Credentials & marks' : c.id === 'origin' ? 'AI origin' : c.label), state: c.state, word: t(c.word), ...(c.detail ? { detail: t(c.detail) } : {}) }));
+  const lampStrip = lamps.some((lamp) => lamp.state !== 'unlit') ? lampStripHtml(lamps) : '';
 
   // The completeness receipt: what ran, what could not, and why - the
   // negative space made visible, with the report-card and keep actions.
@@ -2006,14 +1845,12 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
   // colleague - the request itself evangelises credentials.
   const askCred = !report.found && !noCredSignal && !watermark?.present ? `
     <div class="valid-askcred">
-      <p class="guide-absent">${escape(t('Nothing vouches for or against this file - it simply carries no provenance. That is common, and fixable at the source.'))}</p>
       <button type="button" class="btn" data-ask-cred data-file-name="${escape(fileName)}">${svgIcon('seal')}<span>${t('Copy a note asking for credentials')}</span></button>
     </div>` : '';
 
   return `
-    <div class="valid-result ${state.cls}">
+    <div class="valid-result ${state.cls}" data-actions-index="${fileIndex}">
       <div class="valid-top">
-        ${mediaPreviewHtml(preview, 'lg')}
         <div class="valid-hero">
           <div class="valid-hero-title">
             <span class="valid-hero-icon">${report.madeWithLolly || noCredSignal
@@ -2027,11 +1864,15 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
     // with no hash failure produces none, and falls back to the prose sub that
     // resolveState reworded for exactly that case.
     : invalidBadgesHtml ? invalidBadgesHtml
-      : `<p>${sub}</p>${identityLine}`}
+      : `${report.found ? `<p>${sub}</p>` : ''}${identityLine}`}
         </div>
         ${report.found || watermark?.present || pips.length ? scorecardHtml(report, watermark, pips) : ''}
       </div>
+      <div class="valid-origin-layout">${provenanceOverviewHtml(report, meta)}${mediaPreviewHtml(preview, fileIndex)}</div>
       ${lampStrip}
+      ${stepsBlock ? `<div class="valid-journey-feature" data-lamp-section="provenance">${stepsBlock}</div>` : ''}
+      ${contextCardsHtml(report, meta)}
+      <div data-lamp-section="provenance"><span data-lamp-section="integrity"></span>${panelsBlock}</div>
       ${askCred}
       ${deepScanBlock(fileIndex, report.format, fileName)}
       <div data-lamp-section="origin">
@@ -2047,7 +1888,6 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
       </div>
       ${notesHtml(notes, fileIndex)}
       ${mine ? mineNote(mine) : ''}
-      <div data-lamp-section="provenance"><span data-lamp-section="integrity"></span>${panelsBlock}</div>
       ${claimPanelHtml(fileIndex, report.format, fileName, report.found)}
       ${watermarkNote(watermark)}
       ${imprintRescanBlock(fileIndex, report.format, fileName, !!watermark?.present, report.madeWithLolly)}
@@ -2060,87 +1900,6 @@ function renderReportBody(fileName: string, report: VerifyReport, meta: FileMeta
       ? tRaw("<strong>Checked entirely on this device</strong> - the file was not uploaded. The signer's identity was verified against the Lolly CA root pinned in this app (the same root <code>lolly validate --trust-anchor</code> uses). Validators that don't pin that root - {link}, or <code>c2patool</code> without <code>--trust_anchors</code> - still show the signer as an unknown source.", { link: '<a href="https://verify.contentauthenticity.org/" target="_blank" rel="noopener">verify.contentauthenticity.org</a>' })
       : tRaw('<strong>Checked entirely on this device</strong> - the file was not uploaded. The same file on {link} reads the same, with the signer shown as an unknown source (there is no CA behind an on-device key - by design).', { link: '<a href="https://verify.contentauthenticity.org/" target="_blank" rel="noopener">verify.contentauthenticity.org</a>' })) : ''}
     </div>`;
-}
-
-const MASONRY_BREAKPOINT = '(min-width: 780px)';
-const MASONRY_WIDE_BREAKPOINT = '(min-width: 1400px)';
-
-// True masonry: each card lands in whichever column is CURRENTLY shortest, not
-// wherever a fixed CSS column-count's strictly-sequential fill would put it.
-// column-count fills column 1 (in DOM order) up to a computed height before
-// spilling into column 2 - so one dominant card (a long change history / input
-// record) can tip its ENTIRE column over while a short sibling column sits
-// mostly empty, stranding the next cards behind the tall one instead of beside
-// it. Greedy shortest-column placement is what actually keeps every card
-// visible near the top instead of trailing a long one.
-// Cards are tagged with their template order (data-m-idx) the first time this
-// runs, since shortest-column placement doesn't preserve a simple document-order
-// split - a later re-layout (crossing the column-count breakpoint) needs that
-// original order to rebuild from, not whatever order cards ended up in last time.
-function layoutMasonry(container: HTMLElement): void {
-  if (!container.offsetParent) return; // closed <details> body - re-runs once opened (see wireMasonry)
-  const cols = window.matchMedia(MASONRY_WIDE_BREAKPOINT).matches
-    ? 3
-    : window.matchMedia(MASONRY_BREAKPOINT).matches ? 2 : 1;
-  if (container.dataset.masonryCols === String(cols)) return;
-  const cards = Array.from(container.querySelectorAll<HTMLElement>('.valid-panel, .valid-meta'));
-  if (!cards.length) return;
-  cards.forEach((c, i) => { if (c.dataset.mIdx === undefined) c.dataset.mIdx = String(i); });
-  cards.sort((a, b) => Number(a.dataset.mIdx) - Number(b.dataset.mIdx));
-  container.dataset.masonryCols = String(cols);
-  // Never open more columns than there are cards - a lone summary panel (no
-  // claim found, so made-from/steps/checks are all empty) should stay full-width
-  // rather than sit at half-width beside a dead empty column.
-  const activeCols = Math.min(cols, cards.length);
-  if (activeCols <= 1) {
-    cards.forEach((c) => container.appendChild(c));
-    container.querySelectorAll(':scope > .valid-panels-col').forEach((el) => el.remove());
-    return;
-  }
-  const colEls = Array.from({ length: activeCols }, () => {
-    const col = document.createElement('div');
-    col.className = 'valid-panels-col';
-    return col;
-  });
-  container.replaceChildren(...colEls);
-  const heights = new Array(activeCols).fill(0);
-  for (const card of cards) {
-    let shortest = 0;
-    for (let i = 1; i < activeCols; i++) if (heights[i]! < heights[shortest]!) shortest = i;
-    colEls[shortest]!.appendChild(card);
-    heights[shortest] = colEls[shortest]!.getBoundingClientRect().height;
-  }
-}
-
-// Wires the column-count breakpoint (re-lays-out every currently-visible
-// .valid-panels on crossing it) and, since a batch report's cards start
-// collapsed (display:none - nothing to measure), a capture-phase `toggle`
-// listener: <details> doesn't bubble that event, but capture still reaches it
-// from an ancestor. Also fires for the "Expand all" button, which flips `.open`
-// programmatically (that still dispatches toggle).
-function wireMasonry(viewEl: HTMLElement, reportEl: HTMLElement): void {
-  const relayout = (): void => {
-    reportEl.querySelectorAll<HTMLElement>('.valid-panels').forEach(layoutMasonry);
-  };
-  reportEl.addEventListener('toggle', (e) => {
-    const details = e.target as HTMLElement;
-    if ((details as HTMLDetailsElement).open) details.querySelectorAll<HTMLElement>('.valid-panels').forEach(layoutMasonry);
-  }, true);
-  const queries = [window.matchMedia(MASONRY_BREAKPOINT), window.matchMedia(MASONRY_WIDE_BREAKPOINT)];
-  queries.forEach((mq) => mq.addEventListener('change', relayout));
-  const disclosureMq = window.matchMedia('(min-width: 700px)');
-  const syncDisclosures = (): void => {
-    reportEl.querySelectorAll<HTMLDetailsElement>('.valid-panel-disclosure').forEach((details) => {
-      details.open = disclosureMq.matches;
-    });
-  };
-  disclosureMq.addEventListener('change', syncDisclosures);
-  const prev = (viewEl as HTMLElement & { _cleanup?: () => void })._cleanup;
-  (viewEl as HTMLElement & { _cleanup?: () => void })._cleanup = () => {
-    prev?.();
-    queries.forEach((mq) => mq.removeEventListener('change', relayout));
-    disclosureMq.removeEventListener('change', syncDisclosures);
-  };
 }
 
 // ─── Claim / add-your-credentials (the embed write flow, folded into /verify) ──
@@ -2302,7 +2061,7 @@ function claimPanelHtml(fileIndex: number, format: string | null | undefined, fi
 }
 
 export async function mountValid(viewEl: HTMLElement, host: HostV1, params = ''): Promise<void> {
-  document.title = 'Verify - Lolly';
+  document.title = 'Verify an asset - Lolly';
   // Whether an image can be read for text on this device (a staged OCR model exists).
   // Gates the "Read the text in this image" affordance in an image report.
   const ocrReady = host.ocr?.isAvailable() === true && (host.ocr?.models().length ?? 0) > 0;
@@ -2312,13 +2071,13 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     <div class="gallery-topright">${langFabHtml()}</div>
     <div class="platform-layout valid-layout">
       <header class="plat-header">
-        <h1 class="plat-title">${t('Verify')}</h1>
+        <h1 class="plat-title">${t('Verify an asset')}</h1>
         <div class="plat-header-text">
-          <p class="plat-sub">${t("Check a file's Content Credentials - the signed C2PA manifest Lolly embeds on export. Answers whether it was genuinely made with Lolly, by whom, and where. On-device; nothing is uploaded.")}</p>
+          <p class="plat-sub">${t("Inspect Content Credentials, software, creators, dates, locations and rights. Files stay on this device.")}</p>
         </div>
         <div class="valid-header-actions" aria-label="${escape(t('Verify another item'))}">
-          <button type="button" class="btn" data-check-more>${t('Choose other files')}</button>
-          <button type="button" class="btn" data-result-paste>${t('Paste text')}</button>
+          <button type="button" class="btn" data-check-more>${svgIcon('document')}<span>${t('Choose other files')}</span></button>
+          <button type="button" class="btn" data-result-paste>${svgIcon('clipboard')}<span>${t('Paste text')}</span></button>
         </div>
       </header>
 
@@ -2333,7 +2092,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
           <span class="btn btn--primary valid-drop-cta">${t('Choose files')}</span>
           <strong class="valid-drop-lead">${t('Drop files here')}</strong>
           <span class="valid-drop-hint">${verifyFormatChips()}</span>
-          <span>${t('Check one or several at once, or paste source text - a C2PA credential can travel inside an HTML document or plain text')}</span>
+          <span>${t('Choose one or more files, or paste text.')}</span>
         </div>
 
         <div class="valid-paste">
@@ -2368,7 +2127,6 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     layoutEl.classList.add('has-results');
     layoutEl.classList.remove('is-pasting');
   };
-  wireMasonry(viewEl, reportEl);
 
   // The view's own liveness. A watermark job outlives this view by design (WP-F),
   // and every paint it can do asks this first: a detection that lands after the
@@ -2395,7 +2153,9 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       if (file.size > MAX_VERIFY_BYTES) {
         return { error: t('File is too large to verify here (over {n} MB).', { n: Math.round(MAX_VERIFY_BYTES / 1024 / 1024) }) };
       }
+      await updateVerifyProgress(reportEl, 'bytes', activeFiles.indexOf(file));
       const bytes = new Uint8Array(await file.arrayBuffer());
+      await updateVerifyProgress(reportEl, 'credentials', activeFiles.indexOf(file));
       const report = await verifyC2pa(bytes, opts.externalManifest ? { ...VERIFY_OPTS, externalManifest: opts.externalManifest } : VERIFY_OPTS);
       // SEAL runs on the same bytes, fully on-device and with NO key resolver:
       // the web shell deliberately passes none, so verification here makes zero
@@ -2405,13 +2165,17 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       // Browsers can't do raw DNS, so any web-side lookup would mean handing a
       // resolver operator the domain plus the user's IP - see docs/privacy.md.
       // The Node shells (CLI/TUI/Tauri) can resolve natively and do.
+      await updateVerifyProgress(reportEl, 'seal', activeFiles.indexOf(file));
       const seal = await verifySeal(bytes);
-      const meta = await readMetadata(bytes, file.name);
+      await updateVerifyProgress(reportEl, 'metadata', activeFiles.indexOf(file));
+      const meta = await readVerifyMetadata(host, bytes, file);
+      if (WM_DECODABLE.has(report.format || '')) await updateVerifyProgress(reportEl, 'pixels', activeFiles.indexOf(file));
       let { watermark, lsb } = await pixelChecks(file, report.format) ?? {};
       // A container file (.pptx / PDF) can carry the Imprint inside an embedded
       // raster even though the file itself isn't one Lolly signs directly. Only
       // scan when the top-level pixel check found no mark of its own.
       if (!watermark?.present) {
+        if (report.format === 'pdf' || looksLikePptxFile(file)) await updateVerifyProgress(reportEl, 'container', activeFiles.indexOf(file));
         const embedded = await containerImprintScan(file, report.format, bytes);
         if (embedded?.present) watermark = embedded;
       }
@@ -2424,6 +2188,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
           meta.fields.push({ label: 'LSB analysis', value: t('pixel pair statistics match LSB steganography'), group: 'technical', sensitive: true });
         }
       }
+      await updateVerifyProgress(reportEl, 'history', activeFiles.indexOf(file));
       const mine = await localExportByHash(bytes);
       // The text bindings' stand-in for the image preview. Decoded from the
       // bytes we already hold (no second read), non-fatally, and only for the
@@ -2469,6 +2234,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
           ? (await import('./doc-read.ts')).extractHtmlText(
               new TextDecoder('utf-8', { fatal: false }).decode(bytes.subarray(0, 4 * 1024 * 1024)))
           : '';
+        await updateVerifyProgress(reportEl, 'text', activeFiles.indexOf(file));
         textSignals = analyzeVerifyText(prose || decoded, 'digital');
       }
       return { report, meta, watermark, mine, seal, snippet, textSignals };
@@ -2819,8 +2585,6 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
         resultEl.insertAdjacentHTML('beforeend', contentSealNoteHtml(cs.messageHex ?? ''));
       }
       block.hidden = false;
-      const p = block.closest<HTMLElement>('.valid-panels');
-      if (p) layoutMasonry(p);
     } catch (err) {
       // Passive + best-effort: never surface a failure inline (models may just
       // not be cached). scannedKeys stays set so it isn't retried on a
@@ -3002,7 +2766,6 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
         if (found.present) {
           injectDeepScanPip(b, lollyImprintPip());
           block.outerHTML = watermarkNote({ present: true, score: found.score });
-          reportEl.querySelectorAll<HTMLElement>('.valid-panels').forEach(layoutMasonry);
         } else {
           b.textContent = t('No resized Imprint found');
           resultEl.insertAdjacentHTML('beforeend',
@@ -3083,94 +2846,6 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     reportEl.insertAdjacentHTML('afterbegin', deepScanBannerHtml(decodableCount));
   }
 
-  // Which section a PDF finding's label belongs in (its findings arrive as flat
-  // {label, detail, tone} rows from host.pdf.analyze).
-  // The structural scan emits a FIXED label set (bridge/pdf-structure.ts), so it
-  // routes by exact match rather than by the substring guessing the Info/XMP
-  // fields need - a new structural label should land deliberately, not by
-  // accident of which keyword it happens to contain.
-  // A Map, not an object literal: a bare `LOOKUP[label]` answers truthily for
-  // 'constructor' and friends, and `label` here is data read out of a file.
-  const PDF_STRUCTURE_LABELS = new Map<string, MetaGroup>([
-    ['attachments', 'structure'], ['javascript', 'structure'], ['launch actions', 'structure'],
-    ['form submission', 'structure'], ['remote documents', 'structure'], ['links', 'structure'],
-    ['form values', 'structure'], ['xfa form', 'structure'], ['annotations', 'structure'],
-    ['hidden layers', 'structure'], ['layers', 'structure'],
-    ['digital signature', 'authorship'], ['pages', 'technical'],
-  ]);
-
-  const pdfGroup = (label: string): MetaGroup => {
-    const l = label.toLowerCase();
-    const structural = PDF_STRUCTURE_LABELS.get(l);
-    if (structural) return structural;
-    if (l === 'created' || l === 'modified' || l.includes('date')) return 'timestamps';
-    if (l.includes('produc') || l.includes('created with') || l.includes('creatortool') || l.includes('software')) return 'software';
-    if (l.includes('author') || l.includes('creator')) return 'authorship';
-    if (l.includes('title') || l.includes('subject') || l.includes('keyword')) return 'description';
-    return 'description';
-  };
-
-  // Pages interpreted for the failed-redaction check. Bounded: it walks a page's
-  // whole content stream, and a viewer waiting on a 900-page report has been let
-  // down more than they've been helped. The row says how far it got.
-  const REDACTION_PAGE_CAP = 30;
-
-  /**
-   * Text an opaque shape is painted over - words present in the file that the
-   * page does not show. The classic failed redaction: black bars are graphics,
-   * and the sentence underneath is untouched.
-   *
-   * Lives here rather than in `host.pdf.analyze` because it needs the CONTENT
-   * STREAM interpreter, and pulling that into the metadata bridge would drag the
-   * whole PDF import path onto it. valid.ts already reaches into pdf-import.ts
-   * lazily for the imprint scan; this follows the same seam.
-   */
-  async function readHiddenText(bytes: Uint8Array, fileName: string): Promise<MetaField | undefined> {
-    try {
-      const { openPdfFile } = await import('./pdf-import.ts');
-      const handle = await openPdfFile(new Blob([bytes as BlobPart], { type: 'application/pdf' }));
-      const scan = handle.findHiddenText?.({ maxPages: REDACTION_PAGE_CAP });
-      if (!scan?.findings.length) return undefined;
-
-      const { findings, scanned } = scan;
-      const words = findings.reduce((a, f) => a + (f.text.match(/\S+/g) ?? []).length, 0);
-      const pages = new Set(findings.map((f) => f.page ?? 0)).size;
-      const scope = scanned < handle.pageCount ? t(' (first {n} pages checked)', { n: scanned }) : '';
-      // The words themselves are the evidence - quoting a couple of them is what
-      // turns "a warning" into "look what is still in your file". Bounded, and
-      // the whole recovered text is available in the extraction view.
-      const sample = findings.slice(0, 2).map((f) => `“${f.text}”`).join(', ');
-
-      return {
-        label: t('Hidden text'),
-        value: tRaw('{words} words in {runs} places on {pages} pages are covered by opaque shapes - still in the file, not visible on the page{scope}. For example: {sample}', {
-          words, runs: findings.length, pages, scope, sample,
-        }),
-        group: 'structure',
-        sensitive: true,
-      };
-    } catch (err) {
-      host.log('warn', 'valid: hidden-text scan failed', { file: fileName, error: (err as Error)?.message });
-      return undefined;
-    }
-  }
-
-  // PDF is parsed by the shell (pdf-lib, via host.pdf.analyze); every other format
-  // is read by the DOM-free engine extractor. Never throws - worst case, undefined.
-  async function readMetadata(bytes: Uint8Array, fileName = ''): Promise<FileMetadata | undefined> {
-    const isPdf = bytes.length > 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
-    if (!isPdf) return extractFileMetadata(bytes);
-    try {
-      const findings = (await host.pdf?.analyze(bytes))?.findings ?? [];
-      const fields: MetaField[] = findings.map((f) => ({ label: f.label, value: f.detail, group: pdfGroup(f.label), sensitive: f.tone === 'warn' }));
-      // Prepended, not appended: within its section this is the row that matters
-      // most, and it should not sit below the page count.
-      const hidden = await readHiddenText(bytes, fileName);
-      if (hidden) fields.unshift(hidden);
-      return { format: 'PDF', fields };
-    } catch { return undefined; }
-  }
-
   // A collapsed report whose credential check failed to even run (unreadable bytes).
   function errorSummary(fileName: string, message: string): string {
     return `<summary class="valid-item-summary">
@@ -3195,7 +2870,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     // fetched back as a resource.
     const url = kind === 'none' || kind === 'text' ? undefined : URL.createObjectURL(file);
     if (url) previewUrls.push(url);
-    return { url, kind, format, name: file.name, ...(snippet ? { snippet } : {}) };
+    return { url, kind, format, name: file.name, thumbnail: pdfPreviewFor(file), pages: pdfPageCountFor(file), ...(snippet ? { snippet } : {}) };
   }
 
   // The File objects behind the current batch of reports, indexed exactly like the
@@ -3258,8 +2933,6 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       reportEl.querySelector('.valid-reports-list')!.innerHTML = report
         ? renderReportBody(file.name, report, meta, makePreview(file, report, snippet), 0, watermark, mine, seal, notesFor(report, 0), textSignals, ocrReady)
         : `<p class="valid-busy">${t('Could not check this file: {message}', { message: error! })}</p>`;
-      const panels = reportEl.querySelector<HTMLElement>('.valid-panels');
-      if (panels) layoutMasonry(panels);
       void prefillClaim();  // fill the claim form's author/contact from the opted-in profile
       // Audible verdict, as two composable signals: the spooky ghost "hoooo" marks
       // AI-generated content, the bright "signing" chirps mark an intact Lolly make.
@@ -3272,7 +2945,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       } else {
         playSfx(report?.state === 'valid' ? 'sign' : 'warn');
       }
-      reportEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      viewEl.scrollIntoView({ behavior: 'instant', block: 'start' });
       // Auto-scan if models are on-device, else offer the one-time header banner.
       if (report) void armDeepScan(isDeepScannable(report.format, file.name));
       return;
@@ -3327,11 +3000,11 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       card.className = 'valid-item is-busy';
       card.dataset.cardIndex = String(i);   // so a post-claim re-verify can replace this one card in place
       card.innerHTML = `<summary class="valid-item-summary">
-          <span class="valid-item-badge is-busy">${t('Checking…')}</span>
+          <span class="valid-item-badge is-busy">${t('Waiting…')}</span>
           <span class="valid-item-name">${escape(file.name)}</span>
           <span class="valid-item-chev" aria-hidden="true">${ICON_CHEVRON}</span>
         </summary>
-        <div class="valid-item-body">${checkingHtml(t('Checking {name}…', { name: file.name }))}</div>`;
+        <div class="valid-item-body">${checkingHtml(t('Checking {name}…', { name: file.name }), true)}</div>`;
       listEl.appendChild(card);
       return card;
     });
@@ -3382,7 +3055,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
       activeFilter = (button.dataset.batchFilter ?? 'all') as BatchFilter;
       applyBatchFilter();
     });
-    reportEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    viewEl.scrollIntoView({ behavior: 'instant', block: 'start' });
 
     let allValid = true, anyAi = false, anyLolly = false;
     for (let i = 0; i < list.length; i++) {
@@ -3556,7 +3229,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     const fileIndex = Number(btn.dataset.payloadView);
     const panel = reportEl.querySelector<HTMLElement>(`[data-payload-panel="${fileIndex}"]`);
     if (!panel) return;
-    if (!panel.hidden) { panel.hidden = true; btn.textContent = t('View'); return; }
+    if (!panel.hidden) { panel.hidden = true; btn.textContent = t('Raw bytes'); return; }
     btn.disabled = true;
     try {
       const found = await rereadAppended(fileIndex);
@@ -3564,7 +3237,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
         ? payloadPreviewHtml(found.bytes.subarray(found.appended.offset), found.appended.kind)
         : `<p class="valid-busy">${t('Could not re-read this payload.')}</p>`;
       panel.hidden = false;
-      btn.textContent = t('Hide');
+      btn.textContent = t('Hide raw bytes');
     } catch (err) {
       panel.innerHTML = `<p class="valid-busy">${t('Could not re-read this payload.')}</p>`;
       panel.hidden = false;
@@ -3697,7 +3370,6 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
         card.open = true;
       }
     }
-    reportEl.querySelectorAll<HTMLElement>('.valid-panels').forEach(layoutMasonry);
     void prefillClaim();
   }
 
@@ -4003,70 +3675,6 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     } catch { announce(t('That text could not be copied.')); }
   }
 
-  // The signed report card: a shareable PNG snapshot of THIS verification -
-  // verdict, lamps, receipt counts - itself carrying Content Credentials, so
-  // our statement about a file is provable the same way the file should be.
-  async function saveReportCard(btn: HTMLButtonElement): Promise<void> {
-    const idx = Number(btn.dataset.fileIndex ?? '0');
-    const file = activeFiles[idx];
-    const scope = btn.closest('.valid-result');
-    if (!scope) return;
-    const span = btn.querySelector('span');
-    const orig = span?.textContent ?? '';
-    btn.disabled = true;
-    if (span) span.textContent = t('Preparing…');
-    try {
-      const heroName = scope.querySelector('.valid-hero-filename')?.textContent ?? file?.name ?? 'file';
-      const verdict = scope.querySelector('.valid-hero-pill, .valid-hero-verdict')?.textContent?.trim() ?? '';
-      const lampRows = [...scope.querySelectorAll('.lampstrip .lamp')].map((l) => ({
-        state: l.getAttribute('data-state') ?? 'unlit',
-        label: l.querySelector('.lamp-label')?.textContent ?? '',
-        word: l.querySelector('.lamp-word')?.textContent ?? '',
-      }));
-      const receiptLine = scope.querySelector('.valid-receipt .guide-fact')?.textContent ?? '';
-      // The card wears the ACTIVE BRAND (Andy, 2026-08-21): surface, text,
-      // accent and type come from the runtime --brand-*/--font-brand vars
-      // (brand-vars.ts), falling back to the neutral scheme on a brandless
-      // deploy. Lamp-state colours stay SEMANTIC on purpose - a warning must
-      // read as a warning under any brand, so the brand dresses the chrome,
-      // never the verdicts.
-      const rootStyle = getComputedStyle(document.documentElement);
-      const bv = (name: string, fb: string): string => (rootStyle.getPropertyValue(name).trim() || fb);
-      const cardBg = bv('--brand-surface', '#101318');
-      const cardText = bv('--brand-text', '#f2f5f8');
-      const cardAccent = bv('--brand-primary', '#e0457b');
-      const cardMuted = bv('--brand-muted', '#8a94a0');
-      const cardEdge = bv('--brand-edge', 'rgba(255,255,255,.14)');
-      const cardFont = bv('--font-brand', 'ui-sans-serif,system-ui,sans-serif');
-      const node = document.createElement('div');
-      node.style.cssText = `position:fixed;left:-12000px;top:0;width:880px;padding:36px 40px;background:${cardBg};color:${cardText};font-family:${cardFont};border:1px solid ${cardEdge};border-radius:16px;`;
-      const dotColor: Record<string, string> = { fact: '#2fae62', warn: '#e0453a', hint: '#eba13c', unlit: '#5a6472' };
-      const esc = escape;
-      node.innerHTML = `
-        <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:${esc(cardAccent)}">${esc(t('Verification report'))} · Lolly</div>
-        <div style="font-size:26px;font-weight:700;margin:10px 0 2px;overflow-wrap:anywhere">${esc(heroName)}</div>
-        <div style="font-size:16px;margin:0 0 18px;color:${esc(cardMuted)}">${esc(verdict)}</div>
-        ${lampRows.map((l) => `<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:15px"><span style="width:11px;height:11px;border-radius:50%;background:${dotColor[l.state] ?? dotColor.unlit}"></span><strong>${esc(l.label)}</strong><span style="color:${esc(cardMuted)}">${esc(l.word)}</span></div>`).join('')}
-        <div style="margin-top:16px;font-size:13px;opacity:.9">${esc(receiptLine)}</div>
-        <div style="margin-top:14px;font-size:12px;color:${esc(cardMuted)}">${esc(tRaw('Checked on this device with Lolly · {date} · lolly.tools/verify', { date: new Date().toLocaleString() }))}</div>`;
-      document.body.appendChild(node);
-      try {
-        const png = await host.export.render(node, 'png');
-        let bytes = new Uint8Array(await png.arrayBuffer());
-        try {
-          if (host.c2pa?.sign) bytes = new Uint8Array(await host.c2pa.sign(bytes, 'png', {}));
-        } catch { /* unsigned beats no report - the card still says what it is */ }
-        await host.export.file(new Blob([bytes as BlobPart], { type: 'image/png' }), { filename: `${heroName.replace(/\.[a-z0-9]+$/i, '')}-verification.png` });
-        announce(t('Report card saved.'));
-      } finally { node.remove(); }
-    } catch {
-      announce(t('The report card could not be created.'));
-    } finally {
-      btn.disabled = false;
-      if (span) span.textContent = orig;
-    }
-  }
-
   // Keep the verified file in the user's catalogue WITH its findings attached,
   // so the interrogation becomes the ingredient's standing passport.
   async function keepInCatalog(btn: HTMLButtonElement): Promise<void> {
@@ -4090,6 +3698,18 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
   }
 
   wireLampScroll(reportEl);
+  wireMetadataLinks(reportEl);
+  wireVerifyPreviews(reportEl, (index) => activeFiles[index]);
+  wireVerifyActions(viewEl, reportEl);
+  wireAddressRequests(reportEl);
+  reportEl.addEventListener('click', async (event) => {
+    const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-copy-evidence]') : null;
+    if (!button) return;
+    try {
+      await host.clipboard.writeText(button.dataset.copyEvidence ?? '');
+      announce(t('Link copied'));
+    } catch { announce(t('Could not copy link')); }
+  });
   reportEl.addEventListener('click', (e) => {
     const scoreToggle = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-score-toggle]');
     if (scoreToggle) {
@@ -4105,7 +3725,7 @@ export async function mountValid(viewEl: HTMLElement, host: HostV1, params = '')
     const ask = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-ask-cred]');
     if (ask) void copyCredentialRequest(ask);
     const card = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-report-card]');
-    if (card) void saveReportCard(card);
+    if (card) void saveReportCard(host, card);
     const keep = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-add-catalog]');
     if (keep) void keepInCatalog(keep);
     const claim = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-claim-sign]');

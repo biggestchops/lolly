@@ -10,12 +10,13 @@
  * cell to mount disposed all the earlier ones (the reported "only one of four copies
  * paints").
  *
- * So these cells are never live-painted. Each renders through the SAME path Download-all
+ * Inactive cells render through the SAME path Download-all
  * uses (`renderRowToBlob`, which waits for the tool's `tool:ready` before capturing, so
  * an async photo/depth load arrives) and shows the resulting still as an <img>. Every
  * render is SERIALIZED behind one shared chain: they share the same window globals, so
  * two overlapping renders would dispose each other. The cell's runtime still exists in
- * the view (for the shared-input model, save and export) - only its canvas is a still.
+ * the view (for the shared-input model, save and export). Activation pauses this queue
+ * and drains any active render before the view mounts an interactive canvas.
  */
 import { renderRowToBlob } from '../pro/render-export.ts';
 import type { InputValue } from '../../../../engine/src/inputs.js';
@@ -32,6 +33,9 @@ export interface SinglePreviewer {
   /** The object URL of this cell's current still, or null - so a caller freezing a live
    *  cell to a still (no canvas to snapshot) can fall back to the last one we rendered. */
   lastUrl(key: string): string | null;
+  /** Discard queued previews and wait for an active render before mounting a live cell. */
+  pause(): Promise<void>;
+  resume(): void;
   dispose(): void;
 }
 
@@ -56,10 +60,13 @@ export function createSinglePreviewer(
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const urls = new Map<string, string>();
   let disposed = false;
+  let paused = false;
+  let revision = 0;
 
   const render = (key: string, toolId: string, values: Record<string, InputValue>, cellEl: HTMLElement, onReady?: () => void): void => {
+    const generation = revision;
     chain = chain.then(async () => {
-      if (disposed || !cellEl.isConnected) return;
+      if (disposed || paused || generation !== revision || !cellEl.isConnected) return;
       let blob: Blob;
       try {
         blob = await doRender(toolId, values);
@@ -68,7 +75,7 @@ export function createSinglePreviewer(
         console.warn('[multi-edit] single-instance preview failed:', toolId, err);
         return;
       }
-      if (disposed || !cellEl.isConnected) return;
+      if (disposed || paused || generation !== revision || !cellEl.isConnected) return;
       const url = URL.createObjectURL(blob);
       const prev = urls.get(key);
       urls.set(key, url);
@@ -90,12 +97,20 @@ export function createSinglePreviewer(
 
   return {
     schedule(key, toolId, values, cellEl, onReady) {
-      if (disposed) return;
+      if (disposed || paused) return;
       const t = timers.get(key);
       if (t) clearTimeout(t);
       timers.set(key, setTimeout(() => { timers.delete(key); render(key, toolId, values, cellEl, onReady); }, debounceMs));
     },
     lastUrl(key) { return urls.get(key) ?? null; },
+    pause() {
+      paused = true;
+      revision++;
+      for (const timer of timers.values()) clearTimeout(timer);
+      timers.clear();
+      return chain.then(() => {});
+    },
+    resume() { paused = false; },
     dispose() {
       disposed = true;
       for (const t of timers.values()) clearTimeout(t);

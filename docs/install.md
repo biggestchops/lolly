@@ -217,7 +217,7 @@ Android SDK and NDK prerequisites are in the
 | **Linux, other** | `.AppImage` | Falls out of the same desktop build. For Debian/Ubuntu use the `.deb` above; the Flatpak is the supported cross-distro package. |
 | **Terminal** | `npm i -g @lolly-tools/cli` | The same engine, headless, as `lolly`. It ships no tools and no catalog, so point it at one with `LOLLY_ROOT`, or let the desktop app bring its own. `pnpm run cli` is the in-repo spelling. See [the CLI guide](/info/cli.html#install). |
 | **Terminal, interactive** | `lolly tui` | A full-screen terminal interface, from the same package (`pnpm run tui` in a checkout). See [the TUI guide](/info/tui.html). |
-| **Tool-author SDK** | `npm i -D @lolly-tools/core` | Published on npm. The `HostV1` contract types, the manifest validator and a mock host for testing a tool without the app or a clone of the repository. See [Authoring Tools](/info/authoring-tools.html#try-it-without-the-monorepo). |
+| **Tool-author SDK** | `npm i -D @lolly-tools/core` | Published on npm. The `HostV1` contract types, the manifest validator and a mock host for testing a tool without the app or a clone of the repository. See [Authoring Tools](/info/tool-publishing.html#try-it-without-the-monorepo). |
 | **Browser extension** | Load unpacked | See [Browser Extension](/info/extension.html). |
 | **Your own server** | Self-host the web shell | A static bundle behind any web server, including an air-gapped one. See [Deployment](/info/deployment.html). |
 

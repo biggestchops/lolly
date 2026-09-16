@@ -3,6 +3,7 @@
 import { buildInputModel } from '@lolly/engine';
 import type { InputValue } from '../../../../engine/src/inputs.ts';
 import type { ToolManifest } from '../../../../engine/src/loader.ts';
+import { validateDesignValues } from '@lolly-tools/core/design-tool-v1';
 
 export interface KitField {
   id: string; label: string; type: 'text' | 'url' | 'asset';
@@ -27,6 +28,7 @@ export interface KitRow {
 type RecordValue = { [key: string]: InputValue | undefined };
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const key = (v: unknown): v is string => typeof v === 'string' && /^[a-z][a-z0-9-]{0,63}$/.test(v) && !['constructor', 'prototype'].includes(v);
+const inputKey = (v: unknown): v is string => typeof v === 'string' && /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(v) && !['constructor', 'prototype'].includes(v);
 const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 200;
 const json = (v: unknown, depth = 0): boolean => depth <= 24 && (v === null || v === undefined || typeof v === 'string' || typeof v === 'boolean' ||
   (typeof v === 'number' && Number.isFinite(v)) || (Array.isArray(v) ? v.every(x => json(x, depth + 1)) : record(v) && Object.entries(v).every(([k, x]) => !['__proto__', 'constructor', 'prototype'].includes(k) && json(x, depth + 1))));
@@ -50,7 +52,7 @@ export function parseKitDefinition(raw: unknown): KitDefinition {
     if (!Array.isArray(o.bindings) || o.bindings.length > 32) throw new Error('Invalid kit bindings.');
     const targets = new Set<string>();
     for (const b of o.bindings) {
-      if (!record(b) || !fields.has(String(b.field)) || !key(b.input) || (b.box !== undefined && (!key(b.box) || !key(b.property))) || (b.box === undefined && b.property !== undefined)) throw new Error('Invalid kit binding.');
+      if (!record(b) || !fields.has(String(b.field)) || !inputKey(b.input) || (b.box !== undefined && (!key(b.box) || !key(b.property))) || (b.box === undefined && b.property !== undefined)) throw new Error('Invalid kit binding.');
       const target = `${b.input}/${b.box ?? ''}/${b.property ?? ''}`;
       if (targets.has(target)) throw new Error('Two fields cannot own the same target.');
       targets.add(target);
@@ -145,8 +147,38 @@ export function kitRowIssues(kit: KitState, rows: KitRow[]): string[] {
     const brief = { ...kit.brief };
     try { for (const b of o.bindings) { checkTarget(row, b, kit.definition.fields.find(f => f.id === b.field)!); brief[b.field] = boundValue(row, b); } }
     catch (e) { return [`${o.name}: ${e instanceof Error ? e.message : String(e)}`]; }
-    return kitIssues({ ...kit, brief }).map(message => `${o.name}: ${message}`);
+    const local = row.manifest.designTool ? validateDesignValues(row.manifest.designTool, row.values, true).map(i => i.message) : [];
+    return [...kitIssues({ ...kit, brief }), ...local].map(message => `${o.name}: ${message}`);
   });
+}
+
+/** Common semantic fields become an ordinary kit brief with per-output detachment. */
+export function commonInputKit(rows: KitRow[]): KitState {
+  const shared = rows.filter(row => row.manifest?.designTool?.inputs.some(field => field.common));
+  if (!shared.length) throw new Error('Add tools that declare common inputs first.');
+  if (shared.length > 8) throw new Error('Use up to eight assets in one shared brief.');
+  const fields = new Map<string, KitField>();
+  const brief: Record<string, InputValue> = {};
+  const outputs = shared.map((row, index): KitOutput => {
+    const id = `asset-${index + 1}`;
+    const bindings = row.manifest!.designTool!.inputs.flatMap(field => {
+      if (!field.common) return [];
+      const key = `${field.common.subject}-${field.common.key.toLowerCase()}`;
+      if (!fields.has(key)) {
+        fields.set(key, { id: key, label: field.input.label || field.common.key, type: field.common.key === 'headshot' ? 'asset' : 'text' });
+        brief[key] = row.values[field.input.id] ?? field.input.default as InputValue ?? '';
+      }
+      return [{ field: key, input: field.input.id }];
+    });
+    return { id, name: row.manifest!.name, toolId: row.toolId, format: row.format || 'png', width: row.outWidth || row.manifest!.render.width, height: row.outHeight || row.manifest!.render.height, unit: row.unit === 'mm' ? 'mm' : 'px', values: structuredClone(row.values), bindings };
+  });
+  const definition = parseKitDefinition({ version: 1, id: 'shared-inputs', name: 'Shared inputs', fields: [...fields.values()], outputs });
+  const kit: KitState = { version: 1, source: 'design:common-inputs', definition, brief, detached: {} };
+  const next = rows.map(row => ({...row, values: structuredClone(row.values)}));
+  shared.forEach((row, index) => { next[rows.indexOf(row)]!.kitOutputId = outputs[index]!.id; });
+  applyKit(kit, next);
+  rows.forEach((row, index) => { row.kitOutputId = next[index]!.kitOutputId; row.values = next[index]!.values; });
+  return kit;
 }
 
 export function applyKit(kit: KitState, rows: KitRow[]): void {

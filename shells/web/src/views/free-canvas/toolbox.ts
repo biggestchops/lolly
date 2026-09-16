@@ -422,6 +422,10 @@ export function buildToolbar(fc: FcCtx): void {
         });
       }
     }
+    if (fc.rules) items.push({
+      label: t('Share with rules'), icon: icon(SVG.exportUp), key: 'share-with-rules',
+      run: () => fc.rules?.open(),
+    });
     return items;
   };
   // The ports' door onto the same menu: the top bar's mark button opens it anchored to

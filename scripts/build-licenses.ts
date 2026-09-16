@@ -447,6 +447,16 @@ const MANIFEST: {
 } = {
   vendored: [
     {
+      name: 'Skera font subsetter and Rust dependencies',
+      version: '0.7.0 (pinned Cargo.lock)',
+      spdx: '(MIT OR Apache-2.0) AND Unicode-3.0',
+      copyright: 'Individual crate authors, reproduced in the notices below.',
+      files: 'packages/node-shell/wasm/skera/skera.wasm',
+      text: readFileSync(join(ROOT, 'packages/node-shell/wasm/skera/LICENSES.txt'), 'utf8'),
+      note: 'Unmodified upstream crates compiled through the Lolly MPL-2.0 byte adapter. Source, exact versions and build instructions are in packages/node-shell/wasm/skera/.',
+      where: 'web',
+    },
+    {
       name: 'bwip-js (with BWIPP)',
       version: '4.11.4 (@bwip-js/generic; BWIPP 2026-05-28)',
       spdx: 'MIT',

@@ -43,6 +43,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const LOCKFILES = [
   'shells/tauri-desktop/src-tauri/Cargo.lock',
   'shells/tauri-mobile/src-tauri/Cargo.lock',
+  'packages/node-shell/wasm/skera/Cargo.lock',
 ];
 
 // Parse a Cargo.lock for its [[package]] name/version pairs. Cargo.lock is TOML,
@@ -87,7 +88,7 @@ const licenses: Record<string, string> = doc?.licenses ?? {};
 // lockfile there is no graph to be stale against and the gate is a no-op.
 const present = LOCKFILES.filter((rel) => existsSync(join(ROOT, rel)));
 if (!present.length) {
-  console.log('• No Tauri Cargo.lock present in this checkout - nothing to verify');
+  console.log('• No shipped Cargo.lock present in this checkout - nothing to verify');
   process.exit(0);
 }
 

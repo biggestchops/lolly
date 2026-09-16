@@ -74,7 +74,7 @@
   box-shadow: var(--ui-elevation-sheet);
   font-size: var(--ui-type-label);
   user-select: none;
-  touch-action: none;         /* the panel owns its own pointer gestures */
+  touch-action: auto;         /* individual drag targets own their gestures */
 }
 .tl-panel[hidden] { display: none; }
 /* While a gesture runs, kill hover affordances and the text caret everywhere. */
@@ -84,6 +84,7 @@
 /* ─── Resize grip ────────────────────────────────────────────────────────────
    A full-width separator along the top edge; drag up to grow the panel. */
 .tl-handle {
+  touch-action: none;
   flex: 0 0 auto;
   height: 9px;
   cursor: ns-resize;
@@ -128,10 +129,49 @@
   white-space: nowrap;
 }
 
+.tl-guide-pop {
+  width: 28em;
+  max-width: min(30em, calc(100vw - 2 * var(--ui-space-control-inline)));
+  padding: var(--ui-space-control-inline);
+  font-size: var(--ui-type-label);
+  color: var(--ui-color-text-default);
+}
+.tl-edit-menu, .tl-guide-pop {
+  max-height: calc(100dvh - 2 * var(--ui-space-control-inline));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+}
+.tl-always-pop, .tl-track-size-pop {
+  width: 24em;
+  max-width: calc(100vw - 2 * var(--ui-space-control-inline));
+  max-height: calc(100dvh - 2 * var(--ui-space-control-inline));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  padding: var(--ui-space-control-inline);
+  color: var(--ui-color-text-default);
+  font-size: var(--ui-type-label);
+}
+.tl-always-hint { margin: 0 0 var(--ui-space-control-inline); color: var(--ui-color-text-muted); }
+.tl-always-pop .tl-action, .tl-track-size-pop .tl-action {
+  width: auto;
+  padding-inline: var(--ui-space-control-inline);
+}
+.tl-always-done { margin-block-start: var(--ui-space-control-inline); }
+.tl-track-size-field { display: grid; gap: var(--ui-space-control-block); }
+.tl-track-size-field input { width: 100%; min-width: 0; }
+.tl-track-size-actions { display: flex; gap: var(--ui-space-control-block); margin-block-start: var(--ui-space-control-inline); }
+.tl-track-size-done { margin-inline-start: auto; }
+.tl-guide-pop ol { padding-inline-start: 1.5em; }
+.tl-guide-pop li + li { margin-block-start: var(--ui-space-control-block); }
+.tl-guide-pop p { color: var(--ui-color-text-muted); }
+.tl-guide-pop .tl-guide-done { width: auto; padding-inline: var(--ui-space-control-inline); }
+
 /* Buttons - same silhouette as the editor rail's .fc-btn, one size down. */
 .tl-btn {
   /* Icon-only, so the box follows its glyph on the icon scale; the
-     coarse-pointer 36px below is a finger target and stays flat. */
+     touch target below follows the shared minimum action size. */
   width: calc(30px * var(--a11y-fs)); height: calc(30px * var(--a11y-fs)); padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
   flex: 0 0 auto;
@@ -161,11 +201,23 @@
   background: var(--ui-color-action-primary);
   color: var(--ui-color-action-on-primary);
 }
+.tl-btn.tl-always-on.is-notifying {
+  background: var(--ui-color-action-primary);
+  color: var(--ui-color-action-on-primary);
+  box-shadow: 0 0 0 2px var(--ui-color-focus-ring);
+}
 .tl-screen.is-recording {
   background: hsl(var(--destructive));
   color: var(--ui-color-action-on-primary);
 }
-.tl-mobile-tools { display: none; }
+.tl-mobile-tools { display: inline-flex; }
+.tl-quick-actions { display: contents; }
+.tl-panel:not(.is-mobile-tools-open) .tl-secondary-tool { display: none; }
+.tl-panel .tl-record-source:not([aria-pressed="true"]) { display: none; }
+.tl-tools { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; }
+.tl-panel .tl-tools .tl-action { width: auto; padding-inline: var(--ui-space-control-inline); }
+.tl-tools .tl-captions[data-tip]::after { white-space: normal; min-width: 16em; }
+
 .tl-play { width: calc(34px * var(--a11y-fs)); height: calc(34px * var(--a11y-fs)); border-radius: var(--ui-radius-control); background: var(--ui-color-surface-muted); }
 .tl-play svg { width: calc(17px * var(--a11y-fs)); height: calc(17px * var(--a11y-fs)); }
 .tl-play:hover:not(:disabled) { background: var(--ui-color-selection-surface); }
@@ -212,12 +264,11 @@
     gap: 5px;
     overflow: hidden;
   }
-  /* More specific than the later all-coarse rule: a short/phone workspace gets
-     the full 44px target even though an ordinary touch laptop keeps 36px. */
+  /* Keep the same touch target in the compact toolbar. */
   .tl-panel .tl-btn,
-  .tl-panel .tl-play { width: 44px; height: 44px; }
+  .tl-panel .tl-play { width: var(--ui-size-target); height: var(--ui-size-target); }
   .tl-time { max-width: 62px; overflow: hidden; text-overflow: ellipsis; }
-  .tl-tools { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .tl-tools { min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .tl-tools::-webkit-scrollbar { display: none; }
   .tl-mobile-tools { display: inline-flex; }
   .tl-panel:not(.is-mobile-tools-open) :is(
@@ -388,10 +439,7 @@
   overflow-y: hidden;
   scrollbar-width: thin;
   padding-bottom: 2px;
-  /* The panel takes `touch-action: none` so its drag gestures are never stolen by a
-     browser pan. The inspector is NOT a gesture surface - onPointerDown bails on
-     `.tl-inspector` - so hand its overflow row back to the browser, or a phone can't
-     reach the fields past the fold. */
+  /* A finger pans the overflow controls; only explicit drag targets own gestures. */
   touch-action: pan-x;
 }
 .tl-inspector > :first-child { margin-inline-start: auto; }
@@ -877,6 +925,7 @@
 
 /* ─── Tracks scroller ────────────────────────────────────────────────────────*/
 .tl-tracks {
+  min-width: 0;
   flex: 1 1 auto;
   /* THE SCROLL (plans/179 T12). A flex item's `min-height` is `auto`, which means "never
      smaller than my content" - so this row refused to shrink, `overflow-y: auto` below
@@ -893,26 +942,24 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   padding: 6px 0 4px;
-  /* Same reasoning as `.tl-inspector`: the panel takes `touch-action: none` so its
-     drag gestures survive, but THIS is a real scroller - a long sequence is
-     unreachable on a phone if no finger gesture can pan it. The surfaces that DO own
-     a drag (clips, the ruler, the resize handle) opt back out to `none` below, so a
-     finger on a clip still moves the clip and a finger on the background pans. */
+  /* A finger on the background pans. Clips, the ruler and the resize handle
+     opt out individually so their drag gestures keep working. */
   touch-action: pan-x pan-y;
 }
 .tl-tracks-inner { position: relative; min-height: 100%; }
 
 .tl-lanes { position: relative; display: flex; flex-direction: column; gap: 4px; }
 .tl-lane {
+  flex: 0 0 auto;
   position: relative;
-  height: 34px;
+  height: calc(var(--tl-track-height, 34px) + var(--tl-touch-track-extra, 0px));
   border-radius: var(--ui-radius-control);
   background:
     repeating-linear-gradient(90deg, color-mix(in srgb, var(--ui-color-border-default) 28%, transparent) 0 1px, transparent 1px 100%) 0 0 / 40px 100%,
     color-mix(in srgb, var(--ui-color-surface-muted) 35%, transparent);
 }
 /* The magnetic sequence row reads as the spine: taller, a touch more present. */
-.tl-lane-seq { height: 46px; background-color: color-mix(in srgb, var(--ui-color-surface-muted) 60%, transparent); }
+.tl-lane-seq { height: calc(var(--tl-track-height, 34px) + var(--tl-touch-track-extra, 0px) + 12px); background-color: color-mix(in srgb, var(--ui-color-surface-muted) 60%, transparent); }
 /* The row a vertically-dragged bar would land on (plans/165 Slice C-tracks): the
    same brand ring the selected bar wears, on the ROW, so "drop here to share this
    layer" reads before the pointer lifts. Solid, never dashed - dashed is reserved
@@ -1274,14 +1321,16 @@
 
 /* ─── Scenery strip (everything untimed - "Always on") ───────────────────────*/
 .tl-scenery {
-  position: relative;
+  display: none;
+}
+.tl-scenery.is-popover-list {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 8px;
-  padding-top: 7px;
-  border-top: 1px dashed var(--ui-color-border-default);
+  flex-direction: column;
+  gap: var(--ui-space-control-block);
+  max-height: min(24em, 45dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 .tl-scenery[hidden] { display: none; }
 .tl-scenery-label {
@@ -1303,25 +1352,26 @@
 .tl-chip-group {
   display: inline-flex;
   align-items: stretch;
-  max-width: 210px;
   border: 1px solid var(--ui-color-border-default);
-  border-radius: var(--ui-radius-pill);
+  border-radius: var(--ui-radius-control);
   background: color-mix(in srgb, var(--ui-color-surface-muted) 60%, transparent);
 }
 .tl-chip-group:hover { border-color: var(--ui-color-text-muted); }
 .tl-chip {
+  flex: 1 1 auto;
   min-width: 0;
-  max-width: 160px;
-  padding: 3px 9px;
+  min-height: 32px;
+  padding: var(--ui-space-control-block) var(--ui-space-control-inline);
+  text-align: start;
   border: 0;
   /* Logical corners, so the pill still reads right in RTL. */
   border-radius: 0;
-  border-start-start-radius: 999px;
-  border-end-start-radius: 999px;
+  border-start-start-radius: var(--ui-radius-control);
+  border-end-start-radius: var(--ui-radius-control);
   background: transparent;
   color: var(--ui-color-text-default);
   font: inherit;
-  font-size: var(--fs-xs);
+  font-size: var(--ui-type-label);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1340,16 +1390,14 @@
    element, which keeps the pill a two-child flex row. */
 .tl-chip-add {
   flex: 0 0 auto;
-  /* On the icon scale with its `+`; the coarse-pointer bump below is a finger
-     target, not a glyph, and stays a flat 32px. */
-  width: calc(22px * var(--a11y-fs));
+  width: calc(32px * var(--a11y-fs));
   display: inline-flex; align-items: center; justify-content: center;
   padding: 0;
   border: 0;
   border-inline-start: 1px solid var(--ui-color-border-default);
   border-radius: 0;
-  border-start-end-radius: 999px;
-  border-end-end-radius: 999px;
+  border-start-end-radius: var(--ui-radius-control);
+  border-end-end-radius: var(--ui-radius-control);
   background: transparent;
   color: var(--ui-color-text-muted);
   cursor: pointer;
@@ -1416,7 +1464,7 @@
    (lib/stt-job.ts), so the sheet consents and closes, and the global job toast
    paints the download and the inference. */
 .tl-stt { max-width: 340px; }
-.tl-stt-note { margin: 0; font-size: calc(12.5px * var(--a11y-fs)); color: var(--ui-color-text-muted); }
+.tl-stt-note { margin: 0; font-size: var(--fs-md); color: var(--ui-color-text-muted); }
 .tl-stt-note-dl { color: var(--ui-color-text-default); }
 
 /* ─── Keyboard shortcuts sheet ───────────────────────────────────────────────
@@ -1482,8 +1530,6 @@
      (inline flex) so the row does not grow taller either. An aria-label serves a
      screen reader; it does nothing for the person looking at the panel. */
   .tl-num { width: 60px; }
-  .tl-lane { height: 30px; }
-  .tl-lane-seq { height: 40px; }
 }
 /* Narrow AND touch: pinch the tracks to zoom (see the pinch handler in
    timeline-panel.ts), so the two step buttons stop earning their place in the bar.
@@ -1501,13 +1547,17 @@
      with a finger. */
   .tl-keys { display: none; }
 }
-@media (pointer: coarse) {
-  .tl-btn { width: 36px; height: 36px; }
-  .tl-chip { padding: 7px 11px; }
-  .tl-chip-add { width: 32px; }
+@media (any-pointer: coarse) {
+  /* Even the shortest setting leaves a full touch target inside the track. */
+  .tl-panel { --tl-touch-track-extra: calc(var(--ui-size-target) + 8px - 24px); }
+  .tl-btn { min-width: var(--ui-size-target); min-height: var(--ui-size-target); }
+  .tl-chip { min-height: var(--ui-size-target); }
+  .tl-chip-add { width: var(--ui-size-target); }
+  .tl-group-head, .tl-num, .tl-select, .tl-menu .folder-menu-item,
+  .tl-track-size-field input, .tl-track-size-field .custom-slider { min-height: var(--ui-size-target); }
+  .tl-track-size-field .custom-slider { --cs-pad-top: calc((var(--ui-size-target) - var(--cs-track-h)) / 2); }
   .tl-timing { padding: 8px 12px; }
-  .tl-play { width: 40px; height: 40px; }
-  .tl-handle { height: 14px; }
+  .tl-handle { height: 20px; }
   /* EDGE_PX_COARSE - WCAG 2.5.8's 24px target-size floor. The panel picks the same
      number per EVENT from e.pointerType; this is the cursor/paint half of it. */
   .tl-edge { width: min(24px, 33%); }
@@ -1518,6 +1568,7 @@
   .tl-panel *,
   .tl-panel *::before,
   .tl-panel *::after { transition: none !important; }
+  .tl-always-pop *, .tl-track-size-pop * { transition: none !important; }
   /* The recording dot's pulse is an ANIMATION, which the rule above does not reach.
      It carries no information the red fill doesn't - drop it, don't slow it. */
   .tl-rec-dot { animation: none !important; }
@@ -1527,6 +1578,7 @@
   .tl-inspector.is-entering { animation-name: tl-inspector-fade; }
 }
 html[data-a11y-motion="reduce"] .tl-inspector.is-entering { animation-name: tl-inspector-fade; }
+html[data-a11y-motion="reduce"] .tl-always-on { transition: none; }
 @keyframes tl-inspector-fade {
   from { opacity: 0; }
   to   { opacity: 1; }

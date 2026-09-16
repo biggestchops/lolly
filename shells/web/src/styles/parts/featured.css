@@ -518,6 +518,10 @@
 .featured--coverflow .featured-track {
   transform-style: preserve-3d;
   align-items: center;
+  /* Leave room above and below the selected outline. Equal block padding
+     preserves the Open button's centre alignment. */
+  padding-top: calc(var(--featured-top-space) + var(--sp-6));
+  padding-bottom: var(--sp-6);
   /* The track stands taller than the covers, so align-items centres them with room to
      spare - the covers, their shadows and the lit centre cover float clear of the strip's
      top/bottom edges instead of butting against (and being clipped by) overflow:hidden.

@@ -56,6 +56,8 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   // And for the visualizer: an artist preset is fetched, so an export that didn't wait
   // would capture whichever brand-native preset was up while that was in flight.
   await tview.vizPending;
+  await tview.studioPending;
+  if (tview.studioError) throw tview.studioError;
   // Full-bleed tools (hideSidebar: export:false utilities and canvas-layout tools) have
   // no fixed-size artboard scaled-to-fit - canvasEl/outerEl are null - so there's no
   // transform to un-scale. Run the export directly (still behind the shutter). This is the
@@ -63,6 +65,7 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   if (!canvasEl || !outerEl) {
     if (shutter) await tview.designSystem.closeShutter(detail, onCancel);
     try {
+      tview.studioModule?.prepareToolStudio(tview.contentEl);
       return await fn(report);
     } finally {
       if (shutter) tview.designSystem.openShutter();
@@ -88,6 +91,7 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   outerEl!.style.width = canvasEl!.style.width;
   outerEl!.style.height = canvasEl!.style.height;
   try {
+    tview.studioModule?.prepareToolStudio(tview.contentEl);
     return await fn(report);
   } finally {
     canvasEl!.style.transform = prevTransform;

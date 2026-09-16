@@ -26,17 +26,19 @@
  * through the subset (did gvar survive?).
  *
  * Usage:
- *   node scripts/bench-font-outline.ts [--iters=30] [--json=<path>]
+ *   node scripts/bench-font-outline.ts [--iters=30] [--json=<path>] [--no-skera]
+ *   Add --text-module=<absolute path> to compare a preserved implementation.
  *
- * Re-run when skera matures (v1.0.0 expected EoY 2026) and diff the JSON
- * against the baseline recorded in plan 88.
+ * Compare the JSON against a baseline with the same fonts and corpus. Plans 88
+ * and 262 record the renewed 0.7.0 evaluation and the limits of these samples.
  */
 import { existsSync, readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { tmpdir, cpus, platform, arch, release } from 'node:os';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { createNodeTextAPI } from '@lolly-tools/node-shell/text';
+import { createNodeTextAPI as currentTextAPI } from '@lolly-tools/node-shell/text';
 import { catalogFile } from '@lolly-tools/node-shell/content-roots';
 import { findSkera, skeraVersion, skeraSubset } from '../tests/helpers/skera.ts';
 
@@ -50,6 +52,9 @@ for (const a of process.argv.slice(2)) {
 }
 const ITERS = Math.max(3, Number(args.get('iters') ?? 30));
 const JSON_OUT = args.get('json') ?? null;
+const textModule = args.get('text-module');
+const createNodeTextAPI: typeof currentTextAPI = textModule
+  ? (await import(pathToFileURL(textModule).href)).createNodeTextAPI : currentTextAPI;
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 interface FontCase {
@@ -126,6 +131,9 @@ const api = createNodeTextAPI({ repoRoot: REPO_ROOT });
 const report: Record<string, unknown> = {
   generated: new Date().toISOString(),
   node: process.version,
+  environment: { platform: platform(), arch: arch(), release: release(), cpu: cpus()[0]?.model, logicalCpus: cpus().length },
+  textModule: textModule ?? 'packages/node-shell/src/text.ts',
+  note: 'Local samples under concurrent development load; cold rows share process state. Subset times include CLI startup and are single samples.',
   method: 'harfbuzzjs (HarfBuzz WASM) via packages/node-shell/src/text.ts',
   iters: ITERS,
   fonts: {},
@@ -178,6 +186,8 @@ for (const font of fonts) {
       pathBytes: out.d.length,
       advanceWidth: +out.advanceWidth.toFixed(2),
       notdef: out.notdef,
+      outputSha256: createHash('sha256').update(JSON.stringify(out)).digest('hex'),
+      fontSha256: createHash('sha256').update(readFileSync(font.disk)).digest('hex'),
     };
     fontRows.push(row);
     console.log(
@@ -189,7 +199,7 @@ for (const font of fonts) {
 }
 
 // ── skera stage ──────────────────────────────────────────────────────────────
-const skeraBin = findSkera();
+const skeraBin = args.has('no-skera') ? null : findSkera();
 if (!skeraBin) {
   console.log(
     '\nskera stage skipped - no binary found. Install with `cargo install skera --features cli` ' +

@@ -57,6 +57,7 @@
  *
  * Run its tests:  node --import ./tests/css-stub.mjs --test shells/web/src/views/design-navigator.test.ts
  */
+import { mountLayerGroups } from './design-layer-groups.ts';
 import type { Box, BoxFieldConfig } from './free-canvas-math.ts';
 import { framesAreSequenced, num, renumberFrameOrder } from './free-canvas-math.ts';
 import type {
@@ -474,6 +475,7 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
   bodyEl.append(listEl, emptyEl, makeAllBtn);
   if (skin === 'column') bodyEl.append(layersEl);
   else layersEl.hidden = true;
+  const layerGroups = skin === 'column' ? mountLayerGroups({host:bodyEl,pages:listEl,section:layersEl,list:layersList,heading:layersHead,id:b=>fieldStr(b,F.id),name:(b,i)=>frameName(b,i),children:b=>childrenOf(model.getBoxes(),fieldStr(b,F.id)),row:buildLayerRow,jump:selectFrame}) : null;
   el.append(head);
   if (skin === 'column') el.append(railSlot);
   el.append(bodyEl);
@@ -614,7 +616,7 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
   function queueFocus(id: string, list: HTMLElement, run: () => void): void {
     const rows = rowsOf(list);
     const at = rows.findIndex((r) => (r.dataset.id ?? '') === id);
-    pendingFocus = { id, layers: list === layersList, index: at < 0 ? 0 : at };
+    pendingFocus = { id, layers: list === layersList || layersList.contains(list), index: at < 0 ? 0 : at };
     try { run(); } finally { pendingFocus = null; }
   }
 
@@ -1026,14 +1028,16 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
    * verb, so a host that has not wired it makes every layer reorder a silent no-op.
    */
   function commitLayerOrder(displayIds: string[]): boolean {
-    const frameId = artboard.active();
+    const first = model.getBoxes().find(b => fieldStr(b,F.id) === displayIds[0]);
+    const frameId = first ? fieldStr(first,F.frame) : artboard.active();
     if (!frameId || !actions.reorderChildren) return false;
     actions.reorderChildren(frameId, [...displayIds].reverse());
     return true;
   }
 
   function moveLayer(id: string, delta: number): void {
-    const rows = rowsOf(layersList);
+    const group = layersList.querySelector<HTMLElement>(`[data-nav-row][data-id="${cssId(id)}"]`)?.closest<HTMLElement>('[data-layer-group]') || layersList;
+    const rows = rowsOf(group);
     const ids = rows.map((r) => r.dataset.id ?? '');
     const next = moveInSeq(ids, id, delta);
     if (next.join('|') === ids.join('|')) return;
@@ -1205,7 +1209,7 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
     return b;
   }
 
-  function buildLayerRow(b: Box, i: number, loose = false): HTMLElement {
+  function buildLayerRow(b: Box, i: number, loose = false, list: HTMLElement = layersList): HTMLElement {
     const id = fieldStr(b, F.id);
     const kind = fieldStr(b, F.kind) || 'box';
     const hidden = boolFlag(b[F.hidden]);
@@ -1233,12 +1237,14 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
     if (when) row.append(when);
     row.addEventListener('click', () => {
       if (dragSuppressClick) { dragSuppressClick = false; return; }
+      const parent = fieldStr(b,F.frame);
+      if(parent && parent !== artboard.active())artboard.focus(parent);
       selection.set([id]);
     });
     if (actions.reorderChildren) {
-      row.addEventListener('pointerdown', (ev: Event) => beginDrag(ev as MouseEvent, id, layersList, 'layers'));
+      row.addEventListener('pointerdown', (ev: Event) => beginDrag(ev as MouseEvent, id, list, 'layers'));
     }
-    row.addEventListener('keydown', (ev: KeyboardEvent) => onRowKey(ev, id, row, i, layersList, 'layers'));
+    row.addEventListener('keydown', (ev: KeyboardEvent) => onRowKey(ev, id, row, i, list, 'layers'));
 
     const item = make('div', 'fc-nav-layer-item');
     item.setAttribute('role', 'presentation');
@@ -1308,7 +1314,7 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
       startRename(id, row, index);
       return;
     }
-    if (ev.key === ' ') { swallow(ev); if (kind === 'frames') selectFrame(id); else selection.set([id]); return; }
+    if (ev.key === ' ') { swallow(ev); if (kind === 'frames') selectFrame(id); else row.click(); return; }
     // The two flag toggles beside a layer row, and the transition preview beside a frame
     // row, are all `tabIndex = -1` (see `flagBtn` and the chip): they are announced on
     // the row and operated from it. Without these three keys the capabilities were
@@ -1393,7 +1399,7 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
     // No artboards at all (a timeline document, plans/184 R15): every box is a layer of
     // the document itself, listed with its timing, rather than an empty column.
     const loose = frames.length === 0;
-    const kids = skin === 'column' ? (loose ? looseOf(boxes) : childrenOf(boxes, activeId)) : [];
+    const kids = skin === 'column' ? looseOf(boxes) : [];
     const pages = pageHashes(boxes);
     const sigs = frames.map((b, i) => rowSig(b, i, pages.get(fieldStr(b, F.id)) ?? 0));
     const sig = [
@@ -1446,14 +1452,7 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
       return li;
     }));
 
-    // Layers: the active board's children, reversed - the top of the list paints on top.
-    if (skin === 'column') {
-      const disp = [...kids].reverse();
-      layersEl.hidden = disp.length === 0;
-      layersHead.textContent = loose ? t('Loose layers') : t('Layers');
-      layersList.setAttribute('aria-label', tRaw('{n} layers', { n: disp.length }));
-      layersList.replaceChildren(...disp.map((b, i) => buildLayerRow(b, i, loose)));
-    }
+    layerGroups?.render(frames, kids.filter(b => !frames.some(frame => fieldStr(frame,F.id) === fieldStr(b,F.frame))), activeId);
 
     paintActive(true);
     // A write of ours rebuilds the row the user is standing on, so hand the focus (and
@@ -1524,13 +1523,14 @@ export function initDesignNavigator(opts: DesignNavigatorOpts): DesignNavigatorH
       dot.classList.toggle('is-active', on);
       if (on) dot.setAttribute('aria-current', 'true'); else dot.removeAttribute('aria-current');
     }
+    layerGroups?.paintActive(activeId, ids.map(String));
     const layerRows = rowsOf(layersList);
     const roverLayer = layerRows.find((r) => sel.has(r.dataset.id ?? '')) ?? layerRows[0];
     for (const row of layerRows) {
       const on = sel.has(row.dataset.id ?? '');
       row.classList.toggle('is-active', on);
       row.setAttribute('aria-selected', on ? 'true' : 'false');
-      row.tabIndex = row === roverLayer ? 0 : -1;
+      if (!layerGroups) row.tabIndex = row === roverLayer ? 0 : -1;
     }
   }
 

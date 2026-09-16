@@ -110,19 +110,17 @@ export function createWasmOcrAPI(): OcrAPI {
       return new Promise<OcrResult>((resolve, reject) => {
         const onAbort = (): void => {
           if (!pending.has(reqId)) return;
-          pending.delete(reqId);
           w.postMessage({ id: reqId, type: 'abort' } satisfies OcrWorkerRequest);
-          reject(abortError());
         };
         signal?.addEventListener('abort', onAbort, { once: true });
         pending.set(reqId, {
           settle: (r) => {
             signal?.removeEventListener('abort', onAbort);
-            if (r.aborted) reject(abortError());
+            if (signal?.aborted || r.aborted) reject(abortError());
             else if (r.error || !r.result) reject(new Error(r.error ?? 'The text could not be read.'));
             else resolve(r.result);
           },
-          onProgress: opts?.onProgress,
+          onProgress: (p) => { if (!signal?.aborted) opts?.onProgress?.(p); },
         });
         // Transfer the source pixels - the caller's frame is consumed by the run.
         w.postMessage(

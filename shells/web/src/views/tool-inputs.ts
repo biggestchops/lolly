@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { prepareDesignInputs, isDesignInputVisible } from '../lib/design-tool-input-errors.ts';
 /**
  * Tool view - input subsystem.
  *
@@ -31,18 +32,18 @@ import { tableInputHtml, tableGhostCells } from './table-input-html.ts';
 import { readTableCells, wireTableEnter, wireTableRowMoves } from './table-input-dom.ts';
 import { inputTableValue, inheritTableSources, tableInputValue, parseInputTable } from './block-table.ts';
 import { createToolRuntime as createRuntime } from '../lib/mount-runtime.ts';
-import { escape } from '../utils.js';
+import { escape } from '../utils.ts';
 import { t } from '../i18n.ts';
 import { mountModal } from '../components/modal.ts';
-import { announce } from '../a11y.js';
-import { colorFieldHtml, wireColorField } from '../components/color-field.js';
-import { helpTip, wireHelpTips, linkHelpDescriptions } from '../components/help-tip.js';
+import { announce } from '../a11y.ts';
+import { colorFieldHtml, wireColorField } from '../components/color-field.ts';
+import { helpTip, wireHelpTips, linkHelpDescriptions } from '../components/help-tip.ts';
 import {
   customSliderHtml,
   mountCustomSlider,
   SLIDER_DRAG_EVENT,
 } from '../components/custom-slider.ts';
-import { canSkipInputsRebuild } from './inputs-sync.js';
+import { canSkipInputsRebuild, staticInputControl } from './inputs-sync.ts';
 import { jellyActive, jellyEnabled } from '../lib/jelly.ts';
 import { installTablePaste, htmlTableToTsv } from '../lib/table-paste.ts';
 import { splitMarkdownIntoBlocks } from '../lib/markdown.ts';
@@ -64,10 +65,10 @@ import {
   blockReparentMove,
   buildRefOptions,
   materializeRefTarget,
-} from './block-tree.js';
-import { getTool } from '../bridge/tool-loader.js';
+} from './block-tree.ts';
+import { getTool } from '../bridge/tool-loader.ts';
 import { brandFontFamilies } from '../user-fonts.ts';
-import { storeUserUpload, askLollyIntent } from './picker.js';
+import { storeUserUpload, askLollyIntent } from './picker.ts';
 import { mountSidebarLiveControls } from './live-controls.ts';
 import flatpickr from 'flatpickr';
 
@@ -77,12 +78,11 @@ import type {
   InputValue,
   InputSpec,
   BlockFieldSpec,
-} from '../../../../engine/src/inputs.js';
-import type { LoadedTool } from '../../../../engine/src/loader.js';
-import type { Runtime } from '../../../../engine/src/runtime.js';
+} from '../../../../engine/src/inputs.ts';
+import type { LoadedTool } from '../../../../engine/src/loader.ts';
+import type { Runtime } from '../../../../engine/src/runtime.ts';
 
-import { audioThumbPlaceholder } from '../lib/audio-thumb.ts';
-import { peaksFingerprint } from '../lib/audio-peaks.ts';
+import { assetInputThumbnail } from './inputs-asset-thumb.ts';
 // The same enhancer the picker and catalog grids use - an audio slot starts as an
 // honest glyph and upgrades in place once its peaks are measured.
 import { mountAudioThumbs } from './picker.ts';
@@ -604,7 +604,7 @@ export function compactOptionGrid(labels: string[]): boolean {
   return labels.length > 4 && labels.every((l) => l.length <= 16);
 }
 
-function renderInputs(
+export function renderInputs(
   el: PanelEl,
   model: InputModelItem[],
   runtime: Runtime,
@@ -612,21 +612,14 @@ function renderInputs(
   onDirty?: (id: string) => void,
   toolId?: string
 ): void {
+  [runtime,model] = prepareDesignInputs(runtime,model,el);
   el._emojiInputsDispose?.();
   // Generic input-policy overlay for the mounted tool (empty/no-op by default).
   const policyFor = (id: string): InputPolicy | undefined => getInputPolicy(toolId, id);
   const modelValues: Record<string, InputValue> = Object.fromEntries(
     model.map((i) => [i.id, i.value])
   );
-  const panelModel = model.filter((i) => {
-    if (i.group === 'export') return false;
-    // A control-plane "hidden" input drops from the sidebar entirely (never
-    // rendered). This is a rendering overlay - the model still carries the input.
-    if (policyFor(i.id)?.mode === 'hidden') return false;
-    // One map (every pair required, a value may be a list of accepted values) or
-    // a list of maps (any one sufficient): the engine owns the predicate.
-    return matchesShowIf(i.showIf, modelValues);
-  });
+  const panelModel = model.filter(i => isDesignInputVisible(runtime,i,modelValues,policyFor(i.id)?.mode === 'hidden'));
 
   // The block-row handlers below build the value they commit from the input's
   // CURRENT rows, and they must read those rows from the RUNTIME, not this
@@ -725,14 +718,7 @@ function renderInputs(
     // native time widget, and the floating-label rule out-specifies the static rule
     // tool.css keeps for them, so the class is what actually decides it.
     const isStaticLabel =
-      input.control === 'datetime-local-input' ||
-      input.control === 'table' ||
-      input.control === 'file-picker' ||
-      input.control === 'blocks' ||
-      input.control === 'time-input' ||
-      // A vector's fields are a numeric strip with their own scrub glyphs; a
-      // floating label would sit on top of them, so its name is a static caption.
-      input.control === 'vector' ||
+      staticInputControl(input.control) ||
       isJellyField ||
       Boolean(input.notice) ||
       Boolean(policyNote);
@@ -754,7 +740,7 @@ function renderInputs(
       ['blocks', 'vector', 'asset-picker', 'file-picker', 'color-picker', 'table'].includes(
         input.control
       );
-    const cls = `input-row${isCheckbox ? ' input-row--checkbox' : ''}${isPill ? ' input-row--pill' : ''}${isStaticLabel ? ' input-row--static-label' : ''}${isSubControl(input, prev) ? ' input-row--sub' : ''}`;
+    const cls = `input-row${isCheckbox ? ' input-row--checkbox' : ''}${isPill ? ' input-row--pill' : ''}${isStaticLabel ? ' input-row--static-label' : ''}${input.control === 'textarea' ? ' input-row--multiline' : ''}${isSubControl(input, prev) ? ' input-row--sub' : ''}`;
     const valueTag =
       input.control === 'slider'
         ? ` <span class="input-value">${parseFloat(String(input.value ?? 0))}</span>`
@@ -2938,32 +2924,7 @@ function controlHtml(
       const currentLabel =
         asRow(v?.meta as InputValue | undefined).name ?? v?.id ?? 'Choose asset…';
       const hasValue = Boolean(input.value);
-      // A selected asset carries a resolved blob: URL (see runtime resolveAssetRefs)
-      // - show it as a small preview so the picked image is visible at a glance.
-      // A lottie ref's URL is the animation JSON (unrenderable in <img>), so it
-      // gets a play-glyph stub instead.
-      const thumbUrl = v?.url;
-      const thumb =
-        v?.type === 'lottie'
-          ? `<span class="asset-picker-thumb-inline asset-picker-thumb-lottie" aria-hidden="true">&#9654;</span>`
-          : // An audio ref's URL is an .mp3/.opus/.xm - an <img> at it can only ever
-            // render the browser's broken-image icon. Same trap the picker and catalog
-            // grids had; this is the THIRD renderer, so the audio branch has to be added
-            // wherever a thumbnail is chosen by type, not just where it was first noticed.
-            // The glyph is the honest placeholder; the tile upgrades to the real waveform
-            // once peaks exist (mountAudioThumbs finds it by [data-audio-thumb]).
-            v?.type === 'audio'
-            ? `<span class="asset-picker-thumb-inline asset-picker-thumb-audio"
-                   data-audio-thumb="${escape(v.id)}"
-                   data-audio-fp="${escape(peaksFingerprint(v))}"
-                   aria-hidden="true">${audioThumbPlaceholder({})}</span>`
-            : // A video URL in an <img> is a broken-image icon (same trap as audio). A
-              // muted <video> at #t=0.1 paints a real poster frame in the same tile.
-              v?.type === 'video' && thumbUrl
-              ? `<video class="asset-picker-thumb-inline" src="${escape(thumbUrl)}#t=0.1" muted playsinline preload="metadata" aria-hidden="true"></video>`
-              : thumbUrl
-                ? `<img class="asset-picker-thumb-inline" src="${escape(thumbUrl)}" alt="">`
-                : '';
+      const thumb = assetInputThumbnail(v);
       // An image minted from a pasted Lolly link keeps its origin in meta.toolUrl -
       // the canonical, re-renderable embed URL (see compose.renderUrl). Surface that
       // provenance and an Edit affordance that re-opens the source tool's own inputs

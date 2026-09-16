@@ -275,6 +275,10 @@ export interface TemplatePreset {
  * preset's) so templates cost nothing at rest however large a seed grows.
  */
 export interface TemplateVariant {
+  /** Lead the tools gallery with this editable template. At most one per theme. */
+  galleryCover?: boolean;
+  /** Choose suitable ink for transparent artwork; dark also serves the brand theme. */
+  galleryTheme?: 'light' | 'dark';
   /** Stable id, equal to the file basename. The `?template=<id>` address. */
   id: string;
   /** Display name shown on the chooser tile. */
@@ -297,6 +301,7 @@ export interface TemplateVariant {
  * same). `id` is a permanent contract: never rename or reuse it.
  */
 export interface ToolManifest {
+  designTool?: import('./design-tool-v1.ts').DesignToolPolicyV1;
   id: string;
   name: string;
   version: string;
@@ -322,6 +327,8 @@ export interface ToolManifest {
   category?: string;
   new?: boolean;
   listed?: boolean;
+  /** Use an icon when personal media or a capture is needed before a useful output exists. */
+  galleryArt?: 'render' | 'icon';
   /** The tool assumes it is the ONLY instance on the page - it parks a mutable handle
    *  on `window` and disposes the previous instance when a new one mounts, and/or holds
    *  a WebGL context (capped ~16/tab), so N live copies can't coexist. Multi-edit renders

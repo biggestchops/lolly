@@ -3,7 +3,7 @@
   "name": "Backdrop",
   "description": "Living backdrops from your design system's colours: sixteen GPU effects - flowing silk, prismatic blooms, liquid contours, metaballs, god rays and more. Tune, freeze the exact moment you want, and export stills or motion loops for heroes, walls and meeting backgrounds.",
   "a11yLabel": "Animated {{effect}} backdrop",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "engineVersion": "^1.0.0",
   "status": "official",
   "singleInstance": true,
@@ -61,7 +61,7 @@
       "label": "Number of colours",
       "type": "number",
       "display": "slider",
-      "default": 4,
+      "default": 2,
       "min": 1,
       "max": 6,
       "step": 1,
@@ -71,48 +71,48 @@
       "id": "color1",
       "label": "Colour 1",
       "type": "color",
-      "default": "{color.semantic.primary}"
+      "default": "{color.semantic.secondary}"
     },
     {
       "id": "color2",
       "label": "Colour 2",
       "type": "color",
-      "default": "{color.semantic.secondary}",
+      "default": "{color.semantic.primary}",
       "showIf": { "count": [2, 3, 4, 5, 6] }
     },
     {
       "id": "color3",
       "label": "Colour 3",
       "type": "color",
-      "default": "{color.semantic.muted}",
+      "default": "{color.semantic.secondary}",
       "showIf": { "count": [3, 4, 5, 6] }
     },
     {
       "id": "color4",
       "label": "Colour 4",
       "type": "color",
-      "default": "{color.semantic.text}",
+      "default": "{color.semantic.primary}",
       "showIf": { "count": [4, 5, 6] }
     },
     {
       "id": "color5",
       "label": "Colour 5",
       "type": "color",
-      "default": "{color.semantic.edge}",
+      "default": "{color.semantic.secondary}",
       "showIf": { "count": [5, 6] }
     },
     {
       "id": "color6",
       "label": "Colour 6",
       "type": "color",
-      "default": "{color.semantic.on-primary}",
+      "default": "{color.semantic.primary}",
       "showIf": { "count": [6] }
     },
     {
       "id": "background",
       "label": "Background",
       "type": "color",
-      "default": "{color.semantic.surface}",
+      "default": "{color.semantic.primary}",
       "help": "The field behind the effect. Dark grounds make the colours glow; try the design system's surface for a calmer wash."
     },
     {
@@ -120,7 +120,7 @@
       "display": "segmented",
       "label": "Palette influence",
       "type": "select",
-      "default": "strong",
+      "default": "full",
       "showIf": { "effect": ["silk-flow", "prism-bloom", "liquid-contours"] },
       "options": [
         { "value": "off", "label": "Off" },
@@ -128,7 +128,7 @@
         { "value": "strong", "label": "Strong" },
         { "value": "full", "label": "Full" }
       ],
-      "help": "How strongly the design system's swatches shape the colour. Strong keeps a little spectral shimmer; Full follows the palette most closely, preserving shadows and luminous edges. Off reveals the original spectrum."
+      "help": "How strongly the design system's swatches shape the colour. Strong keeps a little spectral shimmer; the default Full follows the palette most closely, preserving shadows and luminous edges. Off reveals the original spectrum."
     },
     {
       "id": "intensity",
@@ -136,7 +136,7 @@
       "section": "Character",
       "type": "number",
       "display": "slider",
-      "default": 50,
+      "default": 65,
       "min": 0,
       "max": 100,
       "step": 1,
@@ -148,7 +148,7 @@
       "section": "Character",
       "type": "number",
       "display": "slider",
-      "default": 50,
+      "default": 40,
       "min": 0,
       "max": 100,
       "step": 1,
@@ -161,7 +161,7 @@
       "section": "Character",
       "type": "number",
       "display": "slider",
-      "default": 100,
+      "default": 200,
       "min": 25,
       "max": 400,
       "step": 5,

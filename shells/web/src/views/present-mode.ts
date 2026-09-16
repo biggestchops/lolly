@@ -19,6 +19,7 @@
 // continuity is preserved the same way the timeline preserves it: video-mount keys resume
 // off `data-video-key`, which survives the clone. M2 layers real media conduct on top.
 
+import { mountPresentationProduction, type ProductionOptions } from './present-production.ts';
 import {
   buildDeck,
   resolveAddress,
@@ -114,6 +115,8 @@ function isNarrationMarker(marker: HTMLElement): boolean {
  *  Safari throttles it). The conductor fires onAddress freely; the caller debounces. */
 
 export interface OpenPresentOptions {
+  /** Clean output with a separately opened, private controls window. */
+  production?: ProductionOptions;
   /** The tool canvas scope that holds the rendered `.lolly-frame-page` nodes (#tool-content). */
   source: HTMLElement;
   /** The `?s=` address to open on (position, frame id, or `h.f`); null → the first slide. */
@@ -160,6 +163,8 @@ export interface PresentController {
   /** Whether the overview (all-frames map) is showing. */
   readonly overview: boolean;
 }
+
+let closeActivePresentation: (() => void) | null = null;
 
 /** Parse an authored pixel value off an inline style (`left:120px` → 120). */
 function px(el: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {
@@ -502,6 +507,8 @@ function openSlideMotion(
 }
 
 export function openPresentMode(opts: OpenPresentOptions): PresentController | null {
+  if (opts.production && (opts.production.controlsWindow === window || !liveDoc(opts.production.controlsWindow))) return null;
+  closeActivePresentation?.();
   const { source, loop = false, onAddress, onClose, transition = 'slide' } = opts;
   const container = opts.container ?? document.body;
   /** The deck's own transition - what a frame that names none of its own falls back to. */
@@ -682,6 +689,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   let leaveTimer: ReturnType<typeof setTimeout> | null = null;
   // Speaker view (the presenter's private panel: current + next slide previews, notes, timer).
   let speaker: HTMLElement | null = null;
+  let releaseSourcePreview: (() => void) | undefined;
   let speakerRefs: {
     nowSlot: HTMLElement; nextSlot: HTMLElement; nextWrap: HTMLElement;
     notes: HTMLElement; timer: HTMLElement; counter: HTMLElement;
@@ -691,6 +699,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   let speakerTimer: ReturnType<typeof setInterval> | null = null;
   let speakerStart = 0;
   const ownedFullscreen = { v: false };
+  const production = opts.production ? mountPresentationProduction(stage, framesEl, opts.production, layoutScales, close) : null;
 
   // Lock page scroll while the modal deck is up; record to restore exactly.
   const htmlEl = document.documentElement;
@@ -743,13 +752,12 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   // Fit scale per clone: min(vw/fw, vh/fh), leaving a small margin so a slide never
   // kisses the screen edge. Recomputed on resize.
   function layoutScales(): void {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    const { w: vw, h: vh } = viewport();
     for (let i = 0; i < cloneByIndex.length; i++) {
       const clone = cloneByIndex[i]!;
       const fw = specs[i]!.w;
       const fh = specs[i]!.h;
-      const fit = Math.min(vw / fw, vh / fh) * FLIGHT_MARGIN;
+      const fit = Math.min(vw / fw, vh / fh) * (opts.production?.content ? 1 : FLIGHT_MARGIN);
       clone.style.setProperty('--pr-scale', String(fit));
       if (overview) setOverviewTransform(i, vw, vh);
     }
@@ -762,7 +770,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   const OVERVIEW_MARGIN = 0.86;
 
   /** The viewport, in CSS pixels. */
-  function viewport(): Viewport { return { w: window.innerWidth, h: window.innerHeight }; }
+  function viewport(): Viewport { return production?.viewport() ?? { w: window.innerWidth, h: window.innerHeight }; }
   /** One frame's authored rectangle on the canvas. */
   function frameRect(i: number): Rect {
     const s = specs[clampIndex(deck, i)]!;
@@ -1312,6 +1320,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
    *  The stage is usually the PROJECTOR, so the audience reads this too - which is why the
    *  reassuring messages take a shorter `ms` than the ones that report a problem. */
   function note(message: string, ms = NOTE_MS): void {
+    if (production) return;
     noteEl.textContent = message;
     noteEl.hidden = false;
     announce(message);
@@ -1381,12 +1390,15 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
 
   function renderSpeaker(): void {
     if (!speaker || !speakerRefs) return;
+    releaseSourcePreview?.(); releaseSourcePreview = undefined;
     // Fall back to the panel's own window dimensions when a slot hasn't been laid out yet.
     const winW = speakerWin ? speakerWin.innerWidth : window.innerWidth;
     const winH = speakerWin ? speakerWin.innerHeight : window.innerHeight;
     const nowW = Math.max(160, speakerRefs.nowSlot.clientWidth || Math.round(winW * 0.5));
     const nowH = Math.max(120, speakerRefs.nowSlot.clientHeight || Math.round(winH * 0.6));
     speakerRefs.nowSlot.replaceChildren(makeSlidePreview(active, nowW, nowH, speakerDoc));
+    const sourcePreview = speakerRefs.nowSlot.querySelector<HTMLElement>('.lolly-frame-page');
+    if (sourcePreview) releaseSourcePreview = opts.production?.content?.mount(sourcePreview);
     // Next: walkNext returns the same index at the last slide when not looping → no next.
     const nx = walkNext(deck, active, { loop });
     const noNext = nx === active && !loop;
@@ -1416,6 +1428,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
     if (speakerWin && !liveDoc(speakerWin)) {
       const neverAppeared = popupProbe != null;
       closeSpeaker();
+      production?.lostControls();
       if (neverAppeared && !closed) openSpeakerInPage();
       return;
     }
@@ -1434,6 +1447,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
       return b;
     };
     const root = mk('div', 'pr-speaker');
+    root.classList.toggle('pr-speaker-content', !!opts.production?.content);
     const now = mk('div', 'pr-sp-now');
     const nowTag = mk('span', 'pr-sp-tag'); nowTag.textContent = t('Current');
     const nowSlot = mk('div', 'pr-sp-slot');
@@ -1457,6 +1471,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
     host.appendChild(root);
     speaker = root;
     speakerRefs = { nowSlot, nextSlot, nextWrap, notes, timer, counter };
+    if (production) { root.classList.add('pr-speaker-production'); production.controls(doc, root); }
   }
 
   /** Prepare a blank popup: full-height dark body, the app's same-origin stylesheets copied in
@@ -1465,6 +1480,12 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
     const d = win.document;
     const theme = document.documentElement.getAttribute('data-theme');
     if (theme) d.documentElement.setAttribute('data-theme', theme);
+    for (const key of ['data-a11y-motion', 'data-a11y-contrast', 'data-a11y-text', 'data-a11y-previews']) {
+      const value = document.documentElement.getAttribute(key);
+      if (value) d.documentElement.setAttribute(key, value); else d.documentElement.removeAttribute(key);
+    }
+    d.documentElement.lang = document.documentElement.lang;
+    d.documentElement.dir = document.documentElement.dir;
     d.head.replaceChildren();
     d.body.replaceChildren();
     d.title = t('Speaker view'); // AFTER clearing head - the setter re-creates the <title> element
@@ -1498,7 +1519,10 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   // Keys inside the popup: Esc / S close the panel (not the whole deck); everything else drives
   // the deck through the shared handler, so arrows/space work from either window.
   function onSpeakerKey(e: KeyboardEvent): void {
-    if (e.key === 'Escape' || e.key === 's' || e.key === 'S') { e.preventDefault(); closeSpeaker(); return; }
+    if (production && isTyping(e.target)) return;
+    if (e.key === 'Escape' || e.key === 's' || e.key === 'S') {
+      e.preventDefault(); production?.lostControls(); closeSpeaker(); return;
+    }
     onKey(e);
   }
 
@@ -1526,6 +1550,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
    *  because the popup failed, so it always says so - the P4 defect was pressing `s`,
    *  getting a silently blocked popup, and seeing nothing at all. */
   function openSpeakerInPage(): void {
+    if (production) { production.lostControls(); return; }
     speakerWin = null;
     speakerDoc = document;
     buildSpeaker(document, stage);
@@ -1535,9 +1560,9 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   }
 
   function toggleSpeaker(): void {
-    if (speaker || speakerWin) { closeSpeaker(); return; }
+    if (speaker || speakerWin) { if (production) { speakerWin?.focus(); return; } closeSpeaker(); return; }
     let win: Window | null = null;
-    try { win = window.open('', 'lolly-speaker', 'popup=yes,width=1100,height=760'); } catch { win = null; }
+    try { win = opts.production && liveDoc(opts.production.controlsWindow) ? opts.production.controlsWindow : window.open('about:blank', 'lolly-speaker', 'popup=yes,width=1100,height=760'); } catch { win = null; }
     // A blocker answers in three ways: null, a handle whose document is unreachable, or a
     // window that vanishes a moment later. The first two are visible now; the third needs a
     // probe, so the popup stays the preferred path and the fallback arrives on its own.
@@ -1565,6 +1590,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
     }
   }
   function closeSpeaker(): void {
+    releaseSourcePreview?.(); releaseSourcePreview = undefined;
     if (popupProbe) { clearTimeout(popupProbe); popupProbe = null; }
     if (!speaker && !speakerWin) return;
     if (speakerTimer) { clearInterval(speakerTimer); speakerTimer = null; }
@@ -1763,11 +1789,20 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
     const el = target as HTMLElement | null;
     if (!el) return false;
     const tag = el.tagName;
-    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable || !!el.closest?.('.pr-framing-canvas');
   }
 
   function onKey(e: KeyboardEvent): void {
     if (closed || isTyping(e.target)) return;
+    if (production) {
+      if ((!e.ctrlKey && !e.metaKey && production.key(e.key)) || ['Escape', 'o', 'O', 'b', 'B'].includes(e.key)) {
+        if (e.key.toLowerCase() !== 'r') production.hold();
+        e.preventDefault(); e.stopPropagation(); return;
+      }
+      if (!e.ctrlKey && !e.metaKey && !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' ', 's', 'S', 'f', 'F', 'k', 'K', 'm', 'M'].includes(e.key)) {
+        e.preventDefault(); e.stopPropagation(); return;
+      }
+    }
     wake();
     // Any key resumes from a blackout hold (reveal's `B`): the screen was black, so the
     // keystroke is spent lifting it, not navigating.
@@ -1832,6 +1867,8 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   stage.addEventListener('pointerdown', wake);
   stage.addEventListener('focusin', wake);
   window.addEventListener('resize', onResize);
+  window.addEventListener('pagehide', close, { once: true });
+  closeActivePresentation = close;
 
   // ---- Go ----------------------------------------------------------------------------
   syncPauseBtn();
@@ -1841,7 +1878,7 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   render(null);
   wake();
   stage.focus({ preventScroll: true });
-  enterFullscreen();
+  if (production) toggleSpeaker(); else enterFullscreen();
   // Hydrate motion content on the clones so it actually plays in present mode: lottie
   // players and animated-SVG markers (video autoplays natively via its markup). Both are
   // async (fetch + inject); re-conduct once mounted so non-active players start paused.
@@ -1853,6 +1890,9 @@ export function openPresentMode(opts: OpenPresentOptions): PresentController | n
   function close(): void {
     if (closed) return;
     closed = true;
+    if (closeActivePresentation === close) closeActivePresentation = null;
+    window.removeEventListener('pagehide', close);
+    production?.dispose();
     document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('resize', onResize);
     if (idleTimer) clearTimeout(idleTimer);

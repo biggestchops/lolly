@@ -1301,6 +1301,9 @@ export function rippleOverlays(before: Box[], after: Box[], cfg: TimeCfg): Box[]
     spans.push({ id: String(id), start: t.start ?? 0, end: (t.start ?? 0) + t.dur });
   }
   if (!spans.length) return next.map((b) => b);
+  // Packed clips do not overlap. Binary search keeps large group edits from scanning
+  // the whole row for every overlay; overlapping imported rows keep first-match order.
+  const disjoint = spans.every((span, i) => i === 0 || spans[i - 1]!.end <= span.start);
   // Where those clips ended up.
   const moved = new Map<string, number>();
   for (const i of seqIndices(next, cfg)) {
@@ -1313,7 +1316,20 @@ export function rippleOverlays(before: Box[], after: Box[], cfg: TimeCfg): Box[]
     if (!b) return b;
     const t = boxTiming(b, cfg);
     if (t.lane === 'seq' || t.start === null) return b;   // seq clips and scenery are not overlays
-    const span = spans.find((s) => t.start! >= s.start && t.start! < s.end);
+    let span: (typeof spans)[number] | undefined;
+    if (disjoint) {
+      let lo = 0;
+      let hi = spans.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (spans[mid]!.start <= t.start) lo = mid + 1;
+        else hi = mid;
+      }
+      const candidate = spans[lo - 1];
+      if (candidate && t.start < candidate.end) span = candidate;
+    } else {
+      span = spans.find(s => t.start! >= s.start && t.start! < s.end);
+    }
     if (!span) return b;
     const now = moved.get(span.id);
     if (now == null) return b;                             // its anchor clip is gone - stay put
@@ -1570,6 +1586,25 @@ export function removeAndRipple(boxes: Box[], cfg: TimeCfg, id: string, mediaDur
   const culled = rows.filter((_, k) => k !== i);
   if (!wasSeq) return culled;
   return rippleOverlays(rows, packSeq(culled, cfg, mediaDur), cfg);
+}
+
+/** Remove a selection and resolve every surviving overlay against the original row. */
+export function removeManyAndRipple(boxes: Box[], cfg: TimeCfg, ids: readonly string[], mediaDur?: MediaDurFn): Box[] {
+  const rows = Array.isArray(boxes) ? boxes : [];
+  const gone = new Set(ids);
+  const removed = rows.filter(b => gone.has(String(b?.[cfg.idField] ?? '')));
+  if (!removed.length) return rows;
+  let next = rows.filter(b => !gone.has(String(b?.[cfg.idField] ?? '')));
+  if (removed.some(b => boxTiming(b, cfg).lane === 'seq')) {
+    next = rippleOverlays(rows, packSeq(next, cfg, mediaDur), cfg);
+  }
+  const link = cfg.linkField;
+  if (!link) return next;
+  return next.map(b => {
+    if (!b || !gone.has(String(b[link] ?? ''))) return b;
+    const muted = b[cfg.muteField] === true || b[cfg.muteField] === 'true';
+    return { ...b, [link]: '', ...(muted ? { [cfg.muteField]: '' } : {}) };
+  });
 }
 
 /**

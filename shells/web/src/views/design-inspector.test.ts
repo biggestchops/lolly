@@ -317,10 +317,10 @@ test('a plain box shows Object and its paint groups, then Motion + Present; no T
 test('a text box adds Text; an image box adds Image, with the 3x3 position grid', () => {
   const h = mount();
   h.select(['t1']);
-  assert.deepEqual(secs(h), ['object', 'fill', 'appearance', 'shadow', 'tilt', 'arrange', 'text', 'motion', 'present']);
+  assert.deepEqual(secs(h), ['text', 'object', 'fill', 'appearance', 'shadow', 'tilt', 'arrange', 'motion', 'present']);
   assert.ok(h.el.querySelector('select[data-fld="font"]'), 'font select');
   h.select(['i1']);
-  assert.deepEqual(secs(h), ['object', 'fill', 'appearance', 'shadow', 'tilt', 'arrange', 'image', 'motion', 'present']);
+  assert.deepEqual(secs(h), ['image', 'object', 'fill', 'appearance', 'shadow', 'tilt', 'arrange', 'motion', 'present']);
   assert.equal(h.el.querySelectorAll('.fc-posgrid .fc-pos-btn').length, 9);
   h.handle.destroy();
 });
@@ -1505,4 +1505,27 @@ test('an in-progress inspector edit remains bound to the guide it started on', a
   await new Promise(resolve => setTimeout(resolve, 20));
   assert.equal(num(h, 'guide-x').value, '20', 'the inspector catches up after editing');
   h.handle.destroy();
+});
+
+
+test('video properties lead with content and preserve explicit precision preferences', () => {
+  let video = true;
+  const h = mount([{ id: 'a', kind: 'text', text: 'Hello', x: 0, y: 0, w: 400, h: 100 }], { videoWorkspace: () => video });
+  try {
+    h.select(['a']);
+    assert.equal(h.handle.el.querySelector('[data-sec]')?.getAttribute('data-sec'), 'text');
+    const object = h.handle.el.querySelector<HTMLElement>('[data-head="object"]')!;
+    assert.equal(object.getAttribute('aria-expanded'), 'false');
+    const rows = h.handle.el.querySelector('[data-rows="object"]')!;
+    assert.equal(rows.childElementCount, 0, 'collapsed geometry creates no controls');
+    object.focus();
+    click(object);
+    assert.equal(h.handle.el.querySelector('[data-head="object"]')?.getAttribute('aria-expanded'), 'true');
+    assert.ok(h.handle.el.querySelector('[data-rows="object"] input'), 'opening mounts the normal controls');
+    assert.equal(document.activeElement?.getAttribute('data-head'), 'object');
+    video = false;
+    h.handle.sync();
+    assert.equal(h.handle.el.querySelector('[data-sec]')?.getAttribute('data-sec'), 'text');
+    assert.equal(h.handle.el.querySelector('[data-head="object"]')?.getAttribute('aria-expanded'), 'true');
+  } finally { h.handle.destroy(); }
 });

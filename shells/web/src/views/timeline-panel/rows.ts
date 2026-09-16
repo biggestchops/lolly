@@ -240,6 +240,7 @@ export function makeBar(_tp: TpCtx, id: string, lane: '' | 'seq'): HTMLElement {
 export function rebuild(tp: TpCtx, boxes: Box[]): void {
   const { bars, cfg, chips, laneWrap, root, scenery, tracks } = tp;
   const scrollLeft = tracks.scrollLeft;
+  const scrollTop = tracks.scrollTop;
   // Every bar is about to be destroyed. If one of them had focus, the browser sends
   // focus to <body> - and since the key handler is bound on `root`, that kills the
   // keyboard for the rest of the session (delete a clip, then no shortcut works).
@@ -247,6 +248,9 @@ export function rebuild(tp: TpCtx, boxes: Box[]): void {
   const hadFocus =
     root.contains(document.activeElement) &&
     !!(document.activeElement as HTMLElement | null)?.closest('.tl-clip');
+  const listFocus = scenery.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
+  const listId = listFocus?.dataset.id;
+  const listAdd = listFocus?.classList.contains('tl-chip-add');
   bars.clear();
   chips.clear();
   laneWrap.textContent = '';
@@ -361,7 +365,7 @@ export function rebuild(tp: TpCtx, boxes: Box[]): void {
   }
   laneWrap.appendChild(seqLane);
 
-  // Scenery: everything untimed, as a collapsed strip of chips.
+  // Scenery: everything untimed, selected through the Always on list.
   const untimed = boxes.filter((b) => b && !isTimed(b, cfg));
   if (untimed.length) {
     const label = document.createElement('span');
@@ -404,8 +408,14 @@ export function rebuild(tp: TpCtx, boxes: Box[]): void {
 
   restyle(tp, boxes, total, seqIds);
   tracks.scrollLeft = scrollLeft;
+  tracks.scrollTop = scrollTop;
   // restyle → updateRovingTabindex has just picked the surviving focus target.
-  if (hadFocus) (bars.get(tp.focusedId) ?? root).focus?.();
+  if (hadFocus) (bars.get(tp.focusedId) ?? root).focus?.({preventScroll:true});
+  if (listId && tp.alwaysMenu.isOpen()) {
+    const chip = chips.get(listId);
+    const target = listAdd ? chip?.parentElement?.querySelector<HTMLElement>('.tl-chip-add') : chip;
+    (target ?? scenery.querySelector<HTMLElement>('.tl-chip') ?? tp.alwaysBtn).focus();
+  }
 }
 /** Cheap pass: geometry, labels, selection state. No node churn. */
 export function restyle(tp: TpCtx, boxes: Box[], total = durationSec(tp), seqIds?: Set<string>): void {

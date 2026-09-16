@@ -114,6 +114,35 @@ frontend, wasting gigabytes of temporary build space.
 - `src/capture.rs` (312 lines): the only substantial Rust in the project. It drives a **headless Chrome over the DevTools Protocol**, deliberately not the app's own WKWebView or WebView2, because Tauri 2 has no stable API for screenshotting arbitrary content with viewport and scroll control. `capture_page` uses `Page.captureScreenshot`, and its clip rect is **document-space** when `captureBeyondViewport` is true, so scroll depth resolves into `clip.y` rather than into a `window.scrollTo`. An earlier version scrolled and then clipped at `y = 0`, which silently framed the page top at every depth. `capture_page_pdf` uses `Page.printToPDF` under `screen` media emulation for a true vector print. Both run on `spawn_blocking`, because `headless_chrome` is blocking. Both require a Chrome or Chromium install. Only non-http(s) schemes are rejected: capturing localhost or a private dev server is a feature here, because the user runs the tool on their own machine.
 - `src-tauri/capabilities/default.json` holds the Tauri permission set. Filesystem access is limited to the verbs used by state/pack storage and export, with exact scopes for `$APPDATA/saved-state/**`, `$APPDATA/pack-store/**`, and `$DOWNLOAD/Lolly/**`; it cannot traverse the rest of AppData or Downloads. There is no `tauri-plugin-http`. Outbound HTTP goes through `remote_fetch` (`src-tauri/src/remote_fetch.rs`), a narrow native command built on `reqwest` that the webview cannot bypass: HTTPS only, bounded URL/header/body/response sizes, resolution restricted to public IP space, and the resolved address pinned into a fresh no-proxy client with the same checks re-applied on every redirect (five max) - a deliberate replacement for the webview-visible `plugin:http|*` command family, kept narrow because remote instances and user-chosen export providers are first-class callers. The Content Security Policy is a `<meta>` tag in the built `index.html`, written by the shared `../tauri-shared/vite-csp.mjs` plugin, and `tauri.conf.json` keeps `app.security.csp`/`devCsp` null on purpose: with a CSP in the config, Tauri's codegen re-serialises every `.html` asset (the signed tool templates included), so the catalog digests no longer match and no tool loads under the release build's verified-only trust mode (`tests/tauri-csp.test.ts` pins this). `unsafe-eval` remains temporarily because verified built-in tool hooks still use the compatibility executor.
 
+### Private presentation window
+
+`src/presentation_windows.rs` builds the GUI's configured windows with a popup
+handler. The shared presenter requests `about:blank` explicitly; an empty URL
+is rejected by the pinned macOS runtime before the handler runs. One private
+controls window may open. Its navigation is limited to the blank document and
+intercepted local close/focus requests; nested popups are refused. Focus restores
+and raises the existing controls window without a plugin permission grant. Closing the main
+window also destroys its controls. CLI/render-server window construction stays
+on its existing path.
+
+On macOS, WebKit's supplied popup configuration preserves the opener and shared
+media relationship. The adapter gives it a fresh script controller.
+`src/presentation_window.js` makes Tauri use the child's message transport because
+the inherited `ipc://` URL handler still belongs to the opener. Application
+commands require the main window; the controls have no plugin capability grants.
+This is a trusted same-origin UI with direct opener access, not a sandbox for
+untrusted content. Presentation logic, scene state and media ownership remain in
+the web shell.
+
+The opt-in Cargo feature `presentation-probe` embeds
+`tests/presentation-probe.js` and a JSON report command. It requires the separate
+bundle identifier `tools.lolly.PresentationProbe` and replaces media devices with
+generated video. It is absent from ordinary builds. Use an installed `.app` to
+test opener access, live Countdown, borrowed camera preview, native command
+restrictions and close/reopen; a successful Rust build alone does not verify
+those behaviors. Camera extensions and native composition recording are not
+provided by this adapter.
+
 ## Updates
 
 `plugins.updater` in `tauri.conf.json` points at

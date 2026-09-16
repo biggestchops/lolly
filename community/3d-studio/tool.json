@@ -1,0 +1,1773 @@
+{
+  "id": "3d-studio",
+  "name": "3D Studio",
+  "version": "0.3.0",
+  "engineVersion": ">=1.204.0",
+  "status": "official",
+  "singleInstance": true,
+  "category": "designer",
+  "description": "Turn SVG artwork and 3D models into coordinated images. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
+  "a11yLabel": "3D studio rendering with {{studio}} lighting",
+  "tags": [
+    "3d",
+    "studio",
+    "icons",
+    "logo",
+    "svg",
+    "extrusion",
+    "glb",
+    "stl",
+    "lighting",
+    "materials",
+    "product"
+  ],
+  "render": {
+    "width": 1280,
+    "height": 1280,
+    "formats": [
+      "png",
+      "jpg",
+      "webp",
+      "avif",
+      "tiff",
+      "webm",
+      "mp4",
+      "gif"
+    ],
+    "actions": [
+      "copy",
+      "download",
+      "save"
+    ],
+    "convertPaths": false,
+    "video": {
+      "wait": 1,
+      "duration": 5
+    },
+    "sectionIcons": {
+      "Start": "box",
+      "Collection": "box",
+      "Look": "paintbrush",
+      "Shape": "layers",
+      "Camera": "camera",
+      "Depth": "camera",
+      "Stage": "image",
+      "Lighting": "box",
+      "Materials": "paintbrush",
+      "Output": "download",
+      "Lights": "sunburst"
+    }
+  },
+  "hooks": {
+    "onInit": true,
+    "onInput": true
+  },
+  "inputs": [
+    {
+      "id": "controls",
+      "label": "Controls",
+      "type": "select",
+      "default": "guided",
+      "section": "Start",
+      "options": [
+        {
+          "value": "guided",
+          "label": "Guided"
+        },
+        {
+          "value": "expert",
+          "label": "Expert"
+        }
+      ]
+    },
+    {
+      "id": "source",
+      "label": "Start with",
+      "type": "select",
+      "default": "primitive",
+      "section": "Start",
+      "options": [
+        {
+          "value": "primitive",
+          "label": "A sample shape"
+        },
+        {
+          "value": "artwork",
+          "label": "SVG artwork"
+        },
+        {
+          "value": "model",
+          "label": "A 3D model"
+        },
+        {
+          "value": "collection",
+          "label": "A collection"
+        }
+      ]
+    },
+    {
+      "id": "primitive",
+      "label": "Shape",
+      "type": "select",
+      "default": "badge",
+      "section": "Start",
+      "options": [
+        {
+          "value": "badge",
+          "label": "Two-colour badge"
+        },
+        {
+          "value": "sphere",
+          "label": "Sphere"
+        },
+        {
+          "value": "box",
+          "label": "Box"
+        },
+        {
+          "value": "torus",
+          "label": "Ring"
+        }
+      ],
+      "showIf": {
+        "source": "primitive"
+      }
+    },
+    {
+      "id": "artwork",
+      "label": "Artwork",
+      "type": "asset",
+      "section": "Start",
+      "assetType": "vector",
+      "allowUpload": true,
+      "showIf": {
+        "source": "artwork"
+      },
+      "help": "Choose or upload an SVG icon or logo, up to 1 MB. Plain paths, shapes and solid fills are supported."
+    },
+    {
+      "id": "modelAsset",
+      "label": "Model",
+      "type": "asset",
+      "section": "Start",
+      "assetType": "any",
+      "allowUpload": true,
+      "showIf": {
+        "source": "model"
+      },
+      "help": "Choose or upload a self-contained GLB or STL up to 32 MB. Uploads are saved on this device for reuse."
+    },
+    {
+      "id": "modelFormat",
+      "label": "Model format",
+      "type": "select",
+      "default": "auto",
+      "section": "Start",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Detect from filename"
+        },
+        {
+          "value": "glb",
+          "label": "GLB"
+        },
+        {
+          "value": "stl",
+          "label": "STL"
+        }
+      ],
+      "showIf": {
+        "source": "model",
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "collectionName",
+      "label": "Collection name",
+      "type": "text",
+      "default": "Studio collection",
+      "section": "Collection",
+      "showIf": {
+        "source": "collection"
+      }
+    },
+    {
+      "id": "activeSubject",
+      "label": "Preview item",
+      "type": "number",
+      "default": 1,
+      "min": 1,
+      "max": 24,
+      "step": 1,
+      "section": "Collection",
+      "showIf": {
+        "source": "collection"
+      },
+      "help": "Choose an item here or in Review collection. Shared controls apply to the whole set."
+    },
+    {
+      "id": "subjects",
+      "label": "Collection items",
+      "type": "blocks",
+      "section": "Collection",
+      "showIf": {
+        "source": "collection"
+      },
+      "labelledFields": true,
+      "rowActions": true,
+      "help": "Up to 24 items. All use this studio; each can keep its own framing and material slots.",
+      "default": [
+        {
+          "name": "Badge",
+          "kind": "primitive",
+          "primitive": "badge"
+        },
+        {
+          "name": "Sphere",
+          "kind": "primitive",
+          "primitive": "sphere"
+        },
+        {
+          "name": "Box",
+          "kind": "primitive",
+          "primitive": "box"
+        }
+      ],
+      "fields": [
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "text",
+          "default": "Item"
+        },
+        {
+          "id": "kind",
+          "label": "Source",
+          "type": "select",
+          "default": "artwork",
+          "options": [
+            {
+              "value": "artwork",
+              "label": "SVG artwork",
+              "repeatable": true
+            },
+            {
+              "value": "model",
+              "label": "3D model",
+              "repeatable": true
+            },
+            {
+              "value": "primitive",
+              "label": "Sample shape",
+              "repeatable": true
+            }
+          ]
+        },
+        {
+          "id": "asset",
+          "label": "Artwork or model",
+          "type": "asset",
+          "assetType": "any",
+          "allowUpload": true,
+          "showFor": [
+            "artwork",
+            "model"
+          ]
+        },
+        {
+          "id": "primitive",
+          "label": "Sample shape",
+          "type": "select",
+          "default": "badge",
+          "options": [
+            {
+              "value": "badge",
+              "label": "Two-colour badge"
+            },
+            {
+              "value": "sphere",
+              "label": "Sphere"
+            },
+            {
+              "value": "box",
+              "label": "Box"
+            },
+            {
+              "value": "torus",
+              "label": "Ring"
+            }
+          ],
+          "showIf": {
+            "kind": "primitive"
+          }
+        },
+        {
+          "id": "modelFormat",
+          "label": "Model format",
+          "type": "select",
+          "default": "auto",
+          "options": [
+            {
+              "value": "auto",
+              "label": "Detect from filename"
+            },
+            {
+              "value": "glb",
+              "label": "GLB"
+            },
+            {
+              "value": "stl",
+              "label": "STL"
+            }
+          ],
+          "showIf": {
+            "kind": "model",
+            "controls": "expert"
+          }
+        },
+        {
+          "id": "ownFraming",
+          "label": "Use this item's framing",
+          "type": "boolean",
+          "default": false,
+          "help": "Drag the selected preview to create a framing override. Turn this off to follow the shared camera again."
+        },
+        {
+          "id": "azimuth",
+          "label": "Azimuth",
+          "type": "number",
+          "default": 25,
+          "min": -180,
+          "max": 180,
+          "step": 1,
+          "showIf": {
+            "ownFraming": true
+          }
+        },
+        {
+          "id": "elevation",
+          "label": "Elevation",
+          "type": "number",
+          "default": 14,
+          "min": -60,
+          "max": 80,
+          "step": 1,
+          "showIf": {
+            "ownFraming": true
+          }
+        },
+        {
+          "id": "fov",
+          "label": "Field of view",
+          "type": "number",
+          "default": 29,
+          "min": 15,
+          "max": 80,
+          "step": 1,
+          "showIf": {
+            "ownFraming": true
+          }
+        },
+        {
+          "id": "zoom",
+          "label": "Zoom",
+          "type": "number",
+          "default": 1,
+          "min": 0.05,
+          "max": 3,
+          "step": 0.05,
+          "showIf": {
+            "ownFraming": true
+          }
+        },
+        {
+          "id": "roleA",
+          "label": "Material A slot",
+          "type": "text",
+          "default": "",
+          "showIf": {
+            "materialMode": "pair",
+            "controls": "expert"
+          },
+          "help": "Exact slot name or number. Leave both empty for alternating finishes; mapped pairs leave other slots intact."
+        },
+        {
+          "id": "roleB",
+          "label": "Material B slot",
+          "type": "text",
+          "default": "",
+          "showIf": {
+            "materialMode": "pair",
+            "controls": "expert"
+          },
+          "help": "Exact slot name or number. Leave both empty for alternating finishes; mapped pairs leave other slots intact."
+        },
+        {
+          "id": "panX",
+          "label": "Target offset X",
+          "type": "number",
+          "default": 0,
+          "min": -20,
+          "max": 20,
+          "step": 0.05,
+          "showIf": {
+            "ownFraming": true
+          }
+        },
+        {
+          "id": "panY",
+          "label": "Target offset Y",
+          "type": "number",
+          "default": 0,
+          "min": -20,
+          "max": 20,
+          "step": 0.05,
+          "showIf": {
+            "ownFraming": true
+          }
+        },
+        {
+          "id": "panZ",
+          "label": "Target offset Z",
+          "type": "number",
+          "default": 0,
+          "min": -20,
+          "max": 20,
+          "step": 0.05,
+          "showIf": {
+            "ownFraming": true
+          }
+        },
+        {
+          "id": "ownFocus",
+          "label": "Own focus distance",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "focusDistance",
+          "label": "Focus distance (0 = automatic)",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 500,
+          "step": 0.1,
+          "showIf": {
+            "ownFocus": true
+          }
+        }
+      ],
+      "addMenu": {
+        "field": "kind",
+        "label": "Add item"
+      }
+    },
+    {
+      "id": "studio",
+      "label": "Lighting studio",
+      "type": "select",
+      "default": "dramatic",
+      "section": "Look",
+      "options": [
+        {
+          "value": "soft",
+          "label": "Soft studio"
+        },
+        {
+          "value": "dramatic",
+          "label": "Dramatic edge"
+        },
+        {
+          "value": "electric",
+          "label": "Cool contrast"
+        },
+        {
+          "value": "warm",
+          "label": "Warm edge"
+        },
+        {
+          "value": "custom",
+          "label": "Custom lights",
+          "showIf": {
+            "controls": "expert"
+          }
+        }
+      ]
+    },
+    {
+      "id": "materialMode",
+      "label": "Materials",
+      "type": "select",
+      "default": "source",
+      "section": "Look",
+      "options": [
+        {
+          "value": "source",
+          "label": "Keep source materials"
+        },
+        {
+          "value": "pair",
+          "label": "Apply a colour pair"
+        },
+        {
+          "value": "custom",
+          "label": "Override selected slots",
+          "showIf": {
+            "controls": "expert"
+          }
+        }
+      ]
+    },
+    {
+      "id": "colorA",
+      "label": "Colour A",
+      "type": "color",
+      "default": "{color.semantic.secondary}",
+      "section": "Look"
+    },
+    {
+      "id": "colorB",
+      "label": "Colour B",
+      "type": "color",
+      "default": "{color.semantic.primary}",
+      "section": "Look"
+    },
+    {
+      "id": "finishA",
+      "label": "Finish A",
+      "type": "select",
+      "default": "satin",
+      "section": "Look",
+      "options": [
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": [
+        {
+          "source": [
+            "primitive",
+            "artwork"
+          ]
+        },
+        {
+          "source": "model",
+          "materialMode": "pair"
+        },
+        {
+          "source": "collection"
+        }
+      ]
+    },
+    {
+      "id": "finishB",
+      "label": "Finish B",
+      "type": "select",
+      "default": "enamel",
+      "section": "Look",
+      "options": [
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": [
+        {
+          "source": [
+            "primitive",
+            "artwork"
+          ]
+        },
+        {
+          "source": "model",
+          "materialMode": "pair"
+        },
+        {
+          "source": "collection"
+        }
+      ]
+    },
+    {
+      "id": "surfaceFinishes",
+      "label": "Separate face, bevel and side finishes",
+      "type": "boolean",
+      "default": false,
+      "section": "Look",
+      "showIf": [
+        {
+          "source": "artwork"
+        },
+        {
+          "source": "primitive",
+          "primitive": "badge"
+        },
+        {
+          "source": "collection"
+        }
+      ],
+      "help": "For SVG artwork and the sample badge. Source colour regions stay separate."
+    },
+    {
+      "id": "faceFinishA",
+      "label": "Face finish A",
+      "type": "select",
+      "default": "inherit",
+      "section": "Look",
+      "options": [
+        {
+          "value": "inherit",
+          "label": "Use region finish"
+        },
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": {
+        "surfaceFinishes": true
+      },
+      "help": "Region A keeps its colour. This changes only the surface finish."
+    },
+    {
+      "id": "bevelFinishA",
+      "label": "Bevel finish A",
+      "type": "select",
+      "default": "inherit",
+      "section": "Look",
+      "options": [
+        {
+          "value": "inherit",
+          "label": "Use region finish"
+        },
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": {
+        "surfaceFinishes": true
+      },
+      "help": "Region A keeps its colour. This changes only the surface finish."
+    },
+    {
+      "id": "sideFinishA",
+      "label": "Side finish A",
+      "type": "select",
+      "default": "inherit",
+      "section": "Look",
+      "options": [
+        {
+          "value": "inherit",
+          "label": "Use region finish"
+        },
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": {
+        "surfaceFinishes": true
+      },
+      "help": "Region A keeps its colour. This changes only the surface finish."
+    },
+    {
+      "id": "faceFinishB",
+      "label": "Face finish B",
+      "type": "select",
+      "default": "inherit",
+      "section": "Look",
+      "options": [
+        {
+          "value": "inherit",
+          "label": "Use region finish"
+        },
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": {
+        "surfaceFinishes": true
+      },
+      "help": "Region B keeps its colour. This changes only the surface finish."
+    },
+    {
+      "id": "bevelFinishB",
+      "label": "Bevel finish B",
+      "type": "select",
+      "default": "inherit",
+      "section": "Look",
+      "options": [
+        {
+          "value": "inherit",
+          "label": "Use region finish"
+        },
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": {
+        "surfaceFinishes": true
+      },
+      "help": "Region B keeps its colour. This changes only the surface finish."
+    },
+    {
+      "id": "sideFinishB",
+      "label": "Side finish B",
+      "type": "select",
+      "default": "inherit",
+      "section": "Look",
+      "options": [
+        {
+          "value": "inherit",
+          "label": "Use region finish"
+        },
+        {
+          "value": "matte",
+          "label": "Matte"
+        },
+        {
+          "value": "satin",
+          "label": "Satin"
+        },
+        {
+          "value": "enamel",
+          "label": "Polished enamel"
+        },
+        {
+          "value": "metal",
+          "label": "Metal"
+        }
+      ],
+      "showIf": {
+        "surfaceFinishes": true
+      },
+      "help": "Region B keeps its colour. This changes only the surface finish."
+    },
+    {
+      "id": "drama",
+      "label": "Contrast",
+      "type": "number",
+      "default": 0.7,
+      "section": "Look",
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "display": "slider"
+    },
+    {
+      "id": "softness",
+      "label": "Shadow softness",
+      "type": "number",
+      "default": 1.5,
+      "section": "Look",
+      "min": 0,
+      "max": 5,
+      "step": 0.1,
+      "display": "slider"
+    },
+    {
+      "id": "exposure",
+      "label": "Exposure",
+      "type": "number",
+      "default": 1.1,
+      "section": "Look",
+      "min": 0.1,
+      "max": 4,
+      "step": 0.05,
+      "display": "slider"
+    },
+    {
+      "id": "lightMotion",
+      "label": "Light motion",
+      "type": "select",
+      "default": "still",
+      "section": "Look",
+      "options": [
+        {
+          "value": "still",
+          "label": "Stationary"
+        },
+        {
+          "value": "orbit",
+          "label": "Orbit the studio"
+        },
+        {
+          "value": "breathe",
+          "label": "Gently breathe"
+        }
+      ],
+      "help": "Uses Loop seconds. Moving lights change illumination, reflections and cast shadows."
+    },
+    {
+      "id": "lightMotionAmount",
+      "label": "Light motion amount",
+      "type": "number",
+      "default": 0.35,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "section": "Look",
+      "showIf": {
+        "lightMotion": [
+          "orbit",
+          "breathe"
+        ]
+      },
+      "help": "Orbit sweeps out and back; breathing gently varies light strength."
+    },
+    {
+      "id": "shape",
+      "label": "Extrusion and bevel",
+      "type": "vector",
+      "section": "Shape",
+      "fields": [
+        {
+          "id": "depth",
+          "label": "Depth",
+          "default": 0.25,
+          "min": 0.01,
+          "max": 2,
+          "step": 0.01
+        },
+        {
+          "id": "bevel",
+          "label": "Bevel",
+          "default": 0.025,
+          "min": 0,
+          "max": 0.15,
+          "step": 0.005
+        },
+        {
+          "id": "smoothness",
+          "label": "Curve detail",
+          "default": 24,
+          "min": 8,
+          "max": 64,
+          "step": 1
+        }
+      ],
+      "showIf": [
+        {
+          "source": "artwork"
+        },
+        {
+          "source": "primitive",
+          "primitive": "badge"
+        },
+        {
+          "source": "collection"
+        }
+      ],
+      "help": "SVG and badge depth and bevel in studio units. The studio reduces a bevel that would fold or erase narrow details and reports the applied size in Source notes."
+    },
+    {
+      "id": "rotation",
+      "label": "Object rotation",
+      "type": "vector",
+      "section": "Camera",
+      "fields": [
+        {
+          "id": "x",
+          "label": "X",
+          "default": -6,
+          "min": -180,
+          "max": 180,
+          "step": 1
+        },
+        {
+          "id": "y",
+          "label": "Y",
+          "default": -16,
+          "min": -180,
+          "max": 180,
+          "step": 1
+        },
+        {
+          "id": "z",
+          "label": "Z",
+          "default": -7,
+          "min": -180,
+          "max": 180,
+          "step": 1
+        }
+      ],
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "position",
+      "label": "Object position",
+      "type": "vector",
+      "section": "Camera",
+      "fields": [
+        {
+          "id": "x",
+          "label": "X",
+          "default": 0,
+          "min": -5,
+          "max": 5,
+          "step": 0.05
+        },
+        {
+          "id": "y",
+          "label": "Y",
+          "default": 0.1,
+          "min": -5,
+          "max": 5,
+          "step": 0.05
+        },
+        {
+          "id": "z",
+          "label": "Z",
+          "default": 0,
+          "min": -5,
+          "max": 5,
+          "step": 0.05
+        }
+      ],
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "transform",
+      "label": "Object scale",
+      "type": "vector",
+      "section": "Camera",
+      "fields": [
+        {
+          "id": "scale",
+          "label": "Scale",
+          "default": 1,
+          "min": 0.1,
+          "max": 5,
+          "step": 0.05
+        }
+      ],
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "projection",
+      "label": "Projection",
+      "type": "select",
+      "default": "perspective",
+      "section": "Camera",
+      "options": [
+        {
+          "value": "perspective",
+          "label": "Perspective"
+        },
+        {
+          "value": "orthographic",
+          "label": "Orthographic"
+        }
+      ],
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "camera",
+      "label": "Camera",
+      "type": "vector",
+      "section": "Camera",
+      "fields": [
+        {
+          "id": "azimuth",
+          "label": "Orbit",
+          "default": 25,
+          "min": -180,
+          "max": 180,
+          "step": 1
+        },
+        {
+          "id": "elevation",
+          "label": "Elevation",
+          "default": 14,
+          "min": -60,
+          "max": 80,
+          "step": 1
+        },
+        {
+          "id": "fov",
+          "label": "Field of view",
+          "default": 29,
+          "min": 15,
+          "max": 80,
+          "step": 1
+        },
+        {
+          "id": "zoom",
+          "label": "Zoom",
+          "default": 1,
+          "min": 0.05,
+          "max": 3,
+          "step": 0.05
+        },
+        {
+          "id": "panX",
+          "label": "Target offset X",
+          "default": 0,
+          "min": -20,
+          "max": 20,
+          "step": 0.05
+        },
+        {
+          "id": "panY",
+          "label": "Target offset Y",
+          "default": 0,
+          "min": -20,
+          "max": 20,
+          "step": 0.05
+        },
+        {
+          "id": "panZ",
+          "label": "Target offset Z",
+          "default": 0,
+          "min": -20,
+          "max": 20,
+          "step": 0.05
+        }
+      ],
+      "help": "Drag to orbit, use arrow keys on the preview, or choose Fit object and Reset camera. Target offsets move the framing relative to the camera target. Every action can be undone."
+    },
+    {
+      "id": "target",
+      "label": "Camera target",
+      "type": "vector",
+      "section": "Camera",
+      "fields": [
+        {
+          "id": "x",
+          "label": "X",
+          "default": 0,
+          "min": -5,
+          "max": 5,
+          "step": 0.05
+        },
+        {
+          "id": "y",
+          "label": "Y",
+          "default": 1.6,
+          "min": -5,
+          "max": 10,
+          "step": 0.05
+        },
+        {
+          "id": "z",
+          "label": "Z",
+          "default": 0,
+          "min": -5,
+          "max": 5,
+          "step": 0.05
+        }
+      ],
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "depthOfField",
+      "label": "Depth of field",
+      "type": "boolean",
+      "default": false,
+      "section": "Depth",
+      "help": "Softens objects in front of and behind the focus plane. Choose Pick focus, then click the subject. Uses a perspective camera."
+    },
+    {
+      "id": "aperture",
+      "label": "Lens aperture",
+      "type": "number",
+      "default": 0.12,
+      "section": "Depth",
+      "min": 0.01,
+      "max": 0.5,
+      "step": 0.01,
+      "display": "slider",
+      "showIf": {
+        "depthOfField": true
+      },
+      "help": "Larger values soften more of the scene. Keep important edges readable."
+    },
+    {
+      "id": "focusDistance",
+      "label": "Focus distance (0 = automatic)",
+      "type": "number",
+      "default": 0,
+      "section": "Depth",
+      "min": 0,
+      "max": 500,
+      "step": 0.1,
+      "display": "slider",
+      "showIf": {
+        "depthOfField": true,
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "atmosphere",
+      "label": "Foreground and background forms",
+      "type": "boolean",
+      "default": false,
+      "section": "Depth",
+      "help": "Opaque forms at varied distances. They appear only in the scene image."
+    },
+    {
+      "id": "seed",
+      "label": "Arrangement",
+      "type": "number",
+      "default": 1,
+      "section": "Depth",
+      "min": 1,
+      "max": 99999,
+      "step": 1,
+      "display": "slider",
+      "showIf": {
+        "atmosphere": true,
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "backdrop",
+      "label": "Backdrop",
+      "type": "select",
+      "default": "gradient",
+      "section": "Stage",
+      "options": [
+        {
+          "value": "solid",
+          "label": "Solid colour"
+        },
+        {
+          "value": "gradient",
+          "label": "Soft gradient"
+        },
+        {
+          "value": "image",
+          "label": "Image or Backdrop output"
+        }
+      ]
+    },
+    {
+      "id": "background",
+      "label": "Background",
+      "type": "color",
+      "default": "{color.semantic.primary}",
+      "section": "Stage"
+    },
+    {
+      "id": "background2",
+      "label": "Accent",
+      "type": "color",
+      "default": "{color.semantic.secondary}",
+      "section": "Stage"
+    },
+    {
+      "id": "backdropImage",
+      "label": "Backdrop image",
+      "type": "asset",
+      "section": "Stage",
+      "assetType": "image",
+      "allowUpload": true,
+      "showIf": {
+        "backdrop": "image"
+      },
+      "help": "Choose an image, or paste a Backdrop tool link in the asset picker. This controls scenery; lighting stays separate."
+    },
+    {
+      "id": "backdropStrength",
+      "label": "Backdrop strength",
+      "type": "number",
+      "default": 0.5,
+      "section": "Stage",
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "display": "slider"
+    },
+    {
+      "id": "floor",
+      "label": "Stage surface",
+      "type": "select",
+      "default": "shadow",
+      "section": "Stage",
+      "options": [
+        {
+          "value": "shadow",
+          "label": "Transparent shadow catcher"
+        },
+        {
+          "value": "matte",
+          "label": "Matte floor"
+        },
+        {
+          "value": "cove",
+          "label": "Curved studio cove"
+        }
+      ],
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "floorColor",
+      "label": "Stage colour",
+      "type": "color",
+      "default": "{color.semantic.primary}",
+      "section": "Stage",
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "shadowOpacity",
+      "label": "Shadow strength",
+      "type": "number",
+      "default": 0.4,
+      "section": "Stage",
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "display": "slider"
+    },
+    {
+      "id": "pedestal",
+      "label": "Pedestal",
+      "type": "boolean",
+      "default": false,
+      "section": "Stage",
+      "help": "Adds a platform in the scene image. Cutouts contain the main object."
+    },
+    {
+      "id": "keyColor",
+      "label": "Key light",
+      "type": "color",
+      "default": "#ffffff",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "fillColor",
+      "label": "Fill light",
+      "type": "color",
+      "default": "{color.semantic.secondary}",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "rimColor",
+      "label": "Rim light",
+      "type": "color",
+      "default": "{color.semantic.secondary}",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "coolColor",
+      "label": "Cool light",
+      "type": "color",
+      "default": "#426dff",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert",
+        "studio": "electric"
+      }
+    },
+    {
+      "id": "warmColor",
+      "label": "Warm light",
+      "type": "color",
+      "default": "#ffc196",
+      "section": "Lighting",
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "lightLevels",
+      "label": "Light strengths",
+      "type": "vector",
+      "section": "Lighting",
+      "fields": [
+        {
+          "id": "key",
+          "label": "Key",
+          "default": 2.5,
+          "min": 0,
+          "max": 20,
+          "step": 0.1
+        },
+        {
+          "id": "fill",
+          "label": "Fill",
+          "default": 0.7,
+          "min": 0,
+          "max": 20,
+          "step": 0.1
+        },
+        {
+          "id": "rim",
+          "label": "Rim",
+          "default": 3,
+          "min": 0,
+          "max": 20,
+          "step": 0.1
+        }
+      ],
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "environmentIntensity",
+      "label": "Reflection environment",
+      "type": "number",
+      "default": 0.4,
+      "section": "Lighting",
+      "min": 0,
+      "max": 3,
+      "step": 0.05,
+      "display": "slider",
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "environmentRotation",
+      "label": "Environment rotation",
+      "type": "number",
+      "default": 0,
+      "section": "Lighting",
+      "min": -180,
+      "max": 180,
+      "step": 1,
+      "display": "slider",
+      "showIf": {
+        "controls": "expert"
+      }
+    },
+    {
+      "id": "lights",
+      "label": "Custom lights",
+      "type": "blocks",
+      "default": [
+        {
+          "kind": "directional",
+          "color": "#ffffff",
+          "x": -3,
+          "y": 6,
+          "z": 4,
+          "intensity": 2,
+          "size": 1.5,
+          "shadows": true
+        }
+      ],
+      "section": "Lighting",
+      "showIf": {
+        "studio": "custom"
+      },
+      "help": "Up to eight lights and four shadow casters. Area lights shape reflections; use other types for shadows.",
+      "fields": [
+        {
+          "id": "kind",
+          "label": "Type",
+          "type": "select",
+          "default": "directional",
+          "options": [
+            {
+              "value": "directional",
+              "label": "Directional"
+            },
+            {
+              "value": "point",
+              "label": "Point"
+            },
+            {
+              "value": "spot",
+              "label": "Spot"
+            },
+            {
+              "value": "area",
+              "label": "Area"
+            }
+          ]
+        },
+        {
+          "id": "color",
+          "label": "Colour",
+          "type": "color",
+          "default": "#ffffff"
+        },
+        {
+          "id": "x",
+          "label": "X",
+          "type": "number",
+          "default": -3,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "y",
+          "label": "Y",
+          "type": "number",
+          "default": 6,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "z",
+          "label": "Z",
+          "type": "number",
+          "default": 4,
+          "min": -30,
+          "max": 30,
+          "step": 0.1
+        },
+        {
+          "id": "intensity",
+          "label": "Strength",
+          "type": "number",
+          "default": 2,
+          "min": 0,
+          "max": 50,
+          "step": 0.1
+        },
+        {
+          "id": "size",
+          "label": "Size",
+          "type": "number",
+          "default": 1.5,
+          "min": 0.01,
+          "max": 10,
+          "step": 0.1
+        },
+        {
+          "id": "shadows",
+          "label": "Cast shadows",
+          "type": "boolean",
+          "default": true
+        }
+      ],
+      "tableColumns": [
+        "kind",
+        "color",
+        "intensity",
+        "x",
+        "y",
+        "z",
+        "size",
+        "shadows"
+      ]
+    },
+    {
+      "id": "materials",
+      "label": "Material overrides",
+      "type": "blocks",
+      "default": [],
+      "section": "Materials",
+      "showIf": {
+        "materialMode": "custom"
+      },
+      "help": "Use a slot name or number from Material slots on the preview. A colour override replaces its colour texture.",
+      "fields": [
+        {
+          "id": "slot",
+          "label": "Slot name or number",
+          "type": "text",
+          "default": "1"
+        },
+        {
+          "id": "color",
+          "label": "Colour",
+          "type": "color",
+          "default": "#38b98a"
+        },
+        {
+          "id": "roughness",
+          "label": "Roughness",
+          "type": "number",
+          "default": 0.4,
+          "min": 0.04,
+          "max": 1,
+          "step": 0.01
+        },
+        {
+          "id": "metalness",
+          "label": "Metalness",
+          "type": "number",
+          "default": 0,
+          "min": 0,
+          "max": 1,
+          "step": 0.05
+        },
+        {
+          "id": "clearcoat",
+          "label": "Clear coat",
+          "type": "number",
+          "default": 0.2,
+          "min": 0,
+          "max": 1,
+          "step": 0.05
+        }
+      ],
+      "tableColumns": [
+        "slot",
+        "color",
+        "roughness",
+        "metalness",
+        "clearcoat"
+      ]
+    },
+    {
+      "id": "materialSlotA",
+      "label": "Material A slot",
+      "type": "text",
+      "default": "",
+      "section": "Materials",
+      "showIf": {
+        "controls": "expert",
+        "materialMode": "pair",
+        "source": [
+          "artwork",
+          "model",
+          "primitive"
+        ]
+      },
+      "help": "Exact source slot name or number. Leave both empty for alternating pairs."
+    },
+    {
+      "id": "materialSlotB",
+      "label": "Material B slot",
+      "type": "text",
+      "default": "",
+      "section": "Materials",
+      "showIf": {
+        "controls": "expert",
+        "materialMode": "pair",
+        "source": [
+          "artwork",
+          "model",
+          "primitive"
+        ]
+      },
+      "help": "Exact source slot name or number. Leave both empty for alternating pairs."
+    },
+    {
+      "id": "outputMode",
+      "label": "Image contents",
+      "type": "select",
+      "default": "scene",
+      "section": "Output",
+      "options": [
+        {
+          "value": "scene",
+          "label": "Complete scene"
+        },
+        {
+          "value": "object-shadow",
+          "label": "Object with transparent shadow"
+        },
+        {
+          "value": "object",
+          "label": "Object only"
+        }
+      ]
+    },
+    {
+      "id": "collectionSize",
+      "label": "Collection image size",
+      "type": "vector",
+      "section": "Output",
+      "showIf": {
+        "source": "collection"
+      },
+      "help": "Pixels per PNG; at most 12 million pixels per image.",
+      "fields": [
+        {
+          "id": "width",
+          "label": "Width",
+          "default": 1024,
+          "min": 64,
+          "max": 4096,
+          "step": 1
+        },
+        {
+          "id": "height",
+          "label": "Height",
+          "default": 1024,
+          "min": 64,
+          "max": 4096,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "samples",
+      "label": "Render samples",
+      "type": "number",
+      "default": 64,
+      "section": "Output",
+      "min": 8,
+      "max": 256,
+      "step": 8,
+      "display": "slider",
+      "showIf": {
+        "controls": "expert"
+      },
+      "help": "More samples smooth shadows and depth of field. Preview uses fewer samples."
+    },
+    {
+      "id": "motion",
+      "label": "Motion",
+      "type": "select",
+      "default": "still",
+      "section": "Output",
+      "options": [
+        {
+          "value": "still",
+          "label": "Still image"
+        },
+        {
+          "value": "turntable",
+          "label": "Turntable"
+        }
+      ]
+    },
+    {
+      "id": "duration",
+      "label": "Loop seconds",
+      "type": "number",
+      "default": 5,
+      "section": "Output",
+      "min": 1,
+      "max": 30,
+      "step": 0.5,
+      "display": "slider",
+      "showIf": [
+        {
+          "motion": "turntable"
+        },
+        {
+          "lightMotion": [
+            "orbit",
+            "breathe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "turnDegrees",
+      "label": "Turn angle",
+      "type": "number",
+      "default": 360,
+      "section": "Output",
+      "min": -720,
+      "max": 720,
+      "step": 5,
+      "display": "slider",
+      "showIf": {
+        "motion": "turntable",
+        "controls": "expert"
+      }
+    }
+  ]
+}

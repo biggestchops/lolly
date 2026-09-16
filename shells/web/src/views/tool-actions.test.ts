@@ -432,6 +432,64 @@ test('Design runs mounted assurance only while Export is open', async () => {
   h.dispose();
 });
 
+test('fidelity warnings scan only an open Export panel and follow the painted canvas', () => {
+  const h = mount({ seqMs: null, formats: ['png', 'svg', 'pdf'] });
+  const effect = document.createElement('div');
+  effect.style.backdropFilter = 'blur(5px)';
+  h.canvas.appendChild(effect);
+  const warning = h.panel.querySelector<HTMLElement>('[data-fidelity-warning-text]')!.parentElement!;
+  const computedStyle = globalThis.getComputedStyle;
+  let reads = 0;
+  globalThis.getComputedStyle = (node, pseudo) => {
+    if (node === h.canvas || h.canvas.contains(node)) reads++;
+    const style = computedStyle(node, pseudo);
+    // jsdom does not compute backdrop-filter yet; preserve the live test value.
+    if (node === effect) Object.defineProperty(style, 'backdropFilter', { value: effect.style.backdropFilter });
+    return style;
+  };
+  const paint = () => h.canvas.dispatchEvent(new dom.window.CustomEvent('lolly-canvas-painted'));
+  try {
+    h.setModel('boxes', []);
+    paint();
+    h.setFormat('pdf');
+    assert.equal(reads, 0, 'closed Export does no canvas style scans');
+    h.panel.dispatchEvent(new dom.window.CustomEvent('lolly:export-open'));
+    assert.ok(reads > 0);
+    assert.equal(warning.hidden, false);
+    assert.match(warning.textContent!, /frosted glass/);
+    const beforeInput = reads;
+    h.setModel('boxes', []);
+    assert.equal(reads, beforeInput, 'model notification must not read the old canvas');
+    effect.style.backdropFilter = 'none';
+    paint();
+    assert.equal(warning.hidden, true, 'warning clears after the new canvas is painted');
+    effect.style.backdropFilter = 'blur(5px)';
+    paint();
+    assert.equal(warning.hidden, false);
+    h.setFormat('svg');
+    assert.equal(warning.hidden, true, 'SVG keeps the blur');
+    effect.style.transform = 'matrix3d(1,0,0,-0.002,0,1,0,0,0,0,1,0,0,0,0,1)';
+    paint();
+    assert.match(warning.textContent!, /Tilted layers/);
+    assert.equal(warning.hidden, false);
+    h.panel.dispatchEvent(new dom.window.CustomEvent('lolly:export-close'));
+    const beforeClose = reads;
+    paint();
+    assert.equal(reads, beforeClose);
+    assert.equal(warning.hidden, true);
+    h.panel.dispatchEvent(new dom.window.CustomEvent('lolly:export-open'));
+    assert.equal(warning.hidden, false, 'reopening refreshes the warning');
+    h.dispose();
+    const beforeDispose = reads;
+    h.panel.dispatchEvent(new dom.window.CustomEvent('lolly:export-open'));
+    paint();
+    assert.equal(reads, beforeDispose, 'disposed panels release their listeners');
+  } finally {
+    globalThis.getComputedStyle = computedStyle;
+    h.dispose();
+  }
+});
+
 // ── 1. the field is seeded from the timeline, not the manifest ───────────────
 
 test('sequence: Duration is seeded from data-seq-ms, not render.video.duration', () => {
@@ -1721,12 +1779,12 @@ test('the timing labels read as words, with a help tip on the pair', () => {
   );
 });
 
-// ── 12. Convert paths renders the help the engine already wrote (F18) ──────────
+// ── 12. Vector text choices retain accessible help ──────────
 // engine/src/inputs.ts injects the export-option inputs WITH a `help` string. The
 // chip renderer dropped it, which made the one piece of jargon in the sheet the one
 // with an unreadable answer attached.
 
-test('an export-option chip renders its engine help as the standard (i)', () => {
+test('vector text choices render their help as the standard (i)', () => {
   const doc = dom.window.document;
   doc.body.innerHTML = '';
   const panel = doc.createElement('div');
@@ -1786,11 +1844,12 @@ test('an export-option chip renders its engine help as the standard (i)', () => 
     '.export-option:has([data-input-id="convertPaths"])'
   ) as HTMLElement;
   assert.ok(chip, 'the chip still renders');
-  assert.match(chip.textContent ?? '', /Convert paths/, "the label is the engine's, unrelabelled");
+  assert.match(chip.textContent ?? '', /Text/);
+  assert.deepEqual(Array.from(chip.querySelectorAll('option'), option => option.textContent), ['Outline', 'Keep text']);
   assert.ok(chip.classList.contains('help-tip-host'), 'the chip anchors its own tip');
   assert.match(
     chip.querySelector('.help-tip-pop')?.textContent ?? '',
-    /Outline text as vector paths/
+    /Embeds supported fonts when possible/
   );
   const plain = panel.querySelector(
     '.export-option:has([data-input-id="transparent"])'
@@ -2235,4 +2294,21 @@ test('stageCaptionCues answers nothing for a canvas that is not a timed stage', 
   const h = mount({ seqMs: null, formats: ['mp4'] });
   assert.deepEqual(stageCaptionCues(h.canvas), []);
   assert.deepEqual(stageCaptionCues(null), []);
+});
+
+
+test('sequence export discloses audio settings without replacing controls or losing values', () => {
+  const h = mount({ seqMs: 6000 });
+  const options = h.panel.querySelector<HTMLDetailsElement>('[data-video-options]')!;
+  assert.equal(options.open, false);
+  const volume = options.querySelector<HTMLInputElement>('[data-action="audio-volume"]')!;
+  volume.value = '65';
+  options.open = true;
+  h.setFormat('png');
+  assert.equal(options.open, true);
+  assert.equal(options.querySelector('summary')?.hidden, true);
+  h.setFormat('mp4');
+  assert.equal(options.open, false);
+  assert.equal(options.querySelector('[data-action="audio-volume"]'), volume);
+  assert.equal(volume.value, '65');
 });

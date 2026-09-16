@@ -44,6 +44,7 @@ import type { designSystemOps } from './design-system.ts';
 import type { stageLayoutOps } from './stage-layout.ts';
 import type { exportingOps } from './exporting.ts';
 import type { sessionOps } from './session.ts';
+import type { presentationOps } from './presentation.ts';
 import type { popoversOps } from './popovers.ts';
 import type { renderOps } from './render.ts';
 import type { setupOps } from './setup.ts';
@@ -105,6 +106,7 @@ export interface ToolViewCtx {
   isPresent: boolean;
   presentAddress: string | null;
   presentLoop: boolean;
+  presentationScene?: import('../present-production/scene.ts').PresentationScene;
   initialValues: Record<string, InputValue>;
   designIntent: DesignIntent;
   refreshDesignExperience: (_pickDefault?: boolean) => void;
@@ -273,6 +275,9 @@ export interface ToolViewCtx {
   glyphModule: typeof import('../glyph-split-mount.ts') | null;
   vizPending: Promise<unknown>;
   vizModule: VizModule | null;
+  studioPending: Promise<unknown>;
+  studioModule: typeof import('../../lib/studio3d/mount.ts') | null;
+  studioError: Error | null;
   paginateSource: string | undefined;
   tableEditOpts: TableEditOpts | null;
   rafId: number;
@@ -289,6 +294,7 @@ export interface ToolViewCtx {
   stageLayout: ReturnType<typeof stageLayoutOps>;
   exporting: ReturnType<typeof exportingOps>;
   session: ReturnType<typeof sessionOps>;
+  presentation: ReturnType<typeof presentationOps>;
   popovers: ReturnType<typeof popoversOps>;
   render: ReturnType<typeof renderOps>;
   setup: ReturnType<typeof setupOps>;

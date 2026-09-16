@@ -23,16 +23,16 @@
 //
 // Fidelity: rectangles/ellipses/text/groups come back as editable boxes; arbitrary
 // paths come back as crisp vector (SVG) image boxes; raster image XObjects are decoded
-// where the browser can (JPEG directly; Flate RGB/Gray via canvas) and otherwise degrade
-// to a neutral box rather than being dropped.
+// where the browser can (JPEG directly; Flate RGB/Gray via canvas). Clipped paint
+// remains in SVG assets. Unsupported content is reported for source review.
 
 import {
   PDFDocument, PDFName, PDFDict, PDFArray, PDFNumber, PDFRef, PDFRawStream, decodePDFRawStream,
 } from 'pdf-lib';
 import type { PDFContext, PDFObject } from 'pdf-lib';
 import {
-  interpretPdfPage, parseToUnicode, toUnicodeDecoder, finalizeBoxes, safeColor, pdfNodesToSvg,
-  unfilterPng, isShadowPlate, cullPdfNodes, extractPageText,
+  interpretPdfPage, parseToUnicode, toUnicodeDecoder, finalizeBoxes, pdfNodesToSvg,
+  unfilterPng, cullPdfNodes, extractPageText,
   findHiddenText as engineFindHiddenText, findVectorArtwork, windowPdfSvg,
   type DesignMapOptions, type PageText, type HiddenTextFinding, type TaggedElement, 
 } from '@lolly/engine';
@@ -51,6 +51,10 @@ import { storeUserUpload } from './picker.ts';
 import { trapFocus } from '../lib/focus-trap.ts';
 import type { FocusTrap } from '../lib/focus-trap.ts';
 import { NAV_EVENTS } from '../utils.ts';
+import { pdfFontMetrics } from '../lib/pdf-font-metrics.ts';
+import { pdfDesignNodes, type PdfDesignNotice } from '../lib/pdf-design-nodes.ts';
+import { setDesignImportReport, type DesignImportFinding } from '../lib/design-import-report.ts';
+import { setRulesSourcePages } from '../lib/design-tool-source.ts';
 
 // The interpreter's PdfNode plus the `image` field the shell fills in when it resolves a
 // vector/raster placeholder to a stored asset (structurally the design-map DesignNode).
@@ -176,7 +180,8 @@ export async function parsePdfFile(
     }
   }
 
-  const { boxes, width, height } = await pageToBoxes(doc, pageIndex, host, warn, map, newImportCaches());
+  const { boxes, width, height, findings } = await pageToBoxes(doc, pageIndex, host, warn, map, newImportCaches());
+  setDesignImportReport(file, findings);
   return { boxes, width, height, background: '#ffffff' };
 }
 
@@ -188,8 +193,8 @@ export async function parsePdfFile(
  * this a 28-page import decoded, soft-masked and stored the same picture 28 times.
  */
 interface ImportCaches {
-  vectors: Map<string, unknown>;
-  images: Map<unknown, unknown>;
+  vectors: Map<string, AssetRef>;
+  images: Map<PDFRawStream, string>;
 }
 const newImportCaches = (): ImportCaches => ({ vectors: new Map(), images: new Map() });
 
@@ -240,17 +245,24 @@ export async function parsePdfPages(
   }
 
   const frames: PdfPageFrame[] = [];
+  const importedPages: number[] = [];
+  const findings: DesignImportFinding[] = [];
+  setDesignImportReport(file, findings);
   const caches = newImportCaches();
   for (const p of picked) {
     if (picked.length > 1) warn(`Reading page ${p + 1} of ${pageCount}…`);
     try {
-      const { boxes, width, height } = await pageToBoxes(doc, p, host, warn, map, caches);
+      const { boxes, width, height, findings: pageFindings } = await pageToBoxes(doc, p, host, warn, map, caches);
+      findings.push(...pageFindings);
+      importedPages.push(p);
       frames.push({ name: `Page ${p + 1}`, width, height, boxes });
     } catch (err) {
       warn(`Skipped page ${p + 1} (${msg(err)}).`);
+      findings.push({page:p,kind:'review',message:`This page could not be imported: ${msg(err)}`});
     }
   }
   if (!frames.length) throw new Error('Couldn’t find any importable artwork in that document.');
+  setRulesSourcePages(file, importedPages);
   return frames;
 }
 
@@ -261,56 +273,56 @@ export async function parsePdfPages(
  */
 async function pageToBoxes(
   doc: PDFDocument, pageIndex: number, host: HostV1, warn: (msg: string) => void, map: DesignMapOptions | undefined, caches: ImportCaches,
-): Promise<{ boxes: unknown[]; width: number; height: number }> {
+): Promise<{ boxes: unknown[]; width: number; height: number; findings: DesignImportFinding[] }> {
   // Diagnostics are collected, not forwarded: one line per approximated paint would
   // be dozens of toasts. Summarised below, and only for the genuinely lossy rungs -
   // a tiling pattern that collapsed to its inner paint lost nothing.
   const diagnostics: string[] = [];
-  const { nodes, width, height, imageStreams } = interpretPage(doc, pageIndex, (m) => diagnostics.push(m));
+  const { nodes, width, height, imageStreams, tiles } = interpretPage(doc, pageIndex, (m) => diagnostics.push(m));
   if (!nodes.length) throw new Error('Couldn’t find any importable artwork on that page.');
   const lossy = diagnostics.filter((m) => !/^(pattern\.tiling\.collapsed|shading\.type1\.(flat|axialised))\b/.test(m)).length;
   if (lossy) warn(`Approximated ${lossy} fill${lossy === 1 ? '' : 's'} that couldn’t be reproduced exactly.`);
 
-  // Resolve placeholders → stored assets. Clip stacks and soft masks are serializer
-  // concerns (pageToSvg honours both); free-canvas boxes can express neither, so they
-  // are dropped here. A masked translucent achromatic plate is a print engine's
-  // box-shadow: not editable content at all, so it goes rather than importing as a
-  // grey rectangle. (This is exactly what the engine's paint-time placeholder
-  // heuristic used to do for EVERY surface - now scoped to the one surface that
-  // genuinely cannot render a mask.)
-  const drawable = nodes.filter((n) => !isShadowPlate(n));
-  const vecCache = caches.vectors;
-  for (const n of drawable) {
-    delete n._clips;
-    delete n._softMask;
-    try {
-      if (n._vectorPath) {
-        const ref = await storeVector(host, n, vecCache);
-        if (ref) { n.image = ref; } else { n.kind = 'box'; n.fill = firstColor(n._vectorFill); }
-        clearVector(n);
-      } else if (n._imageXObject) {
-        const desc = imageStreams.get(n._imageXObject);
-        // One decode + one store per XObject for the whole import, however many
-        // pages place it. `null` is remembered too: an undecodable image stays
-        // undecodable on page 27.
-        const key = desc?.stream ?? null;
-        let ref: unknown = null;
-        if (desc) {
-          if (key && caches.images.has(key)) ref = caches.images.get(key) ?? null;
-          else { ref = await resolveImage(host, desc, warn); if (key) caches.images.set(key, ref); }
-        }
-        if (ref) { n.image = ref; } else { n.kind = 'box'; n.fill = ''; }
-        delete n._imageXObject;
+  const images = new Map<string, string>();
+  const notices: PdfDesignNotice[] = [];
+  let tileBudget = TILE_BYTE_BUDGET;
+  const drawable = await pdfDesignNodes(nodes, {
+    width, height, notice: notice => notices.push(notice),
+    image: async key => {
+      if (images.has(key)) return images.get(key);
+      const desc = imageStreams.get(key);
+      let uri = desc ? caches.images.get(desc.stream) : undefined;
+      if (!uri && desc) {
+        const decoded = await imageBytes(desc, message => {warn(message);notices.push({kind:'review',message});});
+        if (decoded) {uri = `data:${decoded.mime};base64,${bytesToBase64(decoded.bytes)}`;caches.images.set(desc.stream, uri);}
       }
-    } catch (err) {
-      warn(`Skipped an element that couldn’t be imported (${msg(err)}).`);
-      n.kind = 'box'; clearVector(n); delete n._imageXObject;
-    }
+      if (!uri && tiles.has(key)) {
+        if (tileBudget <= 0) throw new Error('This page has too many complex fills. Simplify it in the source editor before importing.');
+        uri = rasterizeTile(tiles.get(key)!, tileSize(Math.max(width, height))) || undefined;
+        tileBudget -= uri?.length || 0;
+      }
+      if (uri) images.set(key, uri);
+      return uri;
+    },
+    store: async svg => {
+      const cached = caches.vectors.get(svg); if (cached) return cached;
+      const ref = await storeUserUpload(host as Parameters<typeof storeUserUpload>[0], new File([svg], 'pdf-artwork.svg', {type:'image/svg+xml'}), {batch:true});
+      caches.vectors.set(svg, ref); return ref;
+    },
+  });
+  const boxes = finalizeBoxes(drawable, {prefix:'p', ...map});
+  for (const [i, box] of boxes.entries()) {
+    const node = drawable[i]!;
+    Object.assign(box, {name:node.name, x:node.x, y:node.y, w:node.w, h:node.h});
+    if (node.kind === 'text') box.fontSize = Number(node.fontSize);
   }
-
-  const boxes = finalizeBoxes(drawable, { prefix: 'p', ...map });
+  const fixed = notices.filter(n => n.kind === 'fixed').length;
+  if (fixed) warn(`${fixed} clipped or styled objects were kept as images to preserve their appearance.`);
+  for (const notice of notices.filter(n => n.kind === 'review')) warn(`${notice.object || 'Page'}: ${notice.message}`);
+  const findings: DesignImportFinding[] = notices.map(n => ({...n,page:pageIndex}));
+  if (lossy) findings.push({page:pageIndex,kind:'review',message:'Some colours or effects were approximated. Compare this page with the original before sharing.'});
   if (!boxes.length) throw new Error('Couldn’t find any importable artwork on that page.');
-  return { boxes, width: Math.max(1, Math.round(width)), height: Math.max(1, Math.round(height)) };
+  return {boxes, width:Math.max(1, Math.round(width)), height:Math.max(1, Math.round(height)), findings};
 }
 
 // ── pdf-lib access helpers ─────────────────────────────────────────────────────
@@ -565,7 +577,7 @@ function buildFontInfo(ec: ExtractCtx, fontRef: Ref, depth: number): PdfFontInfo
   const twoByte = subtype === 'Type0';
   const rawBase = nameOf(ctx, getKey(ctx, fontRef, 'BaseFont')) || '';
   const base = rawBase.replace(/^[A-Z]{6}\+/, ''); // strip subset prefix "ABCDEF+"
-  const info: PdfFontInfo = { twoByte, family: base, weight: weightFromName(base) };
+  const info: PdfFontInfo = { twoByte, family: base, weight: weightFromName(base), ...pdfFontMetrics(ctx, fontRef) };
 
   // ToUnicode is the reliable path for embedded / subset fonts. For a Type0 font the
   // ToUnicode may live on the font or (rarely) its descendant - the top-level one wins.
@@ -710,11 +722,6 @@ async function applySmask(base: { bytes: Uint8Array; mime: string }, smask: Imag
   return blob ? { bytes: new Uint8Array(await blob.arrayBuffer()), mime: 'image/png', ext: 'png' } : null;
 }
 
-async function resolveImage(host: HostV1, desc: ImageDesc, warn: (msg: string) => void): Promise<unknown> {
-  const got = await imageBytes(desc, warn);
-  return got ? storeBytes(host, got.bytes, got.mime, got.ext) : null;
-}
-
 /** Inflate + de-predictor a Flate image stream's raw samples (8bpc only).
  *  PNG predictor (/Predictor >= 10): pdf-lib's FlateStream only inflates - it
  *  never applies predictors - so the samples are still PNG-row-filtered (a 1-byte
@@ -756,45 +763,6 @@ async function flateImageToPng(desc: ImageDesc): Promise<Uint8Array | null> {
   const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
   return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
 }
-
-async function storeBytes(host: HostV1, bytes: Uint8Array, type: string, ext: string): Promise<unknown> {
-  const file = new File([bytes as BlobPart], `pdf-${Date.now()}-${Math.round(bytes.length)}.${ext}`, { type });
-  // storeUserUpload's param is a shell-internal PickerHost superset of HostV1; the real
-  // host satisfies it at runtime (same object the picker uses). `batch`: a picture the
-  // library already holds byte-for-byte is that asset - an import never asks, and
-  // never raises the library's milestone notice mid-run.
-  return storeUserUpload(host as Parameters<typeof storeUserUpload>[0], file, { batch: true });
-}
-
-// ── vector path resolution ──────────────────────────────────────────────────
-
-async function storeVector(host: HostV1, n: ImportNode, cache: Map<string, unknown>): Promise<unknown> {
-  const vb = n._vectorViewBox || { x: 0, y: 0, w: Math.round(n.w), h: Math.round(n.h) };
-  const d = String(n._vectorPath || '').replace(/"/g, '');
-  if (!d) return null;
-  const fill = colorAttr(n._vectorFill, 'none');
-  const st = n._vectorStroke;
-  const strokeAttr = (st && st.color)
-    ? ` stroke="${colorAttr(st.color, '#000000')}" stroke-width="${Math.max(0.3, +st.width || 1)}" fill-rule="nonzero"` : '';
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${r(vb.x)} ${r(vb.y)} ${r(vb.w)} ${r(vb.h)}" ` +
-    `width="${Math.max(1, Math.round(vb.w))}" height="${Math.max(1, Math.round(vb.h))}">` +
-    `<path d="${d}" fill="${fill}"${strokeAttr}/></svg>`;
-  if (cache.has(svg)) return cache.get(svg);
-  const file = new File([svg], `pdf-vec-${cache.size}.svg`, { type: 'image/svg+xml' });
-  const ref = await storeUserUpload(host as Parameters<typeof storeUserUpload>[0], file, { batch: true });
-  cache.set(svg, ref);
-  return ref;
-}
-
-function colorAttr(v: unknown, dflt: string): string {
-  const s = String(v == null ? '' : v).trim();
-  if (s.toLowerCase() === 'none') return 'none';
-  return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : dflt;
-}
-function firstColor(v: unknown): string { const s = safeColor(v, ''); return (s && s.toLowerCase() !== 'none') ? s : ''; }
-function clearVector(n: ImportNode): void { delete n._vectorPath; delete n._vectorFill; delete n._vectorStroke; delete n._vectorViewBox; }
-function r(v: number): number { return Math.round((+v || 0) * 100) / 100; }
 
 // ── whole pages as SVG (the asset-upload surface) ──────────────────────────────
 

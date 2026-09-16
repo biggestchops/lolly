@@ -283,13 +283,7 @@ function renderActions(
   // 0.985–0.993, text marginally sharper than the live compositor). A PNG of a tilted
   // scene is right, so there is nothing to say about it.
   const VECTOR_FORMATS = new Set(['svg', 'pdf', 'pdf-cmyk', 'emf', 'wmf', 'eps', 'dxf']); ta.VECTOR_FORMATS = VECTOR_FORMATS;
-  // A sidebar edit can turn the effect on or off (Design's Backdrop blur field),
-  // so re-check after every input change as well as on every format change. Cheap: one
-  // computed-style pass over the canvas, and only while the export panel is mounted.
-  // Registered HERE, below the definition - the format-change handler above is wired
-  // earlier in the function and would hit the TDZ if it ran the check eagerly.
-  runtime.subscribe(() => ta.dims.updateFidelityWarning());
-  ta.dims.updateFidelityWarning();
+  ta.dims.wireFidelityWarning();
 
   ta.preflight.seedPreflightFacts();
 

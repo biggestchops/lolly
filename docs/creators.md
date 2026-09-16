@@ -38,6 +38,12 @@ Record a clean take with a count-in, a level meter and gentle coaching, or turn 
 - **[Make something in 60 seconds](/info/make-something.html#make)** - the audiogram scene, for when you would rather be heard than seen.
 - **[Utility views](/info/utilities.html)** - Script audio, when the words come first and the voice comes after.
 
+## Present
+
+Put your camera, logo and name over a Design deck or Countdown, with private controls in a separate window.
+
+- **[Presenting with camera](/info/presenting.html)** - framing, saved scenes, audience sharing, local recording and the current trial limitations.
+
 ## Collaborate
 
 Two people, two devices, one session, edited live. Scan a code across the table and both screens hold the same work, with no account and no server in the middle - and no internet at all when both devices are on the same network.

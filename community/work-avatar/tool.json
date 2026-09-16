@@ -3,7 +3,7 @@
   "name": "Work Avatar",
   "description": "A round profile photo with a treatment and a ring of text - the campaign badge for LinkedIn and every other place your face goes, in your design system's colours and type.",
   "a11yLabel": "Round profile photo in a ring reading {{default text \"nothing\"}}",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "engineVersion": "^1.159.0",
   "status": "community",
   "category": "everyone",
@@ -84,7 +84,7 @@
     "filenameFrom": [
       "text"
     ],
-    "transparentBg": false
+    "transparentBg": true
   },
   "isolate": true,
   "hooks": {

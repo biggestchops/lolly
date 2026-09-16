@@ -177,16 +177,21 @@ function inferInWorker(
   frame: DepthFrame,
   opts: { model: DepthModelId; maxEdge: number; signal?: AbortSignal; onProgress?: (p: DepthProgress) => void },
 ): Promise<DepthMap> {
+  opts.signal?.throwIfAborted();
   const w = spawn();
   const id = ++seq;
   return new Promise<DepthMap>((resolve, reject) => {
-    pending.set(id, { resolve, reject, ...(opts.onProgress ? { onProgress: opts.onProgress } : {}) });
-    opts.signal?.addEventListener('abort', () => {
-      if (!pending.has(id)) return;
-      pending.delete(id);
-      w.postMessage({ id, type: 'abort' } satisfies DepthWorkerRequest);
-      reject(Object.assign(new Error('The depth run was aborted.'), { name: 'AbortError' }));
-    }, { once: true });
+    const signal = opts.signal;
+    const abortError = () => Object.assign(new Error('The depth run was aborted.'), { name: 'AbortError' });
+    const abort = () => {
+      if (pending.has(id)) w.postMessage({ id, type: 'abort' } satisfies DepthWorkerRequest);
+    };
+    pending.set(id, {
+      resolve: (map) => { signal?.removeEventListener('abort', abort); if (signal?.aborted) reject(abortError()); else resolve(map); },
+      reject: (error) => { signal?.removeEventListener('abort', abort); reject(signal?.aborted ? abortError() : error); },
+      onProgress: (p) => { if (!signal?.aborted) opts.onProgress?.(p); },
+    });
+    signal?.addEventListener('abort', abort, { once: true });
     const serializable: SerializableDepthOpts = { model: opts.model, maxEdge: opts.maxEdge };
     w.postMessage({ id, type: 'run', frame, opts: serializable } satisfies DepthWorkerRequest, [frame.data.buffer]);
   });
@@ -265,9 +270,9 @@ export function startDepthJob(
   const controller = new AbortController();
   const job = startJob({ title: t('Reading depth'), cancel: () => controller.abort(), heavy: true });
   void (async (): Promise<void> => {
-    await job.started;
-    if (job.cancelled) { hooks.onComplete?.(null); return; }
     try {
+      await job.started;
+      if (job.cancelled) { hooks.onComplete?.(null); return; }
       const map = await runDepthJob(req, {
         signal: controller.signal,
         isCancelled: () => job.cancelled,
@@ -282,6 +287,8 @@ export function startDepthJob(
       if (job.cancelled || (err as Error | null)?.name === 'AbortError') { hooks.onComplete?.(null); return; }
       job.fail(err);
       hooks.onError?.(err);
+    } finally {
+      job.settle();
     }
   })();
   return job;

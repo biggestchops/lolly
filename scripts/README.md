@@ -141,6 +141,7 @@ These drive tools in a real browser and export through the app's own render path
 | `audit-vector-render.ts` | none | Three-way conformance audit of the print-PDF to SVG interpreter: a screen screenshot, the same print PDF rendered by an independent engine (poppler `pdftoppm`, else macOS `sips`), and our SVG rasterised back. Splits the loss into Chromium's print pass and our interpreter. Writes a dated report under `plans/`. | browser, native, network |
 | `characterize-export.ts` | none | Characterisation harness for `shells/web/src/bridge/export.ts`, the large web-shell export bridge with no direct tests. Snapshots to `scratch/export-characterization.json`. | DESTRUCTIVE, browser |
 | `probe-tool-paint-order.ts` | none | A/B probe for `ExportOpts.stackingOrder` against real tools. Evidence, not a gate. | browser |
+| `build-presentation-trial.ts` | none | Builds a portable three-slide Design `.lolly` with private notes, an embedded logo and saved presentation scenes. Optional positional output directory; defaults to `/tmp/lolly-presentation-260/m1-acceptance/kit`. Camera startup stays explicit. | DESTRUCTIVE (fixture files only) |
 | `build-libopenmpt-wasm.sh` | none | Reproducibly rebuilds the vendored libopenmpt WebAssembly tracker decoder as a single self-contained ES module. Needs Emscripten. | DESTRUCTIVE, submodule, native, network |
 
 ### Vernacular gates: why CI fails on wording

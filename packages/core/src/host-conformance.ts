@@ -38,7 +38,7 @@ export const HOST_V1_METHODS: Record<HostApi, ApiMethods> = {
   assets: { required: ['get', 'query', 'pick', 'isAvailable'], optional: ['resolveProvider', 'credential', 'bytes'] },
   state: { required: ['save', 'load', 'list', 'delete'], optional: [] },
   clipboard: { required: ['writeText', 'writeImage'], optional: [] },
-  export: { required: ['render', 'download', 'file', 'imprint'], optional: ['pack', 'share', 'canShare'] },
+  export: { required: ['render', 'download', 'file', 'imprint'], optional: ['pack', 'share', 'canShare', 'checkLayout'] },
   net: { required: ['fetch'], optional: [] },
   tokens: { required: ['get', 'colors', 'resolve', 'themes'], optional: ['list', 'active', 'snapshot'] },
   text: { required: ['toPath', 'preload'], optional: ['axisDefaults', 'fontUrl', 'characters'] },

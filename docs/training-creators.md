@@ -227,3 +227,7 @@ pnpm run cli learning build module.json --format=static --output=website.zip
 ```
 
 The input follows the SDK's `learning-module-v1.schema.json` for original courses or `learning-module-v2.schema.json` for formatted text and practice quizzes. The editor upgrades a draft to schema 2 when either feature is added. Existing schema 1 drafts and saved packages remain readable. For this CLI path, export saved tool sources to media first. Set each asset source's `url` to a relative file path beside the module JSON, with its `format` matching the file. The command reads only files within that directory, including when resolving symbolic links. It refuses to overwrite an existing output file. Use `--json` for a machine-readable build result and checksum.
+
+## Give teams reusable material tools
+
+Use [Share with rules](create-a-tool.md) in Design to make a course-cover, badge or handout tool. Expose course titles, common first/last names, approved images and authored layout choices. Teams fill those inputs and save or export consistent materials. Add the rendered files to the course project, then use Learning for the website or LMS package. The reusable `.lolly` tool is not a SCORM or xAPI package.

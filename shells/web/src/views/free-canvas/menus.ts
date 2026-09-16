@@ -167,11 +167,13 @@ export async function importAsArtboards(fc: FcCtx,
   const { FRAME_NOTES_FIELD, addKinds, cfg, frameCfg, host, importMap, setCanvasSize } = fc;
   if (!frameCfg) throw new Error(t('This tool has no artboards.'));
   const { parseDesignArtboards } = await import('../design-import.ts');
+  const pages = fc.pendingImport?.rules ? await (await import('../design-rules-pages.ts')).chooseRulesPages(f) : undefined;
   const res = await parseDesignArtboards(f, {
     host: host as any,
     log: setStatus,
-    interactive: true,
-    map: importMap,
+    interactive: !fc.pendingImport?.rules,
+    pages,
+    map: fc.pendingImport?.rules ? { ...importMap, fonts: { ...importMap?.fonts, preserveSource: true } } : importMap,
   });
   if (!res.frames.length) throw new Error(t('Nothing importable was found in that file.'));
   const fk = frameCfg.frameKind;

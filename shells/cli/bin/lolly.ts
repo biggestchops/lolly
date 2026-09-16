@@ -42,6 +42,7 @@ Usage:
   lolly list                               list tools (explicit spelling)
   lolly describe <tool-id> [--all]         show essential inputs; --all shows every input
   lolly run <tool-id> [--flags]            render
+  lolly run <tool.lolly> --trust-tool [--export=png] [--output=file]
   lolly compile <tool-id> [--inputs=x.json] compile a hydrated document (JSON)
   lolly schema <tool-id>                    print its typed input JSON Schema
   lolly inspect|measure <document.json>     inspect without rasterising
@@ -626,6 +627,7 @@ async function render(
   if (password !== undefined) params.password = password;
   delete params['password-stdin'];
 
+  if (/\.lolly$/i.test(toolId)) { const {runDesignToolPackage} = await import('../src/design-tool.ts'); await runDesignToolPackage(toolId, flags); return; }
   await runToolCli({
     toolId,
     params,

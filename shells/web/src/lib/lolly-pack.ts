@@ -61,6 +61,7 @@ export const LOLLY_FILE_FORMAT = 'lolly-share' as const;
 export const LOLLY_FILE_VERSION = 1;
 /** Readers gate on this, never `formatVersion` - additive parts stay compatible. */
 export const LOLLY_MIN_READER = 1;
+export const LOLLY_READER_VERSION = 2;
 /** The `+zip` structured suffix (RFC 6839) advertises the container to OS/tooling. */
 export const LOLLY_MIME = 'application/vnd.lolly+zip';
 export const LOLLY_EXT = '.lolly';
@@ -201,7 +202,7 @@ export interface LollyManifest {
   app: string;
   /** The engine version at export time (for a reader that wants to check ranges). */
   engineVersion?: string;
-  kind: 'session';
+  kind: 'session' | 'tool';
   tool: { id: string; version?: string };
   /** Session thumbnail as a data URL, so an importer has a tile immediately. */
   thumb?: string | null;
@@ -296,6 +297,8 @@ export interface LollySummary {
 }
 
 export interface LollyBuildInput {
+  kind?: 'session' | 'tool';
+  toolCredits?: string;
   /** The saved session - `sessionSnapshot()`'s `SavedStateData` (or a slot's data). */
   session: unknown;
   toolId: string;
@@ -447,10 +450,12 @@ function assetPath(dir: string, base: string, format: string, mime: string, take
  * `data-transfer.ts` does, so integrity + `minReader` behave identically.
  */
 export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuildResult> {
+  if (input.kind === 'tool' && (!input.tool || input.session != null || input.templates?.length || input.designSystem)) throw new Error('A tool file carries exactly one tool, without a saved session or design-system install.');
   const refs = collectSessionAssetRefs(input.session);
   const byId = new Map(input.userAssets.map(r => [r.id, r]));
 
   const entries: Record<string, BundleEntry> = {};
+  if (input.kind === 'tool' && input.toolCredits) entries[CREDITS_PART] = strToU8(input.toolCredits);
   const assets: LollyAssetEntry[] = [];
   let totalBytes = 0;
   let hasLicensed = false;
@@ -540,7 +545,7 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
     : null;
 
   // The session payload, integrity-protected alongside the blobs.
-  entries['session.json'] = strToU8(JSON.stringify(input.session ?? null, null, 2));
+  if (input.kind !== 'tool') entries['session.json'] = strToU8(JSON.stringify(input.session ?? null, null, 2));
   // The sender's design system, when they have one - the same document their studio
   // holds, so "Add from a file" on another device installs the look the session wore.
   const designSystem = input.designSystem?.doc != null ? input.designSystem : null;
@@ -563,7 +568,7 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
     totalBytes,
     hasLicensed,
     licensedExcluded,
-    credits: Boolean(credits),
+    credits: Boolean(credits || input.toolCredits),
     ...(input.creator?.name ? { creatorName: input.creator.name } : {}),
     toolFiles: bundledTool?.files.length ?? 0,
     ...(bundledTool ? { toolTrust: bundledTool.trust } : {}),
@@ -580,10 +585,10 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
   const manifest: LollyManifest = {
     format: LOLLY_FILE_FORMAT,
     formatVersion: LOLLY_FILE_VERSION,
-    minReader: LOLLY_MIN_READER,
+    minReader: input.kind === 'tool' ? 2 : 1,
     app: input.appVersion ?? 'Lolly',
     ...(input.engineVersion ? { engineVersion: input.engineVersion } : {}),
-    kind: 'session',
+    kind: input.kind ?? 'session',
     tool: { id: input.toolId, ...(input.toolVersion ? { version: input.toolVersion } : {}) },
     ...(input.thumb ? { thumb: input.thumb } : {}),
     exportedAt: new Date().toISOString(),
@@ -693,6 +698,15 @@ function labelOf(meta: Record<string, unknown> | undefined): string | undefined 
 }
 
 function lollyReadme(manifest: LollyManifest, summary: LollySummary): string {
+  if (manifest.kind === 'tool') return [
+    BUNDLE_HEADER, '', 'A reusable Lolly tool', '',
+    'Open this file in Lolly and review the tool before installing it.',
+    'Change the declared inputs, then export the finished artwork.',
+    'The designer controls the editable properties, layouts and export formats.',
+    'This file contains one tool and its dependencies, without an editable Design master.',
+    `Tool: ${manifest.tool.id}`, `Version: ${manifest.tool.version || manifest.bundledTool?.version || ''}`,
+    '', 'Help: https://lolly.tools/info/create/create-a-tool.html', '',
+  ].join('\n');
   const lines = [
     BUNDLE_HEADER,
     '',
@@ -793,11 +807,25 @@ export async function readLollyFile(bytes: ArrayBuffer | Uint8Array): Promise<Lo
   if (!manifest || manifest.format !== LOLLY_FILE_FORMAT) {
     throw new Error('This does not look like a .lolly file.');
   }
-  if (typeof manifest.minReader === 'number' && manifest.minReader > LOLLY_MIN_READER) {
+  if (typeof manifest.minReader === 'number' && manifest.minReader > LOLLY_READER_VERSION) {
     throw new Error('This .lolly file was made with a newer version of Lolly. Update to open it.');
   }
   await verifyIntegrity(files, manifest.integrity, 'This .lolly file');
-  const session = readJson(files, 'session.json');
+  if (manifest.kind !== 'tool' && manifest.kind !== 'session') throw new Error('This .lolly payload kind is not supported.');
+  if (manifest.kind === 'tool' && (!manifest.bundledTool || manifest.minReader < 2 || !manifest.integrity || files['session.json'] || manifest.templates || manifest.designSystem)) throw new Error('This tool file has an invalid payload.');
+  if (manifest.kind === 'tool') {
+    const bundle = manifest.bundledTool!;
+    if (bundle.id !== manifest.tool.id || !Array.isArray(bundle.files) || !bundle.files.length) throw new Error('This tool file has inconsistent identity.');
+    const paths = new Set<string>();
+    for (const entry of bundle.files) {
+      if (!/^tool\/[\w./-]+$/.test(entry.path) || entry.path.split('/').some(part => part === '.' || part === '..') || paths.has(entry.path) || !files[entry.path] || !manifest.integrity?.[entry.path]) throw new Error('This tool file has an invalid or unverified part.');
+      paths.add(entry.path);
+    }
+    if (Object.keys(files).some(path => path.startsWith('tool/') && !paths.has(path)) || !paths.has('tool/tool.json') || !paths.has('tool/template.html')) throw new Error('This tool file has an incomplete inventory.');
+    const toolManifest = readJson(files, 'tool/tool.json') as { id?: string; version?: string } | null;
+    if (toolManifest?.id !== bundle.id || bundle.version && bundle.version !== toolManifest.version) throw new Error('This tool file has inconsistent identity.');
+  }
+  const session = manifest.kind === 'tool' ? null : readJson(files, 'session.json');
   const designSystem = manifest.designSystem && files[DESIGN_SYSTEM_PART] ? readJson(files, DESIGN_SYSTEM_PART) : undefined;
   // The part is read whenever it is THERE, not whenever the manifest mentions it: the
   // integrity map already vouched for its bytes, and a file whose manifest lost the
@@ -964,7 +992,7 @@ export async function ingestLollyFile(
     const rewritten = rebaseImportedAssetPins(applyLollyRekey(session, ctx.rekey), ctx.rekey, await host.assets._exportUserAssets());
     // A brand collection reuses the asset transaction, then saves its real
     // sessions individually. It must never mint a synthetic wrapper Project.
-    if (opts.saveSession === false) return { slot: '', toolId: manifest.tool.id, imported, deduped, session: rewritten };
+    if (manifest.kind === 'tool' || opts.saveSession === false) return { slot: '', toolId: manifest.tool.id, imported, deduped, session: rewritten };
     const taken = new Set((await host.state.list()).map(r => r.slot));
     const slot = mintLollySlot(manifest.tool.id, taken);
     const thumb = typeof manifest.thumb === 'string' ? manifest.thumb : null;

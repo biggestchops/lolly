@@ -455,6 +455,7 @@ interface Harness {
     destroy(): void; setOpen(v: boolean): void; isOpen(): boolean;
     /** The one-commit promote free-canvas's timeline-armed create path calls. */
     promote(id: string, want?: { start?: number; dur?: number | null }): void;
+    demote(id: string): void;
     /** The playhead-contextual write seam free-canvas commits through (plans/104 section 8). */
     kfPoseIds(ids: readonly string[]): string[];
     kfPoseWrite(boxes: Box[], ids: readonly string[], delta: Record<string, number>, mode?: 'add' | 'set'): Box[];
@@ -481,7 +482,7 @@ function mount(
   initial: Box[],
   pxPerSecHint = 40,
   addKinds: Array<{ id: string; label?: string; seed?: Record<string, unknown> }> = ADD_KINDS,
-  extra: { host?: unknown; capabilities?: string[]; assetField?: string; linkField?: string; cfgPatch?: Record<string, unknown>; frameSize?: () => { w: number; h: number } | null } = {},
+  extra: { addMedia?: () => Promise<void>; host?: unknown; capabilities?: string[]; assetField?: string; linkField?: string; cfgPatch?: Record<string, unknown>; frameSize?: () => { w: number; h: number } | null } = {},
 ): Harness {
   const doc = dom.window.document;
   const stageEl = doc.createElement('div');
@@ -506,6 +507,7 @@ function mount(
       ...(extra.capabilities ? { manifest: { capabilities: extra.capabilities } } : {}),
     },
     host: extra.host ?? {},
+    addMedia: extra.addMedia,
     blockId: 'boxes',
     // `linkField` is the manifest's OPT-IN to detach/re-attach. Absent by default, so
     // every existing test still exercises a tool that never offers it.
@@ -570,6 +572,43 @@ test('panel mounts as a stage child, outside the canvas, tagged [data-export-hid
     const canvas = stage.firstElementChild as HTMLElement;
     assert.equal(canvas.contains(h.root), false, 'the panel is a SIBLING of the canvas, never inside it');
     assert.ok(h.reserves.length > 0 && h.reserves[0]! > 0, 'opening reserved a stage band');
+  } finally { h.teardown(); }
+});
+
+test('track scrolling stays native and cannot pan the canvas behind the panel', () => {
+  const h = mount([clip('a', 0, 120), overlay('o', 0, 120)]);
+  try {
+    const tracks = h.root.querySelector<HTMLElement>('.tl-tracks')!;
+    let escaped = 0;
+    h.stageEl.addEventListener('wheel', () => { escaped++; });
+    h.stageEl.addEventListener('keydown', () => { escaped++; });
+    h.stageEl.addEventListener('pointerdown', () => { escaped++; });
+    const wheel = new dom.window.WheelEvent('wheel', { bubbles: true, cancelable: true, deltaX: 120, deltaY: 80 });
+    tracks.dispatchEvent(wheel);
+    assert.equal(wheel.defaultPrevented, false, 'native two-axis scrolling remains available');
+    tracks.focus();
+    const key = new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });
+    tracks.dispatchEvent(key);
+    assert.equal(key.defaultPrevented, false, 'a focused track region scrolls with the keyboard');
+    const touch = pointer('pointerdown', 30, { pointerType: 'touch' });
+    tracks.dispatchEvent(touch);
+    assert.equal(touch.defaultPrevented, false, 'background touch pans instead of selecting a marquee');
+    assert.equal(h.root.querySelector<HTMLElement>('.tl-marquee')!.hidden, true);
+    assert.equal(escaped, 0, 'canvas gestures never receive track interactions');
+  } finally { h.teardown(); }
+});
+
+test('rebuilding tracks retains both scroll offsets', async () => {
+  const h = mount([clip('a', 0, 120), overlay('o', 0, 120)]);
+  try {
+    const tracks = h.root.querySelector<HTMLElement>('.tl-tracks')!;
+    tracks.scrollLeft = 360; tracks.scrollTop = 180;
+    const original = h.bar('o');
+    h.boxes.push(overlay('new', 1, 20)); h.notify();
+    await new Promise(resolve => setTimeout(resolve, 60));
+    assert.notEqual(h.bar('o'), original, 'the changed model rebuilds the row list');
+    assert.equal(tracks.scrollLeft, 360);
+    assert.equal(tracks.scrollTop, 180);
   } finally { h.teardown(); }
 });
 
@@ -1559,25 +1598,23 @@ test('the context menu selects what it acts on, and Delete removes exactly that 
   } finally { h.teardown(); }
 });
 
-test('right-clicking INSIDE a multi-selection collapses it to the clicked box', () => {
-  // Every item in this menu acts on the right-clicked box alone. Leaving three bars
-  // painted as selected while "Make always on" demotes one of them shows a state that
-  // never existed, and the user's next act is an undo of something they did not do.
+test('right-clicking inside a multi-selection keeps it and offers selection-wide edits', () => {
   const h = mount([clip('a', 0, 3), clip('b', 3, 2), overlay('o', 1, 1)]);
   try {
     h.select(['a', 'b', 'o']);
     rightClick(h.bar('b'));
     assert.deepEqual(
-      Array.from(h.root.querySelectorAll('.tl-clip[aria-selected="true"]')).map((n) => (n as HTMLElement).dataset.id),
-      ['b'],
-      'the selection collapsed to the box the menu is about',
+      Array.from(h.root.querySelectorAll('.tl-clip[aria-selected="true"]')).map((n) => (n as HTMLElement).dataset.id).sort(),
+      ['a', 'b', 'o'],
+      'the full selection remains visible',
     );
-    const demote = Array.from(openMenu('.tl-ctx-menu')!.querySelectorAll('.folder-menu-item'))
-      .find((n) => n.textContent?.trim() === 'Make always on')!;
-    click(demote);
+    const menu = openMenu('.tl-ctx-menu')!;
+    assert.ok(!menuLabels(menu).includes('Make always on'));
+    const del = Array.from(menu.querySelectorAll('.tl-menu-label'))
+      .find(n => n.textContent === 'Delete 3 items')!;
+    click(del.closest('button')!);
     assert.equal(h.commits.length, 1, 'ONE commit');
-    assert.equal(h.commits[0]!.find((b) => b.id === 'b')!.start, '', 'and only b was demoted');
-    assert.equal(h.commits[0]!.find((b) => b.id === 'a')!.start, 0, 'a is untouched');
+    assert.deepEqual(h.commits[0], []);
   } finally { h.teardown(); }
 });
 
@@ -3134,7 +3171,7 @@ test('the CSS trim zones are the SAME numbers the hit test uses', () => {
   assert.ok(rest, '.tl-edge declares a width');
   assert.equal(Number(rest![1]), EDGE_PX, `.tl-edge width matches EDGE_PX (${EDGE_PX})`);
 
-  const coarse = /@media\s*\(pointer:\s*coarse\)\s*\{[\s\S]*?\.tl-edge\s*\{[^}]*\bwidth:[^;]*?(\d+)px/.exec(css);
+  const coarse = /@media\s*\(any-pointer:\s*coarse\)\s*\{[\s\S]*?\.tl-edge\s*\{[^}]*\bwidth:[^;]*?(\d+)px/.exec(css);
   assert.ok(coarse, 'the coarse-pointer block overrides .tl-edge');
   assert.equal(Number(coarse![1]), EDGE_PX_COARSE, `the coarse override matches EDGE_PX_COARSE (${EDGE_PX_COARSE})`);
 
@@ -3613,7 +3650,7 @@ test('`o` toggles the onion skin from the keyboard; a model change re-emits the 
  * `d`/`D` into one branch and reads the modifier off the event.
  */
 const ON_KEY_BRANCHES = [
-  ' ', 'Spacebar', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End',
+  ' ', 'Spacebar', 'a', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End',
   's', 'S', 'd', 'D', '[', ']', ',', '<', '.', '>', 'e', 'E', 'o', 'O', 'k', 'K',
   '+', '=', '-', '_', 'f', 'F', 'Delete', 'Backspace', '?', 'ContextMenu', 'F10', 'Escape',
 ];
@@ -3638,7 +3675,7 @@ test('the shortcuts sheet cannot drift from the key handler: every documented ke
         h.panel.setOpen(true);
         h.root.dispatchEvent(new dom.window.Event('pointerenter'));
         const e = new dom.window.KeyboardEvent('keydown', {
-          key: ev.key, shiftKey: !!ev.shiftKey, altKey: !!ev.altKey, bubbles: true, cancelable: true,
+          ...ev, bubbles: true, cancelable: true,
         });
         h.root.dispatchEvent(e);
         assert.equal(e.defaultPrevented, true, `${row.keys} (${JSON.stringify(ev)}) - "${row.label}" is documented but not handled`);
@@ -3922,7 +3959,8 @@ test('the shortcuts sheet drift guard also covers the modifier chord for every d
   // Alt and asserted untouched. Every other modifier on every key is still required to
   // pass straight through, so claiming Alt+← does not quietly claim Cmd+← as well.
   const claimed = new Set(
-    PANEL_SHORTCUTS.flatMap((r) => r.events.filter((e) => e.altKey).map((e) => `altKey|${e.key}`)),
+    PANEL_SHORTCUTS.flatMap(r => r.events.flatMap(e =>
+      (['metaKey', 'ctrlKey', 'altKey'] as const).filter(mod => e[mod]).map(mod => `${mod}|${e.key}`))),
   );
   assert.ok(claimed.size > 0, 'precondition: at least one documented chord, or this guard proves nothing new');
   const h = mount([clip('a', 0, 3), clip('b', 3, 2)], 40, ADD_KINDS, { linkField: 'linkOf' });
@@ -4026,6 +4064,7 @@ test('deleting the PICTURE clears the dangling link on the sound that survives i
   );
   try {
     const pic = armKeys(h, 'v', 60);
+    h.select(['v']);
     press(pic, 'Delete');
     const s = h.commits[0]!.find((b) => b.id === 's')!;
     assert.equal(String(s.linkOf ?? ''), '', 'no dangling id survives the delete');
@@ -5277,10 +5316,11 @@ test('+Keyframe sits at the END of the transport cluster, and says when it can d
     // The IDENTITY class only (`classList[1]`, the token `btn()` mints after `tl-btn`) - 
     // a state class like `.is-active` on the snap button is not part of the ordering.
     const cluster = Array.from(h.root.querySelectorAll<HTMLElement>('.tl-tools > .tl-btn'))
-      .map((x) => x.classList[1]);
+      .map((x) => x.classList.contains('tl-always-on') ? 'tl-always-on'
+        : x.classList.contains('tl-track-size') ? 'tl-track-size' : x.classList[1]);
     assert.deepEqual(cluster, [
       'tl-screen', 'tl-add', 'tl-mic', 'tl-cam', 'tl-script', 'tl-transcript', 'tl-split', 'tl-snap', 'tl-onion',
-      'tl-zoom-out', 'tl-zoom-in', 'tl-fit', 'tl-keys', 'tl-mobile-tools', 'tl-kf-btn',
+      'tl-zoom-out', 'tl-zoom-in', 'tl-fit', 'tl-keys', 'tl-always-on', 'tl-mobile-tools', 'tl-track-size', 'tl-kf-btn',
     ], 'the diamond is LAST - never back among +, mic, camera and script');
     assert.equal(cluster.at(-1), 'tl-kf-btn', 'and nothing may be appended after it');
     assert.ok(b.querySelector('svg'), 'it is the diamond glyph');
@@ -6986,5 +7026,337 @@ test("right-clicking a clip with a source file offers Download, and it saves the
   } finally {
     (globalThis as { fetch: unknown }).fetch = realFetch;
     closeOverlays(); h.teardown();
+  }
+});
+
+
+test('More tools preserves the original controls and their state across disclosure', () => {
+  const h = mount([clip('a', 0, 3)]);
+  try {
+    const more = h.root.querySelector<HTMLButtonElement>('.tl-mobile-tools')!;
+    const snap = h.root.querySelector<HTMLButtonElement>('.tl-snap')!;
+    const key = h.root.querySelector('.tl-keys');
+    assert.equal(more.getAttribute('aria-expanded'), 'false');
+    more.click();
+    assert.equal(more.getAttribute('aria-expanded'), 'true');
+    snap.click();
+    more.click();
+    more.click();
+    assert.equal(h.root.querySelector('.tl-keys'), key);
+    assert.equal(snap.getAttribute('aria-pressed'), 'false');
+    assert.equal(h.commits.length, 0);
+  } finally { h.teardown(); }
+});
+
+test('Add media admits one picker at a time and does not mutate the timeline itself', async () => {
+  let opens = 0;
+  let finish = () => {};
+  const h = mount([clip('a', 0, 3)], 40, ADD_KINDS, {
+    addMedia: () => { opens++; return new Promise<void>(resolve => { finish = resolve; }); },
+  });
+  try {
+    const media = h.root.querySelector<HTMLButtonElement>('.tl-add-media')!;
+    media.click();
+    media.click();
+    assert.equal(opens, 1);
+    assert.equal(media.disabled, true);
+    finish();
+    await Promise.resolve();
+    assert.equal(media.disabled, false);
+    assert.equal(h.commits.length, 0);
+  } finally { h.teardown(); }
+});
+
+function editAction(h: Harness, label: string): void {
+  h.root.querySelector<HTMLButtonElement>('.tl-edit')!.click();
+  const menu = openMenu('.tl-edit-menu');
+  assert.ok(menu, 'Edit menu opened');
+  const item = Array.from(menu.querySelectorAll('.tl-menu-label')).find(n => n.textContent === label);
+  assert.ok(item, `${label} is offered`);
+  click(item.closest('button')!);
+}
+
+test('Edit moves a non-adjacent clip selection to the end, preserving order, brand values and overlay anchors', () => {
+  const h = mount([
+    { ...clip('a', 0, 2), font: '{brand.font}', fill: '{brand.primary}' },
+    clip('b', 2, 2), clip('c', 4, 2), clip('d', 6, 2), overlay('title', 1, 1),
+  ]);
+  try {
+    h.select(['c', 'a']);
+    editAction(h, 'Move to end');
+    assert.equal(h.commits.length, 1);
+    const row = h.boxes.filter(b => b.lane === 'seq').sort((a, b) => Number(a.start) - Number(b.start));
+    assert.deepEqual(row.map(b => [b.id, b.start]), [['b', 0], ['d', 2], ['a', 4], ['c', 6]]);
+    assert.equal(h.boxes.find(b => b.id === 'title')!.start, 5);
+    assert.equal(h.boxes.find(b => b.id === 'a')!.font, '{brand.font}');
+    assert.equal(h.boxes.find(b => b.id === 'a')!.fill, '{brand.primary}');
+    assert.deepEqual(new Set(h.selSets.at(-1)), new Set(['a', 'c']));
+  } finally { h.teardown(); }
+});
+
+test('Edit moves overlays to the playhead as a group and a repeated move has no undo entry', () => {
+  const h = mount([clip('a', 0, 8), overlay('title', 1, 2), overlay('sound', 3, 2)]);
+  try {
+    h.select(['title', 'sound']);
+    h.stageEl.dispatchEvent(new dom.window.CustomEvent('fc-seek', { detail: { atMs: 4000 } }));
+    editAction(h, 'Move to playhead');
+    assert.equal(h.commits.length, 1);
+    assert.deepEqual(h.boxes.map(b => [b.id, b.start]), [['a', 0], ['title', 4], ['sound', 6]]);
+    editAction(h, 'Move to playhead');
+    assert.equal(h.commits.length, 1);
+  } finally { h.teardown(); }
+});
+
+test('Edit trims the selected clip instead of a previously focused clip', () => {
+  const h = mount([clip('a', 0, 3), clip('b', 3, 3)]);
+  try {
+    h.bar('a').focus();
+    h.select(['b']);
+    h.stageEl.dispatchEvent(new dom.window.CustomEvent('fc-seek', { detail: { atMs: 4000 } }));
+    editAction(h, 'Trim start to playhead');
+    assert.equal(h.commits.length, 1);
+    assert.equal(h.boxes.find(b => b.id === 'a')!.dur, 3);
+    assert.equal(h.boxes.find(b => b.id === 'b')!.dur, 2);
+    assert.equal(h.boxes.find(b => b.id === 'b')!.clipIn, 1);
+    assert.equal(h.boxes.find(b => b.id === 'b')!.start, 3);
+  } finally { h.teardown(); }
+});
+
+test('Delete removes every selected clip with one commit and hands selection to a survivor', () => {
+  const h = mount([clip('a', 0, 2), clip('b', 2, 2), clip('c', 4, 2), overlay('title', 5, 1)]);
+  try {
+    h.select(['a', 'b']);
+    const bar = h.bar('a');
+    bar.focus();
+    bar.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
+    assert.equal(h.commits.length, 1);
+    assert.deepEqual(h.boxes.map(b => [b.id, b.start]), [['c', 0], ['title', 1]]);
+    assert.deepEqual(h.selSets.at(-1), ['c']);
+  } finally { h.teardown(); }
+});
+
+test('Select all clips stays within the focused timeline and leaves text selection alone', () => {
+  const h = mount([clip('a', 0, 2), overlay('title', 1, 1), scenery('bg')]);
+  try {
+    h.root.focus();
+    const all = new dom.window.KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true, cancelable: true });
+    h.root.dispatchEvent(all);
+    assert.equal(all.defaultPrevented, true);
+    assert.deepEqual(h.selSets.at(-1), ['a', 'title']);
+    const input = document.createElement('input');
+    h.root.append(input);
+    input.focus();
+    const textAll = new dom.window.KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true, cancelable: true });
+    input.dispatchEvent(textAll);
+    assert.equal(textAll.defaultPrevented, false);
+    assert.equal(h.commits.length, 0);
+  } finally { h.teardown(); }
+});
+
+test('Guide is created on request, closes with focus restored, and survives no panel teardown', () => {
+  const h = mount([]);
+  try {
+    const guide = h.root.querySelector<HTMLButtonElement>('.tl-guide')!;
+    assert.equal(document.querySelector('.tl-guide-pop'), null);
+    guide.click();
+    const pop = document.querySelector('.tl-guide-pop')!;
+    assert.equal(pop.getAttribute('role'), 'dialog');
+    assert.equal(pop.querySelectorAll('li').length, 3);
+    click(pop.querySelector('button')!);
+    assert.equal(document.activeElement, guide);
+    assert.equal(document.querySelector('.tl-guide-pop'), null);
+    guide.click();
+    h.panel.setOpen(false);
+    assert.equal(document.querySelector('.tl-guide-pop'), null);
+    h.panel.setOpen(true);
+    h.root.querySelector<HTMLButtonElement>('.tl-edit')!.click();
+    assert.match(document.querySelector('.tl-edit-menu')!.textContent!, /Add media or text/);
+    h.panel.destroy();
+    assert.equal(document.querySelector('.tl-edit-menu'), null);
+    assert.equal(h.commits.length, 0);
+  } finally { h.teardown(); }
+});
+
+test('Edit menu supports arrow keys and Escape returns focus to its button', () => {
+  const h = mount([clip('a', 0, 3), clip('b', 3, 2)]);
+  try {
+    h.select(['a']);
+    const edit = h.root.querySelector<HTMLButtonElement>('.tl-edit')!;
+    edit.click();
+    const menu = openMenu('.tl-edit-menu')!;
+    const items = Array.from(menu.querySelectorAll('button'));
+    assert.equal(document.activeElement, items[0]);
+    const pressMenu = (key: string) => document.activeElement!.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    pressMenu('End');
+    assert.equal(document.activeElement, items.at(-1));
+    pressMenu('ArrowDown');
+    assert.equal(document.activeElement, items[0]);
+    pressMenu('ArrowUp');
+    assert.equal(document.activeElement, items.at(-1));
+    pressMenu('Home');
+    assert.equal(document.activeElement, items[0]);
+    pressMenu('Escape');
+    assert.equal(document.querySelector('.tl-edit-menu'), null);
+    assert.equal(document.activeElement, edit);
+    assert.equal(h.commits.length, 0);
+  } finally { h.teardown(); }
+});
+
+test('Edit does not offer a split of an unselected clip when the selection is elsewhere', () => {
+  const h = mount([clip('a', 0, 5), overlay('title', 3, 1)]);
+  try {
+    h.select(['title']);
+    h.stageEl.dispatchEvent(new dom.window.CustomEvent('fc-seek', { detail: { atMs: 1000 } }));
+    h.root.querySelector<HTMLButtonElement>('.tl-edit')!.click();
+    assert.ok(!Array.from(openMenu('.tl-edit-menu')!.querySelectorAll('.tl-menu-label')).some(n => n.textContent === 'Split at playhead'));
+    h.select(['a']);
+    assert.equal(document.querySelector('.tl-edit-menu'), null, 'a selection change closes the previous options');
+    assert.equal(h.commits.length, 0);
+  } finally { h.teardown(); }
+});
+
+test('Offset starts opened from Edit uses its button as anchor and closes on panel teardown', () => {
+  const h = mount([clip('a', 0, 5), overlay('title', 1, 1), overlay('sound', 2, 1)]);
+  try {
+    h.select(['title', 'sound']);
+    const edit = h.root.querySelector<HTMLButtonElement>('.tl-edit')!;
+    edit.getBoundingClientRect = (() => ({ left: 300, right: 360, top: 200, bottom: 230, width: 60, height: 30 })) as never;
+    editAction(h, 'Offset starts by…');
+    const pop = openMenu('.tl-stagger-pop')!;
+    assert.equal(pop.style.left, '300px');
+    const input = pop.querySelector('input')!;
+    input.value = '500';
+    click(pop.querySelector('button')!);
+    assert.equal(h.commits.length, 1);
+    assert.equal(h.boxes.find(b => b.id === 'sound')!.start, 1.5);
+    assert.equal(document.activeElement, edit);
+    editAction(h, 'Offset starts by…');
+    click(openMenu('.tl-stagger-pop')!.querySelector('button')!);
+    assert.equal(h.commits.length, 1, 'the same spacing does not add an undo entry');
+    editAction(h, 'Offset starts by…');
+    h.panel.setOpen(false);
+    assert.equal(document.querySelector('.tl-stagger-pop'), null);
+  } finally { h.teardown(); }
+});
+
+test('Always on opens a selectable list and its add action keeps the existing single-commit writer', async () => {
+  const h = mount([clip('a', 0, 5), scenery('bg'), scenery('logo')]);
+  try {
+    const button = h.root.querySelector<HTMLButtonElement>('.tl-bar .tl-always-on')!;
+    assert.equal(button.textContent?.trim(), 'Always on (2)');
+    assert.equal(button.classList.contains('is-notifying'), false, 'opening a document is quiet');
+    button.click();
+    const list = document.querySelector('.tl-always-pop')!;
+    const logo = list.querySelector<HTMLButtonElement>('.tl-chip[data-id="logo"]')!;
+    logo.click();
+    assert.deepEqual(h.selSets.at(-1), ['logo']);
+    assert.equal(document.querySelector('.tl-always-pop'), null);
+    assert.equal(document.activeElement, button);
+    assert.equal(h.commits.length, 0, 'selection does not change the document');
+    button.click();
+    assert.equal((document.activeElement as HTMLElement).dataset.id, 'logo', 'reopening finds the selection');
+    document.querySelector<HTMLButtonElement>('.tl-always-pop .tl-chip-add[data-id="logo"]')!.click();
+    assert.equal(h.commits.length, 1);
+    assert.equal(document.querySelector('.tl-always-pop'), null);
+    h.notify();
+    await frames(3);
+    assert.ok(h.bar('logo'));
+    assert.equal(button.textContent?.trim(), 'Always on (1)');
+    button.click();
+    document.querySelector<HTMLButtonElement>('.tl-always-pop .tl-chip-add')!.click();
+    h.notify();
+    await frames(3);
+    assert.equal(button.disabled, true);
+    assert.equal(document.activeElement, h.bar('bg'), 'the last promotion keeps keyboard focus in the timeline');
+  } finally { h.teardown(); }
+});
+
+test('Always on highlights a timed-to-untimed change once and closes cleanly with the panel', async () => {
+  const h = mount([clip('a', 0, 5), overlay('title', 1, 2)]);
+  try {
+    const button = h.root.querySelector<HTMLButtonElement>('.tl-always-on')!;
+    assert.equal(button.disabled, true);
+    h.panel.demote('title');
+    h.notify();
+    await frames(3);
+    assert.equal(button.disabled, false);
+    assert.equal(button.classList.contains('is-notifying'), true);
+    await new Promise(resolve => setTimeout(resolve, 1250));
+    h.notify();
+    await frames(2);
+    assert.equal(button.classList.contains('is-notifying'), false, 'a repaint does not flash again');
+    button.click();
+    h.panel.setOpen(false);
+    assert.equal(document.querySelector('.tl-always-pop'), null);
+    assert.ok(h.root.querySelector('.tl-scenery'), 'the borrowed list returns to its owner');
+    h.panel.setOpen(true);
+    button.click();
+    h.panel.destroy();
+    assert.equal(document.querySelector('.tl-always-pop'), null);
+    assert.equal(document.querySelector('.tl-scenery'), null, 'no borrowed content survives teardown');
+  } finally { h.teardown(); }
+});
+
+test('Always on preserves focus through a rebuild and supports arrow keys and a nested context menu', async () => {
+  const h = mount([clip('a', 0, 5), scenery('bg'), scenery('logo')]);
+  try {
+    const button = h.root.querySelector<HTMLButtonElement>('.tl-always-on')!;
+    button.click();
+    const pressList = (key: string, shiftKey = false) => document.activeElement!.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, shiftKey, bubbles: true, cancelable: true }));
+    pressList('ArrowDown');
+    assert.ok(document.activeElement!.classList.contains('tl-chip-add'));
+    pressList('ArrowDown');
+    assert.equal((document.activeElement as HTMLElement).dataset.id, 'logo');
+    h.panel.demote('a');
+    h.notify();
+    await frames(3);
+    assert.equal((document.activeElement as HTMLElement).dataset.id, 'logo', 'model changes preserve list focus');
+    pressList('F10', true);
+    assert.ok(document.querySelector('.tl-ctx-menu'));
+    pressList('Escape');
+    assert.equal(document.querySelector('.tl-ctx-menu'), null);
+    assert.ok(document.querySelector('.tl-always-pop'), 'one Escape closes only the nested menu');
+    assert.equal((document.activeElement as HTMLElement).dataset.id, 'logo');
+    pressList('Escape');
+    assert.equal(document.querySelector('.tl-always-pop'), null);
+    assert.equal(document.activeElement, button);
+  } finally { h.teardown(); }
+});
+
+test('track sizing is a persistent device preference, with bounded controls and no document commits', () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const stored = new Map<string, string>();
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    getItem: (key: string) => stored.get(key) ?? null,
+    setItem: (key: string, value: string) => stored.set(key, value),
+  } });
+  const h = mount([clip('a', 0, 5)]);
+  try {
+    click(h.root.querySelector('.tl-mobile-tools')!);
+    const size = h.root.querySelector<HTMLButtonElement>('.tl-track-size')!;
+    size.click();
+    const pop = document.querySelector('.tl-track-size-pop')!;
+    const slider = pop.querySelector<HTMLInputElement>('input[type="range"]')!;
+    slider.value = '72';
+    slider.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    assert.equal(h.root.style.getPropertyValue('--tl-track-height'), '72px');
+    click(pop.querySelector('.tl-track-taller')!);
+    assert.equal(slider.value, '80');
+    for (let i = 0; i < 20; i++) click(pop.querySelector('.tl-track-shorter')!);
+    assert.equal(slider.value, '24');
+    click(pop.querySelector('.tl-track-taller')!);
+    click(pop.querySelector('.tl-track-size-done')!);
+    assert.equal(document.activeElement, size);
+    assert.equal(h.commits.length, 0);
+    const reopened = mount([clip('b', 0, 5)]);
+    try { assert.equal(reopened.root.style.getPropertyValue('--tl-track-height'), '32px'); }
+    finally { reopened.teardown(); }
+    size.click();
+    h.panel.setOpen(false);
+    assert.equal(document.querySelector('.tl-track-size-pop'), null);
+  } finally {
+    h.teardown();
+    if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
   }
 });

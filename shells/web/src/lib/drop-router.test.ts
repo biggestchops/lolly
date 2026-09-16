@@ -177,7 +177,7 @@ test('a .penpot keeps its pair: Layout Studio leads, the studio sits beside it',
   // `archive` is false for a .penpot (PURE_DESIGN_EXT_RE excludes it), so this
   // path is untouched by the pack-zip rule above.
   const list = dropChooserChoices(sniff({ design: true, designSystem: true }), ctx());
-  assert.deepEqual(list.map((c) => c.id), ['design', 'design-system', 'sequence', 'exports']);
+  assert.deepEqual(list.map((c) => c.id), ['design', 'design-rules', 'design-system', 'sequence', 'exports']);
   assert.equal(leader(list), 'design');
 });
 
@@ -195,7 +195,7 @@ test('a PDF offers the studio beside its own routes, and never leads with it', (
   // above the transform utility.
   const s = sniff({ pdf: true });
   const list = dropChooserChoices(s, ctx());
-  assert.deepEqual(list.map((c) => c.id), ['design', 'sequence', 'library', 'design-system', 'compress']);
+  assert.deepEqual(list.map((c) => c.id), ['design', 'design-rules', 'sequence', 'library', 'design-system', 'compress']);
   assert.equal(leader(list), 'design');
   // …and the sentence still names the file for what it is.
   assert.equal(dropChooserMessage(s, 'guidelines.pdf', ctx()), '“guidelines.pdf” is a PDF or Illustrator document.');
@@ -252,8 +252,8 @@ test('isBrandPackParts: routes by manifest format, exactly', async () => {
 // they do for a PDF, and the pictures + content routes follow.
 test('a deck offers Design first, then its slides AND content extraction, in the same sheet', () => {
   const list = dropChooserChoices(sniff({ pptx: true }), ctx());
-  assert.deepEqual(list.map((c) => c.id).slice(0, 2), ['design', 'sequence']);
-  assert.deepEqual(list.map((c) => c.id).slice(2, 4), ['library', 'extract']);
+  assert.deepEqual(list.map((c) => c.id).slice(0, 3), ['design', 'design-rules', 'sequence']);
+  assert.deepEqual(list.map((c) => c.id).slice(3, 5), ['library', 'extract']);
   assert.equal(leader(list), 'design', 'a deck edits like a PDF does');
 });
 

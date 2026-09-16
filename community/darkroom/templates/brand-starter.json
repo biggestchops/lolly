@@ -1,0 +1,19 @@
+{
+  "id": "brand-starter",
+  "name": "Brand duotone",
+  "category": "Brand",
+  "description": "A tonal study using your brand colours. Replace the sample with any image.",
+  "values": {
+    "treatment": "duotone",
+    "treatmentAmount": 100,
+    "treatShadow": "{color.semantic.primary}",
+    "treatHighlight": "{color.semantic.secondary}",
+    "filmLook": "none",
+    "image": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/gradient.png?count=3&grain=0",
+      "_unresolved": true
+    }
+  },
+  "galleryCover": true
+}

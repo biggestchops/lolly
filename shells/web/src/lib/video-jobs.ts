@@ -1840,9 +1840,9 @@ export function runVideoJobAsJob(
   const controller = new AbortController();
   const job = startJob({ title, cancel: () => controller.abort() });
   void (async (): Promise<void> => {
-    await job.started;
-    if (job.cancelled) return;
     try {
+      await job.started;
+      if (job.cancelled) return;
       const ref = await runVideoJob(host, req, {
         signal: controller.signal,
         isCancelled: () => job.cancelled,
@@ -1852,8 +1852,11 @@ export function runVideoJobAsJob(
       if (ref) { job.finish(ref); hooks.onComplete?.(ref); }
       else job.finish();
     } catch (err) {
+      if (job.cancelled || (err as Error | null)?.name === 'AbortError') return;
       job.fail(err);
       hooks.onError?.(err);
+    } finally {
+      job.settle();
     }
   })();
   return job;

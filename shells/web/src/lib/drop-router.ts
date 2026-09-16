@@ -43,6 +43,7 @@
 
 import { t, tRaw } from '../i18n.ts';
 import { NAV_EVENTS } from '../utils.ts';
+import { navigateTo } from '../nav.ts';
 import { announce } from '../a11y.ts';
 import { playSfx } from './sfx.ts';
 import { choiceDialog, confirmDialog, closeConfirmDialogs } from '../components/confirm-dialog.ts';
@@ -111,7 +112,7 @@ export const TOKENS_SNIFF_MAX_BYTES = 4 * 1024 * 1024;
 
 // ── one-shot handoff stashes (the verify-handoff pattern) ──────────────────────
 
-let pendingDesign: { file: File; scenes: boolean } | null = null;
+let pendingDesign: { file: File; scenes: boolean; rules?: boolean } | null = null;
 
 /** Is a design file waiting for Design to consume it? A PEEK, not a take: the tool
  *  view asks this before opening its launch-time template chooser, because a file
@@ -126,7 +127,7 @@ export function hasPendingDesignImport(): boolean {
  *  cleared on read. free-canvas checks this on mount. `scenes` carries the
  *  "as timed scenes vs replace the board" choice the drop door offered
  *  (plans/104 section 337): the "Make a video from its frames" door sets it true. */
-export function takePendingDesignImport(): { file: File; scenes: boolean } | null {
+export function takePendingDesignImport(): { file: File; scenes: boolean; rules?: boolean } | null {
   const d = pendingDesign;
   pendingDesign = null;
   return d;
@@ -217,6 +218,12 @@ export function takePendingSpreadsheetFile(): File | null {
  *  the block rows here; views/tool.ts folds them into initialValues on mount. */
 export function setPendingToolSeed(toolId: string, values: Record<string, unknown>): void {
   pendingToolSeed = { toolId, values };
+}
+
+/** Open a separate document from captured values, including on the current tool route. */
+export function openToolWithSeed(toolId:string,values:Record<string,unknown>):void {
+  setPendingToolSeed(toolId,values);
+  routeToConsumer(`#/tool/${encodeURIComponent(toolId)}`,onToolRoute(toolId));
 }
 
 /** Consume the seed stashed for `toolId`. Single use; null for other tools. */
@@ -476,6 +483,7 @@ export function dropChooserChoices(s: Sniff, ctx: ChooserContext): DialogChoice[
   // artboards or as timed scenes, the same doors a PDF gets (Andy, 2026-09-02).
   if (single && (s.design || s.pdf || s.pptx) && has('design')) {
     choices.push({ id: 'design', label: t('Edit in Design'), primary: !s.archive });
+    choices.push({ id: 'design-rules', label: t('Share with rules') });
   }
   // The Design System studio door, next to the Design one so the two
   // .penpot destinations read as a pair (plan 97 section 14.9). It leads only when no
@@ -693,7 +701,7 @@ function previewFacts(preview: LollyPreview): string {
     : preview.sizeBand === 'medium'
       ? t(' It may take a moment to verify on this device.')
       : '';
-  if (preview.kind === 'session') {
+  if (preview.format === 'lolly-share') {
     const templates = declaredTemplateCount(preview.manifest);
     const content = [
       preview.embeddedAssets === 1 ? t('1 embedded file') : t('{n} embedded files', { n: preview.embeddedAssets }),
@@ -733,7 +741,7 @@ async function storageFact(preview: LollyPreview): Promise<string> {
     const free = Math.max(0, estimate.quota - estimate.usage);
     // Session manifests declare the carried payload bytes. Brand manifests do
     // not, so their compressed size is the only honest lower-bound available.
-    const needed = preview.kind === 'session'
+    const needed = (preview.kind === 'session' || preview.kind === 'tool')
       ? Math.max(preview.fileBytes, preview.embeddedBytes)
       : preview.fileBytes;
     if (free >= needed * 1.25) return '';
@@ -885,6 +893,17 @@ export async function openLollyFile(
     announce(tRaw('Inspecting {name}…', { name: file.name }));
     const intake = await import('./lolly-intake.ts');
     const preview = await intake.peekLollyFile(file);
+    if (preview.kind === 'tool') {
+      const loaded = await intake.loadLollyFile(file, preview);
+      if (loaded.kind !== 'tool' && loaded.kind !== 'session') return;
+      const lp = await import('./lolly-pack.ts');
+      if (await provisionLollyTool(loaded.contents, lp)) {
+        const hash = `#/tool/${encodeURIComponent(loaded.contents.manifest.tool.id)}`;
+        routeToConsumer(hash, window.location.hash === hash);
+        announce(t('Tool installed. Only the declared inputs can be changed.'));
+      }
+      return;
+    }
     const storage = await storageFact(preview);
     const choices: DialogChoice[] = preview.kind === 'session'
       ? [
@@ -902,7 +921,7 @@ export async function openLollyFile(
     announce(tRaw('Verifying {name}…', { name: file.name }));
     const loaded = await intake.loadLollyFile(file, preview);
 
-    if (loaded.kind !== 'session') {
+    if ('files' in loaded) {
       await importBrandLollyDrop(file, loaded.files, host);
       return;
     }
@@ -963,7 +982,7 @@ const importLollyDrop = openLollyFile;
  * the session's tool can load here afterwards:
  *   - no carried tool → true (the session resolves its tool from the catalog, as always);
  *   - the tool is already here (catalog or installed) → true, nothing to do;
- *   - carried + not here → a "do you trust the author?" confirm (its code runs unsandboxed);
+ *   - carried + not here → a consent dialog before the isolated tool runs;
  *     Trust ⇒ install + surface it (true); Decline / unsupported (module hooks) ⇒ false.
  */
 export async function provisionLollyTool(parsed: LollyFileContents, lp: typeof import('./lolly-pack.ts')): Promise<boolean> {
@@ -973,9 +992,23 @@ export async function provisionLollyTool(parsed: LollyFileContents, lp: typeof i
   const it = await import('./installed-tools.ts');
   const idx = (window as unknown as { __toolIndex?: { tools?: Array<{ id: string; _installed?: boolean }> } }).__toolIndex;
   const inCatalog = !!idx?.tools?.some(t => t.id === tool.id && t._installed !== true);
-  if (inCatalog || (await it.isToolInstalled(tool.id))) return true;   // already have it
+  if (inCatalog && parsed.manifest.kind === 'tool') throw new Error('This tool id belongs to an installed catalog. Ask the designer to share it with a different tool id.');
+  if (inCatalog || (parsed.manifest.kind !== 'tool' && await it.isToolInstalled(tool.id))) return true;
 
   const manifest = JSON.parse(new TextDecoder().decode(tool.files['tool.json'] ?? new Uint8Array())) as ToolManifest;
+  const { loadTool } = await import('@lolly/engine');
+  await loadTool(tool.id, async path => {
+    const bytes = tool.files[path.slice(tool.id.length + 1)];
+    if (!bytes) throw new Error(`Missing tool file: ${path}`);
+    return new TextDecoder().decode(bytes);
+  }, { trustClass: 'sideloaded-consented' });
+  if (manifest.designTool) {
+    const previous = await it.getInstalledToolVersion(manifest.id,manifest.version);
+    if (previous?.artifactDigest) {
+      if (previous.artifactDigest !== await it.toolArtifactDigest(tool.files)) throw new Error('This version already exists with different contents. Ask the designer for a new revision.');
+      return installSideloadedTool(manifest,tool.files,previous.trust);
+    }
+  }
   const by = parsed.manifest.creator?.name || parsed.manifest.creator?.org;
   if (!await confirmToolTrust(manifest, by)) return false;
   return installSideloadedTool(manifest, tool.files, tool.trust, {
@@ -994,8 +1027,8 @@ async function confirmToolTrust(manifest: ToolManifest, by?: string): Promise<bo
   const name = (manifest as { name?: string }).name || manifest.id;
   return confirmDialog({
     title: tRaw('Trust this tool?'),
-    message: tRaw('This file includes a tool - “{name}”{by} - that isn’t installed here. Opening it runs the tool’s own code on your device. Only install it if you trust where this file came from.',
-      { name, by: by ? tRaw(' by {who}', { who: by }) : '' }),
+    message: tRaw('Install “{name}” {version}{by}? Opening it runs its packaged code on your device. Saved tool sessions keep their current version. Only install files from a source you trust.',
+      { name, version: manifest.version, by: by ? tRaw(' by {who}', { who: by }) : '' }),
     confirmLabel: tRaw('Trust & install'),
     danger: true,
   });
@@ -1226,6 +1259,10 @@ export async function openDropChooser(
       }
       break;
     }
+    case 'design-rules':
+      pendingDesign = { file: first, scenes: false, rules: true };
+      routeToConsumer('#/tool/design', onToolRoute('design'));
+      break;
     case 'design':
       pendingDesign = { file: first, scenes: false };
       routeToConsumer('#/tool/design', onToolRoute('design'));
@@ -1317,7 +1354,8 @@ export async function openDropChooser(
  *  syncUrl rewrites the address bar to). Tool ids are [a-z0-9-], regex-safe. */
 const onToolRoute = (id: string): boolean =>
   new RegExp(`^#/tool/${id}([?/]|$)`).test(window.location.hash)
-  || new RegExp(`^/t/${id}([?/]|$)`).test(window.location.pathname);
+  || (!window.location.hash && (new RegExp(`^/t/${id}([?/]|$)`).test(window.location.pathname)
+    || id === 'design' && /^\/design\/?$/.test(window.location.pathname)));
 
 /** Navigate to `hash`. Every stash this router arms is consumed at MOUNT time
  *  (free-canvas / views/tool.ts / valid.ts), but main.ts's navigate() dedupes a
@@ -1326,8 +1364,10 @@ const onToolRoute = (id: string): boolean =>
  *  shell for a forced remount via its 'lolly:remount' seam so the stash is
  *  still consumed; plain drops (gallery/dashboard only) never hit it. */
 function routeToConsumer(hash: string, alreadyThere: boolean): void {
-  if (window.location.hash !== hash) window.location.hash = hash;
-  if (alreadyThere) window.dispatchEvent(new Event('lolly:remount'));
+  if (alreadyThere) {
+    if (window.location.hash !== hash) history.pushState(null, '', hash);
+    window.dispatchEvent(new Event('lolly:remount'));
+  } else navigateTo(hash);
 }
 
 /**

@@ -330,9 +330,9 @@ export async function regenerateTtsClipAsJob(
 ): Promise<TtsRegenerateResult | null> {
   const controller = new AbortController();
   const job = startJob({ title: t('Speaking the changes'), cancel: () => controller.abort() });
-  await job.started;
-  if (job.cancelled) return null;
   try {
+    await job.started;
+    if (job.cancelled) return null;
     const out = await regenerateTtsClip(host, {
       ...req,
       signal: controller.signal,
@@ -355,6 +355,8 @@ export async function regenerateTtsClipAsJob(
     console.warn('[tts] regenerate failed:', err);
     job.fail(err);
     throw err;
+  } finally {
+    job.settle();
   }
 }
 

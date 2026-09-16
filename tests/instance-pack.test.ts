@@ -22,6 +22,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
+import { loadTool } from '../engine/src/loader.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const suseMounted = existsSync(join(ROOT, 'brands/suse/pack.json'));
@@ -29,7 +30,7 @@ const suseMounted = existsSync(join(ROOT, 'brands/suse/pack.json'));
 const AUDIO_EXT = /\.(mp3|m4a|aac|opus|ogg|oga|wav|flac|aiff?)$/i;
 const EXCLUDED = /(photos|campaign|headshots|music)\//;
 
-test('the suse pack builds clean: exclusions hold, fonts/tools/envelope complete', { skip: !suseMounted && 'brands/suse not mounted' }, () => {
+test('the suse pack builds clean: exclusions hold, fonts/tools/envelope complete', { skip: !suseMounted && 'brands/suse not mounted' }, async () => {
   const out = mkdtempSync(join(tmpdir(), 'lolly-pack-'));
   try {
     execFileSync('node', ['scripts/build-instance-pack.ts', '--out', out], { cwd: ROOT, stdio: 'pipe' });
@@ -83,6 +84,18 @@ test('the suse pack builds clean: exclusions hold, fonts/tools/envelope complete
     for (const t of toolsPart.tools) {
       assert.ok(files[`tools/${t.id}/tool.json`], `tool ${t.id} shipped without its manifest`);
     }
+    if (toolsPart.tools.some(t => t.id === '3d-studio')) {
+      const studio = await loadTool('3d-studio', async path => {
+        const bytes = files[`tools/${path}`];
+        if (!bytes) throw new Error(`Missing packed tool file: ${path}`);
+        return Buffer.from(bytes).toString();
+      });
+      assert.equal(studio.manifest.inputs.find(input => input.id === 'modelAsset')?.default, 'suse/model/geeko');
+      for (const file of ['template.html', 'styles.css', 'hooks.js']) {
+        assert.deepEqual(Buffer.from(files[`tools/3d-studio/${file}`]!), readFileSync(join(ROOT, 'community/3d-studio', file)));
+      }
+      assert.ok(!JSON.parse(Buffer.from(files['tools/3d-studio/tool.json']!).toString()).extends);
+    }
     // The SUSE 3D variant offers the OSS sample models, but the configured
     // community instance already serves the exact same bytes. Do not pay for
     // duplicate copies in the portable brand pack.
@@ -107,6 +120,8 @@ test('the suse pack builds clean: exclusions hold, fonts/tools/envelope complete
     const manifest = JSON.parse(Buffer.from(files['manifest.json']!).toString());
     assert.equal(manifest.format, 'lolly-brand');
     assert.equal(manifest.pack?.kind, 'instance-pack');
+    assert.equal(manifest.counts.fontFamilies, families.size, 'font-family count describes the bundled faces');
+    assert.equal(manifest.counts.fontFiles, fontRows.length);
     for (const name of names) {
       if (name === 'manifest.json' || name === 'lolly.txt' || name === 'pack.sig') continue;
       const sri = manifest.integrity?.[name];

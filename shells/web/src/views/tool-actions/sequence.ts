@@ -53,6 +53,16 @@ export function syncSequenceUi(ta: ActionsCtx): void {
   const { durationEl, liveLabelEl } = ta;
   const isSeq = !!ta.formatRules.seqStageEl();
   const secs = ta.formatRules.seqDurationS();
+  const options = ta.el?.querySelector<HTMLDetailsElement>('[data-video-options]');
+  if (options) {
+    const compact = isSeq && ta.formatRules.isVideoFmt(ta.formatEl?.value ?? ta.initialFmt);
+    if (options.dataset.compact !== String(compact)) {
+      options.dataset.compact = String(compact);
+      options.open = !compact;
+      const summary = options.querySelector('summary');
+      if (summary) summary.hidden = !compact;
+    }
+  }
   // An animated tool (window.__lollyAnim) seeds Duration from its loop when this
   // isn't a sequence; the sequence timeline wins if a tool were somehow both.
   const animSecs = isSeq ? null : ta.formatRules.animDurationS();

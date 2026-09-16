@@ -225,7 +225,7 @@ export const BANNED_PHRASES: { what: string; re: RegExp }[] = [
 const ALLOW: Record<string, string[]> = {
   'docs/animating.md': ['follow the shape of the artwork'],
   'docs/ai-features.md': ['actual shape of the audio'],
-  'docs/url-mode.md': ['actual shape of the catalogue track'],
+  'docs/url-inputs.md': ['actual shape of the catalogue track'],
   'docs/using.md': ['filled shape of the same outline',
     // the Ask view's transcript is that UI's real object, not prose flourish
     'The transcript is session memory:'],
@@ -235,18 +235,14 @@ const ALLOW: Record<string, string[]> = {
   // render.transcribe (engine 1.150): the literal MANIFEST KEY a tool author has
   // to type, in its heading and in the example block. The prose around them says
   // "speech to text" instead.
-  'docs/authoring-tools.md': ['### Transcribing audio (`render.transcribe`)',
-    '"transcribe": { "source": "clip"'],
+  'docs/tool-hooks.md': ['### Transcribing audio (`render.transcribe`)', '"transcribe": { "source": "clip"'],
   // `lolly transcribe` (plan 183): the literal SUBCOMMAND a script author types,
   // in the reserved-verb list, the two `--json` lists, its own paragraph, two
   // command examples and the verbatim `lolly models ls` output. The prose around
   // them says "speech to text" and "reads a clip back as text" instead.
-  'docs/cli.md': ['`speak`, `transcribe`, `mix`',
-    'pnpm run cli transcribe ./clip.wav --lang=en --json',
-    '**`lolly transcribe <clip.wav>`** reads a clip back as text',
-    '$ lolly transcribe ./interview.m4a',
-    'whisper    transcription (lolly transcribe)',
-    '`speak`, `transcribe`, `ocr`'],
+  'docs/cli.md': ['`speak`, `transcribe`, `mix`'],
+  'docs/cli-files.md': ['pnpm run cli transcribe ./clip.wav --lang=en --json', '**`lolly transcribe <clip.wav>`** reads a clip back as text', '$ lolly transcribe ./interview.m4a', 'whisper    transcription (lolly transcribe)'],
+  'docs/cli-automation.md': ['`speak`, `transcribe`, `ocr`'],
   // host.speech transcription: the industry feature name and literal API names
   'docs/host-api.md': ['speech synthesis + transcription',
     'Transcription (v1.99) is the reverse',

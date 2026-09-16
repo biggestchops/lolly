@@ -38,8 +38,8 @@
  *
  * WHEN IT STOPS. The ticker is not a heartbeat - it exists only while something is
  * moving, and "moving" is measured, not assumed: a frame re-arms only while some
- * peer still has a segment left to walk between its last two samples. A peer who
- * parks their pointer is painted at rest and the loop stands down, so a live roster
+ * peer still has a segment to walk or a decorative swing to settle. A peer who
+ * parks their pointer settles quickly and the loop stands down, so a live roster
  * costs nothing once nobody is moving. It also stands down when the roster empties,
  * when every peer's cursor goes away, and (for free) when the tab is hidden, because
  * rAF simply stops being called. That last one matters: a backgrounded helper's tab
@@ -71,6 +71,7 @@
  */
 
 import { prefersReducedMotion } from '../lib/a11y-prefs.ts';
+import { stepCursorSwing, type CursorSwing } from './collab-cursor-motion.ts';
 
 // ── Stylesheet (see the header: this module owns these classes outright) ───────
 
@@ -95,9 +96,6 @@ const CSS = `
   top: 0;
   left: 0;
   z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  gap: calc(2px * var(--a11y-fs));
   pointer-events: none;
   /* Position is written as translate3d by the ticker (rule 4) - promoted so a
      moving cursor is a compositor job and never a reflow. NO transition: the
@@ -108,6 +106,13 @@ const CSS = `
 /* An author \`display\` beats the UA sheet's \`[hidden] { display: none }\`, and a
    released node is hidden before it is pooled. */
 .collab-cursor[hidden] { display: none; }
+.collab-cursor-body {
+  display: flex;
+  direction: ltr;
+  align-items: flex-start;
+  gap: calc(2px * var(--a11y-fs));
+  transform-origin: 0 0;
+}
 
 /* The arrow silhouette: one painted box in the collaborator's colour, clipped to
    a pointer. The halo is a doubled drop-shadow in the theme's card ground rather
@@ -429,6 +434,7 @@ export interface CollabCursors {
 /** A pooled cursor node: its root plus the two children the ticker writes. */
 interface CursorNode {
   root: HTMLElement;
+  body: HTMLElement;
   arrow: HTMLElement;
   label: HTMLElement;
 }
@@ -441,6 +447,8 @@ interface LiveCursor {
   next: CursorSample;
   color: string;
   name: string;
+  swing: CursorSwing;
+  painted: CursorSample | null;
 }
 
 /** Modifier for the reduced-motion presentation (section 4.8). The sheet above sizes it;
@@ -532,13 +540,17 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
   function makeNode(): CursorNode {
     const root = doc.createElement('div');
     root.className = 'collab-cursor';
+    const body = doc.createElement('div');
+    body.className = 'collab-cursor-body';
     const arrow = doc.createElement('div');
     arrow.className = 'collab-cursor-arrow';
     arrow.setAttribute('aria-hidden', 'true');
     const label = doc.createElement('span');
     label.className = 'collab-cursor-label';
-    root.append(arrow, label);
-    return { root, arrow, label };
+    label.dir = 'auto';
+    body.append(arrow, label);
+    root.append(body);
+    return { root, body, arrow, label };
   }
 
   function acquire(): CursorNode {
@@ -557,26 +569,35 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
   /** Write one peer's position. `stage`/`layer` are measured once per frame by the
    *  caller - a per-peer `getBoundingClientRect` is the classic way to turn a smooth
    *  overlay into a layout-thrash machine. */
-  function place(entry: LiveCursor, stage: RectLike, layerRect: RectLike, t: number, still: boolean): void {
+  function place(entry: LiveCursor, stage: RectLike, layerRect: RectLike, t: number, still: boolean, animate: boolean): void {
     const unit = still
       ? { x: entry.next.x, y: entry.next.y }
       : cursorPosition(entry.prev, entry.next, t);
     const client = opts.mapPoint?.(entry.id, unit);
-    if (opts.mapPoint && !client) { entry.node.root.hidden = true; return; }
+    if (opts.mapPoint && !client) { entry.node.root.hidden = true; entry.swing = { angle: 0, velocity: 0 }; entry.painted = null; return; }
     entry.node.root.hidden = false;
     const p = client ? { x: client.x - layerRect.left, y: client.y - layerRect.top }
       : mapUnitPoint(unit.x, unit.y, stage, layerRect);
     // translate3d, never left/top: a compositor move that cannot reflow the page and
     // cannot invalidate the tool render underneath it (rule 4).
     entry.node.root.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
+    const last = entry.painted;
+    setStill(entry.node, still);
+    if (still) entry.swing = { angle: 0, velocity: 0 };
+    else if (animate && last) {
+      // Unit deltas exclude viewport movement, so zooming or panning cannot fling a label.
+      entry.swing = stepCursorSwing(entry.swing, (unit.x - last.x) * stage.width, (unit.y - last.y) * stage.height, t - last.t);
+    }
+    entry.node.body.style.transform = entry.swing.angle ? `rotate(${entry.swing.angle}deg)` : '';
+    if (animate || still || !last) entry.painted = { ...unit, t };
   }
 
-  function paint(t: number): void {
+  function paint(t: number, animate = false): void {
     if (!layer || live.size === 0) return;
     const stage = measureStage();
     const layerRect = measureLayer();
     const still = reducedMotion();
-    for (const entry of live.values()) place(entry, stage, layerRect, t, still);
+    for (const entry of live.values()) place(entry, stage, layerRect, t, still, animate);
   }
 
   /**
@@ -596,11 +617,11 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
     return t < entry.next.t + dur;
   }
 
-  /** Does ANY peer still have a segment left to walk? The ticker's whole reason to
+  /** Does any peer have a segment or decorative swing left? The ticker's reason to
    *  exist - see {@link tick}. */
   function anyMoving(t: number): boolean {
     for (const entry of live.values()) {
-      if (moving(entry, t)) return true;
+      if (moving(entry, t) || entry.swing.angle !== 0 || entry.swing.velocity !== 0) return true;
     }
     return false;
   }
@@ -609,7 +630,7 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
     frame = null;
     if (disposed) return;
     const t = now();
-    paint(t);
+    paint(t, true);
     // Re-checked after the paint, for two separate reasons. `dispose()` can run
     // inside it (a subscriber that tears the tool down), and re-arming there would
     // leave a frame pending forever. And a roster that is merely PRESENT is not a
@@ -643,6 +664,20 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
         if (!disposed && layer) paint(now());
       });
 
+  const motionChanged = (): void => {
+    if (disposed) return;
+    stopTicker();
+    for (const entry of live.values()) {
+      entry.prev = null; entry.painted = null; entry.swing = { angle: 0, velocity: 0 };
+    }
+    paint(now());
+  };
+  const motionQuery = doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)');
+  motionQuery?.addEventListener('change', motionChanged);
+  const MotionObserver = doc.defaultView?.MutationObserver;
+  const motionObserver = MotionObserver ? new MotionObserver(motionChanged) : null;
+  motionObserver?.observe(doc.documentElement, { attributes: true, attributeFilter: ['data-a11y-motion'] });
+
   return {
     get el(): HTMLElement | null {
       return layer?.el ?? null;
@@ -662,7 +697,7 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
         seen.add(peer.id);
         let entry = live.get(peer.id);
         if (!entry) {
-          entry = { id: peer.id, node: acquire(), prev: null, next: { x: c.x, y: c.y, t }, color: '', name: '' };
+          entry = { id: peer.id, node: acquire(), prev: null, next: { x: c.x, y: c.y, t }, color: '', name: '', swing: { angle: 0, velocity: 0 }, painted: null };
           entry.node.root.dataset.clientId = peer.id;
           live.set(peer.id, entry);
           arrived = true;
@@ -672,6 +707,9 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
           // time and hold the cursor visually frozen one interval behind itself.
           entry.prev = entry.next;
           entry.next = { x: c.x, y: c.y, t };
+          if (t - entry.prev.t > CURSOR_SNAP_GAP_MS || t <= entry.prev.t) {
+            entry.swing = { angle: 0, velocity: 0 }; entry.painted = null; arrived = true;
+          }
         }
         if (entry.color !== peer.color) {
           entry.color = peer.color;
@@ -731,6 +769,8 @@ export function createCollabCursors(opts: CollabCursorOptions): CollabCursors {
       if (disposed) return;
       disposed = true;
       unobserve();
+      motionQuery?.removeEventListener('change', motionChanged);
+      motionObserver?.disconnect();
       stopTicker();
       for (const entry of live.values()) entry.node.root.remove();
       live.clear();

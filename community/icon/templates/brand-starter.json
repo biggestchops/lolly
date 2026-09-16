@@ -1,0 +1,13 @@
+{
+  "id": "brand-starter",
+  "name": "Brand monogram",
+  "category": "Brand",
+  "description": "A simple letterform in your brand typeface.",
+  "galleryCover": true,
+  "values": {
+    "text": "Aa",
+    "shape": "rounded",
+    "background": "{color.semantic.primary}",
+    "color": "{color.semantic.on-primary}"
+  }
+}

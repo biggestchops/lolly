@@ -1,0 +1,18 @@
+{
+  "id": "brand-starter",
+  "name": "Type in foil",
+  "category": "Brand",
+  "description": "A restrained foil specimen using live brand typography.",
+  "values": {
+    "image": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/wordmark.png?text=Open&weight=700&color=%23000000",
+      "_unresolved": true
+    },
+    "finish": "foil-gold",
+    "maskSource": "dark",
+    "threshold": 50,
+    "bgColor": "transparent"
+  },
+  "galleryCover": true
+}

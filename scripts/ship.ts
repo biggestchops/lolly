@@ -164,7 +164,7 @@ const vercelDriver: Driver = {
     return inspectField(`https://${domain}`, 'id');
   },
   liveness(handle) {
-    return spawnSync('curl', ['-fsI', '--max-time', '30', handle], { stdio: 'ignore' }).status === 0;
+    return spawnSync(process.execPath, [join(ROOT, 'scripts/check-deployment-live.ts'), handle], { stdio: 'ignore', timeout: 31_000 }).status === 0;
   },
   // Point the production domain at an ALREADY-BUILT deployment - the one that just
   // passed the first-load check - rather than deploying again, so the bytes that
@@ -506,8 +506,8 @@ export function ship(argv: string[] = process.argv.slice(2)): boolean {
       if (opts.mode === 'preview') {
         // There is no domain alias to assert yet: READY plus a 200 from the handle is
         // as far as a preview gets on its own. A preview behind Vercel's deployment
-        // protection answers 401 to an unauthenticated fetch, so it fails HERE,
-        // loudly, and never reaches the first-load check.
+        // protection needs the configured automation bypass for this probe too.
+        // Without it, the 401 fails here before the first-load check.
         if (!driver.liveness(handle)) {
           err(`${target.name} is READY but not serving ${handle}`);
           failed.push(`${target.name} -> ${handle} (READY but not serving)`);

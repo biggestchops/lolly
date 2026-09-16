@@ -38,14 +38,11 @@
 .modal .modal-primary {
   border-color: hsl(var(--primary));
 }
-/* Choice buttons can carry longer labels than OK/Cancel - on a narrow screen they
-   wrap (and the modal stays 420px). On desktop there's no need to cramp them: let
-   the modal grow to fit its options on ONE row (same idea as .unsaved-dialog's
-   widening), capped so a very wordy chooser still can't run off the screen. */
+/* Let desktop choosers grow, then wrap the actions at the width cap so every
+   choice stays inside the dialog and remains reachable by pointer. */
 .modal-actions--choices { flex-wrap: wrap; }
 @media (min-width: 641px) {
   .modal:has(.modal-actions--choices) { width: auto; max-width: min(760px, 92vw); }
-  .modal-actions--choices { flex-wrap: nowrap; }
 }
 /* ─── "Make copies…" chooser (gallery bulk action) ──────────────────────────
    A compact list of the selected tools, each with a native copy-count field,

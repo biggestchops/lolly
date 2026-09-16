@@ -202,7 +202,7 @@ export function maybePromptSequenceFrames(fc: FcCtx): void {
   }
   const boxes = fc.select.getBoxes();
   const n = frameCount(fc, boxes);
-  if (n < 1 || framesAreSequenced(boxes, sc)) {
+  if (n < 1 || framesAreSequenced(boxes, sc) || (n === 1 && fc.timeline.anyTimed(boxes))) {
     hideSeqPrompt(fc);
     return;
   }

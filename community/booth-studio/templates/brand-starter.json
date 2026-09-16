@@ -1,0 +1,27 @@
+{
+  "id": "brand-starter",
+  "name": "Open exhibition",
+  "category": "Brand",
+  "description": "An exhibition scene with editable branded panels.",
+  "galleryCover": true,
+  "values": {
+    "backWall": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/gradient.svg?count=2&grain=0",
+      "_unresolved": true
+    },
+    "header": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/wordmark.svg?text=Open+possibilities&color=%23ffffff",
+      "_unresolved": true
+    },
+    "counter": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/gradient.svg?count=2&grain=0",
+      "_unresolved": true
+    },
+    "panelBase": "{color.semantic.primary}",
+    "transparentBg": true,
+    "people": false
+  }
+}

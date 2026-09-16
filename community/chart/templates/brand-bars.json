@@ -1,0 +1,51 @@
+{
+  "id": "brand-bars",
+  "name": "Brand bars",
+  "category": "Brand",
+  "description": "A clean palette study: colourful bars on transparency, ready for your data.",
+  "values": {
+    "renderMode": "vector",
+    "chartType": "bar",
+    "chartStyle": "technical",
+    "data": "Category,Value\nA,36\nB,58\nC,45\nD,82\nE,68\nF,95",
+    "colorBy": "category",
+    "palette": "ordered",
+    "heading": "",
+    "subheading": "",
+    "showAxes": false,
+    "showGrid": false,
+    "showLegend": false,
+    "showValues": false,
+    "transparentBg": true,
+    "cornerRadius": 6,
+    "differentiate": "colour"
+  },
+  "presets": [
+    {
+      "id": "donut",
+      "name": "Donut",
+      "values": {
+        "chartType": "donut",
+        "donutRadius": 0.62,
+        "sliceGap": 2
+      }
+    },
+    {
+      "id": "areas",
+      "name": "Area",
+      "values": {
+        "chartType": "area",
+        "showPoints": false
+      }
+    },
+    {
+      "id": "annotated",
+      "name": "With labels",
+      "values": {
+        "showAxes": true,
+        "showValues": true
+      }
+    }
+  ],
+  "galleryCover": true
+}

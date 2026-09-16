@@ -173,30 +173,26 @@ async function decodePcm16k(src: AudioSource): Promise<Float32Array> {
 
 /**
  * Post one request to the synthesis worker and wait for its reply, with the
- * abort plumbing both entry points share: reject NOW and tell the worker,
- * which stops at the next sentence boundary (a sentence mid-inference cannot
- * be preempted in-wasm) - its late reply then finds no pending entry and is
- * dropped.
+ * abort plumbing both entry points share. Request a stop and retain ownership
+ * until the worker replies after its current inference/download has settled.
  */
 function ask(
   req: Omit<SpeechWorkerRequest, 'id' | 'type'>, opts: SpeechSynthesizeOpts,
 ): Promise<SpeechWorkerReply> {
-  assertAiAllowed('transcription');
-      const { signal } = opts;
+  assertAiAllowed('speech');
+  const { signal } = opts;
   const w = ensureWorker();
   const id = ++seq;
   return new Promise<SpeechWorkerReply>((resolve, reject) => {
     const onAbort = (): void => {
       if (!pending.has(id)) return;
-      pending.delete(id);
       w.postMessage({ id, type: 'abort' } satisfies SpeechWorkerRequest);
-      reject(abortError());
     };
     signal?.addEventListener('abort', onAbort, { once: true });
     pending.set(id, {
-      resolve: (r) => { signal?.removeEventListener('abort', onAbort); resolve(r); },
-      reject: (e) => { signal?.removeEventListener('abort', onAbort); reject(e); },
-      onProgress: opts.onProgress,
+      resolve: (r) => { signal?.removeEventListener('abort', onAbort); if (signal?.aborted) reject(abortError()); else resolve(r); },
+      reject: (e) => { signal?.removeEventListener('abort', onAbort); reject(signal?.aborted ? abortError() : e); },
+      onProgress: (p) => { if (!signal?.aborted) opts.onProgress?.(p); },
     });
     w.postMessage({ id, type: 'synthesize', ...req } satisfies SpeechWorkerRequest);
   });
@@ -309,19 +305,15 @@ export function createSpeechAPI(): WebSpeechAPI {
       const id = ++whisperSeq;
       return new Promise<SpeechTranscript>((resolve, reject) => {
         const onAbort = (): void => {
-          // Reject NOW and tell the worker, which stops at the next chunk
-          // boundary (a chunk mid-inference cannot be preempted in-wasm) - 
-          // its late reply then finds no pending entry and is dropped.
+          // The worker confirms physical completion at a chunk boundary.
           if (!pendingTranscribe.has(id)) return;
-          pendingTranscribe.delete(id);
           w.postMessage({ id, type: 'abort' } satisfies TranscribeWorkerRequest);
-          reject(abortError('speech transcription aborted'));
         };
         signal?.addEventListener('abort', onAbort, { once: true });
         pendingTranscribe.set(id, {
-          resolve: (r) => { signal?.removeEventListener('abort', onAbort); resolve(r); },
-          reject: (e) => { signal?.removeEventListener('abort', onAbort); reject(e); },
-          onProgress: opts.onProgress,
+          resolve: (r) => { signal?.removeEventListener('abort', onAbort); if (signal?.aborted) reject(abortError()); else resolve(r); },
+          reject: (e) => { signal?.removeEventListener('abort', onAbort); reject(signal?.aborted ? abortError() : e); },
+          onProgress: (p) => { if (!signal?.aborted) opts.onProgress?.(p); },
         });
         // TRANSFER the samples - minutes of 16 kHz PCM is real memory, and
         // this side never reads them again.

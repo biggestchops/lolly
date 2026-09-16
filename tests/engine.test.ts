@@ -146,7 +146,7 @@ test('url-mode: profile is a reserved export param', () => {
 
 test('url-mode: RESERVED set matches the documented reserved-param list', () => {
   // Mirrors the header doc-comment in engine/src/url-mode.js AND the table in
-  // docs/url-mode.md. The docs aren't programmatically importable, so this inline
+  // docs/url-parameters.md. The docs aren't programmatically importable, so this inline
   // list is the guard: if you add/remove a reserved param, update all three.
   const documented = [
     'format', 'export', 'copy', 'full', 'options', 'slot', 'output', 'filename',
@@ -156,11 +156,11 @@ test('url-mode: RESERVED set matches the documented reserved-param list', () => 
   ];
   assert.deepEqual([...RESERVED].sort(), [...documented].sort());
 
-  // ...and the user-facing table in docs/url-mode.md is checked mechanically, not
+  // ...and the user-facing table in docs/url-parameters.md is checked mechanically, not
   // by hope: every reserved name must appear as a row key there (first cell, e.g.
   // "| `width` / `w` | web + CLI | …"), so adding a param without documenting it
   // fails here rather than shipping an undocumented control.
-  const md = readFileSync(new URL('../docs/url-mode.md', import.meta.url), 'utf8');
+  const md = readFileSync(new URL('../docs/url-parameters.md', import.meta.url), 'utf8');
   const rowKeys = new Set<string>();
   for (const line of md.split('\n')) {
     const m = /^\|\s*(`[^|]+?)\s*\|/.exec(line);
@@ -168,7 +168,7 @@ test('url-mode: RESERVED set matches the documented reserved-param list', () => 
     for (const k of m[1]!.matchAll(/`([^`]+)`/g)) rowKeys.add(k[1]!);
   }
   const undocumented = [...RESERVED].filter(k => !rowKeys.has(k));
-  assert.deepEqual(undocumented, [], `reserved params with no docs/url-mode.md row: ${undocumented.join(', ')}`);
+  assert.deepEqual(undocumented, [], `reserved params with no docs/url-parameters.md row: ${undocumented.join(', ')}`);
   // Negative control: the scan is genuinely reading rows, not matching anything - 
   // a name that is not a reserved param has no row key either.
   assert.equal(rowKeys.has('depth'), true);

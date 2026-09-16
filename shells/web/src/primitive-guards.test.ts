@@ -247,6 +247,8 @@ const INLINE_GLYPH_ALLOWED: Record<string, number> = {
   // lifted builders emit markup free-canvas.ts's own tests compare byte-for-byte, and
   // icon() is not interchangeable: it looks a NAME up in PATHS and emits a different
   // attribute order (it adds xmlns). One template, no new pictures. 2026-09-02.
+  // Product logos from the checked-in vendor paths, not interface glyphs.
+  'views/valid-vendors.ts': 1,
   'views/free-canvas-fields.ts': 1,
   'views/multi-edit.ts': 1,
   'views/personalize-nudge.ts': 1,
@@ -648,6 +650,8 @@ test('R9: lib/icons.ts glyph bodies are well-formed (balanced quotes and tags)',
 const RAW_HTML_SINK = /\.(?:inner|outer)HTML\s*\+?=(?!=)(?!\s*['"]\s*['"]\s*[;,)])|\binsertAdjacentHTML\s*\(/;
 
 const RAW_HTML_ALLOWED: Record<string, number> = {
+  // Read the already-hydrated studio marker in an inert template; never mount its content.
+  'views/studio3d-collection.ts': 1,
   'bridge/clipboard.ts': 2,
   // Ask Lolly (#/ask), plans/103 M0. The 2 sinks are the view scaffold (t()
   // labels + escape()d placeholder/aria/hrefs, the static trusted LOLLY_MARK_SVG
@@ -1451,7 +1455,7 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // +1 2026-08-21 (plans/136 W2b): the signed report card's OFFSCREEN node fill
   // - every interpolated value passes through escape() (heroName/verdict/lamp
   // labels read back from OUR rendered DOM, then re-escaped anyway).
-  'views/valid.ts': 29,  // +2 2026-09-13 (plans/253): the Sources panel's [data-reuse-out] sink, filled by reuseAnswerHtml (every issue code and summary through escape()), and the strip note's, filled by stripCreditNoteHtml (t() escapes its one number, escape() the credit into the button attribute); +1 2026-08-18 (plans/125): readImageText's [data-ocr-result].innerHTML = textSignalsHtml(...) - that helper escape()s every interpolated value (band/kind titles, the highlighted extract via escape()d segments, guess, summary), no user text reaches markup; +1 2026-08-19 (plans/126): readDocumentText's same [data-ocr-result] sink for the PDF text-layer read - textSignalsHtml again, plus a page-cap note whose only interpolations are escape()d t() output and two numbers
+  'views/valid.ts': 28,  // +2 2026-09-13 (plans/253): the Sources panel's [data-reuse-out] sink, filled by reuseAnswerHtml (every issue code and summary through escape()), and the strip note's, filled by stripCreditNoteHtml (t() escapes its one number, escape() the credit into the button attribute); +1 2026-08-18 (plans/125): readImageText's [data-ocr-result].innerHTML = textSignalsHtml(...) - that helper escape()s every interpolated value (band/kind titles, the highlighted extract via escape()d segments, guess, summary), no user text reaches markup; +1 2026-08-19 (plans/126): readDocumentText's same [data-ocr-result] sink for the PDF text-layer read - textSignalsHtml again, plus a page-cap note whose only interpolations are escape()d t() output and two numbers
   // 1 as of 2026-08-21 (plans/126 WP-A): the model-tier re-render, host.outerHTML
   // = render(panel), where render is the OWNING view's own panel builder
   // (textSignalsHtml / catTextSignalsHtml), the exact escaped-template family the
@@ -1543,6 +1547,12 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // and its current string value); the remaining interpolations are t() UI literals and
   // the field id, an identifier drawn from the kit definition's own field list.
   'pro/kit-panel.ts': 1,
+  // Rules chrome uses fixed translated labels and escaped field labels/values.
+  // The two artwork sinks use the validated compiler's template and scoped
+  // renderer styles; source files are never inserted as chrome markup.
+  'views/design-rules.ts': 4,
+  'views/design-rules-preview.ts': 1, // moved strict compiled-tool hydration from design-rules.ts
+  'lib/design-tool-preflight.ts': 2,
   // 2 as of 2026-09-13 (new file: the shared emoji control, plans/252). One sink is
   // the control's own markup - every interpolation is escape()d (the set key, its
   // label built from the host listing, each treatment id and its t() label) or a
@@ -1576,6 +1586,14 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   'views/text/presentation.ts': 3,
   'views/text/logs.ts': 1,
   'views/text/inspection.ts': 1,
+  // Inert template comparison of already hydrated tool markup; never mounted.
+  'views/canvas-translation.ts': 2,
+  // Fixed registry icons, escaped report names/indices, and escaped action labels.
+  'views/valid-actions.ts': 4,
+  // Static unavailable state with a registry icon and a fixed translation.
+  'views/valid-preview.ts': 1,
+  // Every report value is escaped; dot colours come from a constant lookup.
+  'views/valid-report-card.ts': 1,
   'views/text.ts': 3,
 };
 
@@ -1802,7 +1820,8 @@ const R12_RATCHETS: Array<{ what: string; pin: number; count: (text: string) => 
     // 301 to 300: the utilities.css boxed-field alias went; the field primitive
     // owns the profile and export inputs by class now.
     // 300 to 299: help-tip paint is shared by the component and uses semantic elevation.
-    pin: 299,
+    // Shared surfaces replace repeated paint in the pending editor and report work.
+    pin: 263,
     count: (t) => [...t.matchAll(/box-shadow:\s*([^;}]+)/g)]
       .map(m => m[1]!.trim())
       .filter(v => v !== 'none' && !/var\(--(?:ui-(?:edge|elevation|effect)|shadow|edge|ring-focus|bevel)/.test(v)).length,
@@ -1817,7 +1836,7 @@ const R12_RATCHETS: Array<{ what: string; pin: number; count: (text: string) => 
     // 101 → 100: the library uses semantic radii throughout.
     // 100 → 98: Design panel and thumbnail-cell radii use semantic tokens.
     // 96 → 94: the sidebar's history and language buttons took --radius-sm.
-    pin: 94,
+    pin: 92,
     count: (t) => (t.match(/border-radius:\s*\d+(?:\.\d+)?px\s*[;}!]/g) ?? []).length,
     fix: 'use var(--radius-xs|sm|md|lg) (derived from --radius) or var(--radius) for the base panel size',
   },

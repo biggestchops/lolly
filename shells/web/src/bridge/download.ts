@@ -39,3 +39,12 @@ export function deferredDownload(load: () => Promise<Download>): Download {
   deliveries.set(download, deliver);
   return download;
 }
+
+/** File-transform delivery changes only explicitly requested font containers. */
+export async function fileDeliveryBlob(blob: Blob, name: string): Promise<Blob> {
+  const ext = name.match(/\.(ttf|otf|woff)$/i)?.[1]?.toLowerCase();
+  if (!ext) return blob;
+  const {sfntKind,convertFontContainer} = await import('@lolly/engine');
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  return sfntKind(bytes) ? new Blob([convertFontContainer(bytes,ext) as BlobPart], {type:`font/${ext}`}) : blob;
+}

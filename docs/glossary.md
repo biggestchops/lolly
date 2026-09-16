@@ -73,3 +73,7 @@ Lolly uses a small set of words with exact meanings, and a few of them (profile,
 **Available offline.** The download manager in the user profile that pre-fetches fonts, shaping code and on-device models, so a render needs no network at all afterwards.
 
 **Ship gate.** The maintainer's pre-deploy run: typecheck, tests, catalog validation, docs screenshots and bundle budgets. Also known as `loldev gtg` (good to go).
+
+### Design-generated tool
+
+An ordinary **tool** compiled from a Design document through Share with rules. Its public inputs describe the changes recipients may make; its remaining artwork is fixed through the supported tool interface. The `.lolly` tool file carries its dependencies and no saved session. See [Share a design with rules](create-a-tool.md).

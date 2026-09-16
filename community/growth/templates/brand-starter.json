@@ -1,0 +1,18 @@
+{
+  "id": "brand-starter",
+  "name": "Brand contours",
+  "category": "Brand",
+  "description": "Organic linework with space around it and no background.",
+  "values": {
+    "seedShape": "burst",
+    "background": "transparent",
+    "color1": "{color.semantic.primary}",
+    "color2": "{color.semantic.secondary}",
+    "color3": "{color.semantic.text}",
+    "weight": 6,
+    "density": 40,
+    "steps": 250
+  },
+  "galleryCover": true,
+  "galleryTheme": "light"
+}

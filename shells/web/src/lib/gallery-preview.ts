@@ -12,13 +12,17 @@ export interface GalleryPreviewSource {
   id: string;
   version?: string;
   formats?: readonly string[];
-  templates?: Array<{ id: string; name: string; values?: Record<string, unknown>; motion?: TemplateMotion }>;
+  galleryArt?: 'render' | 'icon';
+  templates?: Array<{ id: string; name: string; galleryCover?: boolean; galleryTheme?: 'light' | 'dark'; values?: Record<string, unknown>; motion?: TemplateMotion }>;
 }
 
 export function galleryPreviewLooks(tool: GalleryPreviewSource): FeaturedVariant[] {
-  const templates = tool.templates?.filter(t => t.id && t.name) ?? [];
+  if (tool.galleryArt === 'icon') return [];
+  if (tool.formats && !tool.formats.some(f => ['svg', 'png', 'jpg', 'jpeg', 'webp'].includes(f))) return [];
+  const templates = (tool.templates?.filter(t => t.id && t.name) ?? [])
+    .sort((a, b) => Number(b.galleryCover === true) - Number(a.galleryCover === true));
   return templates.length
-    ? templates.map(t => ({ label: t.name, templateId: t.id, values: t.values ?? {}, ...(t.motion ? { motion: t.motion } : {}) }))
+    ? templates.map(t => ({ label: t.name, templateId: t.id, values: t.values ?? {}, ...(t.galleryTheme ? { theme: t.galleryTheme } : {}), ...(t.motion ? { motion: t.motion } : {}) }))
     : [{ values: {} }];
 }
 

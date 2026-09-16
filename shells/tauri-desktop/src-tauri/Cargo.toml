@@ -1,6 +1,6 @@
 [package]
 name = "lolly-desktop"
-version = "1.0.7"
+version = "1.0.8"
 edition = "2021"
 
 [lib]
@@ -9,6 +9,10 @@ name = "lolly_desktop_lib"
 # directly; emitting the mobile template's staticlib + cdylib duplicates the
 # embedded frontend into two unused products and can add gigabytes to a build.
 crate-type = ["rlib"]
+
+[features]
+# Explicit test build only; generated media and assertions are absent from shipped binaries.
+presentation-probe = []
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -96,3 +100,9 @@ url = "2"
 [target.'cfg(target_os = "linux")'.dependencies]
 ashpd = { version = "0.13", features = ["screenshot", "wallpaper", "settings"] }
 zbus = { version = "5", default-features = false, features = ["tokio"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Already used by Wry; give the popup its own script controller while retaining
+# WebKit's supplied window configuration and shared media/opener relationship.
+objc2 = "0.6"
+objc2-web-kit = { version = "0.3", default-features = false, features = ["std", "WKUserContentController", "WKWebViewConfiguration"] }

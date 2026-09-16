@@ -10,29 +10,17 @@
    (the .verify-view selectors live in the entrance block above, next to the
    platform/capabilities ones). */
 
-.verify-view { overflow-y: auto; }
+.verify-view { overflow-y: auto; font-family: var(--ui-type-ui-family); color: var(--ui-color-text-default); background: var(--ui-color-surface-canvas); }
 .verify-view .platform-layout {
   /* Fluid, not fixed - a report with several boxed sections earns more width
      than a single narrow reading column; this still leaves generous margins
      on very wide displays rather than going full-bleed. */
   width: 100%; max-width: min(1320px, 94vw); margin: 0 auto;
-  padding: 3.25rem 1.25rem 5rem; /* top clears the fixed "Tools" pill */
+  padding: var(--ui-space-page) var(--ui-space-panel) calc(var(--ui-space-page) * 3); /* top clears the fixed "Tools" pill */
 }
 
-/* Once a result exists, the upload surface becomes a compact utility header.
-   The evidence starts near the top instead of sitting below the large empty-state
-   drop zone; choosing another file remains one click away. */
-.valid-header-actions { display: none; flex-wrap: wrap; gap: 0.5rem; }
-.valid-layout.has-results { padding-top: 1.15rem; }
-.valid-layout.has-results .plat-header {
-  display: flex; align-items: center; gap: 0.8rem 1.2rem;
-  margin-bottom: 0.75rem;
-}
-.valid-layout.has-results .plat-title {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
-}
-.valid-layout.has-results .plat-header-text { display: none; }
+/* Results retain the page heading and replace the drop zone with file actions. */
+.valid-header-actions { display: none; flex-wrap: wrap; gap: var(--ui-space-control-inline); }
 .valid-layout.has-results .valid-header-actions { display: flex; margin-left: auto; }
 .valid-layout.has-results .valid-intake { display: none; }
 .valid-layout.has-results.is-pasting .valid-intake { display: block; }
@@ -40,30 +28,31 @@
 .valid-layout.has-results.is-pasting .valid-paste-open { display: none; }
 
 @media (min-width: 1440px) {
-  .verify-view .platform-layout { max-width: min(1680px, 96vw); }
+  .verify-view .platform-layout { max-width: min(1680px, 96vw); padding: var(--ui-space-page) var(--ui-space-panel) calc(var(--ui-space-page) * 3); }
 }
 
 .valid-drop {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
-  padding: 2.5rem 1.5rem;
-  border: 2px dashed hsl(var(--border));
-  border-radius: var(--radius);
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
+  gap: var(--sp-5);
+  padding: calc(var(--ui-space-page) * 1.5) var(--ui-space-page);
+  border: 2px dashed var(--ui-color-border-default);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-color-surface-raised);
+  color: var(--ui-color-text-default);
   cursor: pointer;
   text-align: center;
-  transition: border-color var(--dur-1) ease, background-color var(--dur-1) ease;
+  transition: border-color var(--ui-motion-feedback) ease, background-color var(--ui-motion-feedback) ease;
+  box-shadow: var(--ui-elevation-panel);
 }
 .valid-drop:hover,
 .valid-drop:focus-visible,
 .valid-drop.is-over {
-  border-color: hsl(var(--primary));
-  background: hsl(var(--accent));
+  border-color: var(--ui-color-action-primary);
+  background: var(--ui-color-selection-surface);
 }
-.valid-drop:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.valid-drop:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 2px; }
 /* The CTA below is excepted: it wears .btn--primary and must keep that fill's own
    colour and size rather than the muted supporting-copy treatment. */
 .valid-drop span:not(.valid-drop-icon):not(.valid-drop-cta):not(.valid-drop-chip),
@@ -71,15 +60,15 @@
 .valid-drop-icon svg { width: calc(34px * var(--a11y-fs)); height: calc(34px * var(--a11y-fs)); opacity: 0.7; }
 /* The prompt is the headline: larger and in the foreground tone, so the formats
    below read as fine print rather than a competing line. */
-.valid-drop-lead { font-size: calc(1.05rem * var(--a11y-fs)); font-weight: 500; color: hsl(var(--foreground)); }
+.valid-drop-lead { font-size: calc(1.05rem * var(--a11y-fs)); font-weight: 500; color: var(--ui-color-text-default); }
 /* Supported inputs as subtle, glanceable chips (exact formats in each chip's title),
    matching the catalogue drop area's .updz-chip treatment. */
-.valid-drop-hint { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-3); margin: 0.15rem 0; }
+.valid-drop-hint { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--sp-3); margin: var(--sp-1) 0; }
 .valid-drop-chip {
-  padding: 2px 9px; border-radius: var(--radius-pill);
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--muted) / .4);
-  color: hsl(var(--muted-foreground));
+  padding: var(--sp-1) var(--ui-space-control-inline); border-radius: var(--ui-radius-pill);
+  border: 1px solid var(--ui-color-border-default);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent);
+  color: var(--ui-color-text-muted);
   font-size: var(--fs-xs); line-height: 1.6; white-space: nowrap;
 }
 
@@ -89,99 +78,162 @@
    Drag-and-drop stays wired either way, which is what an iPad drag-in needs. */
 .valid-drop-cta { display: none; }
 @media (pointer: coarse) {
-  .valid-drop { padding: 1.5rem 1rem; }
+  .valid-drop { padding: calc(var(--ui-space-page) * 1.5) var(--ui-space-page); box-shadow: var(--ui-elevation-panel); }
   .valid-drop-cta {
     display: block; width: 100%; min-height: 44px;
-    padding: 0.7rem 1rem; font-size: calc(0.95rem * var(--a11y-fs));
+    padding: var(--sp-6) var(--ui-space-panel); font-size: calc(0.95rem * var(--a11y-fs));
   }
   .valid-drop-lead { display: none; }
 }
 
 .valid-report {
-  margin-top: 1.25rem;
-  /* Page-local status palette. Deliberately theme-independent: the pass/fail
-     chips are struck seals meant to read the SAME vivid green / persimmon off
-     any card in any theme. Each status carries a top→bottom glass gradient
-     (--*-1 light crown, --*-2 deep base), a solid mid tone, and a glow hue.
-     Defined here (not on .valid-result) so the collapsed-summary mini scorecard
-     - rendered in the <summary>, outside .valid-result - inherits it too. */
+  margin-top: calc(var(--ui-space-panel) * 1.25);
+  /* Verification colours keep their meaning across brands. Geometry and
+     elevation use the shared UI tokens. Batch summaries inherit this palette. */
   --vf-pass-1: 150 66% 51%;  --vf-pass-2: 154 58% 33%;  --vf-pass: 151 57% 40%;
   --vf-fail-1: 20 90% 56%;   --vf-fail-2: 11 80% 42%;   --vf-fail: 15 82% 47%;
   --vf-warn-1: 44 96% 58%;   --vf-warn-2: 33 90% 47%;   --vf-warn: 36 88% 46%;
   /* --vf-ai-1/2/* (the AI-generated violet) now live in tokens.css :root - they're
      shared with the catalog's GEN-AI pill and are brand/verdict-independent. */
 }
-.valid-busy { color: hsl(var(--muted-foreground)); }
+.valid-busy { color: var(--ui-color-text-muted); }
 /* Context note carried from the catalog "Check credentials" handoff - e.g. that the
    image was re-encoded on import, so a captured credential no longer binds byte-for-byte. */
 .valid-handoff-note {
-  margin: 0 0 1rem; padding: 0.7rem 0.9rem;
-  border: 1px solid hsl(var(--vf-ai-1) / 0.5); border-radius: var(--radius);
-  background: hsl(var(--vf-ai-1) / 0.1); color: hsl(var(--foreground));
-  font-size: var(--fs-lg); line-height: 1.45;
+  margin: 0 0 var(--ui-space-panel); padding: var(--sp-6) var(--ui-space-panel);
+  border: 1px solid hsl(var(--vf-ai-1) / 0.5); border-radius: var(--ui-radius-panel);
+  background: hsl(var(--vf-ai-1) / 0.1); color: var(--ui-color-text-default);
+  font-size: var(--ui-type-title); line-height: 1.45;
 }
 
 .valid-result {
   position: relative;
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  background: hsl(var(--card));
-  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--ui-color-border-default);
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-color-surface-raised);
+  padding: var(--ui-space-page);
   display: grid;
-  gap: 1.1rem;
+  gap: var(--ui-space-panel);
+  box-shadow: var(--ui-elevation-panel);
 }
-/* The uploaded-media preview, the verdict hero, and the at-a-glance scorecard,
-   side by side wherever the card is wide enough. Stacked (preview, then hero,
-   then score) on narrow viewports; the score rejoins the hero's row as a third
-   column only once there's room for all three without cramping. */
-.valid-top { display: grid; gap: 1.1rem; align-items: start; }
-@media (min-width: 640px) {
-  .valid-top { grid-template-columns: minmax(200px, 22rem) 1fr; }
-  .valid-top > .valid-score-wrap { grid-column: 1 / -1; margin-top: 0; }
-}
+/* Credential status leads; the origin overview and preview follow together. */
+.valid-top { display: grid; gap: var(--ui-space-panel); align-items: start; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1080px) {
-  .valid-top { grid-template-columns: minmax(200px, 22rem) 1fr minmax(210px, 320px); }
-  .valid-top > .valid-score-wrap { grid-column: auto; }
+  .valid-top:has(> .valid-score-wrap) { grid-template-columns: minmax(0, 1fr) minmax(260px, 420px); }
 }
-@media (min-width: 1440px) {
-  .valid-top { grid-template-columns: minmax(300px, 28rem) minmax(340px, 1fr) minmax(480px, 620px); gap: 1.4rem; }
-  .valid-top > .valid-score-wrap .valid-score {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(5.8rem, 1fr));
-  }
-  .valid-top > .valid-score-wrap .valid-score-pip { width: auto; }
+.valid-origin-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 18%); gap: var(--ui-space-panel); align-items: start; }
+.valid-origin-layout > .valid-preview { margin: 0; max-height: 15rem; }
+.valid-origin-layout > .valid-preview img, .valid-origin-layout > .valid-preview video { max-height: 15rem; }
+.valid-origin-layout > .valid-preview embed { height: 15rem; }
+.valid-origin-layout > .valid-preview audio { max-width: 100%; }
+.valid-origin-layout > .valid-pdf-preview { max-height: none; background: color-mix(in srgb, var(--ui-color-surface-muted) 35%, transparent); border: 1px solid var(--ui-color-border-default); }
+.valid-pdf-preview img { width: 100%; object-fit: contain; }
+.valid-pdf-preview figcaption { display: grid; gap: var(--sp-2); padding: var(--sp-5); text-align: center; font-size: var(--ui-type-label); color: var(--ui-color-text-muted); }
+.valid-pdf-preview a { color: var(--ui-color-text-default); text-decoration: underline; text-underline-offset: 0.2em; }
+.valid-hero { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+
+/* The file's reported origin stays separate from the credential verdict. */
+.valid-origin-overview { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--sp-6); }
+.valid-origin-card { align-self: start; min-width: 0; padding: var(--ui-space-panel) calc(var(--ui-space-panel) * 1.25); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel); background: var(--ui-color-surface-raised); box-shadow: var(--ui-elevation-panel); }
+.valid-origin-card h3 { display: flex; align-items: center; gap: var(--ui-space-control-inline); margin: 0 0 var(--ui-space-panel); font-size: var(--ui-type-body); font-weight: 650; }
+.valid-origin-card h3 svg { width: 1.1rem; height: 1.1rem; color: var(--ui-color-text-muted); }
+.valid-origin-software { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-6); align-content: start; }
+.valid-origin-software > h3, .valid-origin-software > .valid-origin-note, .valid-origin-software > .valid-origin-evidence, .valid-origin-software > .valid-origin-empty { grid-column: 1 / -1; margin: 0; }
+.valid-software-group { min-width: 0; }
+.valid-software-group:has(.is-primary) { grid-column: 1 / -1; }
+.valid-origin-label { margin: 0 0 var(--sp-3); font-size: var(--ui-type-label); color: var(--ui-color-text-muted); }
+.valid-software-badges { display: flex; flex-wrap: wrap; gap: var(--ui-space-control-inline); }
+.valid-software-badge { display: flex; flex-direction: column; align-items: start; gap: var(--sp-3); min-width: 0; max-width: 100%; padding: var(--ui-space-control-inline) var(--sp-6); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent); box-shadow: var(--ui-elevation-control); }
+.valid-software-badge strong { font-size: var(--ui-type-title); font-weight: 650; overflow-wrap: anywhere; }
+.valid-software-badge.is-primary { padding: var(--sp-5) var(--sp-6); background: color-mix(in srgb, var(--ui-color-selection-surface) 60%, transparent); }
+.valid-software-badge.is-primary strong { font-size: calc(1.45rem * var(--a11y-fs)); letter-spacing: -0.025em; }
+.valid-origin-kinds { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.valid-evidence-kind { display: inline-block; font-size: var(--fs-xs); font-weight: 500; color: var(--ui-color-text-muted); }
+.valid-evidence-kind.is-credential { color: hsl(var(--vf-pass)); }
+.valid-evidence-kind.is-unverified-credential { color: hsl(var(--vf-warn)); }
+.valid-evidence-kind.is-hint { font-style: italic; }
+.valid-origin-note { margin: var(--sp-6) 0 0; color: var(--ui-color-text-muted); font-size: var(--ui-type-label); line-height: 1.5; }
+/* File-supplied links disclose their destination before opening. */
+.valid-metadata-link { color: var(--ui-color-text-default); font: inherit; text-align: start; text-decoration: underline; text-underline-offset: 0.18em; overflow-wrap: anywhere; cursor: pointer; }
+.valid-metadata-link:hover { color: var(--ui-color-action-primary); }
+.valid-metadata-link:focus-visible, .valid-auxiliary summary:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 3px; border-radius: var(--ui-radius-choice); }
+.valid-link-destination { padding: var(--sp-6); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel); background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent); font-family: var(--ui-type-mono-family); font-size: var(--ui-type-label); overflow-wrap: anywhere; user-select: text; }
+.valid-auxiliary { margin-top: var(--sp-6); padding: var(--sp-6) var(--ui-space-panel); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel); background: var(--ui-color-surface-raised); min-width: 0; }
+.valid-auxiliary > summary { cursor: pointer; font-size: var(--ui-type-body); }
+.valid-auxiliary > summary > span { display: block; padding-top: var(--sp-1); font-size: var(--ui-type-label); }
+.valid-auxiliary-fields { display: grid; margin: var(--sp-6) 0; }
+.valid-auxiliary-fields > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--ui-space-control-inline) var(--ui-space-panel); padding: var(--sp-5) 0; border-bottom: 1px solid color-mix(in srgb, var(--ui-color-border-default) 60%, transparent); }
+.valid-auxiliary-fields dt { color: var(--ui-color-text-muted); font-size: var(--ui-type-label); }
+.valid-auxiliary-fields dd { margin: 0; overflow-wrap: anywhere; font-size: var(--ui-type-body); }
+.valid-auxiliary-fields small { display: block; margin-top: var(--sp-2); color: var(--ui-color-text-muted); font-size: var(--fs-xs); }
+.valid-auxiliary-xml summary { cursor: pointer; font-size: var(--ui-type-label); }
+.valid-auxiliary-xml pre { max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--ui-type-label); padding: var(--sp-6); background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent); border-radius: var(--ui-radius-panel); }
+@media (max-width: 639px) {
+  .valid-auxiliary { padding: var(--sp-6); }
+  .valid-auxiliary-fields > div { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
 }
-.valid-hero { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.valid-origin-empty { margin: 0; font-size: var(--ui-type-title); color: var(--ui-color-text-muted); }
+.valid-rights-declarations { display: grid; gap: var(--sp-6); }
+.valid-rights-declaration { display: grid; gap: var(--sp-2); padding-left: var(--sp-6); border-left: 2px solid var(--ui-color-border-default); }
+.valid-rights-declaration strong { font-size: var(--ui-type-title); overflow-wrap: anywhere; }
+.valid-origin-evidence { margin-top: var(--sp-6); padding-top: var(--sp-5); border-top: 1px solid var(--ui-color-border-default); font-size: var(--ui-type-label); }
+.valid-origin-evidence summary { width: fit-content; cursor: pointer; color: var(--ui-color-text-default); }
+.valid-origin-evidence summary:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 3px; border-radius: var(--ui-radius-choice); }
+.valid-origin-evidence h4 { margin: var(--ui-space-panel) 0 var(--sp-3); font-size: var(--ui-type-label); overflow-wrap: anywhere; }
+.valid-origin-evidence ul { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--ui-space-control-inline); }
+.valid-origin-evidence li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2) var(--ui-space-control-inline); min-width: 0; }
+.valid-evidence-source { color: var(--ui-color-text-muted); overflow-wrap: anywhere; }
+.valid-origin-evidence q { flex-basis: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.valid-origin-facts { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--sp-6); padding: var(--sp-6) calc(var(--ui-space-panel) * 1.25); margin: 0; border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel); box-shadow: var(--ui-elevation-control); }
+.valid-origin-facts > div { min-width: 0; }
+.valid-origin-facts dt { font-size: var(--ui-type-label); color: var(--ui-color-text-muted); margin-bottom: var(--sp-2); }
+.valid-origin-facts dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2) var(--ui-space-control-inline); margin: 0; font-size: var(--ui-type-body); overflow-wrap: anywhere; }
+.valid-origin-facts dd > span:first-child { font-weight: 600; }
+.valid-origin-facts small { flex-basis: 100%; font-size: var(--fs-xs); color: var(--ui-color-text-muted); }
+.valid-item-origin, .valid-item-rights { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); min-width: 0; max-width: 100%; padding: var(--sp-2) var(--ui-space-control-inline); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-pill); font-size: var(--ui-type-label); background: color-mix(in srgb, var(--ui-color-surface-muted) 50%, transparent); }
+.valid-item-origin > span, .valid-item-rights > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 18rem; font-weight: 650; }
+.valid-item-origin svg, .valid-item-rights svg { width: 1rem; height: 1rem; flex: 0 0 auto; }
+.valid-item-origin small, .valid-item-rights small { font-size: var(--fs-xs); color: var(--ui-color-text-muted); }
+@media (max-width: 639px) {
+  .valid-origin-layout { grid-template-columns: minmax(0, 1fr); }
+  .valid-origin-layout > .valid-preview { max-width: 100%; }
+  .valid-origin-overview { grid-template-columns: minmax(0, 1fr); }
+  .valid-origin-card { padding: var(--ui-space-panel); box-shadow: var(--ui-elevation-panel); }
+  .valid-item-origin > span, .valid-item-rights > span { max-width: 65vw; }
+}
 /* Icon + heading, grouped so the medallion reads as part of the verdict line
    rather than spanning the whole hero block (sub-copy, identity line, …). */
-.valid-hero-title { display: flex; gap: 0.9rem; align-items: center; }
+.valid-hero-title { display: flex; gap: var(--ui-space-panel); align-items: center; }
 .valid-hero-title h2 { min-width: 0; }
 .valid-hero h2 { margin: 0; font-size: calc(1.2rem * var(--a11y-fs)); letter-spacing: -0.01em; }
 /* Filename stays plain foreground; only the verdict word takes the state's
    accent colour (see the .is-lolly/.is-trusted/.is-delivered rules below). */
-.valid-hero-filename { color: hsl(var(--foreground)); font-weight: 600; overflow-wrap: anywhere; }
+.valid-hero-filename { display: block; margin-bottom: var(--sp-3); color: var(--ui-color-text-muted); font-size: var(--ui-type-body); font-weight: 500; overflow-wrap: anywhere; }
 .valid-hero-verdict { color: inherit; }
-.valid-hero p { margin: 0; color: hsl(var(--muted-foreground)); font-size: var(--fs-lg); max-width: 60ch; }
+.valid-hero p { margin: 0; color: var(--ui-color-text-muted); font-size: var(--ui-type-title); max-width: 60ch; }
 
 /* The verdict pill - "Made with Lolly" / "Verified", struck as a small glossy
    badge (mirrors .valid-item-badge.is-good) rather than plain coloured text, so
    it reads as a stamp beside the filename. vertical-align keeps it optically
    centred on the filename's baseline rather than the pill's own box. */
 .valid-hero-pill {
-  display: inline-flex; align-items: center; gap: 0.32rem;
+  display: inline-flex; align-items: center; gap: var(--sp-3);
   vertical-align: middle;
   font-size: calc(0.76rem * var(--a11y-fs)); font-weight: 800; letter-spacing: 0.01em;
-  padding: 0.24rem 0.75rem 0.26rem; border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--sp-6) var(--sp-2); border-radius: var(--ui-radius-pill);
   color: hsl(0 0% 100%);
   border: 1px solid hsl(0 0% 100% / 0.3);
   white-space: nowrap;
 }
 .valid-hero-pill--lolly {
   background: linear-gradient(163deg, hsl(var(--vf-pass-1)), hsl(var(--vf-pass-2)));
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.45), 0 4px 12px -5px hsl(var(--vf-pass) / 0.7);
+  box-shadow: var(--ui-elevation-control);
 }
 .valid-hero-pill--trusted {
-  background: linear-gradient(163deg, hsl(215 18% 60%), hsl(215 16% 42%));
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 4px 12px -5px hsl(215 16% 40% / 0.6);
+  background: var(--ui-color-surface-muted);
+  box-shadow: var(--ui-elevation-control);
+  color: var(--ui-color-text-default);
+  border-color: var(--ui-color-border-default);
 }
 /* "Likely made with Lolly" - same amber the expired medallion uses: a
    positive-leaning signal that still isn't the flat green claim. */
@@ -189,27 +241,27 @@
   background: linear-gradient(163deg, hsl(var(--vf-warn-1)), hsl(var(--vf-warn-2)));
   color: hsl(30 75% 15%);
   border-color: hsl(30 75% 15% / 0.25);
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.5), 0 4px 12px -5px hsl(var(--vf-warn) / 0.6);
+  box-shadow: var(--ui-elevation-control);
 }
 .valid-lolly-badge,
 .valid-trusted-badge { font-size: 1em; line-height: 1; }
 
 /* The two "key validations" under the Made-with-Lolly pill - big, obvious,
    iconed badges rather than a sentence to parse. */
-.valid-hero-vbadges { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.15rem; }
+.valid-hero-vbadges { display: flex; flex-wrap: wrap; gap: var(--sp-5); margin-top: var(--sp-1); }
 .valid-vbadge {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.55rem 0.95rem 0.55rem 0.55rem;
-  border-radius: var(--radius);
+  display: flex; align-items: center; gap: var(--sp-5);
+  padding: var(--ui-space-control-inline) var(--ui-space-panel) var(--ui-space-control-inline) var(--ui-space-control-inline);
+  border-radius: var(--ui-radius-panel);
   border: 1px solid hsl(var(--vf-pass) / 0.3);
   background: hsl(var(--vf-pass) / 0.09);
-  box-shadow: var(--shadow-2);
-  color: hsl(var(--foreground));
-  font-size: var(--fs-lg); font-weight: 600;
+  box-shadow: var(--ui-elevation-control);
+  color: var(--ui-color-text-default);
+  font-size: var(--ui-type-title); font-weight: 600;
 }
 .valid-vbadge-ic {
   flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
-  width: 1.9rem; height: 1.9rem; border-radius: var(--radius-round);
+  width: 1.9rem; height: 1.9rem; border-radius: var(--ui-radius-choice-round);
   background: hsl(var(--vf-pass) / 0.18); color: hsl(var(--vf-pass));
 }
 .valid-vbadge-ic svg { width: 1.05rem; height: 1.05rem; }
@@ -225,10 +277,10 @@
 .valid-hero-signedby {
   margin: var(--sp-4) 0;
   text-align: center;
-  font-family: var(--font-mono);
-  font-size: calc(0.74rem * var(--a11y-fs)); color: hsl(var(--muted-foreground));
+  font-family: var(--ui-type-mono-family);
+  font-size: calc(0.74rem * var(--a11y-fs)); color: var(--ui-color-text-muted);
 }
-.valid-hero-signedby strong { color: hsl(var(--foreground)); font-weight: 700; }
+.valid-hero-signedby strong { color: var(--ui-color-text-default); font-weight: 700; }
 
 /* ── Uploaded-media preview ──────────────────────────────────────────────────
    A look at the file being checked - large at the top of the card, small beside
@@ -237,12 +289,12 @@
    inherits the card's gap and sits above the verdict hero. */
 .valid-preview {
   margin: 0;
-  border-radius: calc(var(--radius) - 0.35rem);
+  border-radius: var(--ui-radius-panel);
   overflow: hidden;
   border: 0;
   background:
-    conic-gradient(from 90deg, hsl(var(--muted-foreground) / 0.10) 25%, transparent 0 50%, hsl(var(--muted-foreground) / 0.10) 0 75%, transparent 0) 0 0 / 22px 22px,
-    hsl(var(--muted) / 0.5);
+    conic-gradient(from 90deg, color-mix(in srgb, var(--ui-color-text-muted) 10%, transparent) 25%, transparent 0 50%, color-mix(in srgb, var(--ui-color-text-muted) 10%, transparent) 0 75%, transparent 0) 0 0 / 22px 22px,
+    color-mix(in srgb, var(--ui-color-surface-muted) 50%, transparent);
   display: grid;
   place-items: center;
 }
@@ -251,7 +303,7 @@
 .valid-preview--lg { max-height: 22rem; }
 .valid-preview--lg img,
 .valid-preview--lg video { max-height: 22rem; }
-.valid-preview--lg embed { display: block; width: 100%; height: 22rem; background: hsl(var(--muted)); }
+.valid-preview--lg embed { display: block; width: 100%; height: 22rem; background: var(--ui-color-surface-muted); }
 .valid-preview--sm { max-width: 12rem; justify-self: start; }
 .valid-preview--sm img,
 .valid-preview--sm video { max-height: 9rem; }
@@ -261,14 +313,14 @@
 .valid-preview--sm.is-audio { max-width: 20rem; }
 /* Formats a browser can't decode inline (TIFF, MKV) - a quiet labelled tile. */
 .valid-preview.is-placeholder {
-  padding: 2rem 1rem;
-  gap: 0.5rem;
-  color: hsl(var(--muted-foreground));
-  background: hsl(var(--muted) / 0.4);
+  padding: calc(var(--ui-space-panel) * 2) var(--ui-space-panel);
+  gap: var(--ui-space-control-inline);
+  color: var(--ui-color-text-muted);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent);
   text-align: center;
 }
 .valid-preview-ic svg { width: 2.2rem; height: 2.2rem; opacity: 0.7; }
-.valid-preview.is-placeholder figcaption { font-size: var(--fs-md); }
+.valid-preview.is-placeholder figcaption { font-size: var(--ui-type-body); }
 
 /* ── The medallion - the page's signature. A struck, glossy seal that floats
    off the card. Green states get the full crown-jewel treatment (idle bob +
@@ -278,16 +330,13 @@
   position: relative;
   flex: 0 0 auto;
   width: 4.6rem; height: 4.6rem;
-  border-radius: var(--radius-round);
+  border-radius: var(--ui-radius-choice-round);
   overflow: hidden;
   display: grid; place-items: center;
   isolation: isolate;
-  color: hsl(var(--muted-foreground));
-  background: radial-gradient(circle at 34% 26%, hsl(var(--muted)), hsl(var(--muted) / 0.6) 72%);
-  box-shadow:
-    inset 0 2px 3px hsl(0 0% 100% / 0.35),
-    inset 0 -7px 13px hsl(0 0% 0% / 0.16),
-    0 8px 20px -10px hsl(0 0% 0% / 0.4);
+  color: var(--ui-color-text-muted);
+  background: radial-gradient(circle at 34% 26%, var(--ui-color-surface-muted), color-mix(in srgb, var(--ui-color-surface-muted) 60%, transparent) 72%);
+  box-shadow: var(--ui-elevation-floating);
 }
 .valid-hero-icon svg { position: relative; z-index: 2; width: 2.1rem; height: 2.1rem; }
 /* The Lolly logo fills the whole medallion (not a small badge struck into its
@@ -297,14 +346,14 @@
 .valid-hero-logo {
   position: relative; z-index: 1;
   width: 100%; height: 100%;
-  border-radius: var(--radius-round);
+  border-radius: var(--ui-radius-choice-round);
   background: var(--lolly-logo, url("/icons/icon-192.png")) center / cover no-repeat;
-  box-shadow: 0 0 0 2px hsl(0 0% 100% / 0.55), 0 3px 7px hsl(0 0% 0% / 0.4);
+  box-shadow: var(--ui-elevation-panel);
 }
 /* Wet-glass crown highlight over the top third of every medallion. */
 .valid-hero-icon::before {
   content: ''; position: absolute; z-index: 1; inset: 7% 12% 46% 12%;
-  border-radius: var(--radius-round);
+  border-radius: var(--ui-radius-choice-round);
   background: linear-gradient(hsl(0 0% 100% / 0.6), hsl(0 0% 100% / 0));
   pointer-events: none;
 }
@@ -319,9 +368,7 @@
 }
 .valid-result.is-invalid .valid-hero-icon {
   background: radial-gradient(circle at 34% 26%, hsl(var(--vf-fail-1)), hsl(var(--vf-fail-2)) 72%);
-  box-shadow:
-    inset 0 2px 3px hsl(0 0% 100% / 0.45), inset 0 -8px 14px hsl(11 80% 22% / 0.55),
-    0 12px 28px -10px hsl(var(--vf-fail) / 0.6), 0 3px 10px -4px hsl(0 0% 0% / 0.4);
+  box-shadow: var(--ui-elevation-floating);
 }
 /* Expired, "likely made with Lolly", an unreadable carrier and a credential
    that does not cover the whole file share the same amber-warn medallion - all
@@ -332,9 +379,7 @@
 .valid-result.is-likelylolly .valid-hero-icon {
   background: radial-gradient(circle at 34% 26%, hsl(var(--vf-warn-1)), hsl(var(--vf-warn-2)) 72%);
   color: hsl(30 75% 16%);
-  box-shadow:
-    inset 0 2px 3px hsl(0 0% 100% / 0.5), inset 0 -8px 14px hsl(33 80% 26% / 0.5),
-    0 12px 28px -10px hsl(var(--vf-warn) / 0.55), 0 3px 10px -4px hsl(0 0% 0% / 0.35);
+  box-shadow: var(--ui-elevation-floating);
 }
 
 /* ── Green states - the impressive one. Bigger, brighter, animated. */
@@ -345,9 +390,7 @@
   width: 5.4rem; height: 5.4rem;
   color: hsl(0 0% 100%);
   background: radial-gradient(circle at 33% 25%, hsl(var(--vf-pass-1)), hsl(var(--vf-pass-2)) 72%);
-  box-shadow:
-    inset 0 2px 4px hsl(0 0% 100% / 0.55), inset 0 -9px 16px hsl(154 70% 16% / 0.55),
-    0 14px 20px -7px hsl(var(--vf-pass) / 0.27), 0 4px 12px -4px hsl(0 0% 0% / 0.24);
+  box-shadow: var(--ui-elevation-floating);
   animation: valid-medallion-float 4.8s ease-in-out infinite;
 }
 .valid-result.is-valid .valid-hero-icon svg,
@@ -355,32 +398,11 @@
 .valid-result.is-lolly .valid-hero-icon svg,
 .valid-result.is-delivered .valid-hero-icon svg { width: 2.5rem; height: 2.5rem; }
 
-/* The made-with-Lolly medallion's OUTER GLOW follows the brand's main colour
-   (via --lolly-coin-glow, injected by brand-vars.ts) so the drop-shadow matches
-   the recoloured logo swirl filling the coin. The coin body stays green (it's
-   covered by the logo) and unbranded it falls back to the --vf-pass green, so
-   the default look is unchanged. Placed AFTER the shared green block so it wins
-   at equal specificity; the green "Credential intact" pill + scorecard pips are
-   left untouched and keep carrying the pass verdict. */
-.valid-result.is-lolly .valid-hero-icon {
-  box-shadow:
-    inset 0 2px 4px hsl(0 0% 100% / 0.55),
-    inset 0 -9px 16px hsl(154 70% 16% / 0.55),
-    0 14px 20px -7px var(--lolly-coin-glow, hsl(var(--vf-pass) / 0.27)),
-    0 4px 12px -4px hsl(0 0% 0% / 0.24);
-}
-
-/* Silver medallion - the credential verifies, but it was NOT made with Lolly.
-   The animated green coin above is reserved for the branded "Made with Lolly"
-   answer; every other intact result (integrity-only, CA-trusted, delivered)
-   gets a premium struck-silver coin instead. Same size + float + sheen, cooler
-   metal. Higher specificity than the green block, so it wins for non-lolly. */
+/* Intact credentials from other generators use the brand's neutral surfaces. */
 .valid-result.is-valid:not(.is-lolly) .valid-hero-icon {
-  color: hsl(220 22% 30%);
-  background: radial-gradient(circle at 33% 25%, hsl(210 18% 94%), hsl(215 13% 70%) 72%);
-  box-shadow:
-    inset 0 2px 4px hsl(0 0% 100% / 0.8), inset 0 -9px 16px hsl(215 20% 46% / 0.4),
-    0 14px 34px -10px hsl(215 16% 46% / 0.25), 0 4px 12px -4px hsl(0 0% 0% / 0.15);
+  color: var(--ui-color-text-default);
+  background: radial-gradient(circle at 33% 25%, var(--ui-color-surface-raised), var(--ui-color-surface-muted) 72%);
+  box-shadow: var(--ui-elevation-floating);
 }
 
 /* Slow conic light sweep - the "struck coin catching the light" flourish,
@@ -389,7 +411,7 @@
 .valid-result.is-trusted .valid-hero-icon::after,
 .valid-result.is-lolly .valid-hero-icon::after,
 .valid-result.is-delivered .valid-hero-icon::after {
-  content: ''; position: absolute; z-index: 5; inset: -1px; border-radius: var(--radius-round);
+  content: ''; position: absolute; z-index: 5; inset: -1px; border-radius: var(--ui-radius-choice-round);
   background:conic-gradient(from 0deg, transparent 0 64%, #fff5 75%, #fff 80%, transparent 80%);
       mix-blend-mode: overlay;pointer-events: none;
   animation: valid-medallion-sheen 4.5s linear infinite;
@@ -405,29 +427,29 @@
   border-color: hsl(var(--vf-pass) / 0.5);
   background:
     radial-gradient(120% 90% at 8% 0%, hsl(var(--vf-pass) / 0.09), transparent 60%),
-    hsl(var(--card));
-  box-shadow: 0 0 0 1px hsl(var(--vf-pass) / 0.2), 0 18px 44px -26px hsl(var(--vf-pass) / 0.5);
+    var(--ui-color-surface-raised);
+  box-shadow: var(--ui-elevation-panel);
 }
 /* "Signed by <email> - …" under the hero sub; rendered whenever the chain
    verified (trusted, or anchored-but-expired). Scoped under .valid-hero to
    out-specify the `.valid-hero p` margin reset above. */
-.valid-hero .valid-identity-line { margin: 0.35rem 0 0; font-size: var(--fs-md); color: hsl(var(--muted-foreground)); }
+.valid-hero .valid-identity-line { margin: var(--sp-3) 0 0; font-size: var(--ui-type-body); color: var(--ui-color-text-muted); }
 .valid-hero .valid-identity-line strong {
-  font-family: var(--font-mono);
-  font-size: 0.92em; font-weight: 600; color: hsl(var(--foreground));
+  font-family: var(--ui-type-mono-family);
+  font-size: 0.92em; font-weight: 600; color: var(--ui-color-text-default);
 }
 
-.valid-file { margin: 0; font-size: var(--fs-lg); color: hsl(var(--muted-foreground)); overflow-wrap: anywhere; }
-.valid-file strong { color: hsl(var(--foreground)); }
+.valid-file { margin: 0; font-size: var(--ui-type-title); color: var(--ui-color-text-muted); overflow-wrap: anywhere; }
+.valid-file strong { color: var(--ui-color-text-default); }
 /* Voice comes from the composed .guide-absent (parts/guide.css); only spacing is its own. */
-.valid-selfnote { margin: 0 0 -0.35rem; font-size: var(--fs-sm); }
+.valid-selfnote { margin: 0 0 calc(var(--sp-3) * -1); font-size: var(--ui-type-label); }
 .valid-fmt {
-  font-family: var(--font-mono);
+  font-family: var(--ui-type-mono-family);
   font-size: var(--fs-xs);
-  padding: 0.05rem 0.4rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.3rem;
-  color: hsl(var(--muted-foreground));
+  padding: calc(var(--sp-1) / 2) var(--sp-3);
+  border: 1px solid var(--ui-color-border-default);
+  border-radius: var(--ui-radius-choice);
+  color: var(--ui-color-text-muted);
 }
 
 /* The credential's recorded facts, as a grid of floating cards - each fact its
@@ -439,30 +461,27 @@
   /* auto-fit + a capped max: more columns appear as the page widens, but a
      lone fact on a wide screen stays a plate-sized card, not a stretched bar. */
   grid-template-columns: repeat(auto-fit, minmax(210px, 250px));
-  gap: 0.75rem;
+  gap: var(--sp-6);
 }
-/* The "made with" details - a struck-silver spec plate. Brushed metal, black
-   labels; the values ("the numbers") read as small muted SUSE Mono, like an
-   engraved data readout. Explicit metal hues (not theme vars) so the plate looks
-   the same engraved-silver in light and dark. */
+/* Recorded values share the brand's surface and elevation treatment. */
 .valid-fact {
   position: relative;
-  padding: 0.7rem 0.85rem 0.8rem;
-  border-radius: calc(var(--radius) *0.85);
-  border: 1px solid hsl(215 15% 80%);
-  background: linear-gradient(165deg, hsl(210 20% 94%), hsl(215 13% 79%));
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.6), 0 1px 2px hsl(0 0% 0% / 0.12), 0 8px 18px -14px hsl(0 0% 0% / 0.15);
-  transition: transform var(--dur-2) ease, box-shadow var(--dur-2) ease, border-color var(--dur-2) ease;
+  padding: var(--sp-6) var(--sp-6) var(--sp-6);
+  border-radius: var(--ui-radius-panel);
+  border: 1px solid var(--ui-color-border-default);
+  background: var(--ui-color-surface-canvas);
+  box-shadow: var(--ui-elevation-panel);
+  transition: transform var(--ui-motion-overlay) ease, box-shadow var(--ui-motion-overlay) ease, border-color var(--ui-motion-overlay) ease;
 }
 .valid-fact:hover {
   transform: scale(1.03);
-  border-color: hsl(215 20% 50%);
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.7), 0 14px 26px -16px hsl(0 0% 0% / 0.5);
+  border-color: var(--ui-color-selection-border);
+  box-shadow: var(--ui-elevation-floating);
 }
-.valid-fact dt { display: flex; align-items: center; gap: 0.4rem; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: hsl(0 0% 8%); }
-.valid-fact-ic { display: inline-flex; flex: 0 0 auto; color: hsl(215 22% 32%); }
+.valid-fact dt { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ui-color-text-default); }
+.valid-fact-ic { display: inline-flex; flex: 0 0 auto; color: var(--ui-color-text-muted); }
 .valid-fact-ic svg { width: 0.95rem; height: 0.95rem; }
-.valid-fact dd { margin: 0.4rem 0 0; font-size: var(--fs-sm); font-weight: 500; font-family: var(--font-mono); color: hsl(215 12% 40%); overflow-wrap: anywhere; }
+.valid-fact dd { margin: var(--sp-3) 0 0; font-size: var(--ui-type-label); font-weight: 500; font-family: var(--ui-type-mono-family); color: var(--ui-color-text-muted); overflow-wrap: anywhere; }
 
 /* ─── Embedded-metadata reveal ───────────────────────────────────────────────
    A clinical readout of everything the file discloses (EXIF/XMP/GPS/…). Hierarchy
@@ -471,67 +490,67 @@
    value itself, not by chrome. Now a peer card inside .valid-panels (see above),
    so it shares that boxed background instead of trailing below a divider line. */
 .valid-meta {
-    box-shadow: 0 .2rem 1rem #0003;
-    border-radius: var(--radius);
-    background: hsl(var(--muted) / 0.22);
-    padding: 1.4rem 1.5rem;
+    box-shadow: var(--ui-elevation-panel);
+    border-radius: var(--ui-radius-panel);
+    background: color-mix(in srgb, var(--ui-color-surface-muted) 22%, transparent);
+    padding: var(--ui-space-page) var(--ui-space-page);
 }
 .valid-meta-head {
-  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap;
   cursor: pointer; list-style: none; user-select: none;
 }
 .valid-meta-head::-webkit-details-marker { display: none; }
-.valid-meta-head:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 4px; border-radius: 0.35rem; }
+.valid-meta-head:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 4px; border-radius: var(--ui-radius-control); }
 .valid-meta-head h3 {
-  display: flex; align-items: center; gap: 0.5rem;
+  display: flex; align-items: center; gap: var(--ui-space-control-inline);
   margin: 0; font-size: calc(0.95rem * var(--a11y-fs)); font-weight: 650; letter-spacing: -0.01em;
 }
-.valid-meta-head h3 svg { width: 2rem; height: 2rem; color: hsl(var(--muted-foreground)); }
+.valid-meta-head h3 svg { width: 2rem; height: 2rem; color: var(--ui-color-text-muted); }
 .valid-meta-count {
   margin-left: auto;
-  font-family: var(--font-mono); font-size: var(--fs-xs);
-  color: hsl(var(--muted-foreground)); letter-spacing: 0.02em;
+  font-family: var(--ui-type-mono-family); font-size: var(--fs-xs);
+  color: var(--ui-color-text-muted); letter-spacing: 0.02em;
 }
 .valid-meta-sensitive {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.18rem 0.55rem; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-1) var(--ui-space-control-inline); border-radius: var(--ui-radius-pill);
   border: 1px solid hsl(var(--vf-fail) / 0.34);
   background: hsl(var(--vf-fail) / 0.11); color: hsl(var(--vf-fail));
   font-size: var(--fs-xs); font-weight: 750; white-space: nowrap;
 }
 .valid-meta-sensitive svg { width: 0.9rem; height: 0.9rem; }
-.valid-meta-body { display: grid; gap: 0.75rem; margin-top: 0.9rem; }
-.valid-meta-note { margin: 0.45rem 0 0; font-size: var(--fs-sm); line-height: 1.5; color: hsl(var(--muted-foreground)); max-width: 68ch; }
-.valid-meta-note a { color: hsl(var(--primary)); text-underline-offset: 2px; }
+.valid-meta-body { display: grid; gap: var(--sp-6); margin-top: var(--ui-space-panel); }
+.valid-meta-note { margin: var(--ui-space-control-inline) 0 0; font-size: var(--ui-type-label); line-height: 1.5; color: var(--ui-color-text-muted); max-width: 68ch; }
+.valid-meta-note a { color: var(--ui-color-action-primary); text-underline-offset: 2px; }
 /* The "download a cleaned copy" action - deliberately just another inline text
    link beside the Hidden Data tool link, not a CTA button, so a fast lossless
    clean-up path sits quietly where a viewer just saw what the file discloses. */
 .valid-clean-link {
   appearance: none; background: none; border: 0; padding: 0; margin: 0;
-  font: inherit; font-size: var(--fs-sm); color: hsl(var(--primary));
+  font: inherit; font-size: var(--ui-type-label); color: var(--ui-color-action-primary);
   text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
 }
 .valid-clean-link:hover { opacity: 0.8; }
-.valid-clean-link:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
-.valid-clean-link:disabled { color: hsl(var(--muted-foreground)); text-decoration: none; cursor: default; opacity: 0.8; }
+.valid-clean-link:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 2px; }
+.valid-clean-link:disabled { color: var(--ui-color-text-muted); text-decoration: none; cursor: default; opacity: 0.8; }
 
 .valid-meta-grid {
-  margin-top: 1.5rem;
+  margin-top: var(--ui-space-page);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 280px));
-  gap: 1.6rem 2.4rem;
+  gap: var(--ui-space-page) calc(var(--ui-space-panel) * 2.5);
   align-items: start;
 }
 .valid-meta-group h4,
 .valid-meta-location h4 {
-  display: flex; align-items: center; gap: 0.4rem;
-  margin: 0 0 0.7rem;
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin: 0 0 var(--sp-6);
   font-size: calc(0.62rem * var(--a11y-fs)); font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
-  color: hsl(var(--muted-foreground));
+  color: var(--ui-color-text-muted);
 }
 .valid-meta-group h4 svg,
 .valid-meta-location h4 svg { width: 0.82rem; height: 0.82rem; opacity: 0.75; }
-.valid-meta-group dl { margin: 0; display: grid; gap: 0.5rem 0.9rem; grid-template-columns: auto 1fr; }
+.valid-meta-group dl { margin: 0; display: grid; gap: var(--ui-space-control-inline) var(--ui-space-panel); grid-template-columns: auto 1fr; }
 /* Description & text - the group most likely to hold long values (titles,
    captions, comments), so it gets its own inset card and spans two columns to
    give that prose room to breathe. */
@@ -543,13 +562,13 @@
 }
 .valid-meta-row { display: contents; }
 .valid-meta-row dt {
-  font-size: var(--fs-xs); line-height: 1.35; color: hsl(var(--muted-foreground));
+  font-size: var(--fs-xs); line-height: 1.35; color: var(--ui-color-text-muted);
   white-space: nowrap;
 }
 .valid-meta-row dd {
   margin: 0; font-size: var(--fs-xs); line-height: 1.35; font-weight: 500;
-  font-family: var(--font-mono);
-  color: hsl(var(--foreground)); overflow-wrap: anywhere; word-break: break-word;
+  font-family: var(--ui-type-mono-family);
+  color: var(--ui-color-text-default); overflow-wrap: anywhere; word-break: break-word;
 }
 /* Personally identifying - GPS, serials, author names. The exposed VALUE is
    tinted persimmon; the eye lands on the datum, not on decoration. */
@@ -557,35 +576,35 @@
 
 /* Location - a full-width offline world plot with the fix pinned. */
 .valid-meta-location { grid-column: 1 / -1; }
-.valid-meta-location-layout { display: grid; gap: 0.75rem; }
+.valid-meta-location-layout { display: grid; gap: var(--sp-6); }
 .valid-locator {
   display: block; width: 100%; max-width: 560px; height: auto;
-  margin: 0.1rem 0 0; border-radius: 0.7rem;
-  background: hsl(var(--muted) / 0);
+  margin: var(--sp-1) 0 0; border-radius: var(--ui-radius-panel);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 0%, transparent);
 }
-.valid-locator-sea { fill: hsl(var(--muted) / 0); }
+.valid-locator-sea { fill: color-mix(in srgb, var(--ui-color-surface-muted) 0%, transparent); }
 .valid-locator-land {
-  fill: hsl(var(--muted-foreground) / 0.26);
-  stroke: hsl(var(--muted-foreground) / 0.4); stroke-width: 0.5; vector-effect: non-scaling-stroke;
+  fill: color-mix(in srgb, var(--ui-color-text-muted) 26%, transparent);
+  stroke: color-mix(in srgb, var(--ui-color-text-muted) 40%, transparent); stroke-width: 0.5; vector-effect: non-scaling-stroke;
 }
 .valid-locator-halo { fill: hsl(var(--vf-fail) / 0.22); }
-.valid-locator-dot { fill: hsl(var(--vf-fail)); stroke: hsl(var(--card)); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.valid-locator-dot { fill: hsl(var(--vf-fail)); stroke: var(--ui-color-surface-raised); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
 .valid-locator-tick { stroke: hsl(var(--vf-fail)); stroke-width: 1.4; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .valid-meta-loc-read {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1.4rem;
-  margin-top: 0.7rem;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-3) var(--ui-space-page);
+  margin-top: var(--sp-6);
 }
 .valid-meta-location-warning {
-  flex-basis: 100%; display: inline-flex; align-items: center; gap: 0.42rem;
-  width: fit-content; padding: 0.38rem 0.58rem; border-radius: 0.55rem;
-  background: hsl(var(--vf-fail) / 0.09); color: hsl(var(--foreground));
-  font-size: var(--fs-sm); font-weight: 650;
+  flex-basis: 100%; display: inline-flex; align-items: center; gap: var(--sp-3);
+  width: fit-content; padding: var(--sp-3) var(--sp-5); border-radius: var(--ui-radius-control);
+  background: hsl(var(--vf-fail) / 0.09); color: var(--ui-color-text-default);
+  font-size: var(--ui-type-label); font-weight: 650;
 }
 .valid-meta-location-warning svg { width: 1rem; height: 1rem; color: hsl(var(--vf-fail)); }
-.valid-meta-loc-item { display: inline-flex; align-items: baseline; gap: 0.5rem; }
-.valid-meta-loc-item .k { font-size: calc(0.62rem * var(--a11y-fs)); text-transform: uppercase; letter-spacing: 0.07em; color: hsl(var(--muted-foreground)); }
-.valid-meta-loc-item .v { font-family: var(--font-mono); font-size: var(--fs-sm); color: hsl(var(--vf-fail)); }
-.valid-meta-map { font-size: var(--fs-xs); color: hsl(var(--primary)); text-underline-offset: 2px; white-space: nowrap; }
+.valid-meta-loc-item { display: inline-flex; align-items: baseline; gap: var(--ui-space-control-inline); }
+.valid-meta-loc-item .k { font-size: calc(0.62rem * var(--a11y-fs)); text-transform: uppercase; letter-spacing: 0.07em; color: var(--ui-color-text-muted); }
+.valid-meta-loc-item .v { font-family: var(--ui-type-mono-family); font-size: var(--ui-type-label); color: hsl(var(--vf-fail)); }
+.valid-meta-map { font-size: var(--fs-xs); color: var(--ui-color-action-primary); text-underline-offset: 2px; white-space: nowrap; }
 
 /* Hero scorecard - eight canonical checks at a glance. Each pip is a struck
    status chip: pass = glossy pine glass, fail = persimmon/rust glass (equal
@@ -593,21 +612,27 @@
    and not-applicable = a faded sheet of paper lying flat. The icon says WHICH
    check; the chip's material says its state. Pips arm in a staggered cascade. */
 .valid-score-wrap { min-width: 0; }
-.valid-score { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.valid-score { list-style: none; margin: var(--ui-space-panel) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-5); }
 .valid-score-more {
-  display: none; width: 100%; margin-top: 0.7rem; padding: 0.55rem 0.75rem;
-  border: 1px solid hsl(var(--border)); border-radius: var(--radius-pill);
-  background: hsl(var(--muted) / 0.38); color: hsl(var(--foreground));
-  font: inherit; font-size: var(--fs-sm); font-weight: 650; cursor: pointer;
+  display: none; width: 100%; margin-top: var(--sp-6); padding: var(--ui-space-control-inline) var(--sp-6);
+  border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-pill);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 38%, transparent); color: var(--ui-color-text-default);
+  font: inherit; font-size: var(--ui-type-label); font-weight: 650; cursor: pointer;
 }
-.valid-score-more:hover { background: hsl(var(--accent)); }
-.valid-score-more:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.valid-score-more:hover { background: var(--ui-color-selection-surface); }
+.valid-score-more:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 2px; }
+.valid-top .valid-score { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+.valid-top .valid-score:not(.valid-score--mini) .valid-score-pip { display: grid; grid-template-columns: 1.2rem minmax(0, 1fr); width: auto; min-height: 4.2rem; padding: var(--sp-5); text-align: left; gap: var(--sp-2) var(--ui-space-control-inline); animation: none; }
+.valid-top .valid-score:not(.valid-score--mini) .valid-score-pip svg { width: 1.2rem; height: 1.2rem; }
+.valid-top .valid-score-status { grid-column: 2; justify-self: start; margin: 0; font-size: var(--fs-xs); }
+.valid-score-wrap:not(.is-expanded) .valid-score:not(.valid-score--mini) > :nth-child(n + 5) { display: none; }
+.valid-top .valid-score-more { display: block; }
 
 .valid-score-pip {
-  --g1: var(--muted); --g2: var(--muted); --ink: hsl(var(--muted-foreground)); --glow: transparent;
+  --g1: var(--muted); --g2: var(--muted); --ink: var(--ui-color-text-muted); --glow: transparent;
   position: relative; isolation: isolate;
-  display: flex; flex-direction: column; align-items: center; gap: 0.45rem;
-  border-radius: var(--radius);
+  display: flex; flex-direction: column; align-items: center; gap: var(--ui-space-control-inline);
+  border-radius: var(--ui-radius-control);
   text-align: center;
   color: var(--ink);
 }
@@ -618,7 +643,7 @@
 .valid-score-status {
   margin-top: auto;
   font-size: calc(0.58rem * var(--a11y-fs)); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
-  padding: 0.08rem 0.5rem; border-radius: var(--radius-pill);
+  padding: calc(var(--sp-1) / 2) var(--ui-space-control-inline); border-radius: var(--ui-radius-pill);
   border: 0; color: var(--ink);
   overflow-wrap: anywhere;
 }
@@ -626,10 +651,10 @@
 /* Full-size chips + the staggered "power-on" entrance. */
 .valid-score:not(.valid-score--mini) .valid-score-pip {
   width: 6.25rem; min-height: 6.5rem;
-  padding: 0.7rem 0.45rem 0.65rem;
+  padding: var(--sp-6) var(--ui-space-control-inline) var(--sp-5);
   justify-content: center;
   border: 0;
-  background: hsl(var(--muted) / 0.4);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent);
   animation: valid-pip-in 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.25) backwards;
   animation-delay: calc(var(--i, 0) * 70ms);
 }
@@ -638,10 +663,10 @@
 /* Not applicable - a faded sheet of paper: flat on the card, muted, a soft
    close shadow. Almost recedes. */
 .valid-score:not(.valid-score--mini) .valid-score-pip.is-na {
-  --ink: hsl(var(--muted-foreground) / 0.8);
-  background: hsl(var(--muted) / 0.4);
-  border-color: hsl(var(--border) / 0.7);
-  box-shadow: 0 1px 2px hsl(0 0% 0% / 0.07);border:0;
+  --ink: color-mix(in srgb, var(--ui-color-text-muted) 80%, transparent);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent);
+  border: 0;
+  box-shadow: var(--ui-elevation-control);
 }
 .valid-score:not(.valid-score--mini) .valid-score-pip.is-na .valid-score-status { opacity: 0.7; }
 
@@ -649,10 +674,10 @@
    A dark-ash slate: the file WAS signed, just with a self-issued on-device key.
    Overrides the faded-paper is-na look above (later + more specific). */
 .valid-score:not(.valid-score--mini) .valid-score-pip.is-ash {
-  --ink: hsl(220 14% 88%);
-  background: linear-gradient(165deg, hsl(220 9% 30%), hsl(222 11% 21%));
-  border-color: hsl(220 10% 40%);border:0;
-  box-shadow:inset 0 1px #ffffff14,0 8px 20px -12px #0009,0 2px 6px -3px #0006, 0 0 0 1px #30333b;
+  --ink: var(--ui-color-text-default);
+  background: var(--ui-color-surface-muted);
+  border: 0;
+  box-shadow: var(--ui-elevation-control);
 
 }
 
@@ -666,20 +691,16 @@
   background: linear-gradient(163deg, hsl(var(--g1)), hsl(var(--g2)));
   
   scale: 1;
-  box-shadow:
-    inset 0 1px 0 hsl(0 0% 100% / 0.5),
-    inset 0 -10px 18px -8px hsl(0 0% 0% / 0.35),
-    0 15px 28px -10px hsl(var(--glow)),
-    0 6px 14px -6px hsl(0 0% 0% / 0.35);
-  transition: scale var(--dur-3) cubic-bezier(.2,.2,.1,1.2), box-shadow var(--dur-2) ease;
+  box-shadow: var(--ui-elevation-control);
+  transition: scale var(--ui-motion-navigation) cubic-bezier(.2,.2,.1,1.2), box-shadow var(--ui-motion-overlay) ease;
 }
- .valid-score:not(.valid-score--mini) .valid-score-pip.is-ash  {  transition: scale var(--dur-3) cubic-bezier(.2,.2,.1,1.2), box-shadow var(--dur-2) ease;}
+ .valid-score:not(.valid-score--mini) .valid-score-pip.is-ash  {  transition: scale var(--ui-motion-navigation) cubic-bezier(.2,.2,.1,1.2), box-shadow var(--ui-motion-overlay) ease;  --ink: var(--ui-color-text-default);  background: var(--ui-color-surface-muted);  border-color: var(--ui-color-border-default);}
 
 .valid-score:not(.valid-score--mini) .valid-score-pip.is-pass::before,
 .valid-score:not(.valid-score--mini) .valid-score-pip.is-fail::before,
 .valid-score:not(.valid-score--mini) .valid-score-pip.is-warn::before {
   content: ''; position: absolute; z-index: 0; inset: 1px 1px 42% 1px;
-  border-radius: 0.8rem 0.8rem 45% 45% / 0.8rem 0.8rem 100% 100%;
+  border-radius: inherit;
   background: linear-gradient(hsl(0 0% 100% / 0.2), hsl(0 0% 100% / 0));
   border: 0;
   pointer-events: none;
@@ -708,27 +729,27 @@
    (mirrors .valid-clean-link's understatement, one step up in prominence
    since it's a real click target). The result note it can inject reuses
    .valid-wm entirely (see watermarkNote/trustmarkNoteHtml in views/valid.ts). */
-.valid-deepscan { margin-top: 0.9rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+.valid-deepscan { margin-top: var(--ui-space-panel); display: flex; flex-direction: column; align-items: flex-start; gap: var(--ui-space-control-inline); }
 
 /* Batch consent banner - the one-time "enable deep scan" offer at the top of the
    report. After one click the detectors download once and every file is scanned
    automatically; on later visits (models cached) this never appears. Understated
    (a soft neutral card, not the loud violet AI banner) - it's an optional extra. */
 .valid-deepscan-banner {
-  display: flex; align-items: center; gap: 0.75rem;
-  margin-bottom: 1rem; padding: 0.8rem 1rem;
-  border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--muted) / 0.35);
+  display: flex; align-items: center; gap: var(--sp-6);
+  margin-bottom: var(--ui-space-panel); padding: var(--sp-6) var(--ui-space-panel);
+  border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 35%, transparent);
 }
-.valid-deepscan-banner-ic { flex: 0 0 auto; display: inline-flex; color: hsl(var(--muted-foreground)); }
+.valid-deepscan-banner-ic { flex: 0 0 auto; display: inline-flex; color: var(--ui-color-text-muted); }
 .valid-deepscan-banner-ic svg { width: 1.4rem; height: 1.4rem; }
-.valid-deepscan-banner-text { display: grid; gap: 0.15rem; min-width: 0; }
+.valid-deepscan-banner-text { display: grid; gap: var(--sp-1); min-width: 0; }
 .valid-deepscan-banner-text strong { font-size: calc(0.92rem * var(--a11y-fs)); }
-.valid-deepscan-banner-text span { font-size: var(--fs-md); color: hsl(var(--muted-foreground)); }
+.valid-deepscan-banner-text span { font-size: var(--ui-type-body); color: var(--ui-color-text-muted); }
 .valid-deepscan-enable {
   flex: 0 0 auto; margin-left: auto;
-  font-size: var(--fs-md); padding: 0.45rem 1.1rem; border-radius: var(--radius-pill);
-  background: hsl(var(--foreground)); color: hsl(var(--background)); border: 0; font-weight: 600;
+  font-size: var(--ui-type-body); padding: var(--ui-space-control-inline) var(--ui-space-panel); border-radius: var(--ui-radius-pill);
+  background: var(--ui-color-text-default); color: var(--ui-color-surface-canvas); border: 0; font-weight: 600;
 }
 .valid-deepscan-enable:hover:not(:disabled) { opacity: 0.9; }
 .valid-deepscan-enable:disabled { opacity: 0.6; cursor: default; }
@@ -740,14 +761,14 @@
    first chunk arrives and a Content-Length-less response - a sliding highlight
    rather than a fabricated percentage. */
 .valid-deepscan-progress {
-  margin-top: 0.35rem; width: 100%; max-width: 22rem;
-  height: 5px; border-radius: var(--radius-xs); overflow: hidden;
-  background: hsl(var(--border));
+  margin-top: var(--sp-3); width: 100%; max-width: 22rem;
+  height: 5px; border-radius: var(--ui-radius-choice); overflow: hidden;
+  background: var(--ui-color-border-default);
 }
 .valid-deepscan-progress-fill {
   display: block; height: 100%; width: 0%;
-  border-radius: var(--radius-xs); background: hsl(var(--foreground));
-  transition: width var(--dur-2) ease-out;
+  border-radius: var(--ui-radius-choice); background: var(--ui-color-text-default);
+  transition: width var(--ui-motion-overlay) ease-out;
 }
 .valid-deepscan-progress.is-indeterminate .valid-deepscan-progress-fill {
   width: 40% !important; transition: none;
@@ -761,19 +782,17 @@
   .valid-deepscan-progress.is-indeterminate .valid-deepscan-progress-fill { animation: none; opacity: 0.5; }
 }
 
-/* ── AI-generated flag ───────────────────────────────────────────────────────
-   The loudest element on the page. A full-width violet banner with a pulsing
-   glow, a swept sheen, and a twinkling sparkle - impossible to scroll past. */
+/* AI declarations retain their violet signal colour and use brand elevation. */
 .valid-ai-flag {
   position: relative; isolation: isolate; overflow: hidden;
-  display: flex; align-items: center; gap: 0.9rem;
-  padding: 0.95rem 1.1rem;
-  border-radius: var(--radius);
+  display: flex; align-items: center; gap: var(--ui-space-panel);
+  padding: var(--ui-space-panel);
+  border-radius: var(--ui-radius-panel);
   border: 1px solid hsl(var(--vf-ai-1) / 0.65);
   color: hsl(0 0% 100%);
   background: linear-gradient(115deg, hsl(var(--vf-ai-1)), hsl(var(--vf-ai-2)));
-  box-shadow: 0 12px 30px -12px hsl(var(--vf-ai) / 0.65), inset 0 1px 0 hsl(0 0% 100% / 0.35);
-  animation: valid-ai-pulse 2.8s ease-in-out infinite;
+  box-shadow: var(--ui-elevation-panel);
+  animation: none;
 }
 /* Sheen bar that sweeps across every few seconds. */
 .valid-ai-flag::after {
@@ -786,21 +805,16 @@
 .valid-ai-flag-ic { flex: 0 0 auto; display: inline-flex; }
 .valid-ai-flag-ic svg {
   width: 2rem; height: 2rem; stroke-width: 1.7;
-  filter: drop-shadow(0 1px 2px hsl(var(--vf-ai-2) / 0.6));
   animation: valid-ai-twinkle 2.2s ease-in-out infinite;
 }
-.valid-ai-flag-text { display: grid; gap: 0.15rem; min-width: 0; }
+.valid-ai-flag-text { display: grid; gap: var(--sp-1); min-width: 0; }
 .valid-ai-flag-text strong { font-size: calc(1.02rem * var(--a11y-fs)); letter-spacing: -0.01em; }
-.valid-ai-flag-text span { font-size: var(--fs-md); color: hsl(0 0% 100% / 0.9); }
+.valid-ai-flag-text span { font-size: var(--ui-type-body); color: hsl(0 0% 100% / 0.9); }
 .valid-ai-flag-tag {
   flex: 0 0 auto; margin-left: auto; align-self: flex-start;
   font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.09em;
-  padding: 0.2rem 0.55rem; border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--ui-space-control-inline); border-radius: var(--ui-radius-pill);
   background: hsl(0 0% 100% / 0.22); border: 1px solid hsl(0 0% 100% / 0.45);
-}
-@keyframes valid-ai-pulse {
-  0%, 100% { box-shadow: 0 12px 30px -12px hsl(var(--vf-ai) / 0.5),  inset 0 1px 0 hsl(0 0% 100% / 0.35); }
-  50%      { box-shadow: 0 16px 42px -10px hsl(var(--vf-ai) / 0.95), inset 0 1px 0 hsl(0 0% 100% / 0.45); }
 }
 @keyframes valid-ai-sheen { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(120%); } }
 @keyframes valid-ai-twinkle {
@@ -809,13 +823,13 @@
 }
 /* The "likely" (pipeline-fingerprint) tier is deliberately calmer than a
    declaration: same violet identity, none of the motion, a softer lift. */
-.valid-ai-flag--likely { animation: none; box-shadow: 0 8px 20px -14px hsl(var(--vf-ai) / 0.5), inset 0 1px 0 hsl(0 0% 100% / 0.3); }
+.valid-ai-flag--likely { animation: none; box-shadow: var(--ui-elevation-panel); }
 .valid-ai-flag--likely::after { display: none; }
 .valid-ai-flag--likely .valid-ai-flag-ic svg { animation: none; }
 /* Credit line ("Made with Google AI") + the invisible-watermark note inside the
    AI banner - the note reads as a quieter footnote under the main claim. */
-.valid-ai-flag-credit { font-size: var(--fs-md); font-style: italic; color: hsl(0 0% 100% / 0.95); }
-.valid-ai-flag-note { margin-top: 0.35rem; font-size: calc(0.76rem * var(--a11y-fs)); color: hsl(0 0% 100% / 0.82); }
+.valid-ai-flag-credit { font-size: var(--ui-type-body); font-style: italic; color: hsl(0 0% 100% / 0.95); }
+.valid-ai-flag-note { margin-top: var(--sp-3); font-size: calc(0.76rem * var(--a11y-fs)); color: hsl(0 0% 100% / 0.82); }
 .valid-ai-flag-note strong { color: hsl(0 0% 100%); }
 .valid-ai-flag-note a { color: inherit; font-weight: 700; text-decoration: underline; }
 
@@ -829,21 +843,21 @@
    Deliberately understated (a soft green-tinted card, no gloss/animation) so it
    never competes with the C2PA hero or reads as the cryptographic verdict. */
 .valid-wm {
-  display: flex; gap: 0.75rem; align-items: flex-start;
-  padding: 0.8rem 0.95rem;
+  display: flex; gap: var(--sp-6); align-items: flex-start;
+  padding: var(--sp-6) var(--ui-space-panel);
   border: 1px solid hsl(var(--vf-pass) / 0.35);
-  border-radius: 0.75rem;
+  border-radius: var(--ui-radius-panel);
   background: hsl(var(--vf-pass) / 0.07);
 }
 .valid-wm-ic {
   flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
-  width: 2rem; height: 2rem; border-radius: 0.55rem;
+  width: 2rem; height: 2rem; border-radius: var(--ui-radius-control);
   background: hsl(var(--vf-pass) / 0.16); color: hsl(var(--vf-pass));
 }
 .valid-wm-ic svg { width: 1.15rem; height: 1.15rem; }
-.valid-wm-text { display: grid; gap: 0.15rem; min-width: 0; }
-.valid-wm-text strong { font-size: var(--fs-lg); font-weight: 650; color: hsl(var(--foreground)); }
-.valid-wm-text span { font-size: var(--fs-md); line-height: 1.5; color: hsl(var(--muted-foreground)); max-width: 72ch; }
+.valid-wm-text { display: grid; gap: var(--sp-1); min-width: 0; }
+.valid-wm-text strong { font-size: var(--ui-type-title); font-weight: 650; color: var(--ui-color-text-default); }
+.valid-wm-text span { font-size: var(--ui-type-body); line-height: 1.5; color: var(--ui-color-text-muted); max-width: 72ch; }
 
 /* Warn-toned variant - the appended-payload callout (views/valid.ts,
    appendedPayloadHtml). A smuggled zip/exe is worth the amber --vf-warn hue;
@@ -855,61 +869,31 @@
    search) prompt, shown when the automatic pass (Tier 0 + Tier 1) found no Imprint.
    Neutral-toned (no verdict has been reached yet) with a right-aligned trigger; on
    a hit the whole block is replaced by the standard pass-tinted .valid-wm note. */
-.valid-wm--action { border-color: hsl(var(--border)); background: hsl(var(--muted) / 0.4); align-items: center; }
-.valid-wm--action .valid-wm-ic { background: hsl(var(--muted-foreground) / 0.16); color: hsl(var(--muted-foreground)); }
+.valid-wm--action { border-color: var(--ui-color-border-default); background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent); align-items: center; }
+.valid-wm--action .valid-wm-ic { background: color-mix(in srgb, var(--ui-color-text-muted) 16%, transparent); color: var(--ui-color-text-muted); }
 .valid-wm-rescan { flex: 0 0 auto; align-self: center; white-space: nowrap; }
-.valid-wm-rescan-miss { display: block; margin-top: 0.35rem; font-size: var(--fs-sm); color: hsl(var(--muted-foreground)); }
+.valid-wm-rescan-miss { display: block; margin-top: var(--sp-3); font-size: var(--ui-type-label); color: var(--ui-color-text-muted); }
+@media (max-width: 639px) {
+  .valid-wm--action { flex-wrap: wrap; }
+  .valid-wm--action .valid-wm-text { flex: 1 1 12rem; }
+  .valid-wm--action .valid-wm-rescan { margin-left: auto; white-space: normal; max-width: 100%; }
+}
 
 /* Appended-payload View/Download actions - reuses .valid-clean-link's quiet
    inline-text-button styling rather than adding a new button treatment, and
    the inline hex/text preview panel it can open beneath them. */
-.valid-payload-actions { display: flex; gap: 1.1rem; margin-top: 0.35rem; }
+.valid-payload-actions { display: flex; gap: var(--ui-space-panel); margin-top: var(--sp-3); }
 .valid-payload-view {
-  margin-top: 0.6rem; max-height: 16rem; overflow: auto;
-  padding: 0.6rem 0.75rem; border-radius: 0.5rem;
-  background: hsl(var(--background) / 0.6); border: 1px solid hsl(var(--border));
+  margin-top: var(--sp-5); max-height: 16rem; overflow: auto;
+  padding: var(--sp-5) var(--sp-6); border-radius: var(--ui-radius-control);
+  background: color-mix(in srgb, var(--ui-color-surface-canvas) 60%, transparent); border: 1px solid var(--ui-color-border-default);
 }
 .valid-payload-dump {
-  margin: 0; font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.5;
-  white-space: pre-wrap; word-break: break-all; color: hsl(var(--foreground));
+  margin: 0; font-family: var(--ui-type-mono-family); font-size: var(--fs-xs); line-height: 1.5;
+  white-space: pre-wrap; word-break: break-all; color: var(--ui-color-text-default);
 }
 
-/* ── Panels - the file/facts summary, "made from" inputs digest, "what happened"
-   (change history), "what was checked" (assertion log) and embedded metadata as
-   distinct boxed cards rather than lists silently stacked in one column.
-   True masonry (layoutMasonry in valid.ts), NOT a grid or CSS column-count:
-   a row-based grid forces every card in a tall card's row to that height and
-   shoves the next row down, and column-count fills column 1 (in DOM order)
-   before spilling to column 2 - either way, one dominant card (a long change
-   history / input record) stacks the others behind it instead of beside it,
-   stranding "assertion log"/"metadata" at the bottom. JS measures each card and
-   places it into whichever column is CURRENTLY shortest, wrapping them in
-   .valid-panels-col - this rule is just the row/column flex scaffolding those
-   wrappers sit in. One column on narrow viewports (so "made from" always sits
-   directly above change history) - see the matching breakpoint in valid.ts's
-   MASONRY_BREAKPOINT. */
-.valid-panels {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  align-items: stretch;
-}
-/* Row layout only once layoutMasonry has actually split the cards into columns
-   (:has(.valid-panels-col)) - it skips that (leaving cards as direct children)
-   when there are fewer cards than columns, e.g. a lone summary panel with no
-   claim found. Gating on the wrapper's presence, not just the viewport width,
-   keeps that lone card stretching full-width instead of shrinking to content
-   width as a lone flex-row item would. */
-@media (min-width: 780px) {
-  .valid-panels:has(.valid-panels-col) { flex-direction: row; align-items: flex-start; }
-}
-.valid-panels-col {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  flex: 1 1 0;
-  min-width: 0;
-}
+/* Ordered report sections are laid out in valid-report.css. */
 /* The summary column (filename, self-note, fact list) shares the same boxed
    treatment as the made-from/change-history/assertion-log panels so all read as
    siblings; the facts grid collapses to a single value-per-row list at this
@@ -922,15 +906,15 @@
    beside it. */
 .valid-meta-feature { min-width: 0; }
 @media (min-width: 1200px) {
-  .valid-meta-feature .valid-meta.has-map { padding: 1.55rem 1.7rem; }
+  .valid-meta-feature .valid-meta.has-map { padding: var(--ui-space-page) var(--ui-space-page); }
   .valid-meta-feature .valid-meta.has-map .valid-meta-note { max-width: 95ch; }
   .valid-meta-feature .valid-meta.has-map .valid-meta-grid {
     grid-template-columns: minmax(480px, 1.45fr) repeat(2, minmax(190px, 0.72fr));
-    gap: 1.5rem 2.25rem;
+    gap: var(--ui-space-page) calc(var(--ui-space-panel) * 2);
   }
   .valid-meta-feature .valid-meta.has-map .valid-meta-location {
     grid-column: 1; grid-row: 1 / span 4;
-    padding-right: 1.5rem; border-right: 1px solid hsl(var(--border));
+    padding-right: var(--ui-space-page); border-right: 1px solid var(--ui-color-border-default);
   }
   .valid-meta-feature .valid-meta.has-map .valid-locator { max-width: none; }
   .valid-meta-feature .valid-meta.has-map .valid-meta-group--desc { grid-column: 2 / -1; }
@@ -940,62 +924,62 @@
    (matching change-history/assertion-log) so it reads as a peer section rather
    than a footnote of the summary card: monospace values, a swatch chip for
    colours, so the asset shows what it was rendered from at a glance. */
-.valid-input-list { margin: 0; display: grid; gap: 0.3rem; }
+.valid-input-list { margin: 0; display: grid; gap: var(--sp-2); }
 .valid-input-row {
-  display: grid; grid-template-columns: minmax(4rem, 8rem) 1fr; gap: 0.6rem;
-  align-items: baseline; font-size: var(--fs-sm);
+  display: grid; grid-template-columns: minmax(4rem, 8rem) 1fr; gap: var(--sp-5);
+  align-items: baseline; font-size: var(--ui-type-label);
 }
-.valid-input-row dt { margin: 0; font-weight: 600; color: hsl(var(--muted-foreground)); overflow-wrap: anywhere; }
+.valid-input-row dt { margin: 0; font-weight: 600; color: var(--ui-color-text-muted); overflow-wrap: anywhere; }
 .valid-input-row dd {
-  margin: 0; display: flex; align-items: center; gap: 0.35rem; min-width: 0;
-  font-family: var(--font-mono); overflow-wrap: anywhere;
+  margin: 0; display: flex; align-items: center; gap: var(--sp-3); min-width: 0;
+  font-family: var(--ui-type-mono-family); overflow-wrap: anywhere;
 }
 .valid-input-swatch {
-  flex: 0 0 auto; width: 0.85rem; height: 0.85rem; border-radius: 0.2rem;
-  border: 1px solid hsl(var(--border)); box-shadow: inset 0 0 0 1px hsl(0 0% 100% / 0.25);
+  flex: 0 0 auto; width: 0.85rem; height: 0.85rem; border-radius: var(--ui-radius-choice);
+  border: 1px solid var(--ui-color-border-default); box-shadow: var(--ui-elevation-control);
 }
 /* ── Script panel - a synthetic-voice step's recorded source text (the TTS
    credential's parameters.script), shown with its voice/model/lang recipe.
    Long scripts start clamped to ~6 lines; [data-script-expand] lifts the
    clamp (valid.ts's delegated handler) and hides itself. */
-.valid-script-note { margin: 0; font-size: var(--fs-sm); color: hsl(var(--muted-foreground)); }
+.valid-script-note { margin: 0; font-size: var(--ui-type-label); color: var(--ui-color-text-muted); }
 .valid-script-text {
-  margin: 0; padding: 0.6rem 0.75rem; border-radius: 0.5rem;
-  background: hsl(var(--background) / 0.6); border: 1px solid hsl(var(--border));
-  font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.5;
+  margin: 0; padding: var(--sp-5) var(--sp-6); border-radius: var(--ui-radius-control);
+  background: color-mix(in srgb, var(--ui-color-surface-canvas) 60%, transparent); border: 1px solid var(--ui-color-border-default);
+  font-family: var(--ui-type-mono-family); font-size: var(--fs-xs); line-height: 1.5;
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .valid-script-text.is-clamped {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
 }
-.valid-script-actions { display: flex; gap: 1.1rem; }
+.valid-script-actions { display: flex; gap: var(--ui-space-panel); }
 
 .valid-panel {
-  display: grid; gap: 0.7rem; align-content: start; min-width: 0;
-  padding: 1rem 1.1rem 1.15rem;
+  display: grid; gap: var(--sp-6); align-content: start; min-width: 0;
+  padding: var(--ui-space-panel) var(--ui-space-panel) calc(var(--ui-space-panel) * 1.25);
   border: 0;
-  border-radius: var(--radius);box-shadow: 0 .3rem 1rem #0002, 0 -1px #fff1;
-  background: hsl(var(--muted) / 0.22);
+  border-radius: var(--ui-radius-panel);box-shadow: var(--ui-elevation-panel);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 22%, transparent);
 }
-.valid-panel > h3 { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: calc(0.95rem * var(--a11y-fs)); }
-.valid-panel > h3 svg { width: 1.05em; height: 1.05em; color: hsl(var(--muted-foreground)); }
+.valid-panel > h3 { display: flex; align-items: center; gap: var(--ui-space-control-inline); margin: 0; font-size: calc(0.95rem * var(--a11y-fs)); }
+.valid-panel > h3 svg { width: 1.05em; height: 1.05em; color: var(--ui-color-text-muted); }
 .valid-panel-summary {
-  display: flex; align-items: center; gap: 0.55rem;
+  display: flex; align-items: center; gap: var(--ui-space-control-inline);
   min-width: 0; cursor: pointer; list-style: none; user-select: none;
 }
 .valid-panel-summary::-webkit-details-marker { display: none; }
-.valid-panel-summary:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 4px; border-radius: 0.35rem; }
-.valid-panel-summary-title { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 0; font-size: calc(0.95rem * var(--a11y-fs)); font-weight: 700; }
-.valid-panel-summary-title svg { width: 1.05em; height: 1.05em; flex: 0 0 auto; color: hsl(var(--muted-foreground)); }
+.valid-panel-summary:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 4px; border-radius: var(--ui-radius-control); }
+.valid-panel-summary-title { display: inline-flex; align-items: center; gap: var(--ui-space-control-inline); min-width: 0; font-size: calc(0.95rem * var(--a11y-fs)); font-weight: 700; }
+.valid-panel-summary-title svg { width: 1.05em; height: 1.05em; flex: 0 0 auto; color: var(--ui-color-text-muted); }
 .valid-panel-summary-meta {
   margin-left: auto; min-width: 0; max-width: 55%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: hsl(var(--muted-foreground));
+  font-family: var(--ui-type-mono-family); font-size: var(--fs-xs); color: var(--ui-color-text-muted);
 }
-.valid-disclosure-chev { display: inline-flex; flex: 0 0 auto; color: hsl(var(--muted-foreground)); transition: transform var(--dur-1) ease; }
+.valid-disclosure-chev { display: inline-flex; flex: 0 0 auto; color: var(--ui-color-text-muted); transition: transform var(--ui-motion-feedback) ease; }
 .valid-disclosure-chev svg { width: 1rem; height: 1rem; }
 .valid-panel-disclosure[open] > summary .valid-disclosure-chev { transform: rotate(180deg); }
-.valid-panel-body { display: grid; gap: 0.7rem; min-width: 0; }
+.valid-panel-body { display: grid; gap: var(--sp-6); min-width: 0; }
 
 /* ── Sources - what went INTO this file, as its credential records it. One row
    per recorded ingredient, read-only. The credit line is the one that matters:
@@ -1003,16 +987,16 @@
    not the same as the source signing for itself, and the panel must never let
    the two look alike. It is set in the muted colour of a caption, not the tone
    of a verdict, because it is neither a pass nor a failure. */
-.valid-sources-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
-.valid-source { display: grid; gap: 0.25rem; min-width: 0; }
-.valid-source + .valid-source { border-top: 1px solid hsl(var(--border)); padding-top: 0.7rem; }
+.valid-sources-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-6); }
+.valid-source { display: grid; gap: var(--sp-2); min-width: 0; }
+.valid-source + .valid-source { border-top: 1px solid var(--ui-color-border-default); padding-top: var(--sp-6); }
 .valid-source-title { margin: 0; font-weight: 600; }
 .valid-source-format {
-  margin-inline-start: 0.35rem; font-weight: 500; font-size: 0.8em;
-  color: hsl(var(--muted-foreground)); text-transform: uppercase; letter-spacing: .04em;
+  margin-inline-start: var(--sp-3); font-weight: 500; font-size: 0.8em;
+  color: var(--ui-color-text-muted); text-transform: uppercase; letter-spacing: .04em;
 }
 .valid-source-credit, .valid-source-changes, .valid-source-link {
-  margin: 0; font-size: 0.9em; color: hsl(var(--muted-foreground));
+  margin: 0; font-size: 0.9em; color: var(--ui-color-text-muted);
 }
 .valid-source-link a { color: inherit; }
 
@@ -1021,23 +1005,23 @@
    is a separate question from whether its credential verified, and neither one
    may borrow the other's colour. The per-row actions are quiet - a credit to
    paste and a link to the bytes - because the panel is still read-only. */
-.valid-sources-summary { margin: 0 0 0.35rem; font-size: 0.95em; }
-.valid-sources-limit { margin: 0 0 0.25rem; font-size: 0.85em; color: hsl(var(--muted-foreground)); }
-.valid-source-actions { margin: 0.35rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.valid-source-act { font-size: 0.85em; padding: 0.2rem 0.55rem; text-decoration: none; }
-.valid-sources-reuse { margin-top: 0.8rem; display: grid; gap: 0.35rem; }
+.valid-sources-summary { margin: 0 0 var(--sp-3); font-size: 0.95em; }
+.valid-sources-limit { margin: 0 0 var(--sp-2); font-size: 0.85em; color: var(--ui-color-text-muted); }
+.valid-source-actions { margin: var(--sp-3) 0 0; display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.valid-source-act { font-size: 0.85em; padding: var(--sp-2) var(--ui-space-control-inline); text-decoration: none; }
+.valid-sources-reuse { margin-top: var(--sp-6); display: grid; gap: var(--sp-3); }
 .valid-sources-reuse-label { font-size: 0.9em; font-weight: 600; }
 .valid-sources-reuse-out:empty { display: none; }
-.valid-reuse-head { margin: 0.4rem 0 0.2rem; font-size: 0.9em; }
-.valid-reuse-issues { margin: 0; padding-inline-start: 1.1rem; display: grid; gap: 0.25rem; font-size: 0.85em; }
+.valid-reuse-head { margin: var(--sp-3) 0 var(--sp-2); font-size: 0.9em; }
+.valid-reuse-issues { margin: 0; padding-inline-start: var(--ui-space-panel); display: grid; gap: var(--sp-2); font-size: 0.85em; }
 .valid-reuse-code {
-  font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.9em;
-  color: hsl(var(--muted-foreground));
+  font-family: var(--ui-type-mono-family); font-size: 0.9em;
+  color: var(--ui-color-text-muted);
 }
 /* The note after a strip: what the clean file no longer carries. Stated, not
    alarmed - the removal is what the person asked for, and the thing that needs
    saying is the credit that left with it. */
-.valid-clean-note { margin: 0.5rem 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+.valid-clean-note { margin: var(--ui-space-control-inline) 0 0; font-size: 0.9em; display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: baseline; }
 
 /* ── Change history - the credential's recorded actions as a timeline. Each row
    is anchored by a colour-coded MAKER pill on the left: Lolly reads bold green
@@ -1047,7 +1031,7 @@
    for the run of steps between the first and last Lolly-credited row (see
    .valid-step--rail-lolly below) - so "the Lolly leg" of a file's journey
    visually pops even inside a longer multi-manifest chain. */
-.valid-steps-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+.valid-steps-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--ui-space-control-inline); }
 .valid-step {
   position: relative;
   /* Fixed pill gutter (not max-content) so the timeline rail below sits at a
@@ -1055,7 +1039,7 @@
   --rail-x: 2.25rem;
   --step-ic: 0.95rem; /* step-icon width - drives the meta indent (goal 3) */
   display: grid; grid-template-columns: 4.5rem 1fr;
-  column-gap: 0.75rem; row-gap: 0.12rem; align-items: start;
+  column-gap: var(--sp-6); row-gap: var(--sp-1); align-items: start;
 }
 /* The connecting rail - a vertical line from each pill's centre to the next, so
    the steps read as one timeline. Drawn behind the pills (which are opaque), so
@@ -1067,8 +1051,8 @@
   position: absolute; z-index: 0;
   left: var(--rail-x); transform: translateX(-50%);
   top: 0.7rem; bottom: -1.25rem;
-  width: 2px; border-radius: 1px;
-  background: hsl(var(--border));
+  width: 2px; border-radius: var(--ui-radius-choice);
+  background: var(--ui-color-border-default);
 }
 /* The rail segment running through the Lolly leg of the journey (between the
    first and last Lolly-credited step, set in valid.ts) - same gradient as the
@@ -1082,57 +1066,57 @@
   grid-row: 1 / span 2; align-self: start; justify-self: center;
   position: relative; z-index: 1; max-width: 100%;
   display: inline-flex; align-items: center; justify-content: center;
-  padding: 0.24rem 0.55rem; border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--ui-space-control-inline); border-radius: var(--ui-radius-pill);
   font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.02em; line-height: 1.1;
   text-align: center; white-space: normal;
-  background: hsl(var(--muted)); color: hsl(var(--foreground));
-  border: 1px solid hsl(var(--border));
+  background: var(--ui-color-surface-muted); color: var(--ui-color-text-default);
+  border: 1px solid var(--ui-color-border-default);
 }
 .valid-step.is-lolly .valid-step-agent {
   background: linear-gradient(150deg, hsl(var(--vf-pass-1)), hsl(var(--vf-pass-2)));
   color: hsl(0 0% 100%); font-weight: 800; border-color: hsl(0 0% 100% / 0.28);
-  box-shadow: 0 4px 12px -5px hsl(var(--vf-pass) / 0.65), inset 0 1px 0 hsl(0 0% 100% / 0.4);
+  box-shadow: var(--ui-elevation-control);
 }
 .valid-step.is-ai .valid-step-agent {
   background: linear-gradient(150deg, hsl(var(--vf-ai-1)), hsl(var(--vf-ai-2)));
   color: hsl(0 0% 100%); font-weight: 700; border-color: hsl(0 0% 100% / 0.28);
-  box-shadow: 0 4px 12px -5px hsl(var(--vf-ai) / 0.65), inset 0 1px 0 hsl(0 0% 100% / 0.4);
+  box-shadow: var(--ui-elevation-control);
 }
-.valid-step-main { min-width: 0; display: grid; gap: 0.12rem; }
+.valid-step-main { min-width: 0; display: grid; gap: var(--sp-1); }
 /* Icon + label. min-height matches the pill so the icon and label text sit on
    the pill's vertical centre; flex-wrap lets the icon drop to its own line if the
    row ever gets too tight, rather than crushing the text. */
 .valid-step-label {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
-  min-height: 1.4rem; font-weight: 650; font-size: var(--fs-lg);
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3);
+  min-height: 1.4rem; font-weight: 650; font-size: var(--ui-type-title);
 }
-.valid-step-ic { display: inline-flex; flex: 0 0 auto; color: hsl(var(--muted-foreground)); }
+.valid-step-ic { display: inline-flex; flex: 0 0 auto; color: var(--ui-color-text-muted); }
 .valid-step-ic svg { width: var(--step-ic); height: var(--step-ic); }
 /* Description / timestamp / source-type sit UNDER the label, indented by the
    icon + its gap so they optically start where the label TEXT does, not under
    the icon. */
 .valid-step-meta,
-.valid-step-src { padding-left: calc(var(--step-ic) + 0.4rem); }
+.valid-step-src { padding-left: calc(var(--step-ic) + var(--sp-3)); }
 /* Small, muted, SUSE Mono - the same engraved-value treatment as every other
    detail on the page (facts, metadata rows, checks), so a step's recorded
    date/description reads as data, not prose. */
 .valid-step-meta {
-  display: flex; flex-wrap: wrap; gap: 0.1rem 0.4rem; align-items: center;
-  font-size: var(--fs-xs); font-family: var(--font-mono);
-  color: hsl(var(--muted-foreground));
+  display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-3); align-items: center;
+  font-size: var(--fs-xs); font-family: var(--ui-type-mono-family);
+  color: var(--ui-color-text-muted);
 }
 .valid-step-dot { opacity: 0.5; }
-.valid-step-src { display: flex; align-items: center; gap: 0.25rem; font-weight: 600; }
+.valid-step-src { display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; }
 .valid-step-src svg { width: 0.9em; height: 0.9em; }
 .valid-step.is-ai .valid-step-src { color: hsl(var(--vf-ai)); }
 
 /* Compact AI chip in the collapsed multi-file summary row. */
 .valid-item-ai {
-  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.25rem;
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--sp-2);
   font-size: var(--fs-2xs); font-weight: 800; letter-spacing: 0.06em;
-  padding: 0.14rem 0.44rem; border-radius: var(--radius-pill); color: hsl(0 0% 100%);
+  padding: var(--sp-1) var(--ui-space-control-inline); border-radius: var(--ui-radius-pill); color: hsl(0 0% 100%);
   background: linear-gradient(120deg, hsl(var(--vf-ai-1)), hsl(var(--vf-ai-2)));
-  box-shadow: 0 2px 8px -3px hsl(var(--vf-ai) / 0.7);
+  box-shadow: var(--ui-elevation-control);
 }
 .valid-item-ai svg { width: 0.85em; height: 0.85em; }
 /* The fingerprint tier's chip ("AI?"), quieter than a declared "AI". */
@@ -1141,107 +1125,102 @@
 /* The assertion log - a video-game "power-on" cascade: rows arm one after
    another, each swept once by a light bar as it lands. The round mark chip
    reads like a HUD status light. */
-.valid-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.valid-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-6); }
 .valid-check {
   position: relative; overflow: hidden;
-  display: flex; gap: 1rem; align-items: baseline;
-  padding: 0.5rem 0.65rem;
-  border-radius: var(--radius);
-  background: hsl(var(--background) / .5);
-  box-shadow: inset 0 .061rem .35rem #0001, 0 1px #fff1, 0 -1px #0001;
-  font-size: var(--fs-lg);
+  display: flex; gap: var(--ui-space-panel); align-items: baseline;
+  padding: var(--ui-space-control-inline) var(--sp-5);
+  border-radius: var(--ui-radius-panel);
+  background: color-mix(in srgb, var(--ui-color-surface-canvas) 50%, transparent);
+  box-shadow: var(--ui-elevation-control);
+  font-size: var(--ui-type-title);
   opacity: 0;
   animation: valid-check-in 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
-  animation-delay: calc(var(--i, 0) * 55ms + var(--dur-2));
+  animation-delay: calc(var(--i, 0) * 55ms + var(--ui-motion-overlay));
 }
 .valid-check::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(100deg, transparent 20%, hsl(var(--vf-pass) / 0.22) 50%, transparent 80%);
   translate: -110% 0;
   animation: valid-check-sweep 0.7s ease-out forwards;
-  animation-delay: calc(var(--i, 0) * 55ms + var(--dur-2));
+  animation-delay: calc(var(--i, 0) * 55ms + var(--ui-motion-overlay));
 }
 .valid-check--bad { background: hsl(var(--vf-fail) / 0.09); }
 .valid-check-mark {
   flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  width: 1.4rem; height: 1.4rem; border-radius: var(--radius-round);
-  font-size: var(--fs-sm); font-weight: 700; line-height: 1;
-box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 1px #fff1;
+  width: 1.4rem; height: 1.4rem; border-radius: var(--ui-radius-choice-round);
+  font-size: var(--ui-type-label); font-weight: 700; line-height: 1;
+box-shadow: var(--ui-elevation-control);
 }
 .valid-check--ok .valid-check-mark { color: hsl(var(--vf-pass)); background: hsl(var(--vf-pass) / 0.3);  }
-.valid-check--ok code{color:hsl(var(--vf-pass) / 1); margin-left:-5px}
+.valid-check--ok code{color:hsl(var(--vf-pass) / 1); margin-left:calc(var(--sp-2) * -1)}
 .valid-check--bad .valid-check-mark { color: hsl(var(--vf-fail)); background: hsl(var(--vf-fail) / 0.16); }
-.valid-check--info .valid-check-mark { color: hsl(var(--muted-foreground)); background: hsl(var(--muted-foreground) / 0.14); }
-.valid-check-text { display: flex; flex-wrap: wrap; gap: 0.15rem 0.6rem; align-items: baseline; }
-.valid-check-text code {     font-weight: 700;;font-size: var(--fs-sm); font-family: var(--font-mono); background: hsl(var(--muted)); padding: 0.05rem 0.4rem; border-radius: 0.3rem; }
-.valid-check-text > span { color: hsl(var(--muted-foreground)); }
-.valid-check--bad .valid-check-text > span { color: hsl(var(--foreground)); }
+.valid-check--info .valid-check-mark { color: var(--ui-color-text-muted); background: color-mix(in srgb, var(--ui-color-text-muted) 14.000000000000002%, transparent); }
+.valid-check-text { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-5); align-items: baseline; }
+.valid-check-text code {     font-weight: 700;;font-size: var(--ui-type-label); font-family: var(--ui-type-mono-family); background: var(--ui-color-surface-muted); padding: calc(var(--sp-1) / 2) var(--sp-3); border-radius: var(--ui-radius-choice); }
+.valid-check-text > span { color: var(--ui-color-text-muted); }
+.valid-check--bad .valid-check-text > span { color: var(--ui-color-text-default); }
 
 @keyframes valid-check-in { from { opacity: 0; translate: -10px 0; } to { opacity: 1; translate: 0 0; } }
 @keyframes valid-check-sweep { to { translate: 110% 0; } }
 
 /* On-device footnote - a professional callout: a lock chip (nothing was
    uploaded) beside the explanatory prose. */
-/* .valid-note's border is the literally-identical line folded into the shared
-   `.note`/`.plat-note`/`.valid-note` selector in components.css (component
-   audit rec 13) - border-radius stays local (a different calc() than the
-   shared `.note`'s var(--radius); folding it in would nudge this pixel
-   value, a visual change this pass avoids). */
 .valid-note {
-  display: flex; gap: 0.75rem; align-items: flex-start;
-  margin: 0; padding: 0.8rem 0.95rem;
-  border-radius: var(--radius) ;
-  background: hsl(var(--muted) / 0.4);
+  display: flex; gap: var(--sp-6); align-items: flex-start;
+  margin: 0; padding: var(--sp-6) var(--ui-space-panel);
+  border-radius: var(--ui-radius-panel);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent);
 }
 .valid-note-ic {
   flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
-  width: 2rem; height: 2rem; border-radius: 0.55rem;
+  width: 2rem; height: 2rem; border-radius: var(--ui-radius-control);
   background: hsl(var(--vf-pass) / 0.14); color: hsl(var(--vf-pass));
 }
 .valid-note-ic svg { width: 1.1rem; height: 1.1rem; }
-.valid-note-body { margin: 0; font-size: var(--fs-md); line-height: 1.55; color: hsl(var(--muted-foreground)); max-width: 72ch; }
-.valid-note-body strong { color: hsl(var(--foreground)); font-weight: 600; }
+.valid-note-body { margin: 0; font-size: var(--ui-type-body); line-height: 1.55; color: var(--ui-color-text-muted); max-width: 72ch; }
+.valid-note-body strong { color: var(--ui-color-text-default); font-weight: 600; }
 .valid-note-body a { color: hsl(var(--vf-pass)); text-decoration: underline; text-underline-offset: 2px; }
-.valid-note-body code { font-family: var(--font-mono); font-size: 0.92em; }
+.valid-note-body code { font-family: var(--ui-type-mono-family); font-size: 0.92em; }
 
 /* ─── Multi-file: a stack of collapsible reports ─────────────────────────────
    Dropping several files at once yields one <details> per file. The <summary>
    is the always-visible "highlights" glance (state badge + name + signer + a
    mini scorecard); the body holds the full report, borderless since the card
    already frames it. */
-.valid-reports-list { display: grid; gap: 0.75rem; }
+.valid-reports-list { display: grid; gap: var(--sp-6); }
 .valid-batch-overview {
-  display: grid; gap: 0.8rem; margin-bottom: 1rem; padding: 1rem;
-  border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+  display: grid; gap: var(--sp-6); margin-bottom: var(--ui-space-panel); padding: var(--ui-space-panel);
+  border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-card);
   background:
-    radial-gradient(100% 130% at 0% 0%, hsl(var(--primary) / 0.08), transparent 62%),
-    hsl(var(--card));
-  box-shadow: 0 18px 40px -34px hsl(0 0% 0% / 0.6);
+    radial-gradient(100% 130% at 0% 0%, color-mix(in srgb, var(--ui-color-action-primary) 8%, transparent), transparent 62%),
+    var(--ui-color-surface-raised);
+  box-shadow: var(--ui-elevation-panel);
 }
-.valid-batch-heading { display: flex; justify-content: space-between; gap: 0.8rem; align-items: baseline; }
-.valid-batch-heading > span { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: hsl(var(--muted-foreground)); }
-.valid-batch-heading > strong { font-family: var(--font-mono); font-size: var(--fs-sm); }
-.valid-batch-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.65rem; }
+.valid-batch-heading { display: flex; justify-content: space-between; gap: var(--sp-6); align-items: baseline; }
+.valid-batch-heading > span { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ui-color-text-muted); }
+.valid-batch-heading > strong { font-family: var(--ui-type-mono-family); font-size: var(--ui-type-label); }
+.valid-batch-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-5); }
 .valid-batch-stat {
   --batch-tone: var(--muted-foreground);
   position: relative; overflow: hidden; isolation: isolate;
-  display: grid; gap: 0.12rem; justify-items: start; min-width: 0;
-  padding: 0.75rem 0.85rem; border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) * 0.85);
-  background: linear-gradient(160deg, hsl(var(--card)), hsl(var(--muted) / 0.55));
-  color: hsl(var(--foreground)); text-align: left; cursor: pointer;
-  box-shadow: inset 0 1px hsl(0 0% 100% / 0.25), 0 8px 18px -16px hsl(var(--batch-tone) / 0.65);
-  transition: translate var(--dur-1) ease, border-color var(--dur-1) ease, box-shadow var(--dur-1) ease;
+  display: grid; gap: var(--sp-1); justify-items: start; min-width: 0;
+  padding: var(--sp-6); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control);
+  background: linear-gradient(160deg, var(--ui-color-surface-raised), color-mix(in srgb, var(--ui-color-surface-muted) 55.00000000000001%, transparent));
+  color: var(--ui-color-text-default); text-align: left; cursor: pointer;
+  box-shadow: var(--ui-elevation-control);
+  transition: translate var(--ui-motion-feedback) ease, border-color var(--ui-motion-feedback) ease, box-shadow var(--ui-motion-feedback) ease;
 }
 .valid-batch-stat::before {
   content: ''; position: absolute; inset: 0 auto 0 0; width: 3px;
   background: hsl(var(--batch-tone)); opacity: 0.82;
 }
 .valid-batch-stat strong { font-size: calc(1.35rem * var(--a11y-fs)); line-height: 1; }
-.valid-batch-stat span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); }
+.valid-batch-stat span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-xs); color: var(--ui-color-text-muted); }
 .valid-batch-stat:hover:not(:disabled) { translate: 0 -2px; border-color: hsl(var(--batch-tone) / 0.48); }
-.valid-batch-stat.is-active { border-color: hsl(var(--batch-tone) / 0.62); box-shadow: inset 0 1px hsl(0 0% 100% / 0.32), 0 10px 24px -15px hsl(var(--batch-tone) / 0.72); }
-.valid-batch-stat:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.valid-batch-stat.is-active { border-color: hsl(var(--batch-tone) / 0.62); box-shadow: var(--ui-elevation-control); }
+.valid-batch-stat:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 2px; }
 .valid-batch-stat:disabled { cursor: default; opacity: 0.46; }
 .valid-batch-stat.is-good { --batch-tone: var(--vf-pass); }
 .valid-batch-stat.is-attention { --batch-tone: var(--vf-fail); }
@@ -1249,40 +1228,40 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
 .valid-batch-stat.is-none { --batch-tone: var(--muted-foreground); }
 .valid-reports-bar {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 0.75rem; margin-bottom: 0.85rem;
+  gap: var(--sp-6); margin-bottom: var(--sp-6);
 }
-.valid-reports-count { font-size: var(--fs-lg); font-weight: 600; color: hsl(var(--muted-foreground)); }
-.valid-reports-actions { display: flex; gap: 0.4rem; }
-.valid-reports-toggle { font-size: var(--fs-sm); padding: 3px 10px; }
+.valid-reports-count { font-size: var(--ui-type-title); font-weight: 600; color: var(--ui-color-text-muted); }
+.valid-reports-actions { display: flex; gap: var(--sp-3); }
+.valid-reports-toggle { font-size: var(--ui-type-label); padding: var(--sp-1) var(--sp-5); }
 
 .valid-item {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--ui-color-border-default);
   border-left-width: 3px;
-  border-radius: var(--radius);
-  background: hsl(var(--card));
+  border-radius: var(--ui-radius-card);
+  background: var(--ui-color-surface-raised);
   overflow: hidden;
 }
 .valid-item.is-good { border-left-color: hsl(var(--vf-pass) / 0.7); }
 .valid-item.is-bad  { border-left-color: hsl(var(--vf-fail) / 0.7); }
 .valid-item.is-warn { border-left-color: hsl(var(--vf-warn) / 0.7); }
 .valid-item.is-none,
-.valid-item.is-busy { border-left-color: hsl(var(--border)); }
-.valid-item[open] { box-shadow: 0 10px 28px -22px hsl(0 0% 0% / 0.55); }
+.valid-item.is-busy { border-left-color: var(--ui-color-border-default); }
+.valid-item[open] { box-shadow: var(--ui-elevation-panel); }
  
 
 .valid-item-summary {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 0.55rem 0.75rem;
-  padding: 0.7rem 0.9rem;
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--ui-space-control-inline) var(--sp-6);
+  padding: var(--sp-6) var(--ui-space-panel);
   cursor: pointer; list-style: none; user-select: none;
 }
 .valid-item-summary::-webkit-details-marker { display: none; }
-.valid-item-summary:hover { background: hsl(var(--accent) / 0.5); }
-.valid-item-summary:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: -2px; }
+.valid-item-summary:hover { background: color-mix(in srgb, var(--ui-color-selection-surface) 50%, transparent); }
+.valid-item-summary:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: -2px; }
 
 .valid-item-badge {
   flex: 0 0 auto;
   font-size: calc(0.74rem * var(--a11y-fs)); font-weight: 700; white-space: nowrap;
-  padding: 0.15rem 0.6rem; border-radius: var(--radius-pill);
+  padding: var(--sp-1) var(--sp-5); border-radius: var(--ui-radius-pill);
   border: 1px solid currentColor;
 }
 /* The "good" summary badge echoes the hero chips: a glossy green fill that lifts
@@ -1290,12 +1269,12 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
 .valid-item-badge.is-good {
   color: hsl(0 0% 100%); border-color: hsl(0 0% 100% / 0.3);
   background: linear-gradient(163deg, hsl(var(--vf-pass-1)), hsl(var(--vf-pass-2)));
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.45), 0 4px 10px -5px hsl(var(--vf-pass) / 0.7);
+  box-shadow: var(--ui-elevation-control);
 }
 .valid-item-badge.is-bad  { color: hsl(var(--vf-fail)); background: hsl(var(--vf-fail) / 0.12); }
 .valid-item-badge.is-warn { color: hsl(var(--vf-warn)); background: hsl(var(--vf-warn) / 0.14); }
-.valid-item-badge.is-none { color: hsl(var(--muted-foreground)); background: hsl(var(--muted) / 0.5); }
-.valid-item-badge.is-busy { color: hsl(var(--muted-foreground)); background: hsl(var(--muted) / 0.4); border-style: dashed; }
+.valid-item-badge.is-none { color: var(--ui-color-text-muted); background: color-mix(in srgb, var(--ui-color-surface-muted) 50%, transparent); }
+.valid-item-badge.is-busy { color: var(--ui-color-text-muted); background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent); border-style: dashed; }
 
 /* Maker pill - the "who made it" lead on an intact collapsed row, mirroring the
    timeline's maker pills: Lolly reads the same glossy green as the good badge,
@@ -1303,42 +1282,42 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
 .valid-item-maker {
   flex: 0 0 auto; white-space: nowrap;
   font-size: calc(0.74rem * var(--a11y-fs)); font-weight: 700;
-  padding: 0.15rem 0.6rem; border-radius: var(--radius-pill);
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--muted)); color: hsl(var(--foreground));
+  padding: var(--sp-1) var(--sp-5); border-radius: var(--ui-radius-pill);
+  border: 1px solid var(--ui-color-border-default);
+  background: var(--ui-color-surface-muted); color: var(--ui-color-text-default);
 }
 .valid-item-maker.is-lolly {
   color: hsl(0 0% 100%); font-weight: 800; border-color: hsl(0 0% 100% / 0.3);
   background: linear-gradient(163deg, hsl(var(--vf-pass-1)), hsl(var(--vf-pass-2)));
-  box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.45), 0 4px 10px -5px hsl(var(--vf-pass) / 0.7);
+  box-shadow: var(--ui-elevation-control);
 }
 
 .valid-item-name {
   flex: 1 1 8rem; min-width: 0;
-  display: flex; align-items: center; gap: 0.4rem;
-  font-size: var(--fs-lg); font-weight: 600; color: hsl(var(--foreground));
+  display: flex; align-items: center; gap: var(--sp-3);
+  font-size: var(--ui-type-title); font-weight: 600; color: var(--ui-color-text-default);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .valid-item-signer {
-  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.3rem;
-  max-width: 15rem; font-size: var(--fs-sm); color: hsl(var(--muted-foreground));
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--sp-2);
+  max-width: 15rem; font-size: var(--ui-type-label); color: var(--ui-color-text-muted);
 }
-.valid-item-signer svg { width: var(--fs-lg); height: var(--fs-lg); flex: 0 0 auto; }
+.valid-item-signer svg { width: var(--ui-type-title); height: var(--ui-type-title); flex: 0 0 auto; }
 .valid-item-signer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.valid-item-chev { flex: 0 0 auto; display: inline-flex; color: hsl(var(--muted-foreground)); transition: transform var(--dur-1) ease; }
+.valid-item-chev { flex: 0 0 auto; display: inline-flex; color: var(--ui-color-text-muted); transition: transform var(--ui-motion-feedback) ease; }
 .valid-item-chev svg { width: calc(18px * var(--a11y-fs)); height: calc(18px * var(--a11y-fs)); }
 .valid-item[open] .valid-item-chev { transform: rotate(180deg); }
 
-.valid-item-body { padding: 0 0.9rem 0.95rem; }
+.valid-item-body { padding: 0 var(--ui-space-panel) var(--ui-space-panel); }
 /* The card is the frame now - drop the report's own border/box so it doesn't nest. */
 .valid-item-body .valid-result { border: 0; background: transparent; padding: 0; border-radius: 0; box-shadow: none; }
 
 /* Mini scorecard in the summary - icon-only pips, colour still = state. A quiet
    flat echo of the hero chips (no gloss/float - this rides a dense summary row). */
-.valid-score--mini { margin: 0; gap: 0.3rem; flex: 0 0 auto; }
+.valid-score--mini { margin: 0; gap: var(--sp-2); flex: 0 0 auto; }
 .valid-score--mini .valid-score-pip {
-  width: auto; min-height: 0; padding: 0.28rem; border-radius: 0.4rem;
+  width: auto; min-height: 0; padding: var(--sp-2); border-radius: var(--ui-radius-control);
   border: 1px solid transparent;
 }
 .valid-score--mini .valid-score-label,
@@ -1347,22 +1326,20 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
 .valid-score--mini .valid-score-pip.is-pass { color: hsl(var(--vf-pass)); background: hsl(var(--vf-pass) / 0.16); }
 .valid-score--mini .valid-score-pip.is-fail { color: hsl(var(--vf-fail)); background: hsl(var(--vf-fail) / 0.16); }
 .valid-score--mini .valid-score-pip.is-warn { color: hsl(var(--vf-warn)); background: hsl(var(--vf-warn) / 0.18); }
-.valid-score--mini .valid-score-pip.is-na { color: hsl(var(--muted-foreground)); background: hsl(var(--muted) / 0.5); opacity: 0.6; }
+.valid-score--mini .valid-score-pip.is-na { color: var(--ui-color-text-muted); background: color-mix(in srgb, var(--ui-color-surface-muted) 50%, transparent); opacity: 0.6; }
 
 /* Phone hierarchy: preserve the tactile badge language, but show a decisive
    first glance rather than every piece of evidence at once. Details remain a
    single tap away, and batch rows keep only enough pips to support triage. */
 @media (max-width: 639px) {
-  .verify-view .platform-layout { max-width: 100%; padding-inline: 0.8rem; }
-  .valid-layout.has-results { padding-top: 4rem; }
-  .valid-layout.has-results .plat-header { align-items: flex-start; flex-wrap: wrap; }
+  .verify-view .platform-layout { max-width: 100%; padding-inline: var(--sp-6); padding: var(--ui-space-page) var(--ui-space-panel) calc(var(--ui-space-page) * 3); }
   .valid-layout.has-results .valid-header-actions { width: 100%; margin-left: 0; }
   .valid-layout.has-results .valid-header-actions .btn { flex: 1 1 9rem; min-height: 42px; }
-  .valid-result { padding: 1rem; gap: 0.9rem; }
+  .valid-result { padding: var(--ui-space-panel); gap: var(--ui-space-panel); box-shadow: var(--ui-elevation-panel); }
   .valid-preview--lg,
   .valid-preview--lg img,
   .valid-preview--lg video { max-height: 17rem; }
-  .valid-hero-title { align-items: flex-start; gap: 0.7rem; }
+  .valid-hero-title { align-items: flex-start; gap: var(--sp-6); }
   .valid-hero-icon,
   .valid-result.is-valid .valid-hero-icon,
   .valid-result.is-trusted .valid-hero-icon,
@@ -1373,14 +1350,14 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
 
   .valid-score-wrap .valid-score {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem; margin-top: 0.35rem;
+    gap: var(--ui-space-control-inline); margin-top: var(--sp-3);
   }
   .valid-score-wrap .valid-score:not(.valid-score--mini) .valid-score-pip { width: auto; min-height: 6rem; }
   .valid-score-wrap:not(.is-expanded) .valid-score:not(.valid-score--mini) > :nth-child(n + 5) { display: none; }
   .valid-score-more { display: block; }
 
   .valid-panel,
-  .valid-meta { padding: 0.85rem 0.9rem; box-shadow: 0 0.22rem 0.8rem hsl(0 0% 0% / 0.12); }
+  .valid-meta { padding: var(--sp-6) var(--ui-space-panel); box-shadow: var(--ui-elevation-panel); }
   .valid-panel-summary { min-height: 2.25rem; }
   .valid-meta-head {
     display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1392,11 +1369,11 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
   .valid-meta-head .valid-meta-sensitive { grid-column: 1 / -1; grid-row: 2; justify-self: start; }
   .valid-panel-summary-meta { max-width: 40%; }
   .valid-meta-count { margin-left: auto; }
-  .valid-meta-body { margin-top: 0.75rem; }
-  .valid-meta-grid { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+  .valid-meta-body { margin-top: var(--sp-6); }
+  .valid-meta-grid { grid-template-columns: minmax(0, 1fr); gap: calc(var(--ui-space-panel) * 1.25); }
   .valid-meta-group--desc {  margin-bottom:var(--sp-4)}
   .valid-meta-location { grid-column: auto; }
-  .valid-meta-loc-read { align-items: flex-start; flex-direction: column; gap: 0.45rem; }
+  .valid-meta-loc-read { align-items: flex-start; flex-direction: column; gap: var(--ui-space-control-inline); }
 
   .valid-batch-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .valid-batch-stat.is-all { grid-column: 1 / -1; }
@@ -1408,7 +1385,7 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
   .valid-item-summary .valid-score--mini { flex-basis: calc(100% - 2rem); order: 4; }
   .valid-item-summary .valid-score--mini > :nth-child(n + 7) { display: none; }
   .valid-item-chev { margin-left: auto; }
-  .valid-item-body { padding-inline: 0.65rem; }
+  .valid-item-body { padding-inline: var(--sp-5); }
 }
 
 /* ─── Content Credentials identity (profile) ────────────────────────────────
@@ -1466,54 +1443,53 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
   .valid-check { opacity: 1; translate: none; }
   .valid-check::after { display: none; }
 }
-}
 
 /* ── Claim / add-your-credentials - the embed write flow folded into /verify.
    A full-width action card (a sibling of .valid-panels, so masonry leaves it
    alone) under each file's report: a viewer adds their own author/©/licence,
    layered on top of any existing chain, then the file re-verifies in place. */
 .valid-claim {
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--muted) / 0.14);
+  border: 1px solid var(--ui-color-border-default);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 14.000000000000002%, transparent);
 }
-.valid-claim[open] { background: hsl(var(--muted) / 0.22); }
+.valid-claim[open] { background: color-mix(in srgb, var(--ui-color-surface-muted) 22%, transparent); }
 .valid-claim-summary {
-  display: flex; align-items: center; gap: 0.55rem; cursor: pointer; list-style: none;
+  display: flex; align-items: center; gap: var(--ui-space-control-inline); cursor: pointer; list-style: none;
   font-weight: 700; font-size: calc(0.92rem * var(--a11y-fs));
 }
 .valid-claim-summary::-webkit-details-marker { display: none; }
-.valid-claim-ic { display: inline-flex; color: hsl(var(--primary)); }
+.valid-claim-ic { display: inline-flex; color: var(--ui-color-action-primary); }
 .valid-claim-ic svg { width: calc(1.05em * var(--a11y-fs)); height: calc(1.05em * var(--a11y-fs)); }
 .valid-claim-title { flex: 1 1 auto; }
-.valid-claim-chev { display: inline-flex; color: hsl(var(--muted-foreground)); transition: transform var(--dur-2) ease; }
+.valid-claim-chev { display: inline-flex; color: var(--ui-color-text-muted); transition: transform var(--ui-motion-overlay) ease; }
 .valid-claim-chev svg { width: 1.1em; height: 1.1em; }
 .valid-claim[open] .valid-claim-chev { transform: rotate(180deg); }
-.valid-claim-body { display: grid; gap: 0.7rem; margin-top: 0.85rem; }
-.valid-claim-note { margin: 0; font-size: var(--fs-md); color: hsl(var(--muted-foreground)); }
-.valid-claim-field { display: grid; gap: 0.3rem; }
-.valid-claim-field > span { font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: hsl(var(--muted-foreground)); }
+.valid-claim-body { display: grid; gap: var(--sp-6); margin-top: var(--sp-6); }
+.valid-claim-note { margin: 0; font-size: var(--ui-type-body); color: var(--ui-color-text-muted); }
+.valid-claim-field { display: grid; gap: var(--sp-2); }
+.valid-claim-field > span { font-size: var(--ui-type-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ui-color-text-muted); }
 .valid-claim-hint { font-weight: 500; text-transform: none; letter-spacing: 0; opacity: 0.75; }
 .valid-claim-input, .valid-claim-select {
-  width: 100%; padding: 0.5rem 0.65rem; font: inherit; font-size: var(--fs-lg);
-  color: hsl(var(--foreground)); background: hsl(var(--background));
-  border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+  width: 100%; padding: var(--ui-space-control-block) var(--ui-space-control-inline); font: inherit; font-size: var(--ui-type-title);
+  color: var(--ui-color-text-default); background: var(--ui-color-surface-canvas);
+  border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control);
 }
-.valid-claim-input:focus, .valid-claim-select:focus { outline: none; border-color: hsl(var(--primary) / 0.6); box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15); }
-.valid-claim-check { display: flex; align-items: flex-start; gap: 0.5rem; font-size: var(--fs-lg); cursor: pointer; }
-.valid-claim-check input { margin-top: 0.15rem; accent-color: hsl(var(--primary)); }
-.valid-claim-actions { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.2rem; }
+.valid-claim-input:focus, .valid-claim-select:focus { outline: none; border-color: color-mix(in srgb, var(--ui-color-action-primary) 60%, transparent); box-shadow: var(--ui-effect-focus-halo); }
+.valid-claim-check { display: flex; align-items: flex-start; gap: var(--ui-space-control-inline); font-size: var(--ui-type-title); cursor: pointer; }
+.valid-claim-check input { margin-top: var(--sp-1); accent-color: var(--ui-color-action-primary); }
+.valid-claim-actions { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-2); }
 .valid-claim-sign { flex: 0 0 auto; }
-.valid-claim-status { font-size: var(--fs-md); color: hsl(var(--muted-foreground)); }
+.valid-claim-status { font-size: var(--ui-type-body); color: var(--ui-color-text-muted); }
 .valid-claim-status.is-err { color: hsl(var(--destructive)); }
-.valid-claim-foot { margin: 0; font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); opacity: 0.85; }
+.valid-claim-foot { margin: 0; font-size: var(--fs-xs); color: var(--ui-color-text-muted); opacity: 0.85; }
 /* The in-place confirmation banner shown at the top of a re-verified file. */
 .valid-claim-done {
-  display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.9rem;
-  padding: 0.7rem 0.9rem; border-radius: var(--radius);
+  display: flex; align-items: center; gap: var(--ui-space-control-inline); margin-bottom: var(--ui-space-panel);
+  padding: var(--sp-6) var(--ui-space-panel); border-radius: var(--ui-radius-panel);
   font-size: calc(0.88rem * var(--a11y-fs)); font-weight: 600;
-  color: hsl(var(--foreground)); background: hsl(140 60% 45% / 0.16); border: 1px solid hsl(140 55% 45% / 0.4);
+  color: var(--ui-color-text-default); background: hsl(140 60% 45% / 0.16); border: 1px solid hsl(140 55% 45% / 0.4);
 }
-.valid-claim-done-ic { display: inline-flex; width: 1.3em; height: 1.3em; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: hsl(140 55% 40%); color: #fff; font-size: 0.85em; flex: 0 0 auto; }
+.valid-claim-done-ic { display: inline-flex; width: 1.3em; height: 1.3em; align-items: center; justify-content: center; border-radius: var(--ui-radius-pill); background: hsl(140 55% 40%); color: #fff; font-size: 0.85em; flex: 0 0 auto; }
 
 /* ── C2PA 2.4 text bindings: the paste affordance, the carrier notes, the
    AI-disclosure panel and the text preview (plans/105 M2) ────────────────────
@@ -1524,27 +1500,27 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
 /* The "Paste text" fallback under the drop zone. Deliberately OUTSIDE
    .valid-drop: that element is itself a button (click → file picker), so a
    control nested inside it would open the picker on the way past. */
-.valid-paste { margin-top: 0.65rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+.valid-paste { margin-top: var(--sp-5); display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-5); }
 .valid-paste-panel {
-  width: 100%; display: grid; gap: 0.6rem;
-  padding: 0.9rem 1rem; border: 1px solid hsl(var(--border)); border-radius: var(--radius);
-  background: hsl(var(--card));
+  width: 100%; display: grid; gap: var(--sp-5);
+  padding: var(--ui-space-panel); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel);
+  background: var(--ui-color-surface-raised);
 }
-.valid-paste-label { font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: hsl(var(--muted-foreground)); }
+.valid-paste-label { font-size: var(--ui-type-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ui-color-text-muted); }
 .valid-paste-text {
   width: 100%; resize: vertical; min-height: 8rem;
-  padding: 0.6rem 0.7rem; font-family: var(--font-mono); font-size: var(--fs-md); line-height: 1.5;
-  color: hsl(var(--foreground)); background: hsl(var(--background));
-  border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+  padding: var(--ui-space-control-block) var(--ui-space-control-inline); font-family: var(--ui-type-mono-family); font-size: var(--ui-type-body); line-height: 1.5;
+  color: var(--ui-color-text-default); background: var(--ui-color-surface-canvas);
+  border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control);
 }
-.valid-paste-text:focus { outline: none; border-color: hsl(var(--primary) / 0.6); box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15); }
-.valid-paste-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-.valid-paste-foot { margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: hsl(var(--muted-foreground)); max-width: 72ch; }
+.valid-paste-text:focus { outline: none; border-color: color-mix(in srgb, var(--ui-color-action-primary) 60%, transparent); box-shadow: var(--ui-effect-focus-halo); }
+.valid-paste-actions { display: flex; gap: var(--sp-5); flex-wrap: wrap; }
+.valid-paste-foot { margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--ui-color-text-muted); max-width: 72ch; }
 /* Touch: the chip and the two panel buttons are real 44px targets (the chip measured
    30px). Height only - .btn keeps its own padding and label width. */
 @media (pointer: coarse) {
   .valid-paste-open,
-  .valid-paste-actions .btn { min-height: 44px; padding-inline: 1rem; }
+  .valid-paste-actions .btn { min-height: 44px; padding-inline: var(--ui-space-panel); }
 }
 
 /* Carrier notes. Neutral by default - a text credential that could not be used
@@ -1552,32 +1528,32 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
    clipboard, and the copy says so; only the one shape where content really does
    sit outside the credential takes the amber --vf-warn hue. Same box grammar as
    .valid-wm so the page keeps one note treatment. */
-.valid-notes { display: grid; gap: 0.7rem; }
+.valid-notes { display: grid; gap: var(--sp-6); }
 .valid-note {
-  display: flex; gap: 0.75rem; align-items: flex-start;
-  padding: 0.8rem 0.95rem;
-  border: 1px solid hsl(var(--border)); border-radius: 0.75rem;
-  background: hsl(var(--muted) / 0.4);
+  display: flex; gap: var(--sp-6); align-items: flex-start;
+  padding: var(--sp-6) var(--ui-space-panel);
+  border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 40%, transparent);
 }
 .valid-note-ic {
   flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
-  width: 2rem; height: 2rem; border-radius: 0.55rem;
-  background: hsl(var(--muted-foreground) / 0.16); color: hsl(var(--muted-foreground));
+  width: 2rem; height: 2rem; border-radius: var(--ui-radius-control);
+  background: color-mix(in srgb, var(--ui-color-text-muted) 16%, transparent); color: var(--ui-color-text-muted);
 }
 .valid-note-ic svg { width: 1.15rem; height: 1.15rem; }
-.valid-note-text { display: grid; gap: 0.2rem; min-width: 0; }
-.valid-note-text strong { font-size: var(--fs-lg); font-weight: 650; color: hsl(var(--foreground)); }
-.valid-note-text > span { font-size: var(--fs-md); line-height: 1.5; color: hsl(var(--muted-foreground)); max-width: 72ch; }
+.valid-note-text { display: grid; gap: var(--sp-2); min-width: 0; }
+.valid-note-text strong { font-size: var(--ui-type-title); font-weight: 650; color: var(--ui-color-text-default); }
+.valid-note-text > span { font-size: var(--ui-type-body); line-height: 1.5; color: var(--ui-color-text-muted); max-width: 72ch; }
 /* The credential's own reference, shown as inert monospace text - never a link.
    It is a claim made by an unverified document about where its credential
    lives; overflow-wrap keeps a hostile 2 KB URL inside the card. */
 .valid-note-url {
-  font-family: var(--font-mono); font-size: calc(0.74rem * var(--a11y-fs));
-  color: hsl(var(--foreground)); background: hsl(var(--background) / 0.7);
-  border: 1px solid hsl(var(--border)); border-radius: 0.4rem;
-  padding: 0.15rem 0.4rem; overflow-wrap: anywhere; justify-self: start; max-width: 100%;
+  font-family: var(--ui-type-mono-family); font-size: calc(0.74rem * var(--a11y-fs));
+  color: var(--ui-color-text-default); background: color-mix(in srgb, var(--ui-color-surface-canvas) 70%, transparent);
+  border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control);
+  padding: var(--sp-1) var(--sp-3); overflow-wrap: anywhere; justify-self: start; max-width: 100%;
 }
-.valid-note-detail { font-size: var(--fs-sm); line-height: 1.5; color: hsl(var(--muted-foreground)); opacity: 0.9; overflow-wrap: anywhere; }
+.valid-note-detail { font-size: var(--ui-type-label); line-height: 1.5; color: var(--ui-color-text-muted); opacity: 0.9; overflow-wrap: anywhere; }
 .valid-note-action { flex: 0 0 auto; align-self: center; white-space: nowrap; }
 .valid-note--warn { border-color: hsl(var(--vf-warn) / 0.4); background: hsl(var(--vf-warn) / 0.08); }
 .valid-note--warn .valid-note-ic { background: hsl(var(--vf-warn) / 0.22); color: hsl(30 75% 30%); }
@@ -1588,31 +1564,31 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
    a declaration of AI-generated CONTENT, this one records which model the signer
    says was involved. */
 .valid-aidecl {
-  display: flex; gap: 0.75rem; align-items: flex-start;
-  padding: 0.85rem 1rem;
-  border: 1px solid hsl(var(--vf-ai-1) / 0.5); border-radius: 0.75rem;
+  display: flex; gap: var(--sp-6); align-items: flex-start;
+  padding: var(--sp-6) var(--ui-space-panel);
+  border: 1px solid hsl(var(--vf-ai-1) / 0.5); border-radius: var(--ui-radius-panel);
   background: hsl(var(--vf-ai-1) / 0.1);
 }
 .valid-aidecl-ic {
   flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
-  width: 2rem; height: 2rem; border-radius: 0.55rem;
+  width: 2rem; height: 2rem; border-radius: var(--ui-radius-control);
   background: linear-gradient(150deg, hsl(var(--vf-ai-1)), hsl(var(--vf-ai-2))); color: hsl(0 0% 100%);
 }
 .valid-aidecl-ic svg { width: 1.15rem; height: 1.15rem; }
-.valid-aidecl-text { display: grid; gap: 0.3rem; min-width: 0; }
-.valid-aidecl-text > strong { font-size: var(--fs-lg); font-weight: 650; color: hsl(var(--foreground)); }
-.valid-aidecl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
-.valid-aidecl-row { display: grid; gap: 0.1rem; }
-.valid-aidecl-model { font-size: calc(0.84rem * var(--a11y-fs)); color: hsl(var(--foreground)); overflow-wrap: anywhere; }
-.valid-aidecl-fact { font-size: calc(0.76rem * var(--a11y-fs)); color: hsl(var(--muted-foreground)); overflow-wrap: anywhere; }
+.valid-aidecl-text { display: grid; gap: var(--sp-2); min-width: 0; }
+.valid-aidecl-text > strong { font-size: var(--ui-type-title); font-weight: 650; color: var(--ui-color-text-default); }
+.valid-aidecl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.valid-aidecl-row { display: grid; gap: var(--sp-1); }
+.valid-aidecl-model { font-size: calc(0.84rem * var(--a11y-fs)); color: var(--ui-color-text-default); overflow-wrap: anywhere; }
+.valid-aidecl-fact { font-size: calc(0.76rem * var(--a11y-fs)); color: var(--ui-color-text-muted); overflow-wrap: anywhere; }
 /* Muted only when it carries no grammar voice - valid.css loads lazily AFTER
    guide.css, so an unguarded color here would out-cascade the composed voice. */
-.valid-aidecl-note { font-size: var(--fs-sm); line-height: 1.5; max-width: 72ch; }
-.valid-aidecl-note:not(.guide-hint):not(.guide-warn) { color: hsl(var(--muted-foreground)); }
+.valid-aidecl-note { font-size: var(--ui-type-label); line-height: 1.5; max-width: 72ch; }
+.valid-aidecl-note:not(.guide-hint):not(.guide-warn) { color: var(--ui-color-text-muted); }
 .valid-aidecl-tag {
   flex: 0 0 auto; align-self: flex-start;
   font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.06em;
-  padding: 0.18rem 0.5rem; border-radius: var(--radius-pill); color: hsl(0 0% 100%);
+  padding: var(--sp-1) var(--ui-space-control-inline); border-radius: var(--ui-radius-pill); color: hsl(0 0% 100%);
   background: linear-gradient(120deg, hsl(var(--vf-ai-1)), hsl(var(--vf-ai-2)));
 }
 
@@ -1620,35 +1596,35 @@ box-shadow: inset 0 -.13em .5em currentcolor, 0 .2rem .5rem -.2rem #0002, 0 0 0 
    the .valid-preview slot the image/video/pdf previews use, so the hero layout
    is untouched. Scrolls inside its own box - a single 2 KB line must never widen
    the card. */
-.valid-preview.is-text { display: block; max-height: 22rem; overflow: auto; border-radius: var(--radius); border: 1px solid hsl(var(--border)); background: hsl(var(--background) / 0.6); }
+.valid-preview.is-text { display: block; max-height: 22rem; overflow: auto; border-radius: var(--ui-radius-panel); border: 1px solid var(--ui-color-border-default); background: color-mix(in srgb, var(--ui-color-surface-canvas) 60%, transparent); }
 .valid-preview-text {
-  margin: 0; padding: 0.7rem 0.85rem;
-  font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.55;
-  white-space: pre-wrap; overflow-wrap: anywhere; color: hsl(var(--foreground));
+  margin: 0; padding: var(--sp-6);
+  font-family: var(--ui-type-mono-family); font-size: var(--fs-xs); line-height: 1.55;
+  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ui-color-text-default);
 }
-.valid-preview.is-text figcaption { padding: 0 0.85rem 0.6rem; font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); }
+.valid-preview.is-text figcaption { padding: 0 var(--sp-6) var(--sp-5); font-size: var(--fs-xs); color: var(--ui-color-text-muted); }
 
 /* Text AI-likelihood: the extracted text shown for inspection with its genAI
    tells highlighted, graded by confidence - a soft amber for a stylistic
    (heuristic) tell, a firmer red for a byte-level (artifact) tell. */
 .valid-tsig-extract {
-  margin: 0.5rem 0; max-height: 30vh; overflow: auto;
+  margin: var(--ui-space-control-inline) 0; max-height: 30vh; overflow: auto;
   white-space: pre-wrap; overflow-wrap: anywhere; text-align: left;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: var(--fs-sm); line-height: 1.5;
-  background: hsl(var(--muted) / 0.3); padding: 0.6rem 0.7rem;
-  border-radius: calc(var(--radius) * 0.6); color: hsl(var(--foreground));
+  font-family: var(--ui-type-mono-family);
+  font-size: var(--ui-type-label); line-height: 1.5;
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 30%, transparent); padding: var(--sp-5) var(--sp-6);
+  border-radius: var(--ui-radius-control); color: var(--ui-color-text-default);
 }
-mark.valid-hl { color: inherit; border-radius: 2px; padding: 0 0.06em; }
+mark.valid-hl { color: inherit; border-radius: var(--ui-radius-choice); padding: 0 0.06em; }
 /* An invisible/format character, made visible: a tiny named chip (ZWSP, RLO,
    TAG...) with the codepoint in its tooltip. Mirrors .cat-invis so verify and
    the catalog show identical evidence; select-none keeps the label out of a
    copy of the extract. */
 .valid-invis {
   display: inline-block;
-  padding: 0 3px;
-  margin: 0 1px;
-  border-radius: var(--radius-xs);
+  padding: 0 var(--sp-1);
+  margin: 0 calc(var(--sp-1) / 2);
+  border-radius: var(--ui-radius-choice);
   background: hsl(275 65% 55% / .18);
   color: hsl(275 45% 45%);
   font-size: 0.72em;
@@ -1664,20 +1640,20 @@ mark.valid-hl { color: inherit; border-radius: 2px; padding: 0 0.06em; }
 
 /* ── The completeness receipt + the unwitnessed ask ── */
 .valid-receipt {
-  margin-top: 14px;
-  padding: 10px 14px;
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  background: hsl(var(--muted) / 0.3);
+  margin-top: var(--sp-6);
+  padding: var(--sp-5) var(--sp-6);
+  border: 1px solid var(--ui-color-border-default);
+  border-radius: var(--ui-radius-panel);
+  background: color-mix(in srgb, var(--ui-color-surface-muted) 30%, transparent);
 }
-.valid-receipt-list { margin-top: 6px; font-size: var(--fs-sm); }
-.valid-receipt-list > summary { cursor: pointer; color: hsl(var(--muted-foreground)); font-weight: 600; user-select: none; }
-.valid-receipt-list ul { margin: 6px 0 0; padding-left: 1.2em; }
-.valid-receipt-list li { margin: 3px 0; }
+.valid-receipt-list { margin-top: var(--sp-3); font-size: var(--ui-type-label); }
+.valid-receipt-list > summary { cursor: pointer; color: var(--ui-color-text-muted); font-weight: 600; user-select: none; }
+.valid-receipt-list ul { margin: var(--sp-3) 0 0; padding-left: 1.2em; }
+.valid-receipt-list li { margin: var(--sp-1) 0; }
 .valid-receipt-ran::marker { content: '✓  '; color: hsl(145 55% 42%); }
-.valid-receipt-not::marker { content: '–  '; color: hsl(var(--muted-foreground)); }
-.valid-receipt-actions { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin-top: 10px; }
-.valid-askcred { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-5); }
+.valid-receipt-not::marker { content: '–  '; color: var(--ui-color-text-muted); }
+.valid-receipt-actions { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin-top: var(--sp-5); }
+.valid-askcred { margin-top: var(--sp-5); display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-5); }
 .valid-askcred .guide-absent { margin: 0; }
 /* svgIcon() emits no width/height (the giant-sparkle trap) - size the glyphs. */
 .valid-askcred .btn svg, .valid-receipt-actions .btn svg {
@@ -1685,7 +1661,7 @@ mark.valid-hl { color: inherit; border-radius: 2px; padding: 0 0.06em; }
   height: var(--fs-xl);
   flex-shrink: 0;
 }
-.valid-askcred .btn, .valid-receipt-actions .btn { display: inline-flex; align-items: center; gap: 7px; }
+.valid-askcred .btn, .valid-receipt-actions .btn { display: inline-flex; align-items: center; gap: var(--sp-3); }
 mark.valid-hl--heuristic { background: hsl(42 92% 55% / 0.38); }
 mark.valid-hl--artifact { background: hsl(0 82% 60% / 0.42); }
 /* The graded 5-step temperature scale (heatBucket: t1 coolest, t5 hottest) -
@@ -1697,42 +1673,42 @@ mark.valid-hl--t4 { background: hsl(15 86% 55% / 0.42); }
 mark.valid-hl--t5 { background: hsl(0 82% 55% / 0.48); }
 /* The heat-bar minimap: one flex cell per rolling window, its --h (0-1) driving
    both hue (amber → red) and opacity, so a cold cell fades to near-nothing. */
-.valid-tsig-heatbar { display: flex; gap: 1px; height: 8px; margin: 0.45rem 0 0.15rem; border-radius: var(--radius-xs); overflow: hidden; }
+.valid-tsig-heatbar { display: flex; gap: calc(var(--sp-1) / 2); height: 8px; margin: var(--ui-space-control-inline) 0 var(--sp-1); border-radius: var(--ui-radius-choice); overflow: hidden; }
 .valid-tsig-heatbar i { flex: 1 1 0; background: hsl(calc(45 - var(--h, 0) * 45) 90% 52% / max(0.10, calc(var(--h, 0) * 0.85))); }
-.valid-tsig-heatbar-cap { display: block; font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); margin-bottom: 0.2rem; }
+.valid-tsig-heatbar-cap { display: block; font-size: var(--fs-xs); color: var(--ui-color-text-muted); margin-bottom: var(--sp-2); }
 .valid-tsig-band {
-  font-size: var(--fs-xs); padding: 0.05rem 0.45rem;
-  border-radius: var(--radius-pill); background: hsl(var(--muted) / 0.6); vertical-align: middle;
+  font-size: var(--fs-xs); padding: calc(var(--sp-1) / 2) var(--ui-space-control-inline);
+  border-radius: var(--ui-radius-pill); background: color-mix(in srgb, var(--ui-color-surface-muted) 60%, transparent); vertical-align: middle;
 }
 .valid-tsig[data-tsig-band="strong"] .valid-tsig-band { background: hsl(0 70% 55% / 0.3); }
-.valid-tsig-guess { margin: 0.4rem 0 0; font-size: var(--fs-md); opacity: 0.92; }
-.valid-tsig-cands { margin: 0.25rem 0 0; font-size: var(--fs-sm); color: hsl(var(--muted-foreground)); }
-.valid-tsig-legend { display: block; font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); margin: 0.15rem 0 0.2rem; }
+.valid-tsig-guess { margin: var(--sp-3) 0 0; font-size: var(--ui-type-body); opacity: 0.92; }
+.valid-tsig-cands { margin: var(--sp-2) 0 0; font-size: var(--ui-type-label); color: var(--ui-color-text-muted); }
+.valid-tsig-legend { display: block; font-size: var(--fs-xs); color: var(--ui-color-text-muted); margin: var(--sp-1) 0 var(--sp-2); }
 
 /* The score donut: a centred hero gauge with the rating inside the ring. Colour
    follows the band; the number wears text tokens, never the series colour. */
-.valid-tsig-gauge-wrap { display: flex; align-items: center; justify-content: center; gap: 0.7rem; margin: 0.55rem 0 0.3rem; }
+.valid-tsig-gauge-wrap { display: flex; align-items: center; justify-content: center; gap: var(--sp-6); margin: var(--ui-space-control-inline) 0 var(--sp-2); }
 .valid-tsig-gauge { width: calc(64px * var(--a11y-fs)); height: calc(64px * var(--a11y-fs)); }
-.valid-tsig-gauge-copy { display: grid; gap: 0.08rem; }
-.valid-tsig-gauge-copy strong { font-size: var(--fs-sm); }
-.valid-tsig-gauge-copy small { font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); }
+.valid-tsig-gauge-copy { display: grid; gap: calc(var(--sp-1) / 2); }
+.valid-tsig-gauge-copy strong { font-size: var(--ui-type-label); }
+.valid-tsig-gauge-copy small { font-size: var(--fs-xs); color: var(--ui-color-text-muted); }
 .valid-tsig-details { min-width: 0; }
 .valid-tsig-details > summary {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 0; border-top: 1px solid hsl(var(--vf-ai-1) / 0.2);
+  display: flex; align-items: center; gap: var(--ui-space-control-inline);
+  padding: var(--ui-space-control-inline) 0; border-top: 1px solid hsl(var(--vf-ai-1) / 0.2);
   cursor: pointer; list-style: none; user-select: none;
-  font-size: var(--fs-sm); font-weight: 700;
+  font-size: var(--ui-type-label); font-weight: 700;
 }
 .valid-tsig-details > summary::-webkit-details-marker { display: none; }
-.valid-tsig-details > summary:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; border-radius: 0.35rem; }
-.valid-tsig-details-count { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 500; color: hsl(var(--muted-foreground)); }
-.valid-tsig-details-body { display: grid; gap: 0.25rem; min-width: 0; padding-bottom: 0.35rem; }
+.valid-tsig-details > summary:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 2px; border-radius: var(--ui-radius-control); }
+.valid-tsig-details-count { margin-left: auto; font-family: var(--ui-type-mono-family); font-size: var(--fs-xs); font-weight: 500; color: var(--ui-color-text-muted); }
+.valid-tsig-details-body { display: grid; gap: var(--sp-2); min-width: 0; padding-bottom: var(--sp-3); }
 .valid-tsig-gauge circle { fill: none; stroke-width: 6; }
-.valid-tsig-gauge-num { font-size: 17px; font-weight: 700; text-anchor: middle; fill: hsl(var(--foreground)); }
-.valid-tsig-gauge-den { font-size: 8.5px; text-anchor: middle; fill: hsl(var(--muted-foreground)); }
-.valid-tsig-gauge-track { stroke: hsl(var(--muted-foreground) / 0.25); }
+.valid-tsig-gauge-num { font-size: 17px; font-weight: 700; text-anchor: middle; fill: var(--ui-color-text-default); }
+.valid-tsig-gauge-den { font-size: 8.5px; text-anchor: middle; fill: var(--ui-color-text-muted); }
+.valid-tsig-gauge-track { stroke: color-mix(in srgb, var(--ui-color-text-muted) 25%, transparent); }
 .valid-tsig-gauge-fill { stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
-.valid-tsig-gauge[data-band="none"] .valid-tsig-gauge-fill { stroke: hsl(var(--muted-foreground) / 0.6); }
+.valid-tsig-gauge[data-band="none"] .valid-tsig-gauge-fill { stroke: color-mix(in srgb, var(--ui-color-text-muted) 60%, transparent); }
 .valid-tsig-gauge[data-band="weak"] .valid-tsig-gauge-fill { stroke: hsl(45 90% 42%); }
 .valid-tsig-gauge[data-band="notable"] .valid-tsig-gauge-fill { stroke: hsl(30 90% 45%); }
 .valid-tsig-gauge[data-band="strong"] .valid-tsig-gauge-fill { stroke: hsl(0 82% 50%); }
@@ -1742,18 +1718,18 @@ mark.valid-hl--t5 { background: hsl(0 82% 55% / 0.48); }
 :root:not([data-theme="light"]) .valid-tsig-gauge[data-band="notable"] .valid-tsig-gauge-fill { stroke: hsl(30 90% 55%); }
 :root[data-theme="dark"] .valid-tsig-gauge[data-band="strong"] .valid-tsig-gauge-fill,
 :root:not([data-theme="light"]) .valid-tsig-gauge[data-band="strong"] .valid-tsig-gauge-fill { stroke: hsl(0 82% 60%); }
-.valid-tsig-ocr { margin-top: 0.6rem; }
+.valid-tsig-ocr { margin-top: var(--sp-5); }
 /* The read button's icon: svgIcon() emits no width/height attributes, so an
    unsized rule here would let the sparkle blow up to the SVG default size. */
 .valid-ocr-read { display: inline-flex; align-items: center; gap: 0.45em; }
 .valid-ocr-read svg { width: var(--fs-xl); height: var(--fs-xl); flex: none; }
-.valid-ocr-result { margin-top: 0.5rem; }
+.valid-ocr-result { margin-top: var(--ui-space-control-inline); }
 
 /* On-image OCR overlay: box every read line, colour the flagged ones by the same
    confidence grade as the text highlights. Stroke stays crisp at any display size. */
 .valid-ocr-overlay { z-index: 2; }
 .valid-ocr-box { fill: transparent; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.valid-ocr-box--plain { stroke: hsl(var(--muted-foreground) / 0.35); }
+.valid-ocr-box--plain { stroke: color-mix(in srgb, var(--ui-color-text-muted) 35%, transparent); }
 .valid-ocr-box--heuristic { stroke: hsl(42 92% 48%); fill: hsl(42 92% 55% / 0.16); }
 .valid-ocr-box--artifact { stroke: hsl(0 82% 52%); fill: hsl(0 82% 60% / 0.20); }
 /* Temperature strokes for flagged lines - the same t1–t5 scale as the extract
@@ -1771,7 +1747,7 @@ mark.valid-hl--t5 { background: hsl(0 82% 55% / 0.48); }
 /* Loading: the message prominent and centred ABOVE the spinning Lolly mark
    (the inlined icon.svg from lib/lolly-mark.ts). Three layers spin about their
    own centres at the ask-send cadences; both motion prefs still them. */
-.valid-loading { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 2.2rem 1rem; text-align: center; }
+.valid-loading { display: flex; flex-direction: column; align-items: center; gap: var(--ui-space-panel); padding: calc(var(--ui-space-panel) * 2) var(--ui-space-panel); text-align: center; }
 .valid-loading-text { margin: 0; font-size: calc(1.15rem * var(--a11y-fs)); font-weight: 700; }
 .valid-loading-mark { display: block; width: calc(64px * var(--a11y-fs)); height: calc(64px * var(--a11y-fs)); }
 .valid-loading-mark svg { width: 100%; height: 100%; display: block; }
@@ -1790,3 +1766,4 @@ mark.valid-hl--t5 { background: hsl(0 82% 55% / 0.48); }
 html[data-a11y-motion="reduce"] .valid-loading-mark .lolly-mark__spin-1,
 html[data-a11y-motion="reduce"] .valid-loading-mark .lolly-mark__spin-2,
 html[data-a11y-motion="reduce"] .valid-loading-mark .lolly-mark__spin-3 { animation: none; }
+}

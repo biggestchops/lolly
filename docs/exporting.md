@@ -91,7 +91,7 @@ Useful for a storyboard, a thumbnail sheet, a contact sheet for review or a soci
 
 Sampling is taken at the **midpoint** of each interval rather than at the edges, because the first instant of a sequence is often an enter transition that hasn't faded in yet and the last is the state after every clip has ended - endpoint sampling would spend two of your frames on near-blank ones. The count is capped at **64** (a contact sheet is for a human to read), and anything nonsensical typed into the field falls back to `1` rather than failing the export. Each frame is an ordinary still, so Content Credentials, the imprint, physical units and DPI all behave exactly as they do for a single export.
 
-The **Frames** field is the way to get a sheet today. The engine reserves a matching `cuts` URL param, but no shell reads it from a link yet, so a shared link always reopens on the playhead frame - see [URL Mode](/info/url-mode.html#contact-sheets-cuts).
+The **Frames** field is the way to get a sheet today. The engine reserves a matching `cuts` URL param, but no shell reads it from a link yet, so a shared link always reopens on the playhead frame - see [URL Mode](/info/url-parameters.html#contact-sheets-cuts).
 
 ## Multi-page PDF
 
@@ -157,7 +157,7 @@ Choose **Export course** from a supported tool, a project folder or a selection.
 - <!--i:file--> Select Website, SCORM 1.2, SCORM 2004 4th Edition, or an experimental xAPI target. Check the actual content and ZIP size, then save and download the checked version.
 - <!--i:check--> Completion requires acknowledging every required lesson and selecting Finish. The website player stores progress in the browser; an LMS package connects to its receiving LMS.
 
-![The export panel on a Design deck with SCORM (LMS) chosen](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
+![The export panel on a Design deck with SCORM (LMS) chosen](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour%26format%3Dscorm%26options&width=1440&height=900&dpi=192&waitMs=3500&css=.fc-insp%7Bdisplay%3Anone!important%7D.edge-dock-slot--fill%7Bflex%3A1%201%20auto!important%3Bheight%3Aauto!important%3Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D.export-popup.is-floating%7Bheight%3Aauto!important%7D.export-popup-body%7Bmax-height%3Anone!important%3Boverflow%3Avisible!important%7D&drive=click:.edge-dock-tab%3Ahas-text%28%22Export%22%29;wait:600&cropSelector=.export-popup&walker=1&format=svg&dark=1&filename=exp-scorm)
 
 The package includes its finished content and does not require a Lolly account. Extract a Website ZIP onto an HTTP(S) host; import an LMS ZIP without changing its contents. Test the intended destination before distributing the course.
 

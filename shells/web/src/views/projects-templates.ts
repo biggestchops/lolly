@@ -173,12 +173,13 @@ export function templateMenuHtml(item: TemplateItem): string {
     : menuItemHtml('tpl-start', START_ICON, tRaw('Start {tool} with this', { tool: item.toolName }));
   return [
     menuItemHtml('tpl-use', USE_ICON, t('Use')),
+    menuItemHtml('tpl-rules', SHARE_ICON, t('Share with rules')),
     startRow,
     item.own ? menuItemHtml('tpl-rename', EDIT_ICON, t('Rename')) : '',
     item.own ? menuItemHtml('tpl-describe', EDIT_ICON, t('Edit description')) : '',
     item.own ? '' : menuItemHtml('tpl-copy', COPY_ICON, t('Make a copy')),
     item.own ? menuItemHtml('tpl-export', DOWNLOAD_ICON, t('Export as file (.json)')) : '',
-    item.own ? menuItemHtml('tpl-share', SHARE_ICON, t('Share as .lolly')) : '',
+    item.own ? menuItemHtml('tpl-share', SHARE_ICON, t('Share template (.lolly)')) : '',
     !item.own && !item.hidden ? menuItemHtml('tpl-hide', HIDE_ICON, t('Hide')) : '',
     item.hidden ? menuItemHtml('tpl-restore', SHOW_ICON, t('Restore')) : '',
     item.own ? menuItemHtml('tpl-delete', TRASH_ICON, t('Delete'), { danger: true }) : '',
@@ -442,6 +443,13 @@ export function createTemplatesCollection(ctx: TemplatesCtx): TemplatesCollectio
     const item = byRef.get(ref);
     if (!item) return;
     if (act === 'tpl-use') { window.location.hash = templateUseHref(item); return; }
+    if (act === 'tpl-rules') {
+      const values = await seedOf(item);
+      if (!values) { ctx.announce(t('That template could not be read.')); return; }
+      const { launchRulesCopy } = await import('../lib/rules-launch.ts');
+      await launchRulesCopy(item.toolId, values, item.name);
+      return;
+    }
     if (act === 'tpl-start' || act === 'tpl-start-off') {
       await setStartWith(ctx.host, item.toolId, act === 'tpl-start' ? item.ref : null);
       ctx.announce(act === 'tpl-start'

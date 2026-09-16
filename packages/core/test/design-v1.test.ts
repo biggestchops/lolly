@@ -84,3 +84,11 @@ test('Design inspection fails honestly when boxes is not an array', () => {
   assert.equal(report.findings[0]!.id, 'design.boxes.invalid');
   assert.equal(report.layers.length, 0);
 });
+
+
+test('Design inspection accepts numeric block values restored from a URL', () => {
+  const numeric = { id: 'clip', kind: 'text', x: 10, y: 20, w: 640, h: 360, start: 2, dur: 3 };
+  const strings = Object.fromEntries(Object.entries(numeric).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v]));
+  assert.deepEqual(inspectDesignV1([strings]), inspectDesignV1([numeric]));
+  assert.equal(inspectDesignV1([{ ...strings, w: '640px' }]).valid, false);
+});

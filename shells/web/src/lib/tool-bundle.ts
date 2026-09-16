@@ -4,7 +4,7 @@ import { sha256Hex } from '@lolly/engine';
 import { currentLang } from '../i18n.ts';
 import { getToolIntegrity } from '../catalog/integrity.ts';
 import { instanceFetch, instancePath } from './instance.ts';
-import { INSTALLED_CACHE, isToolInstalled } from './installed-tools.ts';
+import { INSTALLED_CACHE, isToolInstalled, getInstalledToolVersion } from './installed-tools.ts';
 import { looksLikeHtmlDocument, looksLikeHtmlDocumentBytes } from '../bridge/tool-file-guard.ts';
 import { localAssetPaths } from './offline-pins.ts';
 import type { LollyToolBundle, LollyToolTrust } from './lolly-pack.ts';
@@ -51,7 +51,10 @@ export async function resolveToolBundle(
   // including media/fonts that are not named in the receiving catalog envelope.
   if (await isToolInstalled(toolId).catch(() => false)) {
     const cache = await caches.open(INSTALLED_CACHE);
-    const prefix = new URL(instancePath(`/tools/${toolId}/`), location.origin).href;
+    const installed = await getInstalledToolVersion(toolId, String(manifest.version));
+    if (manifest.designTool && !installed?.artifactDigest) return null;
+    const root = installed?.artifactDigest ? `/tools/${toolId}/.revisions/${installed.artifactDigest}/` : instancePath(`/tools/${toolId}/`);
+    const prefix = new URL(root, location.origin).href;
     const files: Record<string, Uint8Array> = {};
     for (const request of await cache.keys()) {
       if (!request.url.startsWith(prefix)) continue;

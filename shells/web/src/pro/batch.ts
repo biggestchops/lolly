@@ -33,6 +33,7 @@ export interface BatchRow {
    */
   uid?: string;
   toolId: string;
+  artifactDigest?: string;
   values: Record<string, unknown>;
   unit?: string;
   dpi?: number;
@@ -313,7 +314,7 @@ export async function runBatch<F = unknown>(
   // the tool-id fallback exactly as before.
   const autoStem = async (row: BatchRow): Promise<string | null> => {
     try {
-      const { manifest } = await getTool(row.toolId);
+      const { manifest } = await getTool(row.toolId, row.artifactDigest);
       return deriveExportFilename(manifest as Parameters<typeof deriveExportFilename>[0], row.values);
     } catch { return null; }
   };

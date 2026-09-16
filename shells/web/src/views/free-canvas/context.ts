@@ -46,6 +46,7 @@ import type { keysOps } from './keys.ts';
 import type { editorStateOps } from './editor-state.ts';
 
 export interface FcCtx {
+  rules?: import('../design-rules.ts').DesignRulesHandle;
   // ---- state (was: closure variables of initFreeCanvas) ----
   opts: InitFreeCanvasOpts;
   viewEl: InitFreeCanvasOpts['viewEl'];
@@ -284,7 +285,7 @@ export interface FcCtx {
   mo: MutationObserver;
   timelineAutoOpened: boolean;
   unsub: undefined | (() => void);
-  pendingImport: { file: File; scenes: boolean; } | null;
+  pendingImport: { file: File; scenes: boolean; rules?: boolean; } | null;
   portCfg: BoxFieldConfig;
   modelPort: ModelPort;
   artboardPort: ArtboardPort;

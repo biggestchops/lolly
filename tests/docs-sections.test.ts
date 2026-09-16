@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: MPL-2.0
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {headingId} from '@lolly-tools/docs-render';
+import {SECTION_MOVES,movedSectionLinks} from '../docs/section-moves.ts';
+
+test('every moved section bookmark has a real destination heading and a no-script link', () => {
+  for (const [source,moves] of Object.entries(SECTION_MOVES)) {
+    const html = movedSectionLinks(source,slug=>`/info/${slug}.html`);
+    for (const [anchor,target] of Object.entries(moves)) {
+      const md = readFileSync(new URL(`../docs/${target.slug}.md`,import.meta.url),'utf8');
+      let fenced = false; const headings:string[]=[];
+      for (const line of md.split('\n')) {
+        if (/^\s*```/.test(line)) fenced=!fenced;
+        if (fenced) continue;
+        const heading = /^#{1,4} (.*)$/.exec(line);
+        if (heading) headings.push(headingId(heading[1]!,headings.length));
+      }
+      assert.ok(headings.includes(target.anchor),`${source}#${anchor} points to a missing heading in ${target.slug}`);
+      assert.ok(html.includes(`id="${anchor}"`),`${source}#${anchor} has no fallback anchor`);
+      assert.ok(html.includes(`href="/info/${target.slug}.html#${target.anchor}"`));
+    }
+    assert.match(html,/Object\.prototype\.hasOwnProperty\.call/);
+  }
+});

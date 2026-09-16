@@ -5,6 +5,9 @@ mod menu;
 mod native_transport;
 mod nearby;
 mod oauth;
+mod presentation_windows;
+#[cfg(feature = "presentation-probe")]
+mod presentation_probe;
 mod render_server;
 mod reword;
 mod remote_fetch;
@@ -62,6 +65,7 @@ fn run_gui(mut context: tauri::Context, search_provider: bool) {
             window.visible = false;
         }
     }
+    let windows = presentation_windows::prepare(&mut context);
     tauri::Builder::default()
         // Remember only spatial state. VISIBLE is deliberately excluded: a saved
         // visible window must never make a D-Bus --search-provider launch flash.
@@ -114,7 +118,7 @@ fn run_gui(mut context: tauri::Context, search_provider: bool) {
         // push fills in the dynamic parts (folders, utilities, theme state).
         .menu(|handle| menu::build_menu(handle, &menu::MenuData::default()))
         .on_menu_event(|app, event| menu::handle_event(app, &event))
-        .invoke_handler(tauri::generate_handler![
+        .invoke_handler(presentation_windows::main_commands(tauri::generate_handler![
             desktop_integration::desktop_poll_events,
             desktop_integration::desktop_read_file,
             desktop_integration::desktop_pick_color,
@@ -177,12 +181,13 @@ fn run_gui(mut context: tauri::Context, search_provider: bool) {
             native_transport::native_close,
             native_transport::native_poll_inbound,
             native_transport::native_adopt
-        ])
+        ]))
         // Desktop integration boot (plans/174): first-launch argv (a .lolly
         // double-clicked before the app ran, a lolly:// link that launched us),
         // the clipboard-lens tray, and - on Linux - the D-Bus search/automation
         // surfaces. All additive; failures degrade to a plain window, logged.
         .setup(move |app| {
+            presentation_windows::build(app, &windows)?;
             let handle = app.handle().clone();
             if !search_provider {
                 desktop_integration::classify_argv(

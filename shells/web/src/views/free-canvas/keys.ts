@@ -217,6 +217,7 @@ export function chromeKeysOff(_fc: FcCtx, e: KeyboardEvent): boolean {
   return off(deepActiveElement() as HTMLElement | null);
 }
 export function onKey(fc: FcCtx, e: KeyboardEvent): void {
+  if (fc.rules?.key(e)) return;
   const { NO_TEXT_KINDS, canFlip, cfg, designChrome, stageEl, timeCfg } = fc;
   if (fc.disposed || document.querySelector('dialog[open]')) return;
   // The timeline panel binds its keys on its OWN root and owns them while focus is

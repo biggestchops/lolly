@@ -444,7 +444,7 @@ export function mountFeaturedRow(
 
   // The current UI theme decides which transparent-background looks are legible (a
   // reverse/white look on a light tile - or a dark look on a dark tile - would vanish).
-  const darkTheme = /^(dark|suse)$/.test(currentTheme());
+  const darkTheme = currentTheme() !== 'light';
 
   // Pause signals for the AMBIENT drift only (drag + inertia are user-driven and
   // ignore these). The drift runs only when ALL are clear.

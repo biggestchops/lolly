@@ -118,9 +118,9 @@ export function startOcrJob(
   const controller = new AbortController();
   const job = startJob({ title: t('Reading text'), cancel: () => controller.abort() });
   void (async (): Promise<void> => {
-    await job.started;
-    if (job.cancelled) return;
     try {
+      await job.started;
+      if (job.cancelled) return;
       const result = await runOcrJob(host, req, {
         signal: controller.signal,
         isCancelled: () => job.cancelled,
@@ -137,6 +137,7 @@ export function startOcrJob(
       job.fail(err);
       hooks.onError?.(err);
     } finally {
+      job.settle();
       // Every terminal path, cancel included - a caller's "Reading…" button gets
       // its label back whatever happened. A throwing hook must not strand the job.
       try { hooks.onSettled?.(); } catch { /* a hook must never break the driver */ }

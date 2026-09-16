@@ -40,7 +40,7 @@ pnpm run build:web            # the web shell the browser tier drives
 pnpm --silent run cli install-browser
 ```
 
-See [CLI → What the CLI can render](/info/cli.html#what-the-cli-can-render) for the full tier split. Signing is applied on this side of that split either way - section 6 explains what that means for a render that escalates to the browser. (The browser-tier case is implemented but has not been exercised against a real browser at the time of writing; the browser-free path in every example below has.)
+See [CLI → What the CLI can render](/info/cli-rendering.html#what-the-cli-can-render) for the full tier split. Signing is applied on this side of that split either way - section 6 explains what that means for a render that escalates to the browser. (The browser-tier case is implemented but has not been exercised against a real browser at the time of writing; the browser-free path in every example below has.)
 
 ---
 
@@ -118,7 +118,7 @@ cat leaf.pem issuers.pem > signing-chain.pem
 chmod 600 signing-key.pem
 ```
 
-Accepted key formats: PKCS#8 PEM (`-----BEGIN PRIVATE KEY-----`), encrypted PKCS#8 PEM (`-----BEGIN ENCRYPTED PRIVATE KEY-----`), legacy SEC1 EC PEM (`-----BEGIN EC PRIVATE KEY-----`, what `openssl ecparam` writes) and raw PKCS#8 DER. Accepted chain formats: one or more concatenated `CERTIFICATE` PEM blocks **leaf first**, or a single DER certificate.
+Accepted key formats: PKCS#8 PEM, encrypted PKCS#8 PEM, legacy SEC1 EC PEM (what `openssl ecparam` writes) and raw PKCS#8 DER. Accepted chain formats: one or more concatenated `CERTIFICATE` PEM blocks **leaf first**, or a single DER certificate.
 
 ### 4.2 Where to put the key
 

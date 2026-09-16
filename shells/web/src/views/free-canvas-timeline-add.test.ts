@@ -68,13 +68,14 @@ function pointerEvent(type: string, x: number, y: number): MouseEvent {
  *  fields (so `timeCfg` resolves) and three add-kinds that differ in what they seed. */
 function canvasCfg(): Record<string, unknown> {
   return {
-    idField: 'id', xField: 'x', yField: 'y', wField: 'w', hField: 'h', rotationField: 'rot',
+    idField: 'id', kindField: 'kind', xField: 'x', yField: 'y', wField: 'w', hField: 'h', rotationField: 'rot',
     fillField: 'bg', opacityField: 'opacity', shapeField: 'shape', radiusField: 'radius',
     textField: 'text', groupField: 'group', clipField: 'clip', imageField: 'image', fitField: 'fit',
     startField: 'start', durField: 'dur', clipInField: 'clipIn', speedField: 'speed',
     enterField: 'enter', exitField: 'exit', enterMsField: 'enterMs', exitMsField: 'exitMs',
     muteField: 'mute', laneField: 'lane',
     addKinds: [
+      { id: 'text', label: 'Text', seed: { kind: 'text', text: 'Text', font: 'sans' } },
       { id: 'audio', label: 'Audio', seed: { kind: 'audio' } },
       { id: 'image', label: 'Image', seed: { kind: 'image', fit: 'contain' } },
       // The magnetic-row kinds: `card` authors its OWN length, `clip` deliberately does not.
@@ -407,4 +408,25 @@ test('a rail dragged before the timeline opened comes back to exactly where it w
         'the rail returns to the spot the user dragged it to, not to wherever the column left it');
     } finally { f.destroy(); }
   });
+});
+
+
+test('Text adds an editable, timed overlay in one click with the manifest font', async () => {
+  const f = mount();
+  try {
+    await openPanel(f);
+    const text = f.stageEl.querySelector('.tl-add-text');
+    assert.ok(text);
+    click(text);
+    const rows = f.boxes();
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0]!.kind, 'text');
+    assert.equal(rows[0]!.font, 'sans');
+    assert.equal(rows[0]!.start, 0);
+    assert.equal(rows[0]!.dur, 3);
+    assert.equal(rows[0]!.lane, '');
+    assert.equal(rows[0]!.w, 600);
+    assert.equal(rows[0]!.h, 200);
+    assert.equal(f.armed(), false);
+  } finally { f.destroy(); }
 });

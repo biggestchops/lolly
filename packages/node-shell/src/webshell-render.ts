@@ -695,3 +695,26 @@ export async function renderVideoViaScreenshot(
     await ctx.close();
   }
 }
+
+/** A portable tool is installed in an isolated reader, then rendered by the ordinary export path. */
+export async function renderToolPackageViaWebShell(bytes: Uint8Array, toolId: string, query: string, format: string): Promise<Uint8Array> {
+  const base = await webShellBase();
+  const browser = await getBrowser();
+  const context = await browser.newContext({serviceWorkers:'block',acceptDownloads:true});
+  try {
+    const page = await context.newPage();
+    await page.goto(base, {waitUntil:'load',timeout:30_000});
+    await page.waitForLoadState('networkidle');
+    await page.evaluate(data => {
+      const transfer = new DataTransfer(); transfer.items.add(new File([new Uint8Array(data)], 'tool.lolly'));
+      (document.querySelector('#view') || document.body).dispatchEvent(new DragEvent('drop', {bubbles:true,cancelable:true,dataTransfer:transfer}));
+    }, [...bytes]);
+    await page.getByRole('button', {name:'Trust & install',exact:true}).click({timeout:10_000}).catch(async () => { throw new BrowserError(`The reader could not open this tool file: ${(await page.locator('body').innerText()).slice(-1500)}`); });
+    await page.locator('.lolly-locked-design').waitFor({timeout:30_000});
+    const downloading = page.waitForEvent('download', {timeout:timeoutFor(format)});
+    await page.goto(exportUrl(base,toolId,query,format,{}), {waitUntil:'commit'});
+    const download = await downloading;
+    const path = await download.path(); if (!path) throw new BrowserError('The tool produced no output file.');
+    return new Uint8Array(await readFile(path));
+  } finally { await context.close(); }
+}

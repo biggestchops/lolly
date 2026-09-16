@@ -1,0 +1,20 @@
+{
+  "id": "brand-starter",
+  "name": "Brand halftone",
+  "category": "Brand",
+  "description": "A halftone study generated from a brand-colour gradient.",
+  "values": {
+    "image": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/gradient.png?count=2&blend=normal&grain=0&width=800&height=800",
+      "_unresolved": true
+    },
+    "effect": "halftone",
+    "ht_shape": "circle",
+    "ht_fgColor": "{color.semantic.secondary}",
+    "ht_bgColor": "transparent",
+    "ht_transparentBg": true,
+    "ht_colorSource": "solid"
+  },
+  "galleryCover": true
+}

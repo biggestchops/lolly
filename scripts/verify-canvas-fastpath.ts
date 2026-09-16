@@ -11,8 +11,8 @@
  *   - dragging a cross-box-coupled box (a clip mask) REFUSES (fulls++, skips unchanged) and
  *     is likewise parity-identical.
  *
- * The fast-skip is opt-in via `?canvasfastpath=1`; this harness always sets it. ANY new tool
- * (or a default-enable) MUST pass this gate first. Usage:
+ * Design enables guarded translation by default; canvasfastpath=0 forces the control.
+ * Other editors remain opt-in via canvasfastpath=1. Usage:
  *   pnpm run build:web && node scripts/verify-canvas-fastpath.ts
  */
 import { createServer } from 'node:http';
@@ -21,8 +21,9 @@ import { existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { chromium, type Page } from 'playwright-core';
+import { build } from 'esbuild';
 
-const DIST = join(process.cwd(), 'shells/web/dist');
+const DIST = process.env.LOLLY_WEB_DIST ?? join(process.cwd(), 'shells/web/dist');
 const MIME: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.wasm': 'application/wasm', '.png': 'image/png' };
 
 function serveDist(): Promise<{ base: string; close: () => Promise<void> }> {
@@ -51,10 +52,15 @@ const FIXTURE = [
 let fails = 0;
 
 async function main(): Promise<void> {
+  const bundle = await build({
+    stdin: { contents: `export { renderSvgFromHtml } from './shells/web/src/bridge/export-svg-walker.ts';`, resolveDir: process.cwd(), loader: 'ts' },
+    bundle: true, write: false, format: 'iife', globalName: 'geometryExporter', platform: 'browser',
+    loader: { '.css': 'empty' }, external: ['module'], logLevel: 'silent',
+  });
   const { base, close } = await serveDist();
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
 
-  const url = (boxes: unknown) => `${base}/?canvasfastpath=1#/tool/design?boxes=${encodeURIComponent(JSON.stringify(boxes))}`;
+  const url = (boxes: unknown, fast: boolean) => `${base}/${fast ? '' : '?canvasfastpath=0'}#/tool/design?boxes=${encodeURIComponent(JSON.stringify(boxes))}`;
   const styles = (pg: Page) => pg.evaluate(() => {
     const o: Record<string, string> = {};
     for (const el of document.querySelectorAll('.lolly-box[data-box-id]')) {
@@ -64,9 +70,17 @@ async function main(): Promise<void> {
     return o;
   });
   const counters = (pg: Page) => pg.evaluate(() => ({ ...((window as unknown as { __lollyGeomFastPath?: { skips: number; fulls: number } }).__lollyGeomFastPath ?? { skips: 0, fulls: 0 }) }));
-  async function boot(boxes: unknown): Promise<Page> {
+  async function exported(pg: Page): Promise<string> {
+    await pg.addScriptTag({ content: bundle.outputFiles[0]!.text });
+    return pg.evaluate(async () => {
+      const exporter = (window as unknown as { geometryExporter: { renderSvgFromHtml(node: Element, opts: { rasterFallback: boolean }): Promise<Blob> } }).geometryExporter;
+      return (await exporter.renderSvgFromHtml(document.querySelector('#tool-canvas, #tool-content')!, { rasterFallback: false })).text();
+    });
+  }
+  const metadata = (pg: Page) => pg.locator('script[data-penpot-doc],script[data-pptx-deck]').allTextContents();
+  async function boot(boxes: unknown, fast = true): Promise<Page> {
     const p = await browser.newPage({ viewport: { width: 1400, height: 900 } });
-    await p.goto(url(boxes), { waitUntil: 'load' });
+    await p.goto(url(boxes, fast), { waitUntil: 'load' });
     await p.waitForSelector('.lolly-box[data-box-id="plain"]', { timeout: 20000 });
     await p.waitForTimeout(700); // let the first full paint + fit <script> settle
     return p;
@@ -80,29 +94,43 @@ async function main(): Promise<void> {
 
   async function gesture(label: string, id: string, wantSkip: boolean): Promise<void> {
     const p = await boot(FIXTURE);
+    const originalNode = await p.locator(`.lolly-box[data-box-id="${id}"]`).elementHandle();
     const c0 = await counters(p);
     await dragBody(p, id, 60, 40);
     const c1 = await counters(p);
     const gateOk = wantSkip ? c1.skips > c0.skips : (c1.fulls > c0.fulls && c1.skips === c0.skips);
     const live = await styles(p);
-    const href = await p.evaluate(() => location.href);
+    if (wantSkip && !await originalNode!.evaluate(node => node.isConnected)) throw new Error(`${label}: box was remounted`);
+    const liveSvg = await exported(p);
+    const liveMetadata = await metadata(p);
     await p.close();
 
-    // full-paint control: a fresh load of the resulting doc always full-paints first
-    const p2 = await browser.newPage({ viewport: { width: 1400, height: 900 } });
-    await p2.goto(href, { waitUntil: 'load' });
-    await p2.waitForSelector('.lolly-box[data-box-id="plain"]', { timeout: 20000 });
-    await p2.waitForTimeout(700);
+    // Repeat the same gesture with patching disabled. Round-tripping the URL
+    // normalizes sparse block defaults, so it is not an equivalent input model.
+    const p2 = await boot(FIXTURE, false);
+    await dragBody(p2, id, 60, 40);
     const full = await styles(p2);
+    const fullSvg = await exported(p2);
+    const fullMetadata = await metadata(p2);
     await p2.close();
 
     let parity = true;
     for (const k of new Set([...Object.keys(live), ...Object.keys(full)])) {
       if (live[k] !== full[k]) { parity = false; console.log(`   DIFF ${k}\n     live: ${live[k]}\n     full: ${full[k]}`); }
     }
-    const ok = gateOk && parity;
+    const svgParity = liveSvg === fullSvg;
+    const metadataParity = JSON.stringify(liveMetadata) === JSON.stringify(fullMetadata);
+    for (const [kind, a, b] of [['svg', liveSvg, fullSvg], ['metadata', JSON.stringify(liveMetadata), JSON.stringify(fullMetadata)]]) {
+      if (a !== b) {
+        let offset = 0;
+        while (offset < a!.length && a![offset] === b![offset]) offset++;
+        console.log(`  ${kind} difference at ${offset}: ${a!.slice(Math.max(0, offset - 80), offset + 240)}\n  control: ${b!.slice(Math.max(0, offset - 80), offset + 240)}`);
+      }
+    }
+    const ok = gateOk && parity && svgParity && metadataParity;
     if (!ok) fails++;
     console.log(`[${label}] ${wantSkip ? 'SKIP' : 'REFUSE'}: ${gateOk ? 'ok' : 'FAIL'} (skips ${c0.skips}->${c1.skips}, fulls ${c0.fulls}->${c1.fulls}) | computed-style parity: ${parity ? 'ok' : 'FAIL'}`);
+    console.log(`  SVG byte parity: ${svgParity ? 'ok' : 'FAIL'}; export metadata parity: ${metadataParity ? 'ok' : 'FAIL'}`);
   }
 
   await gesture('drag plain', 'plain', true);
@@ -112,7 +140,7 @@ async function main(): Promise<void> {
   await browser.close();
   await close();
   if (fails) { console.log(`\n${fails} FAILURE(S) - the geometry fast-skip is NOT safe to enable`); process.exit(1); }
-  console.log('\nALL PASS - geometry fast-skip engages/refuses correctly and is byte-identical (computed style) to a full paint.');
+  console.log('\nALL PASS - guarded translations preserve DOM identity, computed styles, SVG bytes and export metadata.');
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

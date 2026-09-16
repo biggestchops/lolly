@@ -322,9 +322,9 @@ export function startMatteJob(
   // heavy slot a model run queues on.
   const job = startJob({ title: t('Removing background'), cancel: () => controller.abort(), heavy: req.method !== 'chroma' });
   void (async (): Promise<void> => {
-    await job.started;
-    if (job.cancelled) return;
     try {
+      await job.started;
+      if (job.cancelled) return;
       const ref = await runMatteJob(host, req, {
         signal: controller.signal,
         isCancelled: () => job.cancelled,
@@ -339,6 +339,8 @@ export function startMatteJob(
       if (job.cancelled || (err as Error | null)?.name === 'AbortError') return;
       job.fail(err);
       hooks.onError?.(err);
+    } finally {
+      job.settle();
     }
   })();
   return job;

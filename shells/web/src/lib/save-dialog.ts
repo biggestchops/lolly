@@ -81,6 +81,7 @@ export interface SaveDialogDeps {
   createTool?: (meta: { title: string; description: string; icon: string; formats: string[] }) => Promise<void>;
   /** Open the Share modal (its `.lolly` File panel) - the "share for anyone to import" path. */
   shareLolly?: () => void;
+  shareWithRules?: () => void;
   /** The project this session is ALREADY filed in (null/absent = root or unknown).
    *  Preselected in the picker so a re-save of a filed session tells the truth
    *  instead of showing "No project" (plans/142 W1). */
@@ -157,7 +158,7 @@ export function openSaveDialog(deps: SaveDialogDeps): void {
   // icon are optional. Formats render as DOM checkboxes below (never an HTML string sink).
   const createToolCard = showCreateTool ? `
     <section class="save-card" data-card="tool">
-      <h3 class="save-card-title">${escape(t('Create a tool'))}</h3>
+      <h3 class="save-card-title">${escape(t('Add a tool shortcut'))}</h3>
       <p class="save-card-desc">${escape(t('Turn this into your own tool - it joins your tool list and opens preconfigured like this.'))}</p>
       <div class="save-card-row">
         <input type="text" class="save-input" data-tool-title maxlength="60" placeholder="${escape(t('Tool name'))}" aria-label="${escape(t('Tool name'))}">
@@ -168,15 +169,15 @@ export function openSaveDialog(deps: SaveDialogDeps): void {
       </div>
       <fieldset class="save-tool-formats" data-tool-formats></fieldset>
       <div class="save-card-row">
-        <button type="button" class="btn" data-act="create-tool">${escape(t('Create tool'))}</button>
+        <button type="button" class="btn" data-act="create-tool">${escape(t('Add shortcut'))}</button>
       </div>
       <p class="save-card-err" data-err="tool" hidden></p>
     </section>` : '';
 
   const shareFoot = deps.shareLolly ? `
     <div class="save-dialog-foot">
-      <span>${escape(t('Made something worth sharing? Send it as a .lolly file for anyone to import.'))}</span>
-      <button type="button" class="save-link" data-act="share">${escape(t('Share…'))}</button>
+      <span>${escape(t('Share an editable starting point, including the current settings.'))}</span>
+      <button type="button" class="save-link" data-act="share">${escape(t('Share session (.lolly)'))}</button>
     </div>` : '';
 
   const title = t('Save as');
@@ -202,6 +203,11 @@ export function openSaveDialog(deps: SaveDialogDeps): void {
           <p class="save-card-err" data-err="project" hidden></p>
         </section>
         ${templateCard}
+        ${deps.shareWithRules ? `<section class="save-card" data-card="rules">
+          <h3 class="save-card-title">${escape(t('Share with rules'))}</h3>
+          <p class="save-card-desc">${escape(t('Choose editable inputs and share one portable tool. The other settings stay fixed.'))}</p>
+          <button type="button" class="btn" data-act="share-rules">${escape(t('Choose inputs'))}</button>
+        </section>` : ''}
       </div>
       ${createToolCard ? `
       <details class="save-more" data-save-more${savedMoreOpen() ? ' open' : ''}>
@@ -332,6 +338,7 @@ export function openSaveDialog(deps: SaveDialogDeps): void {
     const act = btn.dataset.act;
 
     if (act === 'close') { modal.close(); return; }
+    if (act === 'share-rules') { modal.close(); deps.shareWithRules?.(); return; }
     if (act === 'share') { modal.close(); deps.shareLolly?.(); return; }
 
     if (act === 'save-project') {

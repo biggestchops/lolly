@@ -124,7 +124,7 @@ export interface DesignTopbarOpts {
   };
   share(): void;
   /** Open the presenter. `at` is a frame id to start on; `speaker` opens speaker view. */
-  present(o?: { at?: string; speaker?: boolean }): void;
+  present(o?: { at?: string; speaker?: boolean; production?: boolean }): void;
   /** Open the export sheet (today's render popup), on `format` when one is named. */
   exportSheet(o?: { format?: string }): void;
   /**
@@ -224,6 +224,7 @@ interface MenuRow {
    * what the click asked for. See the click handler in toggleMenu for why.
    */
   checked?: () => boolean;
+  closeOnSelect?: boolean;
   run(): void;
 }
 
@@ -467,6 +468,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
       item.appendChild(label);
       item.addEventListener('click', () => {
         if (item.getAttribute('aria-disabled') === 'true') return;
+        if (row.closeOnSelect) closeMenu(true);
         row.run();
         // A checkbox row keeps the menu up (you may want to set both), and re-reads
         // THE PORT rather than flipping its own attribute. `loop.set()` is a URL
@@ -475,6 +477,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
         // validator rejecting the value). A blind flip would then show the opposite
         // of the truth for as long as the menu stays open - and a checkbox row
         // deliberately keeps it open, so that is the whole interaction.
+        if (row.closeOnSelect) return;
         if (!row.checked) closeMenu(true);
         else item.setAttribute('aria-checked', row.checked() ? 'true' : 'false');
       });
@@ -567,6 +570,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
         run: () => opts.present({ at: opts.activeFrameId?.() || undefined }),
       },
       { label: t('Speaker view'), glyph: icon('monitor'), run: () => opts.present({ speaker: true }) },
+      { label: t('Present with camera'), glyph: icon('monitor'), disabled: !opts.hasFrames(), run: () => opts.present({ production: true }) },
       // Notes to voice for the whole deck (plans/180 M-A). The row sits with the other
       // present-time verbs because that is what narration IS - the deck saying itself -
       // and it is greyed rather than hidden when no slide has notes yet, so the way to
@@ -813,7 +817,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
     if (opts.timelineEnabled?.() !== false)
       rows.push({ label: t('Timeline'), glyph: GLYPH.timeline, checked: () => opts.timeline.isOpen(), run: () => opts.timeline.toggle() });
     rows.push({ label: t('Navigator'), glyph: icon('dock'), checked: () => opts.navigator.isOpen(), run: () => opts.navigator.toggle() });
-    if (opts.inspector) rows.push({ label: t('Inspector'), glyph: icon('sliders'), checked: () => !!opts.inspector?.isOpen(), run: () => opts.inspector?.toggle() });
+    if (opts.inspector) rows.push({ label: t('Inspector'), glyph: icon('sliders'), checked: () => !!opts.inspector?.isOpen(), closeOnSelect: true, run: () => opts.inspector?.toggle() });
     if (density === 'min') {
       rows.push({ label: t('Share'), glyph: icon('share'), run: () => opts.share() });
       rows.push(...presentRows());

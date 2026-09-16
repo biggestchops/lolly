@@ -425,6 +425,42 @@
       "spread",
       "longitude",
       "latitude"
+    ],
+    "3d-studio:lights": [
+      "kind",
+      "color",
+      "x",
+      "y",
+      "z",
+      "intensity",
+      "size",
+      "shadows"
+    ],
+    "3d-studio:materials": [
+      "slot",
+      "color",
+      "roughness",
+      "metalness",
+      "clearcoat"
+    ],
+    "3d-studio:subjects": [
+      "name",
+      "kind",
+      "asset",
+      "primitive",
+      "modelFormat",
+      "ownFraming",
+      "azimuth",
+      "elevation",
+      "fov",
+      "zoom",
+      "roleA",
+      "roleB",
+      "panX",
+      "panY",
+      "panZ",
+      "ownFocus",
+      "focusDistance"
     ]
   }
 }

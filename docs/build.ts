@@ -4,6 +4,8 @@
 // Run: node docs/build.ts            build the /info pages once
 //      node docs/build.ts --watch    rebuild on every change under docs/ (used by dev:web)
 // Output: shells/web/public/info/
+import { movedSectionLinks } from './section-moves.ts';
+import { createIconSprite } from './icon-sprite.ts';
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, cpSync, existsSync, readdirSync, rmSync, statSync, watch } from 'node:fs';
 import { resolve, dirname, relative, sep } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -205,11 +207,14 @@ const pages: Page[] = [
   { slug: 'creative-rights', title: 'Creative rights and credits', src: 'creative-rights.md', pathway: 'trust', description: "How Lolly records a source licence, works out what it asks of the use you are making, writes the credit into the file, and names the part only you can do." },
 
   // ── Creators pathway ─────────────────────────────────────────────────────
+  { slug: 'create-a-tool', title: 'Share a design with rules', src: 'create-a-tool.md', pathway: 'creators', description: 'Turn a Design document into a portable tool with approved inputs, shared names, themes and fixed artwork.' },
+  { slug: 'design-tool-contract', title: 'Design tool contract', src: 'design-tool-contract.md', pathway: 'builders', description: 'Declarative rules, portable tool packages and immutable installed revisions.' },
   { slug: 'training-creators', title: 'Training courses', src: 'training-creators.md', pathway: 'creators', description: 'Assemble project content into courses, check their content and size, and export versions for a website or LMS.' },
   { slug: 'learning-integration', title: 'Learning integration', src: 'learning-integration.md', pathway: 'builders', description: 'Portable course delivery and the versioned browser progress event contract.' },
   { slug: 'using',            title: 'Using Lolly',       src: 'using.md',        pathway: 'creators' },
   { slug: 'templates',        title: 'Templates',         src: 'templates.md',    pathway: 'creators', description: "Saved starting points for a tool: how to keep one, how to open a tool on it every time, and how yours sit beside the ones a tool ships with." },
   { slug: 'brand-studio',     title: 'The Brand Studio',  src: 'brand-studio.md', pathway: 'creators' },
+  { slug: '3d-studio', title: '3D Studio', src: '3d-studio.md', pathway: 'creators', description: 'Stage SVG artwork and meshes with materials, lighting, depth of field and transparent shadows.' },
   { slug: 'profile',          title: 'Profiles',          src: 'profile.md',      pathway: 'creators', description: "The working identity Lolly creates as - your name, role and contact details, filled into tools automatically and stored on your own device." },
   // Both of these pages HOST a band that used to sit on the landing (plan 117 block
   // 9). The band is the same function the landing called, so the layout that made
@@ -221,6 +226,7 @@ const pages: Page[] = [
   { slug: 'design-import',    title: 'Import a design (Figma, Penpot, Illustrator, InDesign)', src: 'design-import.md', pathway: 'creators', description: "Bring a finished design out of Figma, Penpot, Illustrator or InDesign and into Lolly as an editable, re-renderable tool rather than a flat picture.", render: renderDesignImportPage },
   { slug: 'formats',          title: 'Every format Lolly can open and make', src: 'formats.md', pathway: 'creators', description: "Every file format Lolly reads, every format it writes, and the ones it does both ways - grouped by what each one is, with a plain-language card behind every chip.", render: renderFormatsPage },
   { slug: 'sequence-editor',  title: 'The sequence editor', src: 'sequence-editor.md', pathway: 'creators' },
+  { slug: 'presenting', title: 'Presenting with camera', src: 'presenting.md', pathway: 'creators', description: 'Prepare camera framing, a logo and captions over slides or Countdown, with private controls, saved scenes and local recording.' },
   { slug: 'animating',        title: 'Animating: keyframes, depth and a camera', src: 'animating.md', pathway: 'creators', description: "Pose a box at one moment, lift it off the page, and fly a camera over the result - keyframes, depth, the scene camera and Lift layers, all on your device." },
   // Collab is a CREATORS page, not a Builders or Trust one: it is a thing two people
   // do with a tool session, and the reader arrives at it from "I want to work on this
@@ -253,10 +259,27 @@ const pages: Page[] = [
   { slug: 'determinism',      title: 'Determinism',       src: 'determinism.md',     pathway: 'builders', description: "Same inputs, same file: one render path behind every shell, what is byte-reproducible and what is not, and the receipts for both." },
   { slug: 'reproducibility',  title: 'Reproducibility',   src: 'reproducibility.md', pathway: 'builders', description: "The URL is the artifact: every input travels as parameters, so a link re-renders next year, and the limits of what a bare link can carry." },
   { slug: 'authoring-tools',  title: 'Authoring Tools',   src: 'authoring-tools.md', pathway: 'builders', description: "Author a Lolly tool: the manifest, the template, the optional hooks, and the invariants that keep one tool running unchanged in the browser, on the desktop and in the terminal." },
+  { slug: 'tool-manifest', title: 'Tool manifests', src: 'tool-manifest.md', pathway: 'builders', description: "Declare identity, rendering, examples and a short walkthrough." },
+  { slug: 'tool-inputs', title: 'Tool inputs', src: 'tool-inputs.md', pathway: 'builders', description: "Choose input types, visibility, profile prefills and common meanings." },
+  { slug: 'tool-structured-inputs', title: 'Structured inputs and canvas controls', src: 'tool-structured-inputs.md', pathway: 'builders', description: "Build repeating groups, editor canvases and bounded image framing." },
+  { slug: 'tool-files', title: 'Assets and file utilities', src: 'tool-files.md', pathway: 'builders', description: "Accept library assets or local files and return transformed output." },
+  { slug: 'tool-rendering', title: 'Templates and rendering', src: 'tool-rendering.md', pathway: 'builders', description: "Write templates and styles that work across vector, canvas and data exports." },
+  { slug: 'tool-starters', title: 'Tool templates and presets', src: 'tool-starters.md', pathway: 'builders', description: "Provide curated starting points, saved templates and Design motion." },
+  { slug: 'tool-hooks', title: 'Tool hooks and host capabilities', src: 'tool-hooks.md', pathway: 'builders', description: "Add portable behavior, live media, recording, speech and allowed network access." },
+  { slug: 'tool-composition', title: 'Composition and brand overlays', src: 'tool-composition.md', pathway: 'builders', description: "Compose tools and resolve brand-specific logos and overlays." },
+  { slug: 'tool-publishing', title: 'Publish and localize a tool', src: 'tool-publishing.md', pathway: 'builders', description: "Validate, distribute, test and translate a reusable tool." },
   { slug: 'authoring-assets', title: 'Authoring Assets',  src: 'authoring-assets.md', pathway: 'builders' },
   { slug: 'host-api',         title: 'Host API',          src: 'host-api.md',        pathway: 'builders' },
   { slug: 'url-mode',         title: 'URL Mode',          src: 'url-mode.md',        pathway: 'builders', description: "Every tool's state lives in the URL, so a link is a finished asset, a reproducible render, and the same input the CLI takes." },
+  { slug: 'url-inputs', title: 'Inputs in URLs', src: 'url-inputs.md', pathway: 'builders', description: "Encode each input type, keyframes and compact values." },
+  { slug: 'url-parameters', title: 'Reserved URL parameters', src: 'url-parameters.md', pathway: 'builders', description: "Look up export settings, packed links, units, print marks and contact sheets." },
+  { slug: 'url-export', title: 'Export and presentation URLs', src: 'url-export.md', pathway: 'builders', description: "Choose formats, download, copy, size, presentation and saved state." },
+  { slug: 'url-app-links', title: 'App links and deep links', src: 'url-app-links.md', pathway: 'builders', description: "Open app views and use the lolly URL scheme." },
   { slug: 'cli',              title: 'CLI',               src: 'cli.md',             pathway: 'builders' },
+  { slug: 'cli-rendering', title: 'Render with the CLI', src: 'cli-rendering.md', pathway: 'builders', description: "Choose export options, troubleshoot the browser renderer and render timelines or links." },
+  { slug: 'cli-files', title: 'CLI file and media utilities', src: 'cli-files.md', pathway: 'builders', description: "Process local files, redactions, speech and on-device models." },
+  { slug: 'cli-automation', title: 'CLI batch and automation', src: 'cli-automation.md', pathway: 'builders', description: "Run batches, preflight outputs and integrate predictable results into scripts and CI." },
+  { slug: 'cli-reference', title: 'CLI verification and configuration', src: 'cli-reference.md', pathway: 'builders', description: "Verify files, inspect metadata, configure completion and find local state." },
   { slug: 'cli-signing',      title: 'Signing from the terminal', src: 'cli-signing.md', pathway: 'operators', description: "Set up a real signing identity for the CLI, so files made from the terminal carry a verifiable name rather than an anonymous on-device key." },
   { slug: 'tui',              title: 'TUI',               src: 'tui.md',             pathway: 'builders' },
   { slug: 'mcp',              title: 'MCP Server',        src: 'mcp.md',             pathway: 'builders' },
@@ -264,6 +287,11 @@ const pages: Page[] = [
   { slug: 'extension',        title: 'Browser Extension', src: 'extension.md',       pathway: 'creators' },
   { slug: 'contributing-setup', title: 'Contributing Setup', src: 'contributing-setup.md', pathway: 'builders', description: "Get a development checkout sized to what you're here to do: slim clone personas for tool authors and engine developers, and how to upgrade to the full thing later." },
   { slug: 'build-guide',      title: 'Build Guide',       src: 'build-guide.md',     pathway: 'operators', description: "Build Lolly for each target: the CLI binary, the desktop app, mobile, and the web PWA. Prerequisites, commands and what each build produces." },
+  { slug: 'build-terminal', title: 'Build the CLI and TUI', src: 'build-terminal.md', pathway: 'operators', description: "Run the terminal shells from source or package the CLI binary." },
+  { slug: 'build-desktop', title: 'Build the desktop app', src: 'build-desktop.md', pathway: 'operators', description: "Set up and package the Tauri desktop shell." },
+  { slug: 'build-mobile', title: 'Build the mobile apps', src: 'build-mobile.md', pathway: 'operators', description: "Set up, develop and package Android and iOS shells." },
+  { slug: 'build-obs', title: 'Build with Open Build Service', src: 'build-obs.md', pathway: 'operators', description: "Plan OBS recipes for Lolly artifacts and their dependencies." },
+  { slug: 'build-kubernetes', title: 'Build the web container and Helm chart', src: 'build-kubernetes.md', pathway: 'operators', description: "Build the web image and deploy the chart with optional services." },
   { slug: 'ios-build',        title: 'Building for iOS',  src: 'ios-build.md',       pathway: 'builders' },
   { slug: 'deployment',       title: 'Deployment',        src: 'deployment.md',      pathway: 'operators' },
   { slug: 'configuration',    title: 'Configuration',     src: 'configuration.md',   pathway: 'operators', description: "Everything that shapes a Lolly instance: which brand it wears, which tools it exposes, and what each tool may do on the device it runs on." },
@@ -471,7 +499,9 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'using',           label: 'Using Lolly' },
         { slug: 'training-creators', label: 'Training courses' },
         { slug: 'templates',       label: 'Templates' },
+        { slug: 'create-a-tool', label: 'Share a design with rules' },
         { slug: 'brand-studio',    label: 'The Brand Studio' },
+        { slug: '3d-studio', label: '3D Studio' },
         { slug: 'design-import',   label: 'Import a design' },
         { slug: 'utilities',       label: 'Utility views' },
         { slug: 'extension',       label: 'Browser Extension' } ] },
@@ -487,6 +517,8 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'dashboard',   label: 'The Dashboard' },
         { slug: 'favourites',  label: 'Your favourites' },
         { slug: 'profile',     label: 'Your profile' } ] },
+      { label: 'Present', items: [
+        { slug: 'presenting', label: 'Presenting with camera' } ] },
       { label: 'Collaborate', items: [
         { slug: 'collaborate', label: 'Working together' } ] },
       { label: 'Post', items: [
@@ -521,22 +553,50 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'determinism',     label: 'Determinism' },
         { slug: 'reproducibility', label: 'Reproducibility' } ] },
       { label: 'Author tools', items: [
-        { slug: 'authoring-tools',  label: 'Authoring Tools' },
+        { slug: 'authoring-tools', label: 'Overview' },
+        { slug: 'tool-manifest', label: 'Manifest' },
+        { slug: 'tool-inputs', label: 'Inputs' },
+        { slug: 'tool-structured-inputs', label: 'Structured inputs' },
+        { slug: 'tool-files', label: 'Assets and files' } ] },
+      { label: 'Render and share tools', items: [
+        { slug: 'tool-rendering', label: 'Templates and rendering' },
+        { slug: 'tool-starters', label: 'Starting points' },
+        { slug: 'tool-hooks', label: 'Hooks and capabilities' },
+        { slug: 'tool-composition', label: 'Composition' },
+        { slug: 'tool-publishing', label: 'Publish and localize' } ] },
+      { label: 'Reference', items: [
         { slug: 'authoring-assets', label: 'Authoring Assets' },
-        { slug: 'host-api',         label: 'Host API' },
-        { slug: 'url-mode',         label: 'URL Mode' } ] },
-      { label: 'Run & integrate', items: [
+        { slug: 'host-api', label: 'Host API' } ] },
+      { label: 'URL mode', items: [
+        { slug: 'url-mode', label: 'Overview' },
+        { slug: 'url-inputs', label: 'Inputs' },
+        { slug: 'url-parameters', label: 'Reserved parameters' },
+        { slug: 'url-export', label: 'Export and presentation' },
+        { slug: 'url-app-links', label: 'App links' } ] },
+      { label: 'CLI', items: [
         { slug: 'cli',         label: 'CLI' },
-        { slug: 'cli-signing', label: 'Signing from the terminal' },
+        { slug: 'cli-rendering', label: 'Render with the CLI' },
+        { slug: 'cli-files', label: 'CLI file and media utilities' },
+        { slug: 'cli-automation', label: 'CLI batch and automation' },
+        { slug: 'cli-reference', label: 'CLI verification and configuration' },
+        { slug: 'cli-signing', label: 'Signing from the terminal' } ] },
+      { label: 'Run & integrate', items: [
         { slug: 'tui',       label: 'Terminal (TUI)' },
         { slug: 'mcp',       label: 'MCP Server' },
         { slug: 'ai-agents', label: 'AI Agents' },
         { slug: 'learning-integration', label: 'Learning integration' },
+        { slug: 'design-tool-contract', label: 'Design tool contract' },
         { slug: 'extension', label: 'Browser Extension' } ] },
+      { label: 'Build targets', items: [
+        { slug: 'build-guide',   label: 'Build Guide' },
+        { slug: 'build-terminal', label: 'Build the CLI and TUI' },
+        { slug: 'build-desktop', label: 'Build the desktop app' },
+        { slug: 'build-mobile', label: 'Build the mobile apps' },
+        { slug: 'build-obs', label: 'Build with Open Build Service' },
+        { slug: 'build-kubernetes', label: 'Build the web container and Helm chart' },
+        { slug: 'ios-build',     label: 'Building for iOS' } ] },
       { label: 'Ship & operate', items: [
         { slug: 'contributing-setup', label: 'Contributing setup' },
-        { slug: 'build-guide',   label: 'Build Guide' },
-        { slug: 'ios-build',     label: 'Building for iOS' },
         { slug: 'deployment',    label: 'Deployment' },
         { slug: 'configuration', label: 'Configuration' },
         { slug: 'about',         label: 'About' } ] },
@@ -567,6 +627,13 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'deployment',    label: 'Deployment' },
         { slug: 'configuration', label: 'Configuration' },
         { slug: 'build-guide',   label: 'Build Guide' } ] },
+      { label: 'Build targets', items: [
+        { slug: 'build-terminal', label: 'Build the CLI and TUI' },
+        { slug: 'build-desktop', label: 'Build the desktop app' },
+        { slug: 'build-mobile', label: 'Build the mobile apps' },
+        { slug: 'build-obs', label: 'Build with Open Build Service' },
+        { slug: 'build-kubernetes', label: 'Build the web container and Helm chart' },
+        { slug: 'ios-build', label: 'Building for iOS' } ] },
       { label: 'Trust', items: [
         { slug: 'trust',    label: 'Trust overview' },
         { slug: 'security', label: 'Security & Verification' },
@@ -1252,8 +1319,9 @@ DOC_ICONS.monitor = SITE_ICONS.toolFeatureMonitor!;
 // The AI mark. Mirrors the spark the web shell's /verify view uses for
 // AI-generated content, so the same idea wears the same glyph in both places.
 DOC_ICONS.sparkle = `<svg viewBox="0 0 24 24" ${DOC_ICON_S}><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></svg>`;
+const DOC_ICON_SPRITE = createIconSprite(DOC_ICONS);
 function docIcon(key: string): string {
-  const svg = DOC_ICONS[key];
+  const svg = DOC_ICON_SPRITE.icon(key);
   if (!svg) { console.warn(`⚠  unknown doc bullet icon "${key}"`); return ''; }
   return svg;
 }
@@ -4537,6 +4605,9 @@ function localizeHref(lang: Lang, href: string): string {
 // as shells/web/src/i18n.ts's LANG_ICON_SVG - duplicated (not imported) since
 // this static-site generator has no shared module boundary with the SPA.
 const LANG_ICON_SVG = `<svg class="lang-switch-icon" viewBox="0 0 440.332 510.236" fill="currentColor" aria-hidden="true"><path d="m311.768 445.719 12.531 20.615c-31.404 20.067-66.19 30.034-103.148 33.127h-16.436c-3.287 0-19.54-2.008-20.088-2.008-6.026-.913-12.235-2.009-17.896-3.287q-15.34-3.562-30.68-9.315c-7.487-2.739-15.34-6.391-22.28-9.86-3.469-1.644-6.573-3.287-9.86-5.296-1.096-.548-6.94-4.748-9.862-4.748-3.287 0-5.297 2.556-5.297 5.295 0 1.644.184 3.106 2.375 4.566 12.418 8.218 25.566 14.426 38.166 19.174 6.94 2.74 14.063 5.296 21.367 7.305 4.2 1.278 8.948 2.558 13.33 3.47 5.662 1.279 11.689 2.375 17.35 3.288 6.392.913 13.15 1.643 19.541 2.191 36.8 0 80.597-5.566 122.537-30.498 1.721-1.243 4.493-2.286 6.744-3.758l11.428 18.801 15.725-45.576z"/><path d="m639.838 180.403-40.768-12.976V48.363c0-3.47-2.557-5.843-5.844-5.843-2.556 0-84.917 28.306-91.492 30.68-22.334 7.444-86.798 29.733-86.798 29.733-1.034.297-2.638.787-4.741 1.449L252.855 48.85a1.826 1.826 0 0 0-2.435 1.722v106.724c-24.405 8.17-41.808 14.02-42.701 14.335-1.644.548-4.2.913-5.662 2.922-.73.73-.913 2.009-1.278 2.922v306.982c0 .365.183.547.183.73 1.095 2.374 3.104 3.835 5.296 3.835 2.739 0 208.367-69.03 212.933-70.856.215-.072.458-.24.697-.438L638.73 487.48a1.826 1.826 0 0 0 2.38-1.74V182.143c0-.795-.514-1.5-1.272-1.74M410.973 409.4l-199.054 66.29V182.04l199.054-66.29ZM587.93 55.668v108.213l-164.492-52.354Zm-20.243 329.6-10.52-38.43-60.517-18.341-13.013 31.304-29.292-8.886 62.178-152.587 28.508 8.636 51.939 187.188zm-183.723-51.715c-1.658-.602-35.965-14.814-40.828-17.142-3.98-1.914-13.737-6.04-18.328-7.913 12.931-19.938 21.094-34.984 22.18-37.276 2.012-4.193 15.699-30.976 16.018-32.625.31-1.67.7-7.843.399-9.31-.302-1.495-5.32 1.38-12.134 3.69-6.824 2.3-19.794 10.735-24.803 11.793-5.027 1.048-21.094 7.135-29.316 9.863s-23.773 7.475-30.17 9.202c-6.406 1.728-11.998 1.865-15.581 2.951 0 0 .477 5.019 1.428 6.523.94 1.505 4.33 5.194 8.27 6.224 3.942 1.037 10.465.62 13.436-.058 2.97-.69 8.114-3.204 8.804-4.301.698-1.116-.36-4.553.814-5.592 1.186-1.028 16.843-4.688 22.755-6.474 5.911-1.817 28.54-9.61 31.607-9.213-.971 3.223-19.173 39.276-25.035 50.032-5.864 10.755-39.926 58.07-47.177 66.408-5.505 6.338-18.843 22.558-23.463 26.218 1.165.322 9.425-.387 10.93-1.318 9.377-5.777 24.996-25.22 30.026-31.142 14.949-17.532 28.083-35.947 38.497-51.75h.011c2.03.845 18.434 14.21 22.714 17.173 4.281 2.96 21.173 12.385 24.833 13.948 3.66 1.583 17.725 8.068 18.317 5.873.591-2.213-2.544-15.154-4.204-15.784m-106.167-120.33c-1.118-1.098 1.455 8.968 5.036 12.59 6.35 6.405 11.31 7.23 13.95 7.337 5.844.233 13.056-1.456 17.338-3.25 4.144-1.769 11.405-5.476 14.153-10.883.583-1.156 2.173-3.097 1.174-7.893-.757-3.689-3.106-4.98-5.97-4.775-2.863.193-11.532 2.505-15.725 3.794-4.194 1.273-12.834 3.903-16.6 4.72-3.756.814-12.038-.379-13.356-1.64" transform="translate(-200.78 -42.52)"/><path d="m529.556 247.883-21.718 52.496 39.929 12.104z" transform="translate(-200.78 -42.52)"/></svg>`;
+const NAV_ICON_SPRITE = createIconSprite({ language: LANG_ICON_SVG, sun: THEME_SVG_SUN, moon: THEME_SVG_MOON, brand: THEME_SVG_BRAND,
+  ...Object.fromEntries([...`${GITHUB_LINK}${HAM_BTN}`.matchAll(/<svg\b[\s\S]*?<\/svg>/g)].map((match, i) => [`nav-${i}`, match[0]])),
+});
 
 // The persistent, combined language picker - same control, same options, on
 // every /info page and (via the shared `lang` localStorage key - see i18n.ts's
@@ -4742,7 +4813,7 @@ const FOOTER_SECTIONS: SitemapSection[] = [
   // kind of thing - who-you-are doors - so they read as one group, with each pathway's
   // sub-columns following after the trio. Membership is unchanged, order only.
   { hub: 'creators', label: 'For Creators', slugs: [
-    'using', 'training-creators', 'templates', 'brand-studio', 'design-import', 'sequence-editor', 'animating', 'utilities', 'extension'] },
+    'using', 'training-creators', 'templates', 'create-a-tool', 'brand-studio', '3d-studio', 'design-import', 'sequence-editor', 'animating', 'utilities', 'extension'] },
   { hub: 'builders', label: 'For Builders', slugs: [
     'overview', 'design-tokens', 'glossary', 'authoring-tools', 'authoring-assets', 'host-api', 'url-mode'] },
   { hub: 'operators', label: 'For Operators', slugs: [
@@ -4751,13 +4822,17 @@ const FOOTER_SECTIONS: SitemapSection[] = [
   { hub: 'creators', label: 'Find your way', slugs: [
     'search', 'ask', 'dashboard', 'favourites', 'profile'] },
   { hub: 'creators', label: 'Share & collaborate', slugs: [
-    'collaborate', 'formats', 'exporting'] },
+    'presenting', 'collaborate', 'formats', 'exporting'] },
   { hub: 'builders', label: 'Concepts', slugs: [
     'constraints', 'determinism', 'reproducibility'] },
   { hub: 'builders', label: 'Run & integrate', slugs: [
-    'cli', 'tui', 'mcp', 'ai-agents', 'data-transfer', 'learning-integration'] },
+    'cli', 'tui', 'mcp', 'ai-agents', 'data-transfer', 'learning-integration', 'design-tool-contract'] },
   { hub: 'builders', label: 'Ship & operate', slugs: [
     'contributing-setup', 'ios-build', 'about'] },
+  { hub: 'builders', label: 'Write a tool', slugs: ['tool-manifest', 'tool-inputs', 'tool-structured-inputs', 'tool-files', 'tool-rendering', 'tool-starters', 'tool-hooks', 'tool-composition', 'tool-publishing'] },
+  { hub: 'builders', label: 'URL reference', slugs: ['url-inputs', 'url-parameters', 'url-export', 'url-app-links'] },
+  { hub: 'builders', label: 'CLI guides', slugs: ['cli-rendering', 'cli-files', 'cli-automation', 'cli-reference'] },
+  { hub: 'operators', label: 'Build targets', slugs: ['build-terminal', 'build-desktop', 'build-mobile', 'build-obs', 'build-kubernetes'] },
   { hub: 'trust', label: 'Trust', slugs: [
     'tenets', 'status-quo', 'input-not-impersonation', 'content-credentials-identity',
     'content-credentials-engineering', 'creative-rights', 'ai-stance', 'ai-features', 'eu-ai-act',
@@ -4854,13 +4929,14 @@ const FOOTER = (lang: Lang, compact = false) => `<footer>${footerSitemap(lang, c
 // listed - which is why `index` lives here despite no sidebar listing it: it is
 // the footer's Home row.
 const SIDEBAR_ICON: Record<string, string> = {
+  '3d-studio': 'layers',
   // Hubs & entry points (`index` is footer-only - the landing page has no rail)
   index: 'home',
   quickstart: 'star', creators: 'palette', builders: 'wrench', operators: 'checklist', trust: 'shieldcheck',
   'status-quo': 'convert', 'input-not-impersonation': 'usercheck',
   // Creators
-  'learning-integration': 'convert', 'training-creators': 'folder', using: 'pentool', templates: 'folder', 'brand-studio': 'palette', profile: 'usercheck', 'design-import': 'upload',
-  'sequence-editor': 'clock', animating: 'layers', exporting: 'download', formats: 'convert', positioning: 'sliders', compare: 'checklist',
+  'design-tool-contract': 'convert', 'create-a-tool': 'pentool', 'learning-integration': 'convert', 'training-creators': 'folder', using: 'pentool', templates: 'folder', 'brand-studio': 'palette', profile: 'usercheck', 'design-import': 'upload',
+  presenting: 'monitor', 'sequence-editor': 'clock', animating: 'layers', exporting: 'download', formats: 'convert', positioning: 'sliders', compare: 'checklist',
   'compare-canva': 'checklist', 'compare-adobe': 'checklist', 'compare-figma': 'checklist', 'compare-render-apis': 'checklist', 'compare-converters': 'checklist',
   'compare-penpot': 'checklist', 'compare-brand-portals': 'checklist',
   'make-something': 'pentool', install: 'download', faq: 'document',
@@ -4874,6 +4950,10 @@ const SIDEBAR_ICON: Record<string, string> = {
   // Builders - architecture & authoring
   overview: 'layers', 'design-tokens': 'hash', glossary: 'document', 'authoring-tools': 'wrench', 'authoring-assets': 'photos',
   'host-api': 'code', 'url-mode': 'link',
+  'build-terminal': 'box', 'build-desktop': 'box', 'build-mobile': 'box', 'build-obs': 'box', 'build-kubernetes': 'box',
+  'cli-rendering': 'code', 'cli-files': 'code', 'cli-automation': 'code', 'cli-reference': 'code',
+  'url-inputs': 'link', 'url-parameters': 'link', 'url-export': 'link', 'url-app-links': 'link',
+  'tool-manifest': 'wrench', 'tool-inputs': 'wrench', 'tool-structured-inputs': 'wrench', 'tool-files': 'wrench', 'tool-rendering': 'wrench', 'tool-starters': 'wrench', 'tool-hooks': 'wrench', 'tool-composition': 'wrench', 'tool-publishing': 'wrench',
   // Builders - run & integrate
   cli: 'code', 'cli-signing': 'seal', tui: 'monitor', mcp: 'server', 'ai-agents': 'sparkle', extension: 'globe',
   // Builders - ship & operate
@@ -5391,7 +5471,7 @@ ${mast ? mast.band : ''}
   // (no .c2pa store is minted for them), so they carry no seal link either.
   const seal = (lang === 'en' && !page.generated) ? `\n${pageSealLink(page.slug)}` : '';
 
-  return `<!doctype html>
+  return NAV_ICON_SPRITE.replaceIn(`<!doctype html>
 <html lang="${LANG_META[lang].htmlLang}" data-theme="light"${LANG_META[lang].dir ? ` dir="${LANG_META[lang].dir}"` : ''}>
 <head>
 <meta charset="utf-8">
@@ -5430,7 +5510,7 @@ ${FOOTER(lang, page.slug === 'tenets')}
 ${jump}
 ${DOCS_JS_TAG}
 </body>
-</html>`;
+</html>`);
 }
 
 // ── llms.txt + markdown twins ─────────────────────────────────────────────────
@@ -5519,8 +5599,10 @@ async function build() {
   // Mirror, don't accumulate: a content change moves the hash, so drop any prior
   // docs.<hash>.{css,js} first or the gitignored output keeps serving stale twins.
   for (const f of readdirSync(outDir)) {
-    if (/^docs\.[A-Za-z0-9_-]{16}\.(css|js)$/.test(f)) rmSync(resolve(outDir, f));
+    if (/^docs(?:-icons)?\.[A-Za-z0-9_-]{16}\.(css|js|svg)$/.test(f)) rmSync(resolve(outDir, f));
   }
+  writeFileSync(resolve(outDir, DOC_ICON_SPRITE.filename), DOC_ICON_SPRITE.svg, 'utf-8');
+  writeFileSync(resolve(outDir, NAV_ICON_SPRITE.filename), NAV_ICON_SPRITE.svg, 'utf-8');
   writeFileSync(resolve(outDir, DOCS_CSS_FILE), CSS, 'utf-8');
   writeFileSync(resolve(outDir, DOCS_JS_FILE), DOCS_JS, 'utf-8');
   console.log(`✓  /info/${DOCS_CSS_FILE} + /info/${DOCS_JS_FILE} (shared chrome, linked per page)`);
@@ -5699,7 +5781,8 @@ async function build() {
       const content = page.isLanding ? buildLandingContent(md, lang)
         : page.render ? page.render(md, lang)
         : mdToHtml(md);
-      const html    = doorizeLinks(wrapPage(lang, page, content, ogSlugs, md));
+      const moved = srcPath === resolvePageSrc(page, 'en') ? movedSectionLinks(page.slug, slug => localeHref(lang,slug)) : '';
+      const html    = doorizeLinks(wrapPage(lang, page, content + moved, ogSlugs, md));
       const outFile = page.slug === 'index' ? 'index.html' : `${pathSlug(page.slug)}.html`;
       if (outFile.includes('/')) mkdirSync(dirname(resolve(localeOutDir, outFile)), { recursive: true });
       writeFileSync(resolve(localeOutDir, outFile), html, 'utf-8');
@@ -5790,7 +5873,7 @@ async function build() {
 <link rel="canonical" href="${SITE_URL}${dest}">
 <meta http-equiv="refresh" content="0; url=${dest}">
 <meta name="robots" content="noindex">
-<script>location.replace(${JSON.stringify(s.target)});</script>
+<script>var target=new URL(${JSON.stringify(s.target)},location.href);if(!target.hash)target.hash=location.hash;if(!target.search)target.search=location.search;location.replace(target.href);</script>
 </head>
 <body>Redirecting to <a href="${dest}">${dest}</a>…</body>
 </html>`;

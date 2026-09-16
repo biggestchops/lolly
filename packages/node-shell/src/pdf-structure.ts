@@ -550,6 +550,11 @@ export function scanPdfStructure(doc: PDFDocument): PdfFinding[] {
       add('Links', hosts.length
         ? `${count(urls.length, 'outbound link')} to ${list(hosts)}`
         : `${count(urls.length, 'outbound link')} - ${list(urls)}`);
+      // Keep complete destinations for the viewer's link review. Never truncate a
+      // URL into a different destination; oversized addresses remain summary-only.
+      for (const url of urls.filter((u) => u.length <= 2048).slice(0, 64)) {
+        out.push({ label: 'Link', detail: url, tone: '' });
+      }
     }
   } catch { /* malformed action graph */ }
 

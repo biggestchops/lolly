@@ -12,7 +12,7 @@ import type { LoadedTool, ToolManifest } from '../../../../engine/src/loader.ts'
 import { currentLang } from '../i18n.ts';
 import { instanceFetch, instancePath } from '../lib/instance.ts';
 import { getToolIntegrity } from '../catalog/integrity.ts';
-import { isToolInstalled, installedFetchFile } from '../lib/installed-tools.ts';
+import { isToolInstalled, installedFetchFile, getInstalledTool } from '../lib/installed-tools.ts';
 import { looksLikeHtmlDocument } from './tool-file-guard.ts';
 
 // Loaded tools are cached so selecting the same template across many rows - the
@@ -43,26 +43,30 @@ export function makeFetchFile(toolId: string): (path: string) => Promise<string>
  *  sidecar when one exists (engine/src/loader.ts's applyManifestI18n) - the active
  *  language never changes mid-session (switchLang reloads the page), so the cache
  *  doesn't need lang in its key. */
-export async function getTool(toolId: string): Promise<LoadedTool> {
-  if (toolCache.has(toolId)) return toolCache.get(toolId)!;
+export async function getTool(toolId: string, artifactDigest?: string): Promise<LoadedTool> {
+  const meta = await getInstalledTool(toolId, artifactDigest);
+  if (artifactDigest && !meta) throw new Error('This saved tool revision is missing. Import its original .lolly file.');
+  const cacheKey = `${toolId}@${artifactDigest || meta?.artifactDigest || ''}`;
+  if (toolCache.has(cacheKey)) return toolCache.get(cacheKey)!;
   // A sideloaded tool (installed from a .lolly) loads from its device-local bucket with
   // NO signed-catalog integrity - the recipient's catalog has no authority over it; its
   // bytes were verified at import (see lib/installed-tools.ts). A catalog tool takes the
   // network path with the signed-catalog check as before.
   const promise = isToolInstalled(toolId).catch(() => false).then((installed) =>
     installed
-      ? loadTool(toolId, installedFetchFile(toolId), {
+      ? loadTool(toolId, installedFetchFile(toolId, artifactDigest || meta?.artifactDigest), {
           lang: currentLang(), trustClass: 'sideloaded-consented',
         })
       : getToolIntegrity().then((integrity) =>
           loadTool(toolId, makeFetchFile(toolId), { lang: currentLang(), integrity: integrity ?? undefined })));
-  toolCache.set(toolId, promise);
+  toolCache.set(cacheKey, promise);
   try {
     const tool = await promise;
-    toolCache.set(toolId, tool);
+    tool.artifactDigest = meta?.artifactDigest;
+    toolCache.set(cacheKey, tool);
     return tool;
   } catch (e) {
-    toolCache.delete(toolId);
+    toolCache.delete(cacheKey);
     throw e;
   }
 }

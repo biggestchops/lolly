@@ -10,14 +10,42 @@ test('Design discovery uses the available templates and opens the exact selected
   const design = index.tools.find((tool: { id: string }) => tool.id === 'design');
   const looks = galleryPreviewLooks(design);
   assert.ok(looks.length > 1);
-  assert.deepEqual(looks.map(look => look.templateId), design.templates.map((tpl: { id: string }) => tpl.id));
-  assert.equal(await galleryLookHref('design', looks[0]), `#/tool/design?template=${design.templates[0].id}`);
+  assert.deepEqual(new Set(looks.map(look => look.templateId)), new Set(design.templates.map((tpl: { id: string }) => tpl.id)));
+  const cover = design.templates.find((tpl: { galleryCover?: boolean }) => tpl.galleryCover) ?? design.templates[0];
+  assert.equal(await galleryLookHref('design', looks[0]), `#/tool/design?template=${cover.id}`);
 });
 
 test('tools without templates use their default state, ignoring authored artwork and examples', async () => {
   const tool = { id: 'backdrop', preview: '/catalog/previews/backdrop.svg', examples: [{ values: { color: '#ff0000' } }] };
   assert.deepEqual(galleryPreviewLooks(tool), [{ values: {} }]);
   assert.equal(await galleryLookHref(tool.id, galleryPreviewLooks(tool)[0]), '#/tool/backdrop');
+});
+
+test('a curated cover leads without changing template order or losing its open target', async () => {
+  const templates = [
+    { id: 'detailed', name: 'Detailed' },
+    { id: 'simple', name: 'Simple', galleryCover: true },
+    { id: 'wide', name: 'Wide' },
+  ];
+  const looks = galleryPreviewLooks({ id: 'chart', templates });
+  assert.deepEqual(looks.map(look => look.templateId), ['simple', 'detailed', 'wide']);
+  assert.deepEqual(templates.map(template => template.id), ['detailed', 'simple', 'wide']);
+  assert.equal(await galleryLookHref('chart', looks[0]), '#/tool/chart?template=simple');
+});
+
+test('tools without a displayable export keep their icon card', () => {
+  assert.deepEqual(galleryPreviewLooks({ id: 'record', formats: ['webm', 'mp4'] }), []);
+  assert.deepEqual(galleryPreviewLooks({ id: 'deck-builder', formats: ['pptx'] }), []);
+  assert.deepEqual(galleryPreviewLooks({ id: 'spatial-photo', formats: ['png'], galleryArt: 'icon' }), []);
+});
+
+test('transparent template variants preserve their theme and exact open target', async () => {
+  const looks = galleryPreviewLooks({ id: 'wordmark', templates: [
+    { id: 'light', name: 'Light ink', galleryCover: true, galleryTheme: 'light' },
+    { id: 'dark', name: 'Reverse ink', galleryCover: true, galleryTheme: 'dark' },
+  ] });
+  assert.deepEqual(looks.map(look => look.theme), ['light', 'dark']);
+  assert.equal(await galleryLookHref('wordmark', looks.find(look => look.theme === 'dark')), '#/tool/wordmark?template=dark');
 });
 
 test('preview identity follows the active palette and opted-in details, independent of token order', async () => {

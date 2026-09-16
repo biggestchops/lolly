@@ -29,6 +29,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { JSDOM } from 'jsdom';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -150,19 +151,21 @@ if (!runner) {
 // Protection) is the way through: with it set, the URL carries the bypass and the real
 // app is measured.
 const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
+const displayTarget = target!.href;
+const redactBypass = (text: string): string => BYPASS ? text.replaceAll(BYPASS, '[redacted]').replaceAll(encodeURIComponent(BYPASS), '[redacted]') : text;
 if (BYPASS) {
   target!.searchParams.set('x-vercel-protection-bypass', BYPASS);
   target!.searchParams.set('x-vercel-set-bypass-cookie', 'true');
 }
 {
   const probe = await fetch(target!.href, { redirect: 'follow', headers: { accept: 'text/html' } })
-    .catch((e: unknown) => { fail(`could not reach ${target!.href} - ${(e as Error).message}`); });
+    .catch((e: unknown) => { fail(`could not reach ${displayTarget} - ${(e as Error).message}`); });
   const body = probe.status === 200 ? (await probe.text().catch(() => '')).slice(0, 4096) : '';
   const gated = probe.status === 401 || probe.status === 403
     || new URL(probe.url).hostname === 'vercel.com'
     || /vercel\.com\/sso-api|Authentication Required|_vercel_sso_nonce/i.test(body);
   if (gated) {
-    fail(`${target!.href} is behind deployment protection (HTTP ${probe.status}${
+    fail(`${displayTarget} is behind deployment protection (HTTP ${probe.status}${
       new URL(probe.url).hostname === 'vercel.com' ? ', redirected to vercel.com' : ''
     }).\n`
       + '  Lighthouse would measure the sign-in page, not this app, and every number would describe vercel.com.\n'
@@ -174,7 +177,7 @@ if (BYPASS) {
 // --- Run it ------------------------------------------------------------------
 const tmp = mkdtempSync(path.join(tmpdir(), 'lolly-first-load-'));
 const reportPath = path.join(tmp, 'lighthouse.json');
-console.log(`• measuring ${target!.href} (mobile preset, cold load - this takes a minute)`);
+console.log(`• measuring ${displayTarget} (mobile preset, cold load - this takes a minute)`);
 const run = spawnSync(
   runner.cmd,
   [
@@ -189,7 +192,7 @@ const run = spawnSync(
   { cwd: root, encoding: 'utf8', timeout: LH_TIMEOUT_MS, maxBuffer: 64 * 1024 * 1024 },
 );
 
-const stderrTail = (run.stderr ?? '').trim().split('\n').slice(-12).join('\n');
+const stderrTail = redactBypass((run.stderr ?? '').trim().split('\n').slice(-12).join('\n'));
 if (run.error || !existsSync(reportPath)) {
   const why = run.error ? String(run.error) : `exited ${run.status}`;
   if (/ENOENT|could not determine executable|npm error 404|not found/i.test(`${why}\n${stderrTail}`)) {
@@ -231,7 +234,7 @@ try {
 if (lhr!.runtimeError?.code) {
   fail(
     `Lighthouse could not load the page (${lhr!.runtimeError.code}): ` +
-      `${lhr!.runtimeError.message ?? 'no message'}\n  Is ${target!.href} deployed and public?`,
+      `${redactBypass(lhr!.runtimeError.message ?? 'no message')}\n  Is ${displayTarget} deployed and public?`,
   );
 }
 
@@ -300,7 +303,7 @@ report(
   dupes.length === 0
     ? `${byUrl.size} unique URLs, each fetched once`
     : `${dupes.length} URL(s) fetched more than once, ~${kb(dupeBytes)} KB re-downloaded`,
-  dupes.map(([url, v]) => `${v.count}x  ${kb(v.bytes)} KB  ${url}`),
+  dupes.map(([url, v]) => `${v.count}x  ${kb(v.bytes)} KB  ${redactBypass(url)}`),
 );
 
 // The served HTML, not the built dist: a rewrite, an edge transform or a stale deploy can
@@ -312,6 +315,20 @@ try {
   if (!res.ok) {
     report('modulepreload count', false, `HTTP ${res.status} fetching the HTML`);
   } else {
+    const document = new JSDOM(html);
+    try {
+      const viewports = document.window.document.querySelectorAll('meta[name="viewport"]');
+      const content = viewports[0]?.getAttribute('content') ?? '';
+      const settings = new Map(content.split(',').map(part => {
+        const [key, value] = part.trim().toLowerCase().split(/\s*=\s*/);
+        return [key, value] as const;
+      }));
+      report('mobile viewport', viewports.length === 1 && settings.get('width') === 'device-width'
+        && Number(settings.get('initial-scale')) === 1,
+      content || 'missing viewport metadata; mobile browsers shrink a desktop-width page');
+    } finally {
+      document.window.close();
+    }
     const preloads = [...html.matchAll(/<link[^>]*\brel=["']modulepreload["'][^>]*>/gi)].length;
     report(
       'modulepreload count',
@@ -331,10 +348,10 @@ if (keepReportAt) {
 if (failures > 0) {
   // Keep the temp report on failure - the numbers above say WHAT blew, the report says why.
   console.error(
-    `\n${failures} first-load check(s) failed against ${target!.href}\n` +
+    `\n${failures} first-load check(s) failed against ${displayTarget}\n` +
       `Full Lighthouse report: ${reportPath}`,
   );
   process.exit(1);
 }
 rmSync(tmp, { recursive: true, force: true });
-console.log(`\n✓ first-load smoke passed against ${target!.href}`);
+console.log(`\n✓ first-load smoke passed against ${displayTarget}`);

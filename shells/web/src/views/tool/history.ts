@@ -263,13 +263,14 @@ export function wireHistory(tview: ToolViewCtx): void {
   const canvasEditInput = editorLayout
     ? tview.tool.manifest.inputs?.find((i) => i.type === 'blocks' && i.canvas)
     : null; tview.canvasEditInput = canvasEditInput;
-  // Geometry paint fast-skip (plans/98 section 9) - OFF by default, opt-in via ?canvasfastpath=1 so
-  // the served-app harness proves exported-SVG byte-parity before it is enabled for everyone.
+  // Design translations have a served-app DOM/SVG/export-metadata parity gate.
+  // Other editors stay opt-in; canvasfastpath=0 keeps the full-paint control available.
   const fastPathOn =
     editorLayout &&
     !!canvasEditInput &&
     typeof location !== 'undefined' &&
-    /[?&]canvasfastpath=1\b/.test(location.href); tview.fastPathOn = fastPathOn;
+    (/[?&]canvasfastpath=1\b/.test(location.href) ||
+      (tview.toolId === 'design' && !/[?&]canvasfastpath=0\b/.test(location.href))); tview.fastPathOn = fastPathOn;
   const fastCfgPaint: FastPathCfg | null =
     fastPathOn && canvasEditInput?.canvas
       ? resolveCanvasFastCfg(canvasEditInput.canvas as Record<string, unknown>)
@@ -428,7 +429,7 @@ export function wireHistory(tview: ToolViewCtx): void {
 
   // Output previews are a single image; file utilities render their actual
   // interface here, so preserve their buttons and fields in the accessibility tree.
-  const canvasRole = runtime.hasExportFile ? 'group' : 'img'; tview.canvasRole = canvasRole;
+  const canvasRole = runtime.hasExportFile || tview.toolId === '3d-studio' ? 'group' : 'img'; tview.canvasRole = canvasRole;
 }
 
 export function historyOps(tview: ToolViewCtx) {

@@ -98,13 +98,13 @@ const onNavEvent = (e: Event): void => {
 };
 
 /** Pop the entry this overlay pushed, so the next Back leaves the view rather than
- *  doing nothing. Deferred one microtask because a caller routinely navigates right
+ *  doing nothing. Deferred one task so promise continuations from onClose can navigate
  *  after closing (welcome-dialog sets '#/start', pickers call navigateTo): by then
  *  the URL has moved, and the href check leaves our entry alone instead of racing a
  *  traversal against that navigation. */
 function consume(entry: StackEntry): void {
   entry.owed = false;
-  queueMicrotask(() => {
+  setTimeout(() => {
     if (entry.seq < depth || location.href !== entry.pushedHref) return;
     depth -= 1;
     selfPops += 1;

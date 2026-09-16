@@ -1821,6 +1821,20 @@ html[data-a11y-motion="reduce"] .url-budget-toast { animation: none; }
    The quality stop is the everyday control; the fold holds codec / fps / rate-mode /
    encoder for pros. `.export-pro-settings` takes its box from the shared `.section-card`
    (disclosure.css); only the header button, the caret and the body layout are local. */
+.export-video-options > summary {
+  cursor: pointer;
+  color: var(--ui-color-text-default);
+  font-size: var(--ui-type-label);
+  padding-block: var(--ui-space-control-block);
+}
+.export-video-options > summary[hidden] { display: none; }
+.export-video-options > summary:focus-visible {
+  outline: 2px solid var(--ui-color-focus-ring);
+  outline-offset: 2px;
+}
+.export-video-options[data-compact="false"] { padding: 0; border: 0; background: none; }
+.export-video-options[open] { display: block; }
+.export-video-options[open] > :not(summary) { margin-block-start: var(--ui-space-control-block); }
 .export-video-quality {
   display: flex;
   flex-direction: column;

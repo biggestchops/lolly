@@ -1,0 +1,15 @@
+{
+  "id": "brand-starter",
+  "name": "Brand waveform",
+  "category": "Brand",
+  "description": "A clear waveform on transparency, ready for a recording.",
+  "values": {
+    "title": "",
+    "subtitle": "",
+    "bg": "transparent",
+    "accent": "{color.semantic.secondary}",
+    "ink": "{color.semantic.text}",
+    "layout": "minimal"
+  },
+  "galleryCover": true
+}

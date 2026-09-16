@@ -262,14 +262,9 @@ export interface PanelShortcut {
    *
    * Empty for a modifier-only row (Alt), which has no keydown branch of its own.
    *
-   * `altKey` is the ONE chord this panel binds, and it is documented rather than
-   * hidden: Alt+←/→ (previous/next keyframe) reuses the arrow keys the bare press
-   * already owns, because "the same key, one step coarser" is the only mapping that
-   * needs no second thing to remember - and Alt is already this panel's modifier
-   * vocabulary (it bypasses snapping everywhere else, i.e. it always means "not the
-   * ordinary reading of this gesture").
+   * Chords carry their modifiers explicitly, including timeline-scoped Select all.
    */
-  events: Array<{ key: string; shiftKey?: boolean; altKey?: boolean }>;
+  events: Array<{ key: string; shiftKey?: boolean; altKey?: boolean; metaKey?: boolean; ctrlKey?: boolean }>;
 }
 
 /**
@@ -290,6 +285,7 @@ export interface PanelShortcut {
  */
 export const PANEL_SHORTCUTS: PanelShortcut[] = [
   { keys: 'Space', label: t('Play or pause'), events: [{ key: ' ' }, { key: 'Spacebar' }] },
+  { keys: 'Cmd/Ctrl + A', label: t('Select all clips'), events: [{ key: 'a', metaKey: true }, { key: 'a', ctrlKey: true }] },
   {
     keys: '← →',
     label: t('Move the playhead'),

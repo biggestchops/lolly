@@ -1528,11 +1528,11 @@ function summarize(results: ShotResult[]): void {
     console.log('   crop to the area of focus (cropSelector= or crop*=) rather than shooting the whole window.');
     process.exit(1);
   }
+  if (failed.length) process.exit(1);
   if (pending.length) {
     console.log(`▲  changed vs the committed baselines - review, then promote with:  pnpm run docs:shots --accept`);
     process.exit(2);
   }
-  if (failed.length) process.exit(1);
 }
 
 // ── Profile pin ───────────────────────────────────────────────────────────────

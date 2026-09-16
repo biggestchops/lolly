@@ -31,14 +31,16 @@
   box-shadow: 0 0 0 2px var(--ui-color-selection-border), var(--object-shadow-hover);
 }
 
-/* Every preview uses the Catalog's transparency backing. */
+/* Catalog and template pickers retain a transparency checkerboard. */
 .cat-tile-fig,
-.gtile-hero,
-.gcar,
 .tile-figure,
 .tpl-cover {
   background: repeating-conic-gradient(hsl(var(--muted) / .5) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
 }
+
+/* Tool covers sit quietly on the card; transparency needs no checkerboard. */
+.gtile-hero,
+.gcar { background: transparent; }
 
 /* Tint the preview backing and blend only the artwork into it. Text and controls
    keep their own colours. This is the Catalog's selection treatment. */

@@ -342,44 +342,53 @@ export async function downloadSelection(cat: CatCtx): Promise<void> {
     heavy: false,
     cancel: () => { /* cooperative - the loop polls job.cancelled between members */ },
   });
-  const files: { name: string; blob: Blob }[] = [];
-  const names = new Set<string>();
-  let credentialed = 0;
-  for (const ref of refs) {
-    if (job.cancelled) return;
-    job.progress(files.length, refs.length);
-    try {
-      const blob = await credentialedBytes(cat, ref);
-      try {
-        const bytes = new Uint8Array(await blob.arrayBuffer());
-        if (extractC2paStore(bytes) && (await verifyC2pa(bytes)).found) credentialed++;
-      } catch { /* the check is advisory - never blocks the zip */ }
-      const orig = downloadName(ref, String(ref.format || 'bin'));
-      let name = orig;
-      for (let n = 2; names.has(name); n++) {
-        name = orig.includes('.') ? orig.replace(/(\.[^.]+)$/, ` (${n})$1`) : `${orig} (${n})`;
-      }
-      names.add(name);
-      files.push({ name, blob });
-    } catch (err) {
-      host.log?.('warn', 'Catalog bulk download: member skipped', { id: ref.id, error: String(err) });
-    }
-  }
-  if (!files.length) { job.finish(); return; }
-  job.progress(files.length, refs.length);
-  const { buildZip, saveBlob } = await import('../../pro/zip.ts');
-  let zip: Blob;
   try {
-    zip = await buildZip(files, { zipName: 'lolly-images', zipLock, password: strongPassword });
+    const files: { name: string; blob: Blob }[] = [];
+    const names = new Set<string>();
+    let credentialed = 0;
+    for (const ref of refs) {
+      if (job.cancelled) return;
+      job.progress(files.length, refs.length);
+      try {
+        const blob = await credentialedBytes(cat, ref);
+        try {
+          const bytes = new Uint8Array(await blob.arrayBuffer());
+          if (extractC2paStore(bytes) && (await verifyC2pa(bytes)).found) credentialed++;
+        } catch { /* the check is advisory - never blocks the zip */ }
+        const orig = downloadName(ref, String(ref.format || 'bin'));
+        let name = orig;
+        for (let n = 2; names.has(name); n++) {
+          name = orig.includes('.') ? orig.replace(/(\.[^.]+)$/, ` (${n})$1`) : `${orig} (${n})`;
+        }
+        names.add(name);
+        files.push({ name, blob });
+      } catch (err) {
+        host.log?.('warn', 'Catalog bulk download: member skipped', { id: ref.id, error: String(err) });
+      }
+    }
+    if (job.cancelled) return;
+    if (!files.length) { job.finish(); return; }
+    job.progress(files.length, refs.length);
+    const { buildZip, saveBlob } = await import('../../pro/zip.ts');
+    let zip: Blob;
+    try {
+      zip = await buildZip(files, { zipName: 'lolly-images', zipLock, password: strongPassword });
+    } catch (err) {
+      job.fail(err);
+      throw err;
+    }
+    if (job.cancelled) return;
+    await saveBlob(zip, 'lolly-images.zip');
+    job.finish();
+    announce(files.length === 1
+      ? t('1 image zipped · {c} with Content Credentials', { c: credentialed })
+      : t('{n} images zipped · {c} with Content Credentials', { n: files.length, c: credentialed }));
   } catch (err) {
     job.fail(err);
     throw err;
+  } finally {
+    job.settle();
   }
-  await saveBlob(zip, 'lolly-images.zip');
-  job.finish();
-  announce(files.length === 1
-    ? t('1 image zipped · {c} with Content Credentials', { c: credentialed })
-    : t('{n} images zipped · {c} with Content Credentials', { n: files.length, c: credentialed }));
 }
 export async function deleteSelection(cat: CatCtx): Promise<void> {
   const { selected, tileSelect } = cat;

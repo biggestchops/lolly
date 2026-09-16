@@ -1,0 +1,20 @@
+{
+  "id": "brand-starter",
+  "name": "Brand avatar",
+  "category": "Brand",
+  "description": "A monogram portrait framed by a clear brand ring.",
+  "galleryCover": true,
+  "values": {
+    "photo": {
+      "source": "remote",
+      "id": "https://lolly.tools/tool/icon.png?text=AM&shape=circle",
+      "_unresolved": true
+    },
+    "photoBackdrop": "none",
+    "text": "OPEN TOGETHER",
+    "ringFade": 0,
+    "ringColor": "{color.semantic.secondary}",
+    "ringGradient": false,
+    "transparentBg": true
+  }
+}

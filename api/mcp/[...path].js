@@ -55,6 +55,11 @@ var init_tool_schema = __esm({
           type: "string",
           description: "Shown in the tool gallery."
         },
+        galleryArt: {
+          type: "string",
+          enum: ["render", "icon"],
+          description: "Gallery first impression. Default render uses editable templates or tool defaults. Use icon when a tool needs personal media or an explicit capture before it has a useful output."
+        },
         a11yLabel: {
           type: "string",
           description: `Optional Handlebars template for the canvas's accessible label (the preview is exposed to screen readers as role=img). Hydrated live with input values, e.g. "QR code linking to {{url}}". Defaults to "<name> preview" when omitted.`
@@ -787,6 +792,447 @@ var init_tool_schema = __esm({
         isolate: {
           type: "boolean",
           description: "Request Worker execution for a verified built-in tool's hooks (engine 1.105+, plans/86-worker-isolation-hooks.md M2). The receiving shell assigns trust independently: sideloaded or remote hook code is forced into strict isolation and fails closed when it cannot be isolated, regardless of this manifest hint."
+        },
+        designTool: {
+          type: "object",
+          additionalProperties: false,
+          required: [
+            "schemaVersion",
+            "presentation",
+            "inputs",
+            "choices",
+            "variants",
+            "defaultVariant",
+            "formats"
+          ],
+          properties: {
+            schemaVersion: {
+              const: 1
+            },
+            presentation: {
+              enum: [
+                "sidebar",
+                "on-canvas"
+              ]
+            },
+            inputs: {
+              type: "array",
+              maxItems: 64,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: [
+                  "input",
+                  "targets"
+                ],
+                properties: {
+                  input: {
+                    $ref: "#/$defs/input"
+                  },
+                  targets: {
+                    type: "array",
+                    maxItems: 1e3,
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      required: [
+                        "variantId",
+                        "layerId",
+                        "property"
+                      ],
+                      properties: {
+                        variantId: {
+                          type: "string",
+                          pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+                        },
+                        layerId: {
+                          type: "string",
+                          maxLength: 2e3
+                        },
+                        property: {
+                          enum: [
+                            "text",
+                            "image",
+                            "fontSize",
+                            "font",
+                            "weight",
+                            "fg",
+                            "fill",
+                            "fit",
+                            "imageFraming"
+                          ]
+                        },
+                        text: {
+                          type: "object",
+                          additionalProperties: false,
+                          required: [
+                            "mode",
+                            "min",
+                            "max",
+                            "wrap"
+                          ],
+                          properties: {
+                            mode: {
+                              enum: [
+                                "fixed",
+                                "shrink"
+                              ]
+                            },
+                            min: {
+                              type: "number",
+                              exclusiveMinimum: 0
+                            },
+                            max: {
+                              type: "number",
+                              exclusiveMinimum: 0
+                            },
+                            maxLines: {
+                              type: "integer",
+                              minimum: 1,
+                              maximum: 100
+                            },
+                            wrap: {
+                              type: "boolean"
+                            },
+                            sharedSize: {
+                              type: "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  common: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: [
+                      "key",
+                      "subject",
+                      "source"
+                    ],
+                    properties: {
+                      key: {
+                        enum: [
+                          "firstname",
+                          "lastname",
+                          "email",
+                          "heading",
+                          "subheading",
+                          "body",
+                          "eventName",
+                          "organization",
+                          "headshot"
+                        ]
+                      },
+                      subject: {
+                        enum: [
+                          "person",
+                          "event",
+                          "content",
+                          "recipient",
+                          "presenter"
+                        ]
+                      },
+                      source: {
+                        enum: [
+                          "brief",
+                          "profile"
+                        ]
+                      }
+                    }
+                  },
+                  text: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: [
+                      "mode",
+                      "min",
+                      "max",
+                      "wrap"
+                    ],
+                    properties: {
+                      mode: {
+                        enum: [
+                          "fixed",
+                          "shrink"
+                        ]
+                      },
+                      min: {
+                        type: "number",
+                        exclusiveMinimum: 0
+                      },
+                      max: {
+                        type: "number",
+                        exclusiveMinimum: 0
+                      },
+                      maxLines: {
+                        type: "integer",
+                        minimum: 1,
+                        maximum: 100
+                      },
+                      wrap: {
+                        type: "boolean"
+                      },
+                      sharedSize: {
+                        type: "boolean"
+                      }
+                    }
+                  },
+                  approved: {
+                    type: "array",
+                    maxItems: 1e3,
+                    items: {
+                      type: "string",
+                      maxLength: 2e3
+                    }
+                  },
+                  image: {
+                    type: "object",
+                    additionalProperties: false,
+                    properties: {
+                      minWidth: {
+                        type: "integer",
+                        minimum: 1,
+                        maximum: 32768
+                      },
+                      minHeight: {
+                        type: "integer",
+                        minimum: 1,
+                        maximum: 32768
+                      },
+                      formats: {
+                        type: "array",
+                        minItems: 1,
+                        uniqueItems: true,
+                        items: {
+                          enum: [
+                            "png",
+                            "jpeg",
+                            "webp",
+                            "avif",
+                            "svg"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            choices: {
+              type: "array",
+              maxItems: 4,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: [
+                  "inputId",
+                  "options"
+                ],
+                properties: {
+                  inputId: {
+                    type: "string",
+                    pattern: "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$"
+                  },
+                  options: {
+                    type: "array",
+                    maxItems: 24,
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      required: [
+                        "value",
+                        "label",
+                        "writes"
+                      ],
+                      properties: {
+                        value: {
+                          type: "string",
+                          maxLength: 2e3
+                        },
+                        label: {
+                          type: "string",
+                          maxLength: 2e3
+                        },
+                        variantId: {
+                          type: "string",
+                          pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+                        },
+                        thumbnail: {
+                          type: "string",
+                          maxLength: 1048576
+                        },
+                        writes: {
+                          type: "array",
+                          maxItems: 1e3,
+                          items: {
+                            type: "object",
+                            additionalProperties: false,
+                            required: [
+                              "variantId",
+                              "layerId",
+                              "property",
+                              "value"
+                            ],
+                            properties: {
+                              variantId: {
+                                type: "string",
+                                pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+                              },
+                              layerId: {
+                                type: "string",
+                                maxLength: 2e3
+                              },
+                              property: {
+                                enum: [
+                                  "text",
+                                  "image",
+                                  "fontSize",
+                                  "font",
+                                  "weight",
+                                  "fg",
+                                  "fill",
+                                  "fit",
+                                  "imageFraming"
+                                ]
+                              },
+                              value: {},
+                              text: {
+                                type: "object",
+                                additionalProperties: false,
+                                required: [
+                                  "mode",
+                                  "min",
+                                  "max",
+                                  "wrap"
+                                ],
+                                properties: {
+                                  mode: {
+                                    enum: [
+                                      "fixed",
+                                      "shrink"
+                                    ]
+                                  },
+                                  min: {
+                                    type: "number",
+                                    exclusiveMinimum: 0
+                                  },
+                                  max: {
+                                    type: "number",
+                                    exclusiveMinimum: 0
+                                  },
+                                  maxLines: {
+                                    type: "integer",
+                                    minimum: 1,
+                                    maximum: 100
+                                  },
+                                  wrap: {
+                                    type: "boolean"
+                                  },
+                                  sharedSize: {
+                                    type: "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        defaults: {
+                          type: "object",
+                          maxProperties: 64
+                        },
+                        fixedInputs: {
+                          type: "array",
+                          maxItems: 64,
+                          items: {
+                            type: "string",
+                            pattern: "^[a-zA-Z][a-zA-Z0-9_-]{0,63}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            variants: {
+              type: "array",
+              maxItems: 24,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: [
+                  "id",
+                  "label",
+                  "width",
+                  "height"
+                ],
+                properties: {
+                  id: {
+                    type: "string",
+                    pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+                  },
+                  label: {
+                    type: "string",
+                    maxLength: 2e3
+                  },
+                  width: {
+                    type: "number",
+                    minimum: 1,
+                    maximum: 16384
+                  },
+                  height: {
+                    type: "number",
+                    minimum: 1,
+                    maximum: 16384
+                  }
+                }
+              }
+            },
+            defaultVariant: {
+              type: "string",
+              pattern: "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+            },
+            formats: {
+              type: "array",
+              minItems: 1,
+              uniqueItems: true,
+              items: {
+                enum: [
+                  "png",
+                  "svg",
+                  "pdf"
+                ]
+              }
+            },
+            sourceTool: {
+              type: "object",
+              additionalProperties: false,
+              required: [
+                "id",
+                "version",
+                "inputs"
+              ],
+              properties: {
+                id: {
+                  type: "string",
+                  minLength: 1
+                },
+                version: {
+                  type: "string",
+                  minLength: 1
+                },
+                inputs: {
+                  type: "object",
+                  maxProperties: 64,
+                  additionalProperties: {
+                    type: "string",
+                    minLength: 1
+                  }
+                }
+              }
+            }
+          }
         }
       },
       $defs: {
@@ -2147,6 +2593,15 @@ var init_tool_schema = __esm({
           ],
           description: 'One named starting point in the "New from template" chooser: an id, a display name, and (in the external per-template file) a full input seed. Two shapes validate against this def: the EXTERNAL file tools/<id>/templates/<tid>.json, which carries `values`; and the METADATA-ONLY entry the synced index carries, which strips `values` (hence `values` is optional). Like an exampleVariant\'s `values` but read directly into a fresh session rather than rendered as an illustrative preview.',
           properties: {
+            galleryTheme: {
+              type: "string",
+              enum: ["light", "dark"],
+              description: "Gallery theme this transparent artwork suits; dark also serves the brand theme. Omit for artwork that suits either theme."
+            },
+            galleryCover: {
+              type: "boolean",
+              description: "Use this editable template as the first gallery preview. At most one cover per theme."
+            },
             id: {
               type: "string",
               description: "Stable id, unique within this tool's `templates[]`. Addressable via the reserved `?template=<id>` param, so treat it as a permanent contract like a tool/asset id."
@@ -3046,11 +3501,11 @@ function canonicalJson(value) {
   if (Array.isArray(value)) {
     return "[" + value.map((v) => canonicalJson(v)).join(",") + "]";
   }
-  const record5 = value;
+  const record7 = value;
   const parts = [];
-  for (const key of Object.keys(record5).sort()) {
-    if (record5[key] === void 0) continue;
-    parts.push(JSON.stringify(key) + ":" + canonicalJson(record5[key]));
+  for (const key of Object.keys(record7).sort()) {
+    if (record7[key] === void 0) continue;
+    parts.push(JSON.stringify(key) + ":" + canonicalJson(record7[key]));
   }
   return "{" + parts.join(",") + "}";
 }
@@ -3159,7 +3614,7 @@ var ENGINE_VERSION;
 var init_version = __esm({
   "engine/src/version.ts"() {
     "use strict";
-    ENGINE_VERSION = "1.197.0";
+    ENGINE_VERSION = "1.204.0";
   }
 });
 
@@ -3409,7 +3864,7 @@ async function loadTool(toolId, fetchFile, opts = {}) {
     }
   }
   if (manifest.render?.formats) {
-    manifest.render.formats = expandDerivedFormats(manifest.render.formats);
+    manifest.render.formats = manifest.designTool ? [...manifest.designTool.formats] : expandDerivedFormats(manifest.render.formats);
   }
   const declared = manifest.render?.formats ?? [];
   const textExts = TEXT_TEMPLATE_EXTS.filter((ext) => declared.includes(ext));
@@ -4226,8 +4681,8 @@ function oklchSlice(opts) {
   let inside;
   if (fast) inside = fast;
   else {
-    const own = ceilingGrid(src);
-    inside = (l, c, h) => c <= sampleCeiling(own, l, h);
+    const own2 = ceilingGrid(src);
+    inside = (l, c, h) => c <= sampleCeiling(own2, l, h);
   }
   const encode = opts.encode ?? "srgb";
   const ceiling = ceilingGrid(ENCODE_GAMUT[encode]);
@@ -5196,9 +5651,9 @@ function parseGradientSpec(input) {
     if (stops.length >= MAX_GRADIENT_STOPS) break;
     const at = Math.max(tok.lastIndexOf("-"), tok.lastIndexOf("@"));
     const hasPos = at > 0 && /^\d+(?:\.\d+)?$/.test(tok.slice(at + 1));
-    const color = readColor(hasPos ? tok.slice(0, at) : tok);
-    if (!color) continue;
-    stops.push({ color, pos: hasPos ? clampPos(parseFloat(tok.slice(at + 1))) : Number.NaN });
+    const color2 = readColor(hasPos ? tok.slice(0, at) : tok);
+    if (!color2) continue;
+    stops.push({ color: color2, pos: hasPos ? clampPos(parseFloat(tok.slice(at + 1))) : Number.NaN });
   }
   if (stops.length < 2) return null;
   spreadPositions(stops);
@@ -6599,8 +7054,8 @@ function makeColorApi() {
     // `slice`, so the studio and the tool can never disagree about where sRGB
     // ends. `gamut` takes a colour STRING like the rest of this API; the other
     // two are numeric because they run per-pixel/per-row.
-    gamut: (color) => {
-      const o = toOklch(color);
+    gamut: (color2) => {
+      const o = toOklch(color2);
       return o ? oklchGamut(o.l, o.c, o.h) : "none";
     },
     maxChroma: (l, h, limit = "srgb") => maxChroma(l, h, limit),
@@ -6609,7 +7064,7 @@ function makeColorApi() {
     // The perceptual axes themselves. Until 1.69 a tool could ask for ramps and
     // harmonies but could not read a colour's own lightness or chroma. The one
     // conversion every colour tool needs, and the one it had to reimplement.
-    oklch: (color) => toOklch(color),
+    oklch: (color2) => toOklch(color2),
     fromOklch: (o) => oklchToHex(o),
     // v1.70: the user's own ICC profile as a gamut (icc.ts + gamut-source.ts).
     // The three queries go through gamut.ts exactly as the display gamuts do:
@@ -7524,7 +7979,8 @@ var init_chart_v1 = __esm({
 
 // packages/core/src/design-v1.ts
 function finite(value, fallback = 0) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  const n2 = typeof value === "string" && value.trim() !== "" ? Number(value) : value;
+  return typeof n2 === "number" && Number.isFinite(n2) ? n2 : fallback;
 }
 function text2(value) {
   return typeof value === "string" ? value : "";
@@ -7898,8 +8354,8 @@ function faceDrift(a, b) {
   if (!ca || !cb) return void 0;
   return deltaEOkColor(ca, cb);
 }
-function canonicalValue(color) {
-  const c = typeof color === "string" ? parseColor(color) : color;
+function canonicalValue(color2) {
+  const c = typeof color2 === "string" ? parseColor(color2) : color2;
   if (!c) return null;
   return formatColor(convertColor(c, "lab"));
 }
@@ -8303,6 +8759,7 @@ function isObjectValue(v) {
   return typeof v === "object" && v !== null;
 }
 function syntheticInputs(manifest) {
+  if (manifest.designTool) return [];
   const declared = manifest.inputs ?? [];
   const synthetic = [];
   if (manifest.render?.transparentBg !== void 0 && !declared.some((i) => i.id === "transparentBg")) {
@@ -8575,6 +9032,224 @@ var init_inputs = __esm({
       "datetime-local"
     ]);
     TEXT_VALUE_CAP = 4e3;
+  }
+});
+
+// packages/core/src/design-tool-v1.ts
+function designToolPolicy(d) {
+  return {
+    schemaVersion: 1,
+    presentation: d.presentation,
+    inputs: d.inputs,
+    choices: d.choices,
+    variants: d.variants.map(({ id: id2, label, width, height }) => ({ id: id2, label, width, height })),
+    defaultVariant: d.defaultVariant,
+    formats: d.formats,
+    ...d.sourceTool ? { sourceTool: d.sourceTool } : {}
+  };
+}
+function validateDesignTool(d, reserved = []) {
+  const issues = [];
+  const add = (code, message, inputId, layerId) => {
+    issues.push({ code, message, inputId, layerId });
+  };
+  if (d.schemaVersion !== 1) add("version", "This rules version is not supported.");
+  if (!/^[a-z0-9][a-z0-9-]{2,95}$/.test(d.id)) add("identity", "Use a valid permanent tool id.");
+  if (!d.name.trim() || !/^\d+\.\d+\.\d+$/.test(d.version)) add("identity", "Add a name and a three-part version.");
+  if (!["sidebar", "on-canvas"].includes(d.presentation)) add("presentation", "Choose Sidebar or On-canvas.");
+  if (!d.formats.length || d.formats.some((f) => !["png", "svg", "pdf"].includes(f))) add("formats", "Choose PNG, SVG or PDF.");
+  if (!d.variants.length || d.variants.length > 24 || d.inputs.length > 64 || d.choices.length > 4 || d.recipes.length > 64) add("limits", "Use up to 24 artboards, 64 inputs and four choices.");
+  const variants = new Map(d.variants.map((v) => [v.id, v]));
+  if (variants.size !== d.variants.length || !variants.has(d.defaultVariant)) add("artboards", "Choose a valid default artboard and unique artboard ids.");
+  for (const v of d.variants) {
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/.test(v.id) || ![v.width, v.height].every((n2) => Number.isFinite(n2) && n2 >= 1 && n2 <= 16384)) add("artboard-size", "Artboards need a size between 1 and 16384 pixels.");
+    if (v.boxes.length > 1e3 || new Set(v.boxes.map((b) => b.id)).size !== v.boxes.length) add("layers", "Layers need unique, permanent ids.");
+  }
+  const fields = new Map(d.inputs.map((f) => [f.input.id, f]));
+  const choiceIds = new Set(d.choices.map((c) => c.inputId));
+  if (fields.size !== d.inputs.length || choiceIds.size !== d.choices.length) add("duplicate-id", "Each input and choice needs a unique id.");
+  const owners = /* @__PURE__ */ new Map();
+  const choiceOwners = /* @__PURE__ */ new Map();
+  const defaultOwners = /* @__PURE__ */ new Map();
+  const checkTarget = (t, owner, type) => {
+    if (!own(propertyTypes, t.property)) {
+      add("property", "This property cannot be made editable.", owner, t.layerId);
+      return;
+    }
+    const layer = variants.get(t.variantId)?.boxes.find((b) => b.id === t.layerId);
+    if (!layer) add("missing-layer", "The linked object was removed. Relink this input.", owner, t.layerId);
+    if (type && !propertyTypes[t.property].includes(type)) add("type", "The input type does not match its property.", owner, t.layerId);
+    const prior = owners.get(keyOf(t));
+    if (prior && prior !== owner) add("ownership", "Two controls change the same property. Choose one owner.", owner, t.layerId);
+    owners.set(keyOf(t), owner);
+  };
+  for (const f of d.inputs) {
+    const i = f.input;
+    if (!idPattern.test(i.id) || badKeys.has(i.id) || internal.has(i.id) || reserved.includes(i.id) || i.id.startsWith("__")) add("input-id", "Use a unique input id that is not a reserved setting.", i.id);
+    if (!["text", "longtext", "number", "select", "color", "asset", "vector", ...d.sourceTool ? ["boolean", "url", "date", "time", "datetime-local"] : []].includes(i.type)) add("input-type", "This input type is not supported in a locked tool.", i.id);
+    if (i.type === "select" && (!i.options?.length || i.options.some((o) => !o.value || !o.label) || new Set(i.options.map((o) => o.value)).size !== i.options.length)) add("options", "Give each option a label and a unique value.", i.id);
+    if (i.type === "number" && (![i.min, i.max, i.step, i.default].every((n2) => typeof n2 === "number" && Number.isFinite(n2)) || Number(i.min) > Number(i.max) || Number(i.step) <= 0)) add("range", "Set a finite minimum, maximum, default and positive step.", i.id);
+    if (i.type === "asset" && i.assetType !== "image") add("media", "Editable images must use the image asset type.", i.id);
+    if (i.type === "vector") {
+      const axes = i.fields;
+      if (!axes?.length || axes.length > 3 || new Set(axes.map((a) => a.id)).size !== axes.length || axes.some((a) => !["x", "y", "zoom"].includes(a.id) || ![a.min, a.max, a.step].every(Number.isFinite) || a.min > a.max || a.step <= 0 || a.min < (a.id === "zoom" ? 1 : 0) || a.max > (a.id === "zoom" ? 1e3 : 100))) add("framing-range", "Set valid X/Y percentages and a bounded zoom range.", i.id);
+    }
+    if (!f.targets.length && !d.sourceTool?.inputs[i.id] && !choiceIds.has(i.id) && !d.recipes.some((r3) => r3.parts.some((p) => "inputId" in p && p.inputId === i.id))) add("unlinked", "Link this input to an object.", i.id);
+    if (f.common && (f.common.key === "headshot" ? i.type !== "asset" : !["text", "longtext"].includes(i.type))) add("common-type", "Use an image for a headshot and text for other common fields.", i.id);
+    if (f.image && (i.type !== "asset" || [f.image.minWidth, f.image.minHeight].some((n2) => n2 !== void 0 && (!Number.isInteger(n2) || n2 < 1 || n2 > 32768)) || f.image.formats && (!f.image.formats.length || f.image.formats.some((format) => !["png", "jpeg", "webp", "avif", "svg"].includes(format))))) add("image-rule", "Choose image formats and positive minimum pixel dimensions.", i.id);
+    if (f.common?.source === "profile" && (!["person", "recipient", "presenter"].includes(f.common.subject) || !["firstname", "lastname", "email"].includes(f.common.key))) add("profile", "Profile prefill is only available for a person\u2019s name or email.", i.id);
+    for (const target of f.targets) {
+      checkTarget(target, i.id, i.type);
+      if (target.text && (!(target.text.min > 0) || !Number.isFinite(target.text.max) || target.text.max < target.text.min)) add("text-fit", "Review this object\u2019s font-size range.", i.id, target.layerId);
+    }
+    if (f.text && (!(f.text.min > 0) || !Number.isFinite(f.text.max) || f.text.min > f.text.max || f.text.maxLines !== void 0 && (!Number.isInteger(f.text.maxLines) || f.text.maxLines < 1))) add("text-fit", "Set a valid font-size range and line limit.", i.id);
+  }
+  if (d.sourceTool) {
+    const entries = Object.entries(d.sourceTool.inputs);
+    if (!d.sourceTool.id || !d.sourceTool.version || entries.length !== d.inputs.length || new Set(entries.map(([, id2]) => id2)).size !== entries.length || entries.some(([id2, source]) => !fields.has(id2) || !source || badKeys.has(source) || source.startsWith("__")))
+      add("source-inputs", "Choose distinct inputs from the source tool.");
+  }
+  let combinations = 1;
+  let artboardSelectors = 0;
+  for (const c of d.choices) {
+    const field2 = fields.get(c.inputId);
+    if (field2?.input.type !== "select" || field2.targets.length) add("choice", "A choice needs its own select input.", c.inputId);
+    combinations *= c.options.length;
+    if (!c.options.length || new Set(c.options.map((o) => o.value)).size !== c.options.length) add("choice-options", "Give each choice option a unique value.", c.inputId);
+    if (c.options.some((o) => o.variantId)) artboardSelectors++;
+    const choiceTargets = /* @__PURE__ */ new Set();
+    for (const o of c.options) {
+      if (!field2?.input.options?.some((p) => p.value === o.value)) add("choice-option", "Declare each choice option in the input.", c.inputId);
+      if (o.variantId && !variants.has(o.variantId)) add("choice-artboard", "Choose an existing artboard.", c.inputId);
+      for (const id2 of /* @__PURE__ */ new Set([...o.fixedInputs ?? [], ...Object.keys(o.defaults ?? {})])) {
+        const target = fields.get(id2);
+        if (!target || choiceIds.has(id2)) add("choice-field", "Choose an existing content input.", c.inputId);
+        const prior = defaultOwners.get(id2);
+        if (prior && prior !== c.inputId) add("ownership", "Two choices set the same input. Choose one owner.", id2);
+        defaultOwners.set(id2, c.inputId);
+        if (target && own(o.defaults || {}, id2)) for (const issue2 of validateDesignValues({ ...designToolPolicy(d), choices: [], inputs: [target] }, { [id2]: o.defaults[id2] })) issues.push(issue2);
+      }
+      const writes = /* @__PURE__ */ new Set();
+      for (const w of o.writes) {
+        const k = keyOf(w);
+        const choiceOwner = choiceOwners.get(k);
+        if (choiceOwner && choiceOwner !== c.inputId) add("ownership", "Two choices control the same property.", c.inputId, w.layerId);
+        choiceOwners.set(k, c.inputId);
+        if (writes.has(k)) add("choice-write", "An option cannot write the same property twice.", c.inputId, w.layerId);
+        writes.add(k);
+        const reader = owners.get(k);
+        if (reader && reader !== c.inputId && !(o.fixedInputs ?? []).includes(reader)) add("ownership", "This option and a reader input both control this property.", reader, w.layerId);
+        if (!reader) checkTarget(w, c.inputId);
+        choiceTargets.add(k);
+      }
+    }
+  }
+  if (combinations > 128 || artboardSelectors > 1) add("choice-limits", "Use one artboard choice and up to 128 option combinations.");
+  for (const r3 of d.recipes) {
+    if (r3.target.property !== "text" || !r3.parts.length || r3.parts.length > 16) add("recipe", "Joined text needs a text target and up to 16 parts.");
+    checkTarget(r3.target, `recipe:${keyOf(r3.target)}`, "text");
+    for (const p of r3.parts) if ("inputId" in p && !["text", "longtext"].includes(fields.get(p.inputId)?.input.type ?? "")) add("recipe-input", "Joined text can use only declared text inputs.", p.inputId);
+  }
+  for (const issue2 of validateDesignValues(designToolPolicy(d), {}, true)) issues.push(issue2);
+  return issues;
+}
+function designSelection(p, values) {
+  let variantId = p.defaultVariant;
+  const fixed = /* @__PURE__ */ new Set();
+  const defaults = {};
+  const writes = [];
+  for (const c of p.choices) {
+    const value = own(values, c.inputId) ? values[c.inputId] : p.inputs.find((f) => f.input.id === c.inputId)?.input.default;
+    const option = c.options.find((o) => o.value === value);
+    if (!option) continue;
+    if (option.variantId) variantId = option.variantId;
+    for (const id2 of option.fixedInputs ?? []) fixed.add(id2);
+    Object.assign(defaults, option.defaults);
+    writes.push(...option.writes);
+  }
+  return { variantId, fixed, defaults, writes };
+}
+function validateDesignValues(p, values, required = false) {
+  const result = [];
+  const selection = designSelection(p, values);
+  for (const f of p.inputs) {
+    const i = f.input;
+    if (selection.fixed.has(i.id)) continue;
+    const v = own(values, i.id) ? values[i.id] : own(selection.defaults, i.id) ? selection.defaults[i.id] : i.default;
+    const bad = (message) => {
+      result.push({ code: "value", message: `${i.label || i.id}: ${message}`, inputId: i.id });
+    };
+    if (v === void 0 || v === null || v === "") {
+      if (required && i.required) bad("add a value.");
+      continue;
+    }
+    if (["text", "longtext", "url", "date", "time", "datetime-local"].includes(i.type)) {
+      if (typeof v !== "string") bad("enter text.");
+      else if (i.maxLength !== void 0 && v.length > i.maxLength) bad(`use up to ${i.maxLength} characters. The full value has been kept.`);
+    } else if (i.type === "boolean") {
+      if (typeof v !== "boolean") bad("choose on or off.");
+    } else if (i.type === "number") {
+      const n2 = Number(v);
+      if (!Number.isFinite(n2) || n2 < Number(i.min) || n2 > Number(i.max) || Math.abs((n2 - Number(i.min)) / Number(i.step) - Math.round((n2 - Number(i.min)) / Number(i.step))) > 1e-7) bad(`use ${i.min} to ${i.max}, in steps of ${i.step}.`);
+    } else if (i.type === "select" && !i.options?.some((o) => o.value === v)) bad("choose an approved option.");
+    else if (i.type === "color" && (typeof v !== "string" || !/^#[\da-f]{3,8}$/i.test(v))) bad("choose a valid colour.");
+    else if (i.type === "asset" && typeof v === "object" && "type" in v && (!["raster", "vector"].includes(String(v.type)) || "format" in v && ["gif", "apng", "html"].includes(String(v.format)))) bad("choose a still image.");
+    else if (i.type === "vector") {
+      const fields = i.fields;
+      if (!v || typeof v !== "object" || !fields?.length) bad("set valid image positioning.");
+      else for (const field2 of fields) {
+        const n2 = Number(v[field2.id] ?? i.default?.[field2.id]);
+        if (!Number.isFinite(n2) || n2 < field2.min || n2 > field2.max || field2.step && Math.abs((n2 - field2.min) / field2.step - Math.round((n2 - field2.min) / field2.step)) > 1e-7) bad(`${field2.id} must be between ${field2.min} and ${field2.max}, using its declared step.`);
+      }
+    }
+    const assetId2 = typeof v === "object" && v && "id" in v ? String(v.id) : String(v);
+    if (f.approved?.length && !f.approved.includes(assetId2)) bad("choose a designer-approved value.");
+  }
+  return result;
+}
+var propertyTypes, badKeys, internal, idPattern, own, keyOf;
+var init_design_tool_v1 = __esm({
+  "packages/core/src/design-tool-v1.ts"() {
+    "use strict";
+    propertyTypes = {
+      text: ["text", "longtext", "select"],
+      image: ["asset"],
+      fontSize: ["number"],
+      font: ["select"],
+      weight: ["select", "number"],
+      fg: ["color", "select"],
+      fill: ["color", "select"],
+      fit: ["select"],
+      imageFraming: ["vector"]
+    };
+    badKeys = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor"]);
+    internal = /* @__PURE__ */ new Set(["boxes", "customCss", "background", "transparentBg", "font", "fontSize", "boxStyle", "textStyle", "mediaHtml", "textHtml", "designRows", "designWidth", "designHeight", "designBackground", "designIssues"]);
+    idPattern = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
+    own = (o, k) => Object.hasOwn(o, k);
+    keyOf = (t) => `${t.variantId}/${t.layerId}/${t.property}`;
+  }
+});
+
+// engine/src/design-tool/policy.ts
+function assertDesignValues(policy, values, required = false) {
+  const issues = validateDesignValues(policy, values, required);
+  if (issues.length) throw new Error(issues.map((i) => i.message).join("\n"));
+}
+function designExportSize(policy, values, format, width, height) {
+  assertDesignValues(policy, values, true);
+  if (!policy.formats.includes(format)) throw new Error("This format is not enabled by the designer.");
+  const selected = designSelection(policy, values);
+  const variant = policy.variants.find((v) => v.id === selected.variantId);
+  if (!variant) throw new Error("The selected artboard is unavailable.");
+  const w = width ?? (height === void 0 ? variant.width : height * variant.width / variant.height);
+  const h = height ?? w * variant.height / variant.width;
+  if (![w, h].every((n2) => Number.isFinite(n2) && n2 > 0) || Math.abs(w / h - variant.width / variant.height) > 1e-3) throw new Error("Keep the artboard proportions chosen by the designer.");
+  return { width: w, height: h };
+}
+var init_policy = __esm({
+  "engine/src/design-tool/policy.ts"() {
+    "use strict";
+    init_design_tool_v1();
   }
 });
 
@@ -32003,21 +32678,21 @@ async function readEmojiPack(bytes, expected) {
   return { ok: true, pack };
 }
 function inspectEmojiPack(pack) {
-  const record5 = admitted.get(pack);
-  return record5 ? clone(record5.manifest) : null;
+  const record7 = admitted.get(pack);
+  return record7 ? clone(record7.manifest) : null;
 }
 function describeEmojiPack(pack) {
-  const record5 = admitted.get(pack);
-  return record5 ? { id: record5.manifest.id, version: record5.manifest.version, family: record5.manifest.family, style: record5.manifest.style } : null;
+  const record7 = admitted.get(pack);
+  return record7 ? { id: record7.manifest.id, version: record7.manifest.version, family: record7.manifest.family, style: record7.manifest.style } : null;
 }
 function matchesEmojiPack(pack, pin) {
-  const record5 = admitted.get(pack);
-  return !!record5 && emojiPackPinKey(record5.pin) === emojiPackPinKey(pin);
+  const record7 = admitted.get(pack);
+  return !!record7 && emojiPackPinKey(record7.pin) === emojiPackPinKey(pin);
 }
 function findEmojiGlyph(pack, meaning) {
-  const record5 = admitted.get(pack);
-  const glyph = record5?.glyphs.get(meaningKey(meaning));
-  return record5 && glyph ? clone({ glyph, metrics: glyph.metrics ?? record5.manifest.metrics }) : null;
+  const record7 = admitted.get(pack);
+  const glyph = record7?.glyphs.get(meaningKey(meaning));
+  return record7 && glyph ? clone({ glyph, metrics: glyph.metrics ?? record7.manifest.metrics }) : null;
 }
 async function verifyEmojiArtwork(pack, meaning, bytes) {
   if (!admitted.has(pack)) return failure("invalid-pack", "Emoji pack has not been validated.");
@@ -32147,7 +32822,7 @@ var init_emoji_svg_syntax = __esm({
 function attribute(name, value, tag2) {
   value = value.trim();
   if (name === "id") {
-    if (!idPattern.test(value)) throw new Error("Unsupported SVG id.");
+    if (!idPattern2.test(value)) throw new Error("Unsupported SVG id.");
     return value;
   }
   if (name === "d") return svgPath(value);
@@ -32319,19 +32994,19 @@ async function prepareEmojiSvg(pack, meaning, bytes, parseXml) {
   const entry2 = findEmojiGlyph(pack, meaning);
   try {
     const source = new TextDecoder("utf-8", { fatal: true }).decode(verified.bytes);
-    const record5 = normalize(source, entry2.glyph.viewBox, parseXml);
-    const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(record5.tree, "emoji")))}`;
+    const record7 = normalize(source, entry2.glyph.viewBox, parseXml);
+    const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(record7.tree, "emoji")))}`;
     const svg = Object.freeze({ checksum, sourceChecksum: entry2.glyph.asset.checksum, normalizer: EMOJI_SVG_VERSION });
-    prepared.set(svg, record5);
+    prepared.set(svg, record7);
     return { ok: true, svg };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "SVG admission failed." };
   }
 }
 function emojiSvgMarkup(svg, prefix = "emoji") {
-  const record5 = prepared.get(svg);
-  if (!record5 || !idPattern.test(prefix)) throw new Error("Invalid prepared SVG or placement prefix.");
-  return serialize(record5.tree, prefix);
+  const record7 = prepared.get(svg);
+  if (!record7 || !idPattern2.test(prefix)) throw new Error("Invalid prepared SVG or placement prefix.");
+  return serialize(record7.tree, prefix);
 }
 function recolor(node, map) {
   const attributes = { ...node.attributes };
@@ -32345,10 +33020,10 @@ function recolor(node, map) {
   return { tag: node.tag, attributes, children: node.children.map((child) => recolor(child, map)) };
 }
 async function recolorPreparedEmojiSvg(svg, map, change) {
-  const record5 = prepared.get(svg);
-  if (!record5) throw new Error("SVG has not been admitted.");
-  const tree = recolor(record5.tree, map);
-  const changes = [.../* @__PURE__ */ new Set([...record5.changes, change])];
+  const record7 = prepared.get(svg);
+  if (!record7) throw new Error("SVG has not been admitted.");
+  const tree = recolor(record7.tree, map);
+  const changes = [.../* @__PURE__ */ new Set([...record7.changes, change])];
   const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(tree, "emoji")))}`;
   const treated = Object.freeze({ checksum, sourceChecksum: svg.sourceChecksum, normalizer: EMOJI_TREATED_SVG_VERSION });
   prepared.set(treated, { tree, changes });
@@ -32374,21 +33049,21 @@ function inkTree(node, counted) {
   return { tag: node.tag, attributes, children: node.children.map((child) => inkTree(child, counted)) };
 }
 async function inkPreparedEmojiSvg(svg) {
-  const record5 = prepared.get(svg);
-  if (!record5) throw new Error("SVG has not been admitted.");
-  if (!singleInk(record5.tree)) return svg;
+  const record7 = prepared.get(svg);
+  if (!record7) throw new Error("SVG has not been admitted.");
+  if (!singleInk(record7.tree)) return svg;
   const counted = { value: 0 };
-  const tree = inkTree(record5.tree, counted);
+  const tree = inkTree(record7.tree, counted);
   if (!counted.value) return svg;
-  const changes = [.../* @__PURE__ */ new Set([...record5.changes, EMOJI_SINGLE_INK_CHANGE])];
+  const changes = [.../* @__PURE__ */ new Set([...record7.changes, EMOJI_SINGLE_INK_CHANGE])];
   const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(tree, "emoji")))}`;
   const inked = Object.freeze({ checksum, sourceChecksum: svg.sourceChecksum, normalizer: EMOJI_INK_SVG_VERSION });
   prepared.set(inked, { tree, changes });
   return inked;
 }
 function visitPreparedEmojiPaints(svg, visit) {
-  const record5 = prepared.get(svg);
-  if (!record5) throw new Error("SVG has not been admitted.");
+  const record7 = prepared.get(svg);
+  if (!record7) throw new Error("SVG has not been admitted.");
   const walk2 = (node) => {
     for (const name of paintNames) {
       const value = node.attributes[name];
@@ -32397,14 +33072,14 @@ function visitPreparedEmojiPaints(svg, visit) {
     }
     for (const child of node.children) walk2(child);
   };
-  walk2(record5.tree);
+  walk2(record7.tree);
 }
 function emojiSvgChanges(svg) {
-  const record5 = prepared.get(svg);
-  if (!record5) throw new Error("SVG has not been admitted.");
-  return [...record5.changes];
+  const record7 = prepared.get(svg);
+  if (!record7) throw new Error("SVG has not been admitted.");
+  return [...record7.changes];
 }
-var EMOJI_SVG_VERSION, EMOJI_TREATED_SVG_VERSION, EMOJI_INK_SVG_VERSION, prepared, namespace, idPattern, tags, xlinkNamespace, shapes, referenceOnly, presentation, inert, units, nonnegative, choices, referenceTargets, localId, paintNames, hexPaint, EMOJI_SINGLE_INK_CHANGE, BLACK_PAINT, WHITE_PAINT;
+var EMOJI_SVG_VERSION, EMOJI_TREATED_SVG_VERSION, EMOJI_INK_SVG_VERSION, prepared, namespace, idPattern2, tags, xlinkNamespace, shapes, referenceOnly, presentation, inert, units, nonnegative, choices, referenceTargets, localId, paintNames, hexPaint, EMOJI_SINGLE_INK_CHANGE, BLACK_PAINT, WHITE_PAINT;
 var init_emoji_svg = __esm({
   "engine/src/emoji-svg.ts"() {
     "use strict";
@@ -32418,7 +33093,7 @@ var init_emoji_svg = __esm({
     EMOJI_INK_SVG_VERSION = "static-svg-v1+emoji-ink-v1";
     prepared = /* @__PURE__ */ new WeakMap();
     namespace = "http://www.w3.org/2000/svg";
-    idPattern = /^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/;
+    idPattern2 = /^[A-Za-z_][A-Za-z0-9_.-]{0,127}$/;
     tags = {
       svg: ["viewBox", "width", "height", "preserveAspectRatio"],
       g: [],
@@ -32562,15 +33237,15 @@ function readPalette(entries) {
 }
 function nearest(lab, chroma, palette) {
   const neutral = chroma < NEUTRAL_CHROMA;
-  let pool = palette.filter((color) => color.chroma < NEUTRAL_CHROMA === neutral);
+  let pool = palette.filter((color2) => color2.chroma < NEUTRAL_CHROMA === neutral);
   if (!pool.length) pool = palette;
   let best = pool[0];
   let bestDistance = Number.POSITIVE_INFINITY;
-  for (const color of pool) {
-    const measured = distance(lab, color.lab);
+  for (const color2 of pool) {
+    const measured = distance(lab, color2.lab);
     if (measured < bestDistance) {
       bestDistance = measured;
-      best = color;
+      best = color2;
     }
   }
   return best;
@@ -34107,12 +34782,12 @@ function withoutUndefined(value) {
 function checkAttributionReadback(expected, report, outputHash, fingerprint) {
   const valid2 = report.found && report.state === "valid";
   const activeLabel = report.claim?.manifestLabel ?? "";
-  const ingredients = (report.ingredients ?? []).filter((record5) => Boolean(activeLabel) && record5.manifest === activeLabel);
+  const ingredients = (report.ingredients ?? []).filter((record7) => Boolean(activeLabel) && record7.manifest === activeLabel);
   const observed = [];
   const missing = [];
   const licenceGaps = [];
   for (const notice of expected.required) {
-    const found = valid2 ? ingredients.find((record5) => matches(notice, record5)) : void 0;
+    const found = valid2 ? ingredients.find((record7) => matches(notice, record7)) : void 0;
     if (!found) {
       missing.push(notice);
       continue;
@@ -34171,10 +34846,10 @@ function checkAttributionReadback(expected, report, outputHash, fingerprint) {
   if (outputHash) receipt.outputHash = outputHash;
   return receipt;
 }
-function matches(notice, record5) {
-  const url = ingredientSourceUrl(record5);
+function matches(notice, record7) {
+  const url = ingredientSourceUrl(record7);
   if (notice.sourceUrl && url) return notice.sourceUrl === url;
-  const instance = record5.instanceId?.split("@")[0];
+  const instance = record7.instanceId?.split("@")[0];
   return Boolean(instance && instance === notice.work);
 }
 var CHECKSUM2, byString2, EXTENSION_FORMATS, ROLE_RELATIONSHIP, ingredientSourceUrl;
@@ -34202,7 +34877,7 @@ var init_rights_attribution = __esm({
       woff2: "font/woff2"
     }));
     ROLE_RELATIONSHIP = /* @__PURE__ */ new Map([["incorporated", "componentOf"]]);
-    ingredientSourceUrl = (record5) => record5.rights?.sourceUrl || record5.data?.url;
+    ingredientSourceUrl = (record7) => record7.rights?.sourceUrl || record7.data?.url;
   }
 });
 
@@ -34482,22 +35157,28 @@ function resolvePaintBindings(html, bindings) {
   });
 }
 function hydrate(templateSource, values, { raw = false } = {}) {
-  const key = raw ? " raw " + templateSource : templateSource;
-  let compiled = compileCache.get(key);
-  if (compiled) {
+  const key = (raw ? "r:" : "h:") + templateSource;
+  const cached2 = compileCache.get(key);
+  if (cached2) {
     compileCache.delete(key);
-    compileCache.set(key, compiled);
-  } else {
-    compiled = Handlebars.compile(templateSource, { noEscape: raw });
-    compileCache.set(key, compiled);
-    if (compileCache.size > COMPILE_CACHE_MAX) {
-      const oldest = compileCache.keys().next().value;
-      if (oldest !== void 0) compileCache.delete(oldest);
-    }
+    compileCache.set(key, cached2);
+    return cached2.compiled(values);
   }
-  return compiled(values);
+  const compiled = Handlebars.compile(templateSource, { noEscape: raw });
+  const output = compiled(values);
+  const bytes = (key.length + templateSource.length) * 2;
+  if (bytes <= COMPILE_CACHE_SOURCE_BYTES) {
+    while (compileCache.size && (compileCache.size >= COMPILE_CACHE_MAX || compileCacheBytes + bytes > COMPILE_CACHE_SOURCE_BYTES)) {
+      const oldest = compileCache.keys().next().value;
+      compileCacheBytes -= compileCache.get(oldest).bytes;
+      compileCache.delete(oldest);
+    }
+    compileCache.set(key, { compiled, bytes });
+    compileCacheBytes += bytes;
+  }
+  return output;
 }
-var ARROW_GLYPHS, ARROW_CLASSES, LEADING_ARROW, MD_ESCAPE, MD_BULLET, MD_ORDERED, MD_HEADING, MD_IMAGE, MD_LINK, MD_LINK_SCHEMES, MD_IMAGE_SCHEMES, FIT_VALUES, PAINT_ATTR, PAINT_CSS, COMPILE_CACHE_MAX, compileCache;
+var ARROW_GLYPHS, ARROW_CLASSES, LEADING_ARROW, MD_ESCAPE, MD_BULLET, MD_ORDERED, MD_HEADING, MD_IMAGE, MD_LINK, MD_LINK_SCHEMES, MD_IMAGE_SCHEMES, FIT_VALUES, PAINT_ATTR, PAINT_CSS, COMPILE_CACHE_MAX, COMPILE_CACHE_SOURCE_BYTES, compileCache, compileCacheBytes;
 var init_template = __esm({
   "engine/src/template.ts"() {
     "use strict";
@@ -34547,16 +35228,16 @@ var init_template = __esm({
       };
       const renderRun = (lines) => {
         if (lines.every((l) => MD_BULLET.test(l))) {
-          const items = lines.map((l) => {
+          const items2 = lines.map((l) => {
             const arrowClass = ARROW_CLASSES[l.match(MD_BULLET)?.[1] ?? ""];
             const cls = arrowClass ? ` class="${arrowClass}"` : "";
             return `<li${cls}>${inline(l.replace(MD_BULLET, ""))}</li>`;
           }).join("");
-          return `<ul>${items}</ul>`;
+          return `<ul>${items2}</ul>`;
         }
         if (lines.every((l) => MD_ORDERED.test(l))) {
-          const items = lines.map((l, i) => `<li><span class="md-index">${i + 1}.</span> ${inline(l.replace(MD_ORDERED, ""))}</li>`).join("");
-          return `<ol style="list-style:none">${items}</ol>`;
+          const items2 = lines.map((l, i) => `<li><span class="md-index">${i + 1}.</span> ${inline(l.replace(MD_ORDERED, ""))}</li>`).join("");
+          return `<ol style="list-style:none">${items2}</ol>`;
         }
         return `<p>${lines.map((l) => inline(l)).join("<br>")}</p>`;
       };
@@ -34694,7 +35375,9 @@ var init_template = __esm({
       "outline-color": "strokeColor"
     };
     COMPILE_CACHE_MAX = 50;
+    COMPILE_CACHE_SOURCE_BYTES = 4 * 1024 * 1024;
     compileCache = /* @__PURE__ */ new Map();
+    compileCacheBytes = 0;
   }
 });
 
@@ -35352,15 +36035,15 @@ async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
       continue;
     }
     const value = resolution.value;
-    const record5 = await artworkFor(value, treatment, packs, io, cache3);
-    if ("reason" in record5) {
-      segments.push({ kind: "unresolved", text: span.text, label: value.glyph.label, reason: record5.reason });
+    const record7 = await artworkFor(value, treatment, packs, io, cache3);
+    if ("reason" in record7) {
+      segments.push({ kind: "unresolved", text: span.text, label: value.glyph.label, reason: record7.reason });
       continue;
     }
     const key = cacheKey(value.pack, value.meaning, treatment);
     let source = used.get(key);
     if (!source) {
-      source = { ...structuredClone(record5.base), occurrences: [] };
+      source = { ...structuredClone(record7.base), occurrences: [] };
       used.set(key, source);
       census.push(source);
     }
@@ -35368,10 +36051,10 @@ async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
     segments.push({
       kind: "emoji",
       text: span.text,
-      key: record5.key,
-      label: record5.label,
-      markup: emojiSvgMarkup(record5.svg, `${prefix}-${placement++}`),
-      metrics: record5.metrics,
+      key: record7.key,
+      label: record7.label,
+      markup: emojiSvgMarkup(record7.svg, `${prefix}-${placement++}`),
+      metrics: record7.metrics,
       source
     });
   }
@@ -35399,7 +36082,7 @@ async function artworkFor(value, treatment, packs, io, cache3) {
   } catch {
     return { reason: "unsupported-metrics" };
   }
-  const record5 = {
+  const record7 = {
     svg,
     metrics,
     label: value.glyph.label,
@@ -35419,8 +36102,8 @@ async function artworkFor(value, treatment, packs, io, cache3) {
       changes: emojiSvgChanges(svg)
     }
   };
-  cache3.set(key, record5);
-  return record5;
+  cache3.set(key, record7);
+  return record7;
 }
 var em, meaningKey2, cacheKey;
 var init_emoji_inline = __esm({
@@ -35706,16 +36389,16 @@ function embedMp4Meta(bytes, tags2) {
   if (!moov) return bytes;
   const children = walkBoxes(bytes, moov.off + 8, moov.off + moov.size);
   if (!children || children.some((b) => b.type === "udta")) return bytes;
-  const items = [];
-  if (tags2.title) items.push(ilstItem("\xA9nam", tags2.title));
-  if (tags2.artist) items.push(ilstItem("\xA9ART", tags2.artist));
-  if (tags2.date) items.push(ilstItem("\xA9day", tags2.date));
-  if (tags2.comment) items.push(ilstItem("\xA9cmt", tags2.comment));
-  if (tags2.encoder) items.push(ilstItem("\xA9too", tags2.encoder));
-  if (tags2.publisher) items.push(freeform("PUBLISHER", tags2.publisher));
-  if (!items.length) return bytes;
+  const items2 = [];
+  if (tags2.title) items2.push(ilstItem("\xA9nam", tags2.title));
+  if (tags2.artist) items2.push(ilstItem("\xA9ART", tags2.artist));
+  if (tags2.date) items2.push(ilstItem("\xA9day", tags2.date));
+  if (tags2.comment) items2.push(ilstItem("\xA9cmt", tags2.comment));
+  if (tags2.encoder) items2.push(ilstItem("\xA9too", tags2.encoder));
+  if (tags2.publisher) items2.push(freeform("PUBLISHER", tags2.publisher));
+  if (!items2.length) return bytes;
   const hdlr = box("hdlr", be32(0), be32(0), fourcc("mdir"), fourcc("appl"), be32(0), be32(0), new Uint8Array(1));
-  const udta = box("udta", box("meta", be32(0), hdlr, box("ilst", ...items)));
+  const udta = box("udta", box("meta", be32(0), hdlr, box("ilst", ...items2)));
   const out = concat(
     bytes.subarray(0, moov.off),
     be32(moov.size + udta.length),
@@ -37788,10 +38471,10 @@ function urnUuid() {
   const h = bytesToHex(b);
   return `urn:uuid:${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
-function joinList(items) {
-  if (items.length <= 1) return items[0] ?? "";
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+function joinList(items2) {
+  if (items2.length <= 1) return items2[0] ?? "";
+  if (items2.length === 2) return `${items2[0]} and ${items2[1]}`;
+  return `${items2.slice(0, -1).join(", ")} and ${items2[items2.length - 1]}`;
 }
 function collectAiIngredientDeclarations(model2) {
   const out = [];
@@ -40797,53 +41480,53 @@ function collectIngredientRecords(store) {
         } else if (RIGHTS_LABEL.test(ab.label)) {
           try {
             const map = decodeCbor(contentOf(store, ab));
-            if (map instanceof Map) for (const [label, record5] of rightsEntries(map)) rights.set(label, record5);
+            if (map instanceof Map) for (const [label, record7] of rightsEntries(map)) rights.set(label, record7);
           } catch {
           }
         }
       }
     }
-    for (const record5 of records) {
-      const bound = rights.get(record5.label);
-      if (bound) record5.rights = bound;
-      out.push(record5);
+    for (const record7 of records) {
+      const bound = rights.get(record7.label);
+      if (bound) record7.rights = bound;
+      out.push(record7);
     }
   }
   return out;
 }
 function ingredientRecord(manifest, label, map) {
   const active = map.get("activeManifest") ?? map.get("c2pa_manifest");
-  const record5 = { manifest, label, credentialed: active instanceof Map };
+  const record7 = { manifest, label, credentialed: active instanceof Map };
   const activeUrl = active instanceof Map ? asText(active.get("url")) : void 0;
-  if (activeUrl) record5.activeManifest = activeUrl;
+  if (activeUrl) record7.activeManifest = activeUrl;
   const relationship = asText(map.get("relationship"));
-  if (relationship) record5.relationship = relationship;
+  if (relationship) record7.relationship = relationship;
   const title = asText(map.get("dc:title"));
-  if (title) record5.title = title;
+  if (title) record7.title = title;
   const format = asText(map.get("dc:format"));
-  if (format) record5.format = format;
+  if (format) record7.format = format;
   const instanceId = asText(map.get("instanceID"));
-  if (instanceId) record5.instanceId = instanceId;
+  if (instanceId) record7.instanceId = instanceId;
   const description = asText(map.get("description"));
-  if (description) record5.description = description;
+  if (description) record7.description = description;
   const informationalUri = asText(map.get("informationalURI"));
-  if (informationalUri) record5.informationalUri = informationalUri;
+  if (informationalUri) record7.informationalUri = informationalUri;
   const digitalSourceType = asText(map.get("digitalSourceType"));
-  if (digitalSourceType) record5.digitalSourceType = digitalSourceType;
+  if (digitalSourceType) record7.digitalSourceType = digitalSourceType;
   const data = map.get("data");
   const dataUrl = data instanceof Map ? asText(data.get("url")) : void 0;
   if (data instanceof Map && dataUrl) {
-    record5.data = { url: dataUrl };
+    record7.data = { url: dataUrl };
     const alg = asText(data.get("alg"));
-    if (alg) record5.data.alg = alg;
+    if (alg) record7.data.alg = alg;
     const hash = data.get("hash");
-    if (hash instanceof Uint8Array) record5.data.hash = bytesToHex(hash);
+    if (hash instanceof Uint8Array) record7.data.hash = bytesToHex(hash);
     const dataFormat = asText(data.get("dc:format"));
-    if (dataFormat) record5.data.format = dataFormat;
+    if (dataFormat) record7.data.format = dataFormat;
     const size = data.get("size");
-    if (typeof size === "number" && Number.isInteger(size) && size >= 0) record5.data.size = size;
+    if (typeof size === "number" && Number.isInteger(size) && size >= 0) record7.data.size = size;
   }
-  return record5;
+  return record7;
 }
 function rightsEntries(map) {
   const sources = map.get("sources");
@@ -40855,7 +41538,7 @@ function rightsEntries(map) {
     const url = ingredient instanceof Map ? asText(ingredient.get("url")) : void 0;
     if (!url?.startsWith("self#jumbf=c2pa.assertions/")) continue;
     const modifications = source.get("modifications");
-    const record5 = {
+    const record7 = {
       creator: asText(source.get("creator")) ?? "",
       license: asText(source.get("license")) ?? "",
       licenseUrl: asText(source.get("licenseUrl")) ?? "",
@@ -40865,10 +41548,10 @@ function rightsEntries(map) {
       sourceHash: asText(source.get("sourceHash")) ?? ""
     };
     const revision = asText(source.get("revision"));
-    if (revision) record5.revision = revision;
+    if (revision) record7.revision = revision;
     const usedHash = asText(source.get("usedHash"));
-    if (usedHash) record5.usedHash = usedHash;
-    out.push([url.slice("self#jumbf=c2pa.assertions/".length), record5]);
+    if (usedHash) record7.usedHash = usedHash;
+    out.push([url.slice("self#jumbf=c2pa.assertions/".length), record7]);
   }
   return out;
 }
@@ -41925,11 +42608,18 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
   const { userTemplates: _templates, emoji: _emojiPref, ...profileValues } = profile;
   void _templates;
   void _emojiPref;
+  const pendingDesignIssues = /* @__PURE__ */ new Map();
+  if (tool.manifest.designTool) {
+    const bound = {};
+    for (const input of tool.manifest.inputs) if (input.bindToProfile && Object.hasOwn(profileValues, input.bindToProfile)) bound[input.id] = profileValues[input.bindToProfile];
+    assertDesignValues(tool.manifest.designTool, { ...bound, ...initialState });
+  }
   let model2 = buildInputModel(tool.manifest, { profile: profileValues, initial: initialState });
   const inputIds = new Set(model2.map((i) => i.id));
   const hookErrors = [];
   const droppedAssets = [];
   model2 = await resolveAssetRefs(model2, host, droppedAssets, composeStack, tool.manifest.id);
+  if (tool.manifest.designTool) assertDesignValues(tool.manifest.designTool, modelToValues(model2));
   model2 = await resolveTokenRefs(model2, host);
   let extras = {};
   let hookRunSeq = 0;
@@ -42221,7 +42911,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     if (!root || typeof root !== "object") return { present: true, replaced: 0, unresolved: 0, census: [] };
     const track = opts2.track !== false;
     const nothing = { replaced: 0, unresolved: 0, census: [] };
-    const record5 = (result2) => {
+    const record7 = (result2) => {
       if (!track) return;
       emojiReplaced = result2.replaced;
       emojiUnresolved = result2.unresolved;
@@ -42230,23 +42920,23 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     };
     if (track) emojiNode = root;
     if (!EMOJI_MAYBE.test(root.textContent ?? "")) {
-      record5(nothing);
+      record7(nothing);
       return { present: true, ...nothing };
     }
     const style = emojiStyle;
     if (!style) {
       await loadEmojiSets();
       if (!emojiSets2?.length) {
-        record5(nothing);
+        record7(nothing);
         return { present: true, ...nothing };
       }
     }
     const packs = style ? await emojiPacksFor(style) : [];
     const { applyEmojiToDom: applyEmojiToDom2 } = await Promise.resolve().then(() => (init_emoji_dom(), emoji_dom_exports));
     const io = {
-      async loadArtwork(pin, asset) {
-        const bytes = await api.artwork(pin, asset);
-        if (!bytes) throw new Error(`emoji artwork missing: ${asset.id}`);
+      async loadArtwork(pin, asset2) {
+        const bytes = await api.artwork(pin, asset2);
+        if (!bytes) throw new Error(`emoji artwork missing: ${asset2.id}`);
         return bytes;
       },
       // The contract types the parser's result as unknown so the SDK carries no
@@ -42261,7 +42951,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       io,
       { cache: emojiArtwork, idScope: opts2.idScope }
     );
-    record5(result);
+    record7(result);
     if (!emojiSets2 && (style || result.replaced || result.unresolved)) void loadEmojiSets();
     return { present: true, ...result };
   }
@@ -42365,6 +43055,16 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       livePaused = false;
     },
     async setInput(id2, value) {
+      if (tool.manifest.designTool) {
+        if (!tool.manifest.inputs.some((i) => i.id === id2)) throw new Error("This property is fixed by the designer.");
+        try {
+          assertDesignValues(tool.manifest.designTool, { ...modelToValues(model2), [id2]: value });
+          pendingDesignIssues.delete(id2);
+        } catch (error) {
+          pendingDesignIssues.set(id2, error.message);
+          throw error;
+        }
+      }
       const priorType = model2.find((i) => i.id === id2)?.type;
       if (priorType === "asset" || priorType === "file" || priorType === "url") liveCameraShown = false;
       model2 = updateInput(model2, id2, value);
@@ -42424,6 +43124,16 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
      * keystroke path only.
      */
     async applyPatch(values) {
+      if (tool.manifest.designTool) {
+        if (Object.keys(values).some((id2) => !tool.manifest.inputs.some((i) => i.id === id2))) throw new Error("This property is fixed by the designer.");
+        try {
+          assertDesignValues(tool.manifest.designTool, { ...modelToValues(model2), ...values });
+          for (const id2 of Object.keys(values)) pendingDesignIssues.delete(id2);
+        } catch (error) {
+          for (const id2 of Object.keys(values)) pendingDesignIssues.set(id2, error.message);
+          throw error;
+        }
+      }
       const applied = [];
       for (const [id2, value] of Object.entries(values ?? {})) {
         const before = model2.find((i) => i.id === id2);
@@ -42669,11 +43379,11 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
         () => exportFileHook({ model: modelForHooks(model2), host, opts: opts2 })
       );
       if (Array.isArray(out)) {
-        const items = out.filter((r3) => Boolean(r3 && r3.bytes != null));
-        if (!items.length) {
+        const items2 = out.filter((r3) => Boolean(r3 && r3.bytes != null));
+        if (!items2.length) {
           throw new Error(`exportFile produced no bytes (${tool.manifest.id})`);
         }
-        return items;
+        return items2;
       }
       if (!out || out.bytes == null) {
         throw new Error(`exportFile produced no bytes (${tool.manifest.id})`);
@@ -42681,6 +43391,20 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       return out;
     },
     async export(renderedNode, format, opts2 = {}) {
+      if (tool.manifest.designTool) {
+        if (tool.manifest.designTool.sourceTool && extras.__lollySourceError) throw new Error(String(extras.__lollySourceError));
+        if (tool.manifest.designTool.sourceTool) {
+          const captured = extras.__lollySourceExportOptions?.[format];
+          if (captured?.background !== void 0) opts2 = { ...opts2, background: captured.background };
+        }
+        if (pendingDesignIssues.size) throw new Error([...pendingDesignIssues.values()].join("\n"));
+        const size = designExportSize(tool.manifest.designTool, modelToValues(model2), format, opts2.width === void 0 ? void 0 : Number(opts2.width), opts2.height === void 0 ? void 0 : Number(opts2.height));
+        opts2 = { ...opts2, ...size };
+        if (!host.export.checkLayout) throw Object.assign(new Error("This tool needs a browser for text layout checks before export."), { code: "NEEDS_BROWSER" });
+        const check = await host.export.checkLayout(renderedNode);
+        if (!check.ok) throw new Error(check.issues.join("\n"));
+        if (hookErrors.length) throw new Error("The tool could not render. Resolve its reported errors before export.");
+      }
       const beforeExport = hooks?.beforeExport;
       if (beforeExport) {
         await runHook("beforeExport", () => beforeExport({ node: renderedNode, format, opts: opts2, host }));
@@ -43010,14 +43734,13 @@ async function resolveTokenRefs(model2, host) {
   });
 }
 function getHookFactory(tool) {
-  const key = `${tool.manifest.id}@${tool.manifest.version}`;
-  let factory = hookFactoryCache.get(key);
+  let factory = hookFactoryCache.get(tool);
   if (!factory) {
     factory = new Function(
       "host",
       `${tool.hooksSource}; return {onInit: typeof onInit !== 'undefined' ? onInit : null,onInput: typeof onInput !== 'undefined' ? onInput : null,onFrame: typeof onFrame !== 'undefined' ? onFrame : null,onLevel: typeof onLevel !== 'undefined' ? onLevel : null,beforeExport: typeof beforeExport !== 'undefined' ? beforeExport : null,afterExport:  typeof afterExport  !== 'undefined' ? afterExport  : null,exportFile:   typeof exportFile   !== 'undefined' ? exportFile   : null,exportStill:  typeof exportStill  !== 'undefined' ? exportStill  : null};`
     );
-    hookFactoryCache.set(key, factory);
+    hookFactoryCache.set(tool, factory);
   }
   return factory;
 }
@@ -43073,6 +43796,7 @@ var HOOK_BUDGET_MS, ALPHA_EXPORT_FORMATS, DATA_FORMATS, hookFactoryCache, inReal
 var init_runtime = __esm({
   "engine/src/runtime.ts"() {
     "use strict";
+    init_policy();
     init_src();
     init_emoji_rights();
     init_rights_attribution();
@@ -43106,7 +43830,7 @@ var init_runtime = __esm({
       scss: "text/x-scss",
       gpl: "text/plain"
     };
-    hookFactoryCache = /* @__PURE__ */ new Map();
+    hookFactoryCache = /* @__PURE__ */ new WeakMap();
     inRealmHookExecutor = loadHooks;
     COMPOSE_TIMEOUT_MS2 = 1e4;
   }
@@ -43672,10 +44396,10 @@ function decodeBlocksCompact(str7, fields) {
     return obj;
   });
 }
-function encodeBlocksCompact(items, fields, opts = {}) {
-  if (!Array.isArray(items) || !items.length || !fields.length) return null;
+function encodeBlocksCompact(items2, fields, opts = {}) {
+  if (!Array.isArray(items2) || !items2.length || !fields.length) return null;
   const cell = (s) => encodeURIComponent(s).replace(/~/g, "%7E");
-  return items.map((item) => {
+  return items2.map((item) => {
     const row = item && typeof item === "object" ? item : {};
     const vals = fields.map((f) => {
       const raw = row[f.id] !== void 0 ? row[f.id] : f.default;
@@ -45142,7 +45866,294 @@ var init_zip = __esm({
   }
 });
 
+// engine/src/xmp-fields.ts
+function xmlValue(value) {
+  return value.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, " ").replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (whole, entity) => {
+    const named = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+    if (entity[0] !== "#") return named[entity] ?? whole;
+    const cp = entity[1]?.toLowerCase() === "x" ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
+    return cp > 0 && cp <= 1114111 && !(cp >= 55296 && cp <= 57343) ? String.fromCodePoint(cp) : "";
+  }).slice(0, 2048).replace(new RegExp("\\p{Cc}", "gu"), " ").replace(/\s+/g, " ").trim();
+}
+function readXmpFields(input, specs) {
+  const text4 = input.slice(0, 1024 * 1024).replace(/<!--[\s\S]*?-->/g, "");
+  const out = [];
+  const namespaces = /* @__PURE__ */ new Map();
+  for (const m2 of text4.matchAll(/xmlns:([\w-]+)\s*=\s*["']([^"']+)["']/g)) namespaces.set(m2[1], m2[2]);
+  for (const [fallback, namespace2, property2, group, label] of specs) {
+    const prefixes = [...namespaces].filter(([, uri]) => uri === namespace2).map(([prefix]) => prefix);
+    if (!namespaces.has(fallback)) prefixes.push(fallback);
+    for (const prefix of prefixes) {
+      const tag2 = `${prefix}:${property2}`;
+      const re = new RegExp(`<${tag2}(?=[\\s/>])([^<>]*?)>|\\b${tag2}\\s*=\\s*["']([^"']*)["']`, "g");
+      let missingClose = false;
+      for (let m2 = re.exec(text4); m2; m2 = re.exec(text4)) {
+        if (out.length >= 64) return out;
+        let raw = m2[2];
+        if (raw === void 0) {
+          raw = /[\w-]+:resource\s*=\s*["']([^"']*)["']/.exec(m2[1] ?? "")?.[1];
+          if (raw === void 0 && !missingClose && !/\/\s*$/.test(m2[1] ?? "")) {
+            const start = m2.index + m2[0].length;
+            const end = text4.indexOf(`</${tag2}`, start);
+            if (end < 0) missingClose = true;
+            else {
+              raw = text4.slice(start, end);
+              re.lastIndex = end + tag2.length + 2;
+            }
+          }
+        }
+        const value = xmlValue(raw ?? "");
+        if (value && !out.some((f) => f.label === label && f.value === value)) out.push({ label, value, group, source: `XMP/RDF ${tag2}`, ...label === "Creator" || label.startsWith("Contact ") ? { sensitive: true } : {} });
+      }
+    }
+  }
+  return out;
+}
+var init_xmp_fields = __esm({
+  "engine/src/xmp-fields.ts"() {
+    "use strict";
+  }
+});
+
+// engine/src/software-origin.ts
+function softwareName(value) {
+  const clean2 = tidy(value);
+  return matchSoftware(clean2)?.[0] ?? clean2;
+}
+function softwareOrigins(fields) {
+  const apps = /* @__PURE__ */ new Map();
+  for (const field2 of fields.slice(0, 128)) {
+    const value = tidy(field2.value);
+    if (!value || /^(?:unknown|none|null|n\/a|unspecified|compressed text chunk)$/i.test(value)) continue;
+    const versionOnly = /^v?\d+(?:\.\d+)*(?:\s*\([\w.-]+\))?$/i.test(value);
+    const camera = fields.find((f) => f.group === "device" && /camera|model|device/i.test(f.label))?.value ?? "";
+    const system = versionOnly && /^(software|created with)$/i.test(field2.label) ? /\biPad\b/i.test(camera) ? "iPadOS" : /\biPhone\b|\biPod\b/i.test(camera) ? "iOS" : void 0 : void 0;
+    if (versionOnly && !system) continue;
+    const explicit = field2.group === "software" && /software|created with|creator.?tool|producer|encoder|encoded|writing app|muxing app|generator|toolkit/i.test(field2.label);
+    const statement = /(?:^|[\n.;])\s*(?:created|made|generated|exported|saved|rendered|written|encoded)\s+(?:with|by|using|in)\s+(.+)/i.exec(field2.value);
+    const comment = /comment|description/i.test(field2.label) && statement ? matchSoftware(statement[1]) : void 0;
+    if (!explicit && !comment) continue;
+    const known = comment ?? matchSoftware(value);
+    const name = system ? `${system} ${value}` : known?.[0] ?? value;
+    const kind = field2.signal === "hint" || !explicit ? "hint" : "metadata";
+    const role = system ? "system" : /history/i.test(field2.label) ? "history" : known?.[2] ?? (/producer|encoder|encoded|writing app|muxing app|toolkit/i.test(field2.label) ? "export" : "authoring");
+    const key = name.toLowerCase();
+    const app = apps.get(key) ?? { name, role, evidence: [] };
+    if (role === "authoring" || role === "export" && app.role === "history") app.role = role;
+    const source = field2.source ?? field2.label;
+    if (!app.evidence.some((e) => e.source === source && e.value === value)) app.evidence.push({ source, value, role, kind });
+    apps.set(key, app);
+  }
+  const order = { authoring: 0, export: 1, history: 2, system: 3 };
+  return [...apps.values()].sort((a, b) => order[a.role] - order[b.role]);
+}
+function xmlProvenanceFields(input) {
+  const specs = [
+    ["x", "adobe:ns:meta/", "xmptk", "software", "Metadata toolkit"],
+    ["xmp", "http://ns.adobe.com/xap/1.0/", "CreatorTool", "software", "Created with"],
+    ["pdf", "http://ns.adobe.com/pdf/1.3/", "Producer", "software", "PDF producer"],
+    ["tiff", "http://ns.adobe.com/tiff/1.0/", "Software", "software", "Software"],
+    ["stEvt", "http://ns.adobe.com/xap/1.0/sType/ResourceEvent#", "softwareAgent", "software", "Software history"],
+    ["dc", "http://purl.org/dc/elements/1.1/", "rights", "authorship", "Rights"],
+    ["xmpRights", "http://ns.adobe.com/xap/1.0/rights/", "UsageTerms", "authorship", "Usage terms"],
+    ["xmpRights", "http://ns.adobe.com/xap/1.0/rights/", "WebStatement", "authorship", "Rights statement"],
+    ["cc", "http://creativecommons.org/ns#", "license", "authorship", "Licence"],
+    ["dc", "http://purl.org/dc/elements/1.1/", "source", "description", "Source"],
+    ["dc", "http://purl.org/dc/elements/1.1/", "relation", "description", "Related resource"],
+    ["cc", "http://creativecommons.org/ns#", "attributionURL", "authorship", "Attribution URL"],
+    ["dc", "http://purl.org/dc/elements/1.1/", "creator", "authorship", "Creator"],
+    ["Iptc4xmpCore", "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/", "CiEmailWork", "authorship", "Contact email"],
+    ["Iptc4xmpCore", "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/", "CiTelWork", "authorship", "Contact phone"],
+    ["Iptc4xmpCore", "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/", "CiUrlWork", "authorship", "Contact website"],
+    ["Iptc4xmpCore", "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/", "CiAdrExtadr", "authorship", "Contact address"],
+    ["Iptc4xmpCore", "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/", "CiAdrCity", "authorship", "Contact city"],
+    ["Iptc4xmpCore", "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/", "CiAdrCtry", "authorship", "Contact country"],
+    ["xmp", "http://ns.adobe.com/xap/1.0/", "CreateDate", "timestamps", "Created"],
+    ["xmp", "http://ns.adobe.com/xap/1.0/", "ModifyDate", "timestamps", "Modified"]
+  ];
+  return readXmpFields(input, specs);
+}
+var SOFTWARE, tidy, matchSoftware;
+var init_software_origin = __esm({
+  "engine/src/software-origin.ts"() {
+    "use strict";
+    init_xmp_fields();
+    SOFTWARE = [
+      ["Affinity Publisher", /\bAffinity Publisher\b/i],
+      ["Affinity Designer", /\bAffinity Designer\b/i],
+      ["Affinity Photo", /\bAffinity Photo\b/i],
+      ["Adobe InDesign", /\bInDesign\b/i],
+      ["Adobe Illustrator", /\bIllustrator\b/i],
+      ["Adobe Photoshop Lightroom", /\bLightroom\b/i],
+      ["Adobe Photoshop", /\bPhotoshop\b/i],
+      ["Adobe After Effects", /\bAfter Effects\b/i],
+      ["Adobe Premiere Pro", /\bPremiere(?: Pro)?\b/i],
+      ["Adobe Express", /\bAdobe Express\b/i],
+      ["Adobe Firefly", /\bFirefly\b/i],
+      ["Adobe Animate", /\bAdobe Animate\b/i],
+      ["Adobe Acrobat", /\bAcrobat\b/i, "export"],
+      ["Adobe PDF Library", /\bAdobe PDF Library\b/i, "export"],
+      ["Adobe PDFL", /\bAdobe PDFL\b/i, "export"],
+      ["Affinity", /\bAffinity\b/i],
+      ["Canva", /\bCanva\b/i],
+      ["Figma", /\bFigma\b/i],
+      ["Penpot", /\bPenpot\b/i],
+      ["Sketch", /\bSketch\b/i],
+      ["Inkscape", /\bInkscape\b/i],
+      ["Scribus", /\bScribus\b/i],
+      ["GIMP", /\bGIMP\b|GNU Image Manipulation Program/i],
+      ["Krita", /\bKrita\b/i],
+      ["CorelDRAW", /\bCorel ?DRAW\b/i],
+      ["Corel PHOTO-PAINT", /\bPHOTO-PAINT\b/i],
+      ["Corel Painter", /\bCorel Painter\b/i],
+      ["PaintShop Pro", /\bPaintShop Pro\b/i],
+      ["Clip Studio Paint", /\bCLIP STUDIO(?: PAINT)?\b/i],
+      ["Procreate", /\bProcreate\b/i],
+      ["Pixelmator", /\bPixelmator(?: Pro)?\b/i],
+      ["Acorn", /\bAcorn\b/i],
+      ["Paint.NET", /\bpaint\.net\b/i],
+      ["Microsoft Paint", /\b(?:Microsoft Paint|mspaint)\b/i],
+      ["Photopea", /\bPhotopea\b/i],
+      ["darktable", /\bdarktable\b/i],
+      ["RawTherapee", /\bRawTherapee\b/i],
+      ["Capture One", /\bCapture One\b/i],
+      ["DxO PhotoLab", /\b(?:DxO PhotoLab|DxO OpticsPro)\b/i],
+      ["Luminar", /\bLuminar\b/i],
+      ["Snapseed", /\bSnapseed\b/i],
+      ["digiKam", /\bdigiKam\b/i],
+      ["Blender", /\bBlender\b/i],
+      ["Cinema 4D", /\bCinema ?4D\b/i],
+      ["Autodesk Maya", /\b(?:Autodesk )?Maya\b/i],
+      ["Autodesk 3ds Max", /\b3ds Max\b/i],
+      ["Houdini", /\bHoudini\b/i],
+      ["ZBrush", /\bZBrush\b/i],
+      ["SketchUp", /\bSketchUp\b/i],
+      ["AutoCAD", /\bAutoCAD\b/i],
+      ["FreeCAD", /\bFreeCAD\b/i],
+      ["Rhino", /\b(?:Rhinoceros|Rhino)\b/i],
+      ["DaVinci Resolve", /\b(?:DaVinci Resolve|Blackmagic Design DaVinci)\b/i],
+      ["Final Cut Pro", /\bFinal Cut(?: Pro)?\b/i],
+      ["Apple Motion", /\bApple Motion\b/i],
+      ["iMovie", /\biMovie\b/i],
+      ["CapCut", /\bCapCut\b/i],
+      ["Kdenlive", /\bKdenlive\b/i],
+      ["Shotcut", /\bShotcut\b/i],
+      ["OpenShot", /\bOpenShot\b/i],
+      ["VEGAS Pro", /\b(?:VEGAS Pro|Sony Vegas)\b/i],
+      ["Avid Media Composer", /\bAvid Media Composer\b/i],
+      ["Nuke", /\bNuke\b/i],
+      ["OBS Studio", /\bOBS(?: Studio)?\b/i],
+      ["Camtasia", /\bCamtasia\b/i],
+      ["Audacity", /\bAudacity\b/i],
+      ["Adobe Audition", /\bAudition\b/i],
+      ["Ableton Live", /\bAbleton(?: Live)?\b/i],
+      ["Logic Pro", /\bLogic Pro\b/i],
+      ["GarageBand", /\bGarageBand\b/i],
+      ["REAPER", /\bREAPER\b/i],
+      ["Pro Tools", /\bPro Tools\b/i],
+      ["FL Studio", /\bFL Studio\b/i],
+      ["MuseScore", /\bMuseScore\b/i],
+      ["Dorico", /\bDorico\b/i],
+      ["Microsoft PowerPoint", /\b(?:Microsoft(?:®|\u00ae)? )?PowerPoint\b/i],
+      ["Microsoft Word", /\bMicrosoft(?:®)?(?: Office)? Word\b/i],
+      ["Microsoft Publisher", /\bMicrosoft(?: Office)? Publisher\b/i],
+      ["Microsoft Visio", /\bVisio\b/i],
+      ["Keynote", /\bKeynote\b/i],
+      ["Apple Pages", /\b(?:Apple )?Pages\b/i],
+      ["LibreOffice", /\bLibreOffice\b/i],
+      ["OpenOffice", /\bOpenOffice(?:\.org)?\b/i],
+      ["QuarkXPress", /\bQuarkXPress\b/i],
+      ["LaTeX", /\b(?:LuaLaTeX|XeLaTeX|pdfLaTeX|LaTeX)\b/i],
+      ["Typst", /\bTypst\b/i],
+      ["Google Slides", /\bGoogle Slides\b/i],
+      ["Google Docs", /\bGoogle Docs\b/i],
+      ["draw.io", /\b(?:draw\.io|diagrams\.net)\b/i],
+      ["Lucidchart", /\bLucidchart\b/i],
+      ["Mermaid", /\bMermaid\b/i],
+      ["Matplotlib", /\bMatplotlib\b/i],
+      ["Gnuplot", /\bGnuplot\b/i],
+      ["Lolly", /\bLolly\b/i],
+      ["Midjourney", /\bMidjourney\b/i],
+      ["DALL\xB7E", /\bDALL[·. -]?E\b/i],
+      ["Stable Diffusion", /\bStable Diffusion\b/i],
+      ["ComfyUI", /\bComfyUI\b/i],
+      ["InvokeAI", /\bInvokeAI\b/i],
+      ["NovelAI", /\bNovelAI\b/i],
+      ["Gemini", /\bGemini\b/i],
+      ["Imagen", /\bImagen\b/i],
+      ["iLovePDF", /\biLovePDF\b/i, "export"],
+      ["Smallpdf", /\bSmallpdf\b/i, "export"],
+      ["Ghostscript", /\bGhostscript\b/i, "export"],
+      ["Cairo", /\bcairo\b/i, "export"],
+      ["Quartz", /\bQuartz\b/i, "export"],
+      ["Skia", /\bSkia(?:\/PDF)?\b/i, "export"],
+      ["pdf-lib", /\bpdf-lib\b/i, "export"],
+      ["jsPDF", /\bjsPDF\b/i, "export"],
+      ["PDFKit", /\bPDFKit\b/i, "export"],
+      ["ReportLab", /\bReportLab\b/i, "export"],
+      ["iText", /\biText(?:Sharp)?\b/i, "export"],
+      ["TCPDF", /\bTCPDF\b/i, "export"],
+      ["wkhtmltopdf", /\bwkhtmltopdf\b/i, "export"],
+      ["WeasyPrint", /\bWeasyPrint\b/i, "export"],
+      ["Prince", /\bPrince\b/i, "export"],
+      ["pdfTeX", /\bpdfTeX\b/i, "export"],
+      ["ImageMagick", /\bImageMagick\b/i, "export"],
+      ["GraphicsMagick", /\bGraphicsMagick\b/i, "export"],
+      ["FFmpeg", /\bFFmpeg\b|\bLav[fc](?=\d|\b)/i, "export"],
+      ["HandBrake", /\bHandBrake\b/i, "export"],
+      ["GStreamer", /\bGStreamer\b/i, "export"],
+      ["LAME", /\bLAME\b/i, "export"],
+      ["XMP Core", /\b(?:Adobe )?XMP Core\b|\bAdobe XMP Core\b/i, "export"],
+      ["iPadOS", /\biPadOS\b/i, "system"],
+      ["iOS", /\biOS\b/i, "system"],
+      ["macOS", /\b(?:macOS|Mac OS X)\b/i, "system"],
+      ["Android", /\bAndroid\b/i, "system"],
+      ["Windows", /\bWindows\b/i, "system"]
+    ];
+    tidy = (value) => value.slice(0, 2048).replace(new RegExp("\\p{Cc}", "gu"), " ").replace(/\s+/g, " ").trim().slice(0, 2048);
+    matchSoftware = (value) => SOFTWARE.find(([, pattern]) => pattern.test(value));
+  }
+});
+
+// engine/src/auxiliary-metadata.ts
+function auxiliaryMetadata(packet, gainMap) {
+  const xmp = packet.slice(0, 1024 * 1024);
+  const technical = readXmpFields(xmp, SPECS);
+  const apple = technical.some((f) => f.label === "Auxiliary image type" && f.value === "urn:com:apple:photo:2020:aux:hdrgainmap");
+  return {
+    name: apple ? "Apple HDR gain map" : gainMap ? "HDR gain map" : "Embedded JPEG",
+    fields: [...technical, ...xmlProvenanceFields(xmp)].slice(0, 64),
+    xmp
+  };
+}
+var APPLE_PIXELS, APPLE_HDR, HDR, SPECS;
+var init_auxiliary_metadata = __esm({
+  "engine/src/auxiliary-metadata.ts"() {
+    "use strict";
+    init_software_origin();
+    init_xmp_fields();
+    APPLE_PIXELS = "http://ns.apple.com/pixeldatainfo/1.0/";
+    APPLE_HDR = "http://ns.apple.com/HDRGainMap/1.0/";
+    HDR = "http://ns.adobe.com/hdr-gain-map/1.0/";
+    SPECS = [
+      ["apdi", APPLE_PIXELS, "AuxiliaryImageType", "technical", "Auxiliary image type"],
+      ["apdi", APPLE_PIXELS, "NativeFormat", "technical", "Native pixel format"],
+      ["apdi", APPLE_PIXELS, "StoredFormat", "technical", "Stored pixel format"],
+      ["HDRGainMap", APPLE_HDR, "HDRGainMapVersion", "technical", "Gain map version"],
+      ["HDRGainMap", APPLE_HDR, "HDRGainMapHeadroom", "technical", "Recorded HDR headroom"],
+      ...["Version", "GainMapMin", "GainMapMax", "Gamma", "OffsetSDR", "OffsetHDR", "HDRCapacityMin", "HDRCapacityMax", "BaseRenditionIsHDR", "UseBaseColorSpace"].map((property2) => [
+        "hdrgm",
+        HDR,
+        property2,
+        "technical",
+        { Version: "Gain map version", GainMapMin: "Minimum gain", GainMapMax: "Maximum gain", Gamma: "Gamma", OffsetSDR: "SDR offset", OffsetHDR: "HDR offset", HDRCapacityMin: "Minimum HDR capacity", HDRCapacityMax: "Maximum HDR capacity", BaseRenditionIsHDR: "Base image is HDR", UseBaseColorSpace: "Uses base colour space" }[property2]
+      ])
+    ];
+  }
+});
+
 // engine/src/file-metadata.ts
+import { unzlibSync } from "fflate";
 function sniff(b) {
   if (b.length < 4) return "";
   if (b[0] === 255 && b[1] === 216) return "JPEG";
@@ -45150,6 +46161,7 @@ function sniff(b) {
   if (b[0] === 71 && b[1] === 73 && b[2] === 70 && b[3] === 56) return "GIF";
   if (b[0] === 73 && b[1] === 73 && b[2] === 42 && b[3] === 0 || b[0] === 77 && b[1] === 77 && b[2] === 0 && b[3] === 42) return "TIFF";
   if (b[0] === 82 && b[1] === 73 && b[2] === 70 && b[3] === 70 && b.length >= 12 && b[8] === 87 && b[9] === 69 && b[10] === 66 && b[11] === 80) return "WebP";
+  if (b.length >= 12 && matchAscii(b, 0, "RIFF") && matchAscii(b, 8, "WAVE")) return "WAV";
   if (b.length >= 12 && matchAscii(b, 4, "ftyp")) {
     const brand = String.fromCharCode(b[8], b[9], b[10], b[11]);
     if (brand === "avif" || brand === "avis") return "AVIF";
@@ -45329,18 +46341,15 @@ function readXmp(text4, out) {
     const t = clip((m2[1] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
     return t || null;
   };
-  const tool = grab(/xmp:CreatorTool>\s*([\s\S]*?)<\/xmp:CreatorTool>/i) || grab(/xmp:CreatorTool=["']([^"']+)["']/i);
-  if (tool && !out.fields.some((f) => f.group === "software" && f.value === tool)) {
-    out.fields.push({ label: "Created with", value: tool, group: "software" });
-  }
+  out.fields.push(...xmlProvenanceFields(text4));
   const creator = grab(/<dc:creator>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/i) || grab(/<dc:creator>([\s\S]*?)<\/dc:creator>/i);
-  if (creator) out.fields.push({ label: "Creator", value: creator, group: "authorship", sensitive: true });
+  if (creator && !out.fields.some((f) => f.label === "Creator")) out.fields.push({ label: "Creator", value: creator, group: "authorship", sensitive: true });
   const rights = grab(/<dc:rights>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/i) || grab(/<dc:rights>([\s\S]*?)<\/dc:rights>/i);
-  if (rights) out.fields.push({ label: "Rights", value: rights, group: "authorship" });
+  if (rights && !out.fields.some((f) => f.label === "Rights")) out.fields.push({ label: "Rights", value: rights, group: "authorship" });
   const subject = /<dc:subject>([\s\S]*?)<\/dc:subject>/i.exec(text4)?.[1];
   if (subject && !out.fields.some((f) => f.label === "Keywords")) {
-    const items = [...subject.matchAll(/<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/gi)].map((m2) => clip((m2[1] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())).filter(Boolean).slice(0, 64);
-    if (items.length) out.fields.push({ label: "Keywords", value: clip(items.join(", ")), group: "description" });
+    const items2 = [...subject.matchAll(/<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/gi)].map((m2) => clip((m2[1] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())).filter(Boolean).slice(0, 64);
+    if (items2.length) out.fields.push({ label: "Keywords", value: clip(items2.join(", ")), group: "description" });
   }
   const credit = grab(/[\w-]+:Credit>\s*([\s\S]*?)<\/[\w-]+:Credit>/i) || grab(/[\w-]+:Credit\s*=\s*["']([^"']+)["']/i);
   if (credit && !out.fields.some((f) => f.label === "Credit")) {
@@ -45515,15 +46524,21 @@ function fmtBytes(n2) {
 function describeDeclaredImage(bytes, off) {
   const idx = readMpfIndex(bytes);
   if (!idx) return null;
-  if (!idx.images.some((im, i) => i > 0 && im.start === off)) return null;
-  return idx.gainMap ? { kind: "HDR gain map (ISO 21496-1 / Ultra HDR)", gainMap: true } : { kind: "second image (MPF multi-picture)", gainMap: false };
+  const image = idx.images.find((im, i) => i > 0 && im.start === off);
+  if (!image) return null;
+  const packet = extractXmpPacket(bytes.subarray(image.start, image.start + image.length));
+  return {
+    kind: idx.gainMap ? "HDR gain map (ISO 21496-1 / Ultra HDR)" : "second image (MPF multi-picture)",
+    gainMap: idx.gainMap,
+    ...packet ? { metadata: auxiliaryMetadata(packet, idx.gainMap) } : {}
+  };
 }
 function noteAppended(bytes, off, out) {
   const len2 = bytes.length - off;
   if (len2 <= 0) return;
   const declared = describeDeclaredImage(bytes, off);
   const kind = declared ? declared.kind : sniffAppended(bytes, off);
-  out.appended = { bytes: len2, kind, offset: off, declared: !!declared };
+  out.appended = { bytes: len2, kind, offset: off, declared: !!declared, ...declared?.metadata ? { metadata: declared.metadata } : {} };
   if (declared?.gainMap) {
     out.fields.push({
       label: "HDR gain map",
@@ -45622,8 +46637,11 @@ function pngText(bytes, start, len2, kind, out) {
   if (nul >= end) return;
   const keyword = new TextDecoder("latin1").decode(bytes.subarray(start, nul));
   let textStart = nul + 1;
+  let compressed = kind === "zTXt";
+  if (kind === "zTXt" && bytes[textStart++] !== 0) return;
   if (kind === "iTXt") {
-    const compressed = bytes[textStart] === 1;
+    if (bytes[textStart] > 1 || bytes[textStart + 1] !== 0) return;
+    compressed = bytes[textStart] === 1;
     textStart += 2;
     let z = textStart;
     while (z < end && bytes[z] !== 0) z++;
@@ -45631,21 +46649,27 @@ function pngText(bytes, start, len2, kind, out) {
     z = textStart;
     while (z < end && bytes[z] !== 0) z++;
     textStart = z + 1;
-    if (compressed) {
-      out.fields.push({ label: keyword || "Text", value: "compressed text chunk", group: "description" });
+  }
+  if (textStart >= end) return;
+  let payload = bytes.subarray(textStart, Math.min(end, textStart + 1024 * 1024));
+  if (compressed) {
+    try {
+      if (end - textStart > 1024 * 1024) return;
+      payload = unzlibSync(payload, { out: new Uint8Array(1024 * 1024 + 1) });
+      if (payload.length > 1024 * 1024) return;
+    } catch {
       return;
     }
   }
-  if (textStart >= end) return;
   if (keyword === "XML:com.adobe.xmp") {
-    const packetEnd = Math.min(end, textStart + MAX_TEXT_SCAN);
-    readXmp(new TextDecoder("utf-8").decode(bytes.subarray(textStart, packetEnd)), out);
+    readXmp(new TextDecoder("utf-8").decode(payload), out);
     return;
   }
-  const value = clip(new TextDecoder(kind === "iTXt" ? "utf-8" : "latin1").decode(bytes.subarray(textStart, Math.min(end, textStart + MAX_VALUE_CHARS * 4))).trim());
+  const value = clip(new TextDecoder(kind === "iTXt" ? "utf-8" : "latin1").decode(payload.subarray(0, MAX_VALUE_CHARS * 4)).trim());
   if (!value) return;
-  const m2 = PNG_KEYWORD_GROUP[keyword] ?? { group: "description" };
-  out.fields.push({ label: keyword || "Text", value, group: m2.group, sensitive: m2.sensitive });
+  const canonical2 = Object.keys(PNG_KEYWORD_GROUP).find((key) => key.toLowerCase() === keyword.toLowerCase());
+  const m2 = PNG_KEYWORD_GROUP[canonical2 ?? keyword] ?? { group: "description" };
+  out.fields.push({ label: (canonical2 ?? keyword) || "Text", value, group: m2.group, sensitive: m2.sensitive, source: `PNG ${kind} ${keyword}` });
 }
 function readPng(bytes, out) {
   let p = 8;
@@ -45658,7 +46682,7 @@ function readPng(bytes, out) {
     if (type === "eXIf") readExif(bytes, dataStart, len2, out);
     else if (type === "tEXt") pngText(bytes, dataStart, len2, "tEXt", out);
     else if (type === "iTXt") pngText(bytes, dataStart, len2, "iTXt", out);
-    else if (type === "zTXt") out.fields.push({ label: "Compressed text", value: "zTXt chunk", group: "description" });
+    else if (type === "zTXt") pngText(bytes, dataStart, len2, "zTXt", out);
     else if (type === "tIME") out.fields.push({ label: "Last modified", value: "embedded timestamp", group: "timestamps" });
     p = end + 4;
     if (type === "IEND") {
@@ -45705,10 +46729,49 @@ function readGif(bytes, out) {
       if (p + 2 > bytes.length) return;
       const end = gifSubBlocksEnd(bytes, p + 2);
       if (end == null) return;
+      if (bytes[p + 1] === 254 && out.fields.length < MAX_FIELDS) {
+        const data = [];
+        for (let q = p + 2; q < end && bytes[q] && data.length < MAX_VALUE_CHARS; ) {
+          const size = bytes[q++];
+          for (let j = 0; j < size && data.length < MAX_VALUE_CHARS; j++) data.push(bytes[q + j]);
+          q += size;
+        }
+        out.fields.push({ label: "Comment", value: new TextDecoder().decode(new Uint8Array(data)), group: "description", source: "GIF comment" });
+      }
       p = end;
       continue;
     }
     return;
+  }
+}
+function readWav(bytes, out) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const limit = Math.min(bytes.length, view.getUint32(4, true) + 8);
+  const tags2 = {
+    ISFT: ["Software", "software"],
+    IART: ["Artist", "authorship"],
+    ICOP: ["Copyright", "authorship"],
+    INAM: ["Title", "description"],
+    ICMT: ["Comment", "description"],
+    ICRD: ["Created", "timestamps"]
+  };
+  for (let p = 12; p + 8 <= limit && out.fields.length < MAX_FIELDS; ) {
+    const length = view.getUint32(p + 4, true), end = p + 8 + length;
+    if (end > limit) break;
+    if (length >= 4 && matchAscii(bytes, p, "LIST") && matchAscii(bytes, p + 8, "INFO")) {
+      for (let q = p + 12; q + 8 <= end && out.fields.length < MAX_FIELDS; ) {
+        const size = view.getUint32(q + 4, true);
+        if (q + 8 + size > end) break;
+        const id2 = String.fromCharCode(...bytes.subarray(q, q + 4));
+        const tag2 = tags2[id2];
+        if (tag2) {
+          const value = new TextDecoder().decode(bytes.subarray(q + 8, Math.min(q + 8 + size, q + 8 + MAX_VALUE_CHARS))).split("\0")[0].trim();
+          if (value) out.fields.push({ label: tag2[0], value, group: tag2[1], source: `WAV INFO ${id2}`, ...id2 === "IART" ? { sensitive: true } : {} });
+        }
+        q += 8 + size + (size & 1);
+      }
+    }
+    p = end + (length & 1);
   }
 }
 function readWebp(bytes, out) {
@@ -45963,7 +47026,7 @@ function readHeifItemTable(bytes) {
   const iinf = kids.find((b) => b.type === "iinf");
   const iloc = kids.find((b) => b.type === "iloc");
   if (!iinf || !iloc) return null;
-  const items = /* @__PURE__ */ new Map();
+  const items2 = /* @__PURE__ */ new Map();
   {
     const v = bytes[iinf.payload];
     const listAt = iinf.payload + 4 + (v === 0 ? 2 : 4);
@@ -45985,11 +47048,11 @@ function readHeifItemTable(bytes) {
         q++;
         item.contentType = bmffString(bytes, q, infe.end);
       }
-      items.set(id2, item);
-      if (items.size >= MAX_HEIF_ITEMS) break;
+      items2.set(id2, item);
+      if (items2.size >= MAX_HEIF_ITEMS) break;
     }
   }
-  if (!items.size) return null;
+  if (!items2.size) return null;
   {
     const v = bytes[iloc.payload];
     let p = iloc.payload + 4;
@@ -46022,7 +47085,7 @@ function readHeifItemTable(bytes) {
       if (p + 2 > iloc.end) break;
       const extentCount = u163(bytes, p);
       p += 2;
-      const item = items.get(id2);
+      const item = items2.get(id2);
       for (let e = 0; e < extentCount; e++) {
         const need = indexSize + offsetSize + lengthSize;
         if (p + need > iloc.end) {
@@ -46040,7 +47103,7 @@ function readHeifItemTable(bytes) {
   }
   const idat = kids.find((b) => b.type === "idat");
   return {
-    items: [...items.values()],
+    items: [...items2.values()],
     ...idat ? { idat: { start: idat.payload, end: idat.end } } : {}
   };
 }
@@ -46093,14 +47156,19 @@ function heifXmpPacket(bytes) {
 function readSvg(bytes, out) {
   const text4 = new TextDecoder("utf-8").decode(bytes.length > MAX_TEXT_SCAN ? bytes.subarray(0, MAX_TEXT_SCAN) : bytes);
   const clean2 = (s) => s ? clip(s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()) || null : null;
-  let editor = null;
-  const gen = /<!--[^>]*Generator:\s*([^\n]*?)(?:-->|SVG (?:Export|Version))/i.exec(text4);
-  if (gen) editor = clean2(gen[1])?.replace(/[,;]\s*$/, "") ?? null;
-  const ink = /inkscape:version=["']([^"']+)["']/i.exec(text4);
-  if (!editor && ink) editor = `Inkscape ${(ink[1] || "").split(" ")[0]}`;
-  if (!editor && /xmlns:sketch=/i.test(text4)) editor = "Sketch";
-  if (!editor && /xmlns:figma=/i.test(text4)) editor = "Figma";
-  if (editor) out.fields.push({ label: "Created with", value: editor, group: "software", sensitive: true });
+  for (const comment of text4.matchAll(/<!--[\s\S]*?-->/g)) {
+    if (out.fields.length >= MAX_FIELDS) break;
+    const value = clean2(comment[0].slice(4, -3));
+    if (!value) continue;
+    const generator = /^\s*Generator:\s*(.+?)(?:[,;]?\s*SVG (?:Export|Version)|$)/i.exec(value);
+    out.fields.push({ label: generator ? "Generator comment" : "Comment", value: generator?.[1] ?? value, group: generator ? "software" : "description", source: "SVG comment", signal: "hint" });
+  }
+  const root = /<svg\b[^>]*>/i.exec(text4)?.[0] ?? "";
+  const ink = /\binkscape:version\s*=\s*["']([^"']+)["']/i.exec(root);
+  if (ink) out.fields.push({ label: "Created with", value: `Inkscape ${ink[1]}`, group: "software", source: "SVG inkscape:version", signal: "hint" });
+  for (const [name, marker] of [["Inkscape", "http://www.inkscape.org/namespaces/inkscape"], ["Sketch", "http://www.bohemiancoding.com/sketch/ns"], ["Figma", "http://www.figma.com/figma/ns"]]) {
+    if (root.includes(marker) && !(name === "Inkscape" && ink)) out.fields.push({ label: "Software marker", value: name, group: "software", source: "SVG editor namespace", signal: "hint" });
+  }
   const doc = /sodipodi:docname=["']([^"']+)["']/i.exec(text4);
   if (doc) out.fields.push({ label: "Original filename", value: doc[1], group: "description", sensitive: true });
   const title = clean2(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(text4)?.[1]);
@@ -46131,6 +47199,9 @@ function extractFileMetadata(bytes) {
       case "WebP":
         readWebp(bytes, out);
         break;
+      case "WAV":
+        readWav(bytes, out);
+        break;
       case "TIFF":
         readExif(bytes, 0, bytes.length, out);
         break;
@@ -46148,6 +47219,7 @@ function extractFileMetadata(bytes) {
     }
   } catch {
   }
+  out.fields = out.fields.slice(0, MAX_FIELDS).map((f) => ({ ...f, value: clip(f.value), source: f.source ?? `${out.format} ${f.label === "Software" && ["JPEG", "TIFF", "WebP", "PNG", "HEIC", "AVIF"].includes(out.format) ? "EXIF Software" : f.label}` }));
   return out;
 }
 function extractXmpPacket(bytes) {
@@ -46243,6 +47315,8 @@ var init_file_metadata = __esm({
     "use strict";
     init_ai_kind();
     init_jpeg_segments();
+    init_software_origin();
+    init_auxiliary_metadata();
     META_GROUP_ORDER = [
       "location",
       "device",
@@ -46714,8 +47788,8 @@ function documentSchema(tool) {
 function inputSchema(input) {
   const base = { title: input.label ?? input.id, ...input.help ? { description: input.help } : {} };
   if (input.type === "number") {
-    const number2 = { type: "number", ...input.min !== void 0 ? { minimum: input.min } : {}, ...input.max !== void 0 ? { maximum: input.max } : {} };
-    return { ...base, ...input.default === "" ? { anyOf: [number2, { const: "" }] } : number2, ...input.default !== void 0 ? { default: input.default } : {} };
+    const number3 = { type: "number", ...input.min !== void 0 ? { minimum: input.min } : {}, ...input.max !== void 0 ? { maximum: input.max } : {} };
+    return { ...base, ...input.default === "" ? { anyOf: [number3, { const: "" }] } : number3, ...input.default !== void 0 ? { default: input.default } : {} };
   }
   if (input.type === "boolean") return { ...base, ...input.default === "" ? { anyOf: [{ type: "boolean" }, { const: "" }] } : { type: "boolean" }, ...input.default !== void 0 ? { default: input.default } : {} };
   if (input.type === "blocks") {
@@ -46807,8 +47881,8 @@ function tokenValuesFromModel(model2) {
 function semanticJson(value) {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map(semanticJson).join(",")}]`;
-  const record5 = value;
-  return `{${Object.keys(record5).sort().filter((key) => record5[key] !== void 0).map((key) => `${JSON.stringify(key)}:${semanticJson(record5[key])}`).join(",")}}`;
+  const record7 = value;
+  return `{${Object.keys(record7).sort().filter((key) => record7[key] !== void 0).map((key) => `${JSON.stringify(key)}:${semanticJson(record7[key])}`).join(",")}}`;
 }
 function diffRecords(a, b) {
   const ak = new Set(Object.keys(a));
@@ -50346,10 +51420,10 @@ function toCubics(path, warm) {
       throw new Error(`unknown spline kind: ${String(path.kind)}`);
   }
 }
-function pairs(items, closed) {
+function pairs(items2, closed) {
   const out = [];
-  for (let i = 0; i + 1 < items.length; i++) out.push([items[i], items[i + 1]]);
-  if (closed && items.length > 2) out.push([items[items.length - 1], items[0]]);
+  for (let i = 0; i + 1 < items2.length; i++) out.push([items2[i], items2[i + 1]]);
+  if (closed && items2.length > 2) out.push([items2[items2.length - 1], items2[0]]);
   return out;
 }
 function lineSegments(n2, closed) {
@@ -51330,7 +52404,7 @@ function validatePathData(d) {
     SEP_RE.exec(d);
     i = SEP_RE.lastIndex;
   };
-  const number2 = () => {
+  const number3 = () => {
     skipSep();
     NUM_RE.lastIndex = i;
     const m2 = NUM_RE.exec(d);
@@ -51379,7 +52453,7 @@ function validatePathData(d) {
       if (!NUM_START.test(d[i])) break;
       for (let a = 0; a < arity2; a++) {
         const isFlag = C === "A" && (a === 3 || a === 4);
-        const v = isFlag ? flag() : number2();
+        const v = isFlag ? flag() : number3();
         if (isFail(v)) return v;
         if (v === null) {
           return fail2("invalid-path", `geom: "${letter}" has an incomplete argument group at offset ${i}`);
@@ -59586,9 +60660,9 @@ function spillOf(tags2, node, base, index2) {
       i = after - 1;
       continue;
     }
-    const own = parseTransform(attrOf(t.attrs, "transform"));
-    if (!own) return NO;
-    const m2 = matMul(stack[stack.length - 1], own);
+    const own2 = parseTransform(attrOf(t.attrs, "transform"));
+    if (!own2) return NO;
+    const m2 = matMul(stack[stack.length - 1], own2);
     if (t.kind === "open") stack.push(m2);
     const attrs = ` ${t.attrs}`;
     if (VIEWPORT_PCT_RE.test(attrs) || VIEWPORT_PCT_STYLE_RE.test(attrs)) return NO;
@@ -59658,11 +60732,11 @@ function cropFor(tags2, c, src, index2, scale) {
   if (w * h >= src.w * src.h * CROP_MIN_GAIN) return null;
   return { x, y, w, h };
 }
-function mergeRefs(own, shared) {
-  if (!shared.ids.length) return own;
-  const ids2 = [...own.ids];
+function mergeRefs(own2, shared) {
+  if (!shared.ids.length) return own2;
+  const ids2 = [...own2.ids];
   const seen = new Set(ids2);
-  let more = own.more || shared.more;
+  let more = own2.more || shared.more;
   for (const id2 of shared.ids) {
     if (seen.has(id2)) continue;
     if (ids2.length >= SVG_LAYERS_MAX_REFS) {
@@ -63994,13 +65068,13 @@ function parseBoxShadow(value) {
     const inset = /\binset\b/.test(part);
     const body = part.replace(/\binset\b/g, " ");
     const colorMatch = findColorToken(body, true);
-    const color = colorMatch ?? "rgb(0,0,0)";
+    const color2 = colorMatch ?? "rgb(0,0,0)";
     const rest = colorMatch ? body.replace(colorMatch, " ") : body;
     const nums = (rest.match(/-?\d*\.?\d+(?:px)?/g) || []).map((s) => parseFloat(s)).filter(Number.isFinite);
     if (nums.length < 2) continue;
     const [x, y, blur = 0, spread = 0] = nums;
     if (x === void 0 || y === void 0) continue;
-    shadows.push({ x, y, blur: Math.max(0, blur), spread, color, inset });
+    shadows.push({ x, y, blur: Math.max(0, blur), spread, color: color2, inset });
   }
   return shadows;
 }
@@ -64011,13 +65085,13 @@ function parseTextShadow(value) {
     const part = raw.trim();
     if (!part) continue;
     const colorMatch = findColorToken(part);
-    const color = colorMatch ?? "rgb(0,0,0)";
+    const color2 = colorMatch ?? "rgb(0,0,0)";
     const rest = colorMatch ? part.replace(colorMatch, " ") : part;
     const nums = (rest.match(/-?\d*\.?\d+(?:px)?/g) || []).map((v) => parseFloat(v)).filter(Number.isFinite);
     if (nums.length < 2) continue;
     const [x, y, blur = 0] = nums;
     if (x === void 0 || y === void 0) continue;
-    out.push({ x, y, blur: Math.max(0, blur), color });
+    out.push({ x, y, blur: Math.max(0, blur), color: color2 });
   }
   return out;
 }
@@ -64426,14 +65500,14 @@ function parseDropShadowFilter(filterStr) {
   for (const fn of fns) {
     if (!/^drop-shadow\(/i.test(fn)) return null;
     const body = fn.slice(fn.indexOf("(") + 1, fn.lastIndexOf(")")).trim();
-    let color = "rgb(0,0,0)";
+    let color2 = "rgb(0,0,0)";
     const cm = findColorToken(body);
     const rest = cm ? body.replace(cm, " ") : body;
-    if (cm) color = cm;
+    if (cm) color2 = cm;
     const nums = (rest.match(/-?\d*\.?\d+(?:px)?/g) || []).map(parseFloat).filter(Number.isFinite);
     if (nums.length < 2) return null;
     const [dx, dy, blur = 0] = nums;
-    shadows.push({ dx, dy, blur: Math.max(0, blur), color });
+    shadows.push({ dx, dy, blur: Math.max(0, blur), color: color2 });
   }
   return shadows.length ? shadows : null;
 }
@@ -65323,13 +66397,13 @@ var init_emf = __esm({
     recSetPolyFillMode = (mode) => record(EMR_SETPOLYFILLMODE, 4, (dv, o) => dv.setUint32(o, mode, true));
     recSelectObject = (handle) => record(EMR_SELECTOBJECT, 4, (dv, o) => dv.setUint32(o, handle >>> 0, true));
     recDeleteObject = (handle) => record(EMR_DELETEOBJECT, 4, (dv, o) => dv.setUint32(o, handle >>> 0, true));
-    recCreateBrush = (handle, color) => record(EMR_CREATEBRUSHINDIRECT, 16, (dv, o) => {
+    recCreateBrush = (handle, color2) => record(EMR_CREATEBRUSHINDIRECT, 16, (dv, o) => {
       dv.setUint32(o, handle, true);
       dv.setUint32(o + 4, BS_SOLID, true);
-      dv.setUint32(o + 8, colorRef(color), true);
+      dv.setUint32(o + 8, colorRef(color2), true);
       dv.setUint32(o + 12, 0, true);
     });
-    recExtCreatePen = (handle, color, width) => record(EMR_EXTCREATEPEN, 44, (dv, o) => {
+    recExtCreatePen = (handle, color2, width) => record(EMR_EXTCREATEPEN, 44, (dv, o) => {
       dv.setUint32(o, handle, true);
       dv.setUint32(o + 4, 0, true);
       dv.setUint32(o + 8, 0, true);
@@ -65338,7 +66412,7 @@ var init_emf = __esm({
       dv.setUint32(o + 20, PS_GEOMETRIC_SOLID, true);
       dv.setUint32(o + 24, Math.max(1, clampInt2(width)), true);
       dv.setUint32(o + 28, BS_SOLID, true);
-      dv.setUint32(o + 32, colorRef(color), true);
+      dv.setUint32(o + 32, colorRef(color2), true);
       dv.setUint32(o + 36, 0, true);
       dv.setUint32(o + 40, 0, true);
     });
@@ -65350,7 +66424,7 @@ var init_emf = __esm({
     });
     recSetBkMode = (mode) => record(EMR_SETBKMODE, 4, (dv, o) => dv.setUint32(o, mode, true));
     recSetTextAlign = (mode) => record(EMR_SETTEXTALIGN, 4, (dv, o) => dv.setUint32(o, mode, true));
-    recSetTextColor = (color) => record(EMR_SETTEXTCOLOR, 4, (dv, o) => dv.setUint32(o, colorRef(color), true));
+    recSetTextColor = (color2) => record(EMR_SETTEXTCOLOR, 4, (dv, o) => dv.setUint32(o, colorRef(color2), true));
   }
 });
 
@@ -65851,8 +66925,8 @@ var init_wmf = __esm({
     recSetWindowOrg = (x, y) => rec(META_SETWINDOWORG, [clampI16(y), clampI16(x)]);
     recSetWindowExt = (w, h) => rec(META_SETWINDOWEXT, [clampI16(h), clampI16(w)]);
     recSetPolyFillMode2 = (mode) => rec(META_SETPOLYFILLMODE, [mode]);
-    recCreatePen = (style, width, color) => rec(META_CREATEPENINDIRECT, [style, clampI16(Math.max(1, width)), 0, ...colorWords(color)]);
-    recCreateBrush2 = (style, color) => rec(META_CREATEBRUSHINDIRECT, [style, ...colorWords(color), 0]);
+    recCreatePen = (style, width, color2) => rec(META_CREATEPENINDIRECT, [style, clampI16(Math.max(1, width)), 0, ...colorWords(color2)]);
+    recCreateBrush2 = (style, color2) => rec(META_CREATEBRUSHINDIRECT, [style, ...colorWords(color2), 0]);
     recSelectObject2 = (idx) => rec(META_SELECTOBJECT, [idx]);
     recDeleteObject2 = (idx) => rec(META_DELETEOBJECT, [idx]);
     recEof2 = () => rec(META_EOF, []);
@@ -67630,8 +68704,8 @@ function readRunProps(rPr, theme) {
   const latin = firstChildByLocal(rPr, "latin");
   const face = latin ? attrByLocal(latin, "typeface") : null;
   if (face) out.font = face;
-  const color = readColor2(firstChildByLocal(rPr, "solidFill"), theme);
-  if (color) out.color = color;
+  const color2 = readColor2(firstChildByLocal(rPr, "solidFill"), theme);
+  if (color2) out.color = color2;
   return out;
 }
 function inheritInto(out, layer) {
@@ -67857,8 +68931,8 @@ function readBackground(root, relsById, theme) {
   const bgPr = firstChildByLocal(bg, "bgPr");
   if (bgPr) {
     const out = {};
-    const color = readColor2(firstChildByLocal(bgPr, "solidFill"), theme);
-    if (color) out.color = color;
+    const color2 = readColor2(firstChildByLocal(bgPr, "solidFill"), theme);
+    if (color2) out.color = color2;
     const blipFill = firstChildByLocal(bgPr, "blipFill");
     const blip = blipFill ? firstChildByLocal(blipFill, "blip") : null;
     const embed = blip ? attrByLocal(blip, "embed") || attrByLocal(blip, "link") : null;
@@ -67868,8 +68942,8 @@ function readBackground(root, relsById, theme) {
   }
   const bgRef = firstChildByLocal(bg, "bgRef");
   if (bgRef) {
-    const color = readColor2(bgRef, theme);
-    if (color) return { color };
+    const color2 = readColor2(bgRef, theme);
+    if (color2) return { color: color2 };
   }
   return void 0;
 }
@@ -68021,13 +69095,13 @@ function slideNum(path) {
 function readingOrder(nodes) {
   if (!Array.isArray(nodes)) return [];
   const coord2 = (v) => typeof v === "number" && Number.isFinite(v) ? v : 0;
-  const items = [];
+  const items2 = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if (node == null || typeof node !== "object") continue;
-    items.push({ node, i, x: coord2(node.xEmu), y: coord2(node.yEmu) });
+    items2.push({ node, i, x: coord2(node.xEmu), y: coord2(node.yEmu) });
   }
-  items.sort((a, b) => a.y - b.y || a.i - b.i);
+  items2.sort((a, b) => a.y - b.y || a.i - b.i);
   const out = [];
   let band = [];
   let bandTop = 0;
@@ -68036,7 +69110,7 @@ function readingOrder(nodes) {
     for (const it of band) out.push(it.node);
     band = [];
   };
-  for (const it of items) {
+  for (const it of items2) {
     if (band.length && it.y - bandTop > ROW_TOLERANCE_EMU) flush();
     if (!band.length) bandTop = it.y;
     band.push(it);
@@ -68810,9 +69884,9 @@ function mdInlines(nodes, ctx, depth) {
   for (const n2 of inlineList(nodes)) out += mdInline(n2, ctx, depth);
   return out;
 }
-function mdList(items, ordered) {
+function mdList(items2, ordered) {
   const lines = [];
-  for (const item of Array.isArray(items) ? items : []) {
+  for (const item of Array.isArray(items2) ? items2 : []) {
     if (!item || typeof item !== "object") continue;
     const indent = "  ".repeat(clampListLevel(item.level));
     const text4 = oneLine(mdInlines(item.inlines, { inTable: false }, 0));
@@ -68919,8 +69993,8 @@ function htmlInlines(nodes, depth) {
   for (const n2 of inlineList(nodes)) out += htmlInline(n2, depth);
   return out;
 }
-function htmlList(items, ordered) {
-  const list2 = (Array.isArray(items) ? items : []).filter((i2) => i2 && typeof i2 === "object");
+function htmlList(items2, ordered) {
+  const list2 = (Array.isArray(items2) ? items2 : []).filter((i2) => i2 && typeof i2 === "object");
   const tag2 = ordered ? "ol" : "ul";
   let i = 0;
   const walk2 = (level2) => {
@@ -69438,9 +70512,9 @@ function readParagraph(p, ctx, depth) {
     if (ctx.openList && ctx.openList.ordered === ordered) {
       ctx.openList.items.push({ level: num7.ilvl, inlines });
     } else {
-      const items = [{ level: num7.ilvl, inlines }];
-      ctx.openList = { ordered, items };
-      pushBlock(ctx, { type: "list", ordered, items });
+      const items2 = [{ level: num7.ilvl, inlines }];
+      ctx.openList = { ordered, items: items2 };
+      pushBlock(ctx, { type: "list", ordered, items: items2 });
     }
   } else if (text4) {
     closeList(ctx);
@@ -69886,22 +70960,22 @@ function creditFor(source) {
   pieces.push(changes.length ? `changes: ${changes.join(", ")}` : "unchanged");
   return `${pieces.join(", ")}.`;
 }
-function sourceFrom(record5) {
-  const rights = record5.rights;
+function sourceFrom(record7) {
+  const rights = record7.rights;
   const partial = {
-    title: record5.title,
+    title: record7.title,
     creator: rights?.creator,
     licence: rights?.license,
     licenceUrl: rights?.licenseUrl,
-    sourceUrl: rights?.sourceUrl ?? record5.data?.url,
+    sourceUrl: rights?.sourceUrl ?? record7.data?.url,
     modifications: rights?.modifications ? [...rights.modifications] : [],
     // A credentialed ingredient carries its own signed manifest, so the source
     // spoke for itself. A source ingredient was described by this exporter, and
     // saying so is the difference between a record and a signature.
-    assertedBy: record5.credentialed ? "source" : "exporter",
+    assertedBy: record7.credentialed ? "source" : "exporter",
     carried: {
       ingredient: true,
-      credentialed: record5.credentialed,
+      credentialed: record7.credentialed,
       // Nothing in a credential says whether a readable credit travels beside
       // the file, so this stays unknown rather than being assumed either way.
       readableCredit: "unknown"
@@ -69952,16 +71026,16 @@ function summaryFor2(report, recorded, credentialed) {
 function evaluateReuse(report, context, options2 = {}) {
   const works = [];
   const uses = [];
-  for (const [index2, record5] of (report.ingredients ?? []).entries()) {
-    const rights = record5.rights;
-    const id2 = record5.instanceId ?? rights?.sourceUrl ?? record5.data?.url ?? `ingredient-${index2 + 1}`;
+  for (const [index2, record7] of (report.ingredients ?? []).entries()) {
+    const rights = record7.rights;
+    const id2 = record7.instanceId ?? rights?.sourceUrl ?? record7.data?.url ?? `ingredient-${index2 + 1}`;
     const work = {
       id: id2,
       creators: rights?.creator ? [{ name: rights.creator, role: "creator" }] : [],
-      rights: rights?.license ? [{ declaration: rights.license, url: rights.licenseUrl, assertedBy: record5.credentialed ? "source" : "exporter", evidence: "native-metadata", status: "parsed" }] : [{ declaration: "", assertedBy: "exporter", evidence: "native-metadata", status: "missing" }]
+      rights: rights?.license ? [{ declaration: rights.license, url: rights.licenseUrl, assertedBy: record7.credentialed ? "source" : "exporter", evidence: "native-metadata", status: "parsed" }] : [{ declaration: "", assertedBy: "exporter", evidence: "native-metadata", status: "missing" }]
     };
-    if (record5.title) work.title = record5.title;
-    const sourceUrl = rights?.sourceUrl ?? record5.data?.url;
+    if (record7.title) work.title = record7.title;
+    const sourceUrl = rights?.sourceUrl ?? record7.data?.url;
     if (sourceUrl) work.sourceUrl = sourceUrl;
     if (rights?.revision) work.revision = rights.revision;
     if (rights?.sourceHash) work.sourceHash = rights.sourceHash;
@@ -72555,7 +73629,7 @@ var init_linux_pack = __esm({
 });
 
 // engine/src/font-convert.ts
-import { unzlibSync } from "fflate";
+import { unzlibSync as unzlibSync2 } from "fflate";
 function sfntKind(bytes) {
   if (bytes.length < 4) return null;
   const magic2 = (bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3]) >>> 0;
@@ -72673,7 +73747,7 @@ function woffToSfnt(bytes) {
       const out = new Uint8Array(origLength);
       let inflated2;
       try {
-        inflated2 = unzlibSync(comp2, { out });
+        inflated2 = unzlibSync2(comp2, { out });
       } catch {
         throw new Error("font-convert: WOFF table inflate failed");
       }
@@ -73165,12 +74239,12 @@ function numText(n2) {
   return Object.is(n2, -0) ? "0" : String(n2);
 }
 function sharedStringsXml(strings, totalRefs) {
-  let items = "";
+  let items2 = "";
   for (const s of strings) {
     const preserve = s !== s.trim() ? ' xml:space="preserve"' : "";
-    items += `<si><t${preserve}>${xmlEsc3(s)}</t></si>`;
+    items2 += `<si><t${preserve}>${xmlEsc3(s)}</t></si>`;
   }
-  return XML_DECL2 + `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${totalRefs}" uniqueCount="${strings.length}">` + items + "</sst>";
+  return XML_DECL2 + `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${totalRefs}" uniqueCount="${strings.length}">` + items2 + "</sst>";
 }
 function contentTypesXml2() {
   return XML_DECL2 + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>';
@@ -73528,7 +74602,7 @@ ${chapter.xhtml}
 `;
 }
 function navXhtml(doc, lang) {
-  const items = doc.chapters.map((c, i) => `        <li><a href="${chapterName(i)}.xhtml">${escapeXml(c.title)}</a></li>`).join("\n");
+  const items2 = doc.chapters.map((c, i) => `        <li><a href="${chapterName(i)}.xhtml">${escapeXml(c.title)}</a></li>`).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${escapeXml(lang)}" lang="${escapeXml(lang)}">
@@ -73540,7 +74614,7 @@ function navXhtml(doc, lang) {
     <nav epub:type="toc" id="toc">
       <h1>${escapeXml(doc.title)}</h1>
       <ol>
-${items}
+${items2}
       </ol>
     </nav>
   </body>
@@ -74452,6 +75526,7 @@ function mapFontFamily(family, fonts) {
   const fam = String(family == null ? "" : family).trim();
   const hit = fonts?.knownFamilies?.find((k) => k.toLowerCase() === fam.toLowerCase());
   if (hit) return hit;
+  if (fonts?.preserveSource && fam) return fam;
   return /mono|consol|courier|menlo|code/i.test(String(family == null ? "" : family)) ? (fonts && fonts.monoFamily) ?? DEFAULT_FONTS.monoFamily : (fonts && fonts.defaultFamily) ?? DEFAULT_FONTS.defaultFamily;
 }
 function mapAlign(a) {
@@ -74537,6 +75612,7 @@ function nodeToBox(node, opts) {
     weight,
     font,
     lineHeight,
+    ...n2.tracking != null ? { tracking: round2(num5(n2.tracking, 0)) } : {},
     group: n2.group != null && n2.group !== "" ? String(n2.group) : "",
     clip: "",
     pad: Math.max(0, Math.round(num5(n2.pad, 8))),
@@ -74827,10 +75903,10 @@ function topPenpotStroke(sh) {
     const style = strokeStyleOf(st);
     if (style === "none") continue;
     const width = num5(get(st, "strokeWidth"), 0);
-    const color = safeColor(get(st, "strokeColor"), "");
-    if (width > 0 && color) {
+    const color2 = safeColor(get(st, "strokeColor"), "");
+    if (width > 0 && color2) {
       const out = {
-        color,
+        color: color2,
         width,
         opacity: clamp(num5(get(st, "strokeOpacity"), 1), 0, 1),
         style
@@ -75228,12 +76304,12 @@ function applyPenpotBlur(sh, node) {
   if (v > 0) node.blur = v;
 }
 function penpotBackgroundBlurPx(sh) {
-  const own = get(sh, "backgroundBlur");
+  const own2 = get(sh, "backgroundBlur");
   const legacy = get(sh, "blur");
-  const entry2 = own && typeof own === "object" ? own : legacy && typeof legacy === "object" && String(get(legacy, "type") || "") === "background-blur" ? legacy : null;
+  const entry2 = own2 && typeof own2 === "object" ? own2 : legacy && typeof legacy === "object" && String(get(legacy, "type") || "") === "background-blur" ? legacy : null;
   if (!entry2) return 0;
   if (get(entry2, "hidden") === true) return 0;
-  if (entry2 === own && String(get(entry2, "type") || "background-blur") !== "background-blur") return 0;
+  if (entry2 === own2 && String(get(entry2, "type") || "background-blur") !== "background-blur") return 0;
   const v = num5(get(entry2, "value"), 0);
   if (!(v > 0)) return 0;
   return clamp(round1(v * BG_BLUR_SIGMA_A + BG_BLUR_SIGMA_B), 0, 300);
@@ -75579,11 +76655,11 @@ function shiftNodesToOrigin(nodes) {
   }
   return { width: Math.max(1, Math.round(maxX - minX)), height: Math.max(1, Math.round(maxY - minY)) };
 }
-function readingOrder2(items, rect) {
-  if (items.length < 2) return [...items];
-  const heights = items.map((t) => rect(t).h).sort((a, b) => a - b);
+function readingOrder2(items2, rect) {
+  if (items2.length < 2) return [...items2];
+  const heights = items2.map((t) => rect(t).h).sort((a, b) => a - b);
   const tol = Math.max(1, (heights[Math.floor(heights.length / 2)] ?? 0) / 2);
-  const byY = [...items].sort((a, b) => rect(a).y + rect(a).h / 2 - (rect(b).y + rect(b).h / 2));
+  const byY = [...items2].sort((a, b) => rect(a).y + rect(a).h / 2 - (rect(b).y + rect(b).h / 2));
   const rows2 = [];
   let rowYc = -Infinity;
   for (const t of byY) {
@@ -76175,7 +77251,7 @@ function tokenize3(src, maxTokens) {
       return [];
     }
     arrayDepth++;
-    const items = [];
+    const items2 = [];
     while (i < n2) {
       const c = code(i);
       if (WS.has(c)) {
@@ -76187,11 +77263,11 @@ function tokenize3(src, maxTokens) {
         break;
       }
       const tk = readOne();
-      if (tk) items.push(tk);
+      if (tk) items2.push(tk);
       else if (i < n2 && code(i) !== 93) i++;
     }
     arrayDepth--;
-    return items;
+    return items2;
   };
   function readOne() {
     if (count2 >= maxTokens) {
@@ -76290,6 +77366,13 @@ function interpretPdfPage(page2) {
   let gseq = 0;
   const onWarn = page2.onWarn ?? (() => {
   });
+  let colourWarning = false;
+  const warnCmyk = () => {
+    if (!colourWarning) {
+      colourWarning = true;
+      onWarn("color.cmyk.approximated");
+    }
+  };
   const pageSink = { nodes, count: 0, max: PDF_MAP_MAX_PAGE_NODES };
   let collapseBudget = PDF_MAP_MAX_PATTERN_EVALS;
   const collapseCache = /* @__PURE__ */ new Map();
@@ -76349,7 +77432,11 @@ function interpretPdfPage(page2) {
       ...baseFill ? { fill: baseFill } : {},
       font: "",
       fontSize: 0,
-      leading: 0
+      leading: 0,
+      charSpacing: 0,
+      wordSpacing: 0,
+      horizontalScale: 1,
+      rise: 0
     } : {
       ctm: baseCtm,
       fill: baseFill,
@@ -76362,6 +77449,10 @@ function interpretPdfPage(page2) {
       font: "",
       fontSize: 0,
       leading: 0,
+      charSpacing: 0,
+      wordSpacing: 0,
+      horizontalScale: 1,
+      rise: 0,
       clips: baseClips,
       fillGradient: null,
       fillMask: null,
@@ -76394,6 +77485,8 @@ function interpretPdfPage(page2) {
     let originSet = false;
     let origin = { x: 0, y: 0 };
     let textSize = 0, textRot = 0, textFill = "", textFont = "";
+    let textWidth = 0, textTracking = 0;
+    let textEnd = { x: 0, y: 0 };
     let lastLineY = 0;
     let lastLineX = 0;
     let leadSum = 0, leadCount = 0;
@@ -76437,7 +77530,7 @@ function interpretPdfPage(page2) {
     };
     const onTextMove = () => {
       const trm = matMul4(s.ctm, tm);
-      const p = apply(trm, 0, 0);
+      const p = apply(trm, 0, s.rise);
       if (!originSet) {
         origin = p;
         originSet = true;
@@ -76445,6 +77538,9 @@ function interpretPdfPage(page2) {
         textRot = rotationOf(trm);
         textFill = s.fill;
         textFont = s.font;
+        textWidth = 0;
+        textTracking = s.charSpacing * scaleMag(trm) * s.horizontalScale;
+        textEnd = p;
         textMcid = mcstack.length ? mcstack[mcstack.length - 1] : -1;
         textAlpha = clamp(s.fillAlpha * s.fillScale, 0, 1);
         textMask = maskPaint("raw");
@@ -76460,11 +77556,13 @@ function interpretPdfPage(page2) {
         const dy = p.y - lastLineY;
         const dx = p.x - lastLineX;
         if (Math.abs(dy) <= textSize * 0.35) {
-          if (dx < -textSize * 0.35 || dx > textSize * 3) {
+          const gap = p.x - textEnd.x;
+          if (gap < -textSize * 0.35 || gap > textSize * 3) {
             flushText();
             onTextMove();
             return;
           }
+          if (gap > textSize * 0.18 && !/\s$/.test(textBuf)) textBuf += " ";
         } else if (dy > textSize * 0.35 && dy <= textSize * 2.1 && Math.abs(dx) <= textSize * 2) {
           if (textBuf && !textBuf.endsWith("\n")) {
             textBuf += "\n";
@@ -76506,9 +77604,18 @@ function interpretPdfPage(page2) {
         drawType3(codes, fi.type3);
         return;
       }
+      if (textBuf && (textFont !== s.font || textFill !== s.fill || Math.abs(textSize - (s.fontSize || 1) * scaleMag(matMul4(s.ctm, tm))) > 0.01 || Math.abs(textTracking - s.charSpacing * scaleMag(matMul4(s.ctm, tm)) * s.horizontalScale) > 0.01)) flushText();
       if (!originSet) onTextMove();
       latchMcid();
       textBuf += decodeStr(codes, s.font);
+      let advance = 0;
+      for (let i = 0; i < codes.length; i += fi?.twoByte ? 2 : 1) {
+        const code = fi?.twoByte ? codes[i] << 8 | (codes[i + 1] ?? 0) : codes[i];
+        advance += ((fi?.widths?.[code] ?? fi?.defaultWidth ?? 550) / 1e3 * (s.fontSize || 0) + s.charSpacing + (!fi?.twoByte && code === 32 ? s.wordSpacing : 0)) * s.horizontalScale;
+      }
+      tm = matMul4(tm, { a: 1, b: 0, c: 0, d: 1, e: advance, f: 0 });
+      textEnd = apply(matMul4(s.ctm, tm), 0, s.rise);
+      textWidth = Math.max(textWidth, Math.hypot(textEnd.x - lastLineX, textEnd.y - lastLineY));
     };
     const showTJ = (arr) => {
       if (!Array.isArray(arr)) return;
@@ -76520,11 +77627,13 @@ function interpretPdfPage(page2) {
         }
         return;
       }
-      if (!originSet) onTextMove();
-      latchMcid();
       for (const el of arr) {
-        if (el.t === "str") textBuf += decodeStr(el.v, s.font);
-        else if (el.t === "num" && el.v <= -180) textBuf += " ";
+        if (el.t === "str") showString(el.v);
+        else if (el.t === "num") {
+          tm = matMul4(tm, { a: 1, b: 0, c: 0, d: 1, e: -(el.v / 1e3) * (s.fontSize || 0) * s.horizontalScale, f: 0 });
+          if (el.v <= -180 && textBuf && !/\s$/.test(textBuf)) textBuf += " ";
+          textEnd = apply(matMul4(s.ctm, tm), 0, s.rise);
+        }
       }
     };
     const flushText = () => {
@@ -76536,8 +77645,9 @@ function interpretPdfPage(page2) {
           kind: "text",
           x: origin.x,
           y: origin.y - size * 0.8,
-          w: Math.max(4, txt.replace(/\n.*/s, "").length * size * 0.55, size * 2),
+          w: Math.max(1, textWidth),
           h: size * (lead || 1.4) * txt.split("\n").length,
+          ...textTracking ? { tracking: textTracking } : {},
           ...lead ? { lineHeight: lead } : {},
           rot: Math.abs(textRot) < 0.5 ? 0 : textRot,
           fg: safeColor(textFill, "#000000") || "#000000",
@@ -76616,7 +77726,7 @@ function interpretPdfPage(page2) {
       }
       const clip3 = s.clips.length ? { _clips: s.clips } : {};
       const subpaths = segs.reduce((c2, sg) => c2 + (sg.op === "m" ? 1 : 0), 0);
-      if ((fillCol || grad) && mode !== "stroke" && subpaths === 1) {
+      if ((fillCol || grad) && mode !== "stroke" && !strokeCol && subpaths === 1) {
         const rect = asRectangle(segs);
         if (rect) {
           sink.nodes.push({
@@ -76916,6 +78026,7 @@ function interpretPdfPage(page2) {
           s.strokePatternUnsupported = "";
           break;
         case "k":
+          warnCmyk();
           s.fill = cmykHex(args);
           s.fillGradient = null;
           s.fillMask = null;
@@ -76923,6 +78034,7 @@ function interpretPdfPage(page2) {
           s.fillTileNodes = null;
           break;
         case "K":
+          warnCmyk();
           s.stroke = cmykHex(args);
           s.strokePatternUnsupported = "";
           break;
@@ -76935,6 +78047,7 @@ function interpretPdfPage(page2) {
         // the numeric operands, which scColor resolves.
         case "sc":
         case "scn": {
+          if (args.length >= 4) warnCmyk();
           const pat = nameArg && res.patterns ? res.patterns[nameArg] : void 0;
           if (pat) {
             applyPattern(pat, nameArg, scColor(args));
@@ -76965,6 +78078,7 @@ function interpretPdfPage(page2) {
         // selections stop burying real signal in the warning census.
         case "SC":
         case "SCN": {
+          if (args.length >= 4) warnCmyk();
           const col = scColor(args);
           if (col) {
             s.stroke = col;
@@ -77145,6 +78259,18 @@ function interpretPdfPage(page2) {
         case "TL":
           s.leading = args[0] ?? 0;
           break;
+        case "Tc":
+          s.charSpacing = args[0] ?? 0;
+          break;
+        case "Tw":
+          s.wordSpacing = args[0] ?? 0;
+          break;
+        case "Tz":
+          s.horizontalScale = (args[0] ?? 100) / 100;
+          break;
+        case "Ts":
+          s.rise = args[0] ?? 0;
+          break;
         case "Tf":
           s.font = nameArg;
           s.fontSize = args[0] ?? s.fontSize;
@@ -77180,6 +78306,8 @@ function interpretPdfPage(page2) {
           showString(strArg);
           break;
         case '"':
+          s.wordSpacing = args[0] ?? 0;
+          s.charSpacing = args[1] ?? 0;
           tlm = matMul4(tlm, { a: 1, b: 0, c: 0, d: 1, e: 0, f: -s.leading });
           tm = tlm;
           onTextMove();
@@ -77404,19 +78532,28 @@ function asRectangle(segs) {
   return { x: cx - l0 / 2, y: cy - l1 / 2, w: l0, h: l1, rot: Math.round(rot * 10) / 10 };
 }
 function asEllipse(segs) {
-  const moves = segs.filter((sg) => sg.op === "m").length;
-  const curves = segs.filter((sg) => sg.op === "c").length;
-  const lines = segs.filter((sg) => sg.op === "l").length;
-  if (moves !== 1 || curves !== 4 || lines > 1) return null;
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const sg of segs) for (let k = 0; k < sg.pts.length; k += 2) {
-    minX = Math.min(minX, sg.pts[k]);
-    maxX = Math.max(maxX, sg.pts[k]);
-    minY = Math.min(minY, sg.pts[k + 1]);
-    maxY = Math.max(maxY, sg.pts[k + 1]);
-  }
+  if (segs[0]?.op !== "m" || segs.filter((s) => s.op === "m").length !== 1) return null;
+  const curves = segs.filter((s) => s.op === "c");
+  if (curves.length !== 4) return null;
+  const first = segs[0].pts;
+  const points = [first, ...curves.map((s) => s.pts.slice(4))];
+  const minX = Math.min(...points.map((p) => p[0])), maxX = Math.max(...points.map((p) => p[0]));
+  const minY = Math.min(...points.map((p) => p[1])), maxY = Math.max(...points.map((p) => p[1]));
   const w = maxX - minX, h = maxY - minY;
   if (w < 0.5 || h < 0.5) return null;
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  const normal = (p) => [(p[0] - cx) * 2 / w, (p[1] - cy) * 2 / h];
+  const near = (a, b) => Math.abs(a[0] - b[0]) < 3e-3 && Math.abs(a[1] - b[1]) < 3e-3;
+  const cardinal = (p) => [[1, 0], [0, 1], [-1, 0], [0, -1]].some((q) => near(p, q));
+  if (!near(normal(points[4]), normal(first))) return null;
+  if (segs.some((s) => s.op === "l" && !near(normal(s.pts), normal(first)))) return null;
+  const k = 0.5522847498307936;
+  for (const [i, curve] of curves.entries()) {
+    const start = normal(points[i]), end = normal(points[i + 1]);
+    if (!cardinal(start) || !cardinal(end) || Math.abs(start[0] * end[0] + start[1] * end[1]) > 3e-3) return null;
+    const c1 = normal(curve.pts.slice(0, 2)), c2 = normal(curve.pts.slice(2, 4));
+    if (!near(c1, [start[0] + k * end[0], start[1] + k * end[1]]) || !near(c2, [end[0] + k * start[0], end[1] + k * start[1]])) return null;
+  }
   return { x: minX, y: minY, w, h };
 }
 function serializePath(segs) {
@@ -77628,9 +78765,10 @@ function textEl(n2) {
   const family = String(n2.fontFamily || "").trim();
   const familyAttr = family ? ` font-family="${escapeXml2(family)}, sans-serif"` : ` font-family="sans-serif"`;
   const weight = n2.fontWeight != null && n2.fontWeight !== "" ? ` font-weight="${escapeXml2(String(n2.fontWeight))}"` : "";
+  const tracking = n2.tracking ? ` letter-spacing="${r(n2.tracking)}"` : "";
   const rot = n2.rot ? ` transform="rotate(${r(n2.rot)} ${r(n2.x)} ${r(baseline0)})"` : "";
   const spans = text4.split("\n").map((line, i) => `<tspan x="${r(n2.x)}" y="${r(baseline0 + i * lineH)}">${escapeXml2(line)}</tspan>`).join("");
-  return `<text xml:space="preserve" fill="${safeAttrColor(n2.fg, "#000000")}" font-size="${r(size)}"${familyAttr}${weight}${opacityAttr(n2)}${rot}>${spans}</text>`;
+  return `<text xml:space="preserve" fill="${safeAttrColor(n2.fg, "#000000")}" font-size="${r(size)}"${familyAttr}${weight}${tracking}${opacityAttr(n2)}${rot}>${spans}</text>`;
 }
 function gradientMarkup(g2, id2, images) {
   const m2 = g2.matrix;
@@ -78129,8 +79267,8 @@ function median2(xs) {
   const m2 = s.length >> 1;
   return s.length % 2 ? s[m2] : (s[m2 - 1] + s[m2]) / 2;
 }
-function cluster(items) {
-  const parent = items.map((_, i) => i);
+function cluster(items2) {
+  const parent = items2.map((_, i) => i);
   const find = (i) => {
     while (parent[i] !== i) {
       parent[i] = parent[parent[i]];
@@ -78142,20 +79280,20 @@ function cluster(items) {
     const ra = find(a), rb = find(b);
     if (ra !== rb) parent[ra] = rb;
   };
-  const typical = median2(items.map((it) => Math.min(it.rect.w, it.rect.h)));
+  const typical = median2(items2.map((it) => Math.min(it.rect.w, it.rect.h)));
   const gap = Math.min(MAX_CLUSTER_GAP2, Math.max(CLUSTER_GAP2, typical * GAP_FACTOR2));
-  for (let i = 0; i < items.length; i++) {
-    const a = expand(items[i].rect, gap);
-    for (let j = i + 1; j < items.length; j++) {
+  for (let i = 0; i < items2.length; i++) {
+    const a = expand(items2[i].rect, gap);
+    for (let j = i + 1; j < items2.length; j++) {
       if (find(i) === find(j)) continue;
-      if (overlaps(a, items[j].rect)) join16(i, j);
+      if (overlaps(a, items2[j].rect)) join16(i, j);
     }
   }
   const collect3 = () => {
     const m2 = /* @__PURE__ */ new Map();
-    for (let i = 0; i < items.length; i++) {
+    for (let i = 0; i < items2.length; i++) {
       const root = find(i);
-      const it = items[i];
+      const it = items2[i];
       const got = m2.get(root);
       if (got) {
         got.idx.push(it.i);
@@ -78200,7 +79338,7 @@ function findVectorArtwork(nodes, opts = {}) {
   if (!Array.isArray(nodes) || !nodes.length) return out;
   const pageArea = Math.max(1, (opts.width ?? 0) * (opts.height ?? 0));
   const pageLong = Math.max(opts.width ?? 0, opts.height ?? 0);
-  const items = [];
+  const items2 = [];
   for (let i = 0; i < nodes.length && i < PDF_ARTWORK_MAX_NODES; i++) {
     const n2 = nodes[i];
     if (!isVectorPaint(n2)) continue;
@@ -78210,10 +79348,10 @@ function findVectorArtwork(nodes, opts = {}) {
       if (pageArea > 1 && e.w * e.h / pageArea > PANEL_FRACTION) continue;
       if (pageLong > 0 && Math.max(e.w, e.h) > pageLong * BAR_SPAN) continue;
     }
-    items.push({ i, rect: { x: e.x, y: e.y, w: e.w, h: e.h }, group: String(n2.group ?? ""), plain: isPlainRect(n2) });
+    items2.push({ i, rect: { x: e.x, y: e.y, w: e.w, h: e.h }, group: String(n2.group ?? ""), plain: isPlainRect(n2) });
   }
-  if (items.length < MIN_SHAPES) return out;
-  for (const c of cluster(items)) {
+  if (items2.length < MIN_SHAPES) return out;
+  for (const c of cluster(items2)) {
     if (out.length >= PDF_ARTWORK_MAX_CANDIDATES) break;
     const members = c.idx.map((i) => nodes[i]);
     const { rect } = c;
@@ -78387,7 +79525,7 @@ function escapeLeading(s) {
   return s.replace(/^([#>|]|\d+[.)]\s|[-*+]\s)/, "\\$1");
 }
 function toItems(nodes) {
-  const items = [];
+  const items2 = [];
   let rotated = 0;
   let chars = 0;
   for (let nodeIndex = 0; nodeIndex < nodes.length && nodeIndex < PDF_TEXT_MAX_NODES; nodeIndex++) {
@@ -78395,7 +79533,7 @@ function toItems(nodes) {
     if (n2.kind !== "text") continue;
     const source = typeof n2.text === "string" ? n2.text : "";
     const remaining = PDF_TEXT_MAX_CHARS - chars;
-    if (remaining <= 0 || items.length >= PDF_TEXT_MAX_ITEMS) break;
+    if (remaining <= 0 || items2.length >= PDF_TEXT_MAX_ITEMS) break;
     const raw = source.slice(0, remaining);
     chars += raw.length;
     if (!raw.trim()) continue;
@@ -78408,12 +79546,12 @@ function toItems(nodes) {
     const font = String(n2.fontFamily ?? "");
     let lineStart = 0;
     let lineIndex = 0;
-    while (lineStart <= raw.length && items.length < PDF_TEXT_MAX_ITEMS) {
+    while (lineStart <= raw.length && items2.length < PDF_TEXT_MAX_ITEMS) {
       const newline = raw.indexOf("\n", lineStart);
       const lineEnd = newline < 0 ? raw.length : newline;
       const text4 = raw.slice(lineStart, lineEnd);
       if (text4.trim()) {
-        items.push({
+        items2.push({
           text: text4,
           x: n2.x,
           // Undo pdf-map's box-top shift, then step down one line per split line
@@ -78433,16 +79571,16 @@ function toItems(nodes) {
       lineIndex++;
     }
   }
-  return { items, rotated };
+  return { items: items2, rotated };
 }
 function joinFragments(acc, next, prevRight) {
   if (!acc) return next.text;
   if (/\s$/.test(acc) || /^\s/.test(next.text)) return acc + next.text;
   return next.x - prevRight > next.size * 0.2 ? `${acc} ${next.text}` : acc + next.text;
 }
-function toLines(items) {
-  if (!items.length) return [];
-  const sorted = [...items].sort((a, b) => a.baseline - b.baseline || a.x - b.x);
+function toLines(items2) {
+  if (!items2.length) return [];
+  const sorted = [...items2].sort((a, b) => a.baseline - b.baseline || a.x - b.x);
   const lines = [];
   let bucket = [sorted[0]];
   const flush = () => {
@@ -78490,8 +79628,8 @@ function toLines(items) {
   flush();
   return lines;
 }
-function findGutters(items, bodySize) {
-  const spans = items.map((i) => [i.x, Math.max(i.right, i.x + 1)]).sort((a, b) => a[0] - b[0]);
+function findGutters(items2, bodySize) {
+  const spans = items2.map((i) => [i.x, Math.max(i.right, i.x + 1)]).sort((a, b) => a[0] - b[0]);
   if (!spans.length) return [];
   const cuts = [];
   let reach = spans[0][1];
@@ -78502,9 +79640,9 @@ function findGutters(items, bodySize) {
   }
   return cuts.slice(0, MAX_COLUMNS - 1);
 }
-function splitByCuts(items, cuts) {
+function splitByCuts(items2, cuts) {
   const cols = Array.from({ length: cuts.length + 1 }, () => []);
-  for (const it of items) {
+  for (const it of items2) {
     let i = 0;
     while (i < cuts.length && it.x >= cuts[i]) i++;
     cols[i].push(it);
@@ -78572,9 +79710,9 @@ function blocksFromColumn(lines, column) {
   flush();
   return out;
 }
-function taggedBlocks(items, tagged) {
+function taggedBlocks(items2, tagged) {
   const byMcid = /* @__PURE__ */ new Map();
-  for (const it of items) {
+  for (const it of items2) {
     if (typeof it.mcid !== "number") continue;
     const bucket = byMcid.get(it.mcid);
     if (bucket) bucket.push(it);
@@ -78667,8 +79805,8 @@ function kindFromType(type) {
 }
 function extractPageText(nodes, opts = {}) {
   const boundedNodes = Array.isArray(nodes) ? nodes.slice(0, PDF_TEXT_MAX_NODES) : [];
-  const { items, rotated } = toItems(boundedNodes);
-  if (!items.length) {
+  const { items: items2, rotated } = toItems(boundedNodes);
+  if (!items2.length) {
     const pageArea = Math.max(1, (opts.width ?? 0) * (opts.height ?? 0));
     const covered = boundedNodes.some((n2) => n2.kind === "image" && n2.w * n2.h / pageArea >= SCAN_COVERAGE);
     return {
@@ -78682,19 +79820,19 @@ function extractPageText(nodes, opts = {}) {
     };
   }
   const sizeChars = /* @__PURE__ */ new Map();
-  for (const it of items) sizeChars.set(it.size, (sizeChars.get(it.size) ?? 0) + it.text.length);
-  let bodySize = items[0].size;
+  for (const it of items2) sizeChars.set(it.size, (sizeChars.get(it.size) ?? 0) + it.text.length);
+  let bodySize = items2[0].size;
   let bestChars = -1;
   for (const [s, n2] of sizeChars) if (n2 > bestChars) {
     bestChars = n2;
     bodySize = s;
   }
   if (opts.tagged?.length) {
-    const { blocks: tb, used } = taggedBlocks(items, opts.tagged.slice(0, PDF_TEXT_MAX_TAGGED_ELEMENTS));
-    const totalChars = items.reduce((a, it) => a + it.text.length, 0);
+    const { blocks: tb, used } = taggedBlocks(items2, opts.tagged.slice(0, PDF_TEXT_MAX_TAGGED_ELEMENTS));
+    const totalChars = items2.reduce((a, it) => a + it.text.length, 0);
     const taggedChars = [...used].reduce((a, it) => a + it.text.length, 0);
     if (totalChars > 0 && taggedChars / totalChars >= MIN_TAGGED_COVERAGE && tb.length) {
-      const leftovers = items.filter((it) => !used.has(it));
+      const leftovers = items2.filter((it) => !used.has(it));
       const extra = leftovers.length ? blocksFromColumn(toLines(leftovers), 0) : [];
       const blocks2 = [...tb, ...extra];
       return {
@@ -78709,9 +79847,9 @@ function extractPageText(nodes, opts = {}) {
       };
     }
   }
-  const cuts = items.length >= MIN_COLUMN_LINES * 2 ? findGutters(items, bodySize) : [];
-  let columns = cuts.length ? splitByCuts(items, cuts.map((c) => c.x)).map(toLines) : [];
-  if (!believableColumns(columns, Math.max(...cuts.map((c) => c.gap), 0))) columns = [toLines(items)];
+  const cuts = items2.length >= MIN_COLUMN_LINES * 2 ? findGutters(items2, bodySize) : [];
+  let columns = cuts.length ? splitByCuts(items2, cuts.map((c) => c.x)).map(toLines) : [];
+  if (!believableColumns(columns, Math.max(...cuts.map((c) => c.gap), 0))) columns = [toLines(items2)];
   const blocks = columns.flatMap((col, i) => blocksFromColumn(col, i));
   markHeadings(blocks);
   return {
@@ -79014,8 +80152,8 @@ function imageColorCloud(data, width, height, opts) {
     if (c >= HUE_CHROMA_FLOOR) hueBins[Math.floor((hue % 360 + 360) % 360 / 30)] += 1;
     const snapped = snapToCube(lin);
     cover[snapped ? oklchOf(snapped).gamut : oklchGamut(l, c, hue)] += 1;
-    const own = space === "display-p3" ? "p3" : "srgb";
-    if (inGamut(l, c, hue, own) && !inGamut(l, c + nearEdge, hue, own)) atRisk++;
+    const own2 = space === "display-p3" ? "p3" : "srgb";
+    if (inGamut(l, c, hue, own2) && !inGamut(l, c + nearEdge, hue, own2)) atRisk++;
   }
   const points = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, maxPoints).map(([key, n2]) => {
     const step = 256 / GRID;
@@ -79151,8 +80289,8 @@ function describeColor(input) {
     alpha: parsed.alpha
   };
 }
-function contrastVsExtremes(color) {
-  const d = describeColor(color);
+function contrastVsExtremes(color2) {
+  const d = describeColor(color2);
   if (!d) return null;
   const hex2 = d.srgbHex;
   const onBlack = contrastRatio(hex2, "#000000");
@@ -79809,36 +80947,36 @@ var init_inpaint = __esm({
         return ta < tb || ta === tb && a < b;
       }
       push(p) {
-        const items = this.idx;
+        const items2 = this.idx;
         let i = this.n++;
-        items[i] = p;
+        items2[i] = p;
         while (i > 0) {
           const parent = i - 1 >> 1;
-          if (!this.before(items[i], items[parent])) break;
-          const tmp = items[i];
-          items[i] = items[parent];
-          items[parent] = tmp;
+          if (!this.before(items2[i], items2[parent])) break;
+          const tmp = items2[i];
+          items2[i] = items2[parent];
+          items2[parent] = tmp;
           i = parent;
         }
       }
       /** Removes and returns the smallest pixel. Only call with size > 0. */
       pop() {
-        const items = this.idx;
-        const top = items[0];
-        const last = items[--this.n];
+        const items2 = this.idx;
+        const top = items2[0];
+        const last = items2[--this.n];
         if (this.n > 0) {
-          items[0] = last;
+          items2[0] = last;
           let i = 0;
           for (; ; ) {
             const l = 2 * i + 1;
             const r3 = l + 1;
             let m2 = i;
-            if (l < this.n && this.before(items[l], items[m2])) m2 = l;
-            if (r3 < this.n && this.before(items[r3], items[m2])) m2 = r3;
+            if (l < this.n && this.before(items2[l], items2[m2])) m2 = l;
+            if (r3 < this.n && this.before(items2[r3], items2[m2])) m2 = r3;
             if (m2 === i) break;
-            const tmp = items[i];
-            items[i] = items[m2];
-            items[m2] = tmp;
+            const tmp = items2[i];
+            items2[i] = items2[m2];
+            items2[m2] = tmp;
             i = m2;
           }
         }
@@ -81004,13 +82142,13 @@ function scanPenpotUsage(entries) {
     let usable = rawStops.length >= 2;
     for (const raw of rawStops) {
       const st = isRecord2(raw) ? raw : null;
-      const color = normHex3(st ? pv(st, "color") : void 0);
-      if (color) bump(color, "gradientStops");
-      if (!st || !color) {
+      const color2 = normHex3(st ? pv(st, "color") : void 0);
+      if (color2) bump(color2, "gradientStops");
+      if (!st || !color2) {
         usable = false;
         continue;
       }
-      stops.push({ color, offset: numOr3(pv(st, "offset"), 0), opacity: numOr3(pv(st, "opacity"), 1) });
+      stops.push({ color: color2, offset: numOr3(pv(st, "offset"), 0), opacity: numOr3(pv(st, "opacity"), 1) });
     }
     if (!usable) return;
     const type = String(pv(g2, "type") ?? "") === "radial" ? "radial" : "linear";
@@ -81275,23 +82413,23 @@ function penpotTokenClosure(filtered) {
   };
   for (const [p, v] of value) for (const ref of refsOf(v)) if (!value.has(ref)) dangling.push(`${p} \u2192 {${ref}}`);
   const WHITE2 = 0, GREY2 = 1, BLACK2 = 2;
-  const color = /* @__PURE__ */ new Map();
+  const color2 = /* @__PURE__ */ new Map();
   const stack = [];
   const visit = (p) => {
-    color.set(p, GREY2);
+    color2.set(p, GREY2);
     stack.push(p);
     for (const ref of refsOf(value.get(p))) {
       if (!value.has(ref)) continue;
-      const c = color.get(ref) ?? WHITE2;
+      const c = color2.get(ref) ?? WHITE2;
       if (c === GREY2) {
         const from = stack.indexOf(ref);
         cycles.push([...stack.slice(from), ref].join(" \u2192 "));
       } else if (c === WHITE2) visit(ref);
     }
     stack.pop();
-    color.set(p, BLACK2);
+    color2.set(p, BLACK2);
   };
-  for (const p of value.keys()) if ((color.get(p) ?? WHITE2) === WHITE2) visit(p);
+  for (const p of value.keys()) if ((color2.get(p) ?? WHITE2) === WHITE2) visit(p);
   return {
     dangling: [...new Set(dangling)].slice(0, 200),
     cycles: [...new Set(cycles)].slice(0, 200)
@@ -81998,15 +83136,15 @@ function penpotTokensJson(doc, selection) {
     active = order.filter((n2) => want.has(n2));
     if (!active.length) active = order.slice();
   } else if (chosenNames.length) {
-    const enabled = /* @__PURE__ */ new Set();
+    const enabled3 = /* @__PURE__ */ new Set();
     for (const n2 of chosenNames) {
       const t = byName.get(n2);
       if (!t) continue;
       for (const [name, st] of Object.entries(t.selectedTokenSets)) {
-        if (st === "enabled") enabled.add(name);
+        if (st === "enabled") enabled3.add(name);
       }
     }
-    active = order.filter((n2) => enabled.has(n2));
+    active = order.filter((n2) => enabled3.has(n2));
     if (!active.length) active = order.slice();
   } else {
     active = order.slice();
@@ -82108,7 +83246,7 @@ function boxesToPenpotDoc(boxesIn, o) {
   }
   const google = new Set(Array.from(o.googleFamilies ?? [], (f) => String(f).trim().toLowerCase()));
   const hexOf2 = (p) => p.alpha < 1 ? `${p.hex}${Math.round(p.alpha * 255).toString(16).padStart(2, "0")}` : p.hex;
-  const color = (v) => {
+  const color2 = (v) => {
     const s = str6(v).trim();
     if (!s) return null;
     if (/var\(/i.test(s) || s.startsWith("{")) {
@@ -82151,7 +83289,7 @@ function boxesToPenpotDoc(boxesIn, o) {
       const dz = clamp(fin2(b.z), -300, 900);
       base.shadows = [{ style: "drop-shadow", x: 0, y: dz * 0.15, blur: clamp(10 + dz * 0.2, 0, 300), spread: 0, color: "#000000", opacity: 85 / 255 }];
     } else if (shadowKind && shadowKind !== "none") {
-      const c = color(b.shadowColor) ?? "#00000055";
+      const c = color2(b.shadowColor) ?? "#00000055";
       const p = parsePenpotColor(c);
       base.shadows = [{ style: "drop-shadow", x: fin2(b.shadowX), y: fin2(b.shadowY), blur: fin2(b.shadowBlur, 10), spread: 0, color: p?.hex ?? "#000000", opacity: p?.alpha ?? 85 / 255 }];
     }
@@ -82161,7 +83299,7 @@ function boxesToPenpotDoc(boxesIn, o) {
     if (bgBlur > 0) base.backgroundBlur = bgBlur;
   };
   const strokeOf = (b) => {
-    const sc = color(b.stroke);
+    const sc = color2(b.stroke);
     const sw = fin2(b.strokeW);
     if (!sc || !(sw > 0)) return [];
     const p = parsePenpotColor(sc);
@@ -82187,7 +83325,7 @@ function boxesToPenpotDoc(boxesIn, o) {
   const fillsOf = (b, w, h) => {
     const grad = gradSpecToPenpot(b.grad, w, h);
     if (grad) return [{ gradient: grad }];
-    const c = color(b.bg);
+    const c = color2(b.bg);
     if (!c) return [];
     const p = parsePenpotColor(c);
     if (!p) return [];
@@ -82207,7 +83345,7 @@ function boxesToPenpotDoc(boxesIn, o) {
       if (!text4.trim()) return null;
       const family = familyOf(b.font);
       const weight = weightOf(b);
-      const fg = color(b.fg) ?? "#000000";
+      const fg = color2(b.fg) ?? "#000000";
       const size = Math.max(1, Math.round(fin2(b.fontSize, 48)));
       const lh = fin2(b.lineHeight, 1.12) || 1.12;
       const tracking = clamp(fin2(b.tracking), -100, 400);
@@ -82221,7 +83359,7 @@ function boxesToPenpotDoc(boxesIn, o) {
         else if (mo) ln = `${mo[1]}${mo[2]}.  ${mo[3]}`;
         const runs = designTextRuns(ln).map((r3) => {
           if (r3.color) textHasRunColor = true;
-          const rc = r3.color ? color(r3.color) ?? fg : fg;
+          const rc = r3.color ? color2(r3.color) ?? fg : fg;
           const rp = parsePenpotColor(rc) ?? { hex: "#000000", alpha: 1 };
           return {
             text: r3.text,
@@ -82307,7 +83445,7 @@ function boxesToPenpotDoc(boxesIn, o) {
         }
         const fp = tokenPathOf(b.font, "font");
         if (fp) applied.fontFamily = fp;
-      } else if (solidFill && color(b.bg)) {
+      } else if (solidFill && color2(b.bg)) {
         const p = tokenPathOf(b.bg, "color");
         if (p) applied.fill = p;
       }
@@ -82339,7 +83477,7 @@ function boxesToPenpotDoc(boxesIn, o) {
         const s = lowerBox(cb);
         if (s) children.push(s);
       }
-      const bg = color(fb.bg) ?? "#ffffff";
+      const bg = color2(fb.bg) ?? "#ffffff";
       const p = parsePenpotColor(bg) ?? { hex: "#ffffff", alpha: 1 };
       const board = {
         type: "board",
@@ -82380,7 +83518,7 @@ function boxesToPenpotDoc(boxesIn, o) {
       const s = lowerBox(cb);
       if (s) children.push(s);
     }
-    const bg = o.background == null ? null : color(o.background);
+    const bg = o.background == null ? null : color2(o.background);
     const p = bg ? parsePenpotColor(bg) : null;
     shapes2.push({
       type: "board",
@@ -84858,15 +85996,15 @@ var init_fs_token = __esm({
 function sessionVersionStamp() {
   return { formatVersion: SESSION_FORMAT_VERSION, engineVersion: ENGINE_VERSION };
 }
-function migrateSessionRecord(record5, log) {
-  if (!record5 || typeof record5 !== "object") return null;
-  const data = record5.data;
+function migrateSessionRecord(record7, log) {
+  if (!record7 || typeof record7 !== "object") return null;
+  const data = record7.data;
   if (data == null || typeof data !== "object") return null;
-  const raw = record5.formatVersion;
+  const raw = record7.formatVersion;
   const fromVersion = typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
   if (fromVersion > SESSION_READER_VERSION) {
     log?.("warn", "saved session was written by a newer version of the app - reading it as-is", {
-      slot: record5.slot,
+      slot: record7.slot,
       recordFormatVersion: fromVersion,
       readerFormatVersion: SESSION_READER_VERSION
     });
@@ -85563,22 +86701,22 @@ async function applyPreparation(sources, inspection, choices2, removeScopes = []
   if (JSON.stringify(fresh.inspection.sources) !== JSON.stringify(inspection.sources) || JSON.stringify(fresh.inspection.findings) !== JSON.stringify(inspection.findings)) throw new Error("The source or inspection changed. Inspect again before applying choices.");
   if (!Array.isArray(choices2) || choices2.length > PREPARE_MAX_FINDINGS || !Array.isArray(removeScopes) || removeScopes.length > 300) throw new Error("Too many preparation choices.");
   const chosen = /* @__PURE__ */ new Map();
-  for (const choice2 of choices2) {
-    if (!fresh.inspection.groups.some((g2) => g2.id === choice2.groupId) || chosen.has(choice2.groupId) || typeof choice2.replacement !== "string" || choice2.replacement.length > 4096) throw new Error("Invalid replacement choice.");
-    if (choice2.findings && (!Array.isArray(choice2.findings) || choice2.findings.some((id2) => !fresh.inspection.findings.some((f) => f.id === id2 && f.groupId === choice2.groupId)))) throw new Error("A selected occurrence no longer belongs to this group.");
-    chosen.set(choice2.groupId, choice2);
+  for (const choice3 of choices2) {
+    if (!fresh.inspection.groups.some((g2) => g2.id === choice3.groupId) || chosen.has(choice3.groupId) || typeof choice3.replacement !== "string" || choice3.replacement.length > 4096) throw new Error("Invalid replacement choice.");
+    if (choice3.findings && (!Array.isArray(choice3.findings) || choice3.findings.some((id2) => !fresh.inspection.findings.some((f) => f.id === id2 && f.groupId === choice3.groupId)))) throw new Error("A selected occurrence no longer belongs to this group.");
+    chosen.set(choice3.groupId, choice3);
   }
   const remove = new Set(removeScopes);
   for (const id2 of remove) if (!fresh.inspection.scopes.some((s) => s.id === id2 && s.id !== s.sourceId)) throw new Error("Only listed archive members can be removed.");
   const byUnit = /* @__PURE__ */ new Map();
   const replaced = /* @__PURE__ */ new Map();
   for (const finding3 of fresh.inspection.findings) {
-    const choice2 = chosen.get(finding3.groupId);
-    if (choice2?.replacement === finding3.value) continue;
-    if (!choice2 || choice2.findings && !choice2.findings.includes(finding3.id)) continue;
+    const choice3 = chosen.get(finding3.groupId);
+    if (choice3?.replacement === finding3.value) continue;
+    if (!choice3 || choice3.findings && !choice3.findings.includes(finding3.id)) continue;
     const entry2 = fresh.spans.get(finding3.id);
     const group = byUnit.get(entry2.unit.id) ?? { unit: entry2.unit, edits: [] };
-    group.edits.push({ span: entry2.span, replacement: choice2.replacement });
+    group.edits.push({ span: entry2.span, replacement: choice3.replacement });
     byUnit.set(entry2.unit.id, group);
     replaced.set(finding3.scopeId, (replaced.get(finding3.scopeId) ?? 0) + 1);
   }
@@ -85863,10 +87001,10 @@ function compareStructure(before, after, options2, budget2) {
         continue;
       }
       if (arrays && options2.arrayAlignment === "id") {
-        const ids2 = (items) => {
+        const ids2 = (items2) => {
           const map = /* @__PURE__ */ new Map();
-          for (let i = 0; i < items.length; i++) {
-            const item = items[i];
+          for (let i = 0; i < items2.length; i++) {
+            const item = items2[i];
             if (!record2(item) || typeof item.id !== "string" || map.has(item.id)) return null;
             map.set(item.id, i);
           }
@@ -87390,11 +88528,11 @@ function learningLinkAllowed(href) {
 }
 function validLearningRichText(value) {
   let count2 = 0, size = 0;
-  const record5 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+  const record7 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
   const keys2 = (v, allowed) => Object.keys(v).every((k) => allowed.includes(k));
   const blocks = ["paragraph", "heading", "bulletList", "orderedList", "blockquote"];
   const visit = (v, parent, depth) => {
-    if (!record5(v) || ++count2 > 1e4 || depth > 12 || !keys2(v, ["type", "attrs", "content", "marks", "text"]))
+    if (!record7(v) || ++count2 > 1e4 || depth > 12 || !keys2(v, ["type", "attrs", "content", "marks", "text"]))
       return false;
     const type = String(v.type);
     const allowed = parent === "" ? ["doc"] : ["paragraph", "heading"].includes(parent) ? ["text", "hardBreak"] : ["bulletList", "orderedList"].includes(parent) ? ["listItem"] : blocks;
@@ -87406,7 +88544,7 @@ function validLearningRichText(value) {
       if (size > 1e5) return false;
     }
     if (v.attrs !== void 0) {
-      if (!record5(v.attrs)) return false;
+      if (!record7(v.attrs)) return false;
       if (type === "heading") {
         if (!keys2(v.attrs, ["level"]) || v.attrs.level !== 2 && v.attrs.level !== 3) return false;
       } else if (type === "orderedList") {
@@ -87419,16 +88557,16 @@ function validLearningRichText(value) {
         return false;
       const seen = /* @__PURE__ */ new Set();
       for (const mark of v.marks) {
-        if (!record5(mark) || !keys2(mark, ["type", "attrs"]) || !["bold", "italic", "underline", "code", "link"].includes(String(mark.type)) || seen.has(mark.type))
+        if (!record7(mark) || !keys2(mark, ["type", "attrs"]) || !["bold", "italic", "underline", "code", "link"].includes(String(mark.type)) || seen.has(mark.type))
           return false;
         seen.add(mark.type);
         if (mark.type === "link") {
-          if (!record5(mark.attrs) || !keys2(mark.attrs, ["href", "target", "rel", "class"]) || typeof mark.attrs.href !== "string" || !learningLinkAllowed(mark.attrs.href))
+          if (!record7(mark.attrs) || !keys2(mark.attrs, ["href", "target", "rel", "class"]) || typeof mark.attrs.href !== "string" || !learningLinkAllowed(mark.attrs.href))
             return false;
           for (const k of ["target", "rel", "class"])
             if (mark.attrs[k] !== void 0 && mark.attrs[k] !== null && typeof mark.attrs[k] !== "string")
               return false;
-        } else if (mark.attrs !== void 0 && (!record5(mark.attrs) || Object.keys(mark.attrs).length))
+        } else if (mark.attrs !== void 0 && (!record7(mark.attrs) || Object.keys(mark.attrs).length))
           return false;
       }
     }
@@ -87957,6 +89095,595 @@ var init_preflight3 = __esm({
   }
 });
 
+// engine/src/design-tool/compiler.ts
+function compileDesignTool(definition, renderer, assets = {}) {
+  const findings = validateDesignTool(definition, [...RESERVED]);
+  if (findings.length) throw new Error(findings.map((f) => f.message).join("\n"));
+  for (const dep of definition.dependencies) if (!assets[dep.path]) throw new Error(`Missing dependency: ${dep.path}`);
+  for (const path of Object.keys(assets)) if (!/^assets\/[\w./-]+$/.test(path) || path.split("/").includes("..")) throw new Error("Invalid dependency path.");
+  const first = definition.variants.find((v) => v.id === definition.defaultVariant);
+  const policy = designToolPolicy(definition);
+  const manifest = {
+    id: definition.id,
+    name: definition.name,
+    version: definition.version,
+    engineVersion: "^1.199.0",
+    description: "Share your design with your rules.",
+    category: "designer",
+    tags: ["design", "template"],
+    status: "community",
+    isolate: true,
+    render: { width: first.width, height: first.height, formats: definition.formats, dims: false, units: false },
+    designTool: policy,
+    inputs: definition.inputs.map((f) => ({ ...f.input, ...f.common?.source === "profile" ? { bindToProfile: f.common.key } : {} })),
+    hooks: { onInit: true, onInput: true }
+  };
+  const json = JSON.stringify(definition).replace(/</g, "\\u003c");
+  const hooks = `${renderer.source}
+var lockedDefinition = ${json};
+${CONSUMER_HOOKS}`;
+  return {
+    manifest,
+    files: {
+      "tool.json": JSON.stringify(manifest, null, 2),
+      "hooks.js": hooks,
+      "template.html": CONSUMER_TEMPLATE,
+      "styles.css": `${renderer.styles}
+${definition.css}
+${CONSUMER_STYLES}`,
+      "compilation.json": JSON.stringify({ compilerVersion: 1, rendererDigest: definition.rendererDigest, dependencies: definition.dependencies }),
+      ...assets
+    }
+  };
+}
+var CONSUMER_HOOKS, CONSUMER_TEMPLATE, CONSUMER_STYLES;
+var init_compiler = __esm({
+  "engine/src/design-tool/compiler.ts"() {
+    "use strict";
+    init_design_tool_v1();
+    init_url_mode();
+    CONSUMER_HOOKS = `
+function renderLocked(ctx) {
+  var supplied = inputsFrom(ctx.model.filter(function(i) { return i.isDirty || i.bindToProfile; }));
+  var result = LollyDesignRules.evaluateDesignTool(lockedDefinition, supplied);
+  var v = result.variant;
+  var computed = compute([{id:'boxes',value:v.boxes},{id:'background',value:v.background}]);
+  var rows = v.boxes.map(function(b,i) {
+    var rule = result.textRules[b.id];
+    var imageRule = result.imageRules[b.id] || {};
+    return {id:b.id, framingId:result.framingMap[b.id] || '', fitGroup:result.fitGroups[b.id] || '', imageMinWidth:imageRule.minWidth || 0, imageMinHeight:imageRule.minHeight || 0, imageFormats:(imageRule.formats || []).join(','), input:result.inputMap[b.id] || '', hidden:computed.boxHide[i],
+      style:computed.boxStyle[i], textStyle:computed.textStyle[i], text:computed.textHtml[i],
+      mediaMarkup:computed.mediaHtml[i], path:computed.pathHtml[i],
+      fit:rule ? rule.mode : '', min:rule ? rule.min : 0, max:rule ? Math.min(rule.max, Number(b.fontSize) || rule.max) : 0,
+      lines:rule ? rule.maxLines || 0 : 0, wrap:rule && !rule.wrap ? 'nowrap' : 'normal'};
+  });
+  return Object.assign({}, result.values, {designRows:rows, designWidth:v.width, designHeight:v.height,
+    designBackground:v.background, designIssues:result.findings, connectorSvg:computed.connectorSvg});
+}
+function onInit(ctx) { return renderLocked(ctx); }
+function onInput(ctx) { return renderLocked(ctx); }
+`;
+    CONSUMER_TEMPLATE = `<div class="artboard lolly-locked-design" style="width:{{designWidth}}px;height:{{designHeight}}px;background:{{designBackground}}" data-design-width="{{designWidth}}" data-design-height="{{designHeight}}">
+<div class="lolly-conn-wrap">{{{connectorSvg}}}</div>
+{{#each designRows}}{{#unless hidden}}
+<div class="lolly-box" data-design-layer="{{id}}" data-framing="{{framingId}}" data-fit-group="{{fitGroup}}" data-image-min-width="{{imageMinWidth}}" data-image-min-height="{{imageMinHeight}}" data-image-formats="{{imageFormats}}" data-public-input="{{input}}" style="{{style}}" data-design-fit="{{fit}}" data-fit-min="{{min}}" data-fit-max="{{max}}" data-fit-lines="{{lines}}">
+{{{path}}}{{{mediaMarkup}}}<div class="lolly-box-text" style="{{textStyle}};white-space:{{wrap}}">{{{text}}}</div></div>
+{{/unless}}{{/each}}</div>`;
+    CONSUMER_STYLES = `.lolly-locked-design { position:relative;overflow:hidden;flex:none; }
+.lolly-locked-design .lolly-box-text { min-width:0; }
+`;
+  }
+});
+
+// engine/src/design-tool/session-compiler.ts
+function compileSessionTool(draft, source, files = {}) {
+  const issues = validateDesignTool(draft, [...RESERVED]);
+  if (!draft.sourceTool || draft.sourceTool.id !== source.manifest.id || draft.sourceTool.version !== source.manifest.version)
+    throw new Error("The source tool does not match this draft.");
+  if (source.manifest.hooks?.module || ["onFrame", "onLevel", "exportStill", "exportFile"].some(
+    (key) => Reflect.get(source.manifest.hooks || {}, key)
+  ) || source.manifest.composes?.length)
+    throw new Error(
+      "This tool needs live, composed or custom export behaviour. Use a still Design document to share its artwork with rules."
+    );
+  if (/<script\b|\son\w+\s*=/i.test(source.template))
+    throw new Error(
+      "This tool has interactive canvas code. Its controls need a portable renderer before sharing with rules."
+    );
+  for (const f of draft.inputs) {
+    const original = source.manifest.inputs.find(
+      (i) => i.id === draft.sourceTool.inputs[f.input.id]
+    );
+    if (source.manifest.inputs.some((i) => i.id === f.input.id))
+      throw new Error("The public input name overlaps a source input. Create a new rule for it.");
+    if (!original || original.type !== f.input.type)
+      throw new Error("Choose an existing source input with the same type.");
+    if (original.maxLength !== void 0 && (f.input.maxLength === void 0 || f.input.maxLength > original.maxLength))
+      throw new Error("Keep the source text limit or make it smaller.");
+    if (original.type === "number" && (original.min !== void 0 && Number(f.input.min) < original.min || original.max !== void 0 && Number(f.input.max) > original.max))
+      throw new Error("Keep numeric limits inside the source range.");
+    if (original.type === "number" && original.step && (Math.abs(
+      Number(f.input.step) / original.step - Math.round(Number(f.input.step) / original.step)
+    ) > 1e-7 || Math.abs(
+      (Number(f.input.min) - (original.min || 0)) / original.step - Math.round((Number(f.input.min) - (original.min || 0)) / original.step)
+    ) > 1e-7))
+      throw new Error("Keep numeric steps aligned with the source input.");
+    if (original.type === "select" && f.input.options?.some((o) => !original.options?.some((p) => p.value === o.value)))
+      throw new Error("Choose options offered by the source tool.");
+  }
+  if (issues.length) throw new Error(issues.map((i) => i.message).join("\n"));
+  if (draft.formats.some((format) => !source.manifest.render.formats.includes(format)))
+    throw new Error("Choose an export format supported by the source tool.");
+  const variant = draft.variants[0];
+  const manifest = {
+    id: draft.id,
+    name: draft.name,
+    version: draft.version,
+    engineVersion: "^1.201.0",
+    description: "A reusable tool with designer-selected inputs.",
+    category: "designer",
+    status: "community",
+    isolate: true,
+    requires: source.manifest.requires,
+    render: {
+      width: variant.width,
+      height: variant.height,
+      formats: draft.formats,
+      dims: false,
+      units: false
+    },
+    designTool: designToolPolicy(draft),
+    inputs: draft.inputs.map((f) => f.input),
+    hooks: { onInit: true, onInput: true }
+  };
+  const json = (value) => JSON.stringify(value).replace(/</g, "\\u003c");
+  const names = ["onInit", "onInput", "beforeExport", "afterExport"];
+  const hooks = `var sourceState=${json({ model: source.model, mapping: draft.sourceTool.inputs, assets: source.assets, tokens: source.tokens })};
+${SESSION_BRIDGE}
+var sourceHooks=(function(host){
+var ${names.join(",")};
+${source.hooks}
+return {${names.map((n2) => `${n2}:typeof ${n2}==='function'?${n2}:null`).join(",")}};
+})(sourceHost);
+${SESSION_HOOKS}`;
+  return {
+    manifest,
+    files: {
+      ...files,
+      "tool.json": JSON.stringify(manifest, null, 2),
+      "hooks.js": hooks,
+      "template.html": `<div class="artboard lolly-locked-design" data-source-tool="true" data-design-width="${variant.width}" data-design-height="${variant.height}" style="width:${variant.width}px;height:${variant.height}px"><span hidden data-source-tool-error>{{__lollySourceError}}</span>${source.template}</div>`,
+      "styles.css": `${source.styles}
+${source.css}
+.lolly-locked-design{position:relative;overflow:hidden;flex:none;}`,
+      "compilation.json": JSON.stringify({
+        compilerVersion: 1,
+        sourceTool: draft.sourceTool,
+        dependencies: source.dependencies
+      })
+    }
+  };
+}
+var SESSION_BRIDGE, SESSION_HOOKS;
+var init_session_compiler = __esm({
+  "engine/src/design-tool/session-compiler.ts"() {
+    "use strict";
+    init_design_tool_v1();
+    init_url_mode();
+    SESSION_BRIDGE = String.raw`
+var sourceDependencyError='';
+var sourceRuntimeAssets=Object.create(null);
+function sourceUnavailable(name){sourceDependencyError='This tool needs an unpackaged dependency: '+name;throw new Error(sourceDependencyError);}
+function sourceToken(ref){var key=String(ref).replace(/^\{|\}$/g,'');var entry=sourceState.tokens.entries.find(function(e){return e.path===key;});return entry?entry.value:undefined;}
+var sourceHost=Object.assign({},host,{
+  profile:{get:async function(){return sourceUnavailable('profile data');}},
+  state:{load:async function(){return sourceUnavailable('saved state');},save:async function(){return sourceUnavailable('saved state');},list:async function(){return sourceUnavailable('saved state');}},
+  assets:{get:async function(id){if(Object.prototype.hasOwnProperty.call(sourceState.assets,id))return sourceState.assets[id];if(Object.prototype.hasOwnProperty.call(sourceRuntimeAssets,id))return sourceRuntimeAssets[id];return sourceUnavailable('asset '+id);},list:async function(){return Object.values(sourceState.assets);}},
+  net:{fetch:async function(){return sourceUnavailable('network access');}},
+  compose:undefined,
+  tokens:{resolve:async function(ref){return sourceToken(ref);},colors:async function(){return sourceState.tokens.colors;},themes:async function(){return sourceState.tokens.themes;},active:async function(){return sourceState.tokens.active;},get:async function(){return {size:sourceState.tokens.entries.length,has:function(path){return sourceState.tokens.entries.some(function(e){return e.path===path;});},get:function(path){return sourceState.tokens.entries.find(function(e){return e.path===path;});},resolve:sourceToken,query:function(filter){return sourceState.tokens.entries.filter(function(e){return !filter||!filter.type||e.type===filter.type;});},colors:function(){return sourceState.tokens.colors;},themes:function(){return sourceState.tokens.themes;}};}}
+});
+`;
+    SESSION_HOOKS = `
+function sourceModel(ctx){return sourceState.model.map(function(item){var publicId=Object.keys(sourceState.mapping).find(function(id){return sourceState.mapping[id]===item.id;});var input=ctx.model.find(function(i){return i.id===publicId;});return Object.assign({},item,{value:input?input.value:item.value===undefined?undefined:JSON.parse(JSON.stringify(item.value)),isDirty:true});});}
+async function sourceRun(name,ctx){
+  sourceDependencyError='';
+  sourceRuntimeAssets=Object.create(null);
+  ctx.model.forEach(function(item){var value=item.value;if(value&&typeof value==='object'&&typeof value.id==='string'&&typeof value.url==='string')sourceRuntimeAssets[value.id]=value;});
+  var model=sourceModel(ctx), values=Object.fromEntries(model.map(function(i){return [i.id,i.value];}));
+  try {
+    var callback=sourceHooks[name], patch=callback?await callback(Object.assign({},ctx,{model:model,host:sourceHost,id:sourceState.mapping[ctx.id]||ctx.id,report:undefined})):{};
+    if(sourceDependencyError)throw new Error(sourceDependencyError);
+    var exportOptions={};
+    for(var format of ['png','svg','pdf']) {
+      var settings={}, exportContext={format:format,opts:settings,host:sourceHost};
+      Object.defineProperty(exportContext,'node',{get:function(){throw new Error('This tool adjusts its canvas during export. Use Design to prepare portable still artwork.');}});
+      if(sourceHooks.beforeExport)await sourceHooks.beforeExport(exportContext);
+      if(sourceHooks.afterExport)await sourceHooks.afterExport(exportContext);
+      if(Object.keys(settings).some(function(key){return key!=='background';}))throw new Error('This tool requires custom export settings. Use Design to prepare portable still artwork.');
+      exportOptions[format]=settings;
+    }
+    if(sourceDependencyError)throw new Error(sourceDependencyError);
+    var output=Object.assign({},values,patch||{},{__lollySourceError:'',__lollySourceExportOptions:exportOptions});
+    Object.keys(sourceState.mapping).forEach(function(id){var original=sourceState.mapping[id];output[id]=patch&&Object.prototype.hasOwnProperty.call(patch,original)?patch[original]:values[original];output[original]=output[id];});
+    return output;
+  }catch(error){return Object.assign({},values,{__lollySourceError:String(error.message||error)});}
+}
+function onInit(ctx){return sourceRun('onInit',ctx);}
+function onInput(ctx){return sourceRun('onInput',ctx);}
+`;
+  }
+});
+
+// engine/src/studio3d-collection.ts
+function record4(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function items(values) {
+  if (!Array.isArray(values.subjects) || !values.subjects.length)
+    throw new Error("Add at least one item to the collection.");
+  if (values.subjects.length > STUDIO_COLLECTION_LIMIT)
+    throw new Error(`Use up to ${STUDIO_COLLECTION_LIMIT} items in one collection.`);
+  return values.subjects.map(record4);
+}
+function studioActiveIndex(values) {
+  const rows2 = items(values);
+  const n2 = Number(values.activeSubject);
+  return Math.max(0, Math.min(rows2.length - 1, Number.isFinite(n2) ? Math.trunc(n2) - 1 : 0));
+}
+function itemValues(values, item) {
+  const kind = item.kind === "model" ? "model" : item.kind === "primitive" ? "primitive" : "artwork";
+  const camera = record4(values.camera);
+  const framing = { ...camera };
+  if (enabled(item.ownFraming))
+    for (const key of ["azimuth", "elevation", "fov", "zoom", "panX", "panY", "panZ"]) {
+      if (item[key] !== void 0 && item[key] !== "") framing[key] = item[key];
+    }
+  return {
+    ...values,
+    source: kind,
+    subjects: [],
+    activeSubject: 1,
+    upload: void 0,
+    primitive: item.primitive || "badge",
+    artwork: kind === "artwork" ? item.asset : void 0,
+    modelAsset: kind === "model" ? item.asset : void 0,
+    modelFormat: item.modelFormat || "auto",
+    camera: framing,
+    focusDistance: enabled(item.ownFocus) ? item.focusDistance : values.focusDistance,
+    materialSlotA: item.roleA || "",
+    materialSlotB: item.roleB || ""
+  };
+}
+function studioActiveValues(values) {
+  if (values.source !== "collection") return values;
+  return itemValues(values, items(values)[studioActiveIndex(values)]);
+}
+function studioCollectionRows(values) {
+  return items(values).map((item, index2) => {
+    const name = String(item.name || `Item ${index2 + 1}`).trim().slice(0, 120) || `Item ${index2 + 1}`;
+    const slug3 = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70) || "item";
+    return {
+      index: index2,
+      name,
+      filename: `${String(index2 + 1).padStart(2, "0")}-${slug3}.png`,
+      ownFraming: enabled(item.ownFraming),
+      values: itemValues(values, item)
+    };
+  });
+}
+function studioCameraEdit(values, camera) {
+  if (values.source !== "collection") return { id: "camera", value: camera };
+  const index2 = studioActiveIndex(values);
+  return {
+    id: "subjects",
+    value: items(values).map(
+      (item, i) => i === index2 ? {
+        ...item,
+        ownFraming: true,
+        azimuth: camera.azimuth,
+        elevation: camera.elevation,
+        fov: camera.fov,
+        zoom: camera.zoom,
+        panX: camera.panX ?? 0,
+        panY: camera.panY ?? 0,
+        panZ: camera.panZ ?? 0
+      } : item
+    )
+  };
+}
+function studioFocusEdit(values, distance2) {
+  if (values.source !== "collection") return { id: "focusDistance", value: distance2 };
+  const index2 = studioActiveIndex(values);
+  return {
+    id: "subjects",
+    value: items(values).map(
+      (item, i) => i === index2 ? { ...item, ownFocus: true, focusDistance: distance2 } : item
+    )
+  };
+}
+function studioCollectionSize(values) {
+  const size = record4(values.collectionSize);
+  const edge = (value) => {
+    const n2 = Number(value);
+    return Math.max(64, Math.min(4096, Number.isFinite(n2) && n2 > 0 ? Math.round(n2) : 1024));
+  };
+  const width = edge(size.width), height = edge(size.height);
+  if (width * height > 12e6) throw new Error("Keep each image below 12 million pixels.");
+  return { width, height };
+}
+var STUDIO_COLLECTION_LIMIT, enabled;
+var init_studio3d_collection = __esm({
+  "engine/src/studio3d-collection.ts"() {
+    "use strict";
+    STUDIO_COLLECTION_LIMIT = 24;
+    enabled = (value) => value === true || value === "true" || value === 1;
+  }
+});
+
+// engine/src/studio3d.ts
+function record5(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function number2(value, fallback, min, max) {
+  const n2 = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
+  return Number.isFinite(n2) ? Math.max(min, Math.min(max, n2)) : fallback;
+}
+function choice2(value, choices2, fallback) {
+  return typeof value === "string" && choices2.includes(value) ? value : fallback;
+}
+function color(value, fallback) {
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : fallback;
+}
+function enabled2(value, fallback = false) {
+  if (value === true || value === "true" || value === "1") return true;
+  if (value === false || value === "false" || value === "0") return false;
+  return fallback;
+}
+function vector(value, keys2, defaults, limit) {
+  const v = record5(value);
+  return keys2.map((key, i) => number2(v[key], defaults[i], -limit, limit));
+}
+function asset(value) {
+  const v = record5(value);
+  return {
+    id: String(v.id || ""),
+    url: typeof v.url === "string" ? v.url : "",
+    name: String(v.name || v.filename || v.url || "")
+  };
+}
+function studioFinish(finish2) {
+  switch (finish2) {
+    case "matte":
+      return { roughness: 0.8, metalness: 0, clearcoat: 0 };
+    case "enamel":
+      return { roughness: 0.22, metalness: 0, clearcoat: 0.6 };
+    case "metal":
+      return { roughness: 0.23, metalness: 1, clearcoat: 0.15 };
+    default:
+      return { roughness: 0.4, metalness: 0, clearcoat: 0.18 };
+  }
+}
+function buildStudioScene(input) {
+  const wrapper = record5(input);
+  if (wrapper.version !== 1) throw new Error("This studio recipe version is not supported.");
+  const v = studioActiveValues(record5(wrapper.values));
+  const kind = choice2(v.source, ["artwork", "model", "primitive"], "primitive");
+  const uploaded = asset(v.upload);
+  const selected = asset(kind === "artwork" ? v.artwork : v.modelAsset);
+  const picked = uploaded.url ? uploaded : selected;
+  const modelFormat = choice2(v.modelFormat, ["auto", "glb", "stl"], "auto");
+  const source = {
+    kind: kind === "artwork" ? "svg" : kind === "model" ? modelFormat === "stl" || modelFormat === "auto" && /\.stl(?:$|[?#])/i.test(picked.name) ? "stl" : "glb" : "primitive",
+    id: picked.id,
+    url: picked.url,
+    primitive: choice2(v.primitive, ["badge", "sphere", "box", "torus"], "badge")
+  };
+  if (source.kind !== "primitive" && !source.url)
+    throw new Error(
+      kind === "artwork" ? "Choose an SVG or upload your artwork." : "Choose or upload a GLB or STL model."
+    );
+  const primary = color(v.colorA, "#38b98a"), secondary = color(v.colorB, "#173d37");
+  const keyColor = color(v.keyColor, "#d9fff1"), fillColor = color(v.fillColor, primary), rimColor = color(v.rimColor, primary);
+  const coolColor = color(v.coolColor, "#426dff");
+  const preset = choice2(
+    v.studio,
+    ["soft", "dramatic", "electric", "warm", "custom"],
+    "dramatic"
+  );
+  const drama = number2(v.drama, 0.7, 0, 1), light = record5(v.lightLevels);
+  const intensity = number2(light.key, 2.5, 0, 20), fill = number2(light.fill, 0.7, 0, 20), rim = number2(light.rim, 3, 0, 20);
+  const softness = number2(v.softness, 1.5, 0, 5);
+  let lights = [
+    {
+      id: "key",
+      kind: "directional",
+      color: preset === "warm" ? color(v.warmColor, "#ffc196") : keyColor,
+      intensity: preset === "soft" ? intensity * 0.7 : intensity,
+      position: [-3.6, 6.8, 4],
+      size: softness,
+      shadows: true
+    },
+    {
+      id: "fill",
+      kind: "directional",
+      color: preset === "electric" ? coolColor : fillColor,
+      intensity: fill * (preset === "soft" ? 1.6 : 1 - drama * 0.65),
+      position: [5, 3, 4],
+      size: softness,
+      shadows: false
+    },
+    {
+      id: "rim",
+      kind: "directional",
+      color: preset === "warm" ? color(v.warmColor, "#ffc196") : rimColor,
+      intensity: rim,
+      position: [3, 5, -3],
+      size: softness,
+      shadows: false
+    },
+    {
+      id: "key-card",
+      kind: "area",
+      color: keyColor,
+      intensity: 3,
+      position: [-4, 4, 3],
+      size: Math.max(0.2, softness * 2),
+      shadows: false
+    }
+  ];
+  if (preset === "custom") {
+    if (!Array.isArray(v.lights) || !v.lights.length)
+      throw new Error("Add at least one light to the custom studio.");
+    if (v.lights.length > 8) throw new Error("A studio supports up to eight lights.");
+    lights = v.lights.map((row, i) => {
+      const l = record5(row);
+      const kind2 = choice2(l.kind, ["directional", "point", "spot", "area"], "directional");
+      return {
+        id: `light-${i + 1}`,
+        kind: kind2,
+        color: color(l.color, keyColor),
+        intensity: number2(l.intensity, 2, 0, 50),
+        position: [number2(l.x, -3, -30, 30), number2(l.y, 6, -30, 30), number2(l.z, 4, -30, 30)],
+        size: number2(l.size, 1.5, 0.01, 10),
+        shadows: kind2 !== "area" && enabled2(l.shadows, true)
+      };
+    });
+  }
+  const camera = record5(v.camera), shape = record5(v.shape), transform2 = record5(v.transform), target = record5(v.target);
+  const backdrop = asset(v.backdropImage);
+  const projection = choice2(v.projection, ["perspective", "orthographic"], "perspective");
+  const rows2 = Array.isArray(v.materials) ? v.materials : [];
+  if (rows2.length > 32) throw new Error("A studio supports up to 32 material overrides.");
+  const seen = /* @__PURE__ */ new Set();
+  const overrides = rows2.map((row, i) => {
+    const m2 = record5(row), slot = String(m2.slot || i + 1).trim();
+    if (seen.has(slot)) throw new Error(`Material slot ${slot} has more than one override.`);
+    seen.add(slot);
+    return {
+      slot,
+      color: color(m2.color, primary),
+      roughness: number2(m2.roughness, 0.4, 0.04, 1),
+      metalness: number2(m2.metalness, 0, 0, 1),
+      clearcoat: number2(m2.clearcoat, 0.2, 0, 1)
+    };
+  });
+  return {
+    version: 1,
+    source,
+    shape: {
+      depth: number2(shape.depth, 0.25, 0.01, 2),
+      bevel: number2(shape.bevel, 0.025, 0, 0.15),
+      smoothness: Math.round(number2(shape.smoothness, 24, 8, 64))
+    },
+    transform: {
+      rotation: vector(v.rotation, ["x", "y", "z"], [-6, -16, -7], 360),
+      position: vector(v.position, ["x", "y", "z"], [0, 0.1, 0], 10),
+      scale: number2(transform2.scale, 1, 0.1, 5)
+    },
+    camera: {
+      projection,
+      azimuth: number2(camera.azimuth, 25, -180, 180),
+      elevation: number2(camera.elevation, 14, -60, 80),
+      fov: number2(camera.fov, 29, 15, 80),
+      zoom: number2(camera.zoom, 1, 0.05, 3),
+      target: [
+        number2(target.x, 0, -5, 5) + number2(camera.panX, 0, -20, 20),
+        number2(target.y, 1.6, -5, 10) + number2(camera.panY, 0, -20, 20),
+        number2(target.z, 0, -5, 5) + number2(camera.panZ, 0, -20, 20)
+      ],
+      focus: number2(v.focusDistance, 0, 0, 500),
+      aperture: projection === "perspective" && v.depthOfField === true ? number2(v.aperture, 0.12, 0.01, 0.5) : 0
+    },
+    materials: {
+      mode: choice2(v.materialMode, ["source", "pair", "custom"], "source"),
+      finishA: choice2(v.finishA, FINISHES, "satin"),
+      finishB: choice2(v.finishB, FINISHES, "enamel"),
+      colorA: primary,
+      colorB: secondary,
+      overrides,
+      bindings: {
+        a: String(v.materialSlotA || "").trim(),
+        b: String(v.materialSlotB || "").trim()
+      },
+      ...enabled2(v.surfaceFinishes) ? {
+        surfaces: Object.fromEntries(
+          ["a", "b"].map((role) => [
+            role,
+            Object.fromEntries(
+              ["face", "bevel", "side"].map((surface) => [
+                surface,
+                choice2(
+                  v[`${surface}Finish${role.toUpperCase()}`],
+                  [...FINISHES, "inherit"],
+                  "inherit"
+                )
+              ])
+            )
+          ])
+        )
+      } : {}
+    },
+    lights,
+    environment: {
+      intensity: number2(v.environmentIntensity, 0.4, 0, 3),
+      rotation: number2(v.environmentRotation, 0, -180, 180)
+    },
+    stage: {
+      output: choice2(v.outputMode, ["scene", "object-shadow", "object"], "scene"),
+      floor: choice2(v.floor, ["shadow", "matte", "cove"], "shadow"),
+      floorColor: color(v.floorColor, secondary),
+      shadowOpacity: number2(v.shadowOpacity, 0.4, 0, 1),
+      background: color(v.background, secondary),
+      background2: color(v.background2, primary),
+      backdrop: choice2(v.backdrop, ["solid", "gradient", "image"], "gradient"),
+      backdropUrl: backdrop.url,
+      backdropId: backdrop.id,
+      backdropStrength: number2(v.backdropStrength, 0.5, 0, 1),
+      pedestal: v.pedestal === true,
+      atmosphere: v.atmosphere === true,
+      seed: Math.round(number2(v.seed, 1, 1, 99999))
+    },
+    exposure: number2(v.exposure, 1.1, 0.1, 4),
+    quality: { previewSamples: 8, exportSamples: Math.round(number2(v.samples, 64, 8, 256)) },
+    motion: {
+      kind: choice2(v.motion, ["still", "turntable"], "still"),
+      seconds: number2(v.duration, 5, 1, 30),
+      degrees: number2(v.turnDegrees, 360, -720, 720)
+    },
+    lightAnimation: {
+      kind: choice2(v.lightMotion, ["still", "orbit", "breathe"], "still"),
+      amount: number2(v.lightMotionAmount, 0.35, 0, 1)
+    }
+  };
+}
+function studioAnimated(scene) {
+  return scene.motion.kind !== "still" || !!(scene.lightAnimation && scene.lightAnimation.kind !== "still" && scene.lightAnimation.amount > 0);
+}
+function studioLightMotion(scene, time, clipSeconds) {
+  const motion = scene.lightAnimation;
+  if (!motion || motion.kind === "still") return { angle: 0, strength: 1 };
+  const seconds = Number.isFinite(time) ? Math.max(0, time) * (clipSeconds && clipSeconds > 0 ? clipSeconds : scene.motion.seconds) : 0;
+  const phase = seconds / scene.motion.seconds % 1;
+  return {
+    angle: motion.kind === "orbit" ? Math.sin(phase * 2 * Math.PI) * Math.PI * motion.amount : 0,
+    strength: motion.kind === "breathe" ? 1 - (1 - Math.cos(phase * 2 * Math.PI)) * motion.amount * 0.35 : 1
+  };
+}
+function studioTime(scene, time, clipSeconds) {
+  if (scene.motion.kind === "still") return 0;
+  const seconds = Number.isFinite(time) ? Math.max(0, time) * (clipSeconds && clipSeconds > 0 ? clipSeconds : scene.motion.seconds) : 0;
+  return seconds / scene.motion.seconds * scene.motion.degrees * Math.PI / 180;
+}
+var FINISHES;
+var init_studio3d = __esm({
+  "engine/src/studio3d.ts"() {
+    "use strict";
+    init_studio3d_collection();
+    FINISHES = ["matte", "satin", "enamel", "metal"];
+  }
+});
+
 // engine/src/index.ts
 var src_exports = {};
 __export(src_exports, {
@@ -88214,6 +89941,7 @@ __export(src_exports, {
   SRGB_SOURCE: () => SRGB_SOURCE,
   STRICT_AMBIENT_GLOBALS: () => STRICT_AMBIENT_GLOBALS,
   STRICT_NAVIGATOR_PROPERTIES: () => STRICT_NAVIGATOR_PROPERTIES,
+  STUDIO_COLLECTION_LIMIT: () => STUDIO_COLLECTION_LIMIT,
   SVG_COLORS_MAX_CHARS: () => SVG_COLORS_MAX_CHARS,
   SVG_COLORS_MAX_MATCHES: () => SVG_COLORS_MAX_MATCHES,
   SVG_CUSTGEOM_MAX_ATTR_CHARS: () => SVG_CUSTGEOM_MAX_ATTR_CHARS,
@@ -88317,6 +90045,7 @@ __export(src_exports, {
   assembleSealMessage: () => assembleSealMessage,
   assembleTokenSetFiles: () => assembleTokenSetFiles,
   assertComposeStack: () => assertComposeStack,
+  assertDesignValues: () => assertDesignValues,
   assertZzfxmBudgets: () => assertZzfxmBudgets,
   assetDependency: () => assetDependency,
   assetIdForUrl: () => assetIdForUrl,
@@ -88355,6 +90084,7 @@ __export(src_exports, {
   buildPptxParts: () => buildPptxParts,
   buildRewordMessages: () => buildRewordMessages,
   buildRpm: () => buildRpm,
+  buildStudioScene: () => buildStudioScene,
   buildThemedAssetId: () => buildThemedAssetId,
   buildTokenTypeIndex: () => buildTokenTypeIndex,
   buildTreatedAssetId: () => buildTreatedAssetId,
@@ -88401,8 +90131,10 @@ __export(src_exports, {
   compareSources: () => compareSources,
   compareVisualSources: () => compareVisualSources,
   compile: () => compileDocument,
+  compileDesignTool: () => compileDesignTool,
   compileDocument: () => compileDocument,
   compileLearningModule: () => compileLearningModule,
+  compileSessionTool: () => compileSessionTool,
   composeSong: () => composeSong,
   computeCost: () => computeCost,
   computePrintGeometry: () => computePrintGeometry,
@@ -88477,6 +90209,7 @@ __export(src_exports, {
   describeColor: () => describeColor,
   describeHiddenText: () => describeHiddenText,
   deserializeCurve: () => deserializeCurve,
+  designExportSize: () => designExportSize,
   designMaterialOf: () => designMaterialOf,
   designSystemHeadId: () => designSystemHeadId,
   designSystemNamespace: () => designSystemNamespace,
@@ -89021,6 +90754,8 @@ __export(src_exports, {
   sniffContainer: () => sniffContainer,
   sniffLayeredRaster: () => sniffLayeredRaster,
   sniffVideoContainer: () => sniffVideoContainer,
+  softwareName: () => softwareName,
+  softwareOrigins: () => softwareOrigins,
   solidPointOklch: () => solidPointOklch,
   solveHyperbezier: () => solveHyperbezier,
   solveLightnessForApca: () => solveLightnessForApca,
@@ -89039,6 +90774,16 @@ __export(src_exports, {
   stripMetadata: () => stripMetadata,
   stripVersionIndex: () => stripVersionIndex,
   strokeToPath: () => strokeToPath,
+  studioActiveIndex: () => studioActiveIndex,
+  studioActiveValues: () => studioActiveValues,
+  studioAnimated: () => studioAnimated,
+  studioCameraEdit: () => studioCameraEdit,
+  studioCollectionRows: () => studioCollectionRows,
+  studioCollectionSize: () => studioCollectionSize,
+  studioFinish: () => studioFinish,
+  studioFocusEdit: () => studioFocusEdit,
+  studioLightMotion: () => studioLightMotion,
+  studioTime: () => studioTime,
   subCubic: () => subCubic,
   subPathsFromPath: () => subPathsFromPath,
   subdivideKfEase: () => subdivideKfEase,
@@ -89115,6 +90860,7 @@ __export(src_exports, {
   writeU32: () => writeU322,
   writeXlsx: () => writeXlsx,
   xcfModeToCss: () => xcfModeToCss,
+  xmlProvenanceFields: () => xmlProvenanceFields,
   xorPath: () => xorPath,
   zipCryptoEncrypt: () => zipCryptoEncrypt,
   zlibCompress: () => zlibCompress,
@@ -89156,6 +90902,7 @@ var init_src2 = __esm({
     init_batch();
     init_metadata();
     init_file_metadata();
+    init_software_origin();
     init_image_meta();
     init_strip_metadata();
     init_pixel_watermark();
@@ -89344,6 +91091,11 @@ var init_src2 = __esm({
     init_compile();
     init_delivery();
     init_preflight3();
+    init_compiler();
+    init_session_compiler();
+    init_policy();
+    init_studio3d();
+    init_studio3d_collection();
   }
 });
 
@@ -89710,15 +91462,15 @@ function readAssetIndex(r3) {
     const path = join2(shared.dir, "index.json");
     if (!existsSync2(path)) continue;
     const mounted = JSON.parse(readFileSync(path, "utf8"));
-    for (const asset of mounted.assets ?? []) {
-      const prior = from.get(asset.id);
+    for (const asset2 of mounted.assets ?? []) {
+      const prior = from.get(asset2.id);
       if (prior) {
         throw new Error(
-          `content-roots: asset id "${asset.id}" is declared in both ${prior} and ${path} - an asset id is a permanent contract, so a shared root may not redefine one`
+          `content-roots: asset id "${asset2.id}" is declared in both ${prior} and ${path} - an asset id is a permanent contract, so a shared root may not redefine one`
         );
       }
-      from.set(asset.id, path);
-      assets.push(asset);
+      from.set(asset2.id, path);
+      assets.push(asset2);
     }
   }
   return { ...index2, assets };
@@ -89773,10 +91525,10 @@ function withMeta(schema, item, extraDesc) {
 }
 function numberField(f) {
   const declaredDefault = f.default;
-  const number2 = { type: "number" };
-  if (f.min !== void 0) number2["minimum"] = f.min;
-  if (f.max !== void 0) number2["maximum"] = f.max;
-  const s = declaredDefault === "" ? { anyOf: [number2, { const: "" }] } : number2;
+  const number3 = { type: "number" };
+  if (f.min !== void 0) number3["minimum"] = f.min;
+  if (f.max !== void 0) number3["maximum"] = f.max;
+  const s = declaredDefault === "" ? { anyOf: [number3, { const: "" }] } : number3;
   if (declaredDefault !== void 0) s["default"] = declaredDefault;
   const desc = describe(f);
   if (desc) s["description"] = desc;
@@ -90661,14 +92413,14 @@ function clip2(s, cap = DETAIL_CAP) {
   const t = s.replace(/\s+/g, " ").trim();
   return t.length > cap ? `${t.slice(0, cap - 1)}\u2026` : t;
 }
-function list(items, cap = LIST_CAP) {
-  const seen = items.map((s) => s.trim()).filter(Boolean);
+function list(items2, cap = LIST_CAP) {
+  const seen = items2.map((s) => s.trim()).filter(Boolean);
   if (!seen.length) return "";
   const head2 = seen.slice(0, cap).join(", ");
   return seen.length > cap ? `${head2} +${seen.length - cap} more` : head2;
 }
-function uniq(items) {
-  return [...new Set(items.filter(Boolean))];
+function uniq(items2) {
+  return [...new Set(items2.filter(Boolean))];
 }
 function bytesLabel(n2) {
   if (!Number.isFinite(n2) || n2 < 0) return "";
@@ -90933,6 +92685,9 @@ function scanPdfStructure(doc) {
         }
       }));
       add("Links", hosts.length ? `${count(urls.length, "outbound link")} to ${list(hosts)}` : `${count(urls.length, "outbound link")} - ${list(urls)}`);
+      for (const url of urls.filter((u) => u.length <= 2048).slice(0, 64)) {
+        out.push({ label: "Link", detail: url, tone: "" });
+      }
     }
   } catch {
   }
@@ -90990,9 +92745,10 @@ var init_pdf_structure = __esm({
 });
 
 // packages/node-shell/src/pdf.ts
+import { unzlibSync as unzlibSync3 } from "fflate";
 function isoDate2(d) {
   try {
-    return d instanceof Date && !Number.isNaN(Number(d)) ? d.toISOString().slice(0, 10) : null;
+    return d instanceof Date && !Number.isNaN(Number(d)) ? d.toISOString() : null;
   } catch {
     return null;
   }
@@ -91008,7 +92764,14 @@ function readXmpText(doc, PDFName4) {
   }
   if (!stream) return "";
   try {
-    const bytes = typeof stream.getContents === "function" ? stream.getContents() : stream.contents;
+    let bytes = typeof stream.getContents === "function" ? stream.getContents() : stream.contents;
+    if (bytes && bytes.length > 1024 * 1024) return "";
+    const filter = stream.dict?.get(PDFName4.of("Filter"));
+    if (filter && bytes) {
+      if (!/^\/?FlateDecode$|^\[\s*\/FlateDecode\s*\]$/.test(String(filter))) return "";
+      bytes = unzlibSync3(bytes, { out: new Uint8Array(1024 * 1024 + 1) });
+      if (bytes.length > 1024 * 1024) return "";
+    }
     return bytes ? new TextDecoder("utf-8").decode(bytes) : "";
   } catch {
     return "";
@@ -91043,6 +92806,13 @@ async function analyzePdf(bytes) {
   if (xmp != null) {
     const who = xmpField(xmp, /<dc:creator>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/i) || xmpField(xmp, /<xmp:CreatorTool>([\s\S]*?)<\/xmp:CreatorTool>/i);
     add("XMP metadata", who ? `XMP packet - ${who}` : "embedded XMP packet", "warn");
+    for (const field2 of xmlProvenanceFields(xmp)) add(field2.source ?? field2.label, field2.value);
+  }
+  const header = new TextDecoder("latin1").decode(bytes.subarray(0, 64 * 1024));
+  let commentCount = 0;
+  for (const match of header.matchAll(/^%{1,2}\s*((?:Creator|Producer|Generator)\s*:\s*[^\r\n]+|(?:Created|Made|Generated|Exported)\s+(?:with|by|using)\s+[^\r\n]+)/gim)) {
+    if (commentCount++ >= 8) break;
+    add("PDF generator comment", match[1].slice(0, 2048));
   }
   try {
     const { scanPdfStructure: scanPdfStructure2 } = await Promise.resolve().then(() => (init_pdf_structure(), pdf_structure_exports));
@@ -91661,10 +93431,10 @@ async function createNodeEmojiAPI(options2 = {}) {
       return listed;
     }
     const found = [];
-    for (const asset of index2.assets ?? []) {
-      if (!asset?.tags?.includes(EMOJI_PACK_TAG)) continue;
-      const meta = readEntryMeta(asset.meta?.emoji);
-      if (meta) found.push({ asset, meta });
+    for (const asset2 of index2.assets ?? []) {
+      if (!asset2?.tags?.includes(EMOJI_PACK_TAG)) continue;
+      const meta = readEntryMeta(asset2.meta?.emoji);
+      if (meta) found.push({ asset: asset2, meta });
     }
     listed = found;
     return listed;
@@ -91706,8 +93476,8 @@ async function createNodeEmojiAPI(options2 = {}) {
   return {
     async sets() {
       const found = await entries();
-      return found.map(({ asset, meta }) => {
-        const size = asset.formats?.find((format) => format.format === "json")?.size;
+      return found.map(({ asset: asset2, meta }) => {
+        const size = asset2.formats?.find((format) => format.format === "json")?.size;
         return {
           pin: { id: meta.id, pin: { version: meta.version }, checksum: meta.checksum },
           family: meta.family,
@@ -91726,9 +93496,9 @@ async function createNodeEmojiAPI(options2 = {}) {
       const bundle = await bundleFor(pin);
       return bundle ? new TextEncoder().encode(bundle.manifest) : null;
     },
-    async artwork(pin, asset) {
+    async artwork(pin, asset2) {
       const bundle = await bundleFor(pin);
-      const key = asset?.url ?? "";
+      const key = asset2?.url ?? "";
       const svg = bundle && Object.hasOwn(bundle.artwork, key) ? bundle.artwork[key] : null;
       return typeof svg === "string" ? new TextEncoder().encode(svg) : null;
     },
@@ -91998,26 +93768,26 @@ __export(emoji_style_exports, {
   withEmojiStyle: () => withEmojiStyle
 });
 function readEmojiStyle(doc) {
-  if (!record4(doc)) return { status: "invalid", issue: { code: "invalid-style", message: "A design token document must be an object." } };
+  if (!record6(doc)) return { status: "invalid", issue: { code: "invalid-style", message: "A design token document must be an object." } };
   if (!Object.hasOwn(doc, "$extensions")) return { status: "unselected" };
-  if (!record4(doc.$extensions)) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token extensions." } };
+  if (!record6(doc.$extensions)) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token extensions." } };
   if (!Object.hasOwn(doc.$extensions, TOKEN_EXT)) return { status: "unselected" };
-  if (!record4(doc.$extensions[TOKEN_EXT])) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token vendor extension." } };
+  if (!record6(doc.$extensions[TOKEN_EXT])) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token vendor extension." } };
   const vendor = doc.$extensions[TOKEN_EXT];
   if (!Object.hasOwn(vendor, "emoji")) return { status: "unselected" };
   const issue2 = validateEmojiStyle(vendor.emoji);
   return issue2 ? { status: "invalid", issue: issue2 } : { status: "selected", style: structuredClone(vendor.emoji) };
 }
 function withEmojiStyle(doc, style) {
-  if (!record4(doc)) throw new Error("A design token document must be an object.");
+  if (!record6(doc)) throw new Error("A design token document must be an object.");
   if (style !== null) {
     const issue2 = validateEmojiStyle(style);
     if (issue2) throw new Error(issue2.message);
   }
   const next = structuredClone(doc);
-  if (next.$extensions !== void 0 && !record4(next.$extensions)) throw new Error("Invalid design token extensions.");
+  if (next.$extensions !== void 0 && !record6(next.$extensions)) throw new Error("Invalid design token extensions.");
   const extensions2 = next.$extensions ?? {};
-  if (extensions2[TOKEN_EXT] !== void 0 && !record4(extensions2[TOKEN_EXT])) throw new Error("Invalid design token vendor extension.");
+  if (extensions2[TOKEN_EXT] !== void 0 && !record6(extensions2[TOKEN_EXT])) throw new Error("Invalid design token vendor extension.");
   const vendor = extensions2[TOKEN_EXT] ?? {};
   if (style === null) delete vendor.emoji;
   else vendor.emoji = structuredClone(style);
@@ -92121,14 +93891,14 @@ function emojiParams(style) {
   const unprotected = protect && !protect.skinTones && !protect.flags && !protect.custom;
   return { emoji: `${style.primary.id}@${style.primary.pin.version}`, emojifx: unprotected ? `${base},unprotected` : base };
 }
-var record4, ID_PATTERN, VERSION_PATTERN, NEUTRAL_CHROMA3, PALETTE_MAX, issue, lastTwo, chromaOf2, lightnessOf;
+var record6, ID_PATTERN, VERSION_PATTERN, NEUTRAL_CHROMA3, PALETTE_MAX, issue, lastTwo, chromaOf2, lightnessOf;
 var init_emoji_style = __esm({
   "engine/src/emoji-style.ts"() {
     "use strict";
     init_token_ext();
     init_emoji_pack();
     init_emoji_treatment();
-    record4 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+    record6 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
     ID_PATTERN = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)+$/;
     VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+-]*$/;
     NEUTRAL_CHROMA3 = 0.03;
@@ -93396,6 +95166,57 @@ import { readFile as readFile4, readdir } from "node:fs/promises";
 import { existsSync as existsSync3 } from "node:fs";
 import { join as join4 } from "node:path";
 import { fileURLToPath as fileURLToPath4 } from "node:url";
+
+// packages/node-shell/src/text-glyphs.ts
+function createGlyphCache(maxBytes = 4 * 1024 * 1024, maxEntries = 4096) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 0 || !Number.isSafeInteger(maxEntries) || maxEntries < 0) {
+    throw new RangeError("Glyph cache limits must be non-negative integers");
+  }
+  const fonts = /* @__PURE__ */ new WeakMap();
+  const entries = /* @__PURE__ */ new Map();
+  let nextFont = 0, bytes = 0, hits2 = 0, misses = 0;
+  return {
+    get(font, id2) {
+      let fontId = fonts.get(font);
+      if (fontId === void 0) {
+        fontId = ++nextFont;
+        fonts.set(font, fontId);
+      }
+      const key = `${fontId}:${id2}`;
+      const cached2 = entries.get(key);
+      if (cached2) {
+        hits2++;
+        entries.delete(key);
+        entries.set(key, cached2);
+        return cached2.glyph;
+      }
+      misses++;
+      const path = font.glyphToPath(id2);
+      const extents = font.glyphExtents(id2);
+      const glyph = Object.freeze({ path, extents: extents ? Object.freeze({ ...extents }) : null });
+      const cost = path.length * 2 + key.length * 2 + 128;
+      if (maxEntries > 0 && cost <= maxBytes) {
+        while (entries.size && (entries.size >= maxEntries || bytes + cost > maxBytes)) {
+          const oldest = entries.keys().next().value;
+          bytes -= entries.get(oldest).bytes;
+          entries.delete(oldest);
+        }
+        entries.set(key, { glyph, bytes: cost });
+        bytes += cost;
+      }
+      return glyph;
+    },
+    clear() {
+      entries.clear();
+      bytes = 0;
+    },
+    stats() {
+      return { entries: entries.size, bytes, hits: hits2, misses, maxBytes, maxEntries };
+    }
+  };
+}
+
+// packages/node-shell/src/text.ts
 var _hb = null;
 async function loadHarfBuzz() {
   if (!_hb) _hb = await import("harfbuzzjs");
@@ -93403,6 +95224,9 @@ async function loadHarfBuzz() {
 }
 var faceCache = /* @__PURE__ */ new Map();
 var fontCache = /* @__PURE__ */ new Map();
+var glyphCache = createGlyphCache();
+var pendingFaces = /* @__PURE__ */ new Map();
+var pendingFonts = /* @__PURE__ */ new Map();
 async function loadFontBytes(fontUrl, repoRoot2) {
   if (fontUrl.startsWith("data:")) {
     const comma = fontUrl.indexOf(",");
@@ -93432,7 +95256,19 @@ async function loadFontBytes(fontUrl, repoRoot2) {
   return new Uint8Array(await readFile4(filePath));
 }
 async function loadFace(fontUrl, repoRoot2) {
-  if (faceCache.has(fontUrl)) return faceCache.get(fontUrl);
+  const key = JSON.stringify([repoRoot2, fontUrl]);
+  if (faceCache.has(key)) return faceCache.get(key);
+  const pending = pendingFaces.get(key);
+  if (pending) return pending;
+  const load2 = readFace(fontUrl, repoRoot2, key);
+  pendingFaces.set(key, load2);
+  try {
+    return await load2;
+  } finally {
+    pendingFaces.delete(key);
+  }
+}
+async function readFace(fontUrl, repoRoot2, key) {
   const hb = await loadHarfBuzz();
   const buf = await loadFontBytes(fontUrl, repoRoot2);
   if (buf.length >= 4 && buf[0] === 119 && buf[1] === 79 && buf[2] === 70 && buf[3] === 50) {
@@ -93441,13 +95277,24 @@ async function loadFace(fontUrl, repoRoot2) {
   const blob = new hb.Blob(buf);
   const face = new hb.Face(blob);
   const entry2 = { blob, face, upem: face.upem, unicodes: new Set(face.collectUnicodes()) };
-  faceCache.set(fontUrl, entry2);
+  faceCache.set(key, entry2);
   return entry2;
 }
 async function loadFont(fontUrl, repoRoot2, variations) {
   const vars = Array.isArray(variations) ? variations.filter((v) => typeof v === "string") : [];
-  const key = vars.length ? `${fontUrl}|${vars.join(",")}` : fontUrl;
+  const key = JSON.stringify([repoRoot2, fontUrl, vars]);
   if (fontCache.has(key)) return fontCache.get(key);
+  const pending = pendingFonts.get(key);
+  if (pending) return pending;
+  const load2 = readFont(fontUrl, repoRoot2, vars, key);
+  pendingFonts.set(key, load2);
+  try {
+    return await load2;
+  } finally {
+    pendingFonts.delete(key);
+  }
+}
+async function readFont(fontUrl, repoRoot2, vars, key) {
   const { face, upem, unicodes } = await loadFace(fontUrl, repoRoot2);
   const hb = _hb;
   const font = new hb.Font(face);
@@ -93619,7 +95466,8 @@ function createNodeTextAPI({ repoRoot: repoRoot2 }) {
           if (glyphId === 0) notdef++;
           const ox = originUnits + penX + xOffset;
           const oy = yOffset;
-          const rawPath = font.glyphToPath(glyphId);
+          const outline = glyphCache.get(font, glyphId);
+          const rawPath = outline.path;
           const glyphD = rawPath ? transformPath(rawPath, ox, oy, scale) : "";
           if (glyphD) d += glyphD;
           if (pieces) {
@@ -93633,7 +95481,7 @@ function createNodeTextAPI({ repoRoot: repoRoot2 }) {
               if (penPxHere < piece.x) piece.x = penPxHere;
             } else pieces.set(key, { d: glyphD, x: penPxHere, advance: advPx });
           }
-          const ext = font.glyphExtents(glyphId);
+          const ext = outline.extents;
           if (ext && (!preserveWhitespaceAdvance || glyphD)) {
             const bx1 = (ox + ext.xBearing) * scale;
             const bx2 = (ox + ext.xBearing + ext.width) * scale;
@@ -94034,9 +95882,9 @@ async function captureUrl(params2, format, dims, opts = {}) {
     if (styles) await page2.addStyleTag({ content: styles }).catch(() => {
     });
     if (params2.recolor === "tint" && params2.tintColor) {
-      await page2.evaluate((color) => {
+      await page2.evaluate((color2) => {
         const o = document.createElement("div");
-        o.style.cssText = `position:fixed;inset:0;background:${color};mix-blend-mode:multiply;pointer-events:none;z-index:2147483647`;
+        o.style.cssText = `position:fixed;inset:0;background:${color2};mix-blend-mode:multiply;pointer-events:none;z-index:2147483647`;
         document.documentElement.appendChild(o);
       }, params2.tintColor).catch(() => {
       });
@@ -95994,8 +97842,8 @@ function createNodeRasterAPI() {
 }
 
 // packages/node-shell/src/image-redact.ts
-function fillRounded(cx, s, color) {
-  cx.fillStyle = color;
+function fillRounded(cx, s, color2) {
+  cx.fillStyle = color2;
   const [tl, tr, br, bl] = s.radii;
   if (!tl && !tr && !br && !bl) {
     cx.fillRect(s.x, s.y, s.w, s.h);
@@ -96882,7 +98730,7 @@ async function writeSessionRecord(stateDir, write) {
   await mkdir(sessionsDir(stateDir), { recursive: true });
   const prior = await readSessionRecord(stateDir, write.slot);
   const now2 = (/* @__PURE__ */ new Date()).toISOString();
-  const record5 = {
+  const record7 = {
     slot: write.slot,
     toolId: write.toolId ?? write.data.__toolId,
     toolVersion: write.toolVersion ?? write.data.__toolVersion,
@@ -96893,8 +98741,8 @@ async function writeSessionRecord(stateDir, write) {
     createdAt: prior?.createdAt ?? now2,
     ...sessionVersionStamp()
   };
-  await writeFile(sessionFilePath(stateDir, write.slot), JSON.stringify(record5, null, 2));
-  return record5;
+  await writeFile(sessionFilePath(stateDir, write.slot), JSON.stringify(record7, null, 2));
+  return record7;
 }
 async function deleteSessionRecord(stateDir, slot) {
   try {
@@ -97095,8 +98943,8 @@ async function outlineSvgText(svg, host, opts = {}) {
     for (const attr4 of Array.from(el.attributes)) {
       if (!DROP_ON_PATH.has(attr4.name)) path.setAttribute(attr4.name, attr4.value);
     }
-    const own = el.getAttribute("transform");
-    path.setAttribute("transform", `${own ? own + " " : ""}translate(${round4(tx)} ${round4(y)})`);
+    const own2 = el.getAttribute("transform");
+    path.setAttribute("transform", `${own2 ? own2 + " " : ""}translate(${round4(tx)} ${round4(y)})`);
     el.replaceWith(path);
     result.outlined++;
   }
@@ -97249,7 +99097,7 @@ async function createCliBridge({ profile = {}, dom, networkAllowlist, designVers
   const tokensAssets = assetIndex2.assets.filter((a) => a.type === "tokens");
   const headTokensId = pickHeadAssetId(tokensAssets.map((a) => a.id));
   const headTokensAsset2 = tokensAssets.find((a) => a.id === headTokensId) ?? null;
-  const readAssetDoc = async (asset) => JSON.parse(await readFile13(assetFilePath(asset.formats[0].url), "utf8"));
+  const readAssetDoc = async (asset2) => JSON.parse(await readFile13(assetFilePath(asset2.formats[0].url), "utf8"));
   let tokensDocCache = null;
   let tokensDocRevision = "";
   async function tokensDoc() {
@@ -97278,13 +99126,13 @@ async function createCliBridge({ profile = {}, dom, networkAllowlist, designVers
       }
       if (slug3 === DESIGN_VERSION_LATEST) return head2;
       const entry2 = index2.versions.find((v) => v.slug === slug3);
-      const asset = headTokensAsset2 ? assetById.get(versionAssetId(headTokensAsset2.id, slug3)) : void 0;
-      if (!entry2 || !asset) {
+      const asset2 = headTokensAsset2 ? assetById.get(versionAssetId(headTokensAsset2.id, slug3)) : void 0;
+      if (!entry2 || !asset2) {
         host.log("warn", `design-system version "${slug3}" is listed but ships no tokens asset - rendering against the edit head instead.`);
         return head2;
       }
       try {
-        return applyPinnedAssets(await readAssetDoc(asset), entry2.assets ?? []);
+        return applyPinnedAssets(await readAssetDoc(asset2), entry2.assets ?? []);
       } catch (e) {
         host.log("warn", `design-system version "${slug3}" could not be read (${e instanceof Error ? e.message : e}) - rendering against the edit head instead.`);
         return head2;
@@ -99320,9 +101168,9 @@ function rowAt(rows2, id2, path) {
     throw new Error(`${path}: layer "${id2}" ${matches3.length ? "is duplicated" : "does not exist"}.`);
   return matches3[0];
 }
-function anchorOf(record5, path) {
-  const before = record5.beforeId;
-  const after = record5.afterId;
+function anchorOf(record7, path) {
+  const before = record7.beforeId;
+  const after = record7.afterId;
   if (before !== void 0 && (typeof before !== "string" || !before.trim()))
     throw new Error(`${path}/beforeId: a stable layer id is required.`);
   if (after !== void 0 && (typeof after !== "string" || !after.trim()))
@@ -99331,9 +101179,9 @@ function anchorOf(record5, path) {
     throw new Error(`${path}: provide exactly one of beforeId or afterId.`);
   return before !== void 0 ? { side: "before", id: before } : { side: "after", id: after };
 }
-function optionalAnchorOf(record5, path) {
-  if (record5.beforeId === void 0 && record5.afterId === void 0) return null;
-  return anchorOf(record5, path);
+function optionalAnchorOf(record7, path) {
+  if (record7.beforeId === void 0 && record7.afterId === void 0) return null;
+  return anchorOf(record7, path);
 }
 function assertNewDesignId(rows2, value, path) {
   if (typeof value !== "string" || !value.trim())
@@ -99390,17 +101238,17 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
     const operation = value[index2];
     if (!operation || typeof operation !== "object" || Array.isArray(operation))
       throw new Error(`${path}: operation must be an object.`);
-    const record5 = operation;
-    const op = record5.op;
+    const record7 = operation;
+    const op = record7.op;
     if (op !== "add" && op !== "duplicate" && op !== "remove" && op !== "reparent" && op !== "reorder")
       throw new Error(`${path}/op: expected add, duplicate, remove, reparent or reorder.`);
     const allowed = new Set(
       op === "add" ? ["op", "layer", "beforeId", "afterId"] : op === "duplicate" ? ["op", "id", "newId", "childIds", "beforeId", "afterId"] : op === "remove" ? ["op", "id", "cascade"] : op === "reparent" ? ["op", "id", "artboardId", "beforeId", "afterId"] : ["op", "id", "beforeId", "afterId"]
     );
-    const extra = Object.keys(record5).find((key) => !allowed.has(key));
+    const extra = Object.keys(record7).find((key) => !allowed.has(key));
     if (extra) throw new Error(`${path}/${extra}: unknown ${op} field.`);
     if (op === "add") {
-      const valueLayer = record5.layer;
+      const valueLayer = record7.layer;
       if (!valueLayer || typeof valueLayer !== "object" || Array.isArray(valueLayer))
         throw new Error(`${path}/layer: a layer object is required.`);
       const supplied = valueLayer;
@@ -99416,10 +101264,10 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
         h: fieldDefault("h", 200),
         ...supplied
       };
-      const hasAnchor = record5.beforeId !== void 0 || record5.afterId !== void 0;
+      const hasAnchor = record7.beforeId !== void 0 || record7.afterId !== void 0;
       if (!hasAnchor) rows2.push(layer);
       else {
-        const anchor = anchorOf(record5, path);
+        const anchor = anchorOf(record7, path);
         const relative2 = rowAt(rows2, anchor.id, `${path}/${anchor.side}Id`);
         if (!sameReorderDomain(layer, relative2.row))
           throw new Error(`${path}: an added layer and its anchor must be siblings or two artboards.`);
@@ -99429,15 +101277,15 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "duplicate") {
-      const source = rowAt(rows2, record5.id, `${path}/id`);
-      const newId = assertNewDesignId(rows2, record5.newId, `${path}/newId`);
-      const anchor = optionalAnchorOf(record5, path) ?? {
+      const source = rowAt(rows2, record7.id, `${path}/id`);
+      const newId = assertNewDesignId(rows2, record7.newId, `${path}/newId`);
+      const anchor = optionalAnchorOf(record7, path) ?? {
         side: "after",
         id: String(source.row.id)
       };
       const isFrame = source.row.kind === "frame";
       const children = isFrame ? rows2.filter((row) => row && typeof row === "object" && !Array.isArray(row) && row.kind !== "frame" && row.frame === source.row.id) : [];
-      const childIdsValue = record5.childIds;
+      const childIdsValue = record7.childIds;
       if (!isFrame && childIdsValue !== void 0)
         throw new Error(`${path}/childIds: only an artboard duplicate may supply child ids.`);
       if (childIdsValue !== void 0 && (!childIdsValue || typeof childIdsValue !== "object" || Array.isArray(childIdsValue)))
@@ -99481,9 +101329,9 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "remove") {
-      const target = rowAt(rows2, record5.id, `${path}/id`);
+      const target = rowAt(rows2, record7.id, `${path}/id`);
       const children = target.row.kind === "frame" ? rows2.filter((row) => row && typeof row === "object" && !Array.isArray(row) && row.frame === target.row.id) : [];
-      if (children.length && record5.cascade !== true)
+      if (children.length && record7.cascade !== true)
         throw new Error(`${path}/cascade: artboard "${String(target.row.id)}" has ${children.length} child layer${children.length === 1 ? "" : "s"}; pass cascade:true to remove them.`);
       const removeIds = /* @__PURE__ */ new Set([target.row.id, ...children.map((row) => row.id)]);
       for (let rowIndex = rows2.length - 1; rowIndex >= 0; rowIndex--) {
@@ -99493,10 +101341,10 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "reparent") {
-      const target = rowAt(rows2, record5.id, `${path}/id`);
+      const target = rowAt(rows2, record7.id, `${path}/id`);
       if (target.row.kind === "frame")
         throw new Error(`${path}/id: artboards cannot be reparented.`);
-      const artboardId = record5.artboardId;
+      const artboardId = record7.artboardId;
       if (artboardId !== null && (typeof artboardId !== "string" || !artboardId.trim()))
         throw new Error(`${path}/artboardId: expected an artboard stable id or null for the pasteboard.`);
       if (typeof artboardId === "string") {
@@ -99505,7 +101353,7 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
           throw new Error(`${path}/artboardId: layer "${artboardId}" is not an artboard.`);
       }
       target.row.frame = artboardId ?? "";
-      const anchor = optionalAnchorOf(record5, path);
+      const anchor = optionalAnchorOf(record7, path);
       if (anchor) {
         reorderDesignRow(rows2, String(target.row.id), anchor, path);
       } else {
@@ -99521,9 +101369,9 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       }
       continue;
     }
-    const id2 = record5.id;
+    const id2 = record7.id;
     if (typeof id2 !== "string" || !id2.trim()) throw new Error(`${path}/id: a stable layer id is required.`);
-    reorderDesignRow(rows2, id2, anchorOf(record5, path), path);
+    reorderDesignRow(rows2, id2, anchorOf(record7, path), path);
   }
   return { ...inputs, boxes: rows2 };
 }
@@ -99536,12 +101384,12 @@ function applyDesignLayerPatches(toolId, manifest, inputs, value) {
     const patch = value[index2];
     if (!patch || typeof patch !== "object" || Array.isArray(patch))
       throw new Error(`/layerPatches/${index2}: patch must be an object.`);
-    const record5 = patch;
-    const extra = Object.keys(record5).find((key) => key !== "id" && key !== "set");
+    const record7 = patch;
+    const extra = Object.keys(record7).find((key) => key !== "id" && key !== "set");
     if (extra) throw new Error(`/layerPatches/${index2}/${extra}: unknown patch field.`);
-    const id2 = record5.id;
+    const id2 = record7.id;
     if (typeof id2 !== "string" || !id2) throw new Error(`/layerPatches/${index2}/id: a stable layer id is required.`);
-    const set = record5.set;
+    const set = record7.set;
     if (!set || typeof set !== "object" || Array.isArray(set)) throw new Error(`/layerPatches/${index2}/set: fields must be an object.`);
     if (Object.hasOwn(set, "id")) throw new Error(`/layerPatches/${index2}/set/id: a stable layer id cannot be changed.`);
     const match = rowAt(rows2, id2, `/layerPatches/${index2}/id`);

@@ -67,17 +67,8 @@ import { isChromium } from '../capabilities.ts';
 import { loadFavouriteAssets, loadHiddenAssets, assetBaseId } from '../lib/asset-favourites.ts';
 import { matchesType as pickerMatchesType, type TypeFilter as PickerTypeFilter } from './catalog-filter.ts';
 
-/** The type pills an untyped pick offers (plans/134 P5) - the catalog's buckets. */
-const PICKER_TYPE_FILTERS: ReadonlyArray<{ key: PickerTypeFilter; label: string }> = [
-  { key: 'all', label: 'All' },
-  { key: 'image', label: 'Image' },
-  { key: 'vector', label: 'Vector' },
-  { key: 'motion', label: 'Motion' },
-  { key: 'audio', label: 'Audio' },
-  { key: 'text', label: 'Text' },
-];
 import { VISUAL_TYPES, isPlaceableAsset } from '../lib/asset-kinds.ts';
-import { pickerAcceptsType, queryPickerAssets } from './picker-query.ts';
+import { PICKER_TYPE_FILTERS, pickerAcceptsType, queryPickerAssets } from './picker-query.ts';
 import { autoplayLottieThumbs } from './lottie-mount.ts';
 import { motionVideoThumb, armMotionPreviews } from '../lib/preview-media.ts';
 import { escapeHtml } from '../lib/html.ts';
@@ -96,27 +87,9 @@ import type { Folder, FolderItem, FolderHost } from '../folders.ts';
 import type { WebStateAPI } from '../bridge/state.ts';
 import type { VideoJobHost } from '../lib/video-jobs.ts';
 
-/** Every file kind the upload surfaces can ingest - the `accept` list for any
- *  affordance that feeds storeUserUpload (the picker's footer input, the catalog's
- *  drop area). Images (raster + SVG), short video, Lottie, and audio all flow
- *  through storeUserUpload; audio (the user's own music) is stored verbatim as a
- *  type:'audio' asset. PDF/.ai and PowerPoint .pptx don't go through storeUserUpload
- *  itself: callers route them to pdf-import.ts's ingestPdfAsSvgAssets /
- *  pptx-import.ts's ingestPptxAsSvgAssets (page(s)/slide(s) → stored SVG) via
- *  isPdfUpload / isPptxUpload. */
-export const UPLOAD_ACCEPT = 'image/svg+xml,image/png,image/apng,image/jpeg,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp,.bmp,image/x-icon,image/vnd.microsoft.icon,.ico,.cur,.svgz,video/mp4,video/webm,video/x-matroska,.mp4,.webm,.mov,.mkv,audio/*,.mp3,.wav,.ogg,.oga,.opus,.m4a,.aac,.flac,.mid,.midi,.mod,.xm,.it,.s3m,.stm,.mtm,application/json,.json,.lottie,application/pdf,.pdf,application/illustrator,.ai,application/vnd.openxmlformats-officedocument.presentationml.presentation,.pptx,.xlsx,.csv,.tsv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*,.txt,.md,.markdown,.text,.js,.jsx,.mjs,.cjs,.ts,.tsx,.py,.rb,.go,.rs,.java,.c,.h,.hpp,.cc,.cpp,.cs,.swift,.kt,.kts,.php,.pl,.lua,.sql,.scala,.sh,.bash,.zsh,.fish,.yaml,.yml,.toml,.ini,.cfg,.conf,.css,.scss,.less,.html,.htm,.xml,.vue,.svelte,.astro,.log,.jsonl,.ndjson';
-
-/** A PDF - or an Illustrator .ai, which saved PDF-compatible IS a PDF - that upload
- *  surfaces must hand to the page→SVG converter instead of storeUserUpload. Sync and
- *  chunk-free on purpose: callers decide the route before lazy-loading pdf-import. */
-export const isPdfUpload = (file: File): boolean =>
-  /\.(pdf|ai)$/i.test(file.name) || /^application\/(pdf|illustrator)$/i.test(file.type);
-
-/** A PowerPoint .pptx that upload surfaces must hand to the slide→SVG converter
- *  instead of storeUserUpload. Sync and chunk-free on purpose: callers decide the
- *  route before lazy-loading pptx-import. */
-export const isPptxUpload = (file: File): boolean =>
-  /\.pptx$/i.test(file.name) || file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+import { UPLOAD_ACCEPT, isPdfUpload, isPptxUpload } from '../lib/upload-types.ts';
+import { tryStoreModelUpload } from '../lib/model-upload.ts';
+export { UPLOAD_ACCEPT, isPdfUpload, isPptxUpload };
 
 type TabId = 'library' | 'uploads' | 'sessions' | 'projects' | 'tools' | 'templates';
 interface Tab {
@@ -174,6 +147,8 @@ export interface CollectResult { ok: boolean; label?: string; silent?: boolean }
  *   - onQuickAddTool  a default-settings session for a tool, no editor step
  */
 export interface CollectOpts {
+  /** Collect assets into an editor, without offering session creation or navigation. */
+  assetsOnly?: boolean;
   /** Compact controls and a persistent added count, for a guided collection flow. */
   guided?: { hint: string };
   folderName: string;
@@ -426,7 +401,7 @@ async function render(
   // tool, so this can only ever render a tool that ships in this build.
   const allowToolUrl = Boolean((host.compose as Partial<WebComposeAPI> | undefined)?.renderUrl
     && (host.compose as Partial<WebComposeAPI> | undefined)?._describeUrl)
-    && opts.type !== 'video';
+    && opts.type !== 'video' && !collect?.assetsOnly;
 
   // The Projects tab browses the user's folders of saved creations + images. It's
   // worth showing whenever a folder could hold something pickable here: saved
@@ -3262,6 +3237,8 @@ export async function storeUserUpload(
     batch?: boolean;
   } = {},
 ): Promise<AssetRef> {
+  const model = await tryStoreModelUpload(host, file);
+  if (model) return model;
   // Read the file as a blob, stash it in the user-assets IDB store, return
   // a `user/...` AssetRef. The bridge's assets.get() resolves these via the
   // same lookup path as library assets - uniform from the tool's POV.

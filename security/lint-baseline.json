@@ -1496,10 +1496,10 @@
       "warning/lint/correctness/noUnusedImports": 1
     },
     "shells/web/src/views/valid.ts": {
-      "warning/lint/complexity/useOptionalChain": 3,
+      "warning/lint/complexity/useOptionalChain": 2,
       "warning/lint/performance/noAccumulatingSpread": 1,
       "error/lint/suspicious/noShadowRestrictedNames": 1,
-      "error/lint/suspicious/useIterableCallbackReturn": 5
+      "error/lint/suspicious/useIterableCallbackReturn": 1
     },
     "shells/web/src/views/video-edit-inline.ts": {
       "warning/lint/complexity/useOptionalChain": 2

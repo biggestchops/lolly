@@ -1,0 +1,10 @@
+@layer views {
+  .locked-fit-feedback { position: absolute; inset-block-end: calc(var(--ui-size-target) + var(--sp-8)); inset-inline: var(--sp-6); text-align: center; font-size: var(--fs-sm); color: var(--ui-color-text-muted); pointer-events: none; font-variant-numeric: tabular-nums; }
+  .locked-edit-inputs { position: absolute; inset-block-end: var(--sp-7); inset-inline-end: var(--sp-7); z-index: 20; }
+  .locked-on-canvas:not(.locked-inputs-open) #tool-sidebar { display: none; }
+  .locked-on-canvas.locked-inputs-open #tool-sidebar { display: flex; }
+  .is-locked-tool [data-public-input]:not([data-public-input=""]) { cursor: pointer; }
+  @media (max-width: 640px) {
+    .locked-edit-inputs { min-height: var(--ui-size-target); inset-block-end: calc(var(--ui-size-target) + var(--sp-8) + env(safe-area-inset-bottom)); }
+  }
+}

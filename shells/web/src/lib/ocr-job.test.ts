@@ -21,7 +21,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { __resetJobsForTest, jobsSnapshot, cancelJob } from './jobs.ts';
+import { __resetJobsForTest, jobsSnapshot, cancelJob, startJob, resourceJobs } from './jobs.ts';
 import { startOcrJob, runOcrJob, reportOcrProgress, type OcrJobHost } from './ocr-job.ts';
 import type { OcrFrame, OcrOpts, OcrResult } from '@lolly-tools/core/host-v1';
 
@@ -41,6 +41,19 @@ interface Recorded {
 }
 
 const recorder = (): Recorded => ({ runOpts: [], logs: [] });
+
+test('queued OCR cancellation runs cleanup without invoking the reader', async () => {
+  __resetJobsForTest();
+  const first = startJob({ title: 'occupying the worker' });
+  let cleaned = 0;
+  const rec = recorder();
+  const job = startOcrJob(makeHost(async () => { assert.fail('cancelled OCR must not run'); }, rec), { frame: frame() }, { onSettled: () => { cleaned++; } });
+  cancelJob(job.id);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(cleaned, 1);
+  assert.deepEqual(resourceJobs().map(row => row.id), [first.id]);
+  first.finish();
+});
 
 function makeHost(run: (f: OcrFrame, o: OcrOpts) => Promise<OcrResult>, rec: Recorded): OcrJobHost {
   return {

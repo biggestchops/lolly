@@ -2,6 +2,7 @@
 /** Dock/float ownership for Design's live Inspector panel. */
 
 import { t } from '../i18n.ts';
+import { mountModal, type ModalHandle } from '../components/modal.ts';
 import {
   type DockReleaseReason,
   edgeDockHitTest,
@@ -72,6 +73,7 @@ export function wireDesignInspectorFloat(
   let restoreBox: GripBox | null = null;
   let open = false;
   let destroyed = false;
+  let sheet: ModalHandle<void> | null = null;
   let releaseAction: 'float' | 'close' | 'destroy' | null = null;
 
   const save = (): void => {
@@ -233,6 +235,22 @@ export function wireDesignInspectorFloat(
 
   const setOpen = (next: boolean, reason: OpenReason = 'user'): boolean => {
     if (destroyed) return false;
+    if (!next && sheet) { sheet.close(); return false; }
+    if (next && isMobile()) {
+      if (sheet) return true;
+      if (isDocked('inspector')) releaseDock('inspector', 'host');
+      clearBox();
+      panel.classList.remove('is-floating', 'is-maximized');
+      tools.hidden = true;
+      sheet = mountModal('', {
+        className: 'modal fc-insp-sheet', ariaLabel: t('Inspector'),
+        onClose: () => { sheet = null; panel.remove(); tools.hidden = false; notify(false, 'user'); },
+      });
+      sheet.el.append(panel);
+      notify(true, reason);
+      closeBtn?.focus();
+      return true;
+    }
     if (next) {
       if (open) {
         if (mode === 'edge') showPanel('inspector');
@@ -357,6 +375,7 @@ export function wireDesignInspectorFloat(
   });
 
   const onResize = (): void => {
+    if (sheet && !isMobile()) { sheet.close(); setOpen(true, 'host'); return; }
     if (!open || mode === 'edge' || !box) return;
     box = clamp(box);
     render();
@@ -378,6 +397,7 @@ export function wireDesignInspectorFloat(
     destroy(): void {
       if (destroyed) return;
       destroyed = true;
+      sheet?.close();
       offDock();
       window.removeEventListener('resize', onResize);
       head.removeEventListener('pointerdown', onHeadDown);

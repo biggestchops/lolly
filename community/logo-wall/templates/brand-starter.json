@@ -1,0 +1,55 @@
+{
+  "id": "brand-starter",
+  "name": "Type collection",
+  "category": "Brand",
+  "description": "A balanced collection of editable wordmarks in your brand typeface.",
+  "galleryCover": true,
+  "values": {
+    "logos": [
+      {
+        "logo": {
+          "source": "remote",
+          "id": "https://lolly.tools/tool/wordmark.svg?text=Open&weight=600",
+          "_unresolved": true
+        },
+        "presence": "normal",
+        "scale": 100,
+        "opacity": 1
+      },
+      {
+        "logo": {
+          "source": "remote",
+          "id": "https://lolly.tools/tool/wordmark.svg?text=Build&weight=600",
+          "_unresolved": true
+        },
+        "presence": "normal",
+        "scale": 100,
+        "opacity": 1
+      },
+      {
+        "logo": {
+          "source": "remote",
+          "id": "https://lolly.tools/tool/wordmark.svg?text=Together&weight=600",
+          "_unresolved": true
+        },
+        "presence": "normal",
+        "scale": 100,
+        "opacity": 1
+      },
+      {
+        "logo": {
+          "source": "remote",
+          "id": "https://lolly.tools/tool/wordmark.svg?text=Forward&weight=600",
+          "_unresolved": true
+        },
+        "presence": "normal",
+        "scale": 100,
+        "opacity": 1
+      }
+    ],
+    "columns": 2,
+    "background": "transparent",
+    "padding": 80
+  },
+  "galleryTheme": "light"
+}

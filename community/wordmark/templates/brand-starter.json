@@ -1,0 +1,14 @@
+{
+  "id": "brand-starter",
+  "name": "Brand type",
+  "category": "Brand",
+  "description": "A short, clear type specimen on transparency.",
+  "values": {
+    "text": "Open possibilities",
+    "weight": 600,
+    "color": "{color.semantic.text}",
+    "tracking": -2
+  },
+  "galleryCover": true,
+  "galleryTheme": "light"
+}

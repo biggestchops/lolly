@@ -266,3 +266,25 @@ test('schema: v1.1 presence fields are optional, the branch stays closed, chat c
   assert.equal(validate({ ...base, viewport: { x: 1, y: 2, zoom: 1, extra: 0 } }), false, 'viewport is closed');
   assert.equal(validate({ ...base, unknown: 1 }), false, 'the presence branch stays closed');
 });
+
+
+test('omitted cleared fields do not amplify later coordinate edits', () => {
+  const doc = new ReferenceCanvasDoc('local');
+  const seed = new Map<BoxId, BoxRow>(Array.from({ length: 200 }, (_, i) => [`row-${i}`, { id: `row-${i}`, x: i, label: 'kept' }]));
+  const origin = { client: 'seed', clock: 1 };
+  doc.applyRemotePatch(damageToOps(new Map(), seed, origin, DEFAULT_GEOMETRY_FIELDS, 'boxes'));
+  const rows = new Map<BoxId, BoxRow>([...seed].map(([id, row]) => [id, { x: row.x!, label: row.label! }]));
+  const damage = { moved: [], restyled: [], added: [], removed: [], zChanged: [], frames: [] };
+  const cleared = doc.onLocalChange(damage, rows, 'boxes');
+  assert.equal(cleared.length, 200, 'legacy identity fields are cleared once');
+  assert.ok(cleared.every(op => op.k === 'field' && op.field === 'id' && op.value === null));
+  for (let x = 1; x <= 3; x++) {
+    rows.set('row-0', { x, label: 'kept' });
+    const ops = doc.onLocalChange(damage, rows, 'boxes');
+    assert.equal(ops.length, 1, 'one coordinate edit stays one operation');
+    assert.equal(ops[0]!.k, 'geom');
+  }
+  rows.set('row-0', { x: 3, label: 'changed' });
+  assert.equal(doc.onLocalChange(damage, rows, 'boxes').length, 1, 'real field edits still propagate');
+  assert.equal(doc.onLocalChange(damage, rows, 'boxes').length, 0);
+});

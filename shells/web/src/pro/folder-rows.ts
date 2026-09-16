@@ -20,6 +20,7 @@ export interface ExportRow {
    */
   uid?: string;
   toolId: string | undefined;
+  artifactDigest?: string;
   values: Record<string, unknown>;
   format?: string;
   filename?: string;
@@ -38,6 +39,7 @@ export interface ExportRow {
 /** One snapshot row inside a saved batch session. */
 interface BatchSessionRow {
   toolId: string;
+  artifactDigest?: string;
   values?: Record<string, unknown>;
   format?: string;
   filename?: string;
@@ -71,6 +73,7 @@ interface StoredSession {
   __batch?: unknown;
   __label?: string;
   __toolId?: string;
+  __toolArtifact?: string;
   __export_filename?: string;
   __export_format?: string;
   __export_width?: string;
@@ -145,6 +148,7 @@ export function rowFromToolSession(data: StoredSession, pathParts: string[] = []
   const leaf = stemOf(data.__export_filename, data.__toolId);
   return {
     toolId: data.__toolId,
+    artifactDigest: data.__toolArtifact,
     values,
     format: data.__export_format || undefined,
     filename: pathParts.length ? [...pathParts, leaf].join('/') : (data.__export_filename || undefined),
@@ -181,6 +185,7 @@ export function rowFromBatchRow(r: BatchSessionRow, pathParts: string[], runDefa
     (a != null && a !== '') ? a : (b != null && b !== '' ? b : undefined);
   return {
     toolId: r.toolId,
+    artifactDigest: r.artifactDigest,
     values: r.values ?? {},
     format: r.format,
     filename: [...pathParts, leaf].join('/'),

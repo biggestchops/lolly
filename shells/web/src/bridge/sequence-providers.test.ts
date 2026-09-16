@@ -291,7 +291,7 @@ test('every audio container the catalog ships or the uploader accepts is registe
   }
 
   // And every audio extension the picker offers the user.
-  const picker = readFileSync(fileURLToPath(new URL('../views/picker.ts', import.meta.url)), 'utf8');
+  const picker = readFileSync(fileURLToPath(new URL('../lib/upload-types.ts', import.meta.url)), 'utf8');
   const accept = /UPLOAD_ACCEPT\s*=\s*'([^']*)'/.exec(picker)?.[1] ?? '';
   assert.ok(accept.length > 0, 'could not read UPLOAD_ACCEPT - this guard must not pass vacuously');
   for (const ext of ['mp3', 'wav', 'ogg', 'oga', 'opus', 'm4a', 'aac', 'flac']) {

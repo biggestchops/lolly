@@ -282,6 +282,7 @@ export function startTranscribeJob(
       // minutes of inference outlive whatever asked for them.
       stashTranscript(words, req.assetId ?? '', transcriptKey(req.src));
       const persisted = await persistTranscript(host, req.assetId ?? '', words);
+      if (job.cancelled) return;
       const applied = hooks.onComplete?.(words, { granularity }) === true;
       job.finish({ words, applied, persisted } satisfies TranscribeJobResult);
       if (applied) return;
@@ -298,6 +299,7 @@ export function startTranscribeJob(
       job.fail(err);
       hooks.onError?.(err);
     } finally {
+      job.settle();
       hooks.onSettled?.();
     }
   })();

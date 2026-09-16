@@ -1,0 +1,75 @@
+{
+  "id": "brand-starter",
+  "name": "Open possibilities",
+  "category": "Slides",
+  "description": "A clear opening slide in your brand colours.",
+  "galleryCover": true,
+  "values": {
+    "boxes": [
+      {
+        "id": "frame",
+        "kind": "frame",
+        "x": 0,
+        "y": 0,
+        "w": 1920,
+        "h": 1080,
+        "rot": 0,
+        "shape": "rect",
+        "bg": "var(--brand-primary, #1e293b)",
+        "order": 0,
+        "clipChildren": true
+      },
+      {
+        "id": "accent",
+        "kind": "box",
+        "frame": "frame",
+        "x": 160,
+        "y": 320,
+        "w": 140,
+        "h": 12,
+        "rot": 0,
+        "shape": "pill",
+        "bg": "var(--brand-secondary, #94a3b8)",
+        "order": 0
+      },
+      {
+        "id": "title",
+        "kind": "text",
+        "frame": "frame",
+        "x": 160,
+        "y": 400,
+        "w": 1600,
+        "h": 300,
+        "rot": 0,
+        "shape": "rect",
+        "text": "Open for\nwhat comes next.",
+        "fg": "var(--brand-on-primary, #ffffff)",
+        "fontSize": 128,
+        "align": "left",
+        "valign": "top",
+        "weight": "700",
+        "font": "sans",
+        "lineHeight": 1.05
+      },
+      {
+        "id": "subtitle",
+        "kind": "text",
+        "frame": "frame",
+        "x": 160,
+        "y": 720,
+        "w": 1600,
+        "h": 100,
+        "rot": 0,
+        "shape": "rect",
+        "text": "Create. Collaborate. Make it yours.",
+        "fg": "var(--brand-on-primary, #ffffff)",
+        "fontSize": 44,
+        "align": "left",
+        "valign": "top",
+        "weight": "400",
+        "font": "sans",
+        "lineHeight": 1.3
+      }
+    ]
+  }
+}

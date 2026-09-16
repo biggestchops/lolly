@@ -1,6 +1,6 @@
-# Lolly 1.0.7
+# Lolly 1.0.8
 
-_Current release: **1.0.7** (2026-09-14). First public release was 1.0.1 (2026-08-30). Free
+_Release notes: **1.0.8** (2026-09-15). Builds and release verification are in progress. First public release was 1.0.1 (2026-08-30). Free
 software under the **Mozilla Public License 2.0**; the content below is brand-agnostic and
 reflects the current platform._
 
@@ -33,6 +33,68 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
 - **Governed automation via MCP.** An optional Model Context Protocol server exposes the
   catalog and render path to AI agents (list, describe, build a link, render, transform,
   redact, verify) under the same rules as the app.
+
+### New in 1.0.8
+
+- **3D Studio for icons and products.** Extrude and bevel SVG
+  artwork or import GLB/STL models. Preserve source colours, give faces, bevels
+  and sides different finishes, and choose dramatic brand-coloured lighting.
+  Depth of field softens real foreground and background forms. Export a complete
+  scene, an object, or an object with a transparent shadow.
+- **One studio for a coordinated set.** Review collections in a contact sheet,
+  share lighting and finishes, retain each item's framing and material bindings,
+  and export a named PNG set. Portable `.lolly` files carry uploaded models.
+  Turntables and orbiting or breathing lights use repeatable animation timing.
+- **More dependable 3D shaping and framing.** Unsafe bevels are reduced with a
+  source note. Fit the object, reset the camera, orbit with the keyboard or click
+  the subject to focus. Camera actions use undo and redo. Imported HDR lighting
+  environments and larger multi-object scenes remain planned work.
+- **Share your design with your rules.** Turn a Design document, saved session or
+  template into a portable tool. Choose the editable text, images and options;
+  keep the rest fixed. Set character limits, text fitting, font-size ranges,
+  image framing and allowed exports. Arrange the inputs for the recipient and
+  choose a sidebar or controls on the canvas.
+- **One choice can change a whole design.** Link several inputs to a theme or
+  switch between artboards. Common fields such as first and last name can supply
+  several assets. Preview with sample values, check the compiled result, and try
+  the downloaded `.lolly` before sharing. Each download has a version; recipients
+  choose when to replace an installed tool.
+- **Start with existing artwork.** Import PDF or PDF-compatible Illustrator
+  artwork, choose pages, inspect the conversion, resolve missing fonts and select
+  editable objects. Outlined or flattened content can be replaced with a text or
+  image input while the surrounding artwork stays fixed. Compare against the
+  source before sharing; conversion is not a guarantee of exact source fidelity.
+- **Navigate a complete document in Layers.** Artboards are collapsible parent
+  groups with their own layers. Jump to an artboard, select and reorder its
+  objects, or switch to Pages for thumbnails and page ordering.
+- **A clearer Design inspector.** Text and image controls lead when those objects
+  are selected. Options use compact chips and shared design-system tokens.
+  Advanced styling stays in a disclosure. On phones, the same controls open in
+  an inspector sheet with keyboard focus and Escape/Back dismissal.
+- **The web app opens at the right size on phones.** Signed web builds retain
+  their mobile viewport settings, fixing the zoomed-out layout in Safari and
+  other mobile browsers. Browser pinch zoom remains available.
+- **Scroll long sequences in both directions.** Track scrolling stays inside the
+  timeline, works with wheel, touch background and keyboard, and retains both
+  scroll positions when tracks rebuild.
+- **Richer course authoring.** Add formatted lesson text and practice quizzes,
+  organize several content blocks together, and assemble a course from project
+  folders. Website and SCORM packages carry the selected design system. Learner
+  preview and preflight check the result before a versioned download; acceptance
+  testing in customer LMS tenants remains pending.
+- **Clearer collaboration and history.** Shared cursors show where collaborators
+  are working. History gains timeline navigation and filtering. Configured Lolly
+  Work deployments retain collaboration acknowledgements and journals for recovery.
+- **Shorter, task-focused creator guides.** Tool authoring, rendering, inputs,
+  composition, publishing, CLI, URL mode and build guidance have their own pages.
+  Read [Create a tool](https://lolly.tools/info/create/create-a-tool.html) and
+  [Training creators](https://lolly.tools/info/create/training-creators.html) for
+  the workflows used by design, training and enablement teams.
+
+The first restricted-tool release produces still PNG, SVG and PDF outputs.
+Motion output, simultaneous export of several artboards, and recipient rebranding
+are not included. Source tools that require live media, remote state, nested tools
+or custom file exports are refused during preparation.
 
 ### New in 1.0.7
 

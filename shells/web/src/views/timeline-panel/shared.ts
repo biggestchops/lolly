@@ -163,6 +163,8 @@ export interface TimelinePanelOpts {
    * rest of the create pipeline. Omitted/empty hides the button entirely.
    */
   addKinds?: TimelineAddKind[];
+  /** Shell-owned media intake; loaded only when the user asks to add media. */
+  addMedia?(): Promise<void>;
   /**
    * The box sub-field that carries an asset ref (free-canvas's `cv.imageField`). Only
    * the record-in-place take writes one, and free-canvas does not thread it today, so

@@ -19,6 +19,8 @@ import type { RevisionHistoryAPI, RevisionStore } from './revision-history.ts';
 
 /** The saved payload: input values plus the runtime's `__`-prefixed markers. */
 export interface SavedStateData {
+  __toolArtifact?: string;
+  __designTool?: import('@lolly-tools/core/design-tool-v1').DesignToolDraftV1;
   __toolId?: string;
   __toolVersion?: string;
   __label?: string;

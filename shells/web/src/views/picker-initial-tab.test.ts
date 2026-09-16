@@ -463,3 +463,30 @@ test('a real MPEG transport stream named .ts is never stored as text', async () 
   assert.notEqual(rec.type, 'text', 'stream bytes must not be classified as text');
   assert.equal(rec.meta?.aiSignals, undefined, 'no AI-writing note on a non-text asset');
 });
+
+
+test('editor media collection keeps adding compatible assets without offering session navigation', async () => {
+  setToolIndex(TOOLS);
+  const added: string[] = [];
+  const p = await open({
+    allowUpload: true, initialTab: 'library', types: ['video', 'audio'],
+    collect: {
+      assetsOnly: true, folderName: 'timeline', tools: [],
+      onAsset: async (ref: AssetRef) => { added.push(ref.id); return true; },
+      onSession: async () => { throw new Error('session navigation is unavailable'); },
+      onOpenTool() { throw new Error('tool navigation is unavailable'); },
+      onQuickAddTool: async () => false,
+    },
+  }, [asset('video/one', 'video'), asset('audio/one', 'audio'), asset('font/one', 'font')]);
+  try {
+    assert.equal(p.tab('sessions'), null);
+    assert.equal(p.tab('tools'), null);
+    assert.equal(p.panel.querySelector('[data-asset-id="font/one"]'), null);
+    for (const id of ['video/one', 'audio/one']) {
+      p.panel.querySelector<HTMLElement>(`[data-asset-id="${id}"]`)!.click();
+      await settle();
+      assert.equal(p.panel.isConnected, true);
+    }
+    assert.deepEqual(added, ['video/one', 'audio/one']);
+  } finally { await p.close(); }
+});

@@ -8,6 +8,7 @@
  */
 
 import type { TextAPI, TextPathCluster } from '@lolly-tools/core/host-v1';
+import { createGlyphCache } from '@lolly-tools/node-shell/text-glyphs';
 import type { Blob as HbBlob, Face as HbFace, Font as HbFont, Feature as HbFeature } from 'harfbuzzjs';
 
 type HarfBuzzModule = typeof import('harfbuzzjs');
@@ -38,9 +39,20 @@ interface FontEntry {
 
 const faceCache = new Map<string, FaceEntry>();
 const fontCache = new Map<string, FontEntry>();
+const glyphCache = createGlyphCache();
+const pendingFaces = new Map<string, Promise<FaceEntry>>();
+const pendingFonts = new Map<string, Promise<FontEntry>>();
 
 async function loadFace(fontUrl: string): Promise<FaceEntry> {
   if (faceCache.has(fontUrl)) return faceCache.get(fontUrl)!;
+  const pending = pendingFaces.get(fontUrl);
+  if (pending) return pending;
+  const load = readFace(fontUrl);
+  pendingFaces.set(fontUrl, load);
+  try { return await load; } finally { pendingFaces.delete(fontUrl); }
+}
+
+async function readFace(fontUrl: string): Promise<FaceEntry> {
   const hb = await loadHarfBuzz();
 
   const r = await fetch(fontUrl);
@@ -65,9 +77,16 @@ async function loadFace(fontUrl: string): Promise<FaceEntry> {
  */
 async function loadFont(fontUrl: string, variations?: string[]): Promise<FontEntry> {
   const vars = Array.isArray(variations) ? variations.filter(v => typeof v === 'string') : [];
-  const key = vars.length ? `${fontUrl}|${vars.join(',')}` : fontUrl;
+  const key = JSON.stringify([fontUrl, vars]);
   if (fontCache.has(key)) return fontCache.get(key)!;
+  const pending = pendingFonts.get(key);
+  if (pending) return pending;
+  const load = readFont(fontUrl, vars, key);
+  pendingFonts.set(key, load);
+  try { return await load; } finally { pendingFonts.delete(key); }
+}
 
+async function readFont(fontUrl: string, vars: string[], key: string): Promise<FontEntry> {
   const { face, upem, unicodes } = await loadFace(fontUrl);
   const hb = _hb!;
   const font = new hb.Font(face);
@@ -227,7 +246,8 @@ export function createTextAPI(): TextAPI {
           const ox = originUnits + penX + xOffset;
           const oy = yOffset;
 
-          const rawPath = font.glyphToPath(glyphId);
+          const outline = glyphCache.get(font, glyphId);
+          const rawPath = outline.path;
           const glyphD = rawPath ? transformPath(rawPath, ox, oy, scale) : '';
           if (glyphD) d += glyphD;
           if (pieces) {
@@ -240,7 +260,7 @@ export function createTextAPI(): TextAPI {
           }
 
           // Bbox from glyph extents (cheaper than parsing the transformed path).
-          const ext = font.glyphExtents(glyphId);
+          const ext = outline.extents;
           if (ext && (!preserveWhitespaceAdvance || glyphD)) {
             const bx1 = (ox + ext.xBearing) * scale;
             const bx2 = (ox + ext.xBearing + ext.width) * scale;

@@ -683,6 +683,15 @@ export function openTemplateChooser(opts: ChooserOpts): Promise<Record<string, I
             if (tile) pickTile(tile);
             return;
           }
+          case 'rules': {
+            if (!entry) return;
+            const values = await getValues(entry.id);
+            if (!values) return;
+            const { launchRulesCopy } = await import('../lib/rules-launch.ts');
+            finish({});
+            await launchRulesCopy(opts.toolId, values, entry.name);
+            return;
+          }
           case 'start':
             await setStartWith(profileHost, opts.toolId, ref === START_BLANK ? START_BLANK : ref);
             break;
@@ -779,6 +788,7 @@ export function openTemplateChooser(opts: ChooserOpts): Promise<Record<string, I
       if (!blank && !entry) return '';
       const rows = [
         mod.menuItemHtml('use', icon('arrowRight', { size: 16 }), t('Use')),
+        entry ? mod.menuItemHtml('rules', icon('share', { size: 16 }), t('Share with rules')) : '',
         startRef === ref
           ? mod.menuItemHtml('start-clear', icon('pin', { size: 16 }), t('Ask me every time'))
           : mod.menuItemHtml('start', icon('pin', { size: 16 }), tRaw('Start {tool} with this', { tool: opts.toolName })),

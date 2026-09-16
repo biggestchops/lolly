@@ -2,8 +2,8 @@
   "id": "design",
   "name": "Design",
   "description": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system.",
-  "version": "1.27.0",
-  "engineVersion": "^1.160.0",
+  "version": "1.29.0",
+  "engineVersion": "^1.199.0",
   "status": "community",
   "category": "designer",
   "tags": [
@@ -32,7 +32,30 @@
   "render": {
     "width": 1920,
     "height": 1080,
-    "formats": ["png", "svg", "penpot", "pdf", "pdf-cmyk", "cmyk-tiff", "jpg", "webp", "mp4", "webm", "gif", "apng", "wav", "mp3", "m4a", "opus", "pptx", "scorm", "avif", "tiff", "emf", "webp-anim"],
+    "formats": [
+      "png",
+      "svg",
+      "penpot",
+      "pdf",
+      "pdf-cmyk",
+      "cmyk-tiff",
+      "jpg",
+      "webp",
+      "mp4",
+      "webm",
+      "gif",
+      "apng",
+      "wav",
+      "mp3",
+      "m4a",
+      "opus",
+      "pptx",
+      "scorm",
+      "avif",
+      "tiff",
+      "emf",
+      "webp-anim"
+    ],
     "actions": [
       "copy",
       "download",
@@ -150,7 +173,7 @@
             "h": 420,
             "rot": 0,
             "shape": "rect",
-            "text": "“The best way to predict the future is to design it.”",
+            "text": "\u201cThe best way to predict the future is to design it.\u201d",
             "fg": "var(--brand-on-primary, #ffffff)",
             "fontSize": 96,
             "align": "left",
@@ -195,11 +218,26 @@
       "label": "Document unit",
       "default": "px",
       "options": [
-        { "value": "px", "label": "Pixels" },
-        { "value": "mm", "label": "Millimetres" },
-        { "value": "cm", "label": "Centimetres" },
-        { "value": "in", "label": "Inches" },
-        { "value": "pt", "label": "Points" }
+        {
+          "value": "px",
+          "label": "Pixels"
+        },
+        {
+          "value": "mm",
+          "label": "Millimetres"
+        },
+        {
+          "value": "cm",
+          "label": "Centimetres"
+        },
+        {
+          "value": "in",
+          "label": "Inches"
+        },
+        {
+          "value": "pt",
+          "label": "Points"
+        }
       ],
       "help": "The unit used for the document size and export dimensions. Geometry stays in CSS pixels internally so existing documents remain exact."
     },
@@ -229,7 +267,7 @@
       "label": "Custom CSS",
       "rows": 8,
       "default": "",
-      "help": "Advanced (plan 112): CSS applied to the whole document - editor, export, and presentation. Scoped to the canvas, so @keyframes work at the top level. `@import` and `</style` are stripped for safety. Target `.lolly-box`, a frame with `[data-frame-id=\"…\"]`, or a present-mode state such as `.pr-active`."
+      "help": "Advanced (plan 112): CSS applied to the whole document - editor, export, and presentation. Scoped to the canvas, so @keyframes work at the top level. `@import` and `</style` are stripped for safety. Target `.lolly-box`, a frame with `[data-frame-id=\"\u2026\"]`, or a present-mode state such as `.pr-active`."
     },
     {
       "id": "transition",
@@ -237,10 +275,22 @@
       "label": "Slide transition",
       "default": "slide",
       "options": [
-        { "value": "slide", "label": "Slide" },
-        { "value": "fade", "label": "Fade" },
-        { "value": "morph", "label": "Morph" },
-        { "value": "flight", "label": "Fly between artboards" }
+        {
+          "value": "slide",
+          "label": "Slide"
+        },
+        {
+          "value": "fade",
+          "label": "Fade"
+        },
+        {
+          "value": "morph",
+          "label": "Morph"
+        },
+        {
+          "value": "flight",
+          "label": "Fly between artboards"
+        }
       ],
       "help": "How slides change in presentation mode (plan 112 M5). Morph animates matching boxes - same text, the same image, or a shared match key - from one slide to the next. Fly between artboards moves the camera across the canvas, zooming out and back in, so the audience sees where each slide sits. A single artboard can override this with its own Transition to next."
     },
@@ -775,7 +825,7 @@
             "image"
           ],
           "rows": 3,
-          "help": "Rich text: **bold**, *italic* / _italic_, and lines starting with - or • become bullets."
+          "help": "Rich text: **bold**, *italic* / _italic_, and lines starting with - or \u2022 become bullets."
         },
         {
           "id": "fg",
@@ -920,7 +970,7 @@
           "type": "boolean",
           "label": "Ligatures",
           "default": true,
-          "help": "Standard ligatures (fi, fl, …). Applies on screen and in the outlined SVG/PDF/EMF export."
+          "help": "Standard ligatures (fi, fl, \u2026). Applies on screen and in the outlined SVG/PDF/EMF export."
         },
         {
           "id": "alternates",
@@ -1732,7 +1782,7 @@
           "type": "text",
           "label": "Frame state",
           "default": "",
-          "help": "Presentation state tokens (plan 112 M4): space-separated names (a–z, 0–9, -) stamped as data-frame-state on this frame's page and, while it is the active slide, as classes on the presenter root. Target with Custom CSS, e.g. [data-frame-state~=\"dark\"] .lolly-box { … }. Set from the right-click menu on a frame; showFor:[] keeps it out of the sidebar."
+          "help": "Presentation state tokens (plan 112 M4): space-separated names (a\u2013z, 0\u20139, -) stamped as data-frame-state on this frame's page and, while it is the active slide, as classes on the presenter root. Target with Custom CSS, e.g. [data-frame-state~=\"dark\"] .lolly-box { \u2026 }. Set from the right-click menu on a frame; showFor:[] keeps it out of the sidebar."
         },
         {
           "id": "matchOf",
@@ -1772,7 +1822,7 @@
           "type": "text",
           "label": "CSS class",
           "default": "",
-          "help": "Your own class names for this box (space-separated, a-z 0-9 - _), so Custom CSS can say .callout { … } instead of addressing an id. Added to the box's class list on the canvas, in every export and in presentation - one document, one truth. Names in the app's own namespaces (lolly- pr- seq- fc-) are dropped. Set from the right-click menu; showFor:[] keeps it out of the sidebar. APPENDED after flipV - the compact-blocks URL wire format is append-only."
+          "help": "Your own class names for this box (space-separated, a-z 0-9 - _), so Custom CSS can say .callout { \u2026 } instead of addressing an id. Added to the box's class list on the canvas, in every export and in presentation - one document, one truth. Names in the app's own namespaces (lolly- pr- seq- fc-) are dropped. Set from the right-click menu; showFor:[] keeps it out of the sidebar. APPENDED after flipV - the compact-blocks URL wire format is append-only."
         },
         {
           "id": "gain",
@@ -1808,10 +1858,22 @@
           "label": "Animate text by",
           "default": "",
           "options": [
-            { "value": "", "label": "Whole text" },
-            { "value": "word", "label": "Word" },
-            { "value": "line", "label": "Line" },
-            { "value": "letter", "label": "Letter" }
+            {
+              "value": "",
+              "label": "Whole text"
+            },
+            {
+              "value": "word",
+              "label": "Word"
+            },
+            {
+              "value": "line",
+              "label": "Line"
+            },
+            {
+              "value": "letter",
+              "label": "Letter"
+            }
           ],
           "help": "Split the box's text so its Animate in/out runs per unit instead of as one block (plans/175 WP-A). Letter tier segments by grapheme cluster - emoji, combining marks and precomposed ligatures stay whole - and silently degrades to Word for joining scripts (Arabic and friends), where per-letter spans would break contextual shaping. Edited from the timeline inspector; showFor:[] keeps it out of the sidebar. APPENDED after ignored - the compact-blocks URL wire format is append-only."
         },
@@ -1833,10 +1895,22 @@
           "label": "Text order",
           "default": "",
           "options": [
-            { "value": "", "label": "First to last" },
-            { "value": "reverse", "label": "Last to first" },
-            { "value": "center", "label": "From the centre" },
-            { "value": "random", "label": "Random" }
+            {
+              "value": "",
+              "label": "First to last"
+            },
+            {
+              "value": "reverse",
+              "label": "Last to first"
+            },
+            {
+              "value": "center",
+              "label": "From the centre"
+            },
+            {
+              "value": "random",
+              "label": "Random"
+            }
           ],
           "help": "The order units animate in. Random is dealt from a seed hashed off the box id, so preview, export and a shared URL all shuffle identically. APPENDED after stagger."
         },
@@ -1847,11 +1921,26 @@
           "label": "While on screen",
           "default": "",
           "options": [
-            { "value": "", "label": "Still" },
-            { "value": "pulse", "label": "Pulse" },
-            { "value": "bob", "label": "Bob" },
-            { "value": "sway", "label": "Sway" },
-            { "value": "flicker", "label": "Flicker" }
+            {
+              "value": "",
+              "label": "Still"
+            },
+            {
+              "value": "pulse",
+              "label": "Pulse"
+            },
+            {
+              "value": "bob",
+              "label": "Bob"
+            },
+            {
+              "value": "sway",
+              "label": "Sway"
+            },
+            {
+              "value": "flicker",
+              "label": "Flicker"
+            }
           ],
           "help": "A small looping motion while the box is on screen (plans/175 WP-B) - the Loop/Emphasis bucket beside Animate in/out. A deterministic sinusoid of the box's own clock, so preview, export and shared URLs render identically. Edited from the timeline inspector; showFor:[] keeps it out of the sidebar. APPENDED after splitOrder - the compact-blocks URL wire format is append-only."
         },
@@ -1966,13 +2055,34 @@
           "label": "Transition to next",
           "default": "",
           "options": [
-            { "value": "", "label": "Same as the deck" },
-            { "value": "slide", "label": "Slide" },
-            { "value": "fade", "label": "Fade" },
-            { "value": "morph", "label": "Morph" },
-            { "value": "flight", "label": "Fly between artboards" },
-            { "value": "none", "label": "Cut" },
-            { "value": "custom", "label": "Custom (set in the timeline)" }
+            {
+              "value": "",
+              "label": "Same as the deck"
+            },
+            {
+              "value": "slide",
+              "label": "Slide"
+            },
+            {
+              "value": "fade",
+              "label": "Fade"
+            },
+            {
+              "value": "morph",
+              "label": "Morph"
+            },
+            {
+              "value": "flight",
+              "label": "Fly between artboards"
+            },
+            {
+              "value": "none",
+              "label": "Cut"
+            },
+            {
+              "value": "custom",
+              "label": "Custom (set in the timeline)"
+            }
           ],
           "help": "For a FRAME: how THIS slide changes into the next one, overriding the document's own Slide transition. Empty follows the deck. 'Custom (set in the timeline)' means the frame's own Enter/Exit rows in the timeline inspector are the truth and nothing derives them. Set from the artboard inspector; showFor:[] keeps it out of the sidebar. APPENDED after locked - the compact-blocks URL wire format is append-only."
         },
@@ -1985,12 +2095,97 @@
         }
       ],
       "default": [
-        { "id": "artboard-1", "kind": "frame", "x": 0, "y": 0, "w": 1920, "h": 1080, "rot": 0, "shape": "rect", "bg": "var(--brand-surface, #ffffff)", "order": 0, "name": "Cover", "clipChildren": true },
-        { "id": "panel", "kind": "box", "frame": "artboard-1", "x": 0, "y": 0, "w": 1120, "h": 1080, "rot": 0, "shape": "rect", "bg": "var(--brand-primary, #1e293b)", "order": 0 },
-        { "id": "accent", "kind": "box", "frame": "artboard-1", "x": 160, "y": 248, "w": 140, "h": 12, "rot": 0, "shape": "pill", "bg": "var(--brand-secondary, #94a3b8)", "order": 0 },
-        { "id": "headline", "kind": "text", "frame": "artboard-1", "x": 160, "y": 316, "w": 800, "h": 320, "rot": 0, "shape": "rect", "text": "Make it yours", "fg": "var(--brand-on-primary, #ffffff)", "fontSize": 120, "align": "left", "valign": "top", "weight": "700", "font": "display", "lineHeight": 1.05 },
-        { "id": "sub", "kind": "text", "frame": "artboard-1", "x": 160, "y": 700, "w": 800, "h": 200, "rot": 0, "shape": "rect", "text": "Double-click any text to edit it. Every colour and typeface here comes from your brand.", "fg": "var(--brand-on-primary, #ffffff)", "fontSize": 38, "align": "left", "valign": "top", "weight": "400", "font": "sans", "lineHeight": 1.35 },
-        { "id": "disc", "kind": "box", "frame": "artboard-1", "x": 1300, "y": 300, "w": 480, "h": 480, "rot": 0, "shape": "circle", "bg": "var(--brand-secondary, #94a3b8)", "order": 0 }
+        {
+          "id": "artboard-1",
+          "kind": "frame",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "rot": 0,
+          "shape": "rect",
+          "bg": "var(--brand-surface, #ffffff)",
+          "order": 0,
+          "name": "Cover",
+          "clipChildren": true
+        },
+        {
+          "id": "panel",
+          "kind": "box",
+          "frame": "artboard-1",
+          "x": 0,
+          "y": 0,
+          "w": 1120,
+          "h": 1080,
+          "rot": 0,
+          "shape": "rect",
+          "bg": "var(--brand-primary, #1e293b)",
+          "order": 0
+        },
+        {
+          "id": "accent",
+          "kind": "box",
+          "frame": "artboard-1",
+          "x": 160,
+          "y": 248,
+          "w": 140,
+          "h": 12,
+          "rot": 0,
+          "shape": "pill",
+          "bg": "var(--brand-secondary, #94a3b8)",
+          "order": 0
+        },
+        {
+          "id": "headline",
+          "kind": "text",
+          "frame": "artboard-1",
+          "x": 160,
+          "y": 316,
+          "w": 800,
+          "h": 320,
+          "rot": 0,
+          "shape": "rect",
+          "text": "Make it yours",
+          "fg": "var(--brand-on-primary, #ffffff)",
+          "fontSize": 120,
+          "align": "left",
+          "valign": "top",
+          "weight": "700",
+          "font": "display",
+          "lineHeight": 1.05
+        },
+        {
+          "id": "sub",
+          "kind": "text",
+          "frame": "artboard-1",
+          "x": 160,
+          "y": 700,
+          "w": 800,
+          "h": 200,
+          "rot": 0,
+          "shape": "rect",
+          "text": "Double-click any text to edit it. Every colour and typeface here comes from your brand.",
+          "fg": "var(--brand-on-primary, #ffffff)",
+          "fontSize": 38,
+          "align": "left",
+          "valign": "top",
+          "weight": "400",
+          "font": "sans",
+          "lineHeight": 1.35
+        },
+        {
+          "id": "disc",
+          "kind": "box",
+          "frame": "artboard-1",
+          "x": 1300,
+          "y": 300,
+          "w": 480,
+          "h": 480,
+          "rot": 0,
+          "shape": "circle",
+          "bg": "var(--brand-secondary, #94a3b8)",
+          "order": 0
+        }
       ]
     }
   ]

@@ -1,0 +1,21 @@
+{
+  "id": "brand-starter",
+  "name": "Open possibilities",
+  "category": "Brand",
+  "description": "A simple brand message ready for your animation.",
+  "galleryCover": true,
+  "values": {
+    "animated": false,
+    "scenes": [
+      {
+        "bgColor": "{color.semantic.primary}",
+        "fgColor": "{color.semantic.on-primary}",
+        "headline": "Open possibilities.",
+        "caption": "Build what comes next.",
+        "animSize": "large",
+        "hold": 3,
+        "transition": "inherit"
+      }
+    ]
+  }
+}

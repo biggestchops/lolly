@@ -115,4 +115,9 @@ test('Tauri remote fetch is a bounded native command, not a raw HTTP plugin', ()
   const adapter = readFileSync(new URL('shells/web/src/lib/instance.ts', ROOT), 'utf8');
   assert.match(adapter, /invoke<TauriRemoteFetchResponse>\('remote_fetch'/);
   assert.doesNotMatch(adapter, /plugin:http\|fetch/);
+  for (const entry of ['cli.rs', 'render_server.rs']) {
+    const source = readFileSync(new URL(`shells/tauri-desktop/src-tauri/src/${entry}`, ROOT), 'utf8');
+    assert.match(source, /crate::remote_fetch::remote_fetch/,
+      `${entry} must support the same bounded instance fetch as the GUI`);
+  }
 });

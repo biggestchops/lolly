@@ -1052,6 +1052,7 @@ export function narrateDeckAsJob(
       job.fail(err);
       hooks.onError?.(err);
     } finally {
+      job.settle();
       hooks.onSettled?.();
     }
   })();

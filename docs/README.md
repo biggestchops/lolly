@@ -48,7 +48,9 @@ security posture).
 | [training-creators.md](training-creators.md) | course creator | Build lessons from project content, arrange blocks, preview as learner and publish a versioned website or LMS package. |
 | [using.md](using.md) | end user | Driving the app: opening a tool, working the canvas, exporting, saving, sharing, moving to another device. |
 | [templates.md](templates.md) | end user | Saved starting points for a tool: saving one from a tool or from Projects, the per-tool "Start with" setting, and managing yours beside the ones a tool ships with. |
+| [Share a design with rules](create-a-tool.md) | Designers | Portable tools from Design |
 | [brand-studio.md](brand-studio.md) | end user | The Brand Studio at `#/start`: logos, colours, type, tokens and files, plus how a brand pack moves between devices. |
+| [3d-studio.md](3d-studio.md) | end user | Guided and expert 3D image creation: SVG extrusion, model imports, materials, lighting, depth, alpha and reusable scenes. |
 | [profile.md](profile.md) | end user | Profiles as the on-device working identity a tool pre-fills from, and how they differ from the platform brand and from capabilities. |
 | [search.md](search.md) | end user | The one field at the bottom of every screen: which routes carry it, what each provider reaches (tools, saved sessions, the catalogue, settings, docs), the spotlight chord, and what it deliberately does not index. |
 | [ask.md](ask.md) | end user | Ask Lolly (`#/ask`): typed questions answered verbatim from this documentation with a citation and an Open-in-docs link - retrieved, never generated - plus navigate-only matches from the app. |
@@ -59,6 +61,7 @@ security posture).
 | [sequence-editor.md](sequence-editor.md) | end user | Editing in time: which clip a canvas click edits, onion-skin ghosts, split scope and Join, reversible detach audio, and trimming (pointer and keyboard). |
 | [extension.md](extension.md) | end user | The Lolly URL Screenshot browser extension, which gives the web app page capture that a browser tab cannot do alone. |
 | [animating.md](animating.md) | end user | Keyframes and depth: +Keyframe's two homes, the playhead-as-arm latch, the Keyframes popup and its curves, the Depth slider and Depth shadow, the scene camera and its five moves, Lift layers, Choreograph (six one-click showcases over a stack), and what a posed frame exports as. |
+| [presenting.md](presenting.md) | end user | Camera framing, logos, lower thirds, saved scenes, private controls, audience sharing, recording and current trial limitations. |
 | [collaborate.md](collaborate.md) | end user | Two devices editing one tool session live: the invite ceremony (link, QR, code door), the matching plates that confirm the peer, presence and focus rings, beaming files across, and why it still works with no internet. |
 | [formats.md](formats.md) | end user | The whole format register as one three-zone table - read-only at the left, written-only at the right, both-ways in the middle - with a plain-language card behind every chip. |
 | [exporting.md](exporting.md) | end user | Choosing a format, setting output size, and the three paths that produce a file (canvas render, generated text/data, on-device transform). |
@@ -72,6 +75,7 @@ security posture).
 |---|---|---|
 | [builders.md](builders.md) | tool author | Pathway hub. A router: three lanes - designers, developers, infrastructure - each listing the pages that carry it. |
 | [learning-integration.md](learning-integration.md) | integrator | Portable course packages, learner progress, LMS adapters and deployment checks. |
+| [Design tool contract](design-tool-contract.md) | Builders | Rules, compilation, packages and immutable revisions |
 | [overview.md](overview.md) | contributor | **The architecture document.** The three-layer separation (engine, shells, tool/brand packs), the capability-bridge boundary, the repository layout, the ten architectural commitments, and where the engine ends and the host begins. Opens with the product rationale, so use its navigation note to jump straight to the architecture. |
 | [design-tokens.md](design-tokens.md) | tool author | The DTCG token model as the single source of truth for brand primitives, and what round-trips with Penpot and Tokens Studio. |
 | [glossary.md](glossary.md) | end user | The words Lolly uses with exact meanings (engine, shell, bridge, tool, brand pack, profile, view, catalog, session, utility, collab) and what each is not. Read before the architecture page or CLAUDE.md. |
@@ -79,10 +83,27 @@ security posture).
 | [determinism.md](determinism.md) | end user | The determinism concept page: same inputs, same file, one render path behind every shell, and what is byte-reproducible against what is not. |
 | [reproducibility.md](reproducibility.md) | end user | The reproducibility concept page: the URL as the artifact, what travels in a link and what a bare link cannot carry. |
 | [authoring-tools.md](authoring-tools.md) | tool author | The tool anatomy (`tool.json`, template, hooks), the input types, and publishing via the generated catalog index. |
+| [tool-manifest.md](tool-manifest.md) | tool author | Declare identity, rendering, examples and a short walkthrough. |
+| [tool-inputs.md](tool-inputs.md) | tool author | Choose input types, visibility, profile prefills and common meanings. |
+| [tool-structured-inputs.md](tool-structured-inputs.md) | tool author | Build repeating groups, editor canvases and bounded image framing. |
+| [tool-files.md](tool-files.md) | tool author | Accept library assets or local files and return transformed output. |
+| [tool-rendering.md](tool-rendering.md) | tool author | Write templates and styles that work across vector, canvas and data exports. |
+| [tool-starters.md](tool-starters.md) | tool author | Provide curated starting points, saved templates and Design motion. |
+| [tool-hooks.md](tool-hooks.md) | tool author | Add portable behavior, live media, recording, speech and allowed network access. |
+| [tool-composition.md](tool-composition.md) | tool author | Compose tools and resolve brand-specific logos and overlays. |
+| [tool-publishing.md](tool-publishing.md) | tool author | Validate, distribute, test and translate a reusable tool. |
 | [authoring-assets.md](authoring-assets.md) | tool author | Catalog assets: the `type` enum from `schemas/asset.schema.json`, asset anatomy, versioning and the permanent-id rule. |
 | [host-api.md](host-api.md) | tool author | The `HostV1` capability bridge every tool calls into, and which shell implements what. |
 | [url-mode.md](url-mode.md) | tool author | Expressing any tool state as URL parameters, the reserved params, and the compact-encoding opt-ins. |
+| [url-inputs.md](url-inputs.md) | builder | Encode each input type, keyframes and compact values. |
+| [url-parameters.md](url-parameters.md) | builder | Look up export settings, packed links, units, print marks and contact sheets. |
+| [url-export.md](url-export.md) | builder | Choose formats, download, copy, size, presentation and saved state. |
+| [url-app-links.md](url-app-links.md) | builder | Open app views and use the lolly URL scheme. |
 | [cli.md](cli.md) | tool author | `lolly` as URL mode under a different transport, for pipelines, CI and batch generation. |
+| [cli-rendering.md](cli-rendering.md) | builder | Choose export options, troubleshoot the browser renderer and render timelines or links. |
+| [cli-files.md](cli-files.md) | builder | Process local files, redactions, speech and on-device models. |
+| [cli-automation.md](cli-automation.md) | builder | Run batches, preflight outputs and integrate predictable results into scripts and CI. |
+| [cli-reference.md](cli-reference.md) | builder | Verify files, inspect metadata, configure completion and find local state. |
 | [tui.md](tui.md) | tool author | The interactive terminal shell: browse, fill inputs, save projects and export without a browser. |
 | [mcp.md](mcp.md) | tool author | The native MCP server, its two hosted tiers, and the callable tools it exposes. |
 | [ai-agents.md](ai-agents.md) | tool author | Driving Lolly from an agent by building a URL or CLI command instead of generating pixels. |
@@ -107,6 +128,11 @@ The Builders sidebar also carries an **About** entry, which renders the repo-roo
 | [deployment.md](deployment.md) | operator | Where each piece runs, and the delivery postures (distribute to devices, host the PWA, run the services). |
 | [configuration.md](configuration.md) | operator | Profiles, brand packs, tool sets and per-tool capabilities as files rather than in-app settings. |
 | [build-guide.md](build-guide.md) | operator | Per-target build steps: CLI binary, desktop app, mobile apps, and the web shell as a container image. |
+| [build-terminal.md](build-terminal.md) | operator | Run the terminal shells from source or package the CLI binary. |
+| [build-desktop.md](build-desktop.md) | operator | Set up and package the Tauri desktop shell. |
+| [build-mobile.md](build-mobile.md) | operator | Set up, develop and package Android and iOS shells. |
+| [build-obs.md](build-obs.md) | operator | Plan OBS recipes for Lolly artifacts and their dependencies. |
+| [build-kubernetes.md](build-kubernetes.md) | operator | Build the web image and deploy the chart with optional services. |
 | [sovereign-production.md](sovereign-production.md) | operator | Sovereign creative production: no server in the render path, consent-gated networking, air-gapped deployment, on-device signing, and the limits stated as facts. |
 
 ## For Trust

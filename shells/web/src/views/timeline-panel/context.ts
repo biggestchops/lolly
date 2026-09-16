@@ -28,9 +28,27 @@ import type { editOps } from './edit.ts';
 import type { recordingOps } from './recording.ts';
 import type { subtitlesOps } from './subtitles.ts';
 import type { panelOps } from './panel.ts';
+import type { toolbarOps } from './toolbar.ts';
+import type { selectionActionsOps } from './selection-actions.ts';
+import type { layoutOps } from './layout.ts';
 
 export interface TpCtx {
   // ---- state (was: closure variables of initTimelinePanel) ----
+  captionsBtn: HTMLButtonElement;
+  recordMenu: BodyPopoverHandle;
+  editMenu: BodyPopoverHandle;
+  guideMenu: BodyPopoverHandle;
+  editBtn: HTMLButtonElement;
+  selectionActions: ReturnType<typeof selectionActionsOps>;
+  toolbar: ReturnType<typeof toolbarOps>;
+  layout: ReturnType<typeof layoutOps>;
+  trackHeight: number;
+  trackThumbTimer: ReturnType<typeof setTimeout> | null;
+  previousTimed: Set<string> | null;
+  alwaysNoticeTimer: ReturnType<typeof setTimeout> | null;
+  alwaysBtn: HTMLButtonElement;
+  alwaysMenu: BodyPopoverHandle;
+  trackSizeMenu: BodyPopoverHandle;
   opts: TimelinePanelOpts;
   stageEl: TimelinePanelOpts['stageEl'];
   canvasEl: TimelinePanelOpts['canvasEl'];

@@ -138,12 +138,13 @@ export function staggerableIds(tp: TpCtx, rows: Box[], ids: readonly string[]): 
     return i >= 0 && isTimed(rows[i]!, cfg) && boxTiming(rows[i]!, cfg).lane !== 'seq';
   });
 }
-export function openStaggerPop(tp: TpCtx, ids: string[]): void {
+export function openStaggerPop(tp: TpCtx, ids: string[], anchor?: HTMLElement): void {
   const { ctxPoint, staggerPoint, staggerPop } = tp;
   tp.staggerIds = ids;
-  staggerPoint.x = ctxPoint.x;
-  staggerPoint.y = ctxPoint.y;
-  staggerPoint.delegate = ctxPoint.delegate;
+  const rect = anchor?.getBoundingClientRect();
+  staggerPoint.x = rect?.left ?? ctxPoint.x;
+  staggerPoint.y = rect?.bottom ?? ctxPoint.y;
+  staggerPoint.delegate = anchor ?? ctxPoint.delegate;
   staggerPop.close();
   staggerPop.open();
 }
@@ -152,27 +153,16 @@ export function openStaggerPop(tp: TpCtx, ids: string[]): void {
  * contextMenuAt does the same), so whatever the menu acts on is also what the
  * inspector and the canvas chrome are showing.
  *
- * The selection COLLAPSES to the clicked box when it was already part of a
- * multi-selection the menu cannot act on as one: the per-box items act on `ctxId`
- * alone, so leaving three bars painted as selected while "Make always on" demotes
- * one of them shows the user a state that never existed - and the next act is an
- * undo of something they did not think they did. Free-canvas's sibling menu
- * resolves the same tension the other way (it disables per-box items on a
- * multi-selection); here collapsing is better, because the box under the pointer
- * is unambiguous. The ONE exception (plans/175 WP-C): a selection of two or more
- * staggerable overlays is kept, and the menu offers only the selection-wide
- * actions - the painted bars and the acted-on set stay the same set.
+ * Inside a multi-selection, the menu keeps that selection and offers group actions.
+ * Outside it, the menu selects the clicked box and offers that box's actions.
  */
 export function openCtxMenu(tp: TpCtx, id: string, x: number, y: number, delegate: HTMLElement | null): void {
   const { bars, cfg, ctxMenu, ctxPoint, getBoxes, selection } = tp;
   if (!id || indexOfId(getBoxes(), cfg, id) < 0) return;
   tp.ctxId = id;
   const sel = selection.get();
-  // ONE exception to the collapse (plans/175 WP-C): a multi-selection that
-  // contains the clicked box AND can act as one (two or more staggerable
-  // overlays) is kept, and the menu offers the selection-wide actions instead
-  // of the per-box ones. Everything else collapses, for the reason above.
-  const multi = sel.length >= 2 && sel.includes(id) ? staggerableIds(tp, getBoxes(), sel) : [];
+  // A click inside the selection offers the same group actions as the Edit button.
+  const multi = sel.length >= 2 && sel.includes(id) ? tp.selectionActions.selectedIds() : [];
   tp.ctxMulti = multi.length >= 2 ? multi : null;
   if (!tp.ctxMulti && (sel.length !== 1 || sel[0] !== id)) tp.rows.selectAndReveal([id]);
   if (bars.has(id)) {

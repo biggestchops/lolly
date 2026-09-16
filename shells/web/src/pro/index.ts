@@ -118,6 +118,7 @@ interface GridRow {
   kitOutputId?: string;
   uid: string;
   toolId: string;
+  artifactDigest?: string;
   manifest: ToolManifest | null;
   values: Record<string, any>;
   format?: string;
@@ -273,6 +274,7 @@ export async function mountPro(viewEl: HTMLElement, host: ProHost, opts: ProMoun
           </label>
           <!-- + Row / +5 live at the bottom-left of the grid, where you use them.
                CSV download/upload live inside the Sessions dialog. -->
+          <button type="button" class="pro-btn" id="pro-common-inputs">${t('Shared inputs')}</button>
           <button type="button" class="pro-btn" id="pro-event-kit">${t('Event kit')}</button>
           <input type="file" id="pro-csv-file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" hidden>
         </div>
@@ -618,6 +620,7 @@ export async function mountPro(viewEl: HTMLElement, host: ProHost, opts: ProMoun
     row.manifest = null;
     try {
       const loaded = await getTool(tool.id);
+      row.artifactDigest = loaded.artifactDigest;
       row.manifest = loaded.manifest;
       // Drop values that no longer correspond to an input on the new tool.
       const ids = new Set((loaded.manifest.inputs ?? []).map((i: any) => i.id));
@@ -1618,7 +1621,7 @@ export async function mountPro(viewEl: HTMLElement, host: ProHost, opts: ProMoun
     const row = rowByUid(uid);
     if (!row?.toolId) return;
     let tool: any;
-    try { tool = await getTool(row.toolId); } catch { return; }
+    try { tool = await getTool(row.toolId, row.artifactDigest); } catch { return; }
     // Build a model from the row's values and hand it to the engine's canonical
     // URL serializer, so the deep link matches what the single-tool view expects.
     const model = (tool.manifest.inputs ?? []).map((i: any) => ({ ...i, value: row.values[i.id] ?? i.default }));

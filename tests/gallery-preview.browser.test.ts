@@ -25,8 +25,8 @@ test('gallery renders branded templates, preserves their framing, and invalidate
     await design.locator('.gcar-slide.is-loaded').first().waitFor({ timeout: 60_000 });
     const cover = design.locator('.gcar-img').first();
     assert.ok((await cover.getAttribute('src'))?.startsWith('data:image/'));
-    assert.equal(await design.locator('.gcar-open').first().getAttribute('href'), '#/tool/design?template=carousel');
-    assert.deepEqual(await cover.evaluate(i => [(i as HTMLImageElement).naturalWidth, (i as HTMLImageElement).naturalHeight]), [1080, 1350]);
+    assert.equal(await design.locator('.gcar-open').first().getAttribute('href'), '#/tool/design?template=brand-starter');
+    assert.deepEqual(await cover.evaluate(i => [(i as HTMLImageElement).naturalWidth, (i as HTMLImageElement).naturalHeight]), [1920, 1080]);
     await page.locator('.ftile[data-tool="design"] .ftile-img.is-active').first().waitFor({ timeout: 60_000 });
     assert.deepEqual(artworkRequests, [], 'gallery never fetches artwork generated for another palette');
     // Run the real renderer twice with an edited primary token and the SAME brand ID,
@@ -118,5 +118,48 @@ test('every gallery tool gets a cover before extra templates, including tools be
     assert.equal(facts.source, 'featured', 'exercise the shared strip/grid queue with Cover Flow extras');
     assert.equal(facts.belowFold, true, 'the fixture must include tools outside the lazy-loading margin');
     assert.deepEqual(facts.covers.sort(), ids.sort(), 'all first covers must be decoded before any extra template');
+  } finally { await browser.close(); }
+});
+
+test('transparent covers switch ink and open targets with the live gallery theme', {
+  skip: origin ? false : 'set LOLLY_GALLERY_TEST_URL to a local Vite shell', timeout: 120_000,
+}, async () => {
+  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1200, height: 900 }, reducedMotion: 'reduce' });
+  try {
+    await page.route('**/catalog/tools/index*.json', async route => {
+      const response = await route.fetch();
+      const data = await response.json();
+      if (Array.isArray(data.tools)) data.tools = data.tools.filter((tool: { id: string }) => ['wordmark', 'snippet'].includes(tool.id));
+      data.defaultHiddenTools = [];
+      await route.fulfill({ response, json: data });
+    });
+    await page.addInitScript(() => {
+      for (const key of ['lolly-welcome-dismissed', 'lolly-tips-dismissed', 'lolly-privacy-ack', 'lolly-capture-neutral']) localStorage.setItem(key, '1');
+    });
+    await page.goto(`${origin}/?theme=light#/`, { waitUntil: 'domcontentloaded' });
+    const sources = new Map<string, string>();
+    for (const theme of ['light', 'dark', 'brand', 'light']) {
+      await page.evaluate(async theme => {
+        const themePath = '/src/theme.ts';
+        const { applyTheme } = await import(themePath);
+        applyTheme(theme, false);
+      }, theme);
+      const expected = `#/tool/wordmark?template=brand-starter${theme === 'light' ? '' : '-dark'}`;
+      await page.waitForFunction(href => document.querySelector('.gtile[data-tool-id="wordmark"] .gcar-open')?.getAttribute('href') === href, expected);
+      const reveal = page.getByRole('button', { name: /^Show hidden tools/ });
+      if (await reveal.isVisible()) await reveal.click();
+      const tile = page.locator('.gtile[data-tool-id="wordmark"]');
+      const img = tile.locator('.gcar-img').first();
+      await tile.locator('.gcar-slide.is-loaded').first().waitFor();
+      assert.equal(await img.evaluate(i => i.style.backgroundColor), '', 'transparency is not replaced by a backing panel');
+      const src = await img.getAttribute('src');
+      assert.ok(src);
+      if (sources.has(theme)) assert.equal(src, sources.get(theme));
+      sources.set(theme, src);
+    }
+    assert.notEqual(sources.get('light'), sources.get('dark'));
+    assert.equal(sources.get('dark'), sources.get('brand'));
   } finally { await browser.close(); }
 });

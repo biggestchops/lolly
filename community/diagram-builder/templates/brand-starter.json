@@ -1,0 +1,38 @@
+{
+  "id": "brand-starter",
+  "name": "Open workflow",
+  "category": "Brand",
+  "description": "A simple three-step workflow on transparency.",
+  "galleryCover": true,
+  "values": {
+    "diagramType": "process",
+    "flowDir": "right",
+    "nodes": [
+      {
+        "nodeId": "discover",
+        "label": "Discover",
+        "shape": "rounded"
+      },
+      {
+        "nodeId": "build",
+        "label": "Build",
+        "shape": "rounded"
+      },
+      {
+        "nodeId": "share",
+        "label": "Share",
+        "shape": "rounded"
+      }
+    ],
+    "background": "transparent",
+    "gridBg": "none",
+    "labelSize": 24,
+    "cardWidth": 220,
+    "cardBorderWidth": 2,
+    "cornerRadius": 8,
+    "nodeStroke": "{color.semantic.secondary}",
+    "edgeColor": "{color.semantic.secondary}",
+    "nodeFill": "{color.semantic.surface}",
+    "nodeText": "{color.semantic.text}"
+  }
+}

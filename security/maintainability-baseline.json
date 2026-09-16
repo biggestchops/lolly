@@ -28,11 +28,11 @@
       "typeEscapes": 19
     },
     "shells/web/src/bridge/export.ts": {
-      "lines": 4671,
+      "lines": 4653,
       "largestFunctionLines": 647,
-      "importFanIn": 25,
-      "importFanOut": 43,
-      "typeEscapes": 61
+      "importFanIn": 26,
+      "importFanOut": 47,
+      "typeEscapes": 60
     },
     "shells/web/src/bridge/sequence-render.ts": {
       "lines": 1700,
@@ -58,43 +58,43 @@
     "shells/web/src/views/design-import.ts": {
       "lines": 1739,
       "largestFunctionLines": 145,
-      "importFanIn": 4,
+      "importFanIn": 5,
       "importFanOut": 11,
       "typeEscapes": 68
     },
     "shells/web/src/views/gallery.ts": {
-      "lines": 1914,
-      "largestFunctionLines": 1816,
+      "lines": 1929,
+      "largestFunctionLines": 1815,
       "importFanIn": 1,
       "importFanOut": 57,
       "typeEscapes": 8
     },
     "shells/web/src/views/picker.ts": {
-      "lines": 2615,
+      "lines": 2608,
       "largestFunctionLines": 2182,
-      "importFanIn": 25,
-      "importFanOut": 50,
+      "importFanIn": 27,
+      "importFanOut": 52,
       "typeEscapes": 3
     },
     "shells/web/src/views/projects.ts": {
-      "lines": 2346,
-      "largestFunctionLines": 3018,
+      "lines": 2328,
+      "largestFunctionLines": 2995,
       "importFanIn": 1,
       "importFanOut": 49,
       "typeEscapes": 9
     },
     "shells/web/src/views/tool-inputs.ts": {
-      "lines": 2923,
-      "largestFunctionLines": 2087,
-      "importFanIn": 5,
-      "importFanOut": 26,
+      "lines": 2900,
+      "largestFunctionLines": 2073,
+      "importFanIn": 7,
+      "importFanOut": 33,
       "typeEscapes": 5
     },
     "shells/web/src/views/valid.ts": {
-      "lines": 3025,
-      "largestFunctionLines": 2119,
+      "lines": 2764,
+      "largestFunctionLines": 1980,
       "importFanIn": 3,
-      "importFanOut": 41,
+      "importFanOut": 50,
       "typeEscapes": 1
     }
   },
@@ -215,7 +215,7 @@
     "shells/web/src/bridge/export-pdfx.ts": 25,
     "shells/web/src/bridge/export-shared.ts": 1,
     "shells/web/src/bridge/export-svg-walker.ts": 19,
-    "shells/web/src/bridge/export.ts": 61,
+    "shells/web/src/bridge/export.ts": 60,
     "shells/web/src/bridge/hook-worker.ts": 2,
     "shells/web/src/bridge/hook-worker.worker.ts": 1,
     "shells/web/src/bridge/identity.ts": 1,
@@ -224,9 +224,7 @@
     "shells/web/src/bridge/media-trim.ts": 4,
     "shells/web/src/bridge/media.ts": 1,
     "shells/web/src/bridge/mediabunny-mux.ts": 2,
-    "shells/web/src/bridge/recorder-webcodecs.ts": 1,
     "shells/web/src/bridge/recorder.ts": 1,
-    "shells/web/src/bridge/scan.ts": 1,
     "shells/web/src/bridge/sequence-dom.ts": 3,
     "shells/web/src/bridge/sequence-gl.ts": 1,
     "shells/web/src/bridge/sequence-providers.ts": 5,

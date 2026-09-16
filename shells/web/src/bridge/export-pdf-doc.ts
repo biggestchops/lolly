@@ -24,6 +24,7 @@
  * resource name reserved up front. The bytes for images, embedded fonts and
  * gradients are built once at output() time.
  */
+import { canEmbedPdfSubset } from './pdf-font-policy.ts';
 import { parseSfnt, subsetSfnt, type SfntFont } from './export-pdf-sfnt.ts';
 import { encryptPdfRc4 } from './export-pdf-rc4.ts';
 // Types only, so pdf-lib stays a lazy runtime import (createPdfDoc below).
@@ -37,6 +38,8 @@ type PdfLib = typeof import('pdf-lib');
 type PdfResources = Record<string, string[] | Record<string, PDFRef>>;
 
 export interface PdfDocOptions {
+  /** Optional host subsetter; glyph IDs must be retained for Identity-H content. */
+  fontSubset?: (font: Uint8Array, glyphs: readonly number[]) => Promise<Uint8Array>;
   /** Page size in points, [width, height]. */
   format?: [number, number];
   orientation?: 'portrait' | 'landscape';
@@ -210,6 +213,7 @@ export class PdfDoc {
   private textColor = '#000000';
   private meta: PdfMetaProperties = {};
   private encryption: PdfDocOptions['encryption'];
+  private fontSubset: PdfDocOptions['fontSubset'];
   private warnings: string[] = [];
   private built: Promise<Uint8Array> | null = null;
 
@@ -220,6 +224,7 @@ export class PdfDoc {
     this.lib = lib;
     this.doc = doc;
     this.encryption = opts.encryption ?? null;
+    this.fontSubset = opts.fontSubset;
     this.activeFont = this.standardFont('helvetica', 'normal');
     const [w, h] = normaliseFormat(opts.format ?? [595.28, 841.89], opts.orientation);
     this.newPage(w, h);
@@ -649,7 +654,7 @@ export class PdfDoc {
     for (const key of drawn) {
       const font = this.fonts.get(key);
       if (!font) continue;
-      fontRefs.set(key, font.sfnt ? this.buildEmbeddedFont(font) : this.base14(font).ref);
+      fontRefs.set(key, font.sfnt ? await this.buildEmbeddedFont(font) : this.base14(font).ref);
     }
 
     const shadingRefs = new Map<string, PDFRef | null>();
@@ -695,17 +700,21 @@ export class PdfDoc {
   }
 
   /** The Type0 / CIDFontType2 object set for one embedded face. */
-  private buildEmbeddedFont(font: FontEntry): PDFRef {
+  private async buildEmbeddedFont(font: FontEntry): Promise<PDFRef> {
     const { PDFString } = this.lib;
     const ctx = this.doc.context;
     const sfnt = font.sfnt!;
+    const index = Number(font.name.slice(1));
+    const tag = Array.from({ length: 6 }, (_, position) => String.fromCharCode(65 + Math.floor(index / 26 ** position) % 26)).join('');
+    const subsetName = `${tag}+${sfnt.postScriptName}`;
     const scale = 1000 / sfnt.unitsPerEm;
-    const subset = subsetSfnt(sfnt, font.gids);
+    if (!canEmbedPdfSubset(sfnt.bytes)) throw new Error('This font does not permit supported PDF subset embedding. Use Outline.');
+    const subset = this.fontSubset ? await this.fontSubset(sfnt.bytes, [...font.gids]) : subsetSfnt(sfnt, font.gids);
     const fileRef = ctx.register(ctx.flateStream(subset, { Length1: subset.length }));
 
     const descriptor = ctx.register(ctx.obj({
       Type: 'FontDescriptor',
-      FontName: sfnt.postScriptName,
+      FontName: subsetName,
       // 4 is the symbolic flag: an Identity-H run addresses glyphs directly, so
       // no standard encoding is being claimed. 64 adds the italic bit.
       Flags: 4 | (sfnt.italicAngle !== 0 || sfnt.italic ? 64 : 0),
@@ -727,7 +736,7 @@ export class PdfDoc {
     const descendant = ctx.register(ctx.obj({
       Type: 'Font',
       Subtype: 'CIDFontType2',
-      BaseFont: sfnt.postScriptName,
+      BaseFont: subsetName,
       CIDSystemInfo: { Registry: PDFString.of('Adobe'), Ordering: PDFString.of('Identity'), Supplement: 0 },
       FontDescriptor: descriptor,
       DW: 1000,
@@ -738,7 +747,7 @@ export class PdfDoc {
     return ctx.register(ctx.obj({
       Type: 'Font',
       Subtype: 'Type0',
-      BaseFont: sfnt.postScriptName,
+      BaseFont: subsetName,
       Encoding: 'Identity-H',
       DescendantFonts: [descendant],
       ToUnicode: ctx.register(ctx.flateStream(buildToUnicode(font.toUnicode))),

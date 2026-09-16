@@ -1,0 +1,17 @@
+{
+  "id": "brand-starter",
+  "name": "Brand blend",
+  "category": "Brand",
+  "description": "A quiet blend of your primary and secondary brand colours.",
+  "values": {
+    "count": 3,
+    "color1": "{color.semantic.primary}",
+    "color2": "{color.semantic.secondary}",
+    "color3": "{color.semantic.primary}",
+    "blend": "normal",
+    "spread": 100,
+    "blur": 18,
+    "grain": 0
+  },
+  "galleryCover": true
+}

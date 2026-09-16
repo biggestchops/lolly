@@ -7,7 +7,10 @@
  * a value (an event listener), goes through `fc.<module>.<fn>`. Extracted verbatim
  * from initFreeCanvas() by scripts/split-closure.ts.
  */
-import { num } from '../free-canvas-math.ts';
+import { t } from '../../i18n.ts';
+import type { AssetRef } from '@lolly-tools/core/host-v1';
+import type { PickerHost } from '../picker.ts';
+import { num, seedBox } from '../free-canvas-math.ts';
 import type { Box } from '../free-canvas-math.ts';
 import type { AddKind, OnionTimeDetail } from './shared.ts';
 import { bindOp, type FcCtx } from './context.ts';
@@ -99,6 +102,9 @@ export async function ensureTimeline(fc: FcCtx, open: boolean): Promise<void> {
         // The box sub-field carrying rendered text, so the panel's generated
         // caption boxes write cue text where the tool's template reads it.
         textField: cv.textField,
+        assetField: cfg.imageField,
+        ...(cfg.imageField && host.assets?.pick && addKinds.some(k => ['clip', 'video', 'image', 'audio', 'lottie'].includes(k.id))
+          ? { addMedia: fc.timeline.openMedia } : {}),
         // The tool's OWN add-kinds, so the panel's plus offers exactly what the rail's
         // does (audio included) instead of hardcoding a list it cannot know.
         addKinds,
@@ -136,6 +142,49 @@ export async function ensureTimeline(fc: FcCtx, open: boolean): Promise<void> {
   })();
   await fc.timelineLoad;
 }
+/** Reuse profile-aware catalogue, private uploads and sequential multi-file ingestion. */
+export async function openMedia(fc: FcCtx): Promise<void> {
+  const { openPicker } = await import('../picker.ts');
+  if (fc.disposed) return;
+  const at = fc.timelinePanel?.time() ?? 0;
+  const kinds = new Set(fc.addKinds.map(k => k.id));
+  const types: AssetRef['type'][] = [];
+  if (kinds.has('clip') || kinds.has('video')) types.push('video');
+  if (kinds.has('clip') || kinds.has('image')) types.push('raster', 'vector');
+  if (kinds.has('audio')) types.push('audio');
+  if (kinds.has('lottie')) types.push('lottie');
+  if (!types.length) return;
+  await openPicker(fc.host as PickerHost, {
+    title: t('Add media'),
+    types,
+    allowUpload: true,
+    initialTab: 'uploads',
+    collect: {
+      assetsOnly: true,
+      folderName: t('timeline'),
+      guided: { hint: t('Choose clips in playback order. Audio starts at the playhead. Select Done when you are ready to edit.') },
+      tools: [],
+      onAsset: async (ref) => addMediaRef(fc, ref, at),
+      onSession: async () => false,
+      onOpenTool: () => {},
+      onQuickAddTool: async () => false,
+    },
+  });
+}
+
+/** One media item, one normal canvas commit. Keep asset refs and manifest seeds intact. */
+export function addMediaRef(fc: FcCtx, ref: AssetRef, at: number): boolean {
+  if (fc.disposed || !fc.timeCfg || !fc.cfg.imageField) return false;
+  const audio = ref.type === 'audio';
+  const kind = fc.addKinds.find(k => k.id === (audio ? 'audio' : ref.type === 'lottie' ? 'lottie' : 'clip'))
+    ?? (!audio ? fc.addKinds.find(k => k.id === (ref.type === 'video' ? 'video' : 'image')) : undefined);
+  if (!kind || !['audio', 'video', 'raster', 'vector', 'lottie'].includes(ref.type)) return false;
+  const ms = ref.meta?.durationMs;
+  const duration = typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms / 1000 : null;
+  addRecordedClip(fc, kind, ref as Box[string], duration, audio ? at : undefined);
+  return true;
+}
+
 export function onTlAdd(fc: FcCtx, e: Event): void {
   const { MAX_ADD_AT_MS, addKinds, timeCfg } = fc;
   if (!timeCfg || fc.disposed) return;
@@ -159,6 +208,30 @@ export function onTlAdd(fc: FcCtx, e: Event): void {
     addRecordedClip(fc, kind, asset as Box[string], durSec);
     return;
   }
+  if (kind.id === 'text' && fc.cfg.textField) {
+    const { cfg } = fc;
+    const boxes = fc.select.getBoxes();
+    const fi = fc.document.activeFrameIndex(boxes);
+    const fr = fi >= 0 ? boxes[fi]! : null;
+    const size = fr ? { w: num(fr[cfg.wField]), h: num(fr[cfg.hField]) } : fc.helpers.canvasWH();
+    const w = size.w * 0.6;
+    const h = size.h * 0.2;
+    const id = fc.select.freshId(boxes);
+    let box = seedBox(cfg, {}, kind.seed as Box, {
+      x: (fr ? num(fr[cfg.xField]) : 0) + (size.w - w) / 2,
+      y: (fr ? num(fr[cfg.yField]) : 0) + (size.h - h) / 2,
+      w, h, rot: 0,
+    }, id);
+    box = fc.select.withLegibleInk(box, boxes);
+    box[timeCfg.startField] = atMs / 1000;
+    box[timeCfg.durField] = 3;
+    box[timeCfg.laneField] = '';
+    fc.modes.toPointer();
+    fc.select.commit(fc.select.assignFrames([...boxes, box], new Set([boxes.length])));
+    fc.timelinePanel?.selectAndReveal([id]);
+    fc.textEdit.editAfterPaint(id, { selectAll: true });
+    return;
+  }
   // AFTER setMode, never before: enterCreate clears the pending time so that an arm
   // from anywhere else cannot inherit one. This is the single place that sets it.
   fc.modes.setMode('create', { kind });
@@ -174,7 +247,7 @@ export function onTlAdd(fc: FcCtx, e: Event): void {
  * a colleague's clip belongs after what the template already plays. The row repacks
  * from array order, so appending IS the placement.
  */
-export function addRecordedClip(fc: FcCtx, kind: AddKind, asset: Box[string], durSec: number | null): void {
+export function addRecordedClip(fc: FcCtx, kind: AddKind, asset: Box[string], durSec: number | null, overlayAt?: number): void {
   const { cfg, timeCfg } = fc;
   const tc = timeCfg!;
   const boxes = fc.select.getBoxes();
@@ -207,8 +280,8 @@ export function addRecordedClip(fc: FcCtx, kind: AddKind, asset: Box[string], du
     [cfg.hField]: rect.h,
     ...(cfg.imageField ? { [cfg.imageField]: asset } : {}),
     ...(cfg.fitField ? { [cfg.fitField]: 'cover' } : {}),
-    [tc.laneField]: 'seq',
-    [tc.startField]: at,
+    [tc.laneField]: overlayAt === undefined ? 'seq' : '',
+    [tc.startField]: overlayAt === undefined ? at : Math.max(0, overlayAt),
     ...(durSec != null ? { [tc.durField]: durSec } : {}),
   };
   fc.select.commit(fc.select.assignFrames([...boxes, box], new Set([boxes.length])));
@@ -386,6 +459,8 @@ export function timelineOps(fc: FcCtx) {
     ensureTimeline: bindOp(fc, ensureTimeline),
     onTlAdd: bindOp(fc, onTlAdd),
     addRecordedClip: bindOp(fc, addRecordedClip),
+    openMedia: bindOp(fc, openMedia),
+    addMediaRef: bindOp(fc, addMediaRef),
     onTlTime: bindOp(fc, onTlTime),
     onionOff: bindOp(fc, onionOff),
     onionFrom: bindOp(fc, onionFrom),

@@ -203,13 +203,13 @@ test('the tile menu offers exactly the plan\'s action set, per ownership', () =>
   const acts = (item: TemplateItem): string[] =>
     [...templateMenuHtml(item).matchAll(/data-act="([^"]+)"/g)].map(x => x[1]!);
   assert.deepEqual(acts(m.items.find(i => i.ref === 'chart:poster')!),
-    ['tpl-use', 'tpl-start-off', 'tpl-copy', 'tpl-hide'],
+    ['tpl-use', 'tpl-rules', 'tpl-start-off', 'tpl-copy', 'tpl-hide'],
     'a shipped tile that IS the start offers the toggle off, a copy and Hide');
   assert.deepEqual(acts(m.items.find(i => i.ref === 'chart:flyer')!),
-    ['tpl-use', 'tpl-start', 'tpl-copy', 'tpl-restore'],
+    ['tpl-use', 'tpl-rules', 'tpl-start', 'tpl-copy', 'tpl-restore'],
     'a hidden shipped tile offers Restore, never Hide');
   assert.deepEqual(acts(m.items.find(i => i.ref === 'user:u1')!),
-    ['tpl-use', 'tpl-start', 'tpl-rename', 'tpl-describe', 'tpl-export', 'tpl-share', 'tpl-delete'],
+    ['tpl-use', 'tpl-rules', 'tpl-start', 'tpl-rename', 'tpl-describe', 'tpl-export', 'tpl-share', 'tpl-delete'],
     'your own template renames, exports, shares and deletes - it is never hidden');
 });
 

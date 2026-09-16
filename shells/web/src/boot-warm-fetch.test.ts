@@ -14,11 +14,13 @@
  * regex matches nothing, so a reworded script would fail the release build. Checking the
  * match here means that failure shows up at commit time instead.
  */
-import { test } from 'node:test';
+
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { JSDOM } from 'jsdom';
 import { SLIM_WARM_SCRIPT } from '../vite.config.js';
 
 const webDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,15 +32,34 @@ const SLIM_PATH = '/catalog/tools/index.slim.json';
 
 test('index.html starts the slim-index fetch and parks it for adoption', () => {
   const script = html.match(SLIM_WARM_SCRIPT)?.[0];
-  assert.ok(script, 'no warm script in index.html - slimIndexWarm() would throw on a release build');
-  assert.match(script, /fetch\(/, 'the warm must be a real fetch, not a preload hint a fetch cannot adopt');
-  assert.match(script, /__lollyBootFetch/, 'the promise has to be parked where adoptBootFetch looks');
+  assert.ok(
+    script,
+    'no warm script in index.html - slimIndexWarm() would throw on a release build'
+  );
+  assert.match(
+    script,
+    /fetch\(/,
+    'the warm must be a real fetch, not a preload hint a fetch cannot adopt'
+  );
+  assert.match(
+    script,
+    /__lollyBootFetch/,
+    'the promise has to be parked where adoptBootFetch looks'
+  );
   assert.ok(script.includes(`'${SLIM_PATH}'`), `the warm must name ${SLIM_PATH}`);
-  assert.match(script, /'sbt-tool-index' in localStorage/, 'only visitors with no cached index ask for this file');
+  assert.match(
+    script,
+    /'sbt-tool-index' in localStorage/,
+    'only visitors with no cached index ask for this file'
+  );
 });
 
 test('loadSlimToolIndex adopts the boot fetch by the same path', () => {
-  assert.match(syncSrc, /adoptBootFetch\(slimPath\)/, 'loadSlimToolIndex must try the adoption first');
+  assert.match(
+    syncSrc,
+    /adoptBootFetch\(slimPath\)/,
+    'loadSlimToolIndex must try the adoption first'
+  );
   // sync.ts builds the path from CATALOG_BASE; check the two compose to the same string.
   const base = syncSrc.match(/const CATALOG_BASE = '([^']+)'/)?.[1];
   assert.ok(base, 'CATALOG_BASE not found in catalog/sync.ts');
@@ -48,4 +69,31 @@ test('loadSlimToolIndex adopts the boot fetch by the same path', () => {
 test('the warm script is the only thing in index.html that names the slim index', () => {
   const hits = html.split(SLIM_PATH).length - 1;
   assert.equal(hits, 1, 'a second reference would be a second request the strip does not remove');
+});
+
+test('a signed release removes only the warm script and keeps the mobile document head', () => {
+  const source = new JSDOM(html);
+  const release = new JSDOM(html.replace(SLIM_WARM_SCRIPT, ''));
+  try {
+    const original = source.window.document;
+    const built = release.window.document;
+    const warm = original.getElementById('lolly-slim-index-warm');
+    assert.ok(warm, 'the warm fetch needs its own build marker');
+    warm.remove();
+    const elements = (doc: Document) => Array.from(doc.head.children, (el) => el.outerHTML);
+    assert.deepEqual(
+      elements(built),
+      elements(original),
+      'all other head elements must survive the signed build'
+    );
+    assert.equal(built.querySelectorAll('meta[name="viewport"]').length, 1);
+    assert.equal(
+      built.querySelector('meta[name="viewport"]')?.getAttribute('content'),
+      'width=device-width, initial-scale=1.0, viewport-fit=cover'
+    );
+    assert.equal(built.getElementById('lolly-slim-index-warm'), null);
+  } finally {
+    source.window.close();
+    release.window.close();
+  }
 });

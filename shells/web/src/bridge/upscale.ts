@@ -125,19 +125,17 @@ export function createUpscaleAPI(): UpscaleAPI {
       return new Promise<UpscaleFrame>((resolve, reject) => {
         const onAbort = (): void => {
           if (!pending.has(reqId)) return;
-          pending.delete(reqId);
           w.postMessage({ id: reqId, type: 'abort' } satisfies UpscaleWorkerRequest);
-          reject(abortError());
         };
         signal?.addEventListener('abort', onAbort, { once: true });
         pending.set(reqId, {
           settle: (r) => {
             signal?.removeEventListener('abort', onAbort);
-            if (r.aborted) reject(abortError());
+            if (signal?.aborted || r.aborted) reject(abortError());
             else if (r.error || !r.frame) reject(new Error(r.error ?? 'upscale failed'));
             else resolve(r.frame);
           },
-          onProgress: opts?.onProgress,
+          onProgress: (p) => { if (!signal?.aborted) opts?.onProgress?.(p); },
         });
         // Transfer the source pixels - the caller's frame is consumed by the run.
         w.postMessage(

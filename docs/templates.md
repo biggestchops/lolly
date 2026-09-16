@@ -74,7 +74,7 @@ Every tile carries a menu, on right-click, long-press, or the **…** that appea
 - **Start Chart with this** (again naming the tool you are in), or clear it if this one is already the starting point.
 - **Rename** and edit the description, on one of yours.
 - **Make a copy**, on one that shipped, so you have your own version to change.
-- **Export as file (.json)** and **Share as .lolly**, for passing one on.
+- **Export as file (.json)** and **Share template (.lolly)**, for passing one on.
 - **Hide**, on one that shipped, or **Delete**, on one of yours.
 
 ### The Templates collection
@@ -111,7 +111,7 @@ A design system can arrive with some of its starters hidden already, so a team s
 ### Passing one on
 
 - **Export as file (.json)** writes the template out in the same file format a tool's own shipped templates use. Drop it into a tool's `templates/` folder, or send it to whoever maintains that tool, and it can ship for everybody.
-- **Share as .lolly** wraps it as a file you can send. Opening it on the other device adds it there as a template.
+- **Share template (.lolly)** wraps it as a file you can send. Opening it on the other device adds it there as a template.
 
 ## Presets
 
@@ -122,3 +122,7 @@ You cannot make a preset in the app. A saved template is how you keep a variant 
 ---
 
 **Related:** [Using Lolly](/info/using.html) for sessions, Projects and sharing. [Your favourites](/info/favourites.html) for the other way of keeping something to hand. [Profiles](/info/profile.html) for the on-device record all of this is written onto.
+
+## Share a constrained tool
+
+A saved template is a starting point in its original tool. To give recipients only selected inputs, choose **Share with rules** from a template’s menu, or from a saved tool session in Projects. This opens a separate authoring copy and leaves the source intact. Design offers object rules; other supported still tools offer an ordered list of editable inputs over their existing renderer. The resulting `.lolly` installs a separate tool with fixed settings and explicit controls. See [Share with rules](create-a-tool.md) for supported inputs and the preview and checking steps.

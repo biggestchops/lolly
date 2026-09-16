@@ -27,6 +27,113 @@
   cursor: default;
 }
 
+/* Clean output shares the deck player; all authoring lives in the private window. */
+.pr-stage.pr-production { cursor: none; }
+.pr-production > .pr-hud,
+.pr-production > .pr-tap,
+.pr-production > .pr-note,
+.pr-production > .pr-progress { display: none; }
+.pr-program {
+  position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px;
+  transform-origin: center; overflow: hidden; background: #05070c; pointer-events: none;
+}
+.pr-program-content, .pr-program-camera { position: absolute; overflow: hidden; }
+.pr-program-camera { background: #05070c; }
+.pr-program-camera video { position: absolute; max-width: none; max-height: none; }
+.pr-program-logo { position: absolute; top: 32px; height: auto; max-height: 160px; object-fit: contain; }
+.pr-program-lower {
+  position: absolute; left: 40px; bottom: 40px; max-width: 800px; padding: 18px 26px;
+  background: #102237; color: #fff; border-left: 6px solid #4c8dff;
+  opacity: 0; transform: translateY(28px); transition: transform 240ms ease-out, opacity 240ms linear;
+  overflow-wrap: anywhere; font-family: var(--font-brand, system-ui, sans-serif);
+}
+.pr-program-lower strong { display: block; font-size: 32px; line-height: 1.25; }
+.pr-program-lower span { display: block; font-size: 22px; line-height: 1.4; }
+.pr-program-lower-on { opacity: 1; transform: translateY(0); }
+.pr-reduced .pr-program-lower { transition: none; }
+.pr-program-holding { position: absolute; inset: 0; background: #05070c; }
+.pr-speaker.pr-speaker-production {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
+  grid-template-rows: minmax(180px, 1fr) minmax(180px, 30%);
+  grid-template-areas: "current production" "notes production";
+  gap: 24px; padding: 24px;
+}
+.pr-speaker-production > .pr-sp-now { grid-area: current; }
+.pr-speaker-production > .pr-sp-aside {
+  grid-area: notes; display: grid; grid-template-columns: minmax(140px, 35%) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr); gap: 16px;
+}
+.pr-speaker-production .pr-sp-timer { grid-column: 2; grid-row: 1; font-size: 24px; }
+.pr-speaker-production .pr-sp-nextwrap { grid-column: 1; grid-row: 1 / 3; }
+.pr-speaker-production .pr-sp-slot-next { min-height: 0; }
+.pr-speaker-production .pr-sp-notes { grid-column: 2; grid-row: 2; font-size: 16px; }
+.pr-speaker-production .pr-sp-controls { grid-column: 1; }
+.pr-speaker.pr-speaker-production.pr-speaker-content { grid-template-rows: minmax(180px, 1fr) auto; }
+.pr-speaker-content > .pr-sp-aside { display: flex; }
+.pr-speaker-content :is(.pr-sp-nextwrap, .pr-sp-notes, .pr-sp-controls) { display: none; }
+.pr-production-controls {
+  grid-area: production; min-width: 0; min-height: 0; display: flex; flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.1); padding-left: 24px;
+  font: calc(14px * var(--a11y-fs, 1))/1.5 var(--font-ui, system-ui, sans-serif);
+}
+.pr-production-controls h2 { font-size: calc(20px * var(--a11y-fs, 1)); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+.pr-production-controls p { font-size: calc(12px * var(--a11y-fs, 1)); line-height: 1.5; color: rgba(255, 255, 255, 0.6); margin: 8px 0; }
+.pr-production-controls p:empty { display: none; }
+.pr-production-header { padding-bottom: 16px; }
+.pr-production-scroll { min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding-right: 8px; }
+.pr-production-section { border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 0; }
+.pr-production-section > summary { font-weight: 600; padding: 12px 0; cursor: pointer; }
+.pr-production-fields { padding-bottom: 12px; }
+.pr-production-controls label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0; font-size: calc(13px * var(--a11y-fs, 1)); }
+.pr-production-controls input:not([type="checkbox"]), .pr-production-controls select {
+  width: 50%; min-width: 0; min-height: 36px; padding: 6px 8px; color: #fff;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-sm); font: inherit;
+}
+.pr-production-controls select option { background: #0b0f18; }
+.pr-production-controls input[type="text"], .pr-production-controls input[type="file"] { width: 100%; }
+.pr-production-controls label:has(input[type="text"]), .pr-production-controls label:has(input[type="file"]) { flex-direction: column; align-items: stretch; gap: 4px; }
+.pr-production-controls input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--pr-accent, #4c8dff); }
+.pr-production-controls :is(button, input, select, summary):focus-visible { outline: 2px solid #8bb4ff; outline-offset: 3px; }
+.pr-production-controls .btn { min-height: 36px; margin: 4px 4px 4px 0; font-size: calc(13px * var(--a11y-fs, 1)); }
+.pr-production-controls .btn--ghost { background: transparent; color: inherit; border-color: rgba(255, 255, 255, 0.22); }
+.pr-production-controls .btn--ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
+.pr-camera-row { display: flex; align-items: center; gap: 12px; }
+.pr-camera-row .btn { flex: none; }
+.pr-camera-framing > summary { padding: 8px 0; font-size: calc(13px * var(--a11y-fs, 1)); color: rgba(255, 255, 255, 0.7); cursor: pointer; }
+.pr-production-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.pr-production-footer .btn--primary { width: 100%; }
+.pr-production-controls .pr-end-presentation { width: 100%; margin: 0; border-color: transparent; color: rgba(255, 255, 255, 0.7); }
+.pr-prepared-camera { position: relative; overflow: hidden; background: rgba(255, 255, 255, 0.04); margin: 12px auto; border-radius: var(--radius-sm); }
+.pr-prepared-camera video { position: absolute; max-width: none; max-height: none; }
+.pr-framing-canvas { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; margin-top: 12px; background: #05070c; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--radius-sm); }
+.pr-framing-content { position: absolute; display: grid; place-items: center; color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.035); font-size: 12px; }
+.pr-framing-camera { position: absolute; display: grid; place-items: center; background: #254b49; border: 1px solid #8bb4ff; color: #fff; font-size: 10px; cursor: move; touch-action: none; box-sizing: border-box; }
+.pr-framing-camera[aria-disabled="true"] { cursor: default; }
+.pr-framing-feed { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.pr-framing-feed video { position: absolute; max-width: none; max-height: none; }
+.pr-framing-camera > span { pointer-events: none; }
+.pr-framing-camera:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
+.pr-framing-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 3px 0 0; background: #8bb4ff; cursor: nwse-resize; touch-action: none; }
+.pr-framing-resize:disabled { display: none; }
+.pr-countdown { position: relative; width: 1280px; height: 720px; display: grid; place-items: center; background: var(--brand-text, #111); color: #fff; }
+.pr-countdown svg { position: absolute; width: 580px; height: 580px; transform: rotate(-90deg); }
+.pr-countdown-track { stroke: rgba(255, 255, 255, 0.12); }
+.pr-countdown-ring { stroke: #fff; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.pr-countdown-time { font: 200 96px/1 var(--font-brand, system-ui, sans-serif); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+.pr-countdown[data-state="done"] .pr-countdown-time, .pr-countdown[data-state="done"] .pr-countdown-ring { color: #fe7c3f; stroke: #fe7c3f; }
+.pr-reduced .pr-countdown-ring, [data-a11y-motion="reduce"] .pr-countdown-ring { transition: none; }
+@media (prefers-reduced-motion: reduce) { .pr-countdown-ring { transition: none; } }
+@media (max-width: 800px) {
+  .pr-speaker.pr-speaker-production {
+    display: flex; flex-direction: column; overflow-y: auto; padding: 16px; gap: 20px;
+  }
+  .pr-speaker-production > .pr-sp-now { flex: none; height: 35vh; min-height: 180px; }
+  .pr-speaker-production > .pr-sp-aside { flex: none; min-height: 160px; }
+  .pr-production-controls { flex: none; border-left: 0; padding-left: 0; }
+  .pr-production-scroll { overflow: visible; }
+}
+
 /* ---- The co-located deck ------------------------------------------------------------ */
 .pr-frames {
   position: absolute;

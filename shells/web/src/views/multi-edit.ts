@@ -389,6 +389,14 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
   // holds live tool DOM at a time; every other cell is an id-free <img> still, which is
   // what lets an activated cell's getElementById find only its own freshly-painted DOM.
   let activeSingle: number | null = null;
+  let activeSingleReady = false;
+  let studio: typeof import('../lib/studio3d/mount.ts') | null = null;
+  cleanups.push(() => {
+    for (const m of members) {
+      m.renderGen++;
+      studio?.destroyToolStudio(m.canvasEl);
+    }
+  });
   const retireThumb = (m: Member) => (): void => { m.thumbEl?.remove(); m.thumbEl = null; };
 
   // paint(m,i): rewrite this cell to its runtime's latest hydrated output.
@@ -406,6 +414,23 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
       // unlayered as authored, so it would beat every app layer and leak across panes.
       scopeTemplateStyles(m.canvasEl, `#me-c${i}`);
       runTemplateScripts(m.canvasEl);
+      if (m.canvasEl.querySelector('[data-lolly-studio]')) {
+        void import('../lib/studio3d/mount.ts').then(async module => {
+          if (gen !== m.renderGen || !m.canvasEl.isConnected) return;
+          studio = module;
+          await studio.mountToolStudio(m.canvasEl, {
+            isCurrent: () => gen === m.renderGen,
+            read: async (url, signal) => {
+              signal.throwIfAborted();
+              if (!host.assets.bytes) throw new Error('Asset bytes are unavailable in this app.');
+              const bytes = await host.assets.bytes(url);
+              signal.throwIfAborted();
+              return bytes;
+            },
+            setInput: (id, value) => { m.dirty = true; rt.setInput(id, value as InputValue); },
+          });
+        }).catch(err => console.warn('multi-edit studio mount failed:', err));
+      }
       // Namespace this cell's SVG def ids (gradients, filters, clipPaths, masks,
       // markers, <use href>) when this tool is DUPLICATED in the grid. Every cell renders
       // into ONE document, so N copies of the same tool otherwise define the same `id` N
@@ -441,7 +466,11 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
     // cell through the shared window globals, so it just marks itself stale and refreshes
     // when it is next activated or the live cell is released.
     if (m.tool.manifest.singleInstance) {
-      if (activeSingle === i) { if (!m.paintRaf) m.paintRaf = requestAnimationFrame(() => paint(m, i)); return; }
+      if (activeSingle === i) {
+        if (activeSingleReady && !m.paintRaf) m.paintRaf = requestAnimationFrame(() => paint(m, i));
+        else m.needsPaint = true;
+        return;
+      }
       if (activeSingle === null) { previewer.schedule(m.slot, m.tool.manifest.id, memberSaveValues(m, modelValues), m.canvasEl, retireThumb(m)); return; }
       m.needsPaint = true;
       return;
@@ -467,6 +496,8 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
       } catch { url = null; }
     }
     if (!url) url = previewer.lastUrl(m.slot);
+    m.renderGen++;
+    studio?.destroyToolStudio(m.canvasEl);
     m.canvasEl.textContent = '';   // drop the live tool DOM + its ids NOW
     m.lastPainted = null;
     if (url) {
@@ -482,7 +513,13 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
     if (!m) return;
     if (activeSingle !== null) freezeSingle(activeSingle);
     activeSingle = i;
-    void ensureRuntime(m, i).then(() => { if (activeSingle === i) paint(m, i); });
+    activeSingleReady = false;
+    for (const member of members) if (member.tool.manifest.singleInstance) member.needsPaint = true;
+    void previewer.pause().then(async () => {
+      if (activeSingle !== i || !m.canvasEl.isConnected) return;
+      await ensureRuntime(m, i);
+      if (activeSingle === i && m.canvasEl.isConnected) { activeSingleReady = true; paint(m, i); }
+    });
   };
   // Release the live cell back to a still, and let any stale siblings refresh now that
   // nothing is live (a shared edit made while a cell was live left them frozen).
@@ -490,6 +527,8 @@ export async function mountMultiEdit(viewEl: ViewElement, host: WebToolHost, par
     if (activeSingle === null) return;
     freezeSingle(activeSingle);
     activeSingle = null;
+    activeSingleReady = false;
+    previewer.resume();
     members.forEach((m, j) => { if (m.tool.manifest.singleInstance && m.needsPaint && m.near) schedulePaint(m, j); });
   };
 

@@ -6,6 +6,44 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.204.0
+
+- Add independent face, bevel and side finishes within each SVG paint region.
+- Preserve camera target offsets and per-item focus through studio collections and URL mode.
+- The shell checks bevel topology, fits subjects and records camera actions in normal history.
+
+## 1.203.0
+
+- Add shared 3D studio collections with per-item framing and explicit material roles.
+- Add deterministic orbiting and breathing light rigs using the scene loop timing.
+
+## 1.202.0
+
+- Add the versioned 3D studio scene recipe, bounded input normalization and deterministic turntable sampling.
+- The web shell mounts studio markers with retained rendering resources, source-region materials and linear float capture.
+
+## 1.201.0
+
+- Compile captured still-tool sessions into portable tools with selected public inputs and fixed source settings.
+- Add optional source-tool provenance to the rules policy and enforce source-render failures during export.
+
+## 1.200.0
+
+- PDF text imports use character-code advances, kerning and text spacing to preserve compatible runs and separate styles.
+- Design mapping carries imported tracking; SVG output preserves it. Filled shapes with borders retain both paints.
+- Four-curve artwork stays as a vector path unless its geometry matches an ellipse.
+- PDF interpretation reports approximate CMYK colour conversion for source review.
+
+## 1.199.0
+
+- Locked Design tools carry optional shared text fitting and image limits, person roles and bounded framing targets.
+
+## 1.198.0
+
+- Compile fixed Design artwork and declared inputs into a portable tool using the shared renderer.
+- Enforce generated-tool input, artboard and export rules at runtime.
+- Add optional `host.export.checkLayout` for bounded text fitting and browser export checks.
+
 1.197.0 - An export says what attribution it promised, and a host says what it
 delivered. The new optional `rights` export option carries the attribution plan
 one frozen evaluation produced, plus the callback a host reports its receipt
@@ -2872,6 +2910,7 @@ the quieter version of the same mistake.
 The finding claims only "present but not visible", never intent; the cause could
 be a botched redaction or ordinary sloppy layering, and callers should keep that
 wording. No v1 bridge method changed.
+
 
 ## 1.77.0 - a brand colour's faces, and the sRGB one wins at export
 

@@ -375,7 +375,7 @@
     "ExportAPI": {
       "module": "export.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "8015bd7c0a67499a5d1a13c9ac939f8bb416443f82ae9865a3fedc90a0d8baa9"
+      "sha256": "bee7852d163e3ecb7462d6fa2a77046b465aada1ee62cdde960b80a72de91bb1"
     },
     "InputFile": {
       "module": "export.ts",

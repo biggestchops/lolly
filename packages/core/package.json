@@ -34,7 +34,9 @@
     "./schema/chart-v1.schema.json": "./schema/chart-v1.schema.json",
     "./learning-v1": "./src/learning-v1.ts",
     "./schema/learning-module-v1.schema.json": "./schema/learning-module-v1.schema.json",
-    "./schema/learning-module-v2.schema.json": "./schema/learning-module-v2.schema.json"
+    "./schema/learning-module-v2.schema.json": "./schema/learning-module-v2.schema.json",
+    "./design-tool-v1": "./src/design-tool-v1.ts",
+    "./studio3d-v1": "./src/studio3d-v1.ts"
   },
   "files": [
     "src",

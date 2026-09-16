@@ -1,0 +1,26 @@
+{
+  "id": "brand-starter",
+  "name": "Brand stickers",
+  "category": "Brand",
+  "description": "A ready-to-print sheet of six brand-colour type stickers.",
+  "values": {
+    "sheet": "a4",
+    "rows": 3,
+    "cols": 2,
+    "gap": 7,
+    "margin": 14,
+    "ticks": true,
+    "tickShape": "rect",
+    "fill": "repeat",
+    "cells": [
+      {
+        "art": {
+          "source": "remote",
+          "id": "https://lolly.tools/tool/icon.svg?text=Open&shape=rounded",
+          "_unresolved": true
+        }
+      }
+    ]
+  },
+  "galleryCover": true
+}

@@ -1,3 +1,7 @@
+import { getDesignPublication, restoreDesignPublication } from '../../lib/design-tool-publication.ts';
+import { getDesignToolSource, restoreDesignToolSource } from '../../lib/design-tool-source.ts';
+import { mountLockedTool } from '../locked-tool.ts';
+import { getDesignToolDraft, restoreDesignToolDraft } from '../../lib/design-tool-draft.ts';
 import { collabHistoryStamp } from '../../lib/collab-undo.ts';
 // SPDX-License-Identifier: MPL-2.0
 /**
@@ -27,6 +31,7 @@ import { mountBackPill } from '../../components/back-pill.ts';
 import { autoOpenToolGuide, showToolGuide } from '../../components/tool-guide.ts';
 import { collectBulkFiles } from '../../lib/bulk-files.ts';
 import { t, tRaw } from '../../i18n.ts';
+import { readScene } from '../present-production/scene.ts';
 import { announce } from '../../a11y.ts';
 import { setupRecordControl } from '../record-control.ts';
 import { setSwatches } from '../../components/color-field.ts';
@@ -359,11 +364,7 @@ export async function templatePick(tview: ToolViewCtx): Promise<void> {
   // direct link, a share, or an OFFSCREEN export remount (the blank-PDF/MP4 bug:
   // scene and export renders re-parse the URL in a context with no index and no
   // inline manifest fallback) would silently drop the seed and render empty.
-  if (captureNeutralPinned()) {
-    // A pinned docs capture (lib/capture-neutral.ts) is a headless open with nobody
-    // there to dismiss a modal: it takes the tool's own default composition, so
-    // neither the named seed nor the chooser ladder below runs.
-  } else if (templateParam && !slot && !tview.seededDirect && Object.keys(values).length === 0) {
+  if (templateParam && !slot && !tview.seededDirect && Object.keys(values).length === 0) {
     // `?template=` names a REF now (plans/226): a bare `<tid>` is this tool's shipped
     // template, exactly as every existing link has it, and `user:<id>` is one the person
     // saved - the Projects tiles and the Templates collection link that way.
@@ -377,6 +378,9 @@ export async function templatePick(tview: ToolViewCtx): Promise<void> {
       { toolId, templateMeta, presetId: presetParam },
     );
     if (found) await applyTemplateSeed(found.values);
+  } else if (captureNeutralPinned()) {
+    // A pinned docs capture honours an explicit template but skips personal
+    // defaults and the chooser, which would need someone to dismiss it.
   } else if (
     !slot &&
     pendingLiveCollab()?.toolId !== toolId &&
@@ -766,6 +770,10 @@ export function wireActionsPanel(tview: ToolViewCtx): void {
 /** The actions bar and the revision history panel. */
 export function mountActions(tview: ToolViewCtx): void {
   const { actionsEl, collabHandle, ephemeralState, exportDefaults, exportSourceNode, libraryHost, mountLifecycle, openedSession, reachedViaLink, runtime, slot, toolId, viewEl } = tview;
+  restoreDesignToolDraft(runtime, tview.initialValues.__designTool);
+  restoreDesignToolSource(runtime, tview.initialValues.__designToolSource);
+  restoreDesignPublication(runtime, tview.initialValues.__designPublication);
+  if (tview.initialValues.__presentation) tview.presentationScene = readScene(tview.initialValues.__presentation);
   const actionsApi = renderActions(
     actionsEl,
     tview.tool.manifest,
@@ -786,12 +794,17 @@ export function mountActions(tview: ToolViewCtx): void {
       // A thunk: session wiring assigns tview.openSaveAs after this mount runs.
       openSaveAs: () => { void tview.openSaveAs?.(); },
       current: toolId === 'design' ? () => tview.session.currentDesignOutcome() : undefined,
-      sessionMeta: toolId === 'design' ? () => ({ __workspace_intent: tview.designIntent }) : undefined,
+      sessionMeta: () => ({ ...(getDesignPublication(runtime) ? {__designPublication:getDesignPublication(runtime)} : {}), ...(getDesignToolSource(runtime) ? { __designToolSource: getDesignToolSource(runtime) } : {}), ...(tview.tool.artifactDigest ? { __toolArtifact: tview.tool.artifactDigest } : {}), ...(getDesignToolDraft(runtime) ? { __designTool: getDesignToolDraft(runtime) } : {}), ...(toolId === 'design' ? { __workspace_intent: tview.designIntent } : {}),
+        ...(tview.presentationScene ? { __presentation: tview.presentationScene } : {}) }),
       ...historyParticipation(tview.tool.manifest, !!collabHandle || !!ephemeralState || !!getCollabSessionSource()),
     }
   ); tview.actionsApi = actionsApi;
   // The retained export file (plans/236) lives only as long as this mount.
   mountLifecycle.add('export delivery result', () => actionsApi?.releaseDelivery?.());
+  if (tview.tool.manifest.designTool && tview.sidebarEl && tview.canvasEl) mountLifecycle.add('locked tool inputs', mountLockedTool({
+    view: viewEl, canvas: tview.canvasEl, stage: tview.stageEl, sidebar: tview.sidebarEl,
+    runtime, host: tview.host, policy: tview.tool.manifest.designTool,
+  }));
   tview.revisionChanged = () => actionsApi?.history?.changed();
   const capture = mountCollabActionHistory({ handle: collabHandle, snapshot: actionsApi?.sessionState,
     toolId, slot: actionsApi?.getSlot?.(), open: () => revisionPanel.open() }); tview.capture = capture;
@@ -1130,7 +1143,7 @@ export async function mountLiveControls(tview: ToolViewCtx): Promise<void> {
         canvasEl,
         runtime,
         onDirty: tview.session.markUserDirty,
-        onBake: (key) => tview.session.bakeFraming(key),
+        onBake: runtime.manifest.designTool ? undefined : (key) => tview.session.bakeFraming(key),
       });
     }
   }

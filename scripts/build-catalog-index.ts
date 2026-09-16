@@ -68,7 +68,7 @@ const ADDED_DATES: Record<string, string> = (() => {
 // gallery's tool-info modal. `tags` is what makes a tool findable by the words a
 // designer actually types - "foil", "riso", "emboss" - rather than only by the
 // handful that happen to appear in its name or description.
-const INDEX_FIELDS = ['id', 'name', 'description', 'version', 'status', 'category', 'capabilities', 'requires', 'privacy', 'new', 'listed', 'deprecated', 'replacedBy', 'tags'];
+const INDEX_FIELDS = ['id', 'name', 'description', 'version', 'status', 'category', 'capabilities', 'requires', 'privacy', 'new', 'listed', 'galleryArt', 'deprecated', 'replacedBy', 'tags'];
 
 /**
  * Is this .png an ANIMATED png (APNG)? A still PNG and an APNG share the extension, the
@@ -236,7 +236,7 @@ export function entryFromManifest(manifest: Manifest): Record<string, unknown> {
       if (typeof t.name !== 'string' || !t.name) continue;
       const meta: Record<string, unknown> = {};
       // METADATA ONLY - `values` is deliberately excluded so the index stays lean.
-      for (const k of ['id', 'name', 'category', 'description', 'thumb', 'motion']) {
+      for (const k of ['id', 'name', 'category', 'description', 'thumb', 'motion', 'galleryCover', 'galleryTheme']) {
         if (t[k] !== undefined) meta[k] = t[k];
       }
       // Presets (plans/142): a template's curated variants - each a values OVERLAY
@@ -314,7 +314,7 @@ export function entryFromManifest(manifest: Manifest): Record<string, unknown> {
 // ADDS or REMOVES a tile / a badge: without them an unlisted mechanism would flash
 // into the grid and a desktop-only tool would flip to "Desktop app only" on the
 // upgrade paint.
-const SLIM_FIELDS = ['id', 'name', 'description', 'category', 'tags', 'status', 'capabilities', 'requires', 'new', 'listed', 'icon', 'preview', 'featured'];
+const SLIM_FIELDS = ['id', 'name', 'description', 'category', 'tags', 'status', 'capabilities', 'requires', 'new', 'listed', 'galleryArt', 'icon', 'preview', 'featured'];
 
 /**
  * The slim (first-paint) form of one full index entry - plans/155 Task 3.8.

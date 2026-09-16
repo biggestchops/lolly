@@ -121,7 +121,7 @@ import { defaultHiddenTemplateErrors, reservedTemplateToolIdError } from './lib/
 
 // Fields tools/index.json mirrors from each manifest - kept in sync with
 // scripts/build-catalog-index.ts.
-const INDEX_FIELDS = ['name', 'description', 'version', 'status', 'category'];
+const INDEX_FIELDS = ['name', 'description', 'version', 'status', 'category', 'galleryArt'];
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -288,6 +288,7 @@ for (const dir of toolDirs) {
   const templateFiles = listToolFiles(dir).filter((f) => f.startsWith('templates/') && f.endsWith('.json')).sort();
   {
     const seenTemplateIds = new Set<string>();
+    const galleryCovers = new Map<string, string>();
     for (const templateRel of templateFiles) {
       const file = templateRel.slice('templates/'.length);
       const rel = `tools/${dir}/${templateRel}`;
@@ -302,6 +303,15 @@ for (const dir of toolDirs) {
       }
       if (typeof t.id !== 'string' || !t.id) { errors.push(`[${dir}] template ${file}: missing/empty "id"`); continue; }
       if (typeof t.name !== 'string' || !t.name) errors.push(`[${dir}] template ${file}: missing/empty "name"`);
+      if (t.galleryCover !== undefined && typeof t.galleryCover !== 'boolean') errors.push(`[${dir}] template ${file}: galleryCover must be a boolean`);
+      if (t.galleryTheme !== undefined && !['light', 'dark'].includes(t.galleryTheme)) errors.push(`[${dir}] template ${file}: galleryTheme must be light or dark`);
+      if (t.galleryCover === true) {
+        for (const theme of t.galleryTheme ? [t.galleryTheme] : ['light', 'dark']) {
+          const previous = galleryCovers.get(theme);
+          if (previous) errors.push(`[${dir}] templates ${previous} and ${file} both declare galleryCover for ${theme}`);
+          galleryCovers.set(theme, file);
+        }
+      }
       if (!t.values || typeof t.values !== 'object' || Array.isArray(t.values)) {
         errors.push(`[${dir}] template ${file}: "values" must be a plain object (the input-id → value seed)`);
       }

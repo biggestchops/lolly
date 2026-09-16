@@ -113,6 +113,7 @@ export interface GalleryTool {
   examples?: FeaturedVariant[];
   paged?: boolean;
   new?: boolean;
+  galleryArt?: 'render' | 'icon';
   /** URL-mode query an injected url-source tool opens with (#/tool/<id>?<openQuery>). */
   openQuery?: string;
   /** "New from template" starting points - METADATA ONLY (the index never carries
@@ -122,6 +123,8 @@ export interface GalleryTool {
    *  a preset deep-links as ?template=<tid>&preset=<pid>. */
   templates?: Array<{
     id: string; name: string; category?: string; description?: string; thumb?: string;
+    galleryCover?: boolean;
+    galleryTheme?: 'light' | 'dark';
     motion?: import('../lib/template-motion.ts').TemplateMotion;
     presets?: Array<{ id: string; name: string; description?: string }>;
   }>;
@@ -461,6 +464,19 @@ export interface GalleryMountOpts {
   /** Raw route query string. `q` seeds the search field - read at mount only,
    *  never written back while typing (plans/99 M0). */
   params?: string;
+}
+
+function observeGalleryTheme(theme: { dark: boolean }, refreshFeatured: () => void, render: () => void): () => void {
+  render();
+  const observer = new MutationObserver(() => {
+    const dark = currentTheme() !== 'light';
+    if (dark === theme.dark) return;
+    theme.dark = dark;
+    refreshFeatured();
+    render();
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  return () => observer.disconnect();
 }
 
 export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts: GalleryMountOpts = {}): Promise<void> {
@@ -1218,7 +1234,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   const isReturning = viewEl.classList.contains('is-returning');
   // (…and not on the mount that upgrades a slim paint to the full index either -
   // upgradesSlimPaint, decided at the top of this mount. See slimPaintedGrid.)
-  // Read once at mount, like darkTheme below: the hero rotation timer and the
+  // Read once at mount: the hero rotation timer and the
   // entrance cascade are both decided as the view is built, so a toggle mid-session
   // takes effect on the next gallery visit.
   // A capture run counts as reduced motion for the same reason the featured row does:
@@ -1227,9 +1243,8 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   // look between two runs rewrites the baseline. See featured-row.ts's `reduced`.
   const prefersReduced = prefersReducedMotion() || captureNeutralPinned();
   // Which theme-tagged example looks the tiles show (transparent-ink looks are filtered
-  // to the matching UI theme - see galleryExampleLooks). Read once at mount, like the
-  // featured row; switching theme refreshes on the next gallery visit.
-  const darkTheme = currentTheme() !== 'light';
+  // to the matching UI theme - see galleryExampleLooks).
+  const theme = { dark: currentTheme() !== 'light' };
   let firstPaint = true;
   let revealObserver: IntersectionObserver | null = null;
   cleanups.push(() => revealObserver?.disconnect());   // render() replaces it; unmount drops the last one
@@ -1531,7 +1546,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
         .slice(0, featuredHandle ? EAGER_TILES_WITH_HERO : EAGER_TILES).map(t => t.id),
     );
     masonry.innerHTML = viewCards + allTools
-      .map(t => cardMarkup(t, latestByTool(t.id), host.capabilities, darkTheme, opts.only === 'utility', eagerIds.has(t.id), templateLine(gtpl, t)))
+      .map(t => cardMarkup(t, latestByTool(t.id), host.capabilities, theme.dark, opts.only === 'utility', eagerIds.has(t.id), templateLine(gtpl, t)))
       .join('');
     masonry.append(noResults);
     masonry.append(hiddenBox);
@@ -2058,7 +2073,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
       const ref = [...selected][0];
       if (!ref) return;
       if (isViewRef(ref)) { const v = viewByRef(ref); if (v) showViewInfoDialog(v); }
-      else showInfoDialog(toolById.get(ref), host, darkTheme, infoTemplates(gtpl, ref));
+      else showInfoDialog(toolById.get(ref), host, theme.dark, infoTemplates(gtpl, ref));
       return;
     }
     if (action === 'copylink') {
@@ -2156,13 +2171,13 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
     if (act === 'copylink') { await copyLink(ref); return; }
     if (act === 'info') {
       if (isViewRef(ref)) { const v = viewByRef(ref); if (v) showViewInfoDialog(v); }
-      else showInfoDialog(toolById.get(ref), host, darkTheme, infoTemplates(gtpl, ref));
+      else showInfoDialog(toolById.get(ref), host, theme.dark, infoTemplates(gtpl, ref));
       return;
     }
     if (act === 'hide') { await hideOne(ref); }
   }
 
-  render();
+  cleanups.push(observeGalleryTheme(theme, refreshFeatured, render));
 
   // ── Deep-link (read-only): open a card's dialog on mount. ───────────────────
   // Read the hash query directly (same shape as main.ts's peekUrlLang) - these
@@ -2176,7 +2191,7 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   const deepLinkTool = toolById.get(deepLink.get('tool') ?? deepLink.get('history') ?? '');
   if (deepLinkTool) {
     if (deepLink.has('history')) openHistoryFor(deepLinkTool);
-    else showInfoDialog(deepLinkTool, host, darkTheme, infoTemplates(gtpl, deepLinkTool.id));
+    else showInfoDialog(deepLinkTool, host, theme.dark, infoTemplates(gtpl, deepLinkTool.id));
   }
 
   // ── First-run ladder: welcome dialog, else ONE banner ───────────────────────
@@ -2498,12 +2513,12 @@ function cardMarkup(
   } else if (hasExamples) {
     // One slide per template, or the tool's default state. Images arrive from
     // the active-brand render cache as the tile approaches the viewport.
-    const exSlides = exampleLooks.map(({ i }, k) =>
-      `<li class="gcar-slide gcar-slide--ex" data-ex-index="${i}"${exampleLooks.length === 1 ? ' data-look-pending' : ''}${tool.templates?.[i]?.motion ? ` data-motion-template="${escape(tool.templates[i]!.id)}"` : ''}>
+    const exSlides = exampleLooks.map(({ v, i }, k) =>
+      `<li class="gcar-slide gcar-slide--ex" data-ex-index="${i}"${exampleLooks.length === 1 ? ' data-look-pending' : ''}${v.motion && v.templateId ? ` data-motion-template="${escape(v.templateId)}"` : ''}>
          <a class="gcar-open" href="${openHref}" data-new-tool="${escape(tool.id)}" tabindex="-1" aria-hidden="true">
            <img class="gcar-img" alt="" aria-hidden="true"${eager && k === 0 ? ' fetchpriority="high"' : ''} decoding="async">
          </a>
-         ${tool.templates?.[i]?.motion ? `<button type="button" class="btn btn--sm gcar-motion-play" data-motion-play aria-pressed="false">${escape(t('Preview animation'))}</button><span class="gcar-motion-label">${escape(tool.templates[i]!.name)}</span>` : ''}
+         ${v.motion && v.templateId ? `<button type="button" class="btn btn--sm gcar-motion-play" data-motion-play aria-pressed="false">${escape(t('Preview animation'))}</button><span class="gcar-motion-label">${escape(v.label ?? '')}</span>` : ''}
        </li>`).join('');
     // Nav + dots come from the look COUNT, which the manifest knows before the first
     // render starts - so a cold tile says how many looks are coming and which one it is

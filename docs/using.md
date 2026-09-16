@@ -85,6 +85,12 @@ Free-canvas tools add a working surface *around* the artboard, like a designer's
 
 **Flip a selection.** Right-click any box and choose **Flip horizontal** or **Flip vertical** to mirror it in place, or press `Shift+H` / `Shift+V` from the keyboard - Shift, because a bare `V` is the Pointer tool. Each selected box mirrors on its own axis in one undo step, and the mirror is a real transform, so it holds in the exported SVG, PDF and PNG rather than only on the canvas.
 
+### Layers and Inspector
+
+In **Layers**, each artboard is a collapsible parent group. Select its name to jump there, expand its layers, and select or reorder objects within that artboard. Switch to **Pages** for thumbnails and page ordering. Arrow keys move through the layer list; Left returns to the artboard heading.
+
+The **Inspector** puts text or image controls first for the selected object. Use option chips for quick choices and expand **Advanced** for styling details. On phones, open **Inspector** from **More actions**. The controls open in a sheet; Escape or Back closes it while keeping your selection.
+
 ### Drawing your own shapes (the pen)
 
 Boxes, circles and rounded frames cover most layouts. When you need a shape that isn't in that list, draw it: the rail's **Pen** button (or the `P` key) puts you in drawing mode. Three single keys move between the modes - **`V`** back to the Pointer, **`P`** for the Pen, **`N`** for the node tool (**Edit points**) - and the Pointer is always the way out of whatever you're in.
@@ -166,7 +172,7 @@ Select a clip and the inspector gives you the same edits as numbers: **Length**,
 
 **The audio strip.** Select any clip that carries sound and a compact strip opens under the timeline: a **Volume** fader, **Pan** for stereo position, a three-band **EQ** (**Low**, **Mid**, **High**), a **Pitch** control that transposes in semitones while the voice keeps its character, and **Normalize volume**, which brings the clip to broadcast loudness (BS.1770) so a quiet voice note and a loud track sit level. Where two clips meet, **Crossfade** blends the junction instead of cutting. An **Effect** slot runs on-device processing on the clip - **Voice cleanup** takes the room and the hiss out of a recording. Speed changes keep pitch too: a clip slowed or hurried is time-stretched, not chipmunked. At every mix the export ducks music under speech as the speech comes and goes and holds the whole programme under a true-peak limiter, so nothing clips on the way out; a waveform that would have clipped is drawn with a warning where it happens.
 
-![The timeline with the music clip selected: its strip runs along the bottom with Speed, Fades, Volume, Pan, EQ, Pitch, Normalize volume and the Effect slot](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dvideo%26_sel%3Dbed&width=1440&height=900&dpi=192&waitMs=5000&waitSelector=.tl-clip&css=.tl-panel%7Bheight%3A300px!important%7D&cropSelector=.tl-panel&walker=1&format=svg&dark=1&filename=tl-audio-strip)
+![The timeline with the music clip selected: its strip runs along the bottom with Speed, Fades, Volume, Pan, EQ, Pitch, Normalize volume and the Effect slot](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Fbx%3Dt1%252Ctext%252C200%252C140%252C1500%252C220%252C0%252Crect%252C16%252C%252C100%252C%252Ccontain%252Cnormal%252CVoiceover%252520session%252C%25257Bcolor.semantic.text%25257D%252C48%252Ccenter%252Cmiddle%252C500%252Csans%252C1.12%252C0%252Ctrue%252Cfalse%252C%252C%252C8%252Cnone%252C00000055%252C0%252C0%252C10%252Ccenter%252Cfalse%252C%252C%252C0%252Cnonzero%252C0%252C3.3%252C0%252C1%252Cnone%252Cnone%252C400%252C400%252Cfalse%252Cseq%252C%252Cround%252Cround%252C%252C0%252C0%252C0%252C0%252C%252C%252C%252C0%252Ctrue%252Cnone%252Cnone%252C%252Cfalse%252C%252C%252C%252C0%252C%252C%252Cfalse%252C%252C%252C%252C%252Cfalse%252Cfalse%252C%252C1%252C%252Cfalse%252C%252C60%252C%252C%252C1%257Ea1%252Caudio%252C200%252C500%252C400%252C80%252C0%252Crect%252C16%252C%252C100%252Clolly%25252Floops%25252F3-am-echoes%252Ccontain%252Cnormal%252C%252C%25257Bcolor.semantic.text%25257D%252C48%252Ccenter%252Cmiddle%252C500%252Csans%252C1.12%252C0%252Ctrue%252Cfalse%252C%252C%252C8%252Cnone%252C00000055%252C0%252C0%252C10%252Ccenter%252Cfalse%252C%252C%252C0%252Cnonzero%252C0%252C3.3%252C0%252C1%252Cnone%252Cnone%252C400%252C400%252Cfalse%252C%252C%252Cround%252Cround%252C%252C0%252C0%252C0%252C0%252C%252C%252C%252C0%252Ctrue%252Cnone%252Cnone%252C%252Cfalse%252C%252C%252C%252C0%252C%252C%252Cfalse%252C%252C%252C%252C%252Cfalse%252Cfalse%252C%252C1.3%252C%252Cfalse%252C%252C60%252C%252C%252C1%26_sel%3Da1&width=1440&height=900&dpi=192&waitMs=5000&waitSelector=.tl-clip&css=.tl-panel%7Bheight%3A300px%21important%7D&cropSelector=.tl-panel&walker=1&format=svg&dark=1&filename=tl-audio-strip&drive=click%3Abutton%3Ahas-text%28%22Inspector%22%29)
 
 **Rendering it.** A motion export is a **deterministic composite**, not a screen recording - each frame is decoded, drawn and encoded at an exact time, so the file doesn't depend on your machine keeping up, and there's no practical frame ceiling on MP4 or WebM. The timeline's own length sets the duration unless you type one. Content Credentials are stamped as on any other export. A still export gives you the frame at the playhead, or a whole contact sheet from the **Frames** field beside the output size - see [Exporting](/info/exporting.html#stills-from-a-timed-composition).
 
@@ -177,6 +183,8 @@ A few limits to keep in mind: a sequence is capped at one hour, GIF and animated
 The Design tool has the same timeline, so you can time a layout without moving to another tool, and it exports motion too.
 
 ## Presenting
+
+To place your camera, a logo and a name caption over the audience picture, use **Present with camera**. Its private controls, saved scenes, sharing and recording steps are covered in [Presenting with camera](/info/presenting.html). The ordinary deck controls below remain available through **Present**.
 
 A Design document made of **artboards** is already a deck. Open the **Lolly menu** on the tool rail and choose **Present** - the last row - and each artboard becomes a full-screen slide, in the order the artboards sit on the canvas. The deck runs on a copy of the rendered artboards, so the editor underneath is never touched and leaving puts you back exactly where you were.
 
@@ -193,7 +201,7 @@ A Design document made of **artboards** is already a deck. Open the **Lolly menu
 
 ![The inspector's Document section: Voice, Blend with, Speed, Lead-in, Tail and Show captions when presenting](/t/url-shot?url=%2F%23%2Ftool%2Fdesign%3Ftemplate%3Dfeature-tour&width=1440&height=900&dpi=192&waitMs=3500&cropSelector=.fc-insp&walker=1&format=svg&dark=1&filename=design-narration)
 
-The deck is a link as well. `?present` opens straight into it, `s=` names the slide - a position, an artboard id or `id.step` for a build step - and the address updates as you move, so what you send is the slide you're on. Tool authors: those parameters are documented on the [URL Mode](/info/url-mode.html#reserved-parameters) page.
+The deck is a link as well. `?present` opens straight into it, `s=` names the slide - a position, an artboard id or `id.step` for a build step - and the address updates as you move, so what you send is the slide you're on. Tool authors: those parameters are documented on the [URL Mode](/info/url-parameters.html#reserved-parameters) page.
 
 ## On a phone
 
@@ -277,7 +285,7 @@ alt text names them - do not re-caption this as "the sort menu".
 
 > One label trap: **View sessions** only exists once something is *selected*. Right-clicking a single unselected card instead offers **N saved sessions**, which opens that tool's own history dialog rather than navigating to Projects.
 
-![Two tool cards ticked in the Tools gallery, with the floating selection bar reading 2 selected and offering Available offline, View sessions, Favourite and Hide](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone!important%7D&drive=click%3A%5Bdata-select%3D%22qr-code%22%5D%3Bclick%3A%5Bdata-select%3D%22gradient%22%5D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&dark=1&filename=misc-bulkbar-gallery)
+![The gallery selection bar for two tools, offering Available offline, View sessions, Favourite and Hide](/t/url-shot?url=%2F%23%2F&width=1440&height=900&dpi=192&waitMs=1600&css=.welcome-dialog%2C.personalize-nudge%7Bdisplay%3Anone%21important%7D&drive=click%3A%5Bdata-select%3D%22qr-code%22%5D%3Bclick%3A%5Bdata-select%3D%22gradient%22%5D&waitSelector=.gallery-view%5Bdata-shots-settled%5D&walker=1&format=svg&dark=1&filename=misc-bulkbar-gallery&cropSelector=.gallery-bulkbar)
 <!--
 SHOT NOTE (misc-bulkbar-gallery): drive targets `[data-select="qr-code"]` /
 `[data-select="gradient"]` - the `.tile-check[data-select="<ref>"]` checkbox button

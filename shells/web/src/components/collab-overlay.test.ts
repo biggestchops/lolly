@@ -311,6 +311,39 @@ test('reduced motion draws static dots and starts no ticker at all', () => {
   h.cursors.dispose();
 });
 
+test('the decoration swings about the true tip, settles, and is reset before a pooled node is reused', () => {
+  const h = mount();
+  h.cursors.setPeers([peer('a', 0, 0.5)]);
+  h.setNow(50); h.cursors.setPeers([peer('a', 1, 0.5)]);
+  for (let t = 50; t <= 100; t += 10) { h.setNow(t); h.frames.flush(); }
+  const body = h.nodes()[0]!.querySelector<HTMLElement>('.collab-cursor-body')!;
+  assert.match(body.style.transform, /rotate\(-/);
+  assert.equal(h.transformOf(), 'translate3d(420px, 110px, 0)', 'the rotation does not move the tip');
+  assert.equal(h.frames.pending(), 1, 'only the decoration continues after the position rests');
+  for (let t = 110; t <= 1500; t += 10) { h.setNow(t); h.frames.flush(); }
+  assert.equal(body.style.transform, '');
+  assert.equal(h.frames.pending(), 0);
+  h.setStageWidth(800); h.cursors.reanchor();
+  assert.equal(body.style.transform, '', 'zooming does not inject motion');
+  h.cursors.setPeers([]); h.cursors.setPeers([peer('b', 0.25, 0.5)]);
+  assert.equal(h.nodes()[0]!.querySelector<HTMLElement>('.collab-cursor-body')!.style.transform, '');
+  h.cursors.dispose();
+});
+
+test('switching to reduced motion during a swing stops and clears it on the next paint', () => {
+  const opts = { still: false }, h = mount(opts);
+  h.cursors.setPeers([peer('a', 0, 0.5)]);
+  h.setNow(50); h.cursors.setPeers([peer('a', 1, 0.5)]);
+  h.setNow(75); h.frames.flush();
+  opts.still = true;
+  h.setNow(90); h.frames.flush();
+  assert.equal(h.transformOf(), 'translate3d(420px, 110px, 0)');
+  assert.equal(h.nodes()[0]!.querySelector<HTMLElement>('.collab-cursor-body')!.style.transform, '');
+  assert.ok(h.nodes()[0]!.classList.contains('collab-cursor--still'));
+  assert.equal(h.frames.pending(), 0);
+  h.cursors.dispose();
+});
+
 test('a borrowed layer is painted into but never unmounted', () => {
   // The arrangement collab.css's internal z-order assumes: ONE .collab-canvas-layer
   // holding both the focus boxes and the cursors. Whoever mounted it owns it.

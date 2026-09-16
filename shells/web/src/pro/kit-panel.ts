@@ -6,7 +6,7 @@ import { fetchTemplateFile } from '../lib/template-source.ts';
 import { t, tRaw } from '../i18n.ts';
 import { escape as escapeHtml } from '../utils.ts';
 import { getTool, renderRowToBlob } from './render-export.ts';
-import { applyKit, boundValue, captureKitEdits, createKitRows, kitIssues, kitRowIssues, parseKitDefinition } from './kit-model.ts';
+import { commonInputKit, applyKit, boundValue, captureKitEdits, createKitRows, kitIssues, kitRowIssues, parseKitDefinition } from './kit-model.ts';
 import type { KitState, KitRow } from './kit-model.ts';
 
 interface KitBatch<R extends KitRow> { kit?: KitState; rows: R[]; running: boolean; zipName: string }
@@ -179,6 +179,13 @@ export function mountKitPanel<R extends KitRow>(
   };
   panel.addEventListener('change', onChange); panel.addEventListener('click', onClick);
   trigger.addEventListener('click', start);
+  const commonTrigger = root.querySelector<HTMLButtonElement>('#pro-common-inputs');
+  const startCommon = (): void => {
+    if (busy || state.running) return;
+    try { state.kit = commonInputKit(state.rows); generation++; error = ''; root.classList.add('kit-hide-rows'); deps.changed(); paint(); }
+    catch (e) { failure(e); }
+  };
+  commonTrigger?.addEventListener('click', startCommon);
   const brandChanged = (): void => { generation++; clearPreviews(); paint(); };
   window.addEventListener('lolly:design-system-changed', brandChanged);
   return { refresh: paint, async validate() {
@@ -186,5 +193,5 @@ export function mountKitPanel<R extends KitRow>(
     try { const found = issues(); const all = found.length ? found : await dependencies(); error = all.join(' '); return all; }
     catch (e) { return [e instanceof Error ? e.message : String(e)]; }
     finally { busy = false; paint(); }
-  }, isBusy: () => busy, dispose() { active = false; generation++; clearPreviews(); panel.removeEventListener('change', onChange); panel.removeEventListener('click', onClick); trigger.removeEventListener('click', start); window.removeEventListener('lolly:design-system-changed', brandChanged); } };
+  }, isBusy: () => busy, dispose() { active = false; generation++; clearPreviews(); panel.removeEventListener('change', onChange); panel.removeEventListener('click', onClick); trigger.removeEventListener('click', start); commonTrigger?.removeEventListener('click', startCommon); window.removeEventListener('lolly:design-system-changed', brandChanged); } };
 }

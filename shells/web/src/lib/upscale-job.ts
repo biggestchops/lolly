@@ -323,9 +323,9 @@ export function startUpscaleJob(
   const controller = new AbortController();
   const job = startJob({ title: t('Upscaling image'), cancel: () => controller.abort() });
   void (async (): Promise<void> => {
-    await job.started;
-    if (job.cancelled) return;
     try {
+      await job.started;
+      if (job.cancelled) return;
       const ref = await runUpscaleJob(host, req, {
         signal: controller.signal,
         isCancelled: () => job.cancelled,
@@ -340,6 +340,8 @@ export function startUpscaleJob(
       if (job.cancelled || (err as Error | null)?.name === 'AbortError') return;
       job.fail(err);
       hooks.onError?.(err);
+    } finally {
+      job.settle();
     }
   })();
   return job;

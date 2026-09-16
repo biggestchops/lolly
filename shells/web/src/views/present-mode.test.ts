@@ -36,7 +36,38 @@ win.HTMLMediaElement.prototype.play = function (this: Playable) { this.__playing
 win.HTMLMediaElement.prototype.pause = function (this: Playable) { this.__playing = false; };
 
 const { openPresentMode } = await import('./present-mode.ts');
+const { readScene } = await import('./present-production/scene.ts');
 const { cameraFor, flightPath, FLIGHT_MARGIN } = await import('./present-math.ts');
+
+test('clean output refuses a blocked controls window without exposing notes', () => {
+  const src = makeRichSource([{ id: 'a', notes: 'PRIVATE' }]);
+  const popup = fakePopup(); popup.closed = true;
+  const ctl = openPresentMode({ source: src, production: {
+    controlsWindow: popup, resolveLogo: async () => { throw new Error('unused'); },
+    uploadLogo: async () => { throw new Error('unused'); }, saveScene: () => {}, saveRecording: async () => {},
+  } });
+  assert.equal(ctl, null); assert.equal(document.querySelector('.pr-stage'), null); cleanup();
+});
+
+test('clean output never falls back to in-page notes and typing stays private', async () => {
+  const src = makeRichSource([{ id: 'a', notes: 'PRIVATE' }, { id: 'b' }]);
+  const popup = fakePopup();
+  const ctl = openPresentMode({ source: src, production: {
+    controlsWindow: popup, scene: readScene(), resolveLogo: async () => { throw new Error('unused'); },
+    uploadLogo: async () => { throw new Error('unused'); }, saveScene: () => {}, saveRecording: async () => {},
+  } })!;
+  const input = popup.document.querySelector<HTMLInputElement>('[aria-label="Lower-third name"]')!;
+  input.dispatchEvent(new win.KeyboardEvent('keydown', { key: 's', bubbles: true }));
+  assert.equal(popup.closed, false, 'typing S does not close the private panel');
+  document.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'o' }));
+  assert.equal(ctl.overview, false);
+  popup.closed = true; await delay(650);
+  assert.equal(document.querySelector('.pr-speaker'), null);
+  assert.equal(document.querySelector<HTMLElement>('.pr-program-holding')!.hidden, false);
+  document.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape' }));
+  assert.ok(document.querySelector('.pr-production'), 'Escape keeps the shared window covered');
+  ctl.close(); cleanup();
+});
 
 /** Build a fresh source scope with N frame pages (ids slideK, laid out left→right). */
 function makeSource(ids: string[]): HTMLElement {

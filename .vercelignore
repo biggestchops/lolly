@@ -71,6 +71,9 @@ shells/web/public/models
 # ship also excludes it for start by simply not initialising the submodule.
 brands/suse
 
+# Locally built brand packs may contain private brand assets.
+dist-packs
+
 # Local sticky profile choice - a developer's own default for this checkout.
 # NEVER ship it: `pnpm run ship` archives the local tree, and the content resolver
 # ranks the sticky file ABOVE profiles.json's default. If it leaked into a deploy
@@ -127,6 +130,7 @@ shells/web/public/info/shots
 # mascots, founded-by.svg - 152 files) are NOT matched by these patterns and
 # still ship, which is why this is per-extension rather than the whole directory.
 shells/web/public/info/*.html
+shells/web/public/info/docs-icons.*.svg
 shells/web/public/info/*.md
 shells/web/public/info/**/*.html
 shells/web/public/info/**/*.md
@@ -149,3 +153,6 @@ shells/web/public/info/audio
 # tool: no Vercel-side step invokes translate.ts, and the file stays git-tracked,
 # so CI and local `npm test` / locales.test.ts are unaffected.
 scripts/i18n/cache.json
+
+# Local assistant caches and session databases are never build inputs.
+.tokensave

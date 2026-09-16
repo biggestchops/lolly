@@ -311,6 +311,8 @@ export async function mountInlineGrade(env: GradeInlineEnv): Promise<GradeInline
       } catch (err) {
         env.log?.('error', 'Grade render failed', { error: String(err) });
         job.fail(err);
+      } finally {
+        job.settle();
       }
     })();
   }, { signal });

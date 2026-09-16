@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { catalogFile, contentRoots, contentUrlFile } from './content-roots.ts';
 
 import type { TextAPI, TextPathCluster } from '@lolly-tools/core/host-v1';
+import { createGlyphCache } from './text-glyphs.ts';
 import type { Blob as HbBlob, Face as HbFace, Font as HbFont, Feature as HbFeature } from 'harfbuzzjs';
 
 type HarfBuzzModule = typeof import('harfbuzzjs');
@@ -59,6 +60,9 @@ interface FontEntry {
 
 const faceCache = new Map<string, FaceEntry>();
 const fontCache = new Map<string, FontEntry>();
+const glyphCache = createGlyphCache();
+const pendingFaces = new Map<string, Promise<FaceEntry>>();
+const pendingFonts = new Map<string, Promise<FontEntry>>();
 
 /**
  * Resolve a font URL to its bytes on disk (the Node analogue of the web module's
@@ -102,7 +106,16 @@ async function loadFontBytes(fontUrl: string, repoRoot: string): Promise<Uint8Ar
 }
 
 async function loadFace(fontUrl: string, repoRoot: string): Promise<FaceEntry> {
-  if (faceCache.has(fontUrl)) return faceCache.get(fontUrl)!;
+  const key = JSON.stringify([repoRoot, fontUrl]);
+  if (faceCache.has(key)) return faceCache.get(key)!;
+  const pending = pendingFaces.get(key);
+  if (pending) return pending;
+  const load = readFace(fontUrl, repoRoot, key);
+  pendingFaces.set(key, load);
+  try { return await load; } finally { pendingFaces.delete(key); }
+}
+
+async function readFace(fontUrl: string, repoRoot: string, key: string): Promise<FaceEntry> {
   const hb = await loadHarfBuzz();
 
   const buf = await loadFontBytes(fontUrl, repoRoot);
@@ -114,7 +127,7 @@ async function loadFace(fontUrl: string, repoRoot: string): Promise<FaceEntry> {
   const blob = new hb.Blob(buf as unknown as ArrayBuffer);
   const face = new hb.Face(blob);
   const entry = { blob, face, upem: face.upem, unicodes: new Set(face.collectUnicodes()) };
-  faceCache.set(fontUrl, entry);
+  faceCache.set(key, entry);
   return entry;
 }
 
@@ -125,9 +138,16 @@ async function loadFace(fontUrl: string, repoRoot: string): Promise<FaceEntry> {
  */
 async function loadFont(fontUrl: string, repoRoot: string, variations?: string[]): Promise<FontEntry> {
   const vars = Array.isArray(variations) ? variations.filter(v => typeof v === 'string') : [];
-  const key = vars.length ? `${fontUrl}|${vars.join(',')}` : fontUrl;
+  const key = JSON.stringify([repoRoot, fontUrl, vars]);
   if (fontCache.has(key)) return fontCache.get(key)!;
+  const pending = pendingFonts.get(key);
+  if (pending) return pending;
+  const load = readFont(fontUrl, repoRoot, vars, key);
+  pendingFonts.set(key, load);
+  try { return await load; } finally { pendingFonts.delete(key); }
+}
 
+async function readFont(fontUrl: string, repoRoot: string, vars: string[], key: string): Promise<FontEntry> {
   const { face, upem, unicodes } = await loadFace(fontUrl, repoRoot);
   const hb = _hb!;
   const font = new hb.Font(face);
@@ -349,7 +369,8 @@ export function createNodeTextAPI({ repoRoot }: { repoRoot: string }): TextAPI {
           const ox = originUnits + penX + xOffset;
           const oy = yOffset;
 
-          const rawPath = font.glyphToPath(glyphId);
+          const outline = glyphCache.get(font, glyphId);
+          const rawPath = outline.path;
           const glyphD = rawPath ? transformPath(rawPath, ox, oy, scale) : '';
           if (glyphD) d += glyphD;
           if (pieces) {
@@ -361,7 +382,7 @@ export function createNodeTextAPI({ repoRoot }: { repoRoot: string }): TextAPI {
             else pieces.set(key, { d: glyphD, x: penPxHere, advance: advPx });
           }
 
-          const ext = font.glyphExtents(glyphId);
+          const ext = outline.extents;
           if (ext && (!preserveWhitespaceAdvance || glyphD)) {
             const bx1 = (ox + ext.xBearing) * scale;
             const bx2 = (ox + ext.xBearing + ext.width) * scale;

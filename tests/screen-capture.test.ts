@@ -78,7 +78,7 @@ test('the sensor capabilities still validate (screen is additive, not a replacem
 
 // ─── version ─────────────────────────────────────────────────────────────────
 
-test('ENGINE_VERSION is 1.197.0', () => {
+test('ENGINE_VERSION is 1.204.0', () => {
   // A literal pin: the screencap surface shipped at 1.54, and tools declare
   // ^1.54.0 to require it. session-record only checks the stamp equals whatever
   // ENGINE_VERSION happens to be (tautological) - this catches an errant bump.
@@ -486,7 +486,10 @@ test('ENGINE_VERSION is 1.197.0', () => {
   // 1.197.0 (2026-09-13): the optional `rights` export option (the attribution plan an
   //          export promised, and the callback a host reports its measured receipt
   //          through) - additive within HostV1, no capture change.
-  assert.equal(ENGINE_VERSION, '1.197.0');
+  // 1.201.0: portable design and saved-session tools add layout preflight to
+  //          export; source provenance is additive and capture stays unchanged.
+  // 1.204.0: studio collections, surface finishes and framing are additive; capture is unchanged.
+  assert.equal(ENGINE_VERSION, '1.204.0');
 });
 
 // ─── loadTool: a ^1.54.0 tool loads against this engine ───────────────────────

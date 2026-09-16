@@ -1231,6 +1231,7 @@ export async function wireCanvas(tview: ToolViewCtx): Promise<void> {
     tview.lottieModule?.destroyLottiePlayers(); // else animationManager ticks detached trees
     tview.videoModule?.destroyVideoPlayers(); // drop remembered <video> positions
     tview.vizModule?.destroyToolViz(); // else a WebGL2 context stays pinned per visited tool
+    tview.studioModule?.destroyToolStudio(tview.contentEl);
     if (tview.onFocusRect && stageEl) stageEl.removeEventListener('fc-focus-rect', tview.onFocusRect);
     styleEl.remove();
     shutter.destroy();

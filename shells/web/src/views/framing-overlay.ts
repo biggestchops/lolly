@@ -1,3 +1,4 @@
+import { designSelection } from '@lolly-tools/core/design-tool-v1';
 // SPDX-License-Identifier: MPL-2.0
 /**
  * The generic image-framing overlay (plans/148 WP-C).
@@ -73,7 +74,8 @@ const clampTo = (v: number, s: FieldSpec | undefined): number => {
 const snapTo = (v: number, s: FieldSpec | undefined, round: (n: number) => number): number => {
   const step = s?.step;
   if (!step || step <= 0) return v;
-  const snapped = round(v / step) * step;
+  const origin = s?.min ?? 0;
+  const snapped = origin + Math.min(Math.floor(((s?.max ?? Infinity) - origin) / step), Math.max(0, round((v - origin) / step))) * step;
   // Steps like 0.5 leave binary dust (0.30000000000000004); trim to the step's decimals.
   const dp = (String(step).split('.')[1] ?? '').length;
   return Number(snapped.toFixed(dp));
@@ -219,7 +221,7 @@ export function setupFramingOverlay({
     bakeBtn.hidden = !onBake;
   }
 
-  function arm(key: string): void {
+  function arm(key: string, focus = true): void {
     if (armedKey === key) return;
     disarm(false);
     armedKey = key;
@@ -230,7 +232,7 @@ export function setupFramingOverlay({
       el.style.touchAction = 'none';
     }
     position();
-    layer.focus();
+    if (focus) layer.focus();
     const target = resolve(key);
     announce(target?.hasTilt
       ? t('Framing this image. Drag to move, scroll to zoom, hold Alt and drag to correct perspective, Escape to finish.')
@@ -469,7 +471,12 @@ export function setupFramingOverlay({
 
   function reset(target: Target): void {
     const next: Partial<Framing> = {};
-    for (const f of FIELDS) if (f in target.specs) next[f] = target.specs[f]?.default ?? NEUTRAL[f];
+    const policy = runtime.manifest.designTool;
+    const authored = policy ? designSelection(policy, Object.fromEntries(model().filter(i => i.isDirty).map(i => [i.id, i.value]))).defaults[target.key] ?? policy.inputs.find(f => f.input.id === target.key)?.input.default : undefined;
+    for (const f of FIELDS) if (f in target.specs) {
+      const value = authored && typeof authored === 'object' ? (authored as Record<string, number>)[f] : undefined;
+      next[f] = value ?? target.specs[f]?.default ?? NEUTRAL[f];
+    }
     commit(target, next);
     announce(t('Framing reset.'));
   }
@@ -510,7 +517,7 @@ export function setupFramingOverlay({
       case '-':           zoomAt(target, el, -stepOf('zoom') * 5); break;
       default: return;
     }
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
   };
   layer.addEventListener('keydown', onKey);
 
@@ -522,7 +529,7 @@ export function setupFramingOverlay({
     const row = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-input-id]');
     const id = row?.dataset.inputId;
     if (!id || id === armedKey) return;
-    if (canvasEl.querySelector(`[data-framing="${CSS.escape(id)}"]`)) arm(id);
+    if (canvasEl.querySelector(`[data-framing="${CSS.escape(id)}"]`)) arm(id, false);
   };
   document.addEventListener('focusin', onFocusIn);
 

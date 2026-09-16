@@ -125,3 +125,17 @@ test('an inner dialog still open blocks the outer one from popping its entry', a
   await settle();
   assert.equal(backs, 1);
 });
+
+test('an awaited dialog result can navigate before its entry is consumed', async () => {
+  backs = 0;
+  let close: () => void = () => {};
+  const result = new Promise<void>(resolve => {
+    const modal = mountModal('<p>Choose a destination</p>', {className:'modal', onClose:() => resolve()});
+    close = () => modal.close();
+  });
+  close();
+  await result;
+  history.pushState(null, '', '/design');
+  await settle();
+  assert.equal(backs, 0, 'the chooser must not undo the navigation from its awaited result');
+});

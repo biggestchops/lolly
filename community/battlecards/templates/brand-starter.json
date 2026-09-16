@@ -1,0 +1,32 @@
+{
+  "id": "brand-starter",
+  "name": "Conversation cards",
+  "category": "Brand",
+  "description": "A short, editable set of cards for a product conversation.",
+  "values": {
+    "title": "Open possibilities",
+    "data": {
+      "columns": [
+        "Topic",
+        "Opportunity",
+        "Next step"
+      ],
+      "rows": [
+        [
+          "Build with confidence",
+          "Bring your ideas to life with an open foundation.",
+          "Explore what comes next."
+        ],
+        [
+          "Choose your path",
+          "Keep the freedom to adapt as your needs grow.",
+          "Start a conversation."
+        ]
+      ]
+    },
+    "accent": "{color.semantic.secondary}",
+    "bg": "{color.semantic.surface}",
+    "ink": "{color.semantic.text}"
+  },
+  "galleryCover": true
+}
