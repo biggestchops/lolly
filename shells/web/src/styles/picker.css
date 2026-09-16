@@ -501,6 +501,9 @@
   border-radius: calc(var(--radius) * 1.5);
 }
 
+/* The "Add from URL" entry card reuses the toolcard chrome; its field fills the width. */
+.asset-picker-urlinput { width: 100%; }
+
 .asset-picker-toolcard-head {
   display: flex;
   align-items: center;
@@ -858,6 +861,7 @@
 }
 
 .asset-picker-footer { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ui-space-control-inline); }
+.asset-picker-addurl,
 .asset-picker-webcam,
 .asset-picker-screencap,
 .asset-picker-scriptaudio,
@@ -876,11 +880,19 @@
   font-size: var(--fs-md);
   transition: border-color var(--dur-1), background var(--dur-1);
 }
+.asset-picker-addurl:hover,
 .asset-picker-webcam:hover,
 .asset-picker-screencap:hover,
 .asset-picker-scriptaudio:hover,
 .asset-picker-matte:hover,
 .asset-picker-upscale:hover { border-color: hsl(var(--primary)); background: hsl(var(--accent)); }
+.asset-picker-addurl:focus-visible,
+.asset-picker-webcam:focus-visible,
+.asset-picker-screencap:focus-visible,
+.asset-picker-scriptaudio:focus-visible,
+.asset-picker-matte:focus-visible,
+.asset-picker-upscale:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.asset-picker-addurl svg,
 .asset-picker-webcam svg,
 .asset-picker-screencap svg,
 .asset-picker-scriptaudio svg,

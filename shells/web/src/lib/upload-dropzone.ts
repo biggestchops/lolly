@@ -27,6 +27,8 @@ import type { PickerHost } from '../views/picker.ts';
 import { announce } from '../a11y.ts';
 import { playSfx } from './sfx.ts';
 import { escape } from '../utils.ts';
+import { icon } from './icons.ts';
+import { fetchImageUrlAsFile, AddViaUrlError } from './add-via-url.ts';
 // Only the trim card's strings and the touch CTA go through t() - the zone's own copy
 // predates it and its translation is a separate i18n pass, not something to half-do here.
 import { t } from '../i18n.ts';
@@ -39,6 +41,8 @@ export interface DropzoneOpts {
   compact?: boolean;
   /** Called after a successful ingest with how many assets landed. */
   onAdded?: (count: number) => void | Promise<void>;
+  /** Show a reveal-on-click "Add from URL" field under the zone (needs `host`). */
+  allowUrl?: boolean;
 }
 
 // What the ingest path ACTUALLY accepts - keep in step with UPLOAD_ACCEPT.
@@ -78,9 +82,42 @@ export function mountUploadDropzone(container: HTMLElement, host: PickerHost, op
         <span class="updz-text"><span class="updz-lead">Drag &amp; drop files here, or <span class="updz-browse">browse</span></span><span class="updz-cta btn btn--primary">${t('Choose files')}</span></span>
         <span class="updz-hint">${opts.hint ? escape(opts.hint) : DEFAULT_HINT_HTML}</span>
       </span>
-    </label>`;
+    </label>${opts.allowUrl ? `
+    <div class="updz-url">
+      <button type="button" class="updz-url-toggle btn btn--ghost btn--sm" aria-expanded="false">${icon('link', { size: 14 })}<span>${t('Add from URL…')}</span></button>
+      <form class="updz-url-form" hidden>
+        <input type="url" class="updz-url-input field-input" inputmode="url" autocomplete="off" spellcheck="false" placeholder="${escape(t('Paste an image URL or a Lolly link'))}" aria-label="${escape(t('Image or Lolly link'))}">
+        <button type="submit" class="updz-url-go btn btn--primary btn--sm">${t('Add')}</button>
+      </form>
+      <p class="updz-url-error" role="alert" hidden></p>
+    </div>` : ''}`;
   const zone = container.querySelector<HTMLElement>('.updz')!;
   const input = container.querySelector<HTMLInputElement>('.updz-input')!;
+
+  // "Add from URL": a Lolly tool link renders on-device (no fetch); anything else
+  // is an image URL, fetched directly or (on the web, where CSP forbids arbitrary
+  // origins) through the app's own /api/fetch-image proxy - either way the bytes
+  // ingest through the SAME storeUserUpload path as a drop, so provenance,
+  // sanitising and downscale are identical.
+  async function addFromUrl(rawUrl: string): Promise<void> {
+    const url = rawUrl.trim();
+    if (!url) return;
+    let file: File;
+    const desc = await host.compose?._describeUrl?.(url).catch(() => null) ?? null;
+    if (desc) {
+      const ref = await host.compose.renderUrl(url);
+      if (!ref) throw new AddViaUrlError(t('That Lolly link could not be rendered.'));
+      const blob = await (await fetch(ref.url)).blob();   // renderUrl returns a self-contained data: URL
+      const name = (String((desc as { name?: unknown }).name ?? 'lolly').replace(/[^\w.-]+/g, '-').slice(0, 60) || 'lolly');
+      file = new File([blob], `${name}.${ref.format || 'svg'}`, { type: blob.type || 'image/svg+xml' });
+    } else {
+      file = await fetchImageUrlAsFile(url);
+    }
+    await storeUserUpload(host, file, { sourceHint: 'url' });
+    playSfx('drop');
+    announce('Added 1 file to your uploads.');
+    await opts.onAdded?.(1);
+  }
 
   // Answers the trim card on the user's behalf when the surface goes away under it
   // (see offerTrim). Null whenever no card is up.
@@ -262,6 +299,48 @@ export function mountUploadDropzone(container: HTMLElement, host: PickerHost, op
     e.preventDefault();
     zone.classList.remove('is-dragover');
     void ingestFiles([...e.dataTransfer.files]);
+  }, { signal });
+
+  // Reveal-on-click URL entry (opts.allowUrl). Shares the module-level single-
+  // flight guard with drops, so a URL add and a drop never run at once.
+  const urlToggle = container.querySelector<HTMLButtonElement>('.updz-url-toggle');
+  const urlForm = container.querySelector<HTMLFormElement>('.updz-url-form');
+  const urlInput = container.querySelector<HTMLInputElement>('.updz-url-input');
+  const urlError = container.querySelector<HTMLElement>('.updz-url-error');
+  urlToggle?.addEventListener('click', () => {
+    const opening = urlForm?.hidden ?? false;
+    if (urlForm) urlForm.hidden = !opening;
+    urlToggle.setAttribute('aria-expanded', String(opening));
+    if (urlError) urlError.hidden = true;
+    if (opening) urlInput?.focus();
+  }, { signal });
+  urlInput?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !urlForm) return;
+    urlForm.hidden = true;
+    urlToggle?.setAttribute('aria-expanded', 'false');
+    urlToggle?.focus();
+  }, { signal });
+  urlForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const value = urlInput?.value.trim();
+    if (!value || ingesting) return;
+    const go = urlForm.querySelector<HTMLButtonElement>('.updz-url-go');
+    if (urlError) urlError.hidden = true;
+    if (go) { go.disabled = true; go.textContent = t('Adding…'); }
+    ingesting = true;
+    try {
+      await addFromUrl(value);
+      if (urlInput) urlInput.value = '';
+      urlForm.hidden = true;
+      urlToggle?.setAttribute('aria-expanded', 'false');
+    } catch (err) {
+      const msg = err instanceof AddViaUrlError ? err.message : ((err as Error)?.message || t('That address could not be added.'));
+      if (urlError) { urlError.textContent = msg; urlError.hidden = false; }
+      host.log?.('warn', 'Add from URL failed', { error: String(err) });
+    } finally {
+      ingesting = false;
+      if (go) { go.disabled = false; go.textContent = t('Add'); }
+    }
   }, { signal });
 
   return () => {

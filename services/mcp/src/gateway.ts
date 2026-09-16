@@ -23,6 +23,7 @@ import { isIP } from 'node:net';
 import { dispatch } from './server.ts';
 import type { JsonRpcRequest } from './protocol.ts';
 import { matchRenderGetPath, renderGet } from './render-get.ts';
+import { matchImageProxyPath, proxyImage } from './image-proxy.ts';
 import {
   authorizationServerMetadata, authorizeGet, authorizePost, isAuthorized,
   protectedResourceMetadata, register, signingSecret, token, type Result,
@@ -217,6 +218,19 @@ export function createGateway(env: NodeJS.ProcessEnv = process.env): (req: Incom
         env,
         rateLimiter: limiter,
       });
+      res.writeHead(r.status, { ...CORS, ...r.headers });
+      if (method === 'HEAD' || r.body === undefined) res.end();
+      else res.end(typeof r.body === 'string' ? r.body : Buffer.from(r.body));
+      return;
+    }
+
+    // ── public image proxy: /api/fetch-image?url=<remote image> ─────────────
+    // Same policy shape as the render route (public, stateless, no MCP secrets):
+    // fetches a caller-chosen image server-side so the web PWA's img-src 'self'
+    // CSP can show it. SSRF-guarded + rate-limited in image-proxy.ts; a self-
+    // hoster disables it with LOLLY_DISABLE_IMAGE_PROXY=1.
+    if ((method === 'GET' || method === 'HEAD') && matchImageProxyPath(path)) {
+      const r = await proxyImage(url, { ip: clientIp(req, env), env, rateLimiter: limiter });
       res.writeHead(r.status, { ...CORS, ...r.headers });
       if (method === 'HEAD' || r.body === undefined) res.end();
       else res.end(typeof r.body === 'string' ? r.body : Buffer.from(r.body));

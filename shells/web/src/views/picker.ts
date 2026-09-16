@@ -63,6 +63,7 @@ import { libCategory, LIB_GROUPS, loadAssetCategories, categoryLabel } from '../
 import type { LibGroup } from '../lib/asset-category.ts';
 import { categoryGlyph } from '../lib/category-icons.ts';
 import { icon } from '../lib/icons.ts';
+import { fetchImageUrlAsFile } from '../lib/add-via-url.ts';
 import { isChromium } from '../capabilities.ts';
 import { loadFavouriteAssets, loadHiddenAssets, assetBaseId } from '../lib/asset-favourites.ts';
 import { matchesType as pickerMatchesType, type TypeFilter as PickerTypeFilter } from './catalog-filter.ts';
@@ -88,7 +89,7 @@ import type { WebStateAPI } from '../bridge/state.ts';
 import type { VideoJobHost } from '../lib/video-jobs.ts';
 
 import { UPLOAD_ACCEPT, isPdfUpload, isPptxUpload } from '../lib/upload-types.ts';
-import { tryStoreModelUpload } from '../lib/model-upload.ts';
+import { isRadianceAsset, tryStoreModelUpload, tryStoreRadianceUpload } from '../lib/model-upload.ts';
 export { UPLOAD_ACCEPT, isPdfUpload, isPptxUpload };
 
 type TabId = 'library' | 'uploads' | 'sessions' | 'projects' | 'tools' | 'templates';
@@ -581,6 +582,7 @@ async function render(
             <input type="file" class="visually-hidden" accept="${UPLOAD_ACCEPT}" />
             <span class="asset-picker-upload-label">${t('Upload your own…')}</span>
           </label>
+          <button type="button" class="asset-picker-addurl">${icon('link', { size: 14 })} ${t('Add from URL…')}</button>
           ${canWebcam ? `<button type="button" class="asset-picker-webcam">${cameraGlyph} ${t('Take a photo')}</button>` : ''}
           ${canScreencap ? `<button type="button" class="asset-picker-screencap">${icon('monitor', { size: 14 })} ${t('Capture screen')}</button>` : ''}
           ${canScriptAudio ? `<button type="button" class="asset-picker-scriptaudio">${icon('mic', { size: 14 })} ${t('Script audio')}</button>` : ''}
@@ -1417,6 +1419,9 @@ async function render(
   // "Take a photo": open a live webcam preview, capture one frame, and store it as an
   // ordinary raster user asset (same path + AssetRef as an upload). Camera teardown is
   // handled inside openWebcamCapture so no track outlives the dialog.
+  // "Add from URL": reveal the URL-entry card (reuses the toolcard takeover).
+  root.querySelector('.asset-picker-addurl')?.addEventListener('click', () => showUrlEntryCard());
+
   root.querySelector('.asset-picker-webcam')?.addEventListener('click', async () => {
     const ref = await openWebcamCapture(file => storeUserUpload(host, file), host.log);
     if (!ref) return;
@@ -2175,20 +2180,15 @@ async function render(
   // A pasted URL that points STRAIGHT AT AN IMAGE FILE (…/logo.png, …/photo.svg,
   // a data: URI) becomes the asset itself - fetched, ingested through
   // storeUserUpload (same validation/provenance as an upload), and picked
-  // (Andy, 2026-08-28: asset inputs accept URLs, not only files). Best-effort:
-  // whether the fetch SUCCEEDS is platform policy (the web CSP admits self +
-  // data: and refuses arbitrary origins; Tauri admits more), and any failure
-  // returns false so the page-capture / can't-open fallback keeps its turn.
+  // (Andy, 2026-08-28: asset inputs accept URLs, not only files). The reach is
+  // lib/add-via-url.ts's: a data:/same-origin URL and the Tauri shells fetch
+  // directly; the deployed web PWA, whose CSP refuses arbitrary origins, routes
+  // it through the app's own same-origin image proxy (/api/fetch-image). Any
+  // failure (not an image, a blocked host, a refusal) returns false so the
+  // page-capture / can't-open fallback keeps its turn.
   async function tryDirectUrlAsset(url: string): Promise<boolean> {
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-      if (!res.ok) return false;
-      const blob = await res.blob();
-      const mime = (blob.type || '').toLowerCase();
-      if (!(mime.startsWith('image/'))) return false;   // pages and non-images → capture fallback
-      const base = /^data:/i.test(url) ? `pasted-${Date.now()}` : (url.split('/').pop()?.split(/[?#]/)[0] || `url-${Date.now()}`);
-      const name = /\.[a-z0-9]{2,5}$/i.test(base) ? base : `${base}.${mime === 'image/svg+xml' ? 'svg' : mime.slice(6).replace('jpeg', 'jpg')}`;
-      const file = new File([blob], name, { type: blob.type || 'image/png' });
+      const file = await fetchImageUrlAsFile(url);
       const ref = await storeUserUpload(host, file, { sourceHint: 'url' });
       if (collect) { dismissTakeover(); collectToast(await collect.onAsset(ref)); return true; }
       close(ref);
@@ -2257,6 +2257,50 @@ async function render(
         errEl.hidden = false;
       }
     });
+  }
+
+  // Route a URL the user pasted or typed: a Lolly tool link opens the render
+  // card; a direct image (or a remote image proxied through /api/fetch-image on
+  // the web) becomes the asset; anything else offers the screenshot-capture
+  // fallback. Shared by the search box and the footer "Add from URL" button;
+  // detectSeq drops a stale async detection when a newer entry supersedes it.
+  let detectSeq = 0;
+  async function handleUrlEntry(raw: string): Promise<void> {
+    const url = raw.trim();
+    if (!url) return;
+    const seq = ++detectSeq;
+    showTakeover(`<div class="asset-picker-loading">${t('Checking link…')}</div>`);
+    const desc = allowToolUrl ? await host.compose._describeUrl(url).catch(() => null) : null;
+    if (seq !== detectSeq) return;                    // superseded by a newer entry
+    if (desc) { showToolCard(desc, url, { editUrl: url }); return; }
+    if (await tryDirectUrlAsset(url)) return;          // a direct / proxied image → stored + picked
+    if (seq !== detectSeq) return;                    // the fetch attempt took a while - re-check
+    showUrlFallback(url);
+  }
+
+  // The footer "Add from URL" affordance: reveal-on-click, so it costs no space
+  // until asked for. Reuses the toolcard takeover chrome (no new layout), the
+  // back arrow / Escape close it, Enter or Add submits through handleUrlEntry.
+  function showUrlEntryCard(): void {
+    showTakeover(`
+      <div class="asset-picker-toolcard">
+        <div class="asset-picker-toolcard-head">
+          <button type="button" class="asset-picker-toolcard-back" aria-label="${escapeHtml(t('Back to list'))}">←</button>
+          ${icon('link', { size: 16 })}
+          <span>${t('Add an image from a web address')}</span>
+        </div>
+        <input type="url" class="asset-picker-urlinput field-input" inputmode="url" autocomplete="off" spellcheck="false"
+          placeholder="${escapeHtml(t('Paste an image URL or a Lolly link…'))}" aria-label="${escapeHtml(t('Image or Lolly link'))}" />
+        <div class="asset-picker-toolcard-actions">
+          <button type="button" class="tc-use url-go">${t('Add')}</button>
+        </div>
+      </div>`);
+    const input = toolcardHost.querySelector<HTMLInputElement>('.asset-picker-urlinput');
+    toolcardHost.querySelector('.asset-picker-toolcard-back')?.addEventListener('click', dismissTakeover);
+    const submit = (): void => { const v = input?.value.trim(); if (v) void handleUrlEntry(v); };
+    toolcardHost.querySelector('.url-go')?.addEventListener('click', submit);
+    input?.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); submit(); } });
+    input?.focus();
   }
 
   // Open a saved single-tool session as an image: reconstruct its canonical embed
@@ -2437,21 +2481,13 @@ async function render(
     // A Lolly tool URL pasted into the search box flips the picker into a "render
     // this tool" card; anything else filters the active pane. The seq guard drops a
     // stale describeUrl (async tool load) when the user keeps typing.
-    let detectSeq = 0;
     let searchDebounce: ReturnType<typeof setTimeout>;
     searchInput?.addEventListener('input', async () => {
       userTouched = true; // the user is driving now - don't auto-switch the pane out
       const raw = searchInput.value.trim();
       if (allowToolUrl && /^https?:\/\//i.test(raw)) {
-        const seq = ++detectSeq;
-        showTakeover(`<div class="asset-picker-loading">${t('Checking link…')}</div>`);
-        const desc = await host.compose._describeUrl(raw).catch(() => null);
-        if (seq !== detectSeq) return; // superseded by a newer keystroke
-        if (desc) { showToolCard(desc, raw, { editUrl: raw }); return; }
-        // Not a Lolly link - maybe it's a direct image file (…/logo.png).
-        if (await tryDirectUrlAsset(raw)) return;
-        if (seq !== detectSeq) return; // the fetch attempt took a while - re-check
-        showUrlFallback(raw);
+        // detectSeq (shared with the footer "Add from URL" card) drops a stale run.
+        await handleUrlEntry(raw);
         return;
       }
       detectSeq++; // invalidate any in-flight detection now that it's not a URL
@@ -2799,11 +2835,12 @@ function recordTabMemory(kind: string, tab: string): void {
 // icon, so paint the baked still the catalog ships beside it (host.assets.query
 // surfaces it as meta.posterUrl for model/lut) or, when there is none, a 3-D box
 // glyph - the honest "this is a model" marker, never a blank tile (plan 216 item 9).
+// A radiance map (.hdr/.exr) lights a scene rather than showing in one: a sun glyph.
 function modelThumb(ref: AssetRef): string {
   const poster = typeof ref.meta?.posterUrl === 'string' ? ref.meta.posterUrl : '';
   return poster
     ? `<img class="asset-picker-thumb" src="${escapeHtml(poster)}" alt="" loading="lazy" decoding="async">`
-    : `<span class="asset-picker-thumb asset-picker-thumb-stub" aria-hidden="true">${icon('box', { size: 30 })}</span>`;
+    : `<span class="asset-picker-thumb asset-picker-thumb-stub" aria-hidden="true">${icon(isRadianceAsset(ref) ? 'sunburst' : 'box', { size: 30 })}</span>`;
 }
 
 function card(ref: AssetRef): string {
@@ -2916,11 +2953,11 @@ function userCard(ref: AssetRef): string {
       ? videoThumb(ref.url, 'asset-picker-thumb')
       : ref.type === 'audio'
         ? audioThumb(ref, 'asset-picker-thumb')
-        : ref.type === 'text' || ref.type === 'data'
+        : ref.type === 'text' || (ref.type === 'data' && !isRadianceAsset(ref))
           ? (ref.type === 'text'
             ? `<span class="asset-picker-thumb asset-picker-thumb-stub" data-text-thumb="${escapeHtml(ref.id)}" aria-hidden="true">¶</span>`
             : `<span class="asset-picker-thumb asset-picker-thumb-stub" aria-hidden="true">▦</span>`)
-          : (ref.type === 'model' || ref.type === 'lut')
+          : (ref.type === 'model' || ref.type === 'lut' || isRadianceAsset(ref))
             ? modelThumb(ref)
             : `<img class="asset-picker-thumb" src="${escapeHtml(ref.url)}" alt="" loading="lazy" decoding="async">`;
   return `
@@ -3237,7 +3274,7 @@ export async function storeUserUpload(
     batch?: boolean;
   } = {},
 ): Promise<AssetRef> {
-  const model = await tryStoreModelUpload(host, file);
+  const model = (await tryStoreModelUpload(host, file)) ?? (await tryStoreRadianceUpload(host, file));
   if (model) return model;
   // Read the file as a blob, stash it in the user-assets IDB store, return
   // a `user/...` AssetRef. The bridge's assets.get() resolves these via the

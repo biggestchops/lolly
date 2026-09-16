@@ -42624,7 +42624,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
   let extras = {};
   let hookRunSeq = 0;
   function runHook(name, invoke, onLate) {
-    const budget2 = HOOK_BUDGET_MS[name];
+    const budget3 = HOOK_BUDGET_MS[name];
     const started = Date.now();
     const seq = onLate ? ++hookRunSeq : 0;
     let finished = false;
@@ -42634,8 +42634,8 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     const out = invoke(report);
     if (out == null || typeof out.then !== "function") {
       const elapsed = Date.now() - started;
-      if (elapsed > budget2) {
-        host.log("warn", `${name} ran ${elapsed}ms synchronously (budget ${budget2}ms - sync hooks can't be preempted)`, { toolId: tool.manifest.id });
+      if (elapsed > budget3) {
+        host.log("warn", `${name} ran ${elapsed}ms synchronously (budget ${budget3}ms - sync hooks can't be preempted)`, { toolId: tool.manifest.id });
       }
       return Promise.resolve(out);
     }
@@ -42646,11 +42646,11 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       finished = true;
       throw error;
     });
-    if (!onLate) return withTimeout2(p, budget2, tool.manifest.id);
-    return withTimeout2(p, budget2, tool.manifest.id).catch((err) => {
+    if (!onLate) return withTimeout2(p, budget3, tool.manifest.id);
+    return withTimeout2(p, budget3, tool.manifest.id).catch((err) => {
       p.then((patch) => {
         if (seq !== hookRunSeq || !patch) return;
-        host.log("info", `${name} finished ${Date.now() - started}ms in (budget ${budget2}ms) - applying late, still the newest run`, { toolId: tool.manifest.id });
+        host.log("info", `${name} finished ${Date.now() - started}ms in (budget ${budget3}ms) - applying late, still the newest run`, { toolId: tool.manifest.id });
         onLate(patch);
       }, () => {
       });
@@ -48662,10 +48662,10 @@ function booleanPath(a, b, op, opts = {}) {
   if (idxA.curves.length > MAX_CURVES || idxB.curves.length > MAX_CURVES) {
     return abandon(A, B, op, `${idxA.curves.length}+${idxB.curves.length} curves over the ${MAX_CURVES} ceiling`);
   }
-  const budget2 = newBudget();
+  const budget3 = newBudget();
   const splitsA = idxA.curves.map(() => []);
   const splitsB = idxB.curves.map(() => []);
-  crossSplits(idxA.curves, idxB.curves, splitsA, splitsB, tol, weld, budget2);
+  crossSplits(idxA.curves, idxB.curves, splitsA, splitsB, tol, weld, budget3);
   const edges = [
     ...splitIntoEdges(idxA.curves, splitsA, weld),
     ...splitIntoEdges(idxB.curves, splitsB, weld)
@@ -48674,14 +48674,14 @@ function booleanPath(a, b, op, opts = {}) {
   for (const e of edges) {
     const m2 = evalCubic(e, 0.5);
     const ref = midTangent(e);
-    const wa = sideWindings(idxA, m2.x, m2.y, ref.x, ref.y, near, budget2);
-    const wb = sideWindings(idxB, m2.x, m2.y, ref.x, ref.y, near, budget2);
+    const wa = sideWindings(idxA, m2.x, m2.y, ref.x, ref.y, near, budget3);
+    const wb = sideWindings(idxB, m2.x, m2.y, ref.x, ref.y, near, budget3);
     const left = combine(wa.left !== 0, wb.left !== 0, op);
     const right = combine(wa.right !== 0, wb.right !== 0, op);
     if (left === right) continue;
     kept.push(left ? e : reverseCubic(e));
   }
-  if (budget2.work <= 0) return abandon(A, B, op, "the work budget ran out mid-classification");
+  if (budget3.work <= 0) return abandon(A, B, op, "the work budget ran out mid-classification");
   return compactPath(walkLoops(dedupeEdges(kept, weld), weld));
 }
 function unionPath(a, b, opts) {
@@ -48708,27 +48708,27 @@ function selfUnion(p, opts = {}) {
   const weld = Math.max(tol, JOIN_EPS) * span;
   const near = weld * 0.01;
   if (idx.curves.length > MAX_CURVES) return path;
-  const budget2 = newBudget();
+  const budget3 = newBudget();
   const splits = idx.curves.map(() => []);
-  selfSplits(idx.curves, splits, tol, weld, budget2);
+  selfSplits(idx.curves, splits, tol, weld, budget3);
   if (path.length === 1 && !splits.some((s) => s.length) && !selfTouching(path[0], weld)) {
     const only = path[0];
     const probe = only.curves[0];
     const m2 = evalCubic(probe, 0.5);
     const ref = midTangent(probe);
-    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget2);
+    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3);
     return [filled(w.left, rule) ? only : reverseContour(only)];
   }
   const kept = [];
   for (const c of splitIntoEdges(idx.curves, splits, weld)) {
     const m2 = evalCubic(c, 0.5);
     const ref = midTangent(c);
-    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget2);
+    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3);
     const left = filled(w.left, rule), right = filled(w.right, rule);
     if (left === right) continue;
     kept.push(left ? c : reverseCubic(c));
   }
-  if (budget2.work <= 0) return path;
+  if (budget3.work <= 0) return path;
   return compactPath(walkLoops(dedupeEdges(kept, weld), weld));
 }
 function windingNumber(p, x, y) {
@@ -48738,17 +48738,17 @@ function windingNumber(p, x, y) {
   if (!box2 || !idx.curves.length) return 0;
   const span = Math.max(box2.x1 - box2.x0, box2.y1 - box2.y0, 1);
   const near = Math.max(EPS2, JOIN_EPS) * span * 0.01;
-  const budget2 = newBudget();
+  const budget3 = newBudget();
   let last = 0;
   for (const d2 of RAY_DIRS) {
-    const cast2 = castRay(idx, x, y, d2[0], d2[1], null, near, budget2);
+    const cast2 = castRay(idx, x, y, d2[0], d2[1], null, near, budget3);
     if (cast2.ok) return cast2.far;
     last = cast2.far;
-    if (budget2.work <= 0) return last;
+    if (budget3.work <= 0) return last;
   }
   const d = RAY_DIRS[0];
-  const cast = castRay(idx, x, y, d[0], d[1], null, near, budget2, true);
-  return cast.ok || budget2.work > 0 ? cast.far : last;
+  const cast = castRay(idx, x, y, d[0], d[1], null, near, budget3, true);
+  return cast.ok || budget3.work > 0 ? cast.far : last;
 }
 function pointInPath(p, x, y, rule = "nonzero") {
   return filled(windingNumber(p, x, y), rule);
@@ -48852,7 +48852,7 @@ function midTangent(c) {
   if (Math.hypot(dx, dy) > 1e-12) return { x: dx, y: dy };
   return { x: 1, y: 0 };
 }
-function sweepPairs(a, b, self, budget2, visit) {
+function sweepPairs(a, b, self, budget3, visit) {
   const byStart = (list2) => list2.map((_, i) => i).sort((p, q) => list2[p].box.x0 - list2[q].box.x0);
   const prune = (active, list2, x) => {
     let w = 0;
@@ -48870,9 +48870,9 @@ function sweepPairs(a, b, self, budget2, visit) {
       const box2 = a[i].box;
       prune(active, a, box2.x0);
       for (const j of active) {
-        if (budget2.pairs-- <= 0) return;
+        if (budget3.pairs-- <= 0) return;
         if (yHit(box2, a[j].box)) visit(Math.min(i, j), Math.max(i, j));
-        if (budget2.splits <= 0) return;
+        if (budget3.splits <= 0) return;
       }
       active.push(i);
     }
@@ -48889,9 +48889,9 @@ function sweepPairs(a, b, self, budget2, visit) {
       const box2 = a[i].box;
       prune(activeB, b, box2.x0);
       for (const j of activeB) {
-        if (budget2.pairs-- <= 0) return;
+        if (budget3.pairs-- <= 0) return;
         if (yHit(box2, b[j].box)) visit(i, j);
-        if (budget2.splits <= 0) return;
+        if (budget3.splits <= 0) return;
       }
       activeA.push(i);
     } else {
@@ -48899,20 +48899,20 @@ function sweepPairs(a, b, self, budget2, visit) {
       const box2 = b[j].box;
       prune(activeA, a, box2.x0);
       for (const i of activeA) {
-        if (budget2.pairs-- <= 0) return;
+        if (budget3.pairs-- <= 0) return;
         if (yHit(a[i].box, box2)) visit(i, j);
-        if (budget2.splits <= 0) return;
+        if (budget3.splits <= 0) return;
       }
       activeB.push(j);
     }
   }
 }
-function addSplit(splits, index2, t, budget2) {
+function addSplit(splits, index2, t, budget3) {
   if (!(t > 1e-9 && t < 1 - 1e-9)) return;
-  if (budget2.splits-- <= 0) return;
+  if (budget3.splits-- <= 0) return;
   splits[index2].push(t);
 }
-function collinearSplits(a, b, weld, budget2) {
+function collinearSplits(a, b, weld, budget3) {
   const dx = a[6] - a[0], dy = a[7] - a[1];
   const len2 = Math.hypot(dx, dy);
   if (len2 < weld) return null;
@@ -48927,7 +48927,7 @@ function collinearSplits(a, b, weld, budget2) {
   const ta = [], tb = [];
   for (const u of [lo, hi]) {
     const px = a[0] + dx * u, py = a[1] + dy * u;
-    budget2.work -= 64;
+    budget3.work -= 64;
     ta.push(nearestOnCubic(a, px, py).t);
     tb.push(nearestOnCubic(b, px, py).t);
   }
@@ -48952,18 +48952,18 @@ function selfIntersectCubic(c) {
   if (!(t1 > 1e-9 && t2 < 1 - 1e-9 && t2 - t1 > 1e-9)) return null;
   return [t1, t2];
 }
-function pairSplits(ci, cj, tol, weld, budget2) {
-  budget2.work -= 4;
+function pairSplits(ci, cj, tol, weld, budget3) {
+  budget3.work -= 4;
   if (coincidence(ci, cj, weld) !== 0) return null;
-  const run = overlapRun(ci, cj, weld, budget2);
+  const run = overlapRun(ci, cj, weld, budget3);
   if (run) return run;
   const hits2 = intersectCubics(ci, cj, tol);
   if (!hits2.length) {
     if (isLineCubic(ci, weld) && isLineCubic(cj, weld)) {
-      const co = collinearSplits(ci, cj, weld, budget2);
+      const co = collinearSplits(ci, cj, weld, budget3);
       if (co) return { a: co.ta, b: co.tb };
     }
-    return contactSplits(ci, cj, weld, budget2);
+    return contactSplits(ci, cj, weld, budget3);
   }
   if (hits2.length >= 2) {
     let a0 = 1, a1 = 0, b0 = 1, b1 = 0;
@@ -48974,25 +48974,25 @@ function pairSplits(ci, cj, tol, weld, budget2) {
       b1 = Math.max(b1, h.t2);
     }
     if (hits2.length > 9 || continuesAsSameCurve(ci, a0, a1, cj, b0, b1, weld) !== 0) {
-      return overlapSplits(ci, cj, weld, budget2);
+      return overlapSplits(ci, cj, weld, budget3);
     }
   }
   return { a: hits2.map((h) => h.t1), b: hits2.map((h) => h.t2) };
 }
-function overlapRun(ci, cj, weld, budget2) {
+function overlapRun(ci, cj, weld, budget3) {
   const ends = [];
   const hi = hullBounds(ci), hj = hullBounds(cj);
   for (const t of [0, 1]) {
     const p = evalCubic(ci, t);
     if (!inflated(hj, p.x, p.y, weld)) continue;
-    budget2.work -= 32;
+    budget3.work -= 32;
     const n2 = nearestOnCubic(cj, p.x, p.y);
     if (n2.distance <= weld) ends.push([t, n2.t]);
   }
   for (const t of [0, 1]) {
     const p = evalCubic(cj, t);
     if (!inflated(hi, p.x, p.y, weld)) continue;
-    budget2.work -= 32;
+    budget3.work -= 32;
     const n2 = nearestOnCubic(ci, p.x, p.y);
     if (n2.distance <= weld) ends.push([n2.t, t]);
   }
@@ -49012,12 +49012,12 @@ function overlapRun(ci, cj, weld, budget2) {
 function inflated(b, x, y, pad) {
   return x >= b.x0 - pad && x <= b.x1 + pad && y >= b.y0 - pad && y <= b.y1 + pad;
 }
-function contactSplits(ci, cj, weld, budget2) {
+function contactSplits(ci, cj, weld, budget3) {
   const leaves = [];
   let nodes = MAX_CONTACT_NODES;
   const rec2 = (p, s0, s1, q, t0, t1) => {
-    if (nodes-- <= 0 || leaves.length >= MAX_CONTACT_LEAVES || budget2.work <= 0) return;
-    budget2.work -= 1;
+    if (nodes-- <= 0 || leaves.length >= MAX_CONTACT_LEAVES || budget3.work <= 0) return;
+    budget3.work -= 1;
     const bp = boundsCubic(p), bq = boundsCubic(q);
     const dx = Math.max(bp.x0 - bq.x1, bq.x0 - bp.x1, 0);
     const dy = Math.max(bp.y0 - bq.y1, bq.y0 - bp.y1, 0);
@@ -49040,14 +49040,14 @@ function contactSplits(ci, cj, weld, budget2) {
   if (!leaves.length) return null;
   const a = [], b = [];
   for (const [s0, s1] of leaves) {
-    const pin = pinContact(ci, cj, s0, s1, weld, budget2);
+    const pin = pinContact(ci, cj, s0, s1, weld, budget3);
     if (!pin) continue;
     a.push(pin[0]);
     b.push(pin[1]);
   }
   return a.length ? { a, b } : null;
 }
-function pinContact(ci, cj, s0, s1, weld, budget2) {
+function pinContact(ci, cj, s0, s1, weld, budget3) {
   const gap = (s) => {
     const p = evalCubic(ci, s);
     const n2 = nearestOnCubic(cj, p.x, p.y);
@@ -49063,8 +49063,8 @@ function pinContact(ci, cj, s0, s1, weld, budget2) {
     if (g2.d < best.d) best = { s, ...g2 };
   }
   for (let i = 0; i < 90 && hi - lo > 1e-12; i++) {
-    if (budget2.work <= 0) break;
-    budget2.work -= 32;
+    if (budget3.work <= 0) break;
+    budget3.work -= 32;
     if (fc.d <= fd.d) {
       hi = d;
       d = c;
@@ -49083,9 +49083,9 @@ function pinContact(ci, cj, s0, s1, weld, budget2) {
   }
   return best.d <= weld ? [best.s, best.t] : null;
 }
-function overlapSplits(ci, cj, weld, budget2) {
+function overlapSplits(ci, cj, weld, budget3) {
   const a = [], b = [];
-  budget2.work -= 256;
+  budget3.work -= 256;
   for (const t of [0, 1]) {
     const p = evalCubic(ci, t);
     const n2 = nearestOnCubic(cj, p.x, p.y);
@@ -49098,27 +49098,27 @@ function overlapSplits(ci, cj, weld, budget2) {
   }
   return { a, b };
 }
-function selfSplits(curves, splits, tol, weld, budget2) {
+function selfSplits(curves, splits, tol, weld, budget3) {
   for (let i = 0; i < curves.length; i++) {
     const loop = selfIntersectCubic(curves[i].c);
     if (loop) {
-      addSplit(splits, i, loop[0], budget2);
-      addSplit(splits, i, loop[1], budget2);
+      addSplit(splits, i, loop[0], budget3);
+      addSplit(splits, i, loop[1], budget3);
     }
   }
-  sweepPairs(curves, curves, true, budget2, (i, j) => {
-    const found = pairSplits(curves[i].c, curves[j].c, tol, weld, budget2);
+  sweepPairs(curves, curves, true, budget3, (i, j) => {
+    const found = pairSplits(curves[i].c, curves[j].c, tol, weld, budget3);
     if (!found) return;
-    for (const t of found.a) addSplit(splits, i, t, budget2);
-    for (const t of found.b) addSplit(splits, j, t, budget2);
+    for (const t of found.a) addSplit(splits, i, t, budget3);
+    for (const t of found.b) addSplit(splits, j, t, budget3);
   });
 }
-function crossSplits(a, b, splitsA, splitsB, tol, weld, budget2) {
-  sweepPairs(a, b, false, budget2, (i, j) => {
-    const found = pairSplits(a[i].c, b[j].c, tol, weld, budget2);
+function crossSplits(a, b, splitsA, splitsB, tol, weld, budget3) {
+  sweepPairs(a, b, false, budget3, (i, j) => {
+    const found = pairSplits(a[i].c, b[j].c, tol, weld, budget3);
     if (!found) return;
-    for (const t of found.a) addSplit(splitsA, i, t, budget2);
-    for (const t of found.b) addSplit(splitsB, j, t, budget2);
+    for (const t of found.a) addSplit(splitsA, i, t, budget3);
+    for (const t of found.b) addSplit(splitsB, j, t, budget3);
   });
 }
 function splitIntoEdges(curves, splits, weld) {
@@ -49168,7 +49168,7 @@ function reachFrom(idx, px, py) {
   const dx = Math.max(b.x0 - px, px - b.x1, 0), dy = Math.max(b.y0 - py, py - b.y1, 0);
   return 2 * (diag + Math.hypot(dx, dy)) + 1;
 }
-function castRay(idx, px, py, ux, uy, ref, near, budget2, complete = false) {
+function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false) {
   const reach = reachFrom(idx, px, py);
   const qx = px + ux * reach, qy = py + uy * reach;
   const rx0 = Math.min(px, qx) - near, rx1 = Math.max(px, qx) + near;
@@ -49180,8 +49180,8 @@ function castRay(idx, px, py, ux, uy, ref, near, budget2, complete = false) {
   );
   let far = 0, net = 0, ok3 = true;
   for (const ic of idx.curves) {
-    if (budget2.work <= 0) return { far, net, ok: false };
-    budget2.work -= 1;
+    if (budget3.work <= 0) return { far, net, ok: false };
+    budget3.work -= 1;
     const b = ic.box;
     if (b.x1 < rx0 || b.x0 > rx1 || b.y1 < ry0 || b.y0 > ry1) continue;
     const c = ic.c;
@@ -49190,7 +49190,7 @@ function castRay(idx, px, py, ux, uy, ref, near, budget2, complete = false) {
       if (!complete) return { far, net, ok: ok3 };
       continue;
     }
-    budget2.work -= 8;
+    budget3.work -= 8;
     for (const hit of intersectLineCubic(px, py, qx, qy, c, hitTol)) {
       const t = hit.t2;
       const s = hit.t1 * reach;
@@ -49212,7 +49212,7 @@ function castRay(idx, px, py, ux, uy, ref, near, budget2, complete = false) {
   }
   return { far, net, ok: ok3 };
 }
-function sideWindings(idx, px, py, rx, ry, near, budget2) {
+function sideWindings(idx, px, py, rx, ry, near, budget3) {
   const dirs = rayDirections(rx, ry);
   const sidesOf = (d2, cast2) => {
     const g2 = d2[0] * ry - d2[1] * rx;
@@ -49220,14 +49220,14 @@ function sideWindings(idx, px, py, rx, ry, near, budget2) {
   };
   let last = null;
   for (const d2 of dirs) {
-    const cast2 = castRay(idx, px, py, d2[0], d2[1], { x: rx, y: ry }, near, budget2);
+    const cast2 = castRay(idx, px, py, d2[0], d2[1], { x: rx, y: ry }, near, budget3);
     if (cast2.ok) return sidesOf(d2, cast2);
     last = sidesOf(d2, cast2);
-    if (budget2.work <= 0) return last;
+    if (budget3.work <= 0) return last;
   }
   const d = dirs[0];
-  const cast = castRay(idx, px, py, d[0], d[1], { x: rx, y: ry }, near, budget2, true);
-  return cast.ok || budget2.work > 0 ? sidesOf(d, cast) : last ?? { left: 0, right: 0 };
+  const cast = castRay(idx, px, py, d[0], d[1], { x: rx, y: ry }, near, budget3, true);
+  return cast.ok || budget3.work > 0 ? sidesOf(d, cast) : last ?? { left: 0, right: 0 };
 }
 function coincidence(a, b, weld) {
   let fwd = true, rev = true;
@@ -50301,7 +50301,7 @@ function offsetBreaks(c, d) {
 }
 function offsetError(src, approx, d, tol) {
   const worst = { error: 0, t: 0.5 };
-  let budget2 = ERROR_BUDGET;
+  let budget3 = ERROR_BUDGET;
   const measure = (u) => {
     const want = offsetPoint(src, u, d);
     if (!want) return null;
@@ -50315,8 +50315,8 @@ function offsetError(src, approx, d, tol) {
     return want;
   };
   const refine = (u0, u1, w0, w1, depth) => {
-    if (budget2 <= 0 || depth >= MAX_ERROR_DEPTH) return;
-    budget2--;
+    if (budget3 <= 0 || depth >= MAX_ERROR_DEPTH) return;
+    budget3--;
     const um = (u0 + u1) / 2;
     const wm = measure(um);
     if (!w0 || !w1 || !wm || sagitta(w0, wm, w1) <= tol) return;
@@ -57121,7 +57121,7 @@ function passes(r3, hypotheses) {
 }
 async function detectWatermarkSearch(rgba, opts, searchOpts) {
   const tier = searchOpts?.tier ?? 1;
-  const budget2 = Math.max(1, searchOpts?.hypothesisBudget ?? DEFAULT_HYPOTHESIS_BUDGET);
+  const budget3 = Math.max(1, searchOpts?.hypothesisBudget ?? DEFAULT_HYPOTHESIS_BUDGET);
   let data = rgba;
   let w = opts.width, h = opts.height;
   const longEdge = Math.max(w, h);
@@ -57145,8 +57145,8 @@ async function detectWatermarkSearch(rgba, opts, searchOpts) {
   const yieldMaybe = async () => {
     if (tried % YIELD_EVERY === 0) await new Promise((res) => setTimeout(res, 0));
   };
-  for (let dy = 0; dy < 8 && tried < budget2; dy++) {
-    for (let dx = 0; dx < 8 && tried < budget2; dx++) {
+  for (let dy = 0; dy < 8 && tried < budget3; dy++) {
+    for (let dx = 0; dx < 8 && tried < budget3; dx++) {
       if (w - dx < 8 || h - dy < 8) continue;
       const cand = dx === 0 && dy === 0 ? { data, width: w, height: h } : cropOrigin(data, w, h, dx, dy);
       const r3 = detectWatermark(cand.data, { width: cand.width, height: cand.height });
@@ -57164,11 +57164,11 @@ async function detectWatermarkSearch(rgba, opts, searchOpts) {
     return best;
   }
   for (const scale of SCALE_ORDER) {
-    if (tried >= budget2) break;
+    if (tried >= budget3) break;
     const rs = bilinearResampleRgba(data, w, h, scale);
     if (rs.width < 8 || rs.height < 8) continue;
-    for (let dy = 0; dy < 8 && tried < budget2; dy++) {
-      for (let dx = 0; dx < 8 && tried < budget2; dx++) {
+    for (let dy = 0; dy < 8 && tried < budget3; dy++) {
+      for (let dx = 0; dx < 8 && tried < budget3; dx++) {
         if (rs.width - dx < 8 || rs.height - dy < 8) continue;
         const cand = dx === 0 && dy === 0 ? rs : cropOrigin(rs.data, rs.width, rs.height, dx, dy);
         const r3 = detectWatermark(cand.data, { width: cand.width, height: cand.height });
@@ -60354,7 +60354,7 @@ function matScale(m2) {
   if (!m2) return 1;
   return Math.max(Math.hypot(m2[0], m2[1]), Math.hypot(m2[2], m2[3])) || 1;
 }
-function buildLevel(tags2, nodes, mat, wrappers, clusterGroups, budget2, onSplit) {
+function buildLevel(tags2, nodes, mat, wrappers, clusterGroups, budget3, onSplit) {
   const boxes = nodes.map((nd) => {
     const local = elementBox(tags2, nd, 0);
     return local && mat ? transformBox(local, mat) : null;
@@ -60365,16 +60365,16 @@ function buildLevel(tags2, nodes, mat, wrappers, clusterGroups, budget2, onSplit
     (!clusterGroups && CONTAINER_TAGS.has(nd.tag.name) ? groupIdx : leafIdx).push(i);
   });
   let clusters = [];
-  const steps = budget2 > 0 ? SVG_LAYERS_HERO_GAP_SCALES : [1];
+  const steps = budget3 > 0 ? SVG_LAYERS_HERO_GAP_SCALES : [1];
   for (let s = 0; s < steps.length; s++) {
     const raw = [
       ...groupIdx.map((i) => [i]),
-      ...clusterLeaves(leafIdx, boxes, steps[s], budget2 > 0 ? SVG_LAYERS_PEER_AREA_RATIO : Infinity)
+      ...clusterLeaves(leafIdx, boxes, steps[s], budget3 > 0 ? SVG_LAYERS_PEER_AREA_RATIO : Infinity)
     ];
     const before = raw.length;
     clusters = splitUnsafeClusters(raw, boxes, nodes.length);
     if (clusters.length > before) onSplit();
-    if (budget2 <= 0 || clusters.length <= budget2) break;
+    if (budget3 <= 0 || clusters.length <= budget3) break;
   }
   return clusters.map((members) => {
     const sorted = [...members].sort((a, b) => a - b);
@@ -65547,11 +65547,11 @@ function normPattern(pattern) {
   for (const v of out) sum += v;
   return sum > EPS3 ? out : null;
 }
-function planSpan(L, pat, cycle, minScale, maxScale, budget2) {
+function planSpan(L, pat, cycle, minScale, maxScale, budget3) {
   const k = pat.length, d0 = pat[0];
   const n2 = Math.max(1, Math.round(L / cycle));
   const s = L / (n2 * cycle);
-  if (s >= minScale && s <= maxScale && n2 * k + 1 <= budget2) {
+  if (s >= minScale && s <= maxScale && n2 * k + 1 <= budget3) {
     const runs2 = [d0 * s / 2];
     for (let c = 0; c < n2; c++) {
       if (c > 0) runs2.push(d0 * s);
@@ -65562,7 +65562,7 @@ function planSpan(L, pat, cycle, minScale, maxScale, budget2) {
   }
   const runs = [];
   let pos = 0, i = 0;
-  while (pos < L - EPS3 && runs.length < budget2) {
+  while (pos < L - EPS3 && runs.length < budget3) {
     const seg = Math.min(pat[i % k], L - pos);
     runs.push(seg);
     pos += seg;
@@ -65606,11 +65606,11 @@ function fitRuns(spanLengths, pattern, opts) {
   const maxScale = clamp(numOr(opts?.maxScale, 1.5), 1, 16);
   const out = [];
   let covered = 0;
-  const budget2 = MAX_RUNS - 2;
+  const budget3 = MAX_RUNS - 2;
   for (const L of spans) {
     if (!(L > EPS3)) continue;
-    if (out.length >= budget2) break;
-    const span = planSpan(L, pat, cycle, minScale, maxScale, budget2 - out.length);
+    if (out.length >= budget3) break;
+    const span = planSpan(L, pat, cycle, minScale, maxScale, budget3 - out.length);
     appendRuns(out, span.runs);
     covered += span.covered;
     if (span.covered < L - EPS3) break;
@@ -68269,24 +68269,24 @@ function patchTheme(xml, theme) {
   return { text: text4, changed };
 }
 function remapColors(xml, colorMap) {
-  const lookup2 = (raw) => {
+  const lookup3 = (raw) => {
     const key = hexNorm2(raw);
     const to = colorMap.get(key);
     return to === void 0 ? void 0 : hexNorm2(to);
   };
-  const a = rewriteTagAttr(xml, "a:srgbClr", "val", lookup2);
-  const b = rewriteTagAttr(a.text, "a:sysClr", "lastClr", lookup2);
+  const a = rewriteTagAttr(xml, "a:srgbClr", "val", lookup3);
+  const b = rewriteTagAttr(a.text, "a:sysClr", "lastClr", lookup3);
   return { text: b.text, count: a.count + b.count };
 }
 function remapFonts(xml, fontMap) {
-  const lookup2 = (raw) => {
+  const lookup3 = (raw) => {
     const to = fontMap.get(xmlDecode(raw));
     return to === void 0 ? void 0 : xmlEncode(to);
   };
   let text4 = xml;
   let count2 = 0;
   for (const q of ["a:latin", "a:ea", "a:cs"]) {
-    const r3 = rewriteTagAttr(text4, q, "typeface", lookup2);
+    const r3 = rewriteTagAttr(text4, q, "typeface", lookup3);
     text4 = r3.text;
     count2 += r3.count;
   }
@@ -73861,12 +73861,12 @@ function readXlsx(bytes, opts = {}) {
   const limit = Number.isFinite(opts.limit) && opts.limit > 0 ? Math.floor(opts.limit) : DEFAULT_XLSX_ROW_LIMIT;
   let entries;
   try {
-    let budget2 = MAX_TOTAL_BYTES;
+    let budget3 = MAX_TOTAL_BYTES;
     entries = unzipSync(bytes, {
       filter: (f) => {
         if (f.originalSize > MAX_PART_BYTES3) return false;
-        if (f.originalSize > budget2) return false;
-        budget2 -= f.originalSize;
+        if (f.originalSize > budget3) return false;
+        budget3 -= f.originalSize;
         return true;
       }
     });
@@ -75966,7 +75966,7 @@ function hasVisibleShadow(sh) {
   const list2 = Array.isArray(sh.shadow) ? sh.shadow : [];
   return list2.some((e) => e && typeof e === "object" && get(e, "hidden") !== true);
 }
-function penpotGroupToSvg(group, lookup2) {
+function penpotGroupToSvg(group, lookup3) {
   if (!group || typeof group !== "object") return "";
   const g2 = group;
   if (String(g2.type || "") !== "group") return "";
@@ -76057,7 +76057,7 @@ function penpotGroupToSvg(group, lookup2) {
     const parts = [];
     let clip3 = "";
     for (let i = 0; i < ids2.length; i++) {
-      const child = lookup2(String(ids2[i]));
+      const child = lookup3(String(ids2[i]));
       if (!child || typeof child !== "object") return null;
       const cs = child;
       if (cs.hidden === true) continue;
@@ -76934,7 +76934,7 @@ function slotFor(sh) {
   }
   return null;
 }
-function penpotComponentSlots(rootShape, lookup2) {
+function penpotComponentSlots(rootShape, lookup3) {
   const out = [];
   const seen = /* @__PURE__ */ new Set();
   const walk2 = (shape) => {
@@ -76948,7 +76948,7 @@ function penpotComponentSlots(rootShape, lookup2) {
     const slot = slotFor(shape);
     if (slot) out.push({ shapeId: id2, ...slot });
     const kids = Array.isArray(shape.shapes) ? shape.shapes : [];
-    for (const k of kids) walk2(lookup2(String(k)));
+    for (const k of kids) walk2(lookup3(String(k)));
   };
   walk2(rootShape);
   return out;
@@ -79080,12 +79080,12 @@ function pdfNodeExtent(n2) {
       const lines = n2._outlinePath ?? [];
       if (!Array.isArray(lines) || lines.length > PDF_SVG_MAX_OUTLINE_LINES) return null;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      let budget2 = PDF_SVG_MAX_OUTLINE_D, scannable = true;
+      let budget3 = PDF_SVG_MAX_OUTLINE_D, scannable = true;
       for (let i = 0; i < lines.length && scannable; i++) {
         const d = lines[i];
         if (!d) continue;
-        budget2 -= d.length;
-        const lb = budget2 < 0 ? null : pathDataBox(d, PDF_SVG_MAX_OUTLINE_D);
+        budget3 -= d.length;
+        const lb = budget3 < 0 ? null : pathDataBox(d, PDF_SVG_MAX_OUTLINE_D);
         if (!lb) {
           scannable = false;
           break;
@@ -81832,7 +81832,7 @@ var init_brand_map = __esm({
 });
 
 // engine/src/brand-import.ts
-function structureIssue(value, budget2) {
+function structureIssue(value, budget3) {
   const active = /* @__PURE__ */ new WeakSet();
   const stack = [{ value, depth: 0 }];
   try {
@@ -81842,8 +81842,8 @@ function structureIssue(value, budget2) {
         active.delete(frame.leave);
         continue;
       }
-      budget2.nodes++;
-      if (budget2.nodes > BRAND_IMPORT_MAX_NODES) {
+      budget3.nodes++;
+      if (budget3.nodes > BRAND_IMPORT_MAX_NODES) {
         return `JSON structure exceeds ${BRAND_IMPORT_MAX_NODES.toLocaleString("en")} values`;
       }
       if (frame.depth > BRAND_IMPORT_MAX_DEPTH) {
@@ -81960,28 +81960,28 @@ function assembleTokenSetFiles(files) {
   }
   return { doc, warnings, source: "token-set-files" };
 }
-function parseEntry(entries, path, warnings, budget2) {
+function parseEntry(entries, path, warnings, budget3) {
   const raw = entries[path];
   if (raw === void 0) return void 0;
   const units2 = raw.length;
   const partLimit = typeof raw === "string" ? BRAND_IMPORT_MAX_PART_CHARS : BRAND_IMPORT_MAX_PART_BYTES;
   if (units2 > partLimit) {
     warnings.push(`${path}: JSON part exceeds ${partLimit.toLocaleString("en")} ${typeof raw === "string" ? "characters" : "bytes"}`);
-    budget2.refused = true;
+    budget3.refused = true;
     return void 0;
   }
-  if (budget2.units + units2 > BRAND_IMPORT_MAX_JSON_UNITS) {
+  if (budget3.units + units2 > BRAND_IMPORT_MAX_JSON_UNITS) {
     warnings.push(`${path}: project JSON exceeds the ${BRAND_IMPORT_MAX_JSON_UNITS.toLocaleString("en")} unit aggregate limit`);
-    budget2.refused = true;
+    budget3.refused = true;
     return void 0;
   }
-  budget2.units += units2;
+  budget3.units += units2;
   try {
     const parsed = JSON.parse(asText2(raw));
-    const issue2 = structureIssue(parsed, budget2.structure);
+    const issue2 = structureIssue(parsed, budget3.structure);
     if (issue2) {
       warnings.push(`${path}: ${issue2}`);
-      budget2.refused = true;
+      budget3.refused = true;
       return void 0;
     }
     return parsed;
@@ -81990,29 +81990,29 @@ function parseEntry(entries, path, warnings, budget2) {
     return void 0;
   }
 }
-function penpotEntryPaths(entries, warnings, budget2) {
+function penpotEntryPaths(entries, warnings, budget3) {
   try {
     const paths = Object.keys(entries);
     if (paths.length > BRAND_IMPORT_MAX_ENTRIES) {
       warnings.push(`project carries more than ${BRAND_IMPORT_MAX_ENTRIES.toLocaleString("en")} archive entries`);
-      budget2.refused = true;
+      budget3.refused = true;
       return [];
     }
     return paths;
   } catch {
     warnings.push("project entry list could not be inspected safely");
-    budget2.refused = true;
+    budget3.refused = true;
     return [];
   }
 }
 function extractPenpotProject(entries) {
   const warnings = [];
-  const budget2 = newParseBudget();
-  const entryPaths = penpotEntryPaths(entries, warnings, budget2);
-  if (budget2.refused) return { doc: null, warnings, source: "penpot-project" };
+  const budget3 = newParseBudget();
+  const entryPaths = penpotEntryPaths(entries, warnings, budget3);
+  if (budget3.refused) return { doc: null, warnings, source: "penpot-project" };
   let tokenPaths = [];
-  const manifest = parseEntry(entries, "manifest.json", warnings, budget2);
-  if (budget2.refused) return { doc: null, warnings, source: "penpot-project" };
+  const manifest = parseEntry(entries, "manifest.json", warnings, budget3);
+  if (budget3.refused) return { doc: null, warnings, source: "penpot-project" };
   const manifestFiles = isRecord2(manifest) && Array.isArray(manifest.files) ? manifest.files : null;
   if (manifestFiles) {
     if (manifestFiles.length > BRAND_IMPORT_MAX_ENTRIES) {
@@ -82043,8 +82043,8 @@ function extractPenpotProject(entries) {
   let doc = null;
   const setNames = /* @__PURE__ */ new Set();
   for (const path of tokenPaths) {
-    const parsed = parseEntry(entries, path, warnings, budget2);
-    if (budget2.refused) return { doc: null, warnings, source: "penpot-project" };
+    const parsed = parseEntry(entries, path, warnings, budget3);
+    if (budget3.refused) return { doc: null, warnings, source: "penpot-project" };
     if (parsed === void 0) continue;
     if (!isRecord2(parsed)) {
       warnings.push(`${path}: token document is not an object - ignored`);
@@ -82087,11 +82087,11 @@ function pv(o, camel) {
   if (o[`:${kb}`] !== void 0) return o[`:${kb}`];
   return void 0;
 }
-function penpotPagePaths(entries, warnings, budget2) {
-  const entryPaths = penpotEntryPaths(entries, warnings, budget2);
-  if (budget2.refused) return [];
-  const manifest = parseEntry(entries, "manifest.json", warnings, budget2);
-  if (budget2.refused) return [];
+function penpotPagePaths(entries, warnings, budget3) {
+  const entryPaths = penpotEntryPaths(entries, warnings, budget3);
+  if (budget3.refused) return [];
+  const manifest = parseEntry(entries, "manifest.json", warnings, budget3);
+  if (budget3.refused) return [];
   const manifestFiles = isRecord2(manifest) && Array.isArray(manifest.files) ? manifest.files : null;
   const pagePathRe = /^files\/([^/]+)\/pages\/[^/]+\/[^/]+\.json$/;
   const candidates2 = [];
@@ -82100,7 +82100,7 @@ function penpotPagePaths(entries, warnings, budget2) {
     if (!match) continue;
     if (candidates2.length >= BRAND_IMPORT_MAX_PAGE_PARTS) {
       warnings.push(`project carries more than ${BRAND_IMPORT_MAX_PAGE_PARTS.toLocaleString("en")} page-shape parts`);
-      budget2.refused = true;
+      budget3.refused = true;
       return [];
     }
     candidates2.push({ path, fileId: match[1] });
@@ -82110,7 +82110,7 @@ function penpotPagePaths(entries, warnings, budget2) {
   }
   if (manifestFiles.length > BRAND_IMPORT_MAX_ENTRIES) {
     warnings.push(`manifest carries more than ${BRAND_IMPORT_MAX_ENTRIES.toLocaleString("en")} file records`);
-    budget2.refused = true;
+    budget3.refused = true;
     return [];
   }
   const fileOrder = /* @__PURE__ */ new Map();
@@ -82121,9 +82121,9 @@ function penpotPagePaths(entries, warnings, budget2) {
 }
 function scanPenpotUsage(entries) {
   const warnings = [];
-  const budget2 = newParseBudget();
-  const pagePaths = penpotPagePaths(entries, warnings, budget2);
-  if (budget2.refused) return { colors: [], gradients: [], fonts: [] };
+  const budget3 = newParseBudget();
+  const pagePaths = penpotPagePaths(entries, warnings, budget3);
+  if (budget3.refused) return { colors: [], gradients: [], fonts: [] };
   const colors = /* @__PURE__ */ new Map();
   const bump = (hex2, key) => {
     if (!hex2) return;
@@ -82188,8 +82188,8 @@ function scanPenpotUsage(entries) {
     walkText(pv(n2, "children"));
   };
   for (const path of pagePaths) {
-    const shape = parseEntry(entries, path, warnings, budget2);
-    if (budget2.refused) return { colors: [], gradients: [], fonts: [] };
+    const shape = parseEntry(entries, path, warnings, budget3);
+    if (budget3.refused) return { colors: [], gradients: [], fonts: [] };
     if (!isRecord2(shape)) continue;
     seePaints(pv(shape, "fills"), "fillColor", "fillColorGradient", "fills");
     seePaints(pv(shape, "strokes"), "strokeColor", "strokeColorGradient", "strokes");
@@ -82231,7 +82231,7 @@ function camelOf(k) {
 }
 function scanPenpotAppliedTokens(entries) {
   const warnings = [];
-  const budget2 = newParseBudget();
+  const budget3 = newParseBudget();
   const rows2 = /* @__PURE__ */ new Map();
   const bump = (name, cls) => {
     let r3 = rows2.get(name);
@@ -82241,9 +82241,9 @@ function scanPenpotAppliedTokens(entries) {
     }
     r3[cls]++;
   };
-  for (const path of penpotPagePaths(entries, warnings, budget2)) {
-    const shape = parseEntry(entries, path, warnings, budget2);
-    if (budget2.refused) return [];
+  for (const path of penpotPagePaths(entries, warnings, budget3)) {
+    const shape = parseEntry(entries, path, warnings, budget3);
+    if (budget3.refused) return [];
     if (!isRecord2(shape)) continue;
     const applied = pv(shape, "appliedTokens");
     if (!isRecord2(applied)) continue;
@@ -86372,7 +86372,7 @@ function encodeBase64(value) {
 function scalarText(value) {
   return ["string", "number", "bigint", "boolean"].includes(typeof value) ? String(value) : void 0;
 }
-function textDocument(doc, bytes, text4, structured, json, rules, budget2) {
+function textDocument(doc, bytes, text4, structured, json, rules, budget3) {
   const lineStarts = [0];
   for (let i = 0; i < text4.length; i++) if (text4[i] === "\n") lineStarts.push(i + 1);
   const lineAt = (offset) => {
@@ -86386,7 +86386,7 @@ function textDocument(doc, bytes, text4, structured, json, rules, budget2) {
   };
   const edits = [];
   const add = (value, start, end, location, field2, encode) => {
-    if (value.length > PREPARE_MAX_TEXT || ++budget2.units > 2e4) {
+    if (value.length > PREPARE_MAX_TEXT || ++budget3.units > 2e4) {
       doc.scope.status = "partial";
       return;
     }
@@ -86482,11 +86482,11 @@ function textDocument(doc, bytes, text4, structured, json, rules, budget2) {
     return encoder4.encode(result);
   };
 }
-function openPreparationDocument(bytes, name, sourceId, id2, rules, budget2, depth = 0, counted = false) {
+function openPreparationDocument(bytes, name, sourceId, id2, rules, budget3, depth = 0, counted = false) {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   const scope = { id: id2, sourceId, path: name, format: "unknown", status: "uninspected", limitations: [] };
   const doc = { scope, children: [], units: [], write: () => bytes };
-  if (!counted && ++budget2.scopes > PREPARE_MAX_SCOPES) {
+  if (!counted && ++budget3.scopes > PREPARE_MAX_SCOPES) {
     scope.limitations.push("The 300-member inspection limit was reached.");
     return doc;
   }
@@ -86512,21 +86512,21 @@ function openPreparationDocument(bytes, name, sourceId, id2, rules, budget2, dep
       scope.limitations.push("Duplicate archive member names prevent a reliable selective rewrite.");
       return doc;
     }
-    if (budget2.scopes + members.length > PREPARE_MAX_SCOPES) {
+    if (budget3.scopes + members.length > PREPARE_MAX_SCOPES) {
       scope.limitations.push("The global 300-member inspection limit was reached. This archive is retained without member inspection.");
       return doc;
     }
-    budget2.scopes += members.length;
+    budget3.scopes += members.length;
     scope.status = "partial";
     scope.limitations.push("Member names and archive comments are not inspected. Rebuilding removes archive comments and empty directory records.");
     for (const [index2, member] of members.entries()) {
       const childId = `${id2}:m${index2}`;
-      budget2.expanded += member.size;
-      const reason = member.flags & 1 ? "Encrypted member; retained without decryption." : ![0, 8].includes(member.method) ? "Unsupported archive compression; member retained." : budget2.expanded > PREPARE_MAX_TOTAL ? "The 64 MiB expansion budget was reached." : member.size > PREPARE_MAX_BYTES ? "Member exceeds the 32 MiB preparation limit." : "";
+      budget3.expanded += member.size;
+      const reason = member.flags & 1 ? "Encrypted member; retained without decryption." : ![0, 8].includes(member.method) ? "Unsupported archive compression; member retained." : budget3.expanded > PREPARE_MAX_TOTAL ? "The 64 MiB expansion budget was reached." : member.size > PREPARE_MAX_BYTES ? "Member exceeds the 32 MiB preparation limit." : "";
       if (reason) doc.children.push({ scope: { id: childId, sourceId, path: `${name}/${member.name}`, format: "unknown", status: "uninspected", limitations: [reason] }, children: [], units: [], write: () => new Uint8Array() });
       else {
         try {
-          doc.children.push(openPreparationDocument(decodeZipMember(member), `${name}/${member.name}`, sourceId, childId, rules, budget2, depth + 1, true));
+          doc.children.push(openPreparationDocument(decodeZipMember(member), `${name}/${member.name}`, sourceId, childId, rules, budget3, depth + 1, true));
         } catch {
           doc.children.push({ scope: { id: childId, sourceId, path: `${name}/${member.name}`, format: "unknown", status: "uninspected", limitations: ["Member could not be decoded; retained unchanged."] }, children: [], units: [], write: () => new Uint8Array() });
         }
@@ -86568,13 +86568,13 @@ function openPreparationDocument(bytes, name, sourceId, id2, rules, budget2, dep
   const json = ["json", "har", "jsonl", "ndjson"].includes(ext);
   const structured = json || ["yml", "yaml"].includes(ext);
   scope.format = json ? ext : structured ? "yaml" : "text";
-  if (budget2.units >= 2e4) {
+  if (budget3.units >= 2e4) {
     scope.status = "uninspected";
     scope.limitations.push("The structured value budget was reached.");
     return doc;
   }
   try {
-    textDocument(doc, bytes, text4, structured, json, rules, budget2);
+    textDocument(doc, bytes, text4, structured, json, rules, budget3);
   } catch {
     doc.units = [];
     doc.write = () => bytes;
@@ -86631,12 +86631,12 @@ async function scan(sources, rules, options2 = {}) {
   const roots2 = [];
   const spans = /* @__PURE__ */ new Map();
   const groups = /* @__PURE__ */ new Map();
-  const budget2 = { scopes: 0, expanded: 0, units: 0 };
+  const budget3 = { scopes: 0, expanded: 0, units: 0 };
   for (const [index2, source] of sources.entries()) {
     options2.signal?.throwIfAborted();
     const digest2 = await preparationDigest(source.bytes);
     inspection.sources.push({ id: source.id, sha256: digest2, size: source.bytes.length, ...source.revision ? { revision: source.revision } : {} });
-    const root = openPreparationDocument(source.bytes, source.name, source.id, source.id, rules, budget2);
+    const root = openPreparationDocument(source.bytes, source.name, source.id, source.id, rules, budget3);
     roots2.push(root);
     for (const doc of preparationDocuments([root])) {
       inspection.scopes.push(doc.scope);
@@ -86857,7 +86857,7 @@ function comparisonBudget(options2, signal) {
   const bounded2 = (value, fallback, max) => Number.isFinite(value) ? Math.max(1, Math.min(max, Math.floor(value))) : fallback;
   const maxWork = bounded2(options2.maxWork, 1e6, 2e6);
   const maxChanges = bounded2(options2.maxChanges, 200, 1e3);
-  const budget2 = {
+  const budget3 = {
     changes: [],
     summary: { added: 0, removed: 0, changed: 0, moved: 0, total: 0 },
     limitations: /* @__PURE__ */ new Set(),
@@ -86867,21 +86867,21 @@ function comparisonBudget(options2, signal) {
       signal?.throwIfAborted();
       work += count2;
       if (work <= maxWork) return true;
-      budget2.limit("The comparison work limit was reached. Unchecked content may differ.");
+      budget3.limit("The comparison work limit was reached. Unchecked content may differ.");
       return false;
     },
     add(change) {
-      budget2.summary[change.kind]++;
-      budget2.summary.total++;
-      if (budget2.changes.length < maxChanges) budget2.changes.push(change);
-      else budget2.detailsTruncated = true;
+      budget3.summary[change.kind]++;
+      budget3.summary.total++;
+      if (budget3.changes.length < maxChanges) budget3.changes.push(change);
+      else budget3.detailsTruncated = true;
     },
     limit(message) {
-      budget2.partial = true;
-      budget2.limitations.add(message);
+      budget3.partial = true;
+      budget3.limitations.add(message);
     }
   };
-  return budget2;
+  return budget3;
 }
 function comparisonValue(value) {
   let text4;
@@ -86963,12 +86963,12 @@ function stationaryIds(before, after) {
   for (let i = tails.at(-1) ?? -1; i >= 0; i = prior[i]) stable.add(common[i]);
   return stable;
 }
-function compareStructure(before, after, options2, budget2) {
+function compareStructure(before, after, options2, budget3) {
   const queue = [{ a: before, b: after, left: [], right: [] }];
   const seenA = /* @__PURE__ */ new WeakSet(), seenB = /* @__PURE__ */ new WeakSet();
   const change = (kind, a, b, left, right) => {
     const av = comparisonValue(a), bv = comparisonValue(b);
-    budget2.add({
+    budget3.add({
       kind,
       ...kind !== "added" ? { before: { path: left }, beforeValue: av.text } : {},
       ...kind !== "removed" ? { after: { path: right }, afterValue: bv.text } : {},
@@ -86976,28 +86976,28 @@ function compareStructure(before, after, options2, budget2) {
     });
   };
   while (queue.length) {
-    if (!budget2.spend()) break;
+    if (!budget3.spend()) break;
     const { a, b, left, right } = queue.pop();
     if (a === b && (a === null || typeof a !== "object")) continue;
     const arrays = Array.isArray(a) && Array.isArray(b);
     if (arrays || record2(a) && record2(b)) {
       if (seenA.has(a) || seenB.has(b)) {
-        budget2.limit("Repeated or cyclic object references were not compared.");
+        budget3.limit("Repeated or cyclic object references were not compared.");
         continue;
       }
       seenA.add(a);
       seenB.add(b);
       if (left.length > 100 || right.length > 100) {
-        budget2.limit("Nested data beyond 100 levels was not compared.");
+        budget3.limit("Nested data beyond 100 levels was not compared.");
         continue;
       }
       const ak = Object.keys(a), bk = Object.keys(b);
       if (arrays && (ak.length !== a.length || bk.length !== b.length)) {
-        budget2.limit("Sparse arrays or arrays with extra properties are not supported.");
+        budget3.limit("Sparse arrays or arrays with extra properties are not supported.");
         continue;
       }
       if (ak.length + bk.length + queue.length > 4e4) {
-        budget2.limit("An object or array exceeds the 20,000-item comparison limit.");
+        budget3.limit("An object or array exceeds the 20,000-item comparison limit.");
         continue;
       }
       if (arrays && options2.arrayAlignment === "id") {
@@ -87024,7 +87024,7 @@ function compareStructure(before, after, options2, budget2) {
           for (const [id2, j] of bm) if (!am.has(id2)) change("added", void 0, b[j], left, [...right, j]);
           continue;
         }
-        budget2.limitations.add("An array has missing or duplicate IDs; it was compared by position.");
+        budget3.limitations.add("An array has missing or duplicate IDs; it was compared by position.");
       }
       const ar = a, br = b;
       const keys2 = [.../* @__PURE__ */ new Set([...ak, ...bk])];
@@ -87038,7 +87038,7 @@ function compareStructure(before, after, options2, budget2) {
       }
     } else {
       if ([a, b].some((v) => typeof v === "function" || typeof v === "symbol" || v && typeof v === "object" && !Array.isArray(v) && !record2(v))) {
-        budget2.limit("Only plain structured data is supported.");
+        budget3.limit("Only plain structured data is supported.");
         continue;
       }
       change("changed", a, b, left, right);
@@ -87071,15 +87071,15 @@ function tokens2(text4, options2) {
   }
   return out;
 }
-function compareText(before, after, options2, budget2) {
+function compareText(before, after, options2, budget3) {
   if (before.length > COMPARE_MAX_TEXT || after.length > COMPARE_MAX_TEXT) {
-    budget2.limit("Text exceeds the 2 MiB comparison limit.");
+    budget3.limit("Text exceeds the 2 MiB comparison limit.");
     return;
   }
   if (before === after) return;
   const a = tokens2(before, options2), b = tokens2(after, options2);
   if (!a || !b) {
-    budget2.limit("Text exceeds the 20,000-token comparison limit.");
+    budget3.limit("Text exceeds the 20,000-token comparison limit.");
     return;
   }
   let start = 0, ae = a.length, be = b.length;
@@ -87090,7 +87090,7 @@ function compareText(before, after, options2, budget2) {
   }
   const n2 = ae - start, m2 = be - start;
   if (!n2 && !m2) return;
-  if (!budget2.spend((n2 + 1) * (m2 + 1))) return;
+  if (!budget3.spend((n2 + 1) * (m2 + 1))) return;
   const cols = m2 + 1, dp = new Uint32Array((n2 + 1) * cols);
   for (let i2 = n2 - 1; i2 >= 0; i2--) for (let j2 = m2 - 1; j2 >= 0; j2--)
     dp[i2 * cols + j2] = a[start + i2].key === b[start + j2].key ? 1 + dp[(i2 + 1) * cols + j2 + 1] : Math.max(dp[(i2 + 1) * cols + j2], dp[i2 * cols + j2 + 1]);
@@ -87109,7 +87109,7 @@ function compareText(before, after, options2, budget2) {
       else left.push(a[start + i++]);
     }
     const av = comparisonValue(left.map((t) => t.text).join("")), bv = comparisonValue(right.map((t) => t.text).join(""));
-    budget2.add({
+    budget3.add({
       kind: !left.length ? "added" : !right.length ? "removed" : "changed",
       ...left.length ? { before: location(left[0]), beforeValue: av.text } : {},
       ...right.length ? { after: location(right[0]), afterValue: bv.text } : {},
@@ -87239,39 +87239,39 @@ function compareSources(request, signal) {
   signal?.throwIfAborted();
   if (request.version !== 1) throw new Error("Unsupported comparison version.");
   const { before, after } = request, options2 = { ...request.options };
-  const budget2 = comparisonBudget(options2, signal);
+  const budget3 = comparisonBudget(options2, signal);
   const mode = options2.mode ?? (before.content.kind === "structure" && after.content.kind === "structure" ? "structure" : "text");
   let byteEquality = "unknown";
   if (before.bytes && after.bytes) {
-    if (before.bytes.length > COMPARE_MAX_TEXT || after.bytes.length > COMPARE_MAX_TEXT) budget2.limitations.add("Byte equality was not checked above 2 MiB.");
+    if (before.bytes.length > COMPARE_MAX_TEXT || after.bytes.length > COMPARE_MAX_TEXT) budget3.limitations.add("Byte equality was not checked above 2 MiB.");
     else byteEquality = before.bytes.length === after.bytes.length && before.bytes.every((value, i) => value === after.bytes[i]) ? "equal" : "different";
   }
   for (const source of [before, after]) {
-    for (const limit of source.fidelity?.limitations ?? []) budget2.limitations.add(limit);
-    if (source.fidelity && source.fidelity.level !== "complete") budget2.limit("A source is incomplete or unavailable. Equality cannot be established.");
+    for (const limit of source.fidelity?.limitations ?? []) budget3.limitations.add(limit);
+    if (source.fidelity && source.fidelity.level !== "complete") budget3.limit("A source is incomplete or unavailable. Equality cannot be established.");
   }
   if ([before, after].some((source) => source.fidelity?.level === "unavailable")) {
   } else if (mode === "text" && before.content.kind === "text" && after.content.kind === "text") {
-    compareText(before.content.text, after.content.text, options2, budget2);
+    compareText(before.content.text, after.content.text, options2, budget3);
   } else if (mode === "structure" && before.content.kind === "structure" && after.content.kind === "structure") {
-    compareStructure(before.content.value, after.content.value, options2, budget2);
-  } else budget2.limit("The selected mode does not match both sources.");
-  const different = budget2.summary.total > 0;
+    compareStructure(before.content.value, after.content.value, options2, budget3);
+  } else budget3.limit("The selected mode does not match both sources.");
+  const different = budget3.summary.total > 0;
   return {
     version: 1,
     before: { ...before.identity },
     after: { ...after.identity },
     mode,
     options: options2,
-    equality: different ? "different" : budget2.partial ? "undetermined" : byteEquality === "equal" ? "identical-bytes" : "equivalent-content",
+    equality: different ? "different" : budget3.partial ? "undetermined" : byteEquality === "equal" ? "identical-bytes" : "equivalent-content",
     byteEquality,
     appearance: "not-compared",
-    completeness: budget2.partial ? "partial" : "complete",
+    completeness: budget3.partial ? "partial" : "complete",
     alignment: mode === "text" ? options2.granularity ?? "line" : options2.arrayAlignment === "id" ? "stable-id" : "object-keys-ordered-arrays",
-    summary: budget2.summary,
-    changes: budget2.changes,
-    detailsTruncated: budget2.detailsTruncated,
-    limitations: [...budget2.limitations]
+    summary: budget3.summary,
+    changes: budget3.changes,
+    detailsTruncated: budget3.detailsTruncated,
+    limitations: [...budget3.limitations]
   };
 }
 function createCompareAPI() {
@@ -93949,7 +93949,7 @@ var init_pdf_file_operation = __esm({
 });
 
 // services/mcp/src/gateway.ts
-import { isIP as isIP2 } from "node:net";
+import { isIP as isIP3 } from "node:net";
 
 // services/mcp/src/protocol.ts
 var ERR = {
@@ -97396,18 +97396,18 @@ function contentString(ctx, pageNode) {
   return parts.join("\n");
 }
 var RESOURCE_NODE_BUDGET = 4096;
-function extractResources(ctx, resDict, depth, stack = /* @__PURE__ */ new Set(), budget2 = { left: RESOURCE_NODE_BUDGET }, images) {
+function extractResources(ctx, resDict, depth, stack = /* @__PURE__ */ new Set(), budget3 = { left: RESOURCE_NODE_BUDGET }, images) {
   const res = { fonts: {}, fontNames: {}, xobjects: {}, extgstates: {}, ocgs: {} };
   const dict = dictOf2(ctx, resDict);
-  if (!dict || depth > 8 || stack.has(dict) || budget2.left-- <= 0) return res;
+  if (!dict || depth > 8 || stack.has(dict) || budget3.left-- <= 0) return res;
   stack.add(dict);
   try {
-    return fillResources(ctx, res, resDict, depth, stack, budget2, images);
+    return fillResources(ctx, res, resDict, depth, stack, budget3, images);
   } finally {
     stack.delete(dict);
   }
 }
-function fillResources(ctx, res, resDict, depth, stack, budget2, images) {
+function fillResources(ctx, res, resDict, depth, stack, budget3, images) {
   for (const [name, ref] of dictEntries2(ctx, getKey(ctx, resDict, "ExtGState"))) {
     const ca = numOf2(ctx, getKey(ctx, ref, "ca")), CA = numOf2(ctx, getKey(ctx, ref, "CA"));
     res.extgstates[name] = {};
@@ -97427,7 +97427,7 @@ function fillResources(ctx, res, resDict, depth, stack, budget2, images) {
       res.xobjects[name] = { kind: "image", imageKey: key };
     } else if (subtype === "Form") {
       const mtx = ctx.lookup(getKey(ctx, ref, "Matrix"));
-      const sub = extractResources(ctx, getKey(ctx, ref, "Resources"), depth + 1, stack, budget2, images);
+      const sub = extractResources(ctx, getKey(ctx, ref, "Resources"), depth + 1, stack, budget3, images);
       res.xobjects[name] = {
         kind: "form",
         content: decodedText(ctx, ref) || "",
@@ -102756,6 +102756,204 @@ function renderFailure(e) {
   return errorResponse(500, `Render failed: ${e.message}`);
 }
 
+// services/mcp/src/image-proxy.ts
+import { lookup as lookup2 } from "node:dns/promises";
+import { isIP as isIP2 } from "node:net";
+var PATH_RE2 = /\/fetch-image$/;
+function matchImageProxyPath(path) {
+  return PATH_RE2.test(path);
+}
+var MAX_URL_LEN = 2048;
+var MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+var MAX_REDIRECTS = 4;
+var OVERALL_TIMEOUT_MS = 2e4;
+var RL_WINDOW_MS2 = 6e4;
+var DEFAULT_RPM2 = 60;
+var DEFAULT_GLOBAL_RPM2 = 600;
+var localRateLimiter2 = new MemoryRateLimiter();
+var ALLOWED_TYPES = /* @__PURE__ */ new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "image/avif",
+  "image/bmp",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+  "image/tiff",
+  "image/apng"
+]);
+var NO_STORE2 = {
+  "content-type": "application/json; charset=utf-8",
+  "cache-control": "no-store",
+  "x-robots-tag": "noindex"
+};
+function errorResponse2(status, error, extra = {}) {
+  return { status, headers: { ...NO_STORE2, ...extra }, body: JSON.stringify({ error }) };
+}
+function budget2(raw, fallback) {
+  const n2 = Number(raw);
+  return Number.isSafeInteger(n2) && n2 > 0 ? n2 : fallback;
+}
+function stripBrackets(hostname) {
+  return hostname.startsWith("[") && hostname.endsWith("]") ? hostname.slice(1, -1) : hostname;
+}
+var ProxyRefused = class extends Error {
+};
+async function resolveHost2(hostname) {
+  try {
+    return (await lookup2(hostname, { all: true, verbatim: true })).map((answer) => answer.address);
+  } catch {
+    return [];
+  }
+}
+function assertFetchableShape(url) {
+  if (url.protocol !== "http:" && url.protocol !== "https:") throw new ProxyRefused(`Only http(s) image URLs are supported, not ${url.protocol.replace(":", "")}.`);
+  if (url.username || url.password) throw new ProxyRefused("The URL must not carry a username or password.");
+}
+async function assertPublicTarget(url, resolver) {
+  const literal = stripBrackets(url.hostname);
+  if (isIP2(literal)) {
+    if (!isPublicAddress(literal)) throw new ProxyRefused("That address is not reachable from here.");
+    return;
+  }
+  const addresses = await resolver(url.hostname);
+  if (!addresses.length) throw new ProxyRefused("That address could not be resolved.");
+  if (addresses.some((a) => !isPublicAddress(a))) throw new ProxyRefused("That address is not reachable from here.");
+}
+var TooLarge = class extends Error {
+};
+async function readCapped(response, max) {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    const buf = new Uint8Array(await response.arrayBuffer());
+    if (buf.byteLength > max) throw new TooLarge();
+    return buf;
+  }
+  const chunks = [];
+  let total = 0;
+  for (; ; ) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > max) {
+      try {
+        await reader.cancel();
+      } catch {
+      }
+      throw new TooLarge();
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const chunk6 of chunks) {
+    out.set(chunk6, off);
+    off += chunk6.byteLength;
+  }
+  return out;
+}
+async function proxyImage(reqUrl, opts) {
+  const env = opts.env ?? process.env;
+  if (env.LOLLY_DISABLE_IMAGE_PROXY === "1") return errorResponse2(404, "not_found");
+  const target = reqUrl.searchParams.get("url");
+  if (!target) return errorResponse2(400, "Pass ?url=<image URL>.");
+  if (target.length > MAX_URL_LEN) return errorResponse2(400, `URL too long (max ${MAX_URL_LEN} characters).`);
+  let parsed;
+  try {
+    parsed = new URL(target);
+  } catch {
+    return errorResponse2(400, "That doesn't look like a URL.");
+  }
+  try {
+    assertFetchableShape(parsed);
+  } catch (e) {
+    if (e instanceof ProxyRefused) return errorResponse2(422, e.message);
+    throw e;
+  }
+  const limiter = opts.rateLimiter ?? localRateLimiter2;
+  try {
+    const perIp = await limiter.consume("imgproxy", opts.ip || "unknown", budget2(env.LOLLY_IMAGE_PROXY_RPM, DEFAULT_RPM2), RL_WINDOW_MS2);
+    if (!perIp.ok) return errorResponse2(429, "Too many image fetches from this address - slow down.", { "retry-after": String(perIp.retryAfter) });
+    const total = await limiter.consume("imgproxy-all", "all", budget2(env.LOLLY_IMAGE_PROXY_GLOBAL_RPM, DEFAULT_GLOBAL_RPM2), RL_WINDOW_MS2);
+    if (!total.ok) return errorResponse2(429, "The image proxy is busy - try again shortly.", { "retry-after": String(total.retryAfter) });
+  } catch (e) {
+    if (!(e instanceof RateLimitUnavailableError)) throw e;
+    return errorResponse2(503, "Image fetching is temporarily unavailable.", { "retry-after": "5" });
+  }
+  const resolver = opts.resolver ?? resolveHost2;
+  const doFetch = opts.fetchImpl ?? fetch;
+  const deadline = AbortSignal.timeout(OVERALL_TIMEOUT_MS);
+  let response;
+  let current = parsed;
+  try {
+    for (let hop = 0; ; hop++) {
+      assertFetchableShape(current);
+      await assertPublicTarget(current, resolver);
+      response = await doFetch(current.toString(), {
+        redirect: "manual",
+        signal: deadline,
+        headers: { accept: "image/*" }
+      });
+      const location = response.status >= 300 && response.status < 400 ? response.headers.get("location") : null;
+      if (!location) break;
+      if (hop >= MAX_REDIRECTS) return errorResponse2(502, "That address redirected too many times.");
+      let next;
+      try {
+        next = new URL(location, current);
+      } catch {
+        return errorResponse2(502, "That address redirected to an invalid location.");
+      }
+      try {
+        await response.body?.cancel();
+      } catch {
+      }
+      current = next;
+    }
+  } catch (e) {
+    if (e instanceof ProxyRefused) return errorResponse2(422, e.message);
+    const name = e?.name;
+    if (name === "TimeoutError" || name === "AbortError") return errorResponse2(504, "That address took too long to answer.");
+    return errorResponse2(502, `Couldn't fetch that URL: ${e.message}`);
+  }
+  if (!response.ok) {
+    try {
+      await response.body?.cancel();
+    } catch {
+    }
+    return errorResponse2(502, `That address answered with ${response.status}.`);
+  }
+  const rawType = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  if (!ALLOWED_TYPES.has(rawType)) {
+    try {
+      await response.body?.cancel();
+    } catch {
+    }
+    return errorResponse2(415, "That URL is not an image.");
+  }
+  let bytes;
+  try {
+    bytes = await readCapped(response, MAX_IMAGE_BYTES);
+  } catch (e) {
+    if (e instanceof TooLarge) return errorResponse2(413, `That image is larger than the ${Math.round(MAX_IMAGE_BYTES / 1024 / 1024)} MB limit.`);
+    return errorResponse2(502, `Couldn't read that image: ${e.message}`);
+  }
+  return {
+    status: 200,
+    headers: {
+      "content-type": rawType,
+      "cache-control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      "content-security-policy": "sandbox",
+      "x-content-type-options": "nosniff",
+      "content-disposition": "inline",
+      "x-robots-tag": "noindex"
+    },
+    body: bytes
+  };
+}
+
 // services/mcp/src/sign.ts
 var te10 = new TextEncoder();
 var subtle8 = globalThis.crypto.subtle;
@@ -103104,7 +103302,7 @@ function clientIp(req, env) {
   const trusted = new Set((env.LOLLY_MCP_TRUSTED_PROXIES || "").split(",").map((v) => v.trim()).filter(Boolean));
   if (!trusted.has(peer)) return peer;
   const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-  return isIP2(forwarded) ? forwarded : peer;
+  return isIP3(forwarded) ? forwarded : peer;
 }
 function send(res, r3) {
   const headers = { ...CORS, ...r3.headers || {} };
@@ -103178,6 +103376,13 @@ function createGateway(env = process.env) {
         env,
         rateLimiter: limiter
       });
+      res.writeHead(r3.status, { ...CORS, ...r3.headers });
+      if (method === "HEAD" || r3.body === void 0) res.end();
+      else res.end(typeof r3.body === "string" ? r3.body : Buffer.from(r3.body));
+      return;
+    }
+    if ((method === "GET" || method === "HEAD") && matchImageProxyPath(path)) {
+      const r3 = await proxyImage(url, { ip: clientIp(req, env), env, rateLimiter: limiter });
       res.writeHead(r3.status, { ...CORS, ...r3.headers });
       if (method === "HEAD" || r3.body === void 0) res.end();
       else res.end(typeof r3.body === "string" ? r3.body : Buffer.from(r3.body));

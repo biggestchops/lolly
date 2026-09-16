@@ -283,6 +283,7 @@ export function mountDropzone(cat: CatCtx): void {
   const mount = viewEl.querySelector<HTMLElement>('[data-dropzone-mount]');
   if (!mount) return;   // no uploads section this paint (a total sync failure)
   cat.dropzoneDispose = mountUploadDropzone(mount, host as unknown as PickerHost, {
+    allowUrl: true,
     onAdded: async () => { if (!cat.mounted) return; await cat.tiles.reload(); if (cat.mounted) rerender(cat); },
   });
   // The roomier "this IS the section" layout when there are no uploads yet.
