@@ -349,3 +349,7 @@ carry a PREVIEW watermark for testing until graduated).
 - Hosted rendering of hook-heavy / HTML-heavy tools needs the optional Chromium worker tier;
   the fast path refuses them by default.
 - New interface text in 1.0.8 is in English only until the next translation update.
+- 3D Studio scenes saved with the first public version (0.3, on lolly.tools for one day
+  before this release) can look slightly different when reopened: depth forms default to
+  copies of the subject, clearcoat and imported-model materials follow the new finish
+  rules, and video frames use 16 samples each instead of 64.
