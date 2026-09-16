@@ -155,7 +155,6 @@ const displayTarget = target!.href;
 const redactBypass = (text: string): string => BYPASS ? text.replaceAll(BYPASS, '[redacted]').replaceAll(encodeURIComponent(BYPASS), '[redacted]') : text;
 if (BYPASS) {
   target!.searchParams.set('x-vercel-protection-bypass', BYPASS);
-  target!.searchParams.set('x-vercel-set-bypass-cookie', 'true');
 }
 {
   const probe = await fetch(target!.href, { redirect: 'follow', headers: { accept: 'text/html' } })
@@ -175,6 +174,9 @@ if (BYPASS) {
 }
 
 // --- Run it ------------------------------------------------------------------
+// Only the browser retains the cookie across Vercel's redirect. The fetch probe
+// above authenticates with the query token directly, without requesting a cookie.
+if (BYPASS) target!.searchParams.set('x-vercel-set-bypass-cookie', 'true');
 const tmp = mkdtempSync(path.join(tmpdir(), 'lolly-first-load-'));
 const reportPath = path.join(tmp, 'lighthouse.json');
 console.log(`• measuring ${displayTarget} (mobile preset, cold load - this takes a minute)`);
