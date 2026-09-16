@@ -16,7 +16,7 @@ import type {
 import { halton, StudioCapture } from './capture.ts';
 import { fitStudioObject, pickStudioFocus, placeStudioScene } from './camera.ts';
 import { loadStudioEnvironment, type StudioEnvironment, studioPalette } from './environment.ts';
-import { applyStudioMaterials, studioHasTransmission } from './materials.ts';
+import { applyStudioMaterials, studioHasEmissive, studioHasTransmission } from './materials.ts';
 import {
   instantiateStudioAsset,
   loadStudioSource,
@@ -359,6 +359,7 @@ export class StudioRenderer {
             : 2;
     const lightMotion = studioLightMotion(recipe, time, clipSeconds);
     const axis = new THREE.Vector3(0, 1, 0);
+    const glow = studioHasEmissive(recipe) ? (recipe.materials.glow ?? 0) : 0;
     try {
       this.capture.render(this.scene, camera, width, height, samples, recipe.exposure, (i) => {
         for (const light of this.stage!.lights) {
@@ -387,7 +388,7 @@ export class StudioRenderer {
           width,
           height
         );
-      });
+      }, glow);
     } finally {
       if (outline) {
         this.scene.remove(outline);

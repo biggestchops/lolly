@@ -787,6 +787,17 @@ describe('3D Studio actual renderer', { skip }, () => {
       assert.notEqual(seeThrough.png, glass.png);
       const custom = await render(page, { ...base, materialMode: 'custom', materials: [{ slot: '1', color: '#ff4060', finish: 'neon' }] });
       assert.notEqual(custom.png, satin.png);
+      // The halo: a neon cutout gains soft partial alpha outside the body; strength 0 skips it.
+      const flat = await render(page, { ...base, finishA: 'neon', finishB: 'neon', glow: 0 });
+      const halo = await render(page, { ...base, finishA: 'neon', finishB: 'neon', glow: 0.8 });
+      assert.notEqual(halo.png, flat.png);
+      let spill = 0;
+      for (let i = 3; i < halo.pixels.length; i += 4) if (flat.pixels[i] === 0 && halo.pixels[i]! > 0) spill++;
+      assert.ok(spill > 300, `the halo spills ${spill} pixels beyond the body`);
+      assert.equal((await render(page, { ...base, finishA: 'neon', finishB: 'neon', glow: 0.8 })).png, halo.png);
+      const noEmissive = await render(page, { ...base, finishA: 'satin', finishB: 'satin', glow: 0.8 });
+      assert.equal(noEmissive.png, satin.png, 'no self-lit finish, no halo pass');
+      if (process.env.STUDIO_SHOTS) await writeFile(join(process.env.STUDIO_SHOTS, 'finish-neon-halo.png'), Buffer.from(halo.png.split(',')[1]!, 'base64'));
       if (process.env.STUDIO_SHOTS) {
         await mkdir(process.env.STUDIO_SHOTS, { recursive: true });
         for (const [finish, png] of seen) await writeFile(join(process.env.STUDIO_SHOTS, `finish-${finish}.png`), Buffer.from(png.split(',')[1]!, 'base64'));

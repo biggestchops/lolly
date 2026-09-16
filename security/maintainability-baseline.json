@@ -84,7 +84,7 @@
       "typeEscapes": 8
     },
     "shells/web/src/views/tool-inputs.ts": {
-      "lines": 2900,
+      "lines": 2899,
       "largestFunctionLines": 2073,
       "importFanIn": 7,
       "importFanOut": 33,

@@ -118,6 +118,8 @@ export interface StudioSceneV1 {
       a: Record<'face' | 'bevel' | 'side', StudioFinish | 'inherit'>;
       b: Record<'face' | 'bevel' | 'side', StudioFinish | 'inherit'>;
     };
+    /** Halo strength around self-lit finishes, 0 to 1; only drawn when one is in use. */
+    glow?: number;
   };
   lights: StudioLightV1[];
   /**

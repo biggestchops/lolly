@@ -1143,6 +1143,18 @@
       ]
     },
     {
+      "id": "glow",
+      "label": "Glow halo",
+      "type": "number",
+      "default": 0.45,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "display": "slider",
+      "section": "Look",
+      "help": "The soft light that spills around Glow and Neon finishes. Drawn only when one of them is in use; a transparent output keeps the halo."
+    },
+    {
       "id": "surfaceFinishes",
       "label": "Separate face, bevel and side finishes",
       "type": "boolean",

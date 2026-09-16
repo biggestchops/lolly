@@ -2165,11 +2165,11 @@ export function renderInputs(
       const menu = btn.closest('.block-add-menu')?.querySelector<HTMLElement>('.block-add-options');
       if (!menu) return;
       const willOpen = menu.hidden;
-      el.querySelectorAll<HTMLElement>('.block-add-options').forEach((m) => {
-        if (m !== menu) m.hidden = true;
-      });
-      menu.hidden = !willOpen;
+      for (const m of el.querySelectorAll<HTMLElement>('.block-add-options'))
+        m.hidden = m !== menu || !willOpen;
       btn.setAttribute('aria-expanded', String(willOpen));
+      // The menu opens in flow at the foot of its section, often below the fold.
+      if (willOpen) menu.scrollIntoView({ block: 'center' });
     });
   });
 
