@@ -14,7 +14,7 @@
  * web-shell driver) live in @lolly-tools/node-shell, shared with the TUI.
  */
 import type { JSDOM } from 'jsdom';
-import { serializeUrlState } from '@lolly/engine';
+import { serializeUrlState, isToolUrl } from '@lolly/engine';
 import { eligibleForResvgPng, rasterizeTierAPng, rasterizeSvgToRgba, pxDims } from '@lolly-tools/node-shell/raster';
 import type { DeepHdrRequest } from '@lolly-tools/node-shell/raster';
 import type { RenderDims } from '@lolly-tools/node-shell/webshell-render';
@@ -86,6 +86,9 @@ export async function renderRaster(opts: {
   /** The reserved emoji params this run was given, forwarded into the Tier-B URL
    *  so the browser tier draws the same set from the same pins. */
   emoji?: { emoji?: string | null; emojiFx?: string | null };
+  /** The values the runtime was created from. Tier B restores from them any Lolly
+   *  tool link this process could not compose itself (see restoreToolLinks). */
+  initial?: Record<string, unknown>;
 }): Promise<RasterResult> {
   const { runtime, dom, manifest, dims } = opts;
   const fmt = opts.format.toLowerCase();
@@ -135,7 +138,8 @@ export async function renderRaster(opts: {
   // The emoji set and its treatment travel in the URL, exactly as they do in a share
   // link: Tier B is the web shell rendering the same address, so it has to be told
   // which set to draw from or it would fall back to the browser's own emoji font.
-  const query = serializeUrlState(runtime.getModel() as never, { emoji: opts.emoji?.emoji, emojiFx: opts.emoji?.emojiFx });
+  const model = opts.initial ? restoreToolLinks(runtime.getModel() as ModelItem[], opts.initial) : runtime.getModel();
+  const query = serializeUrlState(model as never, { emoji: opts.emoji?.emoji, emojiFx: opts.emoji?.emojiFx });
   const MOTION = ['gif', 'apng', 'webm', 'mp4'];
   // PROTOTYPE opt-in: real Playwright screenshots instead of dom-to-image for the
   // frame-by-frame capture (see renderVideoViaScreenshot's doc comment). Motion
@@ -149,6 +153,43 @@ export async function renderRaster(opts: {
   const { renderViaWebShell } = await import('@lolly-tools/node-shell/webshell-render');
   const { bytes } = await renderViaWebShell(manifest.id, query, fmt, dims);
   return { bytes, usedBrowser: true };
+}
+
+interface ModelItem { id: string; type: string; value: unknown; fields?: Array<{ id: string; type?: string }> }
+
+const toolLinkOf = (v: unknown): boolean => {
+  const id = typeof v === 'string' ? v : v && typeof v === 'object' ? (v as { id?: unknown }).id : null;
+  return typeof id === 'string' && isToolUrl(id);
+};
+
+/**
+ * Put back the Lolly tool links this process dropped. A slot that embeds another tool
+ * (a chart on a slide) resolves through this shell's own compose, which cannot draw an
+ * HTML-layout tool in jsdom; the runtime then records the slot as empty. The browser
+ * tier composes those links itself, so its URL has to carry them as the caller gave
+ * them, or every such slot renders blank. Only an EMPTY slot whose input value was a
+ * tool link is restored; blocks are matched by position and only when the count is
+ * unchanged.
+ */
+export function restoreToolLinks(model: readonly ModelItem[], initial: Record<string, unknown>): ModelItem[] {
+  return model.map((input) => {
+    const given = initial[input.id];
+    if (input.type === 'asset') return input.value == null && toolLinkOf(given) ? { ...input, value: given } : input;
+    if (input.type !== 'blocks' || !Array.isArray(input.value) || !Array.isArray(given) || given.length !== input.value.length) return input;
+    const fields = (input.fields ?? []).filter(f => f.type === 'asset').map(f => f.id);
+    let changed = false;
+    const value = input.value.map((item, i) => {
+      const source = given[i];
+      if (!item || typeof item !== 'object' || !source || typeof source !== 'object') return item;
+      let next = item as Record<string, unknown>;
+      for (const fid of fields) {
+        const link = (source as Record<string, unknown>)[fid];
+        if (next[fid] == null && toolLinkOf(link)) { next = { ...next, [fid]: link }; changed = true; }
+      }
+      return next;
+    });
+    return changed ? { ...input, value } : input;
+  });
 }
 
 /**

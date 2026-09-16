@@ -1001,6 +1001,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
       const res = await renderRaster({
         runtime, dom, manifest: tool.manifest, format: targetFormat, dims,
         emoji: { emoji: emojiParam, emojiFx: emojiFxParam },
+        initial: values as Record<string, unknown>,
       });
       const bytes = Buffer.from(res.bytes);
       usedBrowser = res.usedBrowser;

@@ -1545,6 +1545,7 @@ export async function mountProjects(
         canPaste ? menuItem('paste-into', PASTE_ICON, t('Paste here')) : '',
         menuItem('course-folder', RENDER_ICON, t('Export course')),
         menuItem('render', RENDER_ICON, t('Render folder'), { render: true }),
+        menuItem('download-project', DOWNLOAD_ICON, t('Download project (.lolly)')),
         menuItem('download-folder', DOWNLOAD_ICON, t('Download originals')),
         menuItem('save-template', TEMPLATE_ICON, t('Save project as a blueprint…')),
         menuItem('style-folder', PALETTE_ICON, t('Colour and icon…')),
@@ -1648,6 +1649,7 @@ export async function mountProjects(
     else if (act === 'info') openInfoSheet(ref);
     else if (act === 'cut' || act === 'copy') setClipboard(act, selected.has(ref) ? [...selected.keys()] : [ref]);
     else if (act === 'paste-into') await pasteClipboard(ref);
+    else if (act === 'download-project') await downloadProject(ref);
     else if (act === 'download-folder') await downloadOriginals(folders.find(f => f.id === ref)?.name || t('Folder'), [], [], [ref]);
     else if (act === 'save-template') await saveAsBlueprint(ref);
     else if (act === 'open-folder') { window.location.hash = '#/p/' + ref; }
@@ -3087,6 +3089,67 @@ export async function mountProjects(
       await host.export.file(new Blob([bytes as BlobPart], { type: 'application/zip' }), { filename: zipName });
       if (skipped) announce(skipped === 1 ? t('1 file could not be packed and was left out') : t('{n} files could not be packed and were left out', { n: skipped }));
       return { zipName };
+    });
+  }
+
+  // ── Download project ─────────────────────────────────────────────────────────
+  // The folder as ONE `.lolly` a recipient opens back into Projects: its subtree, every
+  // saved session in it (values, tile, carried uploads and the catalog bytes that may
+  // travel) and the pictures filed in it. Batch sessions are not tool sessions and stay
+  // behind, which the toast says. Opening the file rebuilds the tree with fresh ids
+  // (lib/drop-router.ts openLollyProject).
+  async function downloadProject(id: string): Promise<void> {
+    closeMenu();
+    const root = folders.find(f => f.id === id);
+    if (!root) return;
+    const inside = new Set(descendantFolderIds(folders, id));
+    const tree = [root, ...folders.filter(f => inside.has(f.id))];
+    startRenderJob(tRaw('Packing {name}', { name: root.name }), async (job) => {
+      const [lp, { lollyLibraryResolver }] = await Promise.all([import('../lib/lolly-pack.ts'), import('./tool-lolly-vehicle.ts')]);
+      type VehicleAssets = Parameters<typeof lollyLibraryResolver>[0];
+      const h = host as ProjectsHost & { assets: VehicleAssets };
+      const userAssets = await h.assets._exportUserAssets();
+      const appVersion = `Lolly ${ENGINE_VERSION}`;
+      const designSystem = await import('../bridge/tokens.ts')
+        .then(m => m.readUserDesignSystem(h as unknown as Parameters<typeof m.readUserDesignSystem>[0]))
+        .catch(() => null);
+      const keys = new Map<string, string>();
+      const sessions: import('../lib/lolly-pack.ts').LollyProjectSessionInput[] = [];
+      const members = tree.flatMap(f => f.items.filter(it => it.type === 'session').map(it => it.ref));
+      let skipped = 0;
+      for (const slot of members) {
+        if (job.cancelled) return;
+        const e = entryMap.get(slot);
+        const data = isBatchSlot(slot) || !e ? null : await h.state.load(slot).catch(() => null);
+        if (!e || !data) { skipped++; job.progress(sessions.length + skipped, members.length); continue; }
+        const key = `s${sessions.length + 1}`;
+        keys.set(slot, key);
+        sessions.push({
+          key, toolId: e.toolId, data,
+          ...(e.toolVersion ? { toolVersion: e.toolVersion } : {}),
+          ...(e.label || e.filename ? { label: e.label || e.filename || '' } : {}),
+          ...(e.thumb ? { thumb: e.thumb } : {}),
+        });
+        job.progress(sessions.length + skipped, members.length);
+      }
+      const projectFolders = tree.map(f => ({
+        id: f.id, name: f.name, parentId: f.id === id ? null : (f.parentId ?? null),
+        items: f.items.flatMap((it): FolderItem[] => it.type === 'image' ? [{ type: 'image', ref: it.ref }]
+          : keys.has(it.ref) ? [{ type: 'session', ref: keys.get(it.ref)! }] : []),
+        ...(f.color ? { color: f.color } : {}),
+        ...(f.emoji ? { emoji: f.emoji } : {}),
+        ...(f.tags?.length ? { tags: f.tags } : {}),
+      }));
+      const { blob, filename } = await lp.buildLollyFile({
+        kind: 'project', toolId: lp.LOLLY_PROJECT_TOOL_ID, session: null, name: root.name,
+        project: { name: root.name, folders: projectFolders, sessions },
+        userAssets, resolveLibrary: lollyLibraryResolver(h.assets),
+        creator: lp.creatorFromProfile(profile, { appVersion }), appVersion, engineVersion: ENGINE_VERSION,
+        ...(designSystem ? { designSystem } : {}),
+      });
+      await host.export.file(blob, { filename });
+      if (skipped) announce(skipped === 1 ? t('1 file could not be packed and was left out') : t('{n} files could not be packed and were left out', { n: skipped }));
+      return { zipName: filename };
     });
   }
 

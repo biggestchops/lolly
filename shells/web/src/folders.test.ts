@@ -192,3 +192,24 @@ test('project templates: snapshot → add → instantiate with fresh ids + remap
   assert.deepEqual(await store.templateList(), []);
   assert.equal(host._profile().folders.length, 6);   // sibling field untouched by the drop
 });
+
+test('instantiateSubtree maps pictures through an asset map, keeping catalog refs and dropping lost uploads', async () => {
+  const host = makeHost();
+  const store = createFolderStore(host);
+  const tree = [{
+    id: 'sender-root', name: 'Imported', parentId: null,
+    items: [
+      { type: 'session' as const, ref: 'k1' },
+      { type: 'image' as const, ref: 'user/uploads/cover?treatment=warm' },
+      { type: 'image' as const, ref: 'suse/logo/primary' },
+      { type: 'image' as const, ref: 'user/uploads/lost' },
+    ],
+  }];
+  const root = (await store.instantiateSubtree(tree, null, new Map([['k1', 'chart:1']]), new Map([['user/uploads/cover', 'user/uploads/cover-2']])))!;
+  assert.deepEqual(root.items, [
+    { type: 'session', ref: 'chart:1' },
+    { type: 'image', ref: 'user/uploads/cover-2?treatment=warm' },
+    { type: 'image', ref: 'suse/logo/primary' },
+  ]);
+  assert.ok(root.createdAt && root.updatedAt, 'timestamps are minted on this device');
+});

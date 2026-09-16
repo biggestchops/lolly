@@ -695,6 +695,17 @@ function previewFacts(preview: LollyPreview): string {
     : preview.sizeBand === 'medium'
       ? t(' It may take a moment to verify on this device.')
       : '';
+  if (preview.format === 'lolly-share' && preview.kind === 'project') {
+    const content = [
+      preview.sessionCount === 1 ? t('1 saved session') : t('{n} saved sessions', { n: preview.sessionCount }),
+      preview.folderCount === 1 ? t('1 folder') : preview.folderCount ? t('{n} folders', { n: preview.folderCount }) : null,
+      preview.embeddedAssets === 1 ? t('1 embedded file') : preview.embeddedAssets ? t('{n} embedded files', { n: preview.embeddedAssets }) : null,
+      preview.referencedAssets ? (preview.referencedAssets === 1 ? t('1 external reference') : t('{n} external references', { n: preview.referencedAssets })) : null,
+    ].filter(Boolean).join(' · ');
+    return tRaw('“{name}” is a {size} shared project: {content}. Opening it adds its folders and sessions to Projects; it does not replace existing work.{pace}', {
+      name: preview.label, size, content, pace,
+    });
+  }
   if (preview.format === 'lolly-share') {
     const templates = declaredTemplateCount(preview.manifest);
     const content = [
@@ -735,7 +746,7 @@ async function storageFact(preview: LollyPreview): Promise<string> {
     const free = Math.max(0, estimate.quota - estimate.usage);
     // Session manifests declare the carried payload bytes. Brand manifests do
     // not, so their compressed size is the only honest lower-bound available.
-    const needed = (preview.kind === 'session' || preview.kind === 'tool')
+    const needed = (preview.kind === 'session' || preview.kind === 'tool' || preview.kind === 'project')
       ? Math.max(preview.fileBytes, preview.embeddedBytes)
       : preview.fileBytes;
     if (free >= needed * 1.25) return '';
@@ -899,7 +910,9 @@ export async function openLollyFile(
       return;
     }
     const storage = await storageFact(preview);
-    const choices: DialogChoice[] = preview.kind === 'session'
+    const choices: DialogChoice[] = preview.kind === 'project'
+      ? [{ id: 'open-project', label: t('Open project'), primary: true }]
+      : preview.kind === 'session'
       ? [
           { id: 'open-session', label: t('Open shared design'), primary: opts.preferred !== 'design-system' || !preview.includesDesignSystem },
           ...(preview.includesDesignSystem
@@ -907,7 +920,8 @@ export async function openLollyFile(
         ]
       : [{ id: 'use-brand', label: preview.kind === 'instance' ? t('Install brand workspace') : t('Add design system'), primary: true }];
     const chosen = await choiceDialog({
-      title: preview.kind === 'session' ? t('Shared design')
+      title: preview.kind === 'project' ? t('Shared project')
+        : preview.kind === 'session' ? t('Shared design')
         : preview.kind === 'instance' ? t('Brand workspace') : t('Design system'),
       message: previewFacts(preview) + storage, choices, tag: 'lolly-intake',
     });
@@ -924,6 +938,10 @@ export async function openLollyFile(
       return;
     }
     const lp = await import('./lolly-pack.ts');
+    if (loaded.contents.project) {
+      await openLollyProject(loaded.contents, host, lp);
+      return;
+    }
     // A .lolly may carry the tool itself (plans/114 Wave 7). Provision it - behind a
     // "do you trust the author?" gate - BEFORE landing the session, so the session can
     // open. `available` is whether the session's tool can load here afterwards.
@@ -970,6 +988,35 @@ export async function openLollyFile(
 
 // Backwards-compatible private spelling for the existing drop/open call sites.
 const importLollyDrop = openLollyFile;
+
+/**
+ * Land a project file: its assets and sessions, then its folder tree in Projects, and
+ * open the folder it brought. A session whose tool is not installed here is still saved;
+ * it waits in its folder, as a single shared design does.
+ */
+async function openLollyProject(contents: LollyFileContents, host: PickerHost, lp: typeof import('./lolly-pack.ts')): Promise<void> {
+  const project = contents.project!;
+  const { createFolderStore } = await import('../folders.ts');
+  const store = createFolderStore(host as unknown as Parameters<typeof createFolderStore>[0]);
+  announce(contents.manifest.counts.assets
+    ? t('Importing {n} files…', { n: contents.manifest.counts.assets })
+    : tRaw('Adding {name} to your projects…', { name: project.name }));
+  const res = await lp.ingestLollyFile(contents, host as unknown as BeamPackHost, {
+    onProgress: (progress) => announce(progress.phase === 'assets'
+      ? t('Importing file {current} of {total}…', { current: progress.current, total: progress.total })
+      : tRaw('Saving session {current} of {total}…', { current: progress.current, total: progress.total })),
+    folders: {
+      instantiateSubtree: (tree, parentId, slotMap, assetMap) => store.instantiateSubtree(tree, parentId, slotMap, assetMap),
+      removeSubtree: (id) => store.removeSubtree(id),
+    },
+  });
+  playSfx('drop');
+  const sessions = res.project?.slots.length ?? 0;
+  announce(tRaw('Added {name} to your projects: {n} sessions.', { name: project.name, n: sessions }));
+  const folderId = res.project?.folderIds.length === 1 ? res.project.folderIds[0] : undefined;
+  const hash = folderId ? `#/p/${encodeURIComponent(folderId)}` : '#/p';
+  routeToConsumer(hash, window.location.hash === hash);
+}
 
 /**
  * Provision a `.lolly`'s carried tool, if any, before its session lands. Returns whether

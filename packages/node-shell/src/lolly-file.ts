@@ -38,7 +38,7 @@ export interface LollyFont {
  *  nothing here needs them, and typing only what is used keeps the two copies honest. */
 export interface LollyFileManifest {
   format: string;
-  kind?: 'session' | 'tool';
+  kind?: 'session' | 'tool' | 'project';
   formatVersion?: number;
   minReader?: number;
   app?: string;
@@ -47,6 +47,8 @@ export interface LollyFileManifest {
   exportedAt?: string;
   fonts?: LollyFont[];
   bundledTool?: { id: string; version?: string; trust?: string; files?: Array<{ path: string }> };
+  /** A project file's folder tree; only its session count is read here. */
+  project?: { sessions?: unknown[] };
   integrity?: Record<string, string> | null;
 }
 
@@ -79,6 +81,12 @@ export function readLollyFile(bytes: Uint8Array, opts: { allowTool?: boolean } =
   const manifest = parseJson(files.get('manifest.json')) as LollyFileManifest | null;
   if (!manifest || manifest.format !== LOLLY_FILE_FORMAT) {
     throw new Error('This does not look like a .lolly file (no lolly-share manifest.json).');
+  }
+  // A project file (a folder of sessions) asks for reader 3 so older readers stop;
+  // this one knows what it is and says where it opens instead of "update".
+  if (manifest.kind === 'project') {
+    const sessions = Array.isArray(manifest.project?.sessions) ? manifest.project.sessions.length : 0;
+    throw new Error(`This .lolly file is a project folder with ${sessions} saved sessions. Open it in the Lolly app (Open, or drop it on Projects) to add them.`);
   }
   if (typeof manifest.minReader === 'number' && manifest.minReader > LOLLY_READER_VERSION) {
     throw new Error(`This .lolly file needs a newer reader (minReader ${manifest.minReader}).`);

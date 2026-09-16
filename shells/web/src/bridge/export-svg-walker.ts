@@ -2990,7 +2990,11 @@ export async function inlineSvgFromImg(src: string): Promise<Element | null> {
     const comma  = src.indexOf(',');
     const header = src.slice(0, comma);
     const body   = src.slice(comma + 1);
-    text = /;base64/i.test(header) ? atob(body) : decodeURIComponent(body);
+    // atob() yields one character per BYTE; the SVG is UTF-8, so decode the bytes
+    // or every non-ASCII character in a live <text> arrives mangled ('·' as 'Â·').
+    text = /;base64/i.test(header)
+      ? new TextDecoder().decode(Uint8Array.from(atob(body), (c) => c.charCodeAt(0)))
+      : decodeURIComponent(body);
   } else {
     let blob: Blob;
     try {

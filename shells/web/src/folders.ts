@@ -421,16 +421,30 @@ export function createFolderStore(host: FolderHost) {
      * its session item refs through `slotMap` (template slot → new live slot).
      * Items whose slot isn't in the map are dropped (a template session that
      * failed to copy must not leave a dangling ref). Returns the new root.
+     *
+     * Image items are dropped too unless an `assetMap` is given (an imported
+     * project file, whose pictures got new ids on import): then a mapped
+     * image takes its new id, an unmapped catalog image keeps its ref (this
+     * device resolves it), and an unmapped upload is dropped, having no bytes here.
      */
-    async instantiateSubtree(tree: readonly Folder[], parentId: string | null, slotMap: ReadonlyMap<string, string>): Promise<Folder | null> {
+    async instantiateSubtree(tree: readonly Omit<Folder, 'createdAt' | 'updatedAt'>[], parentId: string | null, slotMap: ReadonlyMap<string, string>, assetMap?: ReadonlyMap<string, string>): Promise<Folder | null> {
       if (!tree.length) return null;
       const idMap = new Map(tree.map(f => [f.id, uuid()]));
       const rootId = tree[0]!.id;
-      const created = tree.map(f => ({
+      const mapItem = (it: FolderItem): FolderItem | null => {
+        if (it.type === 'session') return slotMap.has(it.ref) ? { type: it.type, ref: slotMap.get(it.ref)! } : null;
+        if (!assetMap) return null;
+        const cut = it.ref.indexOf('?');
+        const base = cut < 0 ? it.ref : it.ref.slice(0, cut);
+        const mapped = assetMap.get(base);
+        if (mapped) return { type: it.type, ref: mapped + (cut < 0 ? '' : it.ref.slice(cut)) };
+        return it.ref.startsWith('user/') ? null : { type: it.type, ref: it.ref };
+      };
+      const created: Folder[] = tree.map(f => ({
         ...f,
         id: idMap.get(f.id)!,
         parentId: f.id === rootId ? (parentId ?? null) : (idMap.get(f.parentId ?? '') ?? idMap.get(rootId)!),
-        items: f.items.filter(it => it.type === 'session' && slotMap.has(it.ref)).map(it => ({ type: it.type, ref: slotMap.get(it.ref)! })),
+        items: f.items.map(mapItem).filter((it): it is FolderItem => it !== null),
         createdAt: now(), updatedAt: now(),
       }));
       await mutate(folders => { for (const f of created) folders.push(f); });

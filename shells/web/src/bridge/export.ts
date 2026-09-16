@@ -1701,7 +1701,8 @@ async function wrapArtworkSvgWithMarks(artworkEl: Element, geo: PrintGeometry, o
 // maps to a fetchable sfnt. The clone is a deep copy, so its <text> list is 1:1 with the
 // live one in document order; we shape each run and swap the clone's node for a <path>.
 //
-// Runs we can't faithfully outline - a run with <tspan> children, an unresolvable/icon
+// A run made of flat <tspan> lines (a wrapped title) outlines line by line into a <g>.
+// Runs we can't faithfully outline - nested or mixed <tspan> content, an unresolvable/icon
 // font, or one with a .notdef glyph - keep their <text>, but get the resolved family
 // baked as an INLINE style (which beats the tool's internal <style> rule; a presentation
 // attribute would not) so they never fall through to the 'SUSE' var fallback. When
@@ -1721,63 +1722,43 @@ async function outlineSvgTextRuns(liveSvg: Element, clone: Element, outline: boo
     return s.endsWith('em') ? (parseFloat(s) || 0) * em : (parseFloat(s) || 0);
   };
 
-  for (let i = 0; i < liveTexts.length; i++) {
-    const live = liveTexts[i] as SVGTextElement;
-    const cl = cloneTexts[i] as SVGElement;
-    const cs = window.getComputedStyle(live);
-    if (cs.display === 'none') continue;                         // hidden - leave as-is
-    const raw = applyTextTransform((live.textContent ?? '').replace(/\s+/g, ' ').trim(), cs.textTransform);
-    if (!raw) continue;
-
-    // Bake the brand-resolved family inline so a KEPT <text> can't inherit the SUSE
-    // var fallback. No-op cost on a run we go on to replace with a <path>.
-    const bakeFamily = () => { cl.style.fontFamily = cs.fontFamily; };
-
-    const simple = [...live.childNodes].every(n => n.nodeType === 3);   // no <tspan>
-    if (!outline || !simple || !textApi) { bakeFamily(); continue; }
-
+  // Shape one run in `cs`'s font. Null when the face can't be resolved, shaping
+  // fails, or a glyph is missing - the caller then keeps the run as <text>.
+  const shapeRun = async (raw: string, cs: CSSStyleDeclaration): Promise<{ d: string; adv: number } | null> => {
     const fontSizePx = parseFloat(cs.fontSize) || 16;
     const styleSlice = { fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, fontStyle: cs.fontStyle };
     let vf: VectorFont | null = null;
     try { vf = await resolveVectorFont(styleSlice, raw); } catch { vf = null; }
-    if (!vf?.url) { bakeFamily(); continue; }
-
+    if (!vf?.url || !textApi) return null;
     const letterSpacing = letterSpacingPx(cs.letterSpacing);
     const features = featureSettingsToHb(cs.fontFeatureSettings);
-    let d = '', adv = 0, notdef = 0;
     try {
       const r = await textApi.toPath({ text: raw, fontUrl: vf.url, fontSize: fontSizePx, features: features as string[], letterSpacing, variations: vf.variations, fallbackFonts: vf.fallbacks });
-      d = r.d; adv = r.advanceWidth || 0; notdef = r.notdef ?? 0;
+      return r.d && !(r.notdef ?? 0) ? { d: r.d, adv: r.advanceWidth || 0 } : null;
     } catch (e) {
       _host?.log?.('warn', `svg: SVG-text outline failed, keeping <text> - ${(e as Error).message}`);
+      return null;
     }
-    if (!d || notdef) { bakeFamily(); continue; }
-
-    // toPath places the baseline at y=0 with the pen starting at x=0. SVG's own `y`
-    // IS the baseline for the default (auto/alphabetic) dominant-baseline; the other
-    // values shift it by font metrics. `x` (+ dx) with text-anchor and the shaped
-    // advance width give the left edge.
-    const x = num(live.getAttribute('x')) + rel(live.getAttribute('dx'), fontSizePx);
-    let y = num(live.getAttribute('y')) + rel(live.getAttribute('dy'), fontSizePx);
+  };
+  // toPath places the baseline at y=0 with the pen starting at x=0. SVG's own `y`
+  // IS the baseline for the default (auto/alphabetic) dominant-baseline; the other
+  // values shift it by font metrics.
+  const baselineShift = (live: Element, cs: CSSStyleDeclaration, fontSizePx: number): number => {
     const db = live.getAttribute('dominant-baseline') || cs.dominantBaseline || 'auto';
-    if (db === 'middle' || db === 'central') {
-      const { ascent, descent } = fontMetricsPx(cs, fontSizePx); y += (ascent - descent) / 2;
-    } else if (db === 'hanging' || db === 'text-before-edge') {
-      y += fontMetricsPx(cs, fontSizePx).ascent;
-    } else if (db === 'text-after-edge' || db === 'ideographic') {
-      y -= fontMetricsPx(cs, fontSizePx).descent;
-    }
-    if (adv <= 0) { try { adv = live.getComputedTextLength(); } catch { adv = 0; } }
-    const anchor = live.getAttribute('text-anchor') || cs.textAnchor || 'start';
-    const xAdj = anchor === 'middle' ? x - adv / 2 : anchor === 'end' ? x - adv : x;
-
-    const path = document.createElementNS(NS, 'path');
+    if (db === 'middle' || db === 'central') { const { ascent, descent } = fontMetricsPx(cs, fontSizePx); return (ascent - descent) / 2; }
+    if (db === 'hanging' || db === 'text-before-edge') return fontMetricsPx(cs, fontSizePx).ascent;
+    if (db === 'text-after-edge' || db === 'ideographic') return -fontMetricsPx(cs, fontSizePx).descent;
+    return 0;
+  };
+  // A <path> for one shaped run, painted from `cs`. `withOpacity` is false for a
+  // tspan, whose parent <text> opacity is carried by the wrapping group instead.
+  const runPath = (d: string, transform: string, live: Element, cs: CSSStyleDeclaration, withOpacity: boolean): SVGPathElement => {
+    const path = document.createElementNS(NS, 'path') as SVGPathElement;
     path.setAttribute('d', d);
-    const own = live.getAttribute('transform');
-    path.setAttribute('transform', `${own ? own + ' ' : ''}translate(${n2(xAdj)},${n2(y)})`);
+    path.setAttribute('transform', transform);
     path.setAttribute('fill', cs.fill || live.getAttribute('fill') || '#000');
     if (cs.fillOpacity && parseFloat(cs.fillOpacity) < 1) path.setAttribute('fill-opacity', cs.fillOpacity);
-    if (cs.opacity && parseFloat(cs.opacity) < 1) path.setAttribute('opacity', cs.opacity);
+    if (withOpacity && cs.opacity && parseFloat(cs.opacity) < 1) path.setAttribute('opacity', cs.opacity);
     // Preserve text stroke/outline in vector export
     const stroke = cs.stroke || live.getAttribute('stroke');
     if (stroke) {
@@ -1787,7 +1768,87 @@ async function outlineSvgTextRuns(liveSvg: Element, clone: Element, outline: boo
       const strokeOpacity = cs.strokeOpacity || live.getAttribute('stroke-opacity');
       if (strokeOpacity) path.setAttribute('stroke-opacity', strokeOpacity);
     }
-    cl.replaceWith(path);
+    return path;
+  };
+
+  for (let i = 0; i < liveTexts.length; i++) {
+    const live = liveTexts[i] as SVGTextElement;
+    const cl = cloneTexts[i] as SVGElement;
+    const cs = window.getComputedStyle(live);
+    if (cs.display === 'none') continue;                         // hidden - leave as-is
+    const raw = applyTextTransform((live.textContent ?? '').replace(/\s+/g, ' ').trim(), cs.textTransform);
+    if (!raw) continue;
+
+    // Bake the brand-resolved family inline so a KEPT <text> can't inherit the SUSE
+    // var fallback. No-op cost on a run we go on to replace with a <path>. A tool
+    // rule may name tspans directly, so each kept tspan gets its own resolved family.
+    const bakeFamily = () => {
+      cl.style.fontFamily = cs.fontFamily;
+      const liveSpans = live.querySelectorAll('tspan');
+      const cloneSpans = cl.querySelectorAll('tspan');
+      if (liveSpans.length === cloneSpans.length) {
+        cloneSpans.forEach((span, k) => { (span as SVGElement).style.fontFamily = window.getComputedStyle(liveSpans[k]!).fontFamily; });
+      }
+    };
+
+    const simple = [...live.childNodes].every(n => n.nodeType === 3);   // no <tspan>
+    // Line runs: every child is a flat <tspan> (whitespace between them aside), the
+    // shape a wrapped title takes. Each tspan outlines on its own pen position.
+    const lineRuns = !simple && [...live.childNodes].every(n =>
+      (n.nodeType === 3 && !(n.textContent ?? '').trim())
+      || (n.nodeType === 1 && (n as Element).localName === 'tspan' && [...n.childNodes].every(c => c.nodeType === 3)));
+    if (!outline || !textApi || (!simple && !lineRuns)) { bakeFamily(); continue; }
+
+    const fontSizePx = parseFloat(cs.fontSize) || 16;
+    const own = live.getAttribute('transform');
+    const anchor = live.getAttribute('text-anchor') || cs.textAnchor || 'start';
+
+    if (simple) {
+      const shaped = await shapeRun(raw, cs);
+      if (!shaped) { bakeFamily(); continue; }
+      // `x` (+ dx) with text-anchor and the shaped advance width give the left edge.
+      const x = num(live.getAttribute('x')) + rel(live.getAttribute('dx'), fontSizePx);
+      const y = num(live.getAttribute('y')) + rel(live.getAttribute('dy'), fontSizePx) + baselineShift(live, cs, fontSizePx);
+      let adv = shaped.adv;
+      if (adv <= 0) { try { adv = live.getComputedTextLength(); } catch { adv = 0; } }
+      const xAdj = anchor === 'middle' ? x - adv / 2 : anchor === 'end' ? x - adv : x;
+      cl.replaceWith(runPath(shaped.d, `${own ? own + ' ' : ''}translate(${n2(xAdj)},${n2(y)})`, live, cs, true));
+      continue;
+    }
+
+    // A tspan may reset the pen (x/y) or offset it (dx/dy); a run that sets neither
+    // continues where the previous one ended. All runs must shape, or none are
+    // replaced, so a line is never half outlined.
+    let penX = num(live.getAttribute('x')) + rel(live.getAttribute('dx'), fontSizePx);
+    let penY = num(live.getAttribute('y')) + rel(live.getAttribute('dy'), fontSizePx);
+    const shift = baselineShift(live, cs, fontSizePx);
+    const paths: SVGPathElement[] = [];
+    let failed = false;
+    for (const span of live.querySelectorAll('tspan')) {
+      const scs = window.getComputedStyle(span);
+      const text = applyTextTransform((span.textContent ?? '').replace(/\s+/g, ' ').trim(), scs.textTransform);
+      const em = parseFloat(scs.fontSize) || fontSizePx;
+      if (span.hasAttribute('x')) penX = num(span.getAttribute('x'));
+      if (span.hasAttribute('y')) penY = num(span.getAttribute('y'));
+      penX += rel(span.getAttribute('dx'), em);
+      penY += rel(span.getAttribute('dy'), em);
+      if (!text) continue;
+      const shaped = await shapeRun(text, scs);
+      if (!shaped) { failed = true; break; }
+      let adv = shaped.adv;
+      if (adv <= 0) { try { adv = (span as SVGTextContentElement).getComputedTextLength(); } catch { adv = 0; } }
+      const spanAnchor = span.getAttribute('text-anchor') || anchor;
+      const xAdj = spanAnchor === 'middle' ? penX - adv / 2 : spanAnchor === 'end' ? penX - adv : penX;
+      paths.push(runPath(shaped.d, `translate(${n2(xAdj)},${n2(penY + shift)})`, span, scs, true));
+      penX = xAdj + adv;
+    }
+    if (failed || !paths.length) { bakeFamily(); continue; }
+    const group = document.createElementNS(NS, 'g');
+    if (own) group.setAttribute('transform', own);
+    const groupOpacity = live.getAttribute('opacity') ?? (parseFloat(cs.opacity) < 1 ? cs.opacity : null);
+    if (groupOpacity != null && parseFloat(groupOpacity) < 1) group.setAttribute('opacity', groupOpacity);
+    for (const path of paths) group.appendChild(path);
+    cl.replaceWith(group);
   }
 }
 
@@ -3028,14 +3089,16 @@ async function drawSvgVectorsInRegion(pdf: any, svgEl: Element, ox: number, oy: 
       // → SUSE) otherwise fell back to Helvetica at the default size. Advance uses the
       // browser's measured getComputedTextLength (a length → maps like the x attrs); the
       // writer's width is the fallback. Baseline y is the writer's own (SVG y IS the baseline).
-      const drawRun = async (styleEl: any, runText: string, userX: number, userY: number, anchor: string): Promise<number> => {
+      // `opMul` carries the parent <text>'s opacity onto a <tspan>: opacity is not
+      // inherited, but it still fades every run the <text> holds.
+      const drawRun = async (styleEl: any, runText: string, userX: number, userY: number, anchor: string, opMul = 1): Promise<number> => {
         const t = (runText ?? '').trim();
         if (!t) return 0;
         const cs = (typeof window !== 'undefined' && styleEl.isConnected) ? window.getComputedStyle(styleEl) : null;
         let fillStr = styleEl.getAttribute('fill');
         if (!fillStr || fillStr === 'currentColor') fillStr = computedPaint(styleEl, 'fill') || '#000000';
         let rgb = parseSvgColor(fillStr) ?? parseSvgColor(computedPaint(styleEl, 'fill'));
-        const op = parseFloat(styleEl.getAttribute('opacity') ?? styleEl.getAttribute('fill-opacity') ?? '1');
+        const op = parseFloat(styleEl.getAttribute('opacity') ?? styleEl.getAttribute('fill-opacity') ?? '1') * opMul;
         const fsUser = parseFloat(styleEl.getAttribute('font-size') ?? cs?.fontSize ?? '16');
         const fs = fsUser * gAvg * rAvg;
         const fw = parseInt(styleEl.getAttribute('font-weight') ?? cs?.fontWeight ?? '400') || 400;
@@ -3118,6 +3181,8 @@ async function drawSvgVectorsInRegion(pdf: any, svgEl: Element, ox: number, oy: 
       let penX = svgLen(el.getAttribute('x'), vbW);
       let penY = svgLen(el.getAttribute('y'), vbH);
       const textAnchor = el.getAttribute('text-anchor') ?? 'start';
+      const parsedOpacity = parseFloat(el.getAttribute('opacity') ?? '1');
+      const textOpacity = Number.isFinite(parsedOpacity) ? parsedOpacity : 1;
       for (const n of nodes) {
         if (n.nodeType === 3) {                                   // bare text node - flows inline
           if ((n.textContent ?? '').trim()) penX += await drawRun(el, n.textContent, penX, penY, 'start');
@@ -3129,7 +3194,7 @@ async function drawSvgVectorsInRegion(pdf: any, svgEl: Element, ox: number, oy: 
           if (ts.hasAttribute('y')) penY = svgLen(ts.getAttribute('y'), vbH);
           penX += relLen(ts.getAttribute('dx'));
           penY += relLen(ts.getAttribute('dy'));
-          penX += await drawRun(ts, ts.textContent, penX, penY, ts.getAttribute('text-anchor') ?? textAnchor);
+          penX += await drawRun(ts, ts.textContent, penX, penY, ts.getAttribute('text-anchor') ?? textAnchor, textOpacity);
         }
       }
       return;

@@ -10,7 +10,7 @@ import type { ToolManifest } from '../../../../engine/src/loader.ts';
 import type { ShareDialogLolly } from '../components/share-dialog.ts';
 import type { WebToolHost } from './tool.ts';
 
-interface LollyAssetsSlice {
+export interface LollyAssetsSlice {
   get(id: string, opts?: { format?: string; version?: string }): Promise<AssetRef>;
   _getUserRecord?(id: string, version?: string): Promise<BeamAssetRecord | null>;
   _getBlob(id: string, opts?: { format?: string; version?: string }): Promise<Blob | null>;
@@ -40,18 +40,14 @@ async function coarseToolTrust(toolId: string): Promise<LollyToolTrust> {
 }
 
 
-export function makeLollyVehicle(
-  host: WebToolHost,
-  toolId: string,
-  manifest: ToolManifest,
-  sessionState: (() => unknown) | undefined,
-  canvasEl?: Element | null
-): ShareDialogLolly | undefined {
-  if (typeof sessionState !== 'function') return undefined;
-  const assets = host.assets as unknown as LollyAssetsSlice;
-  const appVersion = `Lolly ${ENGINE_VERSION}`;
-
-  const resolveLibrary = async (id: string): Promise<LollyLibraryAsset | null> => {
+/**
+ * Catalog bytes for a `.lolly`, with the redistribution answer attached: bytes the
+ * catalog does not let travel come back `licensed`, so the builder holds them back
+ * unless the sender chose otherwise. Shared by the single-session vehicle below and
+ * the Projects folder download.
+ */
+export function lollyLibraryResolver(assets: LollyAssetsSlice): (id: string) => Promise<LollyLibraryAsset | null> {
+  return async (id: string): Promise<LollyLibraryAsset | null> => {
     try {
       const dep = decodeAssetVersion(id);
       const blob = await assets._getBlob(dep.id, dep.pin);
@@ -75,6 +71,19 @@ export function makeLollyVehicle(
       return null;
     }
   };
+}
+
+export function makeLollyVehicle(
+  host: WebToolHost,
+  toolId: string,
+  manifest: ToolManifest,
+  sessionState: (() => unknown) | undefined,
+  canvasEl?: Element | null
+): ShareDialogLolly | undefined {
+  if (typeof sessionState !== 'function') return undefined;
+  const assets = host.assets as unknown as LollyAssetsSlice;
+  const appVersion = `Lolly ${ENGINE_VERSION}`;
+  const resolveLibrary = lollyLibraryResolver(assets);
 
   const build = async ({
     includeLicensed = false,

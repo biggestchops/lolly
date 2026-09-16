@@ -30,6 +30,7 @@
 import { strToU8 } from 'fflate';
 import type { Profile, UserTemplateRecord } from '@lolly-tools/core/host-v1';
 import { assetDependency } from '../../../../engine/src/asset-version.ts';
+import { base64ToBytes, bytesToBin } from '../../../../engine/src/bytes.ts';
 import { resolveSessionUserAsset, rebaseImportedAssetPins } from './session-asset-versions.ts';
 import { zipAsync } from './zip.ts';
 import {
@@ -61,7 +62,16 @@ export const LOLLY_FILE_FORMAT = 'lolly-share' as const;
 export const LOLLY_FILE_VERSION = 1;
 /** Readers gate on this, never `formatVersion` - additive parts stay compatible. */
 export const LOLLY_MIN_READER = 1;
-export const LOLLY_READER_VERSION = 2;
+export const LOLLY_READER_VERSION = 3;
+/** A project file (a folder tree and its sessions) needs a reader that knows the
+ *  `project` kind, so it asks for 3: a reader from before it says "update" instead of
+ *  opening the first session and dropping the rest. */
+export const LOLLY_PROJECT_MIN_READER = 3;
+/** The manifest's `tool.id` for a project file, which holds many tools' sessions. */
+export const LOLLY_PROJECT_TOOL_ID = 'lolly-project';
+/** Bounds on one project file, so a hostile archive cannot mint unbounded records. */
+export const LOLLY_MAX_PROJECT_SESSIONS = 2000;
+export const LOLLY_MAX_PROJECT_FOLDERS = 500;
 /** The `+zip` structured suffix (RFC 6839) advertises the container to OS/tooling. */
 export const LOLLY_MIME = 'application/vnd.lolly+zip';
 export const LOLLY_EXT = '.lolly';
@@ -202,7 +212,7 @@ export interface LollyManifest {
   app: string;
   /** The engine version at export time (for a reader that wants to check ranges). */
   engineVersion?: string;
-  kind: 'session' | 'tool';
+  kind: 'session' | 'tool' | 'project';
   tool: { id: string; version?: string };
   /** Session thumbnail as a data URL, so an importer has a tile immediately. */
   thumb?: string | null;
@@ -223,7 +233,65 @@ export interface LollyManifest {
    *  The count is a preview convenience (an intake can say "1 template" without
    *  inflating the part); the part itself is what import reads. */
   templates?: { count: number };
+  /** Present on a project file (`kind: 'project'`): the folder tree and the sessions it
+   *  files, each session's values in its own `sessions/<key>.json` part. */
+  project?: LollyProjectManifest;
   integrity?: Record<string, string> | null;
+}
+
+/** One folder of a project file. `items` name sessions by their file-local `key` and
+ *  images by the sender's asset id; ids are the sender's and are re-minted on import. */
+export interface LollyProjectFolder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  items: Array<{ type: 'session' | 'image'; ref: string }>;
+  color?: string;
+  emoji?: string;
+  tags?: string[];
+}
+
+/** One session of a project file, as the manifest lists it. */
+export interface LollyProjectSessionEntry {
+  /** File-local id: letters, digits, `_` and `-`. */
+  key: string;
+  toolId: string;
+  toolVersion?: string;
+  label?: string;
+  /** Zip path of the saved values (`sessions/<key>.json`). */
+  path: string;
+  /** Zip path of the tile image (`thumbs/<key>.<ext>`), when the sender had one. */
+  thumb?: string;
+}
+
+export interface LollyProjectManifest {
+  name: string;
+  folders: LollyProjectFolder[];
+  sessions: LollyProjectSessionEntry[];
+}
+
+/** A session handed to the project builder. */
+export interface LollyProjectSessionInput {
+  key: string;
+  toolId: string;
+  toolVersion?: string;
+  label?: string;
+  data: unknown;
+  /** The tile image as a data URL. */
+  thumb?: string | null;
+}
+
+export interface LollyProjectInput {
+  name: string;
+  folders: LollyProjectFolder[];
+  sessions: LollyProjectSessionInput[];
+}
+
+/** A read project: the manifest block with each session's values and tile restored. */
+export interface LollyProjectContents {
+  name: string;
+  folders: LollyProjectFolder[];
+  sessions: Array<LollyProjectSessionEntry & { data: Record<string, unknown>; thumbUrl: string | null }>;
 }
 
 /** One catalog work whose bytes travelled inside the pack. */
@@ -297,7 +365,7 @@ export interface LollySummary {
 }
 
 export interface LollyBuildInput {
-  kind?: 'session' | 'tool';
+  kind?: 'session' | 'tool' | 'project';
   toolCredits?: string;
   /** The saved session - `sessionSnapshot()`'s `SavedStateData` (or a slot's data). */
   session: unknown;
@@ -333,6 +401,9 @@ export interface LollyBuildInput {
    *  records travel verbatim; the receiver re-mints their ids when it saves them, so
    *  two devices never fight over one id. Omit ⇒ no `templates.json` part at all. */
   templates?: readonly UserTemplateRecord[];
+  /** The folder tree and sessions of a project file (`kind: 'project'`). `session` is
+   *  ignored for a project; `toolId` is conventionally LOLLY_PROJECT_TOOL_ID. */
+  project?: LollyProjectInput;
 }
 
 export interface LollyBuildResult {
@@ -351,6 +422,8 @@ export interface LollyFileContents {
   /** The carried templates, validated and junk-free. Always an array - a file written
    *  before the part existed reads as `[]`, so callers never branch on its absence. */
   templates: UserTemplateRecord[];
+  /** The folder tree and sessions, on a project file only. */
+  project?: LollyProjectContents;
   /** The unzipped parts, so ingest can pull each asset's bytes by `entry.path`. */
   files: Record<string, Uint8Array>;
 }
@@ -451,7 +524,16 @@ function assetPath(dir: string, base: string, format: string, mime: string, take
  */
 export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuildResult> {
   if (input.kind === 'tool' && (!input.tool || input.session != null || input.templates?.length || input.designSystem)) throw new Error('A tool file carries exactly one tool, without a saved session or design-system install.');
-  const refs = collectSessionAssetRefs(input.session);
+  const project = input.kind === 'project' ? input.project : undefined;
+  if (input.kind === 'project') {
+    if (!project) throw new Error('A project file needs its folders and sessions.');
+    if (input.tool || input.templates?.length) throw new Error('A project file carries saved sessions, not a tool or templates.');
+    const problem = projectShapeProblem(project.name, project.folders, project.sessions);
+    if (problem) throw new Error(problem);
+  }
+  // A project's closure is every session plus every image filed in its folders, so a
+  // folder's pictures travel with it even when no session uses them.
+  const refs = collectSessionAssetRefs(project ? projectClosure(project) : input.session);
   const byId = new Map(input.userAssets.map(r => [r.id, r]));
 
   const entries: Record<string, BundleEntry> = {};
@@ -544,8 +626,11 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
     ? await packBundledTool(input.tool, entries)
     : null;
 
-  // The session payload, integrity-protected alongside the blobs.
-  if (input.kind !== 'tool') entries['session.json'] = strToU8(JSON.stringify(input.session ?? null, null, 2));
+  // The session payload, integrity-protected alongside the blobs. A project writes one
+  // part per session instead, plus each session's tile image.
+  let projectManifest: LollyProjectManifest | null = null;
+  if (project) projectManifest = packProjectSessions(project, entries);
+  else if (input.kind !== 'tool') entries['session.json'] = strToU8(JSON.stringify(input.session ?? null, null, 2));
   // The sender's design system, when they have one - the same document their studio
   // holds, so "Add from a file" on another device installs the look the session wore.
   const designSystem = input.designSystem?.doc != null ? input.designSystem : null;
@@ -585,12 +670,12 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
   const manifest: LollyManifest = {
     format: LOLLY_FILE_FORMAT,
     formatVersion: LOLLY_FILE_VERSION,
-    minReader: input.kind === 'tool' ? 2 : 1,
+    minReader: input.kind === 'project' ? LOLLY_PROJECT_MIN_READER : input.kind === 'tool' ? 2 : 1,
     app: input.appVersion ?? 'Lolly',
     ...(input.engineVersion ? { engineVersion: input.engineVersion } : {}),
     kind: input.kind ?? 'session',
     tool: { id: input.toolId, ...(input.toolVersion ? { version: input.toolVersion } : {}) },
-    ...(input.thumb ? { thumb: input.thumb } : {}),
+    ...(input.thumb ? { thumb: input.thumb } : project?.sessions.find(x => x.thumb)?.thumb ? { thumb: project.sessions.find(x => x.thumb)!.thumb } : {}),
     exportedAt: new Date().toISOString(),
     counts: { assets: summary.assetCount, byReference: byReferenceCount, bytes: totalBytes },
     creator: input.creator ?? null,
@@ -603,6 +688,7 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
       ...(designSystem.source ? { source: designSystem.source } : {}),
     } } : {}),
     ...(templates.length ? { templates: { count: templates.length } } : {}),
+    ...(projectManifest ? { project: projectManifest } : {}),
     ...(integrity ? { integrity } : {}),
   };
   // Put the routing manifest first. The universal intake can then describe a
@@ -613,9 +699,152 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
     [README_NAME]: strToU8(lollyReadme(manifest, summary)),
     ...entries,
   });
-  const filename = `${safeBase(input.name || input.toolId)}${LOLLY_EXT}`;
+  const filename = `${safeBase(input.name || project?.name || input.toolId)}${LOLLY_EXT}`;
   const blob = new Blob([zipped as BlobPart], { type: LOLLY_MIME });
   return { blob, filename, manifest, summary };
+}
+
+// ── Project files ─────────────────────────────────────────────────────────────
+
+const PROJECT_KEY_RE = /^[A-Za-z0-9_-]{1,64}$/;
+const PROJECT_TOOL_RE = /^[A-Za-z0-9][\w.-]{0,127}$/;
+const THUMB_EXT: Record<string, string> = {
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif', 'image/svg+xml': 'svg',
+};
+const THUMB_MIME: Record<string, string> = Object.fromEntries(Object.entries(THUMB_EXT).map(([mime, ext]) => [ext, mime]));
+
+const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+const shortText = (v: unknown, max: number): v is string => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
+
+/**
+ * What is wrong with a project's shape, in a sentence, or null when it is sound. The
+ * builder and the reader share it, so a file this module writes is always one it reads:
+ * keys and ids are unique, every parent exists and no folder is its own ancestor, and a
+ * session is filed in at most one folder.
+ */
+export function projectShapeProblem(name: unknown, folders: unknown, sessions: unknown): string | null {
+  if (!shortText(name, 200)) return 'This project has no name.';
+  if (!Array.isArray(folders) || folders.length > LOLLY_MAX_PROJECT_FOLDERS) return 'This project has an unreadable folder list.';
+  if (!Array.isArray(sessions) || sessions.length > LOLLY_MAX_PROJECT_SESSIONS) return 'This project has an unreadable session list.';
+  if (!folders.length && !sessions.length) return 'This project is empty.';
+  const keys = new Set<string>();
+  for (const entry of sessions) {
+    if (!isRecord(entry) || typeof entry.key !== 'string' || !PROJECT_KEY_RE.test(entry.key) || keys.has(entry.key)) return 'A session in this project has a missing or repeated key.';
+    if (typeof entry.toolId !== 'string' || !PROJECT_TOOL_RE.test(entry.toolId)) return `The session "${entry.key}" names no tool.`;
+    keys.add(entry.key);
+  }
+  const ids = new Map<string, Record<string, unknown>>();
+  for (const folder of folders) {
+    if (!isRecord(folder) || !shortText(folder.id, 128) || ids.has(folder.id)) return 'A folder in this project has a missing or repeated id.';
+    if (!shortText(folder.name, 200)) return 'A folder in this project has no name.';
+    if (!Array.isArray(folder.items) || folder.items.length > 10000) return `The folder "${folder.name}" has an unreadable item list.`;
+    ids.set(folder.id, folder);
+  }
+  const filed = new Set<string>();
+  for (const folder of ids.values()) {
+    const parent = folder.parentId;
+    if (parent !== null && parent !== undefined && (typeof parent !== 'string' || !ids.has(parent) || parent === folder.id)) return `The folder "${folder.name}" names a parent that is not in this project.`;
+    // Walk up: a chain longer than the folder count has looped.
+    let at: unknown = parent, steps = 0;
+    while (typeof at === 'string' && steps++ <= ids.size) at = ids.get(at)?.parentId;
+    if (steps > ids.size) return `The folder "${folder.name}" is inside itself.`;
+    for (const item of folder.items as unknown[]) {
+      if (!isRecord(item) || typeof item.ref !== 'string') return `The folder "${folder.name}" has an unreadable item.`;
+      if (item.type === 'session') {
+        if (!keys.has(item.ref) || filed.has(item.ref)) return `The folder "${folder.name}" files a session that is missing or filed twice.`;
+        filed.add(item.ref);
+      } else if (item.type !== 'image' || !item.ref || item.ref.length > 2048) {
+        return `The folder "${folder.name}" has an unreadable item.`;
+      }
+    }
+  }
+  return null;
+}
+
+/** The value the asset closure walks for a project: every session, and every image a
+ *  folder files, as a ref in the id's own namespace. */
+function projectClosure(project: LollyProjectInput): unknown {
+  const images = project.folders.flatMap(f => f.items.filter(i => i.type === 'image'))
+    .map(i => ({ id: i.ref, source: i.ref.startsWith('user/') ? 'user' : 'library' }));
+  return { sessions: project.sessions.map(x => x.data), images };
+}
+
+/** A data URL's bytes and type, for an image type a tile can use; null otherwise. */
+function thumbBytes(url: string): { bytes: Uint8Array; mime: string } | null {
+  const comma = url.indexOf(',');
+  if (!/^data:/i.test(url) || comma < 0) return null;
+  const header = url.slice(5, comma);
+  const mime = (header.split(';')[0] || '').toLowerCase();
+  if (!THUMB_EXT[mime]) return null;
+  const body = url.slice(comma + 1);
+  try {
+    const bytes = /;base64$/i.test(header) ? base64ToBytes(body) : strToU8(decodeURIComponent(body));
+    return { bytes, mime };
+  } catch { return null; }
+}
+
+/** Write each session (and its tile) as its own part; return the manifest block. */
+function packProjectSessions(project: LollyProjectInput, entries: Record<string, BundleEntry>): LollyProjectManifest {
+  const sessions: LollyProjectSessionEntry[] = project.sessions.map((x) => {
+    const path = `sessions/${x.key}.json`;
+    entries[path] = strToU8(JSON.stringify(x.data ?? null, null, 2));
+    const thumb = x.thumb ? thumbBytes(x.thumb) : null;
+    let thumbPath: string | undefined;
+    if (thumb) {
+      const ext = THUMB_EXT[thumb.mime]!;
+      thumbPath = `thumbs/${x.key}.${ext}`;
+      entries[thumbPath] = ext === 'svg' ? thumb.bytes : [thumb.bytes, { level: 0 }];
+    }
+    return {
+      key: x.key, toolId: x.toolId, path,
+      ...(x.toolVersion ? { toolVersion: x.toolVersion } : {}),
+      ...(x.label ? { label: x.label } : {}),
+      ...(thumbPath ? { thumb: thumbPath } : {}),
+    };
+  });
+  const folders = project.folders.map(f => ({
+    id: f.id, name: f.name, parentId: f.parentId ?? null,
+    items: f.items.map(i => ({ type: i.type, ref: i.ref })),
+    ...(f.color ? { color: f.color } : {}),
+    ...(f.emoji ? { emoji: f.emoji } : {}),
+    ...(f.tags?.length ? { tags: [...f.tags] } : {}),
+  }));
+  return { name: project.name, folders, sessions };
+}
+
+/**
+ * Read a project file's block back, checking every part it names. The integrity map
+ * has already vouched for the bytes; this checks that the parts are the ones the
+ * manifest promises, and nothing is read from a path the manifest did not declare.
+ */
+function readProjectPart(manifest: LollyManifest, files: Parameters<typeof readJson>[0]): LollyProjectContents {
+  const block = manifest.project;
+  if (!isRecord(block)) throw new Error('This project file has no project.');
+  const problem = projectShapeProblem(block.name, block.folders, block.sessions);
+  if (problem) throw new Error(problem);
+  const sessions = block.sessions.map((entry) => {
+    const path = `sessions/${entry.key}.json`;
+    if (entry.path !== path || !files[path] || !manifest.integrity?.[path]) throw new Error(`This project file is missing the session "${entry.label || entry.key}".`);
+    const data = readJson(files, path);
+    if (!isRecord(data)) throw new Error(`The session "${entry.label || entry.key}" in this project is unreadable.`);
+    let thumbUrl: string | null = null;
+    if (entry.thumb !== undefined) {
+      const m = /^thumbs\/([A-Za-z0-9_-]{1,64})\.([a-z]{3,4})$/.exec(String(entry.thumb));
+      const mime = m && m[1] === entry.key ? THUMB_MIME[m[2]!] : undefined;
+      if (mime && files[entry.thumb] && manifest.integrity?.[entry.thumb]) thumbUrl = `data:${mime};base64,${btoa(bytesToBin(files[entry.thumb]!))}`;
+    }
+    return { ...entry, data, thumbUrl };
+  });
+  const folders = block.folders.map(f => ({
+    id: f.id, name: f.name.trim(), parentId: f.parentId ?? null,
+    items: f.items.map(i => ({ type: i.type, ref: i.ref })),
+    // The colour is written into a style attribute and the emoji into a tile, so only a plain
+    // hex colour and a short emoji survive; anything else is dropped, not repaired.
+    ...(typeof f.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(f.color) ? { color: f.color } : {}),
+    ...(typeof f.emoji === 'string' && f.emoji.length <= 16 ? { emoji: f.emoji } : {}),
+    ...(Array.isArray(f.tags) ? { tags: f.tags.filter((tag): tag is string => typeof tag === 'string' && tag.length <= 60).slice(0, 20) } : {}),
+  }));
+  return { name: block.name.trim(), folders, sessions };
 }
 
 /**
@@ -811,7 +1040,8 @@ export async function readLollyFile(bytes: ArrayBuffer | Uint8Array): Promise<Lo
     throw new Error('This .lolly file was made with a newer version of Lolly. Update to open it.');
   }
   await verifyIntegrity(files, manifest.integrity, 'This .lolly file');
-  if (manifest.kind !== 'tool' && manifest.kind !== 'session') throw new Error('This .lolly payload kind is not supported.');
+  if (manifest.kind !== 'tool' && manifest.kind !== 'session' && manifest.kind !== 'project') throw new Error('This .lolly payload kind is not supported.');
+  if (manifest.kind === 'project' && (manifest.minReader < LOLLY_PROJECT_MIN_READER || !manifest.integrity || files['session.json'] || manifest.bundledTool || manifest.templates)) throw new Error('This project file has an invalid payload.');
   if (manifest.kind === 'tool' && (!manifest.bundledTool || manifest.minReader < 2 || !manifest.integrity || files['session.json'] || manifest.templates || manifest.designSystem)) throw new Error('This tool file has an invalid payload.');
   if (manifest.kind === 'tool') {
     const bundle = manifest.bundledTool!;
@@ -825,13 +1055,14 @@ export async function readLollyFile(bytes: ArrayBuffer | Uint8Array): Promise<Lo
     const toolManifest = readJson(files, 'tool/tool.json') as { id?: string; version?: string } | null;
     if (toolManifest?.id !== bundle.id || bundle.version && bundle.version !== toolManifest.version) throw new Error('This tool file has inconsistent identity.');
   }
-  const session = manifest.kind === 'tool' ? null : readJson(files, 'session.json');
+  const project = manifest.kind === 'project' ? readProjectPart(manifest, files) : undefined;
+  const session = manifest.kind === 'tool' || project ? null : readJson(files, 'session.json');
   const designSystem = manifest.designSystem && files[DESIGN_SYSTEM_PART] ? readJson(files, DESIGN_SYSTEM_PART) : undefined;
   // The part is read whenever it is THERE, not whenever the manifest mentions it: the
   // integrity map already vouched for its bytes, and a file whose manifest lost the
   // count would otherwise hand back templates it plainly carries.
   const templates = files[TEMPLATES_PART] ? readTemplatesPart(readJson(files, TEMPLATES_PART)) : [];
-  return { manifest, session, templates, files: files as Record<string, Uint8Array>, ...(designSystem !== undefined ? { designSystem } : {}) };
+  return { manifest, session, templates, files: files as Record<string, Uint8Array>, ...(designSystem !== undefined ? { designSystem } : {}), ...(project ? { project } : {}) };
 }
 
 /** A carried tool pulled out of a parsed `.lolly`, ready to hand to the installer.
@@ -878,6 +1109,21 @@ export interface LollyIngestResult {
   deduped: number;
   /** The rewritten session (its asset refs point at the receiver-local ids). */
   session: unknown;
+  /** On a project file: the new top-level folders and every session slot written. */
+  project?: { folderIds: string[]; slots: string[] };
+}
+
+/**
+ * Where a project's folders land. The web shell hands in its folder store; a host
+ * without folders omits it and the sessions arrive unfiled.
+ */
+export interface LollyProjectFolderSink {
+  /** Recreate `tree` (its root first) under `parentId` with fresh ids. Session items
+   *  map through `slotMap` (file key to new slot) and image items through `assetMap`
+   *  (sender asset id to receiver id). Returns the new root. */
+  instantiateSubtree(tree: readonly LollyProjectFolder[], parentId: string | null, slotMap: ReadonlyMap<string, string>, assetMap: ReadonlyMap<string, string>): Promise<{ id: string } | null>;
+  /** Undo one of this import's folder trees when a later step fails. */
+  removeSubtree?(folderId: string): Promise<unknown>;
 }
 
 export interface LollyIngestProgress {
@@ -938,7 +1184,11 @@ function mintLollySlot(toolId: string, taken: ReadonlySet<string>): string {
 export async function ingestLollyFile(
   source: ArrayBuffer | Uint8Array | LollyFileContents,
   host: BeamPackHost,
-  opts: { sanitizeSvg?: BeamSvgSanitiser; onProgress?: (progress: LollyIngestProgress) => void; saveSession?: boolean } = {},
+  opts: {
+    sanitizeSvg?: BeamSvgSanitiser; onProgress?: (progress: LollyIngestProgress) => void; saveSession?: boolean;
+    /** A project file's folders land here, under `parentFolderId` (top level when absent). */
+    folders?: LollyProjectFolderSink; parentFolderId?: string | null;
+  } = {},
 ): Promise<LollyIngestResult> {
   // The universal intake has already parsed + integrity-verified the bundle in
   // order to describe it before committing. Accept that result directly so an
@@ -977,7 +1227,7 @@ export async function ingestLollyFile(
     formatVersion: BEAM_PACK_FORMAT_VERSION,
     minReader: 1,
     kind: 'assets' as BeamPackManifest['kind'],
-    name: manifest.tool.id,
+    name: parsed.project?.name ?? manifest.tool.id,
     entries,
   };
 
@@ -988,6 +1238,10 @@ export async function ingestLollyFile(
       opts.onProgress?.({ phase: 'assets', current: itemIndex + 1, total: items.length, label: it.label });
       const r = await ingestBeamItem({ id: it.id, label: it.label, bytes: it.bytes, checksum: it.checksum }, it.blob, ctx);
       if (r.kind === 'asset') { if (r.deduped) deduped++; else imported++; }
+    }
+    if (parsed.project) {
+      const landed = await ingestProjectSessions(parsed.project, host, ctx.rekey, opts);
+      return { slot: landed.slots[0] ?? '', toolId: manifest.tool.id, imported, deduped, session: null, project: landed };
     }
     const rewritten = rebaseImportedAssetPins(applyLollyRekey(session, ctx.rekey), ctx.rekey, await host.assets._exportUserAssets());
     // A brand collection reuses the asset transaction, then saves its real
@@ -1001,6 +1255,61 @@ export async function ingestLollyFile(
     return { slot, toolId: manifest.tool.id, imported, deduped, session: rewritten };
   } catch (err) {
     await rollbackBeamIngest(ctx);
+    throw err;
+  }
+}
+
+/** A folder and everything under it, the folder first. */
+function projectSubtree(folders: readonly LollyProjectFolder[], rootId: string): LollyProjectFolder[] {
+  const out: LollyProjectFolder[] = [];
+  const queue = [rootId];
+  for (let at = queue.shift(); at !== undefined; at = queue.shift()) {
+    const folder = folders.find(f => f.id === at);
+    if (!folder) continue;
+    out.push(folder);
+    for (const child of folders) if (child.parentId === at) queue.push(child.id);
+  }
+  return out;
+}
+
+/**
+ * Save a project's sessions as new slots and rebuild its folder tree over them. The
+ * assets are already stored, so refs are rewritten through `rekey` exactly as a single
+ * session's are. Any failure removes what this step wrote before rethrowing, and the
+ * caller then rolls back the assets, so a half-imported project never remains.
+ */
+async function ingestProjectSessions(
+  project: LollyProjectContents, host: BeamPackHost, rekey: ReadonlyMap<string, string>,
+  opts: { onProgress?: (progress: LollyIngestProgress) => void; folders?: LollyProjectFolderSink; parentFolderId?: string | null },
+): Promise<{ folderIds: string[]; slots: string[] }> {
+  const userAssets = await host.assets._exportUserAssets();
+  const taken = new Set((await host.state.list()).map(r => r.slot));
+  const slotMap = new Map<string, string>();
+  const slots: string[] = [];
+  const folderIds: string[] = [];
+  try {
+    for (const [n, entry] of project.sessions.entries()) {
+      opts.onProgress?.({ phase: 'session', current: n + 1, total: project.sessions.length, ...(entry.label ? { label: entry.label } : {}) });
+      const data = rebaseImportedAssetPins(applyLollyRekey(entry.data, rekey), rekey, userAssets) as Record<string, unknown>;
+      // The record's tool comes from the manifest entry the reader checked, never
+      // from whatever the values claim.
+      const record = { ...data, __toolId: entry.toolId, ...(data.__label === undefined && entry.label ? { __label: entry.label } : {}) };
+      const slot = mintLollySlot(entry.toolId, taken);
+      taken.add(slot);
+      await host.state.save(slot, record, entry.thumbUrl);
+      slots.push(slot);
+      slotMap.set(entry.key, slot);
+    }
+    if (opts.folders) {
+      for (const root of project.folders.filter(f => !f.parentId)) {
+        const made = await opts.folders.instantiateSubtree(projectSubtree(project.folders, root.id), opts.parentFolderId ?? null, slotMap, rekey);
+        if (made) folderIds.push(made.id);
+      }
+    }
+    return { folderIds, slots };
+  } catch (err) {
+    for (const id of folderIds) { try { await opts.folders?.removeSubtree?.(id); } catch { /* keep unwinding */ } }
+    await Promise.allSettled(slots.map(slot => host.state.delete?.(slot)));
     throw err;
   }
 }

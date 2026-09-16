@@ -3,8 +3,9 @@
  * Manifest-first intake for every file that wears the `.lolly` extension.
  *
  * `.lolly` is the product's portable-container extension, not one payload:
- * `lolly-share` is one saved tool session and `lolly-brand` is one design
- * system (optionally promoted to an instance pack by tools/catalog parts).
+ * `lolly-share` is one saved tool session (or, with `kind: 'project'`, a folder
+ * tree of them) and `lolly-brand` is one design system (optionally promoted to
+ * an instance pack by tools/catalog parts).
  * Entry points must therefore ask the manifest what the file is before they
  * choose a verb. This module is that one read-only decision seam.
  *
@@ -25,7 +26,8 @@ const MANIFEST_MAX_BYTES = 1024 * 1024;
 export type LollySizeBand = 'small' | 'medium' | 'large';
 
 export interface LollySessionPreview {
-  kind: 'session' | 'tool';
+  /** `project` is a folder tree of sessions; the rest describe one session or tool. */
+  kind: 'session' | 'tool' | 'project';
   format: 'lolly-share';
   label: string;
   fileBytes: number;
@@ -40,6 +42,9 @@ export interface LollySessionPreview {
   includesDesignSystem: boolean;
   designSystemLabel: string | null;
   creator: string | null;
+  /** On a project file: how many saved sessions and folders it declares. */
+  sessionCount: number;
+  folderCount: number;
   manifest: Record<string, unknown>;
 }
 
@@ -119,10 +124,11 @@ export function classifyLollyManifest(
     const designSystem = record(manifest.designSystem);
     const creator = record(manifest.creator);
     const creatorName = text(creator?.name) ?? text(creator?.org);
+    const project = manifest.kind === 'project' ? record(manifest.project) : null;
     return {
-      kind: manifest.kind === 'tool' ? 'tool' : 'session',
+      kind: manifest.kind === 'tool' ? 'tool' : manifest.kind === 'project' ? 'project' : 'session',
       format,
-      label: fallback,
+      label: text(project?.name) ?? fallback,
       fileBytes,
       sizeBand: lollySizeBand(fileBytes),
       toolId: text(tool?.id),
@@ -135,6 +141,8 @@ export function classifyLollyManifest(
       includesDesignSystem: !!designSystem,
       designSystemLabel: text(designSystem?.label),
       creator: creatorName,
+      sessionCount: Array.isArray(project?.sessions) ? project.sessions.length : 0,
+      folderCount: Array.isArray(project?.folders) ? project.folders.length : 0,
       manifest,
     };
   }
@@ -266,7 +274,7 @@ export async function peekLollyFile(file: File): Promise<LollyPreview> {
 
 export type LoadedLolly =
   | {
-      kind: 'session' | 'tool';
+      kind: 'session' | 'tool' | 'project';
       preview: LollySessionPreview;
       contents: import('./lolly-pack.ts').LollyFileContents;
     }

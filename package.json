@@ -14,6 +14,7 @@
     "ingest:brand": "node scripts/ingest-brand.ts",
     "ingest:boilerplate": "node scripts/ingest-epub.ts",
     "compose:deck": "node scripts/compose-deck.ts",
+    "pack:project": "node scripts/pack-project.ts",
     "models:vendor": "node scripts/vendor-models.ts",
     "translate": "node scripts/translate.ts",
     "dev:web": "node scripts/dev-web.ts",

@@ -647,9 +647,17 @@
 
     /* ── title band ──────────────────────────────────────────────────────────── */
     var PAD = Math.round(Math.min(W, H) * 0.045) + 16;
+    /* A long title (a survey question, say) wraps to at most three lines and the
+       band grows by the extra lines. A title that fits keeps the one-line layout. */
+    var titleSz = cfg.titleSize || 34;
+    var titleLines = cfg.heading ? wrapToWidth(cfg.heading, W - 2 * PAD, titleSz, cfg.titleWeight, 3) : [];
+    var titleLineH = Math.round(titleSz * 1.18);
+    var titleExtra = titleLines.length > 1 ? (titleLines.length - 1) * titleLineH : 0;
+    var subLines = cfg.subheading ? wrapToWidth(cfg.subheading, W - 2 * PAD, 20, 400, 2) : [];
+    if (subLines.length > 1) titleExtra += 24;
     var titleH = 0;
-    if (cfg.heading && cfg.subheading) titleH = 78;
-    else if (cfg.heading || cfg.subheading) titleH = 48;
+    if (cfg.heading && cfg.subheading) titleH = 78 + titleExtra;
+    else if (cfg.heading || cfg.subheading) titleH = 48 + titleExtra;
     /* Title position (top/bottom) + alignment (left/centre/right). */
     var titleTop = cfg.titlePosition !== 'bottom';
     var titleAlign = cfg.titleAlign || 'left';
@@ -657,12 +665,23 @@
     var titleAnchor = titleAlign === 'center' ? 'middle' : titleAlign === 'right' ? 'end' : 'start';
     var bandTop = titleTop ? PAD : H - PAD - titleH;
     if (cfg.heading) {
-      root.append('text').attr('x', titleX).attr('y', bandTop + 34).attr('text-anchor', titleAnchor).attr('data-canvas-input', 'heading')
-        .attr('font-size', cfg.titleSize || 34).attr('font-weight', cfg.titleWeight).attr('fill', ink).text(cfg.heading);
+      var headText = root.append('text').attr('x', titleX).attr('y', bandTop + 34).attr('text-anchor', titleAnchor).attr('data-canvas-input', 'heading')
+        .attr('font-size', titleSz).attr('font-weight', cfg.titleWeight).attr('fill', ink);
+      if (titleLines.length > 1) {
+        titleLines.forEach(function (line, i) {
+          headText.append('tspan').attr('x', titleX).attr('dy', i ? titleLineH : 0).text(line);
+        });
+      } else headText.text(cfg.heading);
     }
     if (cfg.subheading) {
-      root.append('text').attr('x', titleX).attr('y', bandTop + (cfg.heading ? 66 : 30)).attr('text-anchor', titleAnchor).attr('data-canvas-input', 'subheading')
-        .attr('font-size', 20).attr('font-weight', 400).attr('fill', ink).attr('opacity', 0.62).text(cfg.subheading);
+      var subY = bandTop + (cfg.heading ? 66 + titleExtra - (subLines.length > 1 ? 24 : 0) : 30);
+      var subText = root.append('text').attr('x', titleX).attr('y', subY).attr('text-anchor', titleAnchor).attr('data-canvas-input', 'subheading')
+        .attr('font-size', 20).attr('font-weight', 400).attr('fill', ink).attr('opacity', 0.62);
+      if (subLines.length > 1) {
+        subLines.forEach(function (line, i) {
+          subText.append('tspan').attr('x', titleX).attr('dy', i ? 24 : 0).text(line);
+        });
+      } else subText.text(cfg.subheading);
     }
 
     /* ── legend items ────────────────────────────────────────────────────────── */
@@ -712,7 +731,7 @@
     }
 
     var api = { d3: d3, root: root, cfg: cfg, data: data, cats: cats, series: series, numericCols: numericCols,
-                box: box, ink: ink, guardBg: guardBg, fmt: fmt, catColorFn: catColorFn, seqColorFn: seqColorFn,
+                box: box, canvasW: W, ink: ink, guardBg: guardBg, fmt: fmt, catColorFn: catColorFn, seqColorFn: seqColorFn,
                 barByCat: barByCat, override: overrideColor, textureFor: textureFor,
                 overlayRect: overlayRect, overlayPath: overlayPath, patternsOn: patternsOn, swatches: cfg.brandSwatches,
                 recolorEnabled: recolorEnabled, tagMark: tagMark, markShadow: markShadow, references: references,
@@ -900,6 +919,11 @@
   var CAT_LABEL_CHARTS = { bar: 1, 'bar-horizontal': 1, lollipop: 1, dumbbell: 1, pareto: 1, bullet: 1, 'range-bar': 1 };
   var AUTO_CAP_FRAC = 0.42;   // auto-fit label area never exceeds this share of the box
   function catSz(cfg) { return clamp(cfg.labelSize, 11, 24); }
+  /* A wrapped label may not run into the next row: cap its lines at what one row
+     of `rowH` px holds (always at least one, never more than Max label lines). */
+  function rowLineLimit(cfg, rowH, sz) {
+    return Math.max(1, Math.min(cfg.labelLines || 2, Math.floor(rowH / (sz * 1.12))));
+  }
   /* Resolve 'auto' into a concrete layout for the orientation + label lengths. */
   function resolveLayout(api, horizontal) {
     var cfg = api.cfg, L = cfg.labelLayout || 'auto';
@@ -918,8 +942,9 @@
       var capW = (cfg.labelReserve > 0 ? cfg.labelReserve / 100 : AUTO_CAP_FRAC) * b.w;
       if (cfg.labelReserve > 0) return clamp(capW, 40, b.w * 0.7);
       var need = 0;                                          // auto: fit the wrapped column to content
+      var fitLines = rowLineLimit(cfg, b.h / n, sz);
       for (i = 0; i < api.cats.length; i++) {
-        var lines = wrapToWidth(api.cats[i], capW, sz, cfg.labelWeight, cfg.labelLines);
+        var lines = wrapToWidth(api.cats[i], capW, sz, cfg.labelWeight, fitLines);
         for (k = 0; k < lines.length; k++) need = Math.max(need, measureText(lines[k], sz, cfg.labelWeight));
       }
       return clamp(need + 14, 40, capW + 14);
@@ -1305,9 +1330,10 @@
     var layout = resolveLayout(api, horizontal);
     if (horizontal) {
       var maxW = Math.max(20, plot.x - api.box.x - 8);
+      var rowLines = rowLineLimit(cfg, band.step(), sz);
       cats.forEach(function (c) {
         var yc = band(c) + band.bandwidth() / 2;
-        drawTextLines(g, wrapToWidth(label(c), maxW, sz, weight, cfg.labelLines), plot.x - 8, yc, 'end', sz, weight, ink, 0.8, 'center');
+        drawTextLines(g, wrapToWidth(label(c), maxW, sz, weight, rowLines), plot.x - 8, yc, 'end', sz, weight, ink, 0.8, 'center');
       });
       return;
     }
@@ -1421,8 +1447,28 @@
     drawAxisTitles(api, plot, horizontal);
   }
 
+  /* A value label is drawn just past the end of its bar. When the longest bar runs
+     to the end of the axis, that label can leave the canvas, so give the plot back
+     exactly the width the label needs. A chart whose labels fit is unchanged. */
+  function fitOutsideValueLabels(api, plot, series, dom) {
+    var cfg = api.cfg;
+    if (!cfg.showValues || cfg.bar3d || (cfg.yScaleType || 'linear') !== 'linear' || !(dom[1] > dom[0])) return plot;
+    var sz = cfg.valueSize > 0 ? clamp(cfg.valueSize, 6, 80) : clamp(cfg.labelSize, 9, 30);
+    var weight = cfg.valueWeight || 600, over = 0;
+    series.forEach(function (s) {
+      s.values.forEach(function (raw) {
+        var v = +raw; if (!isFinite(v) || v <= 0) return;
+        var end = plot.x + plot.w * (Math.min(v, dom[1]) - dom[0]) / (dom[1] - dom[0]);
+        var right = end + 6 + (cfg.valueOffset || 0) + measureText(api.fmt(v), sz, weight);
+        over = Math.max(over, right - (api.canvasW - 4));
+      });
+    });
+    return over > 0 ? { x: plot.x, y: plot.y, w: Math.max(20, plot.w - over), h: plot.h } : plot;
+  }
+
   function layoutGroupedBars(api, plot, horizontal, cats, series, dom, colorFor, rx, stroke) {
     var d3 = api.d3, cfg = api.cfg;
+    if (horizontal) plot = fitOutsideValueLabels(api, plot, series, dom);
     var band = d3.scaleBand().domain(cats).range(horizontal ? [plot.y, plot.y + plot.h] : [plot.x, plot.x + plot.w]).padding(cfg.barPadding);
     var inner = d3.scaleBand().domain(series.map(function (s){return s.name;})).range([0, band.bandwidth()]).padding(clamp(cfg.barGap, 0, 0.8));
     var val = makeYScale(cfg.yScaleType, dom, horizontal ? [plot.x, plot.x + plot.w] : [plot.y + plot.h, plot.y], d3);
