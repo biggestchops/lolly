@@ -232,7 +232,7 @@ export async function syncCatalog(host: SyncHost, onAssetsReady?: () => void): P
   try {
     await Promise.all([
       syncTools(host),
-      syncAssets(host).then(() => { onAssetsReady?.(); }),
+      syncAssets(host, onAssetsReady),
     ]);
   } catch (e) {
     setOffline(true);
@@ -467,10 +467,11 @@ function absolutizeAssetUrls(index: AssetIndex): AssetIndex {
   return index;
 }
 
-async function syncAssets(host: SyncHost): Promise<void> {
+async function syncAssets(host: SyncHost, onAssetsReady?: () => void): Promise<void> {
   const resp = await conditionalFetch(instancePath(`${CATALOG_BASE}/assets/index.json`), 'assets-index');
   if (!resp) {
     host.log('info', 'Asset catalog unchanged (304)');
+    onAssetsReady?.();
     return;
   }
   const index = absolutizeAssetUrls(await resp.json() as AssetIndex);
@@ -487,6 +488,7 @@ async function syncAssets(host: SyncHost): Promise<void> {
 
   // Write metadata into IndexedDB so host.assets.get(id) can resolve whatever asset.
   await host.assets._syncFromIndex(index.assets);
+  onAssetsReady?.();
 
   // Remove stale blobs: old versions, removed assets, and on-demand blobs not
   // referenced by whatever saved session (browsed-but-unsaved fetches don't accumulate).

@@ -37,6 +37,7 @@ test('welcome defers tool preview rendering until the user enters the gallery', 
   });
   try {
     await page.route('**/catalog/tools/index.json', async route => { await toolsReady; await route.continue(); });
+    await page.route('**/src/lib/offline-manager.ts', async route => { await toolsReady; await route.continue(); });
     await page.goto(`${origin}/#/`, { waitUntil: 'domcontentloaded' });
     await page.locator('.welcome-dialog').waitFor();
     await page.waitForTimeout(3000);

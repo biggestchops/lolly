@@ -1,7 +1,7 @@
 {
   "alg": "ECDSA-P256-SHA256",
   "keyId": "5zVngG6s-652_L8Zdok5PTfQ6vxdPAYfcpBWxMtzs5c",
-  "signedAt": "2026-09-16T01:05:15.466Z",
+  "signedAt": "2026-09-16T01:10:43.327Z",
   "indexHash": "77b982a0b82f1da8603579af52d1ec20553b918123a3411cb5647b3343593a06",
   "files": {
     "3d/tool.json": "4785299047e8bd29552b7f5563bbc1e957b781c7b99bce640df782415db653b5",
@@ -2112,5 +2112,5 @@
     "work-avatar/i18n/zh.json": "8aed0e349e295ce4e1d2e7d204494687805e9a815d1ff968f2156e0ae6d4aaca",
     "work-avatar/templates/brand-starter.json": "51e781f09fdb62fbee21e3019c3df7172e4c2f87fe6310fd477c2a3275e9d12c"
   },
-  "signature": "VEQn4-EmoJb281GDHH6Nddpn5JMYjarBAs0QyJepXjMhBxIsef-ftB1i4DIEKj3rkKN-YQVMB_ZFhmOZsiXqTg"
+  "signature": "godKQtQtFtQaS-PPoYBnW_ndOZzW1mwCOi_70BB21B1qyLR3P_aytgm1CrHmVU_T8324Rb-Gbkt8Ks3xO4d1Bw"
 }
