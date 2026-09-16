@@ -26,8 +26,12 @@ Nextcloud does not send CORS headers by default. Three working shapes:
   behind the same origin (or the proxy adds the CORS headers) - just works.
 - **Self-hosted Lolly**: the instance owner allows their own cloud host in
   both the Nextcloud CORS config and the deploy's `connect-src` CSP.
-- **Desktop shell (plans/129 WP4)**: native fetch - neither CORS nor CSP
-  applies. The everywhere-answer.
+- **Desktop and mobile apps**: requests go through the apps' native request
+  command, so neither CORS nor CSP applies. That command accepts HTTPS
+  servers on public addresses only: a Nextcloud reachable only on a home
+  network (a private address) is refused there. (Before 2026-09-16 the
+  WebDAV calls used the webview's own fetch and needed CORS in the apps too;
+  plans/138 Tier D, WP-P4, moved them.)
 
 The in-app error names this exact situation when the server is unreachable.
 

@@ -104,7 +104,7 @@ If the browser hasn't granted persistent storage, the section says so and offers
 
 ## Moving a profile to a new device
 
-Because a profile is entirely local, the only way to get it onto a blank install - a new laptop, a freshly reset browser, a colleague's machine, an offline box - is to **carry the file**. No login restores it for you, and that's the point: nothing ever left your device to begin with.
+Because a profile is entirely local, there are two ways to get it onto a blank install - a new laptop, a freshly reset browser, a colleague's machine, an offline box. **Carry the file**, as below, or keep your own devices in step through storage you choose, as [Sync your devices](/info/sync.html) explains. No Lolly login restores it for you, and that's the point: nothing ever went to a Lolly server to begin with.
 
 Under **Settings → Preferences → Storage → Move to another device**:
 

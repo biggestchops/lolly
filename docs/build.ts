@@ -216,6 +216,7 @@ const pages: Page[] = [
   { slug: 'brand-studio',     title: 'The Brand Studio',  src: 'brand-studio.md', pathway: 'creators' },
   { slug: '3d-studio', title: '3D Studio', src: '3d-studio.md', pathway: 'creators', description: 'Stage SVG artwork and meshes with materials, lighting, depth of field and transparent shadows.' },
   { slug: 'profile',          title: 'Profiles',          src: 'profile.md',      pathway: 'creators', description: "The working identity Lolly creates as - your name, role and contact details, filled into tools automatically and stored on your own device." },
+  { slug: 'sync',             title: 'Sync your devices', src: 'sync.md',         pathway: 'creators', description: "Keep your work the same on every device through storage you choose - Dropbox, Google Drive, OneDrive, your own Nextcloud or S3 - with no Lolly server in between." },
   // Both of these pages HOST a band that used to sit on the landing (plan 117 block
   // 9). The band is the same function the landing called, so the layout that made
   // the content readable moved with the content instead of being flattened to prose.
@@ -516,7 +517,8 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'ask',         label: 'Ask Lolly' },
         { slug: 'dashboard',   label: 'The Dashboard' },
         { slug: 'favourites',  label: 'Your favourites' },
-        { slug: 'profile',     label: 'Your profile' } ] },
+        { slug: 'profile',     label: 'Your profile' },
+        { slug: 'sync',        label: 'Sync your devices' } ] },
       { label: 'Present', items: [
         { slug: 'presenting', label: 'Presenting with camera' } ] },
       { label: 'Collaborate', items: [
@@ -4820,7 +4822,7 @@ const FOOTER_SECTIONS: SitemapSection[] = [
     'sales', 'press', 'marketing', 'legal',
     'adoption-governance', 'sovereign-production', 'deployment', 'configuration', 'build-guide', 'cli-signing'] },
   { hub: 'creators', label: 'Find your way', slugs: [
-    'search', 'ask', 'dashboard', 'favourites', 'profile'] },
+    'search', 'ask', 'dashboard', 'favourites', 'profile', 'sync'] },
   { hub: 'creators', label: 'Share & collaborate', slugs: [
     'presenting', 'collaborate', 'formats', 'exporting'] },
   { hub: 'builders', label: 'Concepts', slugs: [
@@ -4946,7 +4948,7 @@ const SIDEBAR_ICON: Record<string, string> = {
   constraints: 'lock', determinism: 'check', reproducibility: 'link',
   'sovereign-production': 'server',
   ask: 'sparkle', dashboard: 'monitor', utilities: 'wrench',
-  collaborate: 'people', search: 'search', favourites: 'star',
+  collaborate: 'people', search: 'search', favourites: 'star', sync: 'convert',
   // Builders - architecture & authoring
   overview: 'layers', 'design-tokens': 'hash', glossary: 'document', 'authoring-tools': 'wrench', 'authoring-assets': 'photos',
   'host-api': 'code', 'url-mode': 'link',
