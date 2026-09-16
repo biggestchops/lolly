@@ -307,10 +307,22 @@
           "markdownDescription": "Denies the authenticate command without any pre-configured scope."
         },
         {
-          "description": "Allows the app to open the system sign-in sheet with `authenticate`.\n\n#### This default permission set includes:\n\n- `allow-authenticate`",
+          "description": "Enables the google_authorize command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-google-authorize",
+          "markdownDescription": "Enables the google_authorize command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the google_authorize command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-google-authorize",
+          "markdownDescription": "Denies the google_authorize command without any pre-configured scope."
+        },
+        {
+          "description": "Allows the app to open the system sign-in sheet with `authenticate` and, on\nAndroid, to ask Google Play services for a Google access token with\n`google_authorize`.\n\n#### This default permission set includes:\n\n- `allow-authenticate`\n- `allow-google-authorize`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Allows the app to open the system sign-in sheet with `authenticate`.\n\n#### This default permission set includes:\n\n- `allow-authenticate`"
+          "markdownDescription": "Allows the app to open the system sign-in sheet with `authenticate` and, on\nAndroid, to ask Google Play services for a Google access token with\n`google_authorize`.\n\n#### This default permission set includes:\n\n- `allow-authenticate`\n- `allow-google-authorize`"
         }
       ]
     }

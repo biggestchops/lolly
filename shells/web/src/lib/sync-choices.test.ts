@@ -83,5 +83,8 @@ test('mobile apps: a provider with mobile sign-in ready needs set-up; Google on 
   assert.equal(states(ios).o365, 'unavailable');
   const android = syncChoicesFor(facts({ shell: 'android', mobileSignIn: new Set(['dropbox']) }));
   assert.equal(states(android).dropbox, 'setup');
-  assert.match(android.find((c) => c.id === 'gdrive')!.note, /Android/);
+  assert.equal(states(android).gdrive, 'unavailable', 'no Android client registered');
+  const play = syncChoicesFor(facts({ shell: 'android', mobileSignIn: new Set(['dropbox', 'gdrive']) }));
+  assert.equal(states(play).gdrive, 'setup');
+  assert.match(play.find((c) => c.id === 'gdrive')!.note, /Google Play services/);
 });

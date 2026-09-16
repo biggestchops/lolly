@@ -23,9 +23,13 @@ interface ImportMetaEnv {
   // the web. Read only by lib/instance-choice.ts isTauriMobileShell().
   readonly VITE_LOLLY_APP_SHELL?: 'tauri-mobile';
   // Mobile sign-in registrations (plans/138 Tier D, WP-M1), each unset until the
-  // provider app lists the mobile redirect. Read by lib/google-drive.ts,
+  // provider app lists the mobile redirect (or, for Google on Android, has an
+  // Android client). Read by lib/google-drive.ts,
   // lib/onedrive-send.ts and lib/dropbox-send.ts.
   readonly VITE_GOOGLE_IOS_CLIENT_ID?: string;
+  // '1' once an Android OAuth client for tools.lolly.mobile (package name and
+  // signing certificate) exists in the Google Cloud project.
+  readonly VITE_GOOGLE_ANDROID_SIGN_IN?: string;
   readonly VITE_MS_MOBILE_CLIENT_ID?: string;
   readonly VITE_DROPBOX_MOBILE?: string;
 }

@@ -9,8 +9,15 @@
 //! supports one and a Custom Tab otherwise. This replaces the desktop loopback
 //! listener, which cannot work on a phone.
 //!
+//! A second command, `plugin:lolly-auth|google_authorize`, asks Google Play
+//! services for a Google access token on Android (WP-M1.4). It refuses to run
+//! on iOS, which uses `authenticate` for Google, and on desktop.
+//!
+//! Both commands share one busy flag, so only one sign-in sheet or consent
+//! screen is open at a time.
+//!
 //! The desktop build compiles so the crate can be checked on any machine, but
-//! the command refuses to run there: the desktop shell has its own flow.
+//! the commands refuse to run there: the desktop shell has its own flow.
 
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -21,8 +28,12 @@ use tauri::{
     AppHandle, Manager, Runtime, State, Url,
 };
 
+mod google;
 #[cfg(mobile)]
 mod mobile;
+
+pub use google::GoogleAuthorization;
+use google::GoogleAuthorizeRequest;
 
 /// The native sheet was closed without a redirect. The web caller matches the
 /// word "cancelled", so keep it in this sentence.
@@ -167,6 +178,25 @@ impl<R: Runtime> LollyAuth<R> {
         let _ = request;
         Err(DESKTOP_ONLY.into())
     }
+
+    #[cfg(target_os = "android")]
+    async fn run_google(
+        &self,
+        request: &GoogleAuthorizeRequest,
+    ) -> Result<GoogleAuthorization, String> {
+        let _claim = self.claim()?;
+        let authorization = mobile::google_authorize(&self.handle, request).await?;
+        google::check_authorization(authorization)
+    }
+
+    #[cfg(not(target_os = "android"))]
+    async fn run_google(
+        &self,
+        request: &GoogleAuthorizeRequest,
+    ) -> Result<GoogleAuthorization, String> {
+        let _ = request;
+        Err(google::ANDROID_ONLY.into())
+    }
 }
 
 fn claim_flag(flag: &AtomicBool) -> Result<SessionClaim<'_>, String> {
@@ -192,11 +222,26 @@ async fn authenticate<R: Runtime>(
     state.run(&request).await
 }
 
+/// `invoke('plugin:lolly-auth|google_authorize', { scopes, interactive })`,
+/// resolving `{ accessToken, grantedScopes }`. Android only. With
+/// `interactive` false no screen is ever shown: a request that needs the
+/// person's approval rejects with `consent-required`.
+#[tauri::command]
+async fn google_authorize<R: Runtime>(
+    _app: AppHandle<R>,
+    state: State<'_, LollyAuth<R>>,
+    scopes: Vec<String>,
+    interactive: Option<bool>,
+) -> Result<GoogleAuthorization, String> {
+    let request = GoogleAuthorizeRequest::new(scopes, interactive.unwrap_or(false))?;
+    state.run_google(&request).await
+}
+
 /// Builds the plugin. Register it with `.plugin(tauri_plugin_lolly_auth::init())`
 /// and grant `lolly-auth:default` in a capability.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("lolly-auth")
-        .invoke_handler(tauri::generate_handler![authenticate])
+        .invoke_handler(tauri::generate_handler![authenticate, google_authorize])
         .setup(|app, api| {
             #[cfg(mobile)]
             let state = LollyAuth::<R> {
