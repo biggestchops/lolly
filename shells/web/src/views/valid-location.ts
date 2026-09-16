@@ -22,12 +22,14 @@ export function wireAddressRequests(root: HTMLElement): void {
     if (!url) return;
     // Use the provider's website: a distributed client cannot enforce the public
     // API's application-wide rate cap. https://operations.osmfoundation.org/policies/nominatim/
+    // nosemgrep: lolly-href-escape-is-not-scheme-validation - addressLookupUrl() always returns the fixed https://nominatim.openstreetmap.org page with numeric parameters
+    const open = `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-address-open>${t('Request address')} ↗</a>`;
     const modal = mountModal(`<h2 class="modal-title">${t('Request address?')}</h2>
       <p class="modal-msg">${t('OpenStreetMap Nominatim will receive these coordinates and your IP address. The asset stays on this device.')}</p>
       <div class="valid-link-destination"><strong>${lat.toFixed(5)}, ${lon.toFixed(5)}</strong><br>nominatim.openstreetmap.org</div>
       <p class="modal-msg">${t('The lookup opens in a new tab. Do not send private or confidential locations. Addresses are approximate.')}</p>
       <p class="valid-location-service"><a href="https://operations.osmfoundation.org/policies/nominatim/" target="_blank" rel="noopener noreferrer">${t('Service usage policy')}</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a></p>
-      <div class="modal-actions"><button type="button" class="btn" data-address-cancel>${t('Cancel')}</button><a class="btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-address-open>${t('Request address')} ↗</a></div>`, {
+      <div class="modal-actions"><button type="button" class="btn" data-address-cancel>${t('Cancel')}</button>${open}</div>`, {
       className: 'modal valid-link-dialog valid-address-dialog', ariaLabel: t('Request address?'),
       initialFocus: (el) => el.querySelector<HTMLElement>('[data-address-cancel]'),
     });

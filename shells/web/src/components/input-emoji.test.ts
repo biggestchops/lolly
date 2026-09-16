@@ -49,3 +49,16 @@ test('generic fields offer insertion without adding it to URLs, numbers or manag
   assert.equal(root.querySelector('[data-field-id="cards:0:title"]')?.getAttribute('aria-label'), 'Card title');
   destroy();
 });
+
+test('a modal that makes the whole app inert at mount does not remove the buttons', () => {
+  // The template chooser traps focus by making #app inert while the sidebar mounts.
+  const dom = new JSDOM('<div id="app" inert><main><input class="field-input" data-input-id="title"><div inert><input class="field-input" data-input-id="locked"></div></main></div>');
+  Object.assign(globalThis, { document: dom.window.document, window: dom.window });
+  const root = dom.window.document.querySelector('main')!;
+  const model = [{ id: 'title', type: 'text' }, { id: 'locked', type: 'text' }] as InputModelItem[];
+  const destroy = mountInputEmoji(root, model, { emoji: {} } as HostV1, { emoji: { style: null }, onEmojiChange: () => () => {} } as unknown as Runtime);
+  const triggers = root.querySelectorAll('.input-emoji-trigger');
+  assert.equal(triggers.length, 1, 'the open field gets a button and the locked one still does not');
+  assert.equal(triggers[0]!.parentElement?.querySelector('[data-input-id]')?.getAttribute('data-input-id'), 'title');
+  destroy();
+});

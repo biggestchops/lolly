@@ -26,12 +26,14 @@ export function contactUrl(value: string): string | null {
 
 export function contactLinkHtml(value: string): string {
   const url = contactUrl(value);
+  // nosemgrep: lolly-href-escape-is-not-scheme-validation - contactUrl() returns only a mailto: or tel: address built from a checked recipient or number
   return url ? `<a class="valid-metadata-link" href="${esc(url)}" data-metadata-url="${esc(url)}" title="${esc(t('Unverified contact from this file. Review before opening.'))}">${icon(url.startsWith('mailto:') ? 'mail' : 'link')}<span>${esc(value.replace(/^(?:mailto|tel):/i, ''))}</span></a>` : esc(value);
 }
 
 export function metadataLinkHtml(value: string, label = value): string {
   const url = metadataUrl(value);
   if (!url) return esc(label);
+  // nosemgrep: lolly-href-escape-is-not-scheme-validation - metadataUrl() returns only a parsed http: or https: address with no credentials
   return `<a class="valid-metadata-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-metadata-url="${esc(url)}" title="${esc(t('Unverified link from this file. Review before opening.'))}" aria-label="${esc(label)} (${esc(t('unverified external link'))})">${esc(label)}<span aria-hidden="true"> ↗</span></a>`;
 }
 
@@ -66,12 +68,14 @@ export function wireMetadataLinks(root: HTMLElement): void {
     if (!url) return;
     event.preventDefault();
     const contact = /^(?:mailto|tel):/.test(url);
+    // nosemgrep: lolly-href-escape-is-not-scheme-validation - url passed metadataUrl() (http/https only) or contactUrl() (mailto/tel only) just above
+    const open = `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-link-open>${contact ? t('Open contact app') : t('Open link')} ↗</a>`;
     const modal = mountModal(`<h2 class="modal-title">${t('Open external link?')}</h2>
       <p class="modal-msg">${t('This address comes from the file. Its destination and safety have not been verified.')}</p>
       <p class="valid-link-destination">${esc(url)}</p>
       ${contact ? `<p class="modal-msg">${t('This opens your email or phone app. Review the recipient before sending or calling.')}</p>` : ''}
       ${url.startsWith('http:') ? `<p class="modal-msg">${t('This connection is not encrypted.')}</p>` : ''}
-      <div class="modal-actions"><button type="button" class="btn" data-link-cancel>${t('Cancel')}</button><a class="btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-link-open>${contact ? t('Open contact app') : t('Open link')} ↗</a></div>`, {
+      <div class="modal-actions"><button type="button" class="btn" data-link-cancel>${t('Cancel')}</button>${open}</div>`, {
       className: 'modal valid-link-dialog', ariaLabel: t('Open external link?'),
       initialFocus: (el) => el.querySelector<HTMLElement>('[data-link-cancel]'),
     });

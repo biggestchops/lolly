@@ -63,6 +63,15 @@ function releaseEncodeLock(): void {
   rmSync(ENCODE_LOCK, { recursive: true, force: true });
 }
 
+/**
+ * Take the same tier for a CPU-heavy browser suite that does not use openHarness(),
+ * such as software WebGL rendering. Call the returned function to release it.
+ */
+export async function holdEncodeTier(): Promise<() => void> {
+  await acquireEncodeLock();
+  return releaseEncodeLock;
+}
+
 export interface CodecProbe {
   webcodecs: boolean;
   avcDecode: boolean;

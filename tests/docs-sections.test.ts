@@ -2,7 +2,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {headingId} from '@lolly-tools/docs-render';
+import {headingId} from '../packages/docs-render/src/index.ts';
 import {SECTION_MOVES,movedSectionLinks} from '../docs/section-moves.ts';
 
 test('every moved section bookmark has a real destination heading and a no-script link', () => {

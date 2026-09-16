@@ -52,7 +52,12 @@ export function mountInputEmoji(
   );
   for (const target of candidates) {
     const input = model.find((item) => item.id === target.closest<HTMLElement>('[data-input-id]')?.dataset.inputId);
-    if (!input || target.closest('[inert]')) continue;
+    if (!input) continue;
+    // Skip a locked control (inert inside the sidebar). A modal that is open while the
+    // sidebar mounts, such as the template chooser, makes the whole app inert for a
+    // moment; that must not cost every field its button for the life of the view.
+    const locked = target.closest('[inert]');
+    if (locked && root.contains(locked)) continue;
     const spec = target.dataset.fieldId
       ? input.fields?.find((field) => field.id === target.dataset.fieldId?.split(':')[2])
       : input;

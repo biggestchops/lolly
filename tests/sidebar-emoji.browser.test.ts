@@ -25,6 +25,11 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     await page.locator('.emoji-choice').getByRole('button', { name: 'Continue', exact: true }).click();
     await page.locator('.emoji-pop unicode-emoji-picker').waitFor();
   };
+  // Snippet and Diagram Builder ship built-in templates, so a fresh visit asks where to start.
+  const startBlank = async () => {
+    await page.locator('.tmpl-chooser-tile[data-template-id="__blank__"]').click();
+    await page.locator('.tmpl-chooser-panel').waitFor({ state: 'detached' });
+  };
   const pick = async () => {
     const cell = page.locator('.emoji-pop unicode-emoji-picker .emojis .emoji').filter({ hasText: emoji }).first();
     await cell.click();
@@ -69,6 +74,7 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     // The profile choice seeds a fresh tool; textarea insertion also uses native edits.
     await page.goto(`${origin}/#/tool/snippet`, { waitUntil: 'networkidle' });
     await page.waitForURL(url => url.searchParams.get('emoji') === chosenSet);
+    await startBlank();
     const code = page.locator('textarea[data-input-id="code"]');
     await code.fill('const hello = "";');
     await code.evaluate((field: HTMLTextAreaElement) => { field.focus(); field.setSelectionRange(15, 15); });
@@ -111,6 +117,7 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
 
     // Block fields use qualified row identities and retain the other cards.
     await page.goto(`${origin}/#/tool/diagram-builder`, { waitUntil: 'networkidle' });
+    await startBlank();
     await page.locator('.block-item').first().locator('.block-collapse').click();
     const card = page.locator('input[data-field-id="nodes:0:label"]');
     const sibling = page.locator('input[data-field-id="nodes:1:label"]');

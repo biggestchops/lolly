@@ -27,6 +27,7 @@ import {
   markLookFailed, markLookReady, readyCarIndices, setCarDot, stripCarouselNav, syncCarState, wireCarousel,
 } from './gallery-carousel.ts';
 import { LOOK_PENDING_ATTR } from '../lib/capture-neutral.ts';
+import { galleryPreviewPriority } from '../lib/gallery-preview.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CSS = readFileSync(join(HERE, '..', 'styles', 'parts', 'gallery.css'), 'utf8');
@@ -216,8 +217,14 @@ test('the view builds its nav and dots from the count, and clears pending where 
   assert.match(VIEW, /if \(perfUiOn\(\)\) \{ gcar\.classList\.add\('has-art'\); stripCarouselNav\(gcar\); return; \}/);
   // The other way a look could sit pending for good: a tile with no box (filtered out
   // by a search, or the whole grid in hide-previews mode) parks its render. A capture
-  // waits for every look, so under the pin it renders last instead of never.
-  assert.match(VIEW, /if \(!rect\.width \|\| !rect\.height\) return captureNeutralPinned\(\) \? 3 : null;/);
+  // waits for every look, so under the pin it renders last instead of never. The rule
+  // lives in lib/gallery-preview.ts; the view passes the capture pin through.
+  assert.match(VIEW, /return perfUiOn\(\) \? null : galleryPreviewPriority\(gcar, cover, captureNeutralPinned\(\)\);/);
+  const boxless = { closest: () => null, getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, bottom: 0 }) } as unknown as HTMLElement;
+  assert.equal(galleryPreviewPriority(boxless, true, false), null, 'a hidden tile parks its render');
+  assert.equal(galleryPreviewPriority(boxless, false, false), null);
+  assert.equal(galleryPreviewPriority(boxless, true, true), 3, 'under a capture it renders last instead of never');
+  assert.equal(galleryPreviewPriority(boxless, false, true), 3);
 });
 
 test('the dots live INSIDE .gcar, which is what hide-previews mode already hides', (t) => {
