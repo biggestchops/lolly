@@ -44,7 +44,7 @@
     }
   },
   "darwin:ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)": {
-    "reviewed": false,
+    "reviewed": true,
     "recorded": "2026-09-16",
     "size": 512,
     "samples": 8,
