@@ -253,9 +253,15 @@ async function mountToolCanvas(
     let mountedStudio: StudioExportHooks<Element> | null = null;
     if (canvas.querySelector('[data-lolly-studio]')) {
       const studio = await import('../lib/studio3d/mount.ts');
+      const { acquireStudioRenderer } = await import('../lib/studio3d/pool.ts');
       mountedStudio = studio;
+      // One of the pool's two contexts, not a context per row. The lease goes back through
+      // the stage cleanup, which every caller runs in a finally block, so a row that fails
+      // returns it too. Nothing may throw between taking the lease and registering that
+      // cleanup, or the renderer would be held with no way to give it back.
+      const lease = await acquireStudioRenderer('batch');
       const cleanup = stage._lottieCleanup;
-      stage._lottieCleanup = () => { studio.destroyToolStudio(canvas); cleanup?.(); };
+      stage._lottieCleanup = () => { studio.destroyToolStudio(canvas); lease.release(); cleanup?.(); };
       // A gallery or chooser tile is a small picture: preview quality keeps a scene with
       // many samples from holding the page for seconds per tile. Exports keep full quality.
       const frameQuality = thumbnail ? 'preview' : 'export';
@@ -265,7 +271,7 @@ async function mountToolCanvas(
         const bytes = await host.assets.bytes(url);
         signal.throwIfAborted();
         return bytes;
-      }, shapeText: studio.studioShaperFor(host), frameQuality });
+      }, shapeText: studio.studioShaperFor(host), frameQuality, lease });
       studio.prepareToolStudio(canvas, frameQuality);
     }
     // The caller exports through withStudioExport with this module, so a studio frame that
@@ -414,7 +420,20 @@ export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, wid
       exportOpts.height = rect.height;
     }
     signal?.throwIfAborted();
-    const blob = await withStudioExport(mounted.studio, canvas, () => runtime.export(target, fmt, exportOpts));
+    // The pixel size this row is about to render at. A studio whose curve detail follows
+    // the output builds its sources again for it; every other tool ignores it. Physical
+    // units become pixels at the export dpi, the way the export bridge converts them.
+    const outPixels = (value: number | undefined, css: number): number =>
+      value === undefined || !(value > 0) ? css
+      : unit === 'px' ? value
+      : (toCssPx({ value, unit }) * (dpi ?? 300)) / 96;
+    const blob = await withStudioExport(
+      mounted.studio,
+      canvas,
+      () => runtime.export(target, fmt, exportOpts),
+      undefined,
+      { width: outPixels(width, layoutW), height: outPixels(height, layoutH) }
+    );
     signal?.throwIfAborted();
     return { blob, format: fmt, url };
   } finally {
@@ -481,7 +500,11 @@ export async function renderToolPages(row: BatchRow, host: HostV1, { format, thu
     const pages: Blob[] = [];
     for (const el of targets) {
       signal?.throwIfAborted();
-      pages.push(await withStudioExport(mounted.studio, canvas, () => runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail, signal })));
+      // A page carries no dimension opts, so the bridge renders it at its own laid-out
+      // box: that box IS this page's output size, and a studio whose curve detail follows
+      // the output is built for it. offsetWidth/Height are transform-independent.
+      const pageSize = { width: el.offsetWidth, height: el.offsetHeight };
+      pages.push(await withStudioExport(mounted.studio, canvas, () => runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail, signal }), undefined, pageSize));
       signal?.throwIfAborted();
     }
     return { pages, format: fmt };

@@ -6,6 +6,16 @@ import type { StudioRead } from './source.ts';
 
 export interface StudioStage {
   group: THREE.Group;
+  dispose(): void;
+}
+
+/**
+ * The lights on their own. They are the part of a scene a camera edit never touches, so
+ * they are built and rebuilt without the floor, backplate, pedestal and depth forms
+ * around them.
+ */
+export interface StudioRig {
+  group: THREE.Group;
   lights: { light: THREE.Light; position: THREE.Vector3; size: number; intensity: number }[];
   dispose(): void;
 }
@@ -151,29 +161,18 @@ function prepareAreaLightTables(): void {
   areaLightTables = true;
 }
 
-export function buildStudioStage(
+/**
+ * The rig: every light the recipe names, plus the hemisphere fill the stage background
+ * ties to. Nothing here reads the camera, so an orbit keeps the rig it has.
+ */
+export function buildStudioRig(
   recipe: StudioSceneV1,
-  camera: THREE.Camera,
-  backdrop: THREE.Texture,
   /** Half-width of the shadowed area; a wide arrangement needs a wider shadow frustum. */
-  extent = 7,
-  /** False when the lighting environment itself is the visible background. */
-  backplate = true,
-  /** The placed subject; depth forms can be copies of it that share its geometry. */
-  subject?: THREE.Object3D
-): StudioStage {
+  extent = 7
+): StudioRig {
   prepareAreaLightTables();
-  const group = new THREE.Group(),
-    geometries = new Set<THREE.BufferGeometry>(),
-    materials = new Set<THREE.Material>();
-  const lights: StudioStage['lights'] = [];
-  const mesh = (geometry: THREE.BufferGeometry, material: THREE.Material): THREE.Mesh => {
-    geometries.add(geometry);
-    materials.add(material);
-    const result = new THREE.Mesh(geometry, material);
-    group.add(result);
-    return result;
-  };
+  const group = new THREE.Group();
+  const lights: StudioRig['lights'] = [];
   if (recipe.lights.filter((l) => l.shadows).length > 4)
     throw new Error('Use at most four shadow-casting lights.');
   for (const cfg of recipe.lights) {
@@ -224,6 +223,47 @@ export function buildStudioStage(
   }
   const fill = recipe.stage.fill;
   group.add(new THREE.HemisphereLight(fill.sky, fill.ground, fill.intensity));
+  return {
+    group,
+    lights,
+    dispose: () => {
+      for (const { light } of lights)
+        if (
+          light instanceof THREE.DirectionalLight ||
+          light instanceof THREE.SpotLight ||
+          light instanceof THREE.PointLight
+        ) {
+          light.shadow.map?.dispose();
+          light.shadow.mapPass?.dispose();
+        }
+    },
+  };
+}
+
+/**
+ * Everything around the subject that is not a light: the floor, the backplate, the
+ * pedestal and the depth forms. Only a scene output reads the camera, and only for the
+ * backplate and the depth forms, so the caller keys this build on the camera just then.
+ */
+export function buildStudioStage(
+  recipe: StudioSceneV1,
+  camera: THREE.Camera,
+  backdrop: THREE.Texture,
+  /** False when the lighting environment itself is the visible background. */
+  backplate = true,
+  /** The placed subject; depth forms can be copies of it that share its geometry. */
+  subject?: THREE.Object3D
+): StudioStage {
+  const group = new THREE.Group(),
+    geometries = new Set<THREE.BufferGeometry>(),
+    materials = new Set<THREE.Material>();
+  const mesh = (geometry: THREE.BufferGeometry, material: THREE.Material): THREE.Mesh => {
+    geometries.add(geometry);
+    materials.add(material);
+    const result = new THREE.Mesh(geometry, material);
+    group.add(result);
+    return result;
+  };
   const sceneOutput = recipe.stage.output === 'scene';
   if (recipe.stage.output !== 'object') {
     const shadow = !sceneOutput || recipe.stage.floor === 'shadow';
@@ -337,17 +377,7 @@ export function buildStudioStage(
   }
   return {
     group,
-    lights,
     dispose: () => {
-      for (const { light } of lights)
-        if (
-          light instanceof THREE.DirectionalLight ||
-          light instanceof THREE.SpotLight ||
-          light instanceof THREE.PointLight
-        ) {
-          light.shadow.map?.dispose();
-          light.shadow.mapPass?.dispose();
-        }
       for (const geometry of geometries) geometry.dispose();
       for (const material of materials) material.dispose();
     },

@@ -44,10 +44,16 @@ export interface StudioSceneCounters {
   updates: number;
   /** Sources read and prepared (geometry built from bytes, words or a primitive). */
   sourceLoads: number;
-  /** Material assignments, one per placed object per update. */
+  /** Source loads that were abandoned or refused, so they built nothing. */
+  sourceAborts: number;
+  /** Material assignments, one per placed object, on an instantiation or a materials edit. */
   materialSets: number;
-  /** Stage rebuilds: floor, lights, shadows and depth forms. */
+  /** Objects instantiated from a loaded source. */
+  instances: number;
+  /** Stage rebuilds: floor, backplate, pedestal and depth forms. */
   stageBuilds: number;
+  /** Light rig rebuilds: the lights, their shadows and the hemisphere fill. */
+  rigBuilds: number;
   /** Backdrop texture builds. */
   backdropBuilds: number;
   /** Environment map builds. */
@@ -65,12 +71,22 @@ export interface StudioSceneHost<Surface, Camera, Point> {
   readonly canvas: Surface;
   /**
    * Load what the recipe names and swap it in. A newer update cancels an older one; a
-   * frozen host holds the swap until it is thawed.
+   * frozen host holds the swap until it is thawed. Only what the edit changed is rebuilt:
+   * a camera or light edit re-instantiates nothing and applies no material.
+   *
+   * `retain` names loaded-source keys that survive this update even though it does not
+   * place them, so a caller rendering a set through one host keeps the whole set's
+   * sources. The keys come from the host's own `studioAssetKeys`.
+   *
+   * `pixels` is the long side of the output these sources are being built for. A recipe
+   * whose shape detail follows the output reads its curves against it, so a preview and a
+   * larger export are different sources; a recipe with a fixed curve count ignores it.
    */
   update: (
     recipe: StudioSceneV1,
     read: StudioSceneRead,
-    shaper?: StudioSceneShaper
+    shaper?: StudioSceneShaper,
+    opts?: { retain?: string[]; pixels?: number }
   ) => Promise<StudioSourceInfo>;
   /** Draw one frame at a pixel size. `time` is the loop position from 0 to 1. */
   render: (
@@ -94,6 +110,11 @@ export interface StudioSceneHost<Surface, Camera, Point> {
     verify?: boolean
   ) => void;
   inspect: () => StudioSceneCounters;
+  /**
+   * Drop every loaded source the last update did not place, whatever `retain` held on to
+   * while a set was rendered. A host kept warm for the next document calls this first.
+   */
+  trimAssets: () => void;
   /**
    * While frozen, an update in flight waits before it swaps anything in, and the
    * preview-only calls below are ignored, so a capture keeps the frame it started with.

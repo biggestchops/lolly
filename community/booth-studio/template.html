@@ -58,16 +58,21 @@
      three.js to keep version-synced; if `flythrough` ever leaves community, vendor
      a copy here. */
   var LIB = '/tools/flythrough/lib/three.min.js';
+  function usable(lib) { return (lib && lib.WebGLRenderer) ? lib : null; }
+  function loaded() { return usable(window.LollyThreeGl) || usable(window.LollyThree); }
   function loadThree() {
-    if (window.LollyThree) return Promise.resolve(window.LollyThree);
+    var have = loaded();
+    if (have) return Promise.resolve(have);
     window.__lollyThreeLoading = window.__lollyThreeLoading || new Promise(function (res, rej) {
       var s = document.createElement('script');
       s.src = LIB;
-      s.onload = function () { res(window.LollyThree); };
+      s.onload = function () { res(loaded()); };
       s.onerror = function () { s.remove(); window.__lollyThreeLoading = null; rej(new Error('three load failed')); };
       document.head.appendChild(s);
     });
-    return window.__lollyThreeLoading;
+    /* Re-read the globals after the load settles rather than trusting the promise's
+       value: `flythrough` owns this bundle and parks its own promise here. */
+    return window.__lollyThreeLoading.then(function () { return loaded(); });
   }
 
   // ---- booth designs --------------------------------------------------------

@@ -3501,11 +3501,11 @@ function canonicalJson(value) {
   if (Array.isArray(value)) {
     return "[" + value.map((v) => canonicalJson(v)).join(",") + "]";
   }
-  const record9 = value;
+  const record10 = value;
   const parts = [];
-  for (const key of Object.keys(record9).sort()) {
-    if (record9[key] === void 0) continue;
-    parts.push(JSON.stringify(key) + ":" + canonicalJson(record9[key]));
+  for (const key of Object.keys(record10).sort()) {
+    if (record10[key] === void 0) continue;
+    parts.push(JSON.stringify(key) + ":" + canonicalJson(record10[key]));
   }
   return "{" + parts.join(",") + "}";
 }
@@ -3614,7 +3614,7 @@ var ENGINE_VERSION;
 var init_version = __esm({
   "engine/src/version.ts"() {
     "use strict";
-    ENGINE_VERSION = "1.207.0";
+    ENGINE_VERSION = "1.208.0";
   }
 });
 
@@ -32678,21 +32678,21 @@ async function readEmojiPack(bytes, expected) {
   return { ok: true, pack };
 }
 function inspectEmojiPack(pack) {
-  const record9 = admitted.get(pack);
-  return record9 ? clone(record9.manifest) : null;
+  const record10 = admitted.get(pack);
+  return record10 ? clone(record10.manifest) : null;
 }
 function describeEmojiPack(pack) {
-  const record9 = admitted.get(pack);
-  return record9 ? { id: record9.manifest.id, version: record9.manifest.version, family: record9.manifest.family, style: record9.manifest.style } : null;
+  const record10 = admitted.get(pack);
+  return record10 ? { id: record10.manifest.id, version: record10.manifest.version, family: record10.manifest.family, style: record10.manifest.style } : null;
 }
 function matchesEmojiPack(pack, pin) {
-  const record9 = admitted.get(pack);
-  return !!record9 && emojiPackPinKey(record9.pin) === emojiPackPinKey(pin);
+  const record10 = admitted.get(pack);
+  return !!record10 && emojiPackPinKey(record10.pin) === emojiPackPinKey(pin);
 }
 function findEmojiGlyph(pack, meaning) {
-  const record9 = admitted.get(pack);
-  const glyph = record9?.glyphs.get(meaningKey(meaning));
-  return record9 && glyph ? clone({ glyph, metrics: glyph.metrics ?? record9.manifest.metrics }) : null;
+  const record10 = admitted.get(pack);
+  const glyph = record10?.glyphs.get(meaningKey(meaning));
+  return record10 && glyph ? clone({ glyph, metrics: glyph.metrics ?? record10.manifest.metrics }) : null;
 }
 async function verifyEmojiArtwork(pack, meaning, bytes) {
   if (!admitted.has(pack)) return failure("invalid-pack", "Emoji pack has not been validated.");
@@ -32994,19 +32994,19 @@ async function prepareEmojiSvg(pack, meaning, bytes, parseXml) {
   const entry2 = findEmojiGlyph(pack, meaning);
   try {
     const source = new TextDecoder("utf-8", { fatal: true }).decode(verified.bytes);
-    const record9 = normalize(source, entry2.glyph.viewBox, parseXml);
-    const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(record9.tree, "emoji")))}`;
+    const record10 = normalize(source, entry2.glyph.viewBox, parseXml);
+    const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(record10.tree, "emoji")))}`;
     const svg = Object.freeze({ checksum, sourceChecksum: entry2.glyph.asset.checksum, normalizer: EMOJI_SVG_VERSION });
-    prepared.set(svg, record9);
+    prepared.set(svg, record10);
     return { ok: true, svg };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "SVG admission failed." };
   }
 }
 function emojiSvgMarkup(svg, prefix = "emoji") {
-  const record9 = prepared.get(svg);
-  if (!record9 || !idPattern2.test(prefix)) throw new Error("Invalid prepared SVG or placement prefix.");
-  return serialize(record9.tree, prefix);
+  const record10 = prepared.get(svg);
+  if (!record10 || !idPattern2.test(prefix)) throw new Error("Invalid prepared SVG or placement prefix.");
+  return serialize(record10.tree, prefix);
 }
 function recolor(node, map) {
   const attributes = { ...node.attributes };
@@ -33020,10 +33020,10 @@ function recolor(node, map) {
   return { tag: node.tag, attributes, children: node.children.map((child) => recolor(child, map)) };
 }
 async function recolorPreparedEmojiSvg(svg, map, change) {
-  const record9 = prepared.get(svg);
-  if (!record9) throw new Error("SVG has not been admitted.");
-  const tree = recolor(record9.tree, map);
-  const changes = [.../* @__PURE__ */ new Set([...record9.changes, change])];
+  const record10 = prepared.get(svg);
+  if (!record10) throw new Error("SVG has not been admitted.");
+  const tree = recolor(record10.tree, map);
+  const changes = [.../* @__PURE__ */ new Set([...record10.changes, change])];
   const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(tree, "emoji")))}`;
   const treated = Object.freeze({ checksum, sourceChecksum: svg.sourceChecksum, normalizer: EMOJI_TREATED_SVG_VERSION });
   prepared.set(treated, { tree, changes });
@@ -33049,21 +33049,21 @@ function inkTree(node, counted) {
   return { tag: node.tag, attributes, children: node.children.map((child) => inkTree(child, counted)) };
 }
 async function inkPreparedEmojiSvg(svg) {
-  const record9 = prepared.get(svg);
-  if (!record9) throw new Error("SVG has not been admitted.");
-  if (!singleInk(record9.tree)) return svg;
+  const record10 = prepared.get(svg);
+  if (!record10) throw new Error("SVG has not been admitted.");
+  if (!singleInk(record10.tree)) return svg;
   const counted = { value: 0 };
-  const tree = inkTree(record9.tree, counted);
+  const tree = inkTree(record10.tree, counted);
   if (!counted.value) return svg;
-  const changes = [.../* @__PURE__ */ new Set([...record9.changes, EMOJI_SINGLE_INK_CHANGE])];
+  const changes = [.../* @__PURE__ */ new Set([...record10.changes, EMOJI_SINGLE_INK_CHANGE])];
   const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(tree, "emoji")))}`;
   const inked = Object.freeze({ checksum, sourceChecksum: svg.sourceChecksum, normalizer: EMOJI_INK_SVG_VERSION });
   prepared.set(inked, { tree, changes });
   return inked;
 }
 function visitPreparedEmojiPaints(svg, visit) {
-  const record9 = prepared.get(svg);
-  if (!record9) throw new Error("SVG has not been admitted.");
+  const record10 = prepared.get(svg);
+  if (!record10) throw new Error("SVG has not been admitted.");
   const walk2 = (node) => {
     for (const name of paintNames) {
       const value = node.attributes[name];
@@ -33072,12 +33072,12 @@ function visitPreparedEmojiPaints(svg, visit) {
     }
     for (const child of node.children) walk2(child);
   };
-  walk2(record9.tree);
+  walk2(record10.tree);
 }
 function emojiSvgChanges(svg) {
-  const record9 = prepared.get(svg);
-  if (!record9) throw new Error("SVG has not been admitted.");
-  return [...record9.changes];
+  const record10 = prepared.get(svg);
+  if (!record10) throw new Error("SVG has not been admitted.");
+  return [...record10.changes];
 }
 var EMOJI_SVG_VERSION, EMOJI_TREATED_SVG_VERSION, EMOJI_INK_SVG_VERSION, prepared, namespace, idPattern2, tags, xlinkNamespace, shapes, referenceOnly, presentation, inert, units, nonnegative, choices, referenceTargets, localId, paintNames, hexPaint, EMOJI_SINGLE_INK_CHANGE, BLACK_PAINT, WHITE_PAINT;
 var init_emoji_svg = __esm({
@@ -34782,12 +34782,12 @@ function withoutUndefined(value) {
 function checkAttributionReadback(expected, report, outputHash, fingerprint) {
   const valid2 = report.found && report.state === "valid";
   const activeLabel = report.claim?.manifestLabel ?? "";
-  const ingredients = (report.ingredients ?? []).filter((record9) => Boolean(activeLabel) && record9.manifest === activeLabel);
+  const ingredients = (report.ingredients ?? []).filter((record10) => Boolean(activeLabel) && record10.manifest === activeLabel);
   const observed = [];
   const missing = [];
   const licenceGaps = [];
   for (const notice of expected.required) {
-    const found = valid2 ? ingredients.find((record9) => matches(notice, record9)) : void 0;
+    const found = valid2 ? ingredients.find((record10) => matches(notice, record10)) : void 0;
     if (!found) {
       missing.push(notice);
       continue;
@@ -34846,10 +34846,10 @@ function checkAttributionReadback(expected, report, outputHash, fingerprint) {
   if (outputHash) receipt.outputHash = outputHash;
   return receipt;
 }
-function matches(notice, record9) {
-  const url = ingredientSourceUrl(record9);
+function matches(notice, record10) {
+  const url = ingredientSourceUrl(record10);
   if (notice.sourceUrl && url) return notice.sourceUrl === url;
-  const instance = record9.instanceId?.split("@")[0];
+  const instance = record10.instanceId?.split("@")[0];
   return Boolean(instance && instance === notice.work);
 }
 var CHECKSUM2, byString2, EXTENSION_FORMATS, ROLE_RELATIONSHIP, ingredientSourceUrl;
@@ -34877,7 +34877,7 @@ var init_rights_attribution = __esm({
       woff2: "font/woff2"
     }));
     ROLE_RELATIONSHIP = /* @__PURE__ */ new Map([["incorporated", "componentOf"]]);
-    ingredientSourceUrl = (record9) => record9.rights?.sourceUrl || record9.data?.url;
+    ingredientSourceUrl = (record10) => record10.rights?.sourceUrl || record10.data?.url;
   }
 });
 
@@ -36035,15 +36035,15 @@ async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
       continue;
     }
     const value = resolution.value;
-    const record9 = await artworkFor(value, treatment, packs, io, cache3);
-    if ("reason" in record9) {
-      segments.push({ kind: "unresolved", text: span.text, label: value.glyph.label, reason: record9.reason });
+    const record10 = await artworkFor(value, treatment, packs, io, cache3);
+    if ("reason" in record10) {
+      segments.push({ kind: "unresolved", text: span.text, label: value.glyph.label, reason: record10.reason });
       continue;
     }
     const key = cacheKey(value.pack, value.meaning, treatment);
     let source = used.get(key);
     if (!source) {
-      source = { ...structuredClone(record9.base), occurrences: [] };
+      source = { ...structuredClone(record10.base), occurrences: [] };
       used.set(key, source);
       census.push(source);
     }
@@ -36051,10 +36051,10 @@ async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
     segments.push({
       kind: "emoji",
       text: span.text,
-      key: record9.key,
-      label: record9.label,
-      markup: emojiSvgMarkup(record9.svg, `${prefix}-${placement++}`),
-      metrics: record9.metrics,
+      key: record10.key,
+      label: record10.label,
+      markup: emojiSvgMarkup(record10.svg, `${prefix}-${placement++}`),
+      metrics: record10.metrics,
       source
     });
   }
@@ -36082,7 +36082,7 @@ async function artworkFor(value, treatment, packs, io, cache3) {
   } catch {
     return { reason: "unsupported-metrics" };
   }
-  const record9 = {
+  const record10 = {
     svg,
     metrics,
     label: value.glyph.label,
@@ -36102,8 +36102,8 @@ async function artworkFor(value, treatment, packs, io, cache3) {
       changes: emojiSvgChanges(svg)
     }
   };
-  cache3.set(key, record9);
-  return record9;
+  cache3.set(key, record10);
+  return record10;
 }
 var em, meaningKey2, cacheKey;
 var init_emoji_inline = __esm({
@@ -41480,53 +41480,53 @@ function collectIngredientRecords(store) {
         } else if (RIGHTS_LABEL.test(ab.label)) {
           try {
             const map = decodeCbor(contentOf(store, ab));
-            if (map instanceof Map) for (const [label, record9] of rightsEntries(map)) rights.set(label, record9);
+            if (map instanceof Map) for (const [label, record10] of rightsEntries(map)) rights.set(label, record10);
           } catch {
           }
         }
       }
     }
-    for (const record9 of records) {
-      const bound = rights.get(record9.label);
-      if (bound) record9.rights = bound;
-      out.push(record9);
+    for (const record10 of records) {
+      const bound = rights.get(record10.label);
+      if (bound) record10.rights = bound;
+      out.push(record10);
     }
   }
   return out;
 }
 function ingredientRecord(manifest, label, map) {
   const active = map.get("activeManifest") ?? map.get("c2pa_manifest");
-  const record9 = { manifest, label, credentialed: active instanceof Map };
+  const record10 = { manifest, label, credentialed: active instanceof Map };
   const activeUrl = active instanceof Map ? asText(active.get("url")) : void 0;
-  if (activeUrl) record9.activeManifest = activeUrl;
+  if (activeUrl) record10.activeManifest = activeUrl;
   const relationship = asText(map.get("relationship"));
-  if (relationship) record9.relationship = relationship;
+  if (relationship) record10.relationship = relationship;
   const title = asText(map.get("dc:title"));
-  if (title) record9.title = title;
+  if (title) record10.title = title;
   const format = asText(map.get("dc:format"));
-  if (format) record9.format = format;
+  if (format) record10.format = format;
   const instanceId = asText(map.get("instanceID"));
-  if (instanceId) record9.instanceId = instanceId;
+  if (instanceId) record10.instanceId = instanceId;
   const description = asText(map.get("description"));
-  if (description) record9.description = description;
+  if (description) record10.description = description;
   const informationalUri = asText(map.get("informationalURI"));
-  if (informationalUri) record9.informationalUri = informationalUri;
+  if (informationalUri) record10.informationalUri = informationalUri;
   const digitalSourceType = asText(map.get("digitalSourceType"));
-  if (digitalSourceType) record9.digitalSourceType = digitalSourceType;
+  if (digitalSourceType) record10.digitalSourceType = digitalSourceType;
   const data = map.get("data");
   const dataUrl = data instanceof Map ? asText(data.get("url")) : void 0;
   if (data instanceof Map && dataUrl) {
-    record9.data = { url: dataUrl };
+    record10.data = { url: dataUrl };
     const alg = asText(data.get("alg"));
-    if (alg) record9.data.alg = alg;
+    if (alg) record10.data.alg = alg;
     const hash = data.get("hash");
-    if (hash instanceof Uint8Array) record9.data.hash = bytesToHex(hash);
+    if (hash instanceof Uint8Array) record10.data.hash = bytesToHex(hash);
     const dataFormat = asText(data.get("dc:format"));
-    if (dataFormat) record9.data.format = dataFormat;
+    if (dataFormat) record10.data.format = dataFormat;
     const size = data.get("size");
-    if (typeof size === "number" && Number.isInteger(size) && size >= 0) record9.data.size = size;
+    if (typeof size === "number" && Number.isInteger(size) && size >= 0) record10.data.size = size;
   }
-  return record9;
+  return record10;
 }
 function rightsEntries(map) {
   const sources = map.get("sources");
@@ -41538,7 +41538,7 @@ function rightsEntries(map) {
     const url = ingredient instanceof Map ? asText(ingredient.get("url")) : void 0;
     if (!url?.startsWith("self#jumbf=c2pa.assertions/")) continue;
     const modifications = source.get("modifications");
-    const record9 = {
+    const record10 = {
       creator: asText(source.get("creator")) ?? "",
       license: asText(source.get("license")) ?? "",
       licenseUrl: asText(source.get("licenseUrl")) ?? "",
@@ -41548,10 +41548,10 @@ function rightsEntries(map) {
       sourceHash: asText(source.get("sourceHash")) ?? ""
     };
     const revision = asText(source.get("revision"));
-    if (revision) record9.revision = revision;
+    if (revision) record10.revision = revision;
     const usedHash = asText(source.get("usedHash"));
-    if (usedHash) record9.usedHash = usedHash;
-    out.push([url.slice("self#jumbf=c2pa.assertions/".length), record9]);
+    if (usedHash) record10.usedHash = usedHash;
+    out.push([url.slice("self#jumbf=c2pa.assertions/".length), record10]);
   }
   return out;
 }
@@ -42911,7 +42911,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     if (!root || typeof root !== "object") return { present: true, replaced: 0, unresolved: 0, census: [] };
     const track = opts2.track !== false;
     const nothing = { replaced: 0, unresolved: 0, census: [] };
-    const record9 = (result2) => {
+    const record10 = (result2) => {
       if (!track) return;
       emojiReplaced = result2.replaced;
       emojiUnresolved = result2.unresolved;
@@ -42920,14 +42920,14 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     };
     if (track) emojiNode = root;
     if (!EMOJI_MAYBE.test(root.textContent ?? "")) {
-      record9(nothing);
+      record10(nothing);
       return { present: true, ...nothing };
     }
     const style = emojiStyle;
     if (!style) {
       await loadEmojiSets();
       if (!emojiSets2?.length) {
-        record9(nothing);
+        record10(nothing);
         return { present: true, ...nothing };
       }
     }
@@ -42951,7 +42951,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       io,
       { cache: emojiArtwork, idScope: opts2.idScope }
     );
-    record9(result);
+    record10(result);
     if (!emojiSets2 && (style || result.replaced || result.unresolved)) void loadEmojiSets();
     return { present: true, ...result };
   }
@@ -47788,8 +47788,8 @@ function documentSchema(tool) {
 function inputSchema(input) {
   const base = { title: input.label ?? input.id, ...input.help ? { description: input.help } : {} };
   if (input.type === "number") {
-    const number3 = { type: "number", ...input.min !== void 0 ? { minimum: input.min } : {}, ...input.max !== void 0 ? { maximum: input.max } : {} };
-    return { ...base, ...input.default === "" ? { anyOf: [number3, { const: "" }] } : number3, ...input.default !== void 0 ? { default: input.default } : {} };
+    const number4 = { type: "number", ...input.min !== void 0 ? { minimum: input.min } : {}, ...input.max !== void 0 ? { maximum: input.max } : {} };
+    return { ...base, ...input.default === "" ? { anyOf: [number4, { const: "" }] } : number4, ...input.default !== void 0 ? { default: input.default } : {} };
   }
   if (input.type === "boolean") return { ...base, ...input.default === "" ? { anyOf: [{ type: "boolean" }, { const: "" }] } : { type: "boolean" }, ...input.default !== void 0 ? { default: input.default } : {} };
   if (input.type === "blocks") {
@@ -47881,8 +47881,8 @@ function tokenValuesFromModel(model2) {
 function semanticJson(value) {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map(semanticJson).join(",")}]`;
-  const record9 = value;
-  return `{${Object.keys(record9).sort().filter((key) => record9[key] !== void 0).map((key) => `${JSON.stringify(key)}:${semanticJson(record9[key])}`).join(",")}}`;
+  const record10 = value;
+  return `{${Object.keys(record10).sort().filter((key) => record10[key] !== void 0).map((key) => `${JSON.stringify(key)}:${semanticJson(record10[key])}`).join(",")}}`;
 }
 function diffRecords(a, b) {
   const ak = new Set(Object.keys(a));
@@ -52404,7 +52404,7 @@ function validatePathData(d) {
     SEP_RE.exec(d);
     i = SEP_RE.lastIndex;
   };
-  const number3 = () => {
+  const number4 = () => {
     skipSep();
     NUM_RE.lastIndex = i;
     const m2 = NUM_RE.exec(d);
@@ -52453,7 +52453,7 @@ function validatePathData(d) {
       if (!NUM_START.test(d[i])) break;
       for (let a = 0; a < arity2; a++) {
         const isFlag = C === "A" && (a === 3 || a === 4);
-        const v = isFlag ? flag() : number3();
+        const v = isFlag ? flag() : number4();
         if (isFail(v)) return v;
         if (v === null) {
           return fail2("invalid-path", `geom: "${letter}" has an incomplete argument group at offset ${i}`);
@@ -70960,22 +70960,22 @@ function creditFor(source) {
   pieces.push(changes.length ? `changes: ${changes.join(", ")}` : "unchanged");
   return `${pieces.join(", ")}.`;
 }
-function sourceFrom(record9) {
-  const rights = record9.rights;
+function sourceFrom(record10) {
+  const rights = record10.rights;
   const partial = {
-    title: record9.title,
+    title: record10.title,
     creator: rights?.creator,
     licence: rights?.license,
     licenceUrl: rights?.licenseUrl,
-    sourceUrl: rights?.sourceUrl ?? record9.data?.url,
+    sourceUrl: rights?.sourceUrl ?? record10.data?.url,
     modifications: rights?.modifications ? [...rights.modifications] : [],
     // A credentialed ingredient carries its own signed manifest, so the source
     // spoke for itself. A source ingredient was described by this exporter, and
     // saying so is the difference between a record and a signature.
-    assertedBy: record9.credentialed ? "source" : "exporter",
+    assertedBy: record10.credentialed ? "source" : "exporter",
     carried: {
       ingredient: true,
-      credentialed: record9.credentialed,
+      credentialed: record10.credentialed,
       // Nothing in a credential says whether a readable credit travels beside
       // the file, so this stays unknown rather than being assumed either way.
       readableCredit: "unknown"
@@ -71026,16 +71026,16 @@ function summaryFor2(report, recorded, credentialed) {
 function evaluateReuse(report, context, options2 = {}) {
   const works = [];
   const uses = [];
-  for (const [index2, record9] of (report.ingredients ?? []).entries()) {
-    const rights = record9.rights;
-    const id2 = record9.instanceId ?? rights?.sourceUrl ?? record9.data?.url ?? `ingredient-${index2 + 1}`;
+  for (const [index2, record10] of (report.ingredients ?? []).entries()) {
+    const rights = record10.rights;
+    const id2 = record10.instanceId ?? rights?.sourceUrl ?? record10.data?.url ?? `ingredient-${index2 + 1}`;
     const work = {
       id: id2,
       creators: rights?.creator ? [{ name: rights.creator, role: "creator" }] : [],
-      rights: rights?.license ? [{ declaration: rights.license, url: rights.licenseUrl, assertedBy: record9.credentialed ? "source" : "exporter", evidence: "native-metadata", status: "parsed" }] : [{ declaration: "", assertedBy: "exporter", evidence: "native-metadata", status: "missing" }]
+      rights: rights?.license ? [{ declaration: rights.license, url: rights.licenseUrl, assertedBy: record10.credentialed ? "source" : "exporter", evidence: "native-metadata", status: "parsed" }] : [{ declaration: "", assertedBy: "exporter", evidence: "native-metadata", status: "missing" }]
     };
-    if (record9.title) work.title = record9.title;
-    const sourceUrl = rights?.sourceUrl ?? record9.data?.url;
+    if (record10.title) work.title = record10.title;
+    const sourceUrl = rights?.sourceUrl ?? record10.data?.url;
     if (sourceUrl) work.sourceUrl = sourceUrl;
     if (rights?.revision) work.revision = rights.revision;
     if (rights?.sourceHash) work.sourceHash = rights.sourceHash;
@@ -85996,15 +85996,15 @@ var init_fs_token = __esm({
 function sessionVersionStamp() {
   return { formatVersion: SESSION_FORMAT_VERSION, engineVersion: ENGINE_VERSION };
 }
-function migrateSessionRecord(record9, log) {
-  if (!record9 || typeof record9 !== "object") return null;
-  const data = record9.data;
+function migrateSessionRecord(record10, log) {
+  if (!record10 || typeof record10 !== "object") return null;
+  const data = record10.data;
   if (data == null || typeof data !== "object") return null;
-  const raw = record9.formatVersion;
+  const raw = record10.formatVersion;
   const fromVersion = typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
   if (fromVersion > SESSION_READER_VERSION) {
     log?.("warn", "saved session was written by a newer version of the app - reading it as-is", {
-      slot: record9.slot,
+      slot: record10.slot,
       recordFormatVersion: fromVersion,
       readerFormatVersion: SESSION_READER_VERSION
     });
@@ -88528,11 +88528,11 @@ function learningLinkAllowed(href) {
 }
 function validLearningRichText(value) {
   let count2 = 0, size = 0;
-  const record9 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+  const record10 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
   const keys2 = (v, allowed) => Object.keys(v).every((k) => allowed.includes(k));
   const blocks = ["paragraph", "heading", "bulletList", "orderedList", "blockquote"];
   const visit = (v, parent, depth) => {
-    if (!record9(v) || ++count2 > 1e4 || depth > 12 || !keys2(v, ["type", "attrs", "content", "marks", "text"]))
+    if (!record10(v) || ++count2 > 1e4 || depth > 12 || !keys2(v, ["type", "attrs", "content", "marks", "text"]))
       return false;
     const type = String(v.type);
     const allowed = parent === "" ? ["doc"] : ["paragraph", "heading"].includes(parent) ? ["text", "hardBreak"] : ["bulletList", "orderedList"].includes(parent) ? ["listItem"] : blocks;
@@ -88544,7 +88544,7 @@ function validLearningRichText(value) {
       if (size > 1e5) return false;
     }
     if (v.attrs !== void 0) {
-      if (!record9(v.attrs)) return false;
+      if (!record10(v.attrs)) return false;
       if (type === "heading") {
         if (!keys2(v.attrs, ["level"]) || v.attrs.level !== 2 && v.attrs.level !== 3) return false;
       } else if (type === "orderedList") {
@@ -88557,16 +88557,16 @@ function validLearningRichText(value) {
         return false;
       const seen = /* @__PURE__ */ new Set();
       for (const mark of v.marks) {
-        if (!record9(mark) || !keys2(mark, ["type", "attrs"]) || !["bold", "italic", "underline", "code", "link"].includes(String(mark.type)) || seen.has(mark.type))
+        if (!record10(mark) || !keys2(mark, ["type", "attrs"]) || !["bold", "italic", "underline", "code", "link"].includes(String(mark.type)) || seen.has(mark.type))
           return false;
         seen.add(mark.type);
         if (mark.type === "link") {
-          if (!record9(mark.attrs) || !keys2(mark.attrs, ["href", "target", "rel", "class"]) || typeof mark.attrs.href !== "string" || !learningLinkAllowed(mark.attrs.href))
+          if (!record10(mark.attrs) || !keys2(mark.attrs, ["href", "target", "rel", "class"]) || typeof mark.attrs.href !== "string" || !learningLinkAllowed(mark.attrs.href))
             return false;
           for (const k of ["target", "rel", "class"])
             if (mark.attrs[k] !== void 0 && mark.attrs[k] !== null && typeof mark.attrs[k] !== "string")
               return false;
-        } else if (mark.attrs !== void 0 && (!record9(mark.attrs) || Object.keys(mark.attrs).length))
+        } else if (mark.attrs !== void 0 && (!record10(mark.attrs) || Object.keys(mark.attrs).length))
           return false;
       }
     }
@@ -89553,6 +89553,10 @@ var init_studio3d_arrangement = __esm({
 function record6(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
+function number2(value, fallback, min, max) {
+  const n2 = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
+  return Number.isFinite(n2) ? Math.max(min, Math.min(max, n2)) : fallback;
+}
 function items(values) {
   if (!Array.isArray(values.subjects) || !values.subjects.length)
     throw new Error("Add at least one item to the collection.");
@@ -89560,13 +89564,38 @@ function items(values) {
     throw new Error(`Use up to ${STUDIO_COLLECTION_LIMIT} items in one collection.`);
   return values.subjects.map(record6);
 }
+function subjectIds(rows2) {
+  const taken = /* @__PURE__ */ new Set();
+  return rows2.map((row, index2) => {
+    const id2 = studioObjectId(row, index2, /* @__PURE__ */ new Set());
+    if (taken.has(id2))
+      throw new Error(`Items ${[...taken].indexOf(id2) + 1} and ${index2 + 1} share the id "${id2}".`);
+    taken.add(id2);
+    return id2;
+  });
+}
+function studioSubjectIds(values) {
+  return subjectIds(items(values));
+}
 function studioActiveIndex(values) {
   const rows2 = items(values);
   const n2 = Number(values.activeSubject);
   return Math.max(0, Math.min(rows2.length - 1, Number.isFinite(n2) ? Math.trunc(n2) - 1 : 0));
 }
 function itemValues(values, item) {
-  const kind = item.kind === "model" ? "model" : item.kind === "primitive" ? "primitive" : "artwork";
+  const kind = item.kind === "model" ? "model" : item.kind === "primitive" ? "primitive" : item.kind === "text" ? "text" : "artwork";
+  const scale = number2(item.scale, 1, 0.5, 2);
+  const offsetX = number2(item.offsetX, 0, -5, 5), offsetY = number2(item.offsetY, 0, -5, 5);
+  const transform2 = record6(values.transform), position = record6(values.position);
+  const corrections = {};
+  if (scale !== 1)
+    corrections.transform = { ...transform2, scale: number2(transform2.scale, 1, 0.1, 5) * scale };
+  if (offsetX || offsetY)
+    corrections.position = {
+      x: number2(position.x, 0, -5, 5) + offsetX,
+      y: number2(position.y, 0.1, -5, 5) + offsetY,
+      z: number2(position.z, 0, -5, 5)
+    };
   const camera = record6(values.camera);
   const framing = { ...camera };
   if (enabled(item.ownFraming))
@@ -89583,6 +89612,13 @@ function itemValues(values, item) {
     artwork: kind === "artwork" ? item.asset : void 0,
     modelAsset: kind === "model" ? item.asset : void 0,
     modelFormat: item.modelFormat || "auto",
+    // A Words item sets its own line in the shared typesetting; its own font, when it
+    // names one instead of inheriting, is the only type setting an item may differ in.
+    ...kind === "text" ? {
+      words: item.text,
+      ...item.font && item.font !== "inherit" ? { wordFont: item.font } : {}
+    } : {},
+    ...corrections,
     camera: framing,
     focusDistance: enabled(item.ownFocus) ? item.focusDistance : values.focusDistance,
     materialSlotA: item.roleA || "",
@@ -89594,47 +89630,47 @@ function studioActiveValues(values) {
   return itemValues(values, items(values)[studioActiveIndex(values)]);
 }
 function studioCollectionRows(values) {
-  return items(values).map((item, index2) => {
+  const rows2 = items(values);
+  const ids2 = subjectIds(rows2);
+  return rows2.map((item, index2) => {
     const name = String(item.name || `Item ${index2 + 1}`).trim().slice(0, 120) || `Item ${index2 + 1}`;
     const slug3 = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70) || "item";
     return {
       index: index2,
+      id: ids2[index2],
       name,
+      // Numbered by position, so a delivered set reads in the order the sheet shows.
       filename: `${String(index2 + 1).padStart(2, "0")}-${slug3}.png`,
       ownFraming: enabled(item.ownFraming),
       values: itemValues(values, item)
     };
   });
 }
+function studioSubjectEdit(values, id2, patch) {
+  const rows2 = items(values);
+  const at = subjectIds(rows2).indexOf(id2);
+  if (at < 0) throw new Error(`No item in this collection has the id "${id2}".`);
+  return { id: "subjects", value: rows2.map((item, i) => i === at ? { ...item, ...patch } : item) };
+}
 function studioCameraEdit(values, camera) {
   if (values.source !== "collection") return { id: "camera", value: camera };
-  const index2 = studioActiveIndex(values);
-  return {
-    id: "subjects",
-    value: items(values).map(
-      (item, i) => i === index2 ? {
-        ...item,
-        ownFraming: true,
-        azimuth: camera.azimuth,
-        elevation: camera.elevation,
-        fov: camera.fov,
-        zoom: camera.zoom,
-        panX: camera.panX ?? 0,
-        panY: camera.panY ?? 0,
-        panZ: camera.panZ ?? 0
-      } : item
-    )
-  };
+  return studioSubjectEdit(values, studioSubjectIds(values)[studioActiveIndex(values)], {
+    ownFraming: true,
+    azimuth: camera.azimuth,
+    elevation: camera.elevation,
+    fov: camera.fov,
+    zoom: camera.zoom,
+    panX: camera.panX ?? 0,
+    panY: camera.panY ?? 0,
+    panZ: camera.panZ ?? 0
+  });
 }
 function studioFocusEdit(values, distance2) {
   if (values.source !== "collection") return { id: "focusDistance", value: distance2 };
-  const index2 = studioActiveIndex(values);
-  return {
-    id: "subjects",
-    value: items(values).map(
-      (item, i) => i === index2 ? { ...item, ownFocus: true, focusDistance: distance2 } : item
-    )
-  };
+  return studioSubjectEdit(values, studioSubjectIds(values)[studioActiveIndex(values)], {
+    ownFocus: true,
+    focusDistance: distance2
+  });
 }
 function studioCollectionSize(values) {
   const size = record6(values.collectionSize);
@@ -89646,12 +89682,21 @@ function studioCollectionSize(values) {
   if (width * height > 12e6) throw new Error("Keep each image below 12 million pixels.");
   return { width, height };
 }
-var STUDIO_COLLECTION_LIMIT, enabled;
+function studioSheetSize(size) {
+  const scale = Math.min(1, STUDIO_SHEET_PIXELS / Math.max(size.width, size.height));
+  return {
+    width: Math.max(1, Math.round(size.width * scale)),
+    height: Math.max(1, Math.round(size.height * scale))
+  };
+}
+var STUDIO_COLLECTION_LIMIT, enabled, STUDIO_SHEET_PIXELS;
 var init_studio3d_collection = __esm({
   "engine/src/studio3d-collection.ts"() {
     "use strict";
+    init_studio3d_arrangement();
     STUDIO_COLLECTION_LIMIT = 24;
     enabled = (value) => value === true || value === "true" || value === 1;
+    STUDIO_SHEET_PIXELS = 512;
   }
 });
 
@@ -89717,7 +89762,7 @@ var init_studio3d_lights = __esm({
 function record7(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
-function number2(value, fallback, min, max) {
+function number3(value, fallback, min, max) {
   const n2 = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
   return Number.isFinite(n2) ? Math.max(min, Math.min(max, n2)) : fallback;
 }
@@ -89734,7 +89779,7 @@ function enabled2(value, fallback = false) {
 }
 function vector(value, keys2, defaults, limit) {
   const v = record7(value);
-  return keys2.map((key, i) => number2(v[key], defaults[i], -limit, limit));
+  return keys2.map((key, i) => number3(v[key], defaults[i], -limit, limit));
 }
 function asset(value) {
   const v = record7(value);
@@ -89786,9 +89831,9 @@ function textSettings(v) {
   return {
     text: "",
     font: family || "sans",
-    weight: Math.round(number2(v.wordWeight, 700, 100, 900) / 100) * 100,
-    tracking: number2(v.wordTracking, 0, -0.2, 1),
-    lineHeight: number2(v.wordLineHeight, 1.1, 0.7, 2),
+    weight: Math.round(number3(v.wordWeight, 700, 100, 900) / 100) * 100,
+    tracking: number3(v.wordTracking, 0, -0.2, 1),
+    lineHeight: number3(v.wordLineHeight, 1.1, 0.7, 2),
     align: choice2(v.wordAlign, ["left", "center", "right"], "center")
   };
 }
@@ -89835,17 +89880,17 @@ function arrangementObjects(v) {
       ...pending ? { pending: true } : {},
       transform: {
         rotation: [
-          number2(row.rotX, 0, -360, 360),
-          number2(row.rotY, 0, -360, 360),
-          number2(row.rotZ, 0, -360, 360)
+          number3(row.rotX, 0, -360, 360),
+          number3(row.rotY, 0, -360, 360),
+          number3(row.rotZ, 0, -360, 360)
         ],
         position: [
-          number2(row.x, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT),
-          number2(row.y, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT),
-          number2(row.z, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT)
+          number3(row.x, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT),
+          number3(row.y, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT),
+          number3(row.z, 0, -STUDIO_ARRANGEMENT_EXTENT, STUDIO_ARRANGEMENT_EXTENT)
         ],
         // A row without a scale is a newcomer to a group; 0.6 is the manifest default.
-        scale: number2(row.scale, 0.6, 0.1, 5)
+        scale: number3(row.scale, 0.6, 0.1, 5)
       },
       grounded: enabled2(row.grounded, true),
       visible: enabled2(row.visible, true),
@@ -89878,9 +89923,9 @@ function buildStudioScene(input) {
     ["soft", "dramatic", "electric", "warm", "custom"],
     "dramatic"
   );
-  const drama = number2(v.drama, 0.7, 0, 1), light = record7(v.lightLevels);
-  const intensity = number2(light.key, 2.5, 0, 20), fill = number2(light.fill, 0.7, 0, 20), rim = number2(light.rim, 3, 0, 20);
-  const softness = number2(v.softness, 1.5, 0, 5);
+  const drama = number3(v.drama, 0.7, 0, 1), light = record7(v.lightLevels);
+  const intensity = number3(light.key, 2.5, 0, 20), fill = number3(light.fill, 0.7, 0, 20), rim = number3(light.rim, 3, 0, 20);
+  const softness = number3(v.softness, 1.5, 0, 5);
   const placed2 = (role) => vector(v[`${role}Position`], ["x", "y", "z"], STUDIO_PRESET_LIGHT_POSITIONS[role], 30);
   const keyPosition = placed2("key");
   let lights = [
@@ -89932,9 +89977,9 @@ function buildStudioScene(input) {
         id: `light-${i + 1}`,
         kind: kind2,
         color: color(l.color, keyColor),
-        intensity: number2(l.intensity, 2, 0, 50),
-        position: [number2(l.x, -3, -30, 30), number2(l.y, 6, -30, 30), number2(l.z, 4, -30, 30)],
-        size: number2(l.size, 1.5, 0.01, 10),
+        intensity: number3(l.intensity, 2, 0, 50),
+        position: [number3(l.x, -3, -30, 30), number3(l.y, 6, -30, 30), number3(l.z, 4, -30, 30)],
+        size: number3(l.size, 1.5, 0.01, 10),
         shadows: kind2 !== "area" && enabled2(l.shadows, true)
       };
     });
@@ -89964,9 +90009,9 @@ function buildStudioScene(input) {
     return {
       slot,
       color: color(m2.color, primary),
-      roughness: number2(m2.roughness, 0.4, 0.04, 1),
-      metalness: number2(m2.metalness, 0, 0, 1),
-      clearcoat: number2(m2.clearcoat, 0.2, 0, 1),
+      roughness: number3(m2.roughness, 0.4, 0.04, 1),
+      metalness: number3(m2.metalness, 0, 0, 1),
+      clearcoat: number3(m2.clearcoat, 0.2, 0, 1),
       ...finish2 && finish2 !== "satin" ? { finish: finish2 } : {}
     };
   });
@@ -89974,30 +90019,33 @@ function buildStudioScene(input) {
     version: 1,
     source,
     shape: {
-      depth: number2(shape.depth, 0.25, 0.01, 2),
-      bevel: number2(shape.bevel, 0.025, 0, 0.15),
-      smoothness: Math.round(number2(shape.smoothness, 24, 8, 64))
+      depth: number3(shape.depth, 0.25, 0.01, 2),
+      bevel: number3(shape.bevel, 0.025, 0, 0.15),
+      smoothness: Math.round(number3(shape.smoothness, 24, 8, 64)),
+      // count keeps Smoothness as the number of chords per curve, as every earlier
+      // release did; auto asks the shell to read the count off the output size.
+      detail: choice2(v.curveDetail, ["count", "auto"], "count")
     },
     transform: arrangement ? objects[0].transform : {
       // Words read best square to the camera; the studio's tilted default pose is
       // for objects. A wordmark can still take the scene pose on request.
       rotation: source.kind === "text" && choice2(v.wordPose, ["front", "scene"], "front") === "front" ? [0, 0, 0] : vector(v.rotation, ["x", "y", "z"], [-6, -16, -7], 360),
       position: vector(v.position, ["x", "y", "z"], [0, 0.1, 0], 10),
-      scale: number2(transform2.scale, 1, 0.1, 5)
+      scale: number3(transform2.scale, 1, 0.1, 5)
     },
     camera: {
       projection,
-      azimuth: number2(camera.azimuth, 25, -180, 180),
-      elevation: number2(camera.elevation, 14, -60, 80),
-      fov: number2(camera.fov, 29, 15, 80),
-      zoom: number2(camera.zoom, 1, 0.05, 3),
+      azimuth: number3(camera.azimuth, 25, -180, 180),
+      elevation: number3(camera.elevation, 14, -60, 80),
+      fov: number3(camera.fov, 29, 15, 80),
+      zoom: number3(camera.zoom, 1, 0.05, 3),
       target: [
-        number2(target.x, 0, -5, 5) + number2(camera.panX, 0, -20, 20),
-        number2(target.y, 1.6, -5, 10) + number2(camera.panY, 0, -20, 20),
-        number2(target.z, 0, -5, 5) + number2(camera.panZ, 0, -20, 20)
+        number3(target.x, 0, -5, 5) + number3(camera.panX, 0, -20, 20),
+        number3(target.y, 1.6, -5, 10) + number3(camera.panY, 0, -20, 20),
+        number3(target.z, 0, -5, 5) + number3(camera.panZ, 0, -20, 20)
       ],
-      focus: number2(v.focusDistance, 0, 0, 500),
-      aperture: projection === "perspective" && v.depthOfField === true ? number2(v.aperture, 0.12, 0.01, 0.5) : 0
+      focus: number3(v.focusDistance, 0, 0, 500),
+      aperture: projection === "perspective" && v.depthOfField === true ? number3(v.aperture, 0.12, 0.01, 0.5) : 0
     },
     materials: {
       mode: choice2(v.materialMode, ["source", "pair", "custom"], "source"),
@@ -90010,7 +90058,7 @@ function buildStudioScene(input) {
         a: String(v.materialSlotA || "").trim(),
         b: String(v.materialSlotB || "").trim()
       },
-      glow: number2(v.glow, 0.45, 0, 1),
+      glow: number3(v.glow, 0.45, 0, 1),
       ...enabled2(v.surfaceFinishes) ? {
         surfaces: Object.fromEntries(
           ["a", "b"].map((role) => [
@@ -90031,50 +90079,50 @@ function buildStudioScene(input) {
     },
     lights,
     environment: {
-      intensity: number2(v.environmentIntensity, 0.4, 0, 3),
-      rotation: number2(v.environmentRotation, 0, -180, 180),
+      intensity: number3(v.environmentIntensity, 0.4, 0, 3),
+      rotation: number3(v.environmentRotation, 0, -180, 180),
       kind: environmentKind,
       url: environmentKind === "image" ? environment.url : "",
       id: environmentKind === "image" ? environment.id : "",
       background: enabled2(v.environmentBackground),
-      blur: number2(v.environmentBlur, 0.3, 0, 1)
+      blur: number3(v.environmentBlur, 0.3, 0, 1)
     },
     stage: {
       output: choice2(v.outputMode, ["scene", "object-shadow", "object"], "scene"),
       floor: choice2(v.floor, ["shadow", "matte", "cove"], "shadow"),
       floorColor: color(v.floorColor, secondary),
-      shadowOpacity: number2(v.shadowOpacity, 0.4, 0, 1),
+      shadowOpacity: number3(v.shadowOpacity, 0.4, 0, 1),
       background,
       background2: color(v.background2, primary),
       backdrop: choice2(v.backdrop, ["solid", "gradient", "image"], "gradient"),
       backdropUrl: backdrop.url,
       backdropId: backdrop.id,
-      backdropStrength: number2(v.backdropStrength, 0.5, 0, 1),
+      backdropStrength: number3(v.backdropStrength, 0.5, 0, 1),
       pedestal: v.pedestal === true,
       atmosphere: v.atmosphere === true,
       atmosphereForms: choice2(v.atmosphereForms, ["spheres", "copies"], "copies"),
-      atmosphereSpread: number2(v.atmosphereSpread, 0.5, 0, 1),
-      atmosphereCount: Math.round(number2(v.atmosphereCount, 7, 1, 12)),
-      seed: Math.round(number2(v.seed, 1, 1, 99999)),
+      atmosphereSpread: number3(v.atmosphereSpread, 0.5, 0, 1),
+      atmosphereCount: Math.round(number3(v.atmosphereCount, 7, 1, 12)),
+      seed: Math.round(number3(v.seed, 1, 1, 99999)),
       // The hemisphere fill the stage has always used, declared so the tie to the
       // background is visible in the recipe.
       fill: { sky: primary, ground: background, intensity: 0.12 }
     },
-    exposure: number2(v.exposure, 1.1, 0.1, 4),
+    exposure: number3(v.exposure, 1.1, 0.1, 4),
     quality: {
       previewSamples: 8,
-      exportSamples: Math.round(number2(v.samples, 64, 8, 256)),
+      exportSamples: Math.round(number3(v.samples, 64, 8, 256)),
       // Motion hides sampling noise a still would show, and a clip is hundreds of frames.
-      clipSamples: Math.round(number2(v.videoSamples, 16, 1, 64))
+      clipSamples: Math.round(number3(v.videoSamples, 16, 1, 64))
     },
     motion: {
       kind: choice2(v.motion, ["still", "turntable"], "still"),
-      seconds: number2(v.duration, 5, 1, 30),
-      degrees: number2(v.turnDegrees, 360, -720, 720)
+      seconds: number3(v.duration, 5, 1, 30),
+      degrees: number3(v.turnDegrees, 360, -720, 720)
     },
     lightAnimation: {
       kind: choice2(v.lightMotion, ["still", "orbit", "breathe"], "still"),
-      amount: number2(v.lightMotionAmount, 0.35, 0, 1)
+      amount: number3(v.lightMotionAmount, 0.35, 0, 1)
     },
     ...arrangement ? { objects, activeObject: studioActiveObject(v) } : {},
     cameraMotion: {
@@ -90092,17 +90140,17 @@ function cameraKeys(v) {
   return rows2.map((row, i) => {
     const k = record7(row);
     return {
-      at: number2(k.at, rows2.length > 1 ? i / (rows2.length - 1) * 100 : 0, 0, 100) / 100,
-      azimuth: number2(k.azimuth, 25, -720, 720),
-      elevation: number2(k.elevation, 14, -60, 80),
-      fov: number2(k.fov, 29, 15, 80),
-      zoom: number2(k.zoom, 1, 0.05, 3),
+      at: number3(k.at, rows2.length > 1 ? i / (rows2.length - 1) * 100 : 0, 0, 100) / 100,
+      azimuth: number3(k.azimuth, 25, -720, 720),
+      elevation: number3(k.elevation, 14, -60, 80),
+      fov: number3(k.fov, 29, 15, 80),
+      zoom: number3(k.zoom, 1, 0.05, 3),
       target: [
-        number2(k.panX, 0, -25, 25),
-        number2(k.panY, 1.6, -25, 25),
-        number2(k.panZ, 0, -25, 25)
+        number3(k.panX, 0, -25, 25),
+        number3(k.panY, 1.6, -25, 25),
+        number3(k.panZ, 0, -25, 25)
       ],
-      focus: number2(k.focusDistance, 0, 0, 500)
+      focus: number3(k.focusDistance, 0, 0, 500)
     };
   });
 }
@@ -90148,6 +90196,226 @@ var init_studio3d = __esm({
       "iridescent"
     ];
     FINISHES = STUDIO_FINISHES;
+  }
+});
+
+// engine/src/studio3d-look.ts
+function studioKeyInput(key) {
+  const dot = key.indexOf(".");
+  return dot < 0 ? key : key.slice(0, dot);
+}
+function studioKeyField(key) {
+  const dot = key.indexOf(".");
+  return dot < 0 ? null : key.slice(dot + 1);
+}
+function record8(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function clone4(value) {
+  return value === void 0 || value === null || typeof value !== "object" ? value : JSON.parse(JSON.stringify(value));
+}
+function studioLookOf(values) {
+  const look2 = {};
+  for (const key of STUDIO_LOOK_KEYS) {
+    const id2 = studioKeyInput(key);
+    const field2 = studioKeyField(key);
+    if (field2 === null) {
+      if (values[id2] !== void 0) look2[id2] = clone4(values[id2]);
+      continue;
+    }
+    const from = record8(values[id2]);
+    if (from[field2] === void 0) continue;
+    const into = record8(look2[id2]);
+    into[field2] = clone4(from[field2]);
+    look2[id2] = into;
+  }
+  return look2;
+}
+function studioApplyLook(values, look2, overrides = []) {
+  const kept = new Set(overrides.map(studioKeyInput));
+  const next = { ...values };
+  for (const key of STUDIO_LOOK_KEYS) {
+    const id2 = studioKeyInput(key);
+    if (kept.has(id2)) continue;
+    const field2 = studioKeyField(key);
+    if (field2 === null) {
+      if (look2[id2] !== void 0) next[id2] = clone4(look2[id2]);
+      continue;
+    }
+    const from = record8(look2[id2]);
+    if (from[field2] === void 0) continue;
+    next[id2] = { ...record8(next[id2]), [field2]: clone4(from[field2]) };
+  }
+  return next;
+}
+function studioParseRef(value) {
+  const text4 = String(value ?? "").trim();
+  const at = text4.lastIndexOf("@");
+  if (at <= 0 || at === text4.length - 1) return null;
+  const id2 = text4.slice(0, at);
+  const version = Number(text4.slice(at + 1));
+  if (!Number.isInteger(version) || version < 1) return null;
+  return { id: id2, version };
+}
+function studioFormatRef(ref) {
+  return `${ref.id}@${ref.version}`;
+}
+function studioParseOverrides(value) {
+  let parsed = value;
+  if (typeof value === "string") {
+    const text4 = value.trim();
+    if (!text4) return [];
+    try {
+      parsed = JSON.parse(text4);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(parsed)) return [];
+  const ids2 = /* @__PURE__ */ new Set();
+  for (const entry2 of parsed) {
+    const id2 = studioKeyInput(String(entry2 ?? "").trim());
+    if (STUDIO_LOOK_INPUT_IDS.includes(id2)) ids2.add(id2);
+  }
+  return [...ids2].sort();
+}
+function studioFormatOverrides(ids2) {
+  const clean2 = studioParseOverrides(ids2);
+  return clean2.length ? JSON.stringify(clean2) : "";
+}
+function studioRecordOverride(overrides, changedId) {
+  const ids2 = studioParseOverrides(overrides);
+  const id2 = studioKeyInput(String(changedId ?? ""));
+  if (!STUDIO_LOOK_INPUT_IDS.includes(id2) || ids2.includes(id2)) return ids2;
+  return [...ids2, id2].sort();
+}
+var STUDIO_LOOK_KEYS, STUDIO_INSTANCE_KEYS, STUDIO_LOOK_INPUT_IDS;
+var init_studio3d_look = __esm({
+  "engine/src/studio3d-look.ts"() {
+    "use strict";
+    STUDIO_LOOK_KEYS = [
+      // Look
+      "studio",
+      "materialMode",
+      "colorA",
+      "colorB",
+      "finishA",
+      "finishB",
+      "glow",
+      "surfaceFinishes",
+      "faceFinishA",
+      "bevelFinishA",
+      "sideFinishA",
+      "faceFinishB",
+      "bevelFinishB",
+      "sideFinishB",
+      "drama",
+      "softness",
+      "exposure",
+      "lightMotion",
+      "lightMotionAmount",
+      // Shape: how the studio builds a flat mark into a solid. One depth and bevel is
+      // shared by every object in an arrangement, which is what makes it studio-wide.
+      "shape",
+      "curveDetail",
+      // Camera language, without the framing.
+      "projection",
+      "camera.fov",
+      // Lens character. The focus distance depends on the subject, so it stays below.
+      "depthOfField",
+      "aperture",
+      // Depth forms sit in front of and behind the subject, as part of the set.
+      "atmosphere",
+      "atmosphereForms",
+      "atmosphereSpread",
+      "atmosphereCount",
+      "seed",
+      // Stage
+      "backdrop",
+      "background",
+      "background2",
+      "backdropImage",
+      "backdropStrength",
+      "floor",
+      "floorColor",
+      "shadowOpacity",
+      "pedestal",
+      // Lighting rig and environment
+      "keyColor",
+      "fillColor",
+      "rimColor",
+      "coolColor",
+      "warmColor",
+      "lightLevels",
+      "keyPosition",
+      "fillPosition",
+      "rimPosition",
+      "environment",
+      "environmentImage",
+      "environmentBackground",
+      "environmentBlur",
+      "environmentIntensity",
+      "environmentRotation",
+      "lights",
+      // Quality
+      "samples",
+      "videoSamples",
+      // Motion and the camera path
+      "motion",
+      "cameraMotion",
+      "cameraKeys",
+      "cameraEase",
+      "cameraLoop",
+      "duration",
+      "turnDegrees"
+    ];
+    STUDIO_INSTANCE_KEYS = [
+      // The subject
+      "controls",
+      "source",
+      "primitive",
+      "artwork",
+      "modelAsset",
+      "modelFormat",
+      "words",
+      "wordFont",
+      "wordWeight",
+      "wordPose",
+      "wordTracking",
+      "wordLineHeight",
+      "wordAlign",
+      // The collection and the arrangement
+      "collectionName",
+      "activeSubject",
+      "subjects",
+      "activeObject",
+      "objects",
+      // Framing
+      "rotation",
+      "position",
+      "transform",
+      "target",
+      "camera.azimuth",
+      "camera.elevation",
+      "camera.zoom",
+      "camera.panX",
+      "camera.panY",
+      "camera.panZ",
+      "focusDistance",
+      // The slots and overrides of this document's own model
+      "materials",
+      "materialSlotA",
+      "materialSlotB",
+      // Delivery
+      "outputMode",
+      "collectionSize",
+      // The link itself
+      "studioRef",
+      "studioOverrides"
+    ];
+    STUDIO_LOOK_INPUT_IDS = [
+      ...new Set(STUDIO_LOOK_KEYS.map(studioKeyInput))
+    ];
   }
 });
 
@@ -90413,10 +90681,14 @@ __export(src_exports, {
   STUDIO_CAMERA_KEY_LIMIT: () => STUDIO_CAMERA_KEY_LIMIT,
   STUDIO_COLLECTION_LIMIT: () => STUDIO_COLLECTION_LIMIT,
   STUDIO_FINISHES: () => STUDIO_FINISHES,
+  STUDIO_INSTANCE_KEYS: () => STUDIO_INSTANCE_KEYS,
   STUDIO_KEY_CARD_OFFSET: () => STUDIO_KEY_CARD_OFFSET,
   STUDIO_LIGHT_RANGE: () => STUDIO_LIGHT_RANGE,
   STUDIO_LIGHT_TARGET: () => STUDIO_LIGHT_TARGET,
+  STUDIO_LOOK_INPUT_IDS: () => STUDIO_LOOK_INPUT_IDS,
+  STUDIO_LOOK_KEYS: () => STUDIO_LOOK_KEYS,
   STUDIO_PRESET_LIGHT_POSITIONS: () => STUDIO_PRESET_LIGHT_POSITIONS,
+  STUDIO_SHEET_PIXELS: () => STUDIO_SHEET_PIXELS,
   SVG_COLORS_MAX_CHARS: () => SVG_COLORS_MAX_CHARS,
   SVG_COLORS_MAX_MATCHES: () => SVG_COLORS_MAX_MATCHES,
   SVG_CUSTGEOM_MAX_ATTR_CHARS: () => SVG_CUSTGEOM_MAX_ATTR_CHARS,
@@ -91254,6 +91526,7 @@ __export(src_exports, {
   studioActiveValues: () => studioActiveValues,
   studioAddCameraKey: () => studioAddCameraKey,
   studioAnimated: () => studioAnimated,
+  studioApplyLook: () => studioApplyLook,
   studioArrangementPivot: () => studioArrangementPivot,
   studioArrangementRows: () => studioArrangementRows,
   studioCameraEdit: () => studioCameraEdit,
@@ -91265,18 +91538,29 @@ __export(src_exports, {
   studioCollectionSize: () => studioCollectionSize,
   studioFinish: () => studioFinish,
   studioFocusEdit: () => studioFocusEdit,
+  studioFormatOverrides: () => studioFormatOverrides,
+  studioFormatRef: () => studioFormatRef,
+  studioKeyField: () => studioKeyField,
+  studioKeyInput: () => studioKeyInput,
   studioLightEdit: () => studioLightEdit,
   studioLightMotion: () => studioLightMotion,
+  studioLookOf: () => studioLookOf,
   studioObjectEdit: () => studioObjectEdit,
   studioObjectId: () => studioObjectId,
   studioObjectName: () => studioObjectName,
   studioObjectSelect: () => studioObjectSelect,
   studioOrbitLight: () => studioOrbitLight,
   studioOverlaps: () => studioOverlaps,
+  studioParseOverrides: () => studioParseOverrides,
+  studioParseRef: () => studioParseRef,
   studioPlaceableLights: () => studioPlaceableLights,
+  studioRecordOverride: () => studioRecordOverride,
   studioRestPose: () => studioRestPose,
   studioScaleLightDistance: () => studioScaleLightDistance,
   studioSceneObjects: () => studioSceneObjects,
+  studioSheetSize: () => studioSheetSize,
+  studioSubjectEdit: () => studioSubjectEdit,
+  studioSubjectIds: () => studioSubjectIds,
   studioTime: () => studioTime,
   subCubic: () => subCubic,
   subPathsFromPath: () => subPathsFromPath,
@@ -91593,6 +91877,7 @@ var init_src2 = __esm({
     init_studio3d_camera_path();
     init_studio3d_lights();
     init_studio3d_arrangement();
+    init_studio3d_look();
   }
 });
 
@@ -92036,10 +92321,10 @@ function withMeta(schema, item, extraDesc) {
 }
 function numberField(f) {
   const declaredDefault = f.default;
-  const number3 = { type: "number" };
-  if (f.min !== void 0) number3["minimum"] = f.min;
-  if (f.max !== void 0) number3["maximum"] = f.max;
-  const s = declaredDefault === "" ? { anyOf: [number3, { const: "" }] } : number3;
+  const number4 = { type: "number" };
+  if (f.min !== void 0) number4["minimum"] = f.min;
+  if (f.max !== void 0) number4["maximum"] = f.max;
+  const s = declaredDefault === "" ? { anyOf: [number4, { const: "" }] } : number4;
   if (declaredDefault !== void 0) s["default"] = declaredDefault;
   const desc = describe(f);
   if (desc) s["description"] = desc;
@@ -94279,26 +94564,26 @@ __export(emoji_style_exports, {
   withEmojiStyle: () => withEmojiStyle
 });
 function readEmojiStyle(doc) {
-  if (!record8(doc)) return { status: "invalid", issue: { code: "invalid-style", message: "A design token document must be an object." } };
+  if (!record9(doc)) return { status: "invalid", issue: { code: "invalid-style", message: "A design token document must be an object." } };
   if (!Object.hasOwn(doc, "$extensions")) return { status: "unselected" };
-  if (!record8(doc.$extensions)) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token extensions." } };
+  if (!record9(doc.$extensions)) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token extensions." } };
   if (!Object.hasOwn(doc.$extensions, TOKEN_EXT)) return { status: "unselected" };
-  if (!record8(doc.$extensions[TOKEN_EXT])) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token vendor extension." } };
+  if (!record9(doc.$extensions[TOKEN_EXT])) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token vendor extension." } };
   const vendor = doc.$extensions[TOKEN_EXT];
   if (!Object.hasOwn(vendor, "emoji")) return { status: "unselected" };
   const issue2 = validateEmojiStyle(vendor.emoji);
   return issue2 ? { status: "invalid", issue: issue2 } : { status: "selected", style: structuredClone(vendor.emoji) };
 }
 function withEmojiStyle(doc, style) {
-  if (!record8(doc)) throw new Error("A design token document must be an object.");
+  if (!record9(doc)) throw new Error("A design token document must be an object.");
   if (style !== null) {
     const issue2 = validateEmojiStyle(style);
     if (issue2) throw new Error(issue2.message);
   }
   const next = structuredClone(doc);
-  if (next.$extensions !== void 0 && !record8(next.$extensions)) throw new Error("Invalid design token extensions.");
+  if (next.$extensions !== void 0 && !record9(next.$extensions)) throw new Error("Invalid design token extensions.");
   const extensions2 = next.$extensions ?? {};
-  if (extensions2[TOKEN_EXT] !== void 0 && !record8(extensions2[TOKEN_EXT])) throw new Error("Invalid design token vendor extension.");
+  if (extensions2[TOKEN_EXT] !== void 0 && !record9(extensions2[TOKEN_EXT])) throw new Error("Invalid design token vendor extension.");
   const vendor = extensions2[TOKEN_EXT] ?? {};
   if (style === null) delete vendor.emoji;
   else vendor.emoji = structuredClone(style);
@@ -94402,14 +94687,14 @@ function emojiParams(style) {
   const unprotected = protect && !protect.skinTones && !protect.flags && !protect.custom;
   return { emoji: `${style.primary.id}@${style.primary.pin.version}`, emojifx: unprotected ? `${base},unprotected` : base };
 }
-var record8, ID_PATTERN, VERSION_PATTERN, NEUTRAL_CHROMA3, PALETTE_MAX, issue, lastTwo, chromaOf2, lightnessOf;
+var record9, ID_PATTERN, VERSION_PATTERN, NEUTRAL_CHROMA3, PALETTE_MAX, issue, lastTwo, chromaOf2, lightnessOf;
 var init_emoji_style = __esm({
   "engine/src/emoji-style.ts"() {
     "use strict";
     init_token_ext();
     init_emoji_pack();
     init_emoji_treatment();
-    record8 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+    record9 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
     ID_PATTERN = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)+$/;
     VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+-]*$/;
     NEUTRAL_CHROMA3 = 0.03;
@@ -99241,7 +99526,7 @@ async function writeSessionRecord(stateDir, write) {
   await mkdir(sessionsDir(stateDir), { recursive: true });
   const prior = await readSessionRecord(stateDir, write.slot);
   const now2 = (/* @__PURE__ */ new Date()).toISOString();
-  const record9 = {
+  const record10 = {
     slot: write.slot,
     toolId: write.toolId ?? write.data.__toolId,
     toolVersion: write.toolVersion ?? write.data.__toolVersion,
@@ -99252,8 +99537,8 @@ async function writeSessionRecord(stateDir, write) {
     createdAt: prior?.createdAt ?? now2,
     ...sessionVersionStamp()
   };
-  await writeFile(sessionFilePath(stateDir, write.slot), JSON.stringify(record9, null, 2));
-  return record9;
+  await writeFile(sessionFilePath(stateDir, write.slot), JSON.stringify(record10, null, 2));
+  return record10;
 }
 async function deleteSessionRecord(stateDir, slot) {
   try {
@@ -99909,9 +100194,9 @@ async function createCliBridge({ profile = {}, dom, networkAllowlist, designVers
         if (format !== "penpot") strip("data-lolly-bind");
       }
       if (format === "html") {
-        const clone4 = node.cloneNode(true);
-        clone4.querySelectorAll("script").forEach((el) => el.remove());
-        return new Blob([clone4.outerHTML], { type: "text/html" });
+        const clone5 = node.cloneNode(true);
+        clone5.querySelectorAll("script").forEach((el) => el.remove());
+        return new Blob([clone5.outerHTML], { type: "text/html" });
       }
       if (format === "svg" || format === "svgz") {
         const svg = rootSvgOf(node);
@@ -101679,9 +101964,9 @@ function rowAt(rows2, id2, path) {
     throw new Error(`${path}: layer "${id2}" ${matches3.length ? "is duplicated" : "does not exist"}.`);
   return matches3[0];
 }
-function anchorOf(record9, path) {
-  const before = record9.beforeId;
-  const after = record9.afterId;
+function anchorOf(record10, path) {
+  const before = record10.beforeId;
+  const after = record10.afterId;
   if (before !== void 0 && (typeof before !== "string" || !before.trim()))
     throw new Error(`${path}/beforeId: a stable layer id is required.`);
   if (after !== void 0 && (typeof after !== "string" || !after.trim()))
@@ -101690,9 +101975,9 @@ function anchorOf(record9, path) {
     throw new Error(`${path}: provide exactly one of beforeId or afterId.`);
   return before !== void 0 ? { side: "before", id: before } : { side: "after", id: after };
 }
-function optionalAnchorOf(record9, path) {
-  if (record9.beforeId === void 0 && record9.afterId === void 0) return null;
-  return anchorOf(record9, path);
+function optionalAnchorOf(record10, path) {
+  if (record10.beforeId === void 0 && record10.afterId === void 0) return null;
+  return anchorOf(record10, path);
 }
 function assertNewDesignId(rows2, value, path) {
   if (typeof value !== "string" || !value.trim())
@@ -101749,17 +102034,17 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
     const operation = value[index2];
     if (!operation || typeof operation !== "object" || Array.isArray(operation))
       throw new Error(`${path}: operation must be an object.`);
-    const record9 = operation;
-    const op = record9.op;
+    const record10 = operation;
+    const op = record10.op;
     if (op !== "add" && op !== "duplicate" && op !== "remove" && op !== "reparent" && op !== "reorder")
       throw new Error(`${path}/op: expected add, duplicate, remove, reparent or reorder.`);
     const allowed = new Set(
       op === "add" ? ["op", "layer", "beforeId", "afterId"] : op === "duplicate" ? ["op", "id", "newId", "childIds", "beforeId", "afterId"] : op === "remove" ? ["op", "id", "cascade"] : op === "reparent" ? ["op", "id", "artboardId", "beforeId", "afterId"] : ["op", "id", "beforeId", "afterId"]
     );
-    const extra = Object.keys(record9).find((key) => !allowed.has(key));
+    const extra = Object.keys(record10).find((key) => !allowed.has(key));
     if (extra) throw new Error(`${path}/${extra}: unknown ${op} field.`);
     if (op === "add") {
-      const valueLayer = record9.layer;
+      const valueLayer = record10.layer;
       if (!valueLayer || typeof valueLayer !== "object" || Array.isArray(valueLayer))
         throw new Error(`${path}/layer: a layer object is required.`);
       const supplied = valueLayer;
@@ -101775,10 +102060,10 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
         h: fieldDefault("h", 200),
         ...supplied
       };
-      const hasAnchor = record9.beforeId !== void 0 || record9.afterId !== void 0;
+      const hasAnchor = record10.beforeId !== void 0 || record10.afterId !== void 0;
       if (!hasAnchor) rows2.push(layer);
       else {
-        const anchor = anchorOf(record9, path);
+        const anchor = anchorOf(record10, path);
         const relative2 = rowAt(rows2, anchor.id, `${path}/${anchor.side}Id`);
         if (!sameReorderDomain(layer, relative2.row))
           throw new Error(`${path}: an added layer and its anchor must be siblings or two artboards.`);
@@ -101788,15 +102073,15 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "duplicate") {
-      const source = rowAt(rows2, record9.id, `${path}/id`);
-      const newId = assertNewDesignId(rows2, record9.newId, `${path}/newId`);
-      const anchor = optionalAnchorOf(record9, path) ?? {
+      const source = rowAt(rows2, record10.id, `${path}/id`);
+      const newId = assertNewDesignId(rows2, record10.newId, `${path}/newId`);
+      const anchor = optionalAnchorOf(record10, path) ?? {
         side: "after",
         id: String(source.row.id)
       };
       const isFrame = source.row.kind === "frame";
       const children = isFrame ? rows2.filter((row) => row && typeof row === "object" && !Array.isArray(row) && row.kind !== "frame" && row.frame === source.row.id) : [];
-      const childIdsValue = record9.childIds;
+      const childIdsValue = record10.childIds;
       if (!isFrame && childIdsValue !== void 0)
         throw new Error(`${path}/childIds: only an artboard duplicate may supply child ids.`);
       if (childIdsValue !== void 0 && (!childIdsValue || typeof childIdsValue !== "object" || Array.isArray(childIdsValue)))
@@ -101827,8 +102112,8 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       const collision = proposed.find((id3) => rows2.some((row) => row && typeof row === "object" && !Array.isArray(row) && row.id === id3));
       if (collision)
         throw new Error(`${path}: layer "${collision}" already exists.`);
-      const clone4 = { ...source.row, id: newId };
-      rows2.push(clone4);
+      const clone5 = { ...source.row, id: newId };
+      rows2.push(clone5);
       reorderDesignRow(rows2, newId, anchor, path);
       for (const child of children) {
         rows2.push({
@@ -101840,9 +102125,9 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "remove") {
-      const target = rowAt(rows2, record9.id, `${path}/id`);
+      const target = rowAt(rows2, record10.id, `${path}/id`);
       const children = target.row.kind === "frame" ? rows2.filter((row) => row && typeof row === "object" && !Array.isArray(row) && row.frame === target.row.id) : [];
-      if (children.length && record9.cascade !== true)
+      if (children.length && record10.cascade !== true)
         throw new Error(`${path}/cascade: artboard "${String(target.row.id)}" has ${children.length} child layer${children.length === 1 ? "" : "s"}; pass cascade:true to remove them.`);
       const removeIds = /* @__PURE__ */ new Set([target.row.id, ...children.map((row) => row.id)]);
       for (let rowIndex = rows2.length - 1; rowIndex >= 0; rowIndex--) {
@@ -101852,10 +102137,10 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "reparent") {
-      const target = rowAt(rows2, record9.id, `${path}/id`);
+      const target = rowAt(rows2, record10.id, `${path}/id`);
       if (target.row.kind === "frame")
         throw new Error(`${path}/id: artboards cannot be reparented.`);
-      const artboardId = record9.artboardId;
+      const artboardId = record10.artboardId;
       if (artboardId !== null && (typeof artboardId !== "string" || !artboardId.trim()))
         throw new Error(`${path}/artboardId: expected an artboard stable id or null for the pasteboard.`);
       if (typeof artboardId === "string") {
@@ -101864,7 +102149,7 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
           throw new Error(`${path}/artboardId: layer "${artboardId}" is not an artboard.`);
       }
       target.row.frame = artboardId ?? "";
-      const anchor = optionalAnchorOf(record9, path);
+      const anchor = optionalAnchorOf(record10, path);
       if (anchor) {
         reorderDesignRow(rows2, String(target.row.id), anchor, path);
       } else {
@@ -101880,9 +102165,9 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       }
       continue;
     }
-    const id2 = record9.id;
+    const id2 = record10.id;
     if (typeof id2 !== "string" || !id2.trim()) throw new Error(`${path}/id: a stable layer id is required.`);
-    reorderDesignRow(rows2, id2, anchorOf(record9, path), path);
+    reorderDesignRow(rows2, id2, anchorOf(record10, path), path);
   }
   return { ...inputs, boxes: rows2 };
 }
@@ -101895,12 +102180,12 @@ function applyDesignLayerPatches(toolId, manifest, inputs, value) {
     const patch = value[index2];
     if (!patch || typeof patch !== "object" || Array.isArray(patch))
       throw new Error(`/layerPatches/${index2}: patch must be an object.`);
-    const record9 = patch;
-    const extra = Object.keys(record9).find((key) => key !== "id" && key !== "set");
+    const record10 = patch;
+    const extra = Object.keys(record10).find((key) => key !== "id" && key !== "set");
     if (extra) throw new Error(`/layerPatches/${index2}/${extra}: unknown patch field.`);
-    const id2 = record9.id;
+    const id2 = record10.id;
     if (typeof id2 !== "string" || !id2) throw new Error(`/layerPatches/${index2}/id: a stable layer id is required.`);
-    const set = record9.set;
+    const set = record10.set;
     if (!set || typeof set !== "object" || Array.isArray(set)) throw new Error(`/layerPatches/${index2}/set: fields must be an object.`);
     if (Object.hasOwn(set, "id")) throw new Error(`/layerPatches/${index2}/set/id: a stable layer id cannot be changed.`);
     const match = rowAt(rows2, id2, `/layerPatches/${index2}/id`);

@@ -27,6 +27,18 @@
     try { document.dispatchEvent(new CustomEvent('tool:ready')); } catch (e) {}
   }
 
+  /* The other half of the handshake. An error panel is not a render: saying "ready"
+     here let an export deliver the panel as if it were the picture. Every failure
+     path below calls this instead, which shows the message, marks the wrapper so
+     host.export refuses to capture it, and tells the waiting renderer why. */
+  function fail(txt) {
+    message(txt);
+    var w = canvas && canvas.parentNode;
+    if (w && w.setAttribute) w.setAttribute('data-export-error', txt);
+    if (readyFired) return; readyFired = true;
+    try { document.dispatchEvent(new CustomEvent('tool:failed', { detail: { message: txt } })); } catch (e) {}
+  }
+
   /* Tear down the renderer from the previous paint (its <canvas> was just
      replaced by the innerHTML swap, so its GL context is orphaned). */
   if (window.__lolly3d && typeof window.__lolly3d.dispose === 'function') {
@@ -39,27 +51,37 @@
     if (w) { var d = document.createElement('div'); d.className = 'lolly3d-msg'; d.textContent = txt; w.appendChild(d); }
   }
 
+  /* three.js is vendored per tool and the two legacy 3D tools need different
+     renderers, so one shared global cannot serve both: whichever tool opened first
+     won `window.LollyThree`, and the other reported "3D library failed to load."
+     Take a global only when it carries the class this tool needs, and load this
+     tool's own bundle otherwise - it publishes itself as LollyThreeGpu. */
   var LIB = '/tools/3d/lib/three.min.js';
+  function usable(lib) { return (lib && lib.WebGPURenderer) ? lib : null; }
+  function loaded() { return usable(window.LollyThreeGpu) || usable(window.LollyThree); }
   function loadThree() {
-    if (window.LollyThree) return Promise.resolve(window.LollyThree);
+    var have = loaded();
+    if (have) return Promise.resolve(have);
     window.__lolly3dLoading = window.__lolly3dLoading || new Promise(function (res, rej) {
       var s = document.createElement('script');
       s.src = LIB;
-      s.onload = function () { res(window.LollyThree); };
+      s.onload = function () { res(loaded()); };
       s.onerror = function () { s.remove(); window.__lolly3dLoading = null; rej(new Error('three load failed')); };
       document.head.appendChild(s);
     });
-    return window.__lolly3dLoading;
+    /* Re-read the globals after the load settles rather than trusting the promise's
+       value, so a promise parked here by an earlier paint still answers correctly. */
+    return window.__lolly3dLoading.then(function () { return loaded(); });
   }
 
   loadThree().then(function (THREE) {
     if (!alive()) return;
-    if (!THREE || !THREE.WebGPURenderer) { message('3D library failed to load.'); fireReady(); return; }
+    if (!THREE || !THREE.WebGPURenderer) { fail('3D library failed to load.'); return; }
     start(THREE).catch(function (err) {
       if (!alive()) return;
-      console.error('[3d] init error:', err); message(String(err && err.message || err)); fireReady();
+      console.error('[3d] init error:', err); fail(String(err && err.message || err));
     });
-  }).catch(function (e) { console.error('[3d]', e); message('3D library failed to load.'); fireReady(); });
+  }).catch(function (e) { console.error('[3d]', e); fail('3D library failed to load.'); });
 
   // ---- easing + progress helpers -------------------------------------------
   function easeInOut(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
@@ -166,11 +188,11 @@
     loader.load(cfg.modelUrl, function (gltf) {
       if (!alive() || disposed) return;
       var model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
-      if (!model) { message('Model has no scene.'); fireReady(); return; }
+      if (!model) { fail('Model has no scene.'); return; }
 
       // Frame: centre horizontally, rest the base on y=0 (for the contact shadow).
       var box = new THREE.Box3().setFromObject(model);
-      if (box.isEmpty()) { message('Model has no visible geometry.'); fireReady(); return; }
+      if (box.isEmpty()) { fail('Model has no visible geometry.'); return; }
       var size = new THREE.Vector3(); box.getSize(size);
       var center = new THREE.Vector3(); box.getCenter(center);
       model.position.x -= center.x;
@@ -229,7 +251,7 @@
       });
     }, undefined, function (err) {
       console.error('[3d] model load failed:', err);
-      message('Could not load the model.'); fireReady();
+      fail('Could not load the model.');
     });
 
     // Camera pose at elapsed time t (seconds) from the base pose + the chosen move.

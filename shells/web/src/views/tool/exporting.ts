@@ -14,9 +14,20 @@ import { marksFromCsv } from './shared.ts';
 import type { ExportDefaults, ExportReport, PrintMarks } from './shared.ts';
 import { bindOp, type ToolViewCtx } from './context.ts';
 
-export function exportUnscaled<T>(tview: ToolViewCtx, 
+/** What an editor capture can ask of the wrapper. `size` is the pixel size this export
+ *  really renders at, when the caller knows it (the export bar resolves it from the very
+ *  dimensions it hands the bridge). A tool whose detail follows the output is built again
+ *  for that size; leaving it out keeps the old behaviour, which is the preview's size. */
+export interface ExportUnscaledOpts {
+  shutter?: boolean;
+  detail?: string;
+  onCancel?: () => void;
+  size?: { width: number; height: number };
+}
+
+export function exportUnscaled<T>(tview: ToolViewCtx,
   fn: (report?: ExportReport) => Promise<T>,
-  opts: { shutter?: boolean; detail?: string; onCancel?: () => void } = {}
+  opts: ExportUnscaledOpts = {}
 ): Promise<T> {
   const run = tview.exportChain.catch(() => {}).then(() => exportUnscaledRaw(tview, fn, opts));
   tview.exportChain = run.catch(() => {});
@@ -28,7 +39,8 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
     shutter = false,
     detail,
     onCancel,
-  }: { shutter?: boolean; detail?: string; onCancel?: () => void } = {}
+    size,
+  }: ExportUnscaledOpts = {}
 ): Promise<T> {
   const { canvasEl, outerEl } = tview;
   // Drives the shutter's status block; inert when this export runs without one.
@@ -68,7 +80,7 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   if (!canvasEl || !outerEl) {
     if (shutter) await tview.designSystem.closeShutter(detail, onCancel);
     try {
-      return await withStudioExport(tview.studioModule, tview.contentEl, () => fn(report), 'export');
+      return await withStudioExport(tview.studioModule, tview.contentEl, () => fn(report), 'export', size);
     } finally {
       if (shutter) tview.designSystem.openShutter();
     }
@@ -93,7 +105,7 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   outerEl!.style.width = canvasEl!.style.width;
   outerEl!.style.height = canvasEl!.style.height;
   try {
-    return await withStudioExport(tview.studioModule, tview.contentEl, () => fn(report), 'export');
+    return await withStudioExport(tview.studioModule, tview.contentEl, () => fn(report), 'export', size);
   } finally {
     canvasEl!.style.transform = prevTransform;
     outerEl!.style.transform = prevOuterTransform;
@@ -186,7 +198,7 @@ export function resolveExportFormat(tview: ToolViewCtx): void {
 
 export function exportingOps(tview: ToolViewCtx) {
   return {
-    exportUnscaled: <T>(fn: (report?: ExportReport) => Promise<T>, opts: { shutter?: boolean; detail?: string; onCancel?: () => void } = {}): Promise<T> => exportUnscaled<T>(tview, fn, opts),
+    exportUnscaled: <T>(fn: (report?: ExportReport) => Promise<T>, opts: ExportUnscaledOpts = {}): Promise<T> => exportUnscaled<T>(tview, fn, opts),
     exportUnscaledRaw: bindOp(tview, exportUnscaledRaw),
     resolveExportFormat: bindOp(tview, resolveExportFormat),
   };

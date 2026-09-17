@@ -1059,12 +1059,15 @@ async function renderTiff(node: Element, opts: ExportOpts): Promise<Blob> {
   const d = exportDims(node, opts);
   const dtoOpts = rasterStyle(d, opts);
   const restore = await swapBlobUrls(node);
+  // Deterministic base frame (t=0) at the EXPORT size, exactly as renderRaster does,
+  // so a frame-clock tool (the 3D studio) draws this file at its real size instead of
+  // handing back the canvas-size preview for the capture to scale up.
+  const fc = beginFrameClock(node); renderFrameAt(fc, 0, undefined, { width: dtoOpts.width, height: dtoOpts.height });
   let canvas: HTMLCanvasElement;
   try {
-    const raw = await lib.toCanvas(node, dtoOpts);
-    canvas = normalizeCanvas(raw, dtoOpts.width, dtoOpts.height);
+    canvas = normalizeCanvas(await lib.toCanvas(node, dtoOpts), dtoOpts.width, dtoOpts.height);
   } finally {
-    restore();
+    restore(); endFrameClock(fc);
   }
   // Imprint before reading pixels back out, so the mark is in the bytes packTiff
   // serialises. Uncompressed TIFF is lossless - unlike JPEG/AVIF this is a
@@ -1104,12 +1107,13 @@ async function renderBmp(node: Element, opts: ExportOpts): Promise<Blob> {
   const d = exportDims(node, opts);
   const dtoOpts = rasterStyle(d, opts);
   const restore = await swapBlobUrls(node);
+  // Deterministic base frame (t=0) at the export size - see renderTiff.
+  const fc = beginFrameClock(node); renderFrameAt(fc, 0, undefined, { width: dtoOpts.width, height: dtoOpts.height });
   let canvas: HTMLCanvasElement;
   try {
-    const raw = await lib.toCanvas(node, dtoOpts);
-    canvas = normalizeCanvas(raw, dtoOpts.width, dtoOpts.height);
+    canvas = normalizeCanvas(await lib.toCanvas(node, dtoOpts), dtoOpts.width, dtoOpts.height);
   } finally {
-    restore();
+    restore(); endFrameClock(fc);
   }
   if (opts.imprint) imprintCanvas(canvas, LOSSLESS_STRENGTH);
   await durableEmbedCanvas(canvas, opts);
@@ -1187,18 +1191,20 @@ async function renderCmykTiff(node: Element, opts: ExportOpts): Promise<Blob> {
   const ptPx  = (v: number) => Math.round(v * d.dpi / 72);        // points → device px (offset)
   const ptDim = (v: number) => Math.max(1, ptPx(v));              // points → device px (size)
 
+  // With geometry the design is stretched to COVER the bleed box (mirrors the
+  // PDF's scale-to-bleed); without it, the plain trim-size raster as before. Read
+  // before the capture starts, because the frame clock below needs the size.
+  const dtoOpts = geo
+    ? coverRasterStyle(d, opts, ptDim(geo.artwork.w), ptDim(geo.artwork.h))
+    : rasterStyle(d, opts);
   const restore = await swapBlobUrls(node);
+  // Deterministic base frame (t=0) at the export size - see renderTiff.
+  const fc = beginFrameClock(node); renderFrameAt(fc, 0, undefined, { width: dtoOpts.width, height: dtoOpts.height });
   let artCanvas: HTMLCanvasElement;
   try {
-    // With geometry the design is stretched to COVER the bleed box (mirrors the
-    // PDF's scale-to-bleed); without it, the plain trim-size raster as before.
-    const dtoOpts = geo
-      ? coverRasterStyle(d, opts, ptDim(geo.artwork.w), ptDim(geo.artwork.h))
-      : rasterStyle(d, opts);
-    const raw = await lib.toCanvas(node, dtoOpts);
-    artCanvas = normalizeCanvas(raw, dtoOpts.width, dtoOpts.height);
+    artCanvas = normalizeCanvas(await lib.toCanvas(node, dtoOpts), dtoOpts.width, dtoOpts.height);
   } finally {
-    restore();
+    restore(); endFrameClock(fc);
   }
 
   // Compose the artwork onto the full white sheet (print stock) when there's a margin.
@@ -6629,9 +6635,10 @@ function recordStream(stream: MediaStream, { durationMs = 5000, mimeType = video
 // opts.dither - Floyd-Steinberg dithering (default false)
 async function renderGif(node: Element, opts: ExportOpts): Promise<Blob> {
   const { GIFEncoder, quantize, applyPalette } = await import('gifenc') as any;
-
-  const fps           = 15;
-  const frameInterval = Math.round(1000 / fps); // 67ms → rounds to 70ms in GIF centiseconds
+  // Transparency rules live next door, loaded beside the encoder so neither reaches
+  // the main chunk. A frame with no clear pixel is quantised exactly as it always was.
+  const alpha = await import('./export-gif-alpha.ts');
+  const fps = 15, frameInterval = Math.round(1000 / fps); // 67ms → rounds to 70ms in GIF centiseconds
   const durationMs    = (opts.duration ?? 5) * 1000;
   let   frameCount    = Math.max(1, Math.round(durationMs / frameInterval));
   const dither        = Boolean(opts.dither);
@@ -6650,13 +6657,13 @@ async function renderGif(node: Element, opts: ExportOpts): Promise<Blob> {
   const targetW = source.width, targetH = source.height;
 
   const offscreen = document.createElement('canvas');
-  offscreen.width  = targetW;
-  offscreen.height = targetH;
+  offscreen.width = targetW; offscreen.height = targetH;
   const offCtx = offscreen.getContext('2d')!;
 
   try {
     const gif = GIFEncoder();
     let palette: [number, number, number][] | null = null;
+    let clearIndex = -1;    // the dithered path's one clear entry, fixed with its global palette
 
     // Dither scratch buffers are allocated ONCE and reused for every frame: the
     // global palette is fixed after frame 0, so the per-frame ~14MB error buffer
@@ -6675,18 +6682,22 @@ async function renderGif(node: Element, opts: ExportOpts): Promise<Blob> {
       if (dither) {
         // Dithering already hides banding, and its reused error/nearest-colour buffers
         // require a STABLE palette - so this path keeps one global palette, built from
-        // frame 0 and reused for the whole clip.
-        if (i === 0) palette = quantize(pixels, 256);
-        const indexed = ditherFloydSteinberg(pixels, targetW, targetH, palette!, ditherState!);
-        gif.writeFrame(indexed, targetW, targetH, i === 0 ? { palette, delay: frameInterval, repeat } : { delay: frameInterval });
+        // frame 0 and reused for the whole clip. Frame 0 therefore also decides whether
+        // the clip carries transparency; the mask below puts the holes back after the
+        // error diffusion, which reads RGB only.
+        if (i === 0) { const clear = alpha.gifHasClearPixels(pixels); palette = alpha.gifPalette(quantize, pixels, clear) as [number, number, number][]; clearIndex = alpha.gifClearIndex(palette); }
+        const indexed = alpha.gifMaskClear(ditherFloydSteinberg(pixels, targetW, targetH, palette!, ditherState!), pixels, palette!, clearIndex), clear = alpha.gifTransparency(clearIndex);
+        gif.writeFrame(indexed, targetW, targetH, i === 0 ? { palette, delay: frameInterval, repeat, ...clear } : { delay: frameInterval, ...clear });
       } else {
         // No dithering: give EACH frame its own optimal 256-colour table (a local
         // palette) rather than forcing every frame through frame 0's colours. A clip
         // whose palette evolves - fades, colour shifts, live footage - no longer bands
         // back to the first frame. Costs one quantize per frame and a little more size.
-        const framePalette = quantize(pixels, 256);
-        const indexed = applyPalette(pixels, framePalette);
-        gif.writeFrame(indexed, targetW, targetH, i === 0 ? { palette: framePalette, delay: frameInterval, repeat } : { palette: framePalette, delay: frameInterval });
+        // Each frame also decides its own transparency, so a subject that leaves the
+        // frame does not cost the rest of the clip its holes.
+        const hasClear = alpha.gifHasClearPixels(pixels), framePalette = alpha.gifPalette(quantize, pixels, hasClear);
+        const indexed = alpha.gifIndices(applyPalette, pixels, framePalette, hasClear), clear = alpha.gifTransparency(alpha.gifClearIndex(framePalette));
+        gif.writeFrame(indexed, targetW, targetH, i === 0 ? { palette: framePalette, delay: frameInterval, repeat, ...clear } : { palette: framePalette, delay: frameInterval, ...clear });
       }
       // Progress for a slow N-frame render (no-op when no listener is wired).
       opts.onProgress?.(i + 1, frameCount);

@@ -1,22 +1,29 @@
 // SPDX-License-Identifier: MPL-2.0
 /**
  * 3D Studio lifecycle in a real browser: the export clock, frame holds during a capture,
- * capture errors, source keys, lifecycle states, renderer counters and the empty-frame check.
+ * capture errors, source keys, lifecycle states, split invalidation and its counters, the
+ * renderer pool, retained sources across a set, and the empty-frame check.
  *
  * Run with:
  *   node --import ./tests/css-stub.mjs --test tests/studio3d-lifecycle.browser.test.ts
  *
  * Uses the shared harness (tests/helpers/studio3d-browser.ts) at 256 px with 8 samples.
- * With STUDIO_SHOTS set, the counter baseline is written there as lifecycle-counters.json
- * next to the review renders.
+ *
+ * The per-edit counters are a committed fixture, tests/fixtures/studio3d/lifecycle/
+ * counters.json, keyed like the lighting baseline (`${platform}:${renderer}`) so a
+ * measurement can be traced to the machine that made it. The counts themselves are
+ * bookkeeping and do not vary by backend, so a machine with no entry of its own is
+ * compared against the one that is recorded rather than skipped. STUDIO_WRITE_BASELINE=1
+ * records this machine's entry; with STUDIO_SHOTS set the same table is written there too.
  */
 import assert from 'node:assert/strict';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import type { Page } from 'playwright';
 import {
   type StudioHarness,
+  type StudioRoute,
   type StudioValues,
   saveShot,
   startStudioHarness,
@@ -27,17 +34,52 @@ const EMPTY_FRAME =
   'The studio frame came out empty. Export again, or reload the studio if it happens again.';
 const CONTEXT_LOST = 'The graphics context was lost. Reload the studio and try a smaller output.';
 const CLIP_SIZE = { width: 320, height: 240 };
+const COUNTERS = join(
+  import.meta.dirname,
+  'fixtures',
+  'studio3d',
+  'lifecycle',
+  'counters.json'
+);
+/** Sources the counter table is measured on: an extruded primitive, a GLB and an STL. */
+const COUNTER_SOURCES: Record<string, StudioValues> = {
+  badge: { source: 'primitive', primitive: 'badge' },
+  duck: { source: 'model', modelAsset: { url: '/duck.glb', name: 'duck.glb' } },
+  stl: { source: 'model', modelAsset: { url: '/binary.stl', name: 'binary.stl' } },
+};
+/** The edits, applied one after another on top of each other. */
+const COUNTER_EDITS: [string, StudioValues][] = [
+  ['orbit', { camera: { azimuth: 70, elevation: 20 } }],
+  ['light', { keyPosition: { x: 5, y: 2, z: -4 } }],
+  ['colour', { colorA: '#ff4060' }],
+  ['finish', { finishA: 'matte' }],
+  ['bevel', { shape: { depth: 0.25, bevel: 0.06, smoothness: 24 } }],
+  ['depth', { shape: { depth: 0.4, bevel: 0.06, smoothness: 24 } }],
+];
 
 interface Counters {
   updates: number;
   sourceLoads: number;
+  sourceAborts: number;
   materialSets: number;
+  instances: number;
   stageBuilds: number;
+  rigBuilds: number;
   backdropBuilds: number;
   environmentBuilds: number;
   frames: number;
   captures: number;
   memory: { geometries: number; textures: number };
+}
+
+/** One backend's recorded table: every source, every edit, every counter. */
+interface CounterFile {
+  [backend: string]: {
+    recorded: string;
+    size: number;
+    samples: number;
+    scenes: Record<string, Record<string, Record<string, number>>>;
+  };
 }
 
 interface LifecycleStatus {
@@ -85,11 +127,32 @@ interface LifecycleApi {
     held: string;
     heldSets: number;
     firstSets: number;
+    heldLoads: number;
+    firstLoads: number;
     viewed: string;
     released: string;
     releasedSets: number;
   }>;
   loseContext(): Promise<LifecycleStatus>;
+  expireCapture(ms: number): Promise<{
+    raised: boolean;
+    cleared: boolean;
+    state: string;
+    updates: number;
+    deferredRan: boolean;
+    prepare: string | null;
+  }>;
+  retainSet(urls: string[], retain: boolean): Promise<{
+    loadsFirstPass: number;
+    loadsSecondPass: number;
+    geometriesAfterFirst: number;
+    geometriesAfterSecond: number;
+    geometriesAfterRelease: number;
+    loadsAfterRelease: number;
+    pool: { size: number; busy: number; waiting: number; created: number };
+  }>;
+  poolRuns(count: number): Promise<{ created: number; size: number; busy: number }>;
+  poolConcurrent(): Promise<{ contexts: number; waiting: number; third: boolean }>;
   destroy(): void;
 }
 
@@ -105,9 +168,10 @@ declare global {
  */
 const extraSource = `
 import { beginFrameClock as lifecycleBegin, renderFrameAt as lifecycleFrame, endFrameClock as lifecycleEnd } from './shells/web/src/bridge/frame-clock.ts';
-import { StudioRenderer as LifecycleRenderer } from './shells/web/src/lib/studio3d/renderer.ts';
+import { StudioRenderer as LifecycleRenderer, studioAssetKeys } from './shells/web/src/lib/studio3d/renderer.ts';
 import { StudioCapture as LifecycleCapture } from './shells/web/src/lib/studio3d/capture.ts';
-import { inspectToolStudio, studioCaptureError } from './shells/web/src/lib/studio3d/mount.ts';
+import { inspectToolStudio, studioCaptureError, STUDIO_CAPTURE_BUDGET } from './shells/web/src/lib/studio3d/mount.ts';
+import { acquireStudioRenderer, drainStudioPool, studioPoolState } from './shells/web/src/lib/studio3d/pool.ts';
 import { buildStudioScene as lifecycleScene } from './engine/src/studio3d.ts';
 
 let lifecycleReads = 0;
@@ -275,9 +339,15 @@ window.lifecycle = {
       renderer.render(96, 96, 'export');
       const first = canvas.toDataURL();
       const firstSets = renderer.inspect().materialSets;
+      const firstLoads = renderer.inspect().sourceLoads;
       renderer.freeze(true);
       const update = renderer.update(scene({ source: 'primitive', primitive: 'torus', colorA: '#ff4060' }), countedRead);
-      for (let i = 0; i < 20; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+      // The hold is reached once the new source has finished loading, so the test waits
+      // for that count rather than for a stretch of wall-clock time.
+      const deadline = Date.now() + 20000;
+      while (renderer.inspect().sourceLoads === firstLoads && Date.now() < deadline)
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      const heldLoads = renderer.inspect().sourceLoads;
       const heldSets = renderer.inspect().materialSets;
       renderer.render(96, 96, 'export');
       const held = canvas.toDataURL();
@@ -287,10 +357,101 @@ window.lifecycle = {
       renderer.freeze(false);
       await update;
       renderer.render(96, 96, 'export');
-      return { first, held, heldSets, firstSets, viewed, released: canvas.toDataURL(), releasedSets: renderer.inspect().materialSets };
+      return { first, held, heldSets, firstSets, heldLoads, firstLoads, viewed, released: canvas.toDataURL(), releasedSets: renderer.inspect().materialSets };
     } finally {
       renderer.dispose();
     }
+  },
+  async expireCapture(ms) {
+    const was = STUDIO_CAPTURE_BUDGET.ms;
+    STUDIO_CAPTURE_BUDGET.ms = ms;
+    try {
+      const canvas = studioCanvas();
+      const before = statusNow().counters.updates;
+      canvas.__lollyFrameDriven = true;
+      const raised = canvas.__lollyFrameDriven === true;
+      // A mount arriving during a capture is deferred; clearing the flag must run it.
+      markerNow().dataset.lollyStudio = JSON.stringify({ version: 1, values: { ...studioDefaults, source: 'primitive', primitive: 'sphere', colorA: '#ff4060' } });
+      const deferred = mountToolStudio(container, lifecycleOptions);
+      const deadline = Date.now() + 20000;
+      while (canvas.__lollyFrameDriven === true && Date.now() < deadline)
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      await deferred;
+      await nextFrame();
+      const now = statusNow();
+      return {
+        raised,
+        cleared: canvas.__lollyFrameDriven !== true,
+        state: now.state,
+        updates: now.counters.updates - before,
+        deferredRan: now.counters.updates > before,
+        prepare: messageOf(() => prepareToolStudio(container)),
+      };
+    } finally {
+      STUDIO_CAPTURE_BUDGET.ms = was;
+    }
+  },
+  async retainSet(urls, retain) {
+    const scene = (url) => lifecycleScene({ version: 1, values: { ...studioDefaults, source: 'artwork', artwork: { url }, outputMode: 'object' } });
+    const recipes = urls.map(scene);
+    const keys = retain ? recipes.flatMap(studioAssetKeys) : undefined;
+    const lease = await acquireStudioRenderer('sheet');
+    const pass = async () => {
+      const before = lease.renderer.inspect().sourceLoads;
+      for (const recipe of recipes) {
+        await lease.renderer.update(recipe, countedRead, shapeText, keys ? { retain: keys } : undefined);
+        lease.renderer.render(96, 96, 'export');
+      }
+      return lease.renderer.inspect().sourceLoads - before;
+    };
+    let result;
+    try {
+      const loadsFirstPass = await pass();
+      const geometriesAfterFirst = lease.renderer.inspect().memory.geometries;
+      const loadsSecondPass = await pass();
+      const geometriesAfterSecond = lease.renderer.inspect().memory.geometries;
+      result = { loadsFirstPass, loadsSecondPass, geometriesAfterFirst, geometriesAfterSecond };
+    } finally {
+      lease.release();
+    }
+    // The renderer is warm and idle: what it still holds is one document's worth.
+    const geometriesAfterRelease = lease.renderer.inspect().memory.geometries;
+    const loadsAfterRelease = lease.renderer.inspect().sourceLoads;
+    const pool = studioPoolState();
+    drainStudioPool();
+    return { ...result, geometriesAfterRelease, loadsAfterRelease, pool };
+  },
+  async poolRuns(count) {
+    const start = studioPoolState().created;
+    for (let i = 0; i < count; i++) {
+      const lease = await acquireStudioRenderer('batch');
+      lease.canvas.width = 32;
+      lease.release();
+    }
+    const state = studioPoolState();
+    drainStudioPool();
+    return { created: state.created - start, size: state.size, busy: state.busy };
+  },
+  async poolConcurrent() {
+    const start = studioPoolState().created;
+    const first = await acquireStudioRenderer('batch');
+    const second = await acquireStudioRenderer('sheet');
+    let third = false;
+    const pending = acquireStudioRenderer('batch').then((lease) => {
+      third = true;
+      return lease;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const held = studioPoolState();
+    const waiting = held.waiting;
+    const settled = third;
+    first.release();
+    const granted = await pending;
+    const contexts = studioPoolState().created - start;
+    granted.release();
+    second.release();
+    drainStudioPool();
+    return { contexts, waiting, third: settled };
   },
   async loseContext() {
     studioCanvas().getContext('webgl2').getExtension('WEBGL_lose_context').loseContext();
@@ -304,6 +465,8 @@ window.lifecycle = {
 `;
 
 let harness: StudioHarness | undefined;
+let iconUrls: string[] = [];
+let backend = 'unknown';
 
 function studio(): StudioHarness {
   if (!harness) throw new Error('The 3D Studio harness did not start.');
@@ -333,10 +496,13 @@ const api = (page: Page) => ({
   prepareError: () => page.evaluate(() => window.lifecycle!.prepareError()),
   captureError: () => page.evaluate(() => window.lifecycle!.captureError()),
   opaquePixels: () => page.evaluate(() => window.lifecycle!.opaquePixels()),
+  expireCapture: (ms: number) => page.evaluate((ms) => window.lifecycle!.expireCapture(ms), ms),
+  retainSet: (urls: string[], retain: boolean) =>
+    page.evaluate(([urls, retain]) => window.lifecycle!.retainSet(urls, retain), [urls, retain] as const),
 });
 
 /** The counter changes between two statuses, plus the reads and shaper calls in between. */
-function delta(from: LifecycleStatus, to: LifecycleStatus) {
+function delta(from: LifecycleStatus, to: LifecycleStatus): Record<string, number> {
   const a = from.counters!,
     b = to.counters!;
   return {
@@ -344,19 +510,109 @@ function delta(from: LifecycleStatus, to: LifecycleStatus) {
     shaped: to.shaped - from.shaped,
     updates: b.updates - a.updates,
     sourceLoads: b.sourceLoads - a.sourceLoads,
+    sourceAborts: b.sourceAborts - a.sourceAborts,
     materialSets: b.materialSets - a.materialSets,
+    instances: b.instances - a.instances,
     stageBuilds: b.stageBuilds - a.stageBuilds,
+    rigBuilds: b.rigBuilds - a.rigBuilds,
     backdropBuilds: b.backdropBuilds - a.backdropBuilds,
     environmentBuilds: b.environmentBuilds - a.environmentBuilds,
     frames: b.frames - a.frames,
     captures: b.captures - a.captures,
-    memory: b.memory,
   };
+}
+
+/**
+ * Twelve two-colour icons for the retained-source set: lane T0's public icon fixtures when
+ * they are in the tree, otherwise twelve of the geometry fixtures, which are the same kind
+ * of file. `degenerate.svg` is left out; it is a fixture about refusing a shape.
+ */
+async function iconSet(): Promise<{ path: string; body: string }[]> {
+  const dirs = [
+    join(import.meta.dirname, 'fixtures', 'studio3d', 'icons'),
+    join(import.meta.dirname, 'fixtures', 'studio3d', 'geometry'),
+  ];
+  for (const dir of dirs) {
+    const names = (await readdir(dir))
+      .filter((name) => name.endsWith('.svg') && name !== 'degenerate.svg')
+      .sort()
+      .slice(0, 12);
+    if (names.length === 12)
+      return Promise.all(
+        names.map(async (name) => ({
+          path: `/set/${name}`,
+          body: await readFile(join(dir, name), 'utf8'),
+        }))
+      );
+  }
+  throw new Error('No twelve SVG fixtures were found for the retained-source set.');
+}
+
+/**
+ * A GLB of one flat card whose only material is a nearly clear blend: it passes a ray test
+ * and draws almost nothing. Written here rather than committed, because the whole point is
+ * the one number in it.
+ */
+function clearCardGlb(): Uint8Array {
+  const positions = new Float32Array([-1.5, 0, 0, 1.5, 0, 0, 1.5, 3, 0, -1.5, 3, 0]);
+  const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+  const bin = new Uint8Array(positions.byteLength + 16);
+  bin.set(new Uint8Array(positions.buffer), 0);
+  bin.set(new Uint8Array(indices.buffer), positions.byteLength);
+  const json = {
+    asset: { version: '2.0' },
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+    nodes: [{ mesh: 0 }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1, material: 0 }] }],
+    materials: [
+      {
+        name: 'card',
+        pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 0.01], metallicFactor: 0, roughnessFactor: 1 },
+        alphaMode: 'BLEND',
+        doubleSided: true,
+      },
+    ],
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 4, type: 'VEC3', min: [-1.5, 0, 0], max: [1.5, 3, 0] },
+      { bufferView: 1, componentType: 5123, count: 6, type: 'SCALAR' },
+    ],
+    bufferViews: [
+      { buffer: 0, byteOffset: 0, byteLength: positions.byteLength },
+      { buffer: 0, byteOffset: positions.byteLength, byteLength: indices.byteLength },
+    ],
+    buffers: [{ byteLength: bin.length }],
+  };
+  const text = new TextEncoder().encode(JSON.stringify(json));
+  const jsonChunk = new Uint8Array(Math.ceil(text.length / 4) * 4).fill(0x20);
+  jsonChunk.set(text);
+  const out = new Uint8Array(12 + 8 + jsonChunk.length + 8 + bin.length);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, out.length, true);
+  view.setUint32(12, jsonChunk.length, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  out.set(jsonChunk, 20);
+  view.setUint32(20 + jsonChunk.length, bin.length, true);
+  view.setUint32(24 + jsonChunk.length, 0x004e4942, true);
+  out.set(bin, 28 + jsonChunk.length);
+  return out;
 }
 
 describe('3D Studio lifecycle', { skip: studioSkip }, () => {
   before(async () => {
-    harness = await startStudioHarness({ size: 256, extraSource });
+    const icons = await iconSet();
+    iconUrls = icons.map((icon) => icon.path);
+    const routes: Record<string, StudioRoute> = { '/clear-card.glb': clearCardGlb() };
+    for (const icon of icons) routes[icon.path] = icon.body;
+    harness = await startStudioHarness({ size: 256, extraSource, routes });
+    const page = await harness.open();
+    try {
+      backend = `${process.platform}:${await harness.rendererName(page)}`;
+    } finally {
+      await page.close();
+    }
   });
   after(async () => {
     await harness?.close();
@@ -434,6 +690,7 @@ describe('3D Studio lifecycle', { skip: studioSkip }, () => {
   it('keeps a frozen renderer on its instances and camera until it is thawed', async () => {
     await withPage(async (page) => {
       const held = await page.evaluate(() => window.lifecycle!.heldUpdate());
+      assert.equal(held.heldLoads, held.firstLoads + 1, 'the held update finished its load, so the hold was reached');
       assert.equal(held.heldSets, held.firstSets, 'the held update has not swapped its instances in');
       assert.equal(held.held, held.first, 'the frame stays the first scene');
       assert.equal(held.viewed, held.first, 'a preview camera is ignored while frozen');
@@ -477,40 +734,88 @@ describe('3D Studio lifecycle', { skip: studioSkip }, () => {
     });
   });
 
-  it('re-reads a source only for what it consumes, and reports counters for each kind of edit', async () => {
+  it('rebuilds only what an edit changed, against the committed counter table', async () => {
     await withPage(async (page) => {
       const l = api(page);
-      const sources: Record<string, StudioValues> = {
-        badge: { source: 'primitive', primitive: 'badge' },
-        duck: { source: 'model', modelAsset: { url: '/duck.glb', name: 'duck.glb' } },
-        stl: { source: 'model', modelAsset: { url: '/binary.stl', name: 'binary.stl' } },
-      };
-      const edits: [string, StudioValues][] = [
-        ['orbit', { camera: { azimuth: 70, elevation: 20 } }],
-        ['light', { keyPosition: { x: 5, y: 2, z: -4 } }],
-        ['colour', { colorA: '#ff4060' }],
-        ['bevel', { shape: { depth: 0.25, bevel: 0.06, smoothness: 24 } }],
-      ];
-      const baseline: Record<string, Record<string, ReturnType<typeof delta>>> = {};
-      for (const [name, base] of Object.entries(sources)) {
+      const scenes: Record<string, Record<string, Record<string, number>>> = {};
+      for (const [name, base] of Object.entries(COUNTER_SOURCES)) {
         let values = base;
         let last = await l.mount(values);
         assert.equal(last.state, 'ready', name);
-        baseline[name] = {};
-        for (const [edit, change] of edits) {
+        scenes[name] = {};
+        for (const [edit, change] of COUNTER_EDITS) {
           values = { ...values, ...change };
           const next = await l.mount(values);
           assert.equal(next.state, 'ready', `${name} ${edit}`);
-          baseline[name]![edit] = delta(last, next);
-          if (name !== 'badge') assert.equal(next.reads, last.reads, `a ${edit} edit does not re-read the ${name} file`);
+          scenes[name]![edit] = delta(last, next);
+          if (name !== 'badge')
+            assert.equal(next.reads, last.reads, `a ${edit} edit does not re-read the ${name} file`);
           last = next;
         }
       }
-      console.log(`3D Studio invalidation baseline (milestone 2): ${JSON.stringify(baseline)}`);
+      const recorded: CounterFile = JSON.parse(await readFile(COUNTERS, 'utf8')) as CounterFile;
+      const entry = { recorded: new Date().toISOString().slice(0, 10), size: 256, samples: 8, scenes };
+      console.log(`3D Studio invalidation counters: ${JSON.stringify({ [backend]: entry })}`);
+      if (process.env.STUDIO_WRITE_BASELINE) {
+        recorded[backend] = entry;
+        await writeFile(COUNTERS, JSON.stringify(recorded, null, 2) + '\n');
+      }
       if (process.env.STUDIO_SHOTS) {
         await mkdir(process.env.STUDIO_SHOTS, { recursive: true });
-        await writeFile(join(process.env.STUDIO_SHOTS, 'lifecycle-counters.json'), JSON.stringify(baseline, null, 2) + '\n');
+        await writeFile(
+          join(process.env.STUDIO_SHOTS, 'lifecycle-counters.json'),
+          JSON.stringify({ [backend]: entry }, null, 2) + '\n'
+        );
       }
+      // What the split is for, stated as the edits themselves rather than as a table.
+      for (const name of Object.keys(COUNTER_SOURCES)) {
+        for (const edit of ['orbit', 'light']) {
+          const measured = scenes[name]![edit]!;
+          assert.equal(measured.materialSets, 0, `a ${edit} edit applies no material to the ${name}`);
+          assert.equal(measured.instances, 0, `a ${edit} edit re-instantiates no ${name}`);
+          assert.equal(measured.sourceLoads, 0, `a ${edit} edit loads no ${name} source`);
+          assert.equal(measured.frames, 1, `a ${edit} edit draws one frame of the ${name}`);
+        }
+        assert.equal(scenes[name]!.orbit!.rigBuilds, 0, `an orbit keeps the ${name}'s light rig`);
+        assert.equal(scenes[name]!.light!.rigBuilds, 1, `a light move rebuilds the ${name}'s rig`);
+        assert.equal(scenes[name]!.light!.stageBuilds, 0, 'and nothing around it');
+      }
+      for (const name of ['duck', 'stl']) {
+        const colour = scenes[name]!.colour!;
+        assert.equal(colour.materialSets, 1, `a colour edit re-applies the ${name}'s materials`);
+        assert.equal(colour.instances, 0, `and re-instantiates no ${name}`);
+        assert.equal(colour.sourceLoads, 0);
+        assert.equal(colour.stageBuilds, 0, 'and leaves the floor and backplate alone');
+        // The engine writes the hemisphere fill from colour A, so a colour edit is a light
+        // edit as well. The rig is the cheap half: no floor, no backplate, no depth forms.
+        assert.equal(colour.rigBuilds, 1, 'the fill is tied to colour A, so the rig follows it');
+        const finish = scenes[name]!.finish!;
+        assert.equal(finish.materialSets, 1, `and so does a finish edit on the ${name}`);
+        assert.equal(finish.instances, 0);
+        assert.equal(finish.rigBuilds, 0, 'a finish reaches no light');
+        assert.equal(finish.stageBuilds, 0);
+        for (const edit of ['bevel', 'depth']) {
+          assert.equal(scenes[name]![edit]!.sourceLoads, 0, `a ${edit} edit does not re-read the ${name}`);
+          assert.equal(scenes[name]![edit]!.instances, 0, `or re-instantiate it`);
+        }
+      }
+      // The badge is extruded with the shared shape and baked with the colour pair, so
+      // both a shape edit and a colour edit make it a different source.
+      for (const edit of ['colour', 'bevel', 'depth']) {
+        assert.equal(scenes.badge![edit]!.sourceLoads, 1, `a ${edit} edit re-reads the badge once`);
+        assert.equal(scenes.badge![edit]!.instances, 1, `and instantiates it once`);
+      }
+      // The counts are bookkeeping, not pixels, so a machine with no entry of its own is
+      // held to the one that is recorded rather than left unchecked.
+      const against = recorded[backend] ?? Object.values(recorded)[0];
+      assert.ok(against, 'counters.json records at least one backend');
+      assert.deepEqual(scenes, against.scenes, `counter deltas against ${recorded[backend] ? backend : 'the recorded backend'}`);
+    });
+  });
+
+  it('re-reads a source only for what it consumes', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
       // Artwork is extruded with the shared bevel, so a bevel edit reads its file again.
       const artwork = { source: 'artwork', artwork: { url: '/fixture.svg' } };
       const drawn = await l.mount(artwork);
@@ -522,6 +827,36 @@ describe('3D Studio lifecycle', { skip: studioSkip }, () => {
       const recoloured = await l.mount({ ...words, colorA: '#ff4060' });
       assert.equal(recoloured.shaped, shaped.shaped, 'a colour edit does not reshape the words');
       assert.equal(recoloured.counters!.sourceLoads, shaped.counters!.sourceLoads);
+      assert.equal(recoloured.counters!.sourceAborts, shaped.counters!.sourceAborts, 'and nothing was abandoned');
+    });
+  });
+
+  it('rebuilds nothing at all when a cut-out output orbits', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
+      const sphere = { source: 'primitive', primitive: 'sphere', outputMode: 'object' };
+      const first = await l.mount(sphere);
+      assert.equal(first.state, 'ready');
+      const orbited = await l.mount({ ...sphere, camera: { azimuth: 70, elevation: 20 } });
+      assert.deepEqual(
+        delta(first, orbited),
+        {
+          reads: 0,
+          shaped: 0,
+          updates: 1,
+          sourceLoads: 0,
+          sourceAborts: 0,
+          materialSets: 0,
+          instances: 0,
+          stageBuilds: 0,
+          rigBuilds: 0,
+          backdropBuilds: 0,
+          environmentBuilds: 0,
+          frames: 1,
+          captures: 0,
+        },
+        'an orbit with no backplate in the frame draws one frame and rebuilds nothing'
+      );
     });
   });
 
@@ -545,19 +880,105 @@ describe('3D Studio lifecycle', { skip: studioSkip }, () => {
 
   // stage.ts used to call RectAreaLightUniformsLib.init() on every stage build, which made
   // a new pair of area-light tables each time and never freed the old pair (two textures
-  // per camera, light or colour edit). The tables are now made once.
-  it('keeps GPU textures level across camera edits that rebuild the stage', async () => {
+  // per camera, light or colour edit). The tables are now made once, and the lights are
+  // rebuilt on their own, so both kinds of rebuild are measured here.
+  it('keeps GPU textures level across stage and rig rebuilds', async () => {
     await withPage(async (page) => {
       const l = api(page);
       const badge = { source: 'primitive', primitive: 'badge' };
-      const counts = [(await l.mount(badge)).counters!.memory];
+      const first = await l.mount(badge);
+      const counts = [first.counters!.memory];
+      let stageBuilds = first.counters!.stageBuilds;
+      // A scene output paints a backplate square to the camera, so an orbit rebuilds it.
       for (const azimuth of [30, 50, 70, 90]) {
         const status = await l.mount({ ...badge, camera: { azimuth } });
-        assert.equal(status.counters!.stageBuilds, counts.length + 1, 'each camera edit rebuilds the stage');
+        assert.equal(status.counters!.stageBuilds, ++stageBuilds, 'each camera edit rebuilds the backplate');
+        assert.equal(status.counters!.rigBuilds, first.counters!.rigBuilds, 'and leaves the rig alone');
         counts.push(status.counters!.memory);
       }
-      console.log(`3D Studio GPU memory across stage rebuilds: ${JSON.stringify(counts)}`);
+      let rigBuilds = first.counters!.rigBuilds;
+      for (const x of [-3, -2, -1, 0]) {
+        const status = await l.mount({ ...badge, camera: { azimuth: 90 }, keyPosition: { x, y: 6.8, z: 4 } });
+        assert.equal(status.counters!.rigBuilds, ++rigBuilds, 'each light move rebuilds the rig');
+        assert.equal(status.counters!.stageBuilds, stageBuilds, 'and nothing around it');
+        counts.push(status.counters!.memory);
+      }
+      console.log(`3D Studio GPU memory across stage and rig rebuilds: ${JSON.stringify(counts)}`);
       for (const memory of counts) assert.deepEqual(memory, counts[0]);
+    });
+  });
+
+  it('clears a capture flag its export never lowered, and runs what was waiting', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
+      assert.equal((await l.mount({ source: 'primitive', primitive: 'sphere' })).state, 'ready');
+      const expired = await l.expireCapture(250);
+      assert.equal(expired.raised, true, 'the flag went up');
+      assert.equal(expired.cleared, true, 'and came down on its own');
+      assert.equal(expired.state, 'ready');
+      assert.equal(expired.deferredRan, true, 'the mount that was waiting ran');
+      assert.equal(expired.updates, 1, 'exactly once');
+      assert.equal(expired.prepare, null, 'and the studio exports again');
+    });
+  });
+
+  it('refuses a frame whose only subject is drawn nearly clear', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
+      const card = {
+        source: 'model',
+        modelAsset: { url: '/clear-card.glb', name: 'clear-card.glb' },
+        materialMode: 'source',
+        outputMode: 'object',
+      };
+      assert.equal((await l.mount(card)).state, 'ready', 'the card loads and is in frame');
+      // A ray meets the card at every probe, so the old check called it drawn. The frame
+      // holds about three units of alpha out of 255 there, which is not a picture of it.
+      assert.equal(await l.prepareError(), EMPTY_FRAME);
+      assert.equal((await l.status()).state, 'ready', 'the refusal fails the export, not the studio');
+    });
+  });
+
+  it('keeps a whole set of sources through one pooled renderer, and gives them back on release', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
+      assert.equal(iconUrls.length, 12, 'twelve icons make the set');
+      const retained = await l.retainSet(iconUrls, true);
+      assert.equal(retained.loadsFirstPass, 12, 'the first pass reads each icon once');
+      assert.equal(retained.loadsSecondPass, 0, 'and the second pass reads none of them again');
+      assert.equal(
+        retained.geometriesAfterSecond,
+        retained.geometriesAfterFirst,
+        'so the geometry count is flat across the set'
+      );
+      assert.ok(
+        retained.geometriesAfterRelease < retained.geometriesAfterFirst,
+        `release returns the set's geometry (${retained.geometriesAfterRelease} against ${retained.geometriesAfterFirst})`
+      );
+      assert.equal(retained.loadsAfterRelease, 12, 'and reads nothing to do it');
+      assert.equal(retained.pool.created, 1, 'the whole sheet ran on one context');
+      assert.equal(retained.pool.busy, 0, 'which was handed back');
+    });
+  });
+
+  it('reads every item again without retain, which is what retain is for', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
+      const plain = await l.retainSet(iconUrls, false);
+      assert.equal(plain.loadsFirstPass, 12);
+      assert.equal(plain.loadsSecondPass, 12, 'each item evicts the last, so the set is read again');
+    });
+  });
+
+  it('lends two contexts and no more, however many rows ask', async () => {
+    await withPage(async (page) => {
+      const serial = await page.evaluate(() => window.lifecycle!.poolRuns(24));
+      assert.equal(serial.created, 1, 'twenty-four rows one after another share one context');
+      assert.equal(serial.busy, 0);
+      const concurrent = await page.evaluate(() => window.lifecycle!.poolConcurrent());
+      assert.equal(concurrent.third, false, 'a third caller waits rather than opening a context');
+      assert.equal(concurrent.waiting, 1);
+      assert.equal(concurrent.contexts, 2, 'and is served by the first one released');
     });
   });
 

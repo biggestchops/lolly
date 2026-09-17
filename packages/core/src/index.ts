@@ -150,4 +150,4 @@ export type {
 } from './emoji-v1.ts';
 
 export type { LearningRichNode, LearningQuiz, LearningProgressEventV1, LearningTarget, LearningSource, LearningBlock, LearningLesson, LearningModule, LearningFile, LearningContentBlock, LearningContent, LearningAttempt, LearningFinding, LearningRelease } from './learning-v1.ts';
-export type { StudioSceneV1, StudioSourceV1, StudioObjectV1, StudioCameraKeyV1, StudioMaterialV1, StudioLightV1, StudioSurfaceInfo, StudioSourceInfo, StudioVector3, StudioProjection, StudioFinish, StudioFinishSpec } from './studio3d-v1.ts';
+export type { StudioSceneV1, StudioSourceV1, StudioObjectV1, StudioCameraKeyV1, StudioMaterialV1, StudioLightV1, StudioSurfaceInfo, StudioSourceInfo, StudioVector3, StudioProjection, StudioFinish, StudioFinishSpec, StudioLookScopeV1, StudioLinkV1 } from './studio3d-v1.ts';

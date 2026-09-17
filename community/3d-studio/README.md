@@ -29,6 +29,8 @@ STUDIO_SHELL_URL=http://127.0.0.1:5173 node --import ./tests/css-stub.mjs --test
 
 The browser tests need Playwright Chromium. `STUDIO_NATIVE=1` selects native Metal on macOS for local GPU review. `STUDIO_SUSE=1` enables the private six-icon fixtures when that brand pack is mounted. `STUDIO_SHOTS=<directory>` saves the fixture output for visual review.
 
+The test set carries twelve public two-colour icons under `tests/fixtures/studio3d/icons` (written by `generate.ts` beside them, listed by `tests/helpers/studio3d-icons.ts`): three thin outlines, three heavy solids, three tall and three wide, so a twelve-subject collection can be rendered without the private SUSE icons. All twelve extrude at the full bevel at both the 0.025 and 0.05 requests.
+
 The recipe and material pins under `tests/fixtures/studio3d/recipes/` record what the pushed 0.4.0 (commit `05faef7a4`) evaluates. `tests/studio3d-compat.browser.test.ts` renders that commit's renderer beside the current one in the same browser and compares exact pixels; it needs full git history and skips on a shallow clone. `STUDIO_COMPAT_SELF=1` compares the pushed renderer with itself. `STUDIO_WRITE_BASELINE=1` records the per-backend lighting measures, the flat backdrop colour and the tessellation baseline. The backdrop colour and the tessellation baseline are records only; a lighting entry is compared only once it is marked reviewed.
 
 Preview and export share the same recipe. GPU pixels are tested for repeatability on a given backend; equality across every GPU is not promised. SVG admission and output limits are documented in the user guide.

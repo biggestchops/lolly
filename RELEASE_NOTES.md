@@ -36,6 +36,73 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
 
 ### New in 1.0.9 (unreleased)
 
+- **3D Studio turns in APNG and animated WebP.** The two animated still formats
+  join WebM, MP4 and GIF under the studio's export menu, and both keep the
+  transparency of **Object only** and **Object with transparent shadow**, so a
+  turntable with a clear background can sit over a page without a box.
+- **Studios you can reuse.** Save the look of a 3D Studio document as a studio,
+  then apply it to another document, a collection or an arrangement. The subject,
+  the framing and the output settings stay with each document, and so does any
+  studio control you change yourself. Editing a saved studio leaves the documents
+  that use it alone until you choose Update from studio; Detach keeps the look and
+  stops following. Saved studios live on your profile and never travel in a share
+  link, which carries the values themselves.
+- **Twelve icons, one studio.** Collection items now carry a size correction and a
+  nudge of their own, so a set of unlike icons comes out level under one studio:
+  twelve public test icons that varied by 65 percent in how much of the frame they
+  filled now sit within 1.4 percent of each other, and the corrections survive a
+  change of studio, colour pair and finishes. Items also carry a stable id, so
+  reordering a collection keeps every override with the item it was made for, and
+  an item can now be Words.
+- **A contact sheet you can send.** Review collection renders its previews at up to
+  512 pixels instead of 320, says what the sheet and the delivered files will be,
+  and saves the whole sheet as one PNG.
+- **Curve detail can follow the output size.** 3D Studio can read the number of
+  straight pieces a curve is drawn with from the image you asked for, instead of
+  a fixed count, keeping the flattening error inside a quarter of a pixel and the
+  mesh inside one million triangles. A 4096 pixel image of a curved ring takes 47
+  pieces per curve where a 64 pixel thumbnail takes 8. The fixed count stays the
+  default and renders exactly as before.
+- **3D Studio rebuilds only what you changed.** Moving the camera no longer
+  rebuilds the objects, and moving a light rebuilds the lights alone. A colour or
+  finish edit writes the materials onto the objects already in place, and only an
+  extrusion edit reads the artwork again. Batch rows, contact sheets and preview
+  tiles share two graphics contexts rather than opening one each, and a renderer
+  handed back keeps its environment and backdrop, so a twelve-item collection is
+  much cheaper to preview and export.
+- **Unlit STL models show their colour.** An STL that carries no facet normals,
+  or whose normals are all zero, rendered as a black solid with neither its colour
+  nor its finish. The studio computes the normals from the triangles instead and
+  records it in Source notes. STL is a facet format, so those normals are flat,
+  one per facet.
+- **GIF exports keep their transparency.** Every tool that writes an animated GIF
+  now names a clear palette entry: a pixel less than half opaque becomes a hole
+  instead of turning black, so a transparent shadow no longer arrives on a black
+  card. GIF has one bit of alpha, so a soft edge steps rather than fades; APNG and
+  animated WebP keep the full alpha channel. A GIF with no transparent pixels is
+  unchanged, byte for byte.
+- **TIFF, BMP and CMYK TIFF are drawn at the size you ask for.** These three still
+  exports run the same export frame clock as PNG and JPEG, so a tool that draws
+  its own frames uses the requested pixel size rather than the canvas size.
+- **A tool link inside another document renders at export quality.** A Lolly tool
+  link placed in a Design image box, or embedded as a tool image, was rendered at
+  preview quality and a preview size when the document was exported. It is now
+  rendered at export quality, at full samples and at its real size. Cards in the
+  asset picker stay cheap previews.
+- **The 3D and Flythrough tools open in one session.** Each vendors its own
+  three.js build, and the second one opened in a page took the first one's library
+  and reported that the 3D library failed to load. Each bundle now publishes
+  itself under its own name and each tool takes only the build it can use. Both
+  bundles are rebuilt at three 0.186.0.
+- **A failed 3D tool can no longer be exported as a picture.** The 3D and
+  Flythrough tools reported themselves ready even when they had put an error panel
+  on the canvas, so a batch or export path photographed the panel and delivered it
+  as the result. They now report the failure, which fails that export instead.
+- **An abandoned 3D export no longer freezes the studio.** If an export stops
+  before it finishes, the studio takes itself back after thirty seconds, records
+  why in the browser console and checks its next frame. An export whose frame is
+  truly empty still fails rather than saving a blank picture, and that check now
+  reads the pixels of a cut-out surface instead of counting it as nothing.
 - **Painted environments light the way they look.** The six painted 3D Studio
   environments were mirrored in the lighting map, so a shiny object reflected the
   painted sun or windows far from the lamp that lit it. Reflections and the crisp

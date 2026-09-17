@@ -57,6 +57,25 @@ async function recordableVideo(): Promise<{ webm: boolean; mp4: boolean }> {
 // can never self-evict (and revoke a still-displayed blob) within a single render.
 const CACHE_CAP = 64;
 
+// Web-only, additive: how good the child render has to be. A render that is being
+// PLACED inside another tool's output is part of the deliverable and takes export
+// quality - full samples, and the real pixel size rather than a preview's 800 px
+// ceiling (plan 265 milestone 2, E6, closing Q5(a)). A card in the asset picker is a
+// preview and stays cheap. Neither name is on the v1 ComposeAPI contract, so a caller
+// that says nothing keeps the behaviour it had.
+export type WebComposeSpec = ComposeSpec & { thumbnail?: boolean };
+export type WebComposeUrlOpts = ComposeUrlOpts & { thumbnail?: boolean };
+
+/**
+ * Preview quality, or the finished thing? A caller may say. When it does not, the
+ * answer is read from `_stack`: the runtime sets it while resolving an asset inside a
+ * parent render (a Design image box holding a tool link), and that render is the one
+ * the document keeps. The picker and the upload dropzone call with no stack.
+ */
+export function composeQuality(opts: { thumbnail?: boolean; _stack?: readonly string[] }): boolean {
+  return opts.thumbnail ?? !(opts._stack?.length);
+}
+
 export function createComposeAPI(host: HostV1) {
   // Module-scoped per-bridge cache: key → { assetRef, blobUrl }. Insertion order
   // is LRU order; a hit is re-inserted to mark it most-recently-used.
@@ -75,16 +94,20 @@ export function createComposeAPI(host: HostV1) {
     return run;
   };
 
-  async function render(spec: ComposeSpec): Promise<AssetRef> {
+  async function render(spec: WebComposeSpec): Promise<AssetRef> {
     const { toolId, inputs = {}, format, width, height, unit, dpi, transient, settleMs, _stack = [] } = spec ?? {};
     if (typeof toolId !== 'string' || !toolId) throw new Error('compose: missing toolId');
+    // Preview quality unless the caller asked for the finished thing (see the types above).
+    const thumbnail = spec?.thumbnail ?? true;
 
     assertComposeStack(_stack, toolId);
 
     // `transient` bypasses the LRU on BOTH sides: a one-shot bulk render is never
     // re-requested, so caching it would evict live preview entries for nothing and
     // pin a multi-MB blob. The URL is then unowned here - the caller revokes it.
-    const key = transient ? '' : cacheKey(toolId, inputs, format, width, height, unit, dpi);
+    // The quality is part of the key: the same child at preview and at export quality
+    // is two different pictures, and the second must not be served the first.
+    const key = transient ? '' : cacheKey(toolId, inputs, format, width, height, unit, dpi, thumbnail);
     if (!transient) {
       const hit = cache.get(key);
       if (hit) { cache.delete(key); cache.set(key, hit); return hit.assetRef; } // LRU bump
@@ -97,7 +120,7 @@ export function createComposeAPI(host: HostV1) {
     const doRender = () => renderRowToBlob(
       { toolId, values: inputs as Record<string, InputValue> },
       host,
-      { format, width, height, unit: unit as Unit | undefined, dpi, composeStack: _stack, watermark: false, embedMeta: false, thumbnail: true, settleMs },
+      { format, width, height, unit: unit as Unit | undefined, dpi, composeStack: _stack, watermark: false, embedMeta: false, thumbnail, settleMs },
     );
     const { blob, format: fmt } = isSingle ? await serializeSingle(doRender) : await doRender();
 
@@ -180,11 +203,12 @@ export function createComposeAPI(host: HostV1) {
   // embed URL - the portable identity that persists through URL mode + saved
   // sessions and is fed back here by the runtime to re-render on load. `opts`
   // (format/size, set by the picker) override what the link specifies.
-  async function renderUrl(url: string, opts: ComposeUrlOpts = {}) {
+  async function renderUrl(url: string, opts: WebComposeUrlOpts = {}) {
     const r = await resolveSpec(url);
     if (!r) return null;
     const { parsed, tool, state, query } = r;
     const supported = (tool.manifest.render?.formats ?? []).map(normFmt);
+    const thumbnail = composeQuality(opts);   // see the rule above the function
 
     const format = normFmt(opts.format) || normFmt(parsed.format)
       || (supported.includes('svg') ? 'svg' : (supported[0] || 'png'));
@@ -204,7 +228,7 @@ export function createComposeAPI(host: HostV1) {
     try {
       ref = await render({
         toolId: parsed.toolId, inputs: state.values,
-        format: format as ExportFormat, width, height, unit, dpi, _stack: opts._stack ?? [],
+        format: format as ExportFormat, width, height, unit, dpi, _stack: opts._stack ?? [], thumbnail,
       });
     } catch (e) {
       host.log?.('warn', `renderUrl "${parsed.toolId}": ${(e as Error).message}`);
@@ -267,8 +291,9 @@ function cacheKey(
   height: number | undefined,
   unit: string | undefined,
   dpi: number | undefined,
+  thumbnail: boolean,
 ): string {
-  return `${toolId}|${stableStringify(inputs)}|${format ?? ''}|${width ?? ''}${unit ?? ''}x${height ?? ''}@${dpi ?? ''}`;
+  return `${toolId}|${stableStringify(inputs)}|${format ?? ''}|${width ?? ''}${unit ?? ''}x${height ?? ''}@${dpi ?? ''}|${thumbnail ? 'preview' : 'export'}`;
 }
 
 function stableStringify(value: unknown): string {

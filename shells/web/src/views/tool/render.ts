@@ -24,6 +24,7 @@ import { mountEmoji } from '../emoji-mount.ts';
 import { boundEndpointIds, geometryFastPathPlan } from '../canvas-scene.ts';
 import type { Box } from '../free-canvas-math.ts';
 import { c2paDefaultOn, exportTargetNode, extFor, isCmykFmt, isPrintFmt } from '../tool-actions.ts';
+import { exportPixelSize } from '../export-dimension-fields.ts';
 import { armAutoCopy, resolveCanvasAnnotations } from './shared.ts';
 import type { RunExportOpts, } from './shared.ts';
 import { bindOp, type ToolViewCtx } from './context.ts';
@@ -270,6 +271,20 @@ export function paint(tview: ToolViewCtx): void {
             },
           }))
           .catch(error => { if (gen === tview.renderGen) tview.studioError = error instanceof Error ? error : new Error(String(error)); });
+        // Saved studios (plan 265 step 2): Save studio, Apply a studio, Update from
+        // studio and Detach, in the sidebar's Studio section. renderInputs rebuilds the
+        // panel on every model change and runs before this paint, so the row is put
+        // back with each paint rather than wired once.
+        if (inputsEl) {
+          const panel = inputsEl;
+          void import('../../lib/studio-library.ts')
+            .then(m => m.mountStudioActions(panel, {
+              runtime: tview.runtime,
+              host: tview.host,
+              toolId: tview.toolId,
+            }))
+            .catch(error => console.warn('studio library mount failed:', error));
+        }
       }
       clearCanvasError(tview);
       tview.lastPainted = hydrated;
@@ -361,6 +376,9 @@ export function paint(tview: ToolViewCtx): void {
     // a deep-link export captures the branded canvas, not the fallbacks. The live
     // palette (for CMYK ink substitution) is the same tokens fetch, so it rides
     // along rather than adding its own wait.
+    // waitForQuiescence rejects when a tool reports `tool:failed` (plan 265 milestone 2,
+    // E4), so each of these three waits ends in a catch: a tool that could not draw is a
+    // logged reason the deep-link action did not run, not an unhandled rejection.
     Promise.all([waitForQuiescence(contentEl), brandVarsReady, livePalette(tview.host)]).then(
       ([, , palette]) => {
       const { nativeH, nativeW, urlBleed, urlC2pa, urlDepth, urlDpi, urlDurable, urlFilename, urlHdr, urlHeight, urlImprint, urlMarks, urlNostage, urlPassword, urlProfile, urlUnit, urlVideo, urlWidth } = tview;
@@ -469,28 +487,32 @@ export function paint(tview: ToolViewCtx): void {
             expOpts.provenance = urlMarks.provenance;
           }
         }
-        tview.exporting.exportUnscaled(() =>
-          { const { exportSourceNode, runtime } = tview; return runtime
-            .export(exportTargetNode(exportSourceNode), fmt, expOpts)
-            .then((blob) => tview.host.export.download(blob, `${name}.${extFor(fmt, blob)}`))
-            .catch((err) => console.error('Auto-export failed:', err)); }
+        tview.exporting.exportUnscaled(
+          () =>
+            { const { exportSourceNode, runtime } = tview; return runtime
+              .export(exportTargetNode(exportSourceNode), fmt, expOpts)
+              .then((blob) => tview.host.export.download(blob, `${name}.${extFor(fmt, blob)}`))
+              .catch((err) => console.error('Auto-export failed:', err)); },
+          // A deep link names its own size, so this export knows what it renders at: a tool
+          // whose detail follows the output is built for the link's size, not the preview.
+          { size: exportPixelSize(expOpts) }
         );
       }
-    );
+    ).catch((err) => tview.host.log?.('warn', `Auto-export did not start: ${String(err)}`));
   }
 
   if (tview.pendingAutoCopy) {
     tview.pendingAutoCopy = false;
     Promise.all([waitForQuiescence(contentEl), brandVarsReady]).then(() =>
       { const { actionsApi, actionsEl, urlFormat } = tview; return armAutoCopy(actionsEl, actionsApi, urlFormat || undefined); }
-    );
+    ).catch((err) => tview.host.log?.('warn', `Auto-copy did not start: ${String(err)}`));
   }
 
   if (tview.pendingAutoPreview) {
     tview.pendingAutoPreview = false;
     Promise.all([waitForQuiescence(contentEl), brandVarsReady]).then(() =>
       runPreview(tview).catch((err) => console.error('Auto-preview failed:', err))
-    );
+    ).catch((err) => tview.host.log?.('warn', `Auto-preview did not start: ${String(err)}`));
   }
 }
 // Paint any queued frame right now (cancelling the scheduled rAF). Used by

@@ -1596,6 +1596,13 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // Every report value is escaped; dot colours come from a constant lookup.
   'views/valid-report-card.ts': 1,
   'views/text.ts': 3,
+  // 2026-09-17, the saved-studio actions row (plan 265 milestone 2). One sink builds
+  // the Studio section header from a fixed class string and one translated title; the
+  // other builds four buttons whose labels go through the shared escape helper, with
+  // fixed action names, and one notice whose whole text, including a studio's own
+  // name, is escaped before it is written. Nothing here reads a document or a network
+  // response.
+  'lib/studio-library.ts': 2,
 };
 
 test('R10: raw-HTML sinks are a pinned inventory, not a growing one', () => {

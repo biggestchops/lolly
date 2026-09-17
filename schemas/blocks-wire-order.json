@@ -461,7 +461,13 @@
       "panY",
       "panZ",
       "ownFocus",
-      "focusDistance"
+      "focusDistance",
+      "scale",
+      "offsetX",
+      "offsetY",
+      "id",
+      "text",
+      "font"
     ],
     "3d-studio:objects": [
       "name",

@@ -897,6 +897,11 @@ export function wireApprovalAndActions(ta: ActionsCtx): void {
         const captions = wantEmbed || wantSidecar ? await ta.audio.captionText() : null;
         const softCaptionsVtt = wantEmbed && captions ? captions.vtt : undefined;
         const sidecarCaptions = wantSidecar && captions ? captions : null;
+        // The dimensions this export is about to render at, read once. They go to the
+        // export bridge below, and the same reading becomes the pixel size handed to a
+        // tool whose detail follows the output (the 3D studio's curve detail: auto).
+        const exportDims = ta.dims.exportDims();
+        const exportSize = ta.dims.exportPixels(exportDims);
         // RunExportOpts plus the durationUserSet contract flag: it belongs to the
         // sequence path (the tool hook reads ctx.opts.durationUserSet), not to the
         // generic shell-wide export options, so it's carried as a local widening
@@ -907,7 +912,7 @@ export function wireApprovalAndActions(ta: ActionsCtx): void {
           cuts?: number;
           subtitlesVtt?: string;
         } & typeof audioOpt = {
-          ...ta.dims.exportDims(),
+          ...exportDims,
           signal: exportAbort.signal,
           onProgress: (done, total) => {
             // Live take: (done, total) is a seconds countdown from the recorder. The
@@ -1530,7 +1535,7 @@ export function wireApprovalAndActions(ta: ActionsCtx): void {
                       reportToShutter = report ?? null; // read by opts.onProgress above
                       return runtime.export(drvNode, fmt, opts);
                     },
-                    { shutter: true, detail: fmtLabel(fmt), onCancel: cancelExport }
+                    { shutter: true, detail: fmtLabel(fmt), onCancel: cancelExport, size: exportSize }
                   );
             } finally {
               if (liveDrive) {

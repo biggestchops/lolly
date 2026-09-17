@@ -21,11 +21,28 @@
  *
  * The 2026-08 "variation" concept (`variationOf`) is legacy: older records may carry it,
  * the chooser may group by it, nothing writes it from now on.
+ *
+ * A record may also be SCOPED (plan 265 step 2). A `scope: 'look'` record is a saved
+ * studio: half a document's values, not a starting point, so `list()` leaves it out and
+ * only `listLooks()` returns it. It carries `lookVersion`, an integer that counts up on
+ * every save over the same record, which is what lets a document name the version of a
+ * studio it took its look from and notice when a newer one exists. Nothing else about a
+ * scoped record differs: it rides the same profile field and the same get/set.
  */
 
+import type { StudioLookScopeV1 } from '@lolly-tools/core/studio3d-v1';
 import type { UserTemplateRecord } from '@lolly-tools/core/host-v1';
 
-export type UserTemplate = UserTemplateRecord;
+/**
+ * A saved user template. The two optional fields are additive: a record without them is
+ * the full-document template every earlier save wrote, and reads exactly as before.
+ */
+export interface UserTemplate extends UserTemplateRecord {
+  /** 'look' marks a saved studio; absent marks a starting point for a new document. */
+  scope?: StudioLookScopeV1['scope'];
+  /** Present on a scoped record: 1 on the first save, one more on each save after. */
+  lookVersion?: number;
+}
 
 interface UserTemplateProfile {
   userTemplates?: UserTemplate[];
@@ -85,6 +102,8 @@ export interface SaveTemplateInput {
   from?: string;
   /** Legacy: the 2026-08 variation card still passes it; kept on the record when given. */
   variationOf?: string;
+  /** 'look' saves a studio instead of a starting point: `values` holds half a document. */
+  scope?: UserTemplate['scope'];
 }
 
 export function createUserTemplateStore(host: UserTemplateHost) {
@@ -101,10 +120,22 @@ export function createUserTemplateStore(host: UserTemplateHost) {
   function stamp(t: UserTemplate): void { t.updatedAt = now(); }
 
   const store = {
-    /** Every user template, or just this tool's when `toolId` is given (newest first). */
+    /**
+     * Every starting-point template, or just this tool's when `toolId` is given (newest
+     * first). Saved studios are left out: they carry half a document, so a chooser that
+     * starts a new one must never offer them. Use `listLooks` for those.
+     */
     async list(toolId?: string): Promise<UserTemplate[]> {
       const profile = await host.profile.get();
-      const all = (profile.userTemplates ?? []).slice();
+      const all = (profile.userTemplates ?? []).slice().filter(t => !t.scope);
+      const scoped = toolId ? all.filter(t => t.toolId === toolId) : all;
+      return scoped.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    },
+
+    /** Saved studios (`scope: 'look'`), for this tool when `toolId` is given, newest first. */
+    async listLooks(toolId?: string): Promise<UserTemplate[]> {
+      const profile = await host.profile.get();
+      const all = (profile.userTemplates ?? []).filter(t => t.scope === 'look');
       const scoped = toolId ? all.filter(t => t.toolId === toolId) : all;
       return scoped.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     },
@@ -128,11 +159,29 @@ export function createUserTemplateStore(host: UserTemplateHost) {
         ...(input.designSystem ? { designSystem: { ...input.designSystem } } : {}),
         ...(input.from ? { from: input.from } : {}),
         ...(input.variationOf ? { variationOf: input.variationOf } : {}),
+        ...(input.scope === 'look' ? { scope: 'look' as const, lookVersion: 1 } : {}),
         createdAt: now(),
         updatedAt: now(),
       };
       await mutate(list => list.push(tpl));
       return tpl;
+    },
+
+    /**
+     * "Save this look again": swap a saved studio's values and count its version up, so
+     * a document that names the old version can tell there is a newer one. Returns the
+     * updated record, or null when the id is gone or names a starting point rather than
+     * a studio.
+     */
+    async updateLook(id: string, values: Record<string, unknown>): Promise<UserTemplate | null> {
+      return mutate(list => {
+        const t = list.find(x => x.id === id);
+        if (t?.scope !== 'look') return null;
+        t.values = values ?? {};
+        t.lookVersion = Math.max(1, Math.trunc(Number(t.lookVersion) || 1)) + 1;
+        stamp(t);
+        return { ...t };
+      });
     },
 
     /** "Update from this document": swap the seed, keep identity, name and stamps. */

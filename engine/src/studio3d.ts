@@ -369,6 +369,9 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       depth: number(shape.depth, 0.25, 0.01, 2),
       bevel: number(shape.bevel, 0.025, 0, 0.15),
       smoothness: Math.round(number(shape.smoothness, 24, 8, 64)),
+      // count keeps Smoothness as the number of chords per curve, as every earlier
+      // release did; auto asks the shell to read the count off the output size.
+      detail: choice(v.curveDetail, ['count', 'auto'] as const, 'count'),
     },
     transform: arrangement
       ? objects[0]!.transform

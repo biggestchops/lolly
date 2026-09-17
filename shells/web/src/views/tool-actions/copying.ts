@@ -124,9 +124,12 @@ export async function performCopy(ta: ActionsCtx, fmtOverride?: string): Promise
   // it first (awaiting before write() loses the gesture and the browser silently
   // denies the write; deferring the blob inside the promise is the cross-browser
   // pattern that survives the ~shutter delay). One export feeds both paths.
+  // The copy renders at the export bar's dimensions, so it carries their pixel size too:
+  // a tool whose detail follows the output is built for what is copied, not the preview.
+  const copyDims = ta.dims.exportDims();
   const blobPromise = exportUnscaled(
-    () => runtime.export(flatExportNode(canvasEl), 'png', ta.dims.exportDims()),
-    { shutter: true }
+    () => runtime.export(flatExportNode(canvasEl), 'png', copyDims),
+    { shutter: true, size: ta.dims.exportPixels(copyDims) }
   );
   if (navigator.clipboard?.write && window.ClipboardItem) {
     try {
@@ -182,7 +185,10 @@ export async function preview(ta: ActionsCtx): Promise<void> {
     const fmt =
       (manifest.render.preview as { format?: string } | undefined)?.format ||
       manifest.render.formats[0]!;
-    await exportUnscaled(() => runtime.export(exportTargetNode(canvasEl), fmt, ta.dims.exportDims()));
+    const previewDims = ta.dims.exportDims();
+    await exportUnscaled(() => runtime.export(exportTargetNode(canvasEl), fmt, previewDims), {
+      size: ta.dims.exportPixels(previewDims),
+    });
   } finally {
     ta.previewing = false;
   }
@@ -260,8 +266,9 @@ export function wireSendTargets(ta: ActionsCtx): void {
         choice = picked;
       }
       label.textContent = t('Rendering…');
+      const sendDims = ta.dims.exportDims();
       const opts = {
-        ...ta.dims.exportDims(),
+        ...sendDims,
         ...(target.requiresCredential
           ? { c2pa: true, ...(ta.dims.c2paDaysVal() ? { c2paDays: ta.dims.c2paDaysVal()! } : {}) }
           : {}),
@@ -283,6 +290,7 @@ export function wireSendTargets(ta: ActionsCtx): void {
       const sendNode = multiPage ? exportTargetNode(canvasEl) : flatExportNode(canvasEl);
       const blob = await exportUnscaled(() => runtime.export(sendNode, fmt, opts), {
         shutter: true,
+        size: ta.dims.exportPixels(sendDims),
       });
       label.textContent = t('Sending…');
       const out = await target.send({

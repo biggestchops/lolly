@@ -119,8 +119,10 @@ function recipe(id: string): Promise<StudioValues> {
 
 /**
  * The harness tetrahedron as binary STL with real facet normals. The /binary.stl fixture
- * writes zero normals, which three's STL loader keeps, so it renders black and shows no
- * colour or finish.
+ * writes zero normals, which three's STL loader keeps, and that used to render as a black
+ * solid showing neither its colour nor its finish. The studio now computes the normals
+ * from the triangles, which is why the `stl` set is a listed correction (CORRECTIONS
+ * below); this set, whose file carries real normals, is unchanged by it.
  */
 function litStl(): Uint8Array {
   const corners = [
@@ -300,6 +302,8 @@ const TOLERANCES: Record<string, { maxDelta: number; changedFraction: number; re
  * decision that accepted it. A listed set must still differ.
  */
 const CORRECTIONS: Record<string, string> = {
+  stl:
+    'Q14, accepted by Andy on 2026-09-17 with the milestone 2 hand-off: an STL whose facet normals are all zero rendered as a black solid, so the file showed neither its colour nor its finish. The studio now computes the normals from the triangles when the file carries none, and says so in Source notes. The stl-lit set, whose file has real normals, is unchanged.',
   'painted-environment':
     'Q6, accepted by Andy on 2026-09-17: painted panoramas are no longer mirrored, so reflections and the crisp background agree with the lamps',
 };

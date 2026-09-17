@@ -32,7 +32,7 @@ document rather than a handful of fields: **chart** (`chart.md`), **design**
 | ID | Name | Category | Formats | Requires | Capabilities | Purpose |
 |---|---|---|---|---|---|---|
 | `3d` | 3D | designer | png, jpg, webp, webm, mp4, gif, avif, tiff, apng, webp-anim | - | - | Load a 3D model into a lit scene, orbit and pose the camera, and render a still or a turntable animation. |
-| `3d-studio` | 3D Studio | designer | png, jpg, webp, avif, tiff, webm, mp4, gif | - | - | Turn SVG artwork and 3D models into coordinated images, alone or arranged together in one scene. |
+| `3d-studio` | 3D Studio | designer | png, jpg, webp, avif, tiff, webm, mp4, gif, apng, webp-anim | - | - | Turn SVG artwork and 3D models into coordinated images, alone or arranged together in one scene. |
 | `agenda` | Agenda | event | pdf, pdf-cmyk, svg, penpot, png, jpg, webp, ics | - | - | A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for t… |
 | `asset-export` | Asset Export | everyone | svg, penpot, png, jpg, webp, pdf, pdf-cmyk, cmyk-tiff, ico, zip, avif, tiff, eps, dxf, emf | - | - | Render any catalog asset - or a Lolly tool link - out to any format and size. |
 | `audiogram` | Audiogram | everyone | png, webm, mp4, gif, webp-anim, html, wav, mp3, m4a, opus, srt, vtt, apng | - | - | Turn a voice clip or song into a video in your design system's colours that actually moves with the sound - bars, spe… |

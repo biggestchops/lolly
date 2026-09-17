@@ -5298,11 +5298,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 --------------------------------------------------------------------------------
+three.js 0.186.0 (r186)
+SPDX-License-Identifier: MIT
+Files: tools/3d/lib/three.min.js, tools/flythrough/lib/three.min.js
+Copyright: Copyright © 2010-2026 three.js authors
+The 3d bundle is the WebGPU build (WebGPURenderer, with its WebGL 2 backend as the fallback) plus the GLTFLoader, RoomEnvironment and OrbitControls addons; the flythrough bundle is the WebGL build with the same addons. Both are rebuilt by scripts/build-three-bundle.ts from the root devDependency, and each publishes its own global (LollyThreeGpu, LollyThreeGl) so one page can hold both.
+
+Copyright © 2010-2026 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
 three.js 0.185.1 (r185)
 SPDX-License-Identifier: MIT
-Files: tools/3d/lib/three.min.js, tools/flythrough/lib/three.min.js, tools/chart/lib/three-chart.min.js
+Files: tools/chart/lib/three-chart.min.js
 Copyright: Copyright © 2010-2026 three.js authors
-The 3d bundle is the WebGPU build (WebGPURenderer, with its WebGL 2 backend as the fallback) plus the GLTFLoader, RoomEnvironment and OrbitControls addons, rebuilt by scripts/build-three-bundle.ts from the root devDependency; the flythrough bundle is the WebGL build with the same addons. Chart's lazy WebGL build carries only its scene, geometry, material and lighting primitives and is rebuilt by scripts/build-chart-three.ts.
+Chart's lazy WebGL build carries only its scene, geometry, material and lighting primitives and is rebuilt by scripts/build-chart-three.ts. It stays at r185 until that bundle is next rebuilt.
 
 Copyright © 2010-2026 three.js authors
 

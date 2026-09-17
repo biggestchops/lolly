@@ -638,3 +638,251 @@ test('private SUSE icons keep a bevel on every shape', {
       }
     }
 });
+
+import { STUDIO_ICONS, studioIconPath } from './helpers/studio3d-icons.ts';
+
+/**
+ * The twelve public icon fixtures (plan 265 milestone 2, T0), through the checks above.
+ *
+ * They stand in for a brand icon family in the collection work, so what matters here is
+ * that each one really extrudes: the right number of shapes, the holes the drawing has,
+ * a closed surface, caps that face out, and the full bevel at both requests with no
+ * reduction note. The set was drawn for that last point (no detail under about three
+ * units, no corner sharper than about 45 degrees, deep overlaps where one colour meets
+ * itself), so a note appearing here means an icon changed, not that the studio did.
+ */
+type IconCase = Pick<Fixture, 'file' | 'holes' | 'hits' | 'misses'>;
+
+const ICON_CASES: IconCase[] = [
+  {
+    file: 'bolt-ring.svg',
+    holes: [0, 1],
+    hits: [
+      [20, 4, GREEN],
+      [4, 20, GREEN],
+      [36, 20, GREEN],
+      [20, 20, DARK],
+    ],
+    misses: [
+      [11, 20],
+      [20, 29],
+      [1, 20],
+    ],
+  },
+  {
+    file: 'gear.svg',
+    holes: [0, 1],
+    hits: [
+      [20, 4, GREEN],
+      [4, 20, GREEN],
+      [20, 20, DARK],
+    ],
+    misses: [
+      [20, 14],
+      [6, 6],
+      [1, 20],
+    ],
+  },
+  {
+    file: 'leaf.svg',
+    holes: [0, 1],
+    hits: [
+      [10, 27, GREEN],
+      [27, 17, GREEN],
+      [20, 20, DARK],
+    ],
+    misses: [
+      [4, 20],
+      [34, 20],
+      [30, 30],
+      [10, 10],
+    ],
+  },
+  {
+    file: 'play.svg',
+    holes: [0, 1],
+    hits: [
+      [10, 20, DARK],
+      [30, 20, DARK],
+      [20, 8, DARK],
+      [20, 20, GREEN],
+    ],
+    misses: [
+      [4, 20],
+      [20, 4],
+      [7, 7],
+    ],
+  },
+  {
+    file: 'cloud.svg',
+    holes: [0, 1],
+    hits: [
+      [20, 10, DARK],
+      [8, 20, DARK],
+      [28, 20, DARK],
+      [19, 20, GREEN],
+    ],
+    misses: [
+      [20, 5],
+      [2, 20],
+      [20, 31],
+    ],
+  },
+  {
+    file: 'padlock.svg',
+    holes: [0, 1],
+    hits: [
+      [20, 34, GREEN],
+      [10, 30, GREEN],
+      [20, 21.5, GREEN],
+      [15, 17, DARK],
+      [24, 17, DARK],
+    ],
+    misses: [
+      [20, 27],
+      [20, 15],
+      [4, 20],
+    ],
+  },
+  {
+    file: 'magnifier.svg',
+    holes: [0, 1],
+    hits: [
+      [16.5, 6, DARK],
+      [6, 16.5, DARK],
+      [32, 32, DARK],
+      [16.5, 16.5, GREEN],
+    ],
+    misses: [
+      [10, 16.5],
+      [30, 16.5],
+      [16.5, 30],
+    ],
+  },
+  {
+    file: 'bell.svg',
+    holes: [0, 0],
+    hits: [
+      [20, 10, GREEN],
+      [10, 26, GREEN],
+      [20, 31, DARK],
+    ],
+    misses: [
+      [20, 27.5],
+      [6, 20],
+      [32, 26],
+    ],
+  },
+  {
+    file: 'house.svg',
+    holes: [0, 1],
+    hits: [
+      [20, 12, GREEN],
+      [6, 30, GREEN],
+      [34, 22, GREEN],
+      [20, 23, DARK],
+    ],
+    misses: [
+      [20, 6],
+      [6, 12],
+      [34, 34],
+    ],
+  },
+  {
+    file: 'pin.svg',
+    holes: [0, 1],
+    hits: [
+      [20, 7, GREEN],
+      [9, 17, GREEN],
+      [20, 33, GREEN],
+      [20, 16, DARK],
+    ],
+    misses: [
+      [20, 2],
+      [8, 30],
+      [34, 17],
+    ],
+  },
+  {
+    file: 'chat.svg',
+    holes: [0, 0, 0, 3],
+    hits: [
+      [20, 12, GREEN],
+      [14, 31, GREEN],
+      [13, 18, DARK],
+      [20, 18, DARK],
+      [27, 18, DARK],
+    ],
+    misses: [
+      [20, 4],
+      [2, 18],
+      [20, 32],
+    ],
+  },
+  {
+    file: 'star.svg',
+    holes: [0, 1],
+    hits: [
+      [20, 5, GREEN],
+      [5, 15, GREEN],
+      [12, 32, GREEN],
+      [20, 20, DARK],
+    ],
+    misses: [
+      [20, 32],
+      [4, 30],
+      [20, 1],
+    ],
+  },
+];
+
+for (const icon of STUDIO_ICONS)
+  test(`icon fixture ${icon.file} (${icon.weight})`, async (t) => {
+    const fixture = ICON_CASES.find((entry) => entry.file === icon.file);
+    assert.ok(fixture, `${icon.file} is in STUDIO_ICONS with no case here`);
+    const text = readFileSync(studioIconPath(icon.file), 'utf8');
+    assert.ok(text.includes('SPDX-License-Identifier: MPL-2.0'), `${icon.file}: licence comment`);
+    for (const request of REQUESTS) {
+      const asset = await loadSvgFixture(text, { bevel: request });
+      const where = `${icon.file} at ${request}`;
+      try {
+        const meshes = meshesOf(asset),
+          scale = scaleOf(asset);
+        const reports = meshes.map((mesh) => inspectMesh(mesh, scale));
+        t.diagnostic(
+          `${request}: applied ${reports.map((r) => r.bevel.toPrecision(3)).join(', ')}; ${reports.map((r) => r.triangles).join(', ')} triangles`
+        );
+        assert.equal(meshes.length, fixture.holes.length, `${where}: shape count`);
+        assert.deepEqual(
+          reports.map((r) => r.genus).sort((a, b) => a - b),
+          fixture.holes,
+          `${where}: holes per shape`
+        );
+        for (const [x, y, paint] of fixture.hits) {
+          const found = probe(meshes, x, y);
+          assert.ok(found.length > 0, `${where}: (${x}, ${y}) should hit a solid`);
+          if (paint) assert.deepEqual(found, [paint], `${where}: (${x}, ${y}) paint`);
+        }
+        for (const [x, y] of fixture.misses)
+          assert.deepEqual(probe(meshes, x, y), [], `${where}: (${x}, ${y}) should miss`);
+        for (const r of reports) {
+          const label = `${where} ${r.paint}`;
+          assert.ok(r.finite, `${label}: every position is finite`);
+          assert.equal(r.collapsed, 0, `${label}: no triangle collapses when vertices merge`);
+          assert.equal(r.openEdges, 0, `${label}: every edge is shared by two triangles`);
+          assert.equal(r.capsOffEnds, 0, `${label}: cap triangles are at the two ends`);
+          assert.equal(r.capsFlipped, 0, `${label}: caps face out`);
+          assert.equal(r.badNormals, 0, `${label}: every normal has a direction`);
+          if (r.bevel > 1e-6) assert.deepEqual(r.groups, [0, 1, 2], `${label}: surface groups`);
+          assert.ok(sameBevel(r.bevel, request), `${where}: applied ${r.bevel}, requested ${request}`);
+        }
+        assert.deepEqual(
+          asset.info.warnings.filter((w) => REDUCED.test(w)),
+          [],
+          `${where}: no bevel note`
+        );
+      } finally {
+        asset.dispose();
+      }
+    }
+  });

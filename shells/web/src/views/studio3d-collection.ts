@@ -3,16 +3,21 @@
 import './studio3d-collection.css';
 import { type InputModelItem, type InputValue, matchesShowIf } from '../../../../engine/src/inputs.ts';
 import type { Runtime } from '../../../../engine/src/runtime.ts';
+import { safeFileName } from '@lolly-tools/core/file-v1';
 import type { AssetRef } from '../../../../packages/core/src/host-v1.ts';
 import {
   type StudioValues,
   studioCollectionRows,
   studioCollectionSize,
+  studioSheetSize,
 } from '../../../../engine/src/studio3d-collection.ts';
 import { mountModal } from '../components/modal.ts';
+import { t, tRaw } from '../i18n.ts';
 import { isBatchRunActive, startBatchExport } from '../lib/batch-job.ts';
+import { applyStudio, listStudios } from '../lib/studio-library.ts';
 import { renderStudioCollection } from '../lib/studio3d/collection-preview.ts';
 import { studioShaperFor } from '../lib/studio3d/mount.ts';
+import { createUserTemplateStore } from '../lib/user-templates.ts';
 import type { PanelEl, WebToolHost } from './tool.ts';
 import { syncInputs } from './tool-inputs.ts';
 
@@ -102,6 +107,64 @@ export async function addStudioSources(
   return added;
 }
 
+/** Fits one line to a width, ending in three dots when it has to be cut. */
+function fitLine(ctx: CanvasRenderingContext2D, text: string, width: number): string {
+  if (ctx.measureText(text).width <= width) return text;
+  let cut = text;
+  while (cut.length > 1 && ctx.measureText(`${cut}...`).width > width) cut = cut.slice(0, -1);
+  return `${cut}...`;
+}
+
+/**
+ * The contact sheet as one picture: every tile in a grid at the size it was previewed,
+ * its name under it, and the collection named in the top corner. The tiles are the
+ * previews already on screen, so the file says exactly what the review said, and the
+ * drawing is plain 2D canvas work with no second trip to the GPU.
+ */
+async function drawContactSheet(
+  tiles: { name: string; blob: Blob }[],
+  size: { width: number; height: number },
+  title: string
+): Promise<Blob> {
+  const columns = Math.max(1, Math.min(6, Math.ceil(Math.sqrt(tiles.length))));
+  const rows = Math.ceil(tiles.length / columns);
+  const gap = 24;
+  const label = Math.max(20, Math.round(size.height * 0.12));
+  const type = Math.max(11, Math.round(label * 0.6));
+  const head = Math.round(type * 2.6);
+  const canvas = document.createElement('canvas');
+  canvas.width = gap * 2 + columns * size.width + (columns - 1) * gap;
+  canvas.height = gap * 2 + head + rows * (size.height + label) + (rows - 1) * gap;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('This device cannot draw the contact sheet.');
+  const family = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#182920';
+  ctx.font = `600 ${Math.round(type * 1.25)}px ${family}`;
+  ctx.fillText(fitLine(ctx, title, canvas.width - gap * 2), gap, gap);
+  for (const [index, tile] of tiles.entries()) {
+    const bitmap = await createImageBitmap(tile.blob);
+    try {
+      const x = gap + (index % columns) * (size.width + gap);
+      const y = gap + head + Math.floor(index / columns) * (size.height + label + gap);
+      ctx.drawImage(bitmap, x, y, size.width, size.height);
+      ctx.font = `${type}px ${family}`;
+      ctx.fillStyle = '#182920';
+      ctx.fillText(fitLine(ctx, tile.name, size.width), x, y + size.height + Math.round(label * 0.2));
+    } finally {
+      bitmap.close();
+    }
+  }
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('The contact sheet could not be saved.'))),
+      'image/png'
+    )
+  );
+}
+
 export function openStudioCollection(runtime: Runtime, host: WebToolHost): void {
   if (open.has(runtime)) return;
   open.add(runtime);
@@ -119,9 +182,10 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
   const dialog = mountModal(
     `<header><h2>Review collection</h2><button type="button" data-studio-close aria-label="Close collection review">Close</button></header>
     <p>Change the shared look here. Edit an item to adjust its framing. Save the studio to keep the whole collection together.</p>
-    <div class="studio-collection-layout"><div data-studio-collection-controls class="tool-inputs"></div>
+    <div class="studio-collection-layout"><div><div data-studio-collection-studio hidden></div><div data-studio-collection-controls class="tool-inputs"></div></div>
       <div><p data-studio-collection-status role="status">Preparing previews...</p><div data-studio-collection-grid></div></div></div>
-    <footer><span>Previews use 8 samples. Exports use the saved render quality and start at the beginning of the animation loop.</span>
+    <footer><span data-studio-collection-sizes>Previews use 8 samples. Exports use the saved render quality and start at the beginning of the animation loop.</span>
+      <button type="button" data-studio-sheet-download disabled>${t('Download sheet')}</button>
       <button type="button" data-studio-set-export disabled>Export PNG set</button></footer>`,
     {
       className: 'studio-collection-dialog',
@@ -142,10 +206,16 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
   const grid = dialog.el.querySelector<HTMLElement>('[data-studio-collection-grid]')!;
   const status = dialog.el.querySelector<HTMLElement>('[data-studio-collection-status]')!;
   const exporting = dialog.el.querySelector<HTMLButtonElement>('[data-studio-set-export]')!;
+  const sheeting = dialog.el.querySelector<HTMLButtonElement>('[data-studio-sheet-download]')!;
+  const sizes = dialog.el.querySelector<HTMLElement>('[data-studio-collection-sizes]')!;
+  const studioSlot = dialog.el.querySelector<HTMLElement>('[data-studio-collection-studio]')!;
   let previous: InputModelItem[] | null = null,
     lastKey = '',
     lastModel = '',
     snapshot: StudioValues | null = null;
+  /** The rendered tiles of the sheet on screen, in item order, for the one-file download. */
+  let tiles: { name: string; blob: Blob }[] = [];
+  let tileSize = { width: 0, height: 0 };
   const readValues = (): StudioValues =>
     Object.fromEntries(runtime.getModel().map((item) => [item.id, item.value]));
   const read = async (url: string, signal: AbortSignal): Promise<Uint8Array> => {
@@ -161,6 +231,7 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
     const signal = abort.signal,
       gen = ++generation;
     exporting.disabled = true;
+    sheeting.disabled = true;
     snapshot = null;
     status.textContent = 'Updating previews...';
     clearTimeout(timer);
@@ -171,9 +242,17 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
           if (closed || gen !== generation) return;
           releaseImages();
           grid.replaceChildren();
+          tiles = [];
           try {
             const rows = studioCollectionRows(resolved),
               size = studioCollectionSize(values);
+            // Both numbers are stated: what the contact sheet draws and what a delivered
+            // file will be, because they are no longer the same size.
+            tileSize = studioSheetSize(size);
+            sizes.textContent = tRaw(
+              'Previews render at {pw} by {ph} pixels with 8 samples. Each exported image is {w} by {h} at the saved render quality, from the start of the animation loop.',
+              { pw: tileSize.width, ph: tileSize.height, w: size.width, h: size.height }
+            );
             const cards = rows.map((row) => {
               const card = document.createElement('article');
               const image = document.createElement('div');
@@ -210,6 +289,7 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
                 img.src = url;
                 img.alt = `${row.name}, rendered in this studio`;
                 card.image.append(img);
+                tiles.push({ name: row.name, blob: result });
               }
               status.textContent = `Rendered ${++done} of ${rows.length}`;
             }, studioShaperFor(host));
@@ -221,6 +301,7 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
               snapshot = structuredClone(values);
               exporting.disabled = false;
             }
+            sheeting.disabled = !tiles.length;
           } catch (error) {
             if (!closed && gen === generation && !signal.aborted)
               status.textContent = (error as Error).message;
@@ -295,4 +376,53 @@ export function openStudioCollection(runtime: Runtime, host: WebToolHost): void 
     status.textContent =
       'PNG set queued. Progress and cancellation are available in the job notification.';
   };
+  sheeting.onclick = () => {
+    if (closed || !tiles.length) return;
+    const drawn = tiles.slice(),
+      size = { ...tileSize };
+    const name = String(readValues().collectionName || 'Studio collection').slice(0, 120);
+    sheeting.disabled = true;
+    status.textContent = t('Drawing the contact sheet...');
+    void drawContactSheet(drawn, size, name)
+      .then(async (blob) => {
+        await host.export.download(blob, safeFileName(`${name} contact sheet.png`));
+        if (closed) return;
+        status.textContent = tRaw('Contact sheet saved: {count} items on one page.', {
+          count: drawn.length,
+        });
+      })
+      .catch((error: unknown) => {
+        if (!closed) status.textContent = (error as Error).message;
+      })
+      .finally(() => {
+        if (!closed) sheeting.disabled = false;
+      });
+  };
+  // A saved studio (the Studio library) writes its whole look into the shared values;
+  // the previews then refresh through the ordinary subscription, like any other edit.
+  void (async () => {
+    try {
+      const saved = await listStudios(createUserTemplateStore(host), '3d-studio');
+      if (closed || !saved.length) return;
+      const label = document.createElement('label');
+      label.className = 'studio-collection-pick';
+      label.textContent = t('Studio');
+      const select = document.createElement('select');
+      select.append(new Option(t('Keep the current look'), ''));
+      for (const studio of saved) select.append(new Option(studio.name, studio.id));
+      select.onchange = () => {
+        const chosen = saved.find((studio) => studio.id === select.value);
+        if (!chosen) return;
+        status.textContent = tRaw('Applying {name}...', { name: chosen.name });
+        void applyStudio(runtime, chosen).catch((error: unknown) => {
+          if (!closed) status.textContent = (error as Error).message;
+        });
+      };
+      label.append(' ', select);
+      studioSlot.replaceChildren(label);
+      studioSlot.hidden = false;
+    } catch {
+      // A profile that cannot list saved studios simply offers none.
+    }
+  })();
 }

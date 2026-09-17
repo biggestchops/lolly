@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
+import { CSS_DPI, isPhysical, parseDimension, toPixels } from '@lolly/engine';
 import { convertLength, roundIn } from '../lib/unit-steps.ts';
 
 export interface ExportDimensionUpdate {
@@ -7,6 +8,38 @@ export interface ExportDimensionUpdate {
   height?: number;
   unit?: string;
   dpi?: number;
+}
+
+/** The export dimensions as the bridge receives them: plain px numbers, or unit strings. */
+export interface ExportDimensionOpts {
+  width?: number | string;
+  height?: number | string;
+  dpi?: number;
+}
+
+/**
+ * The pixel size an export of these dimensions really renders at, or undefined when the
+ * dimensions name no size at all (the bridge then measures the node on screen, which is
+ * the preview size a reader already falls back to).
+ *
+ * Physical units become pixels at the export dpi, print's 300 when none was given: the
+ * rule bridge/export-shared.ts applies, over the engine's own conversion, so a reader of
+ * this number and the file it gets are talking about the same output.
+ *
+ * Today the one reader is the 3D studio, whose curve detail can follow the output size.
+ */
+export function exportPixelSize(
+  dims: ExportDimensionOpts,
+): { width: number; height: number } | undefined {
+  const w = parseDimension(dims.width);
+  const h = parseDimension(dims.height);
+  if (!w && !h) return undefined;
+  const dpi = (dims.dpi ?? 0) > 0 ? (dims.dpi ?? 0) : isPhysical(w) || isPhysical(h) ? 300 : CSS_DPI;
+  const width = w ? toPixels(w, dpi) : 0;
+  const height = h ? toPixels(h, dpi) : 0;
+  // One side left blank takes the other one's value. The size is read for its longer
+  // side, and a zero would read as "smaller than the preview" rather than "not given".
+  return { width: width || height, height: height || width };
 }
 
 function field<T extends Element>(root: ParentNode, action: string): T | null {

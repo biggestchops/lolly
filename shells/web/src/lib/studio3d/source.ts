@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
-import { extrudeStudioShape } from './geometry.ts';
+import { extrudeStudioShape, studioChordTolerance } from './geometry.ts';
 import { makeGeomApi } from '../../../../../engine/src/geom-api.ts';
 import type {
   StudioSceneV1,
@@ -17,6 +17,12 @@ export interface StudioAsset {
   dispose(): void;
 }
 export type StudioRead = (url: string, signal: AbortSignal) => Promise<Uint8Array>;
+/** The output a load builds geometry for: the longest side of the frame, in pixels. */
+export interface StudioDetailTarget {
+  pixels: number;
+}
+/** The frame a mount previews in, which mount.ts caps at this many pixels on the long side. */
+export const STUDIO_PREVIEW_PIXELS = 800;
 /** One shaped line: an SVG path with the baseline at y=0, plus its advance, at `fontSize` px. */
 export type StudioShaper = (
   line: string,
@@ -237,7 +243,8 @@ export function prepareStudioSvg(text: string): { svg: string; slots: StudioSour
 
 function svgObject(
   text: string,
-  scene: StudioSceneV1
+  scene: StudioSceneV1,
+  pixels: number
 ): { object: THREE.Group; info: StudioSourceInfo } {
   const prepared = prepareStudioSvg(text),
     paths = new SVGLoader().parse(prepared.svg).paths;
@@ -250,6 +257,9 @@ function svgObject(
   if (!Number.isFinite(span) || span < 1e-6) throw new Error('The artwork has no measurable area.');
   const scale = 3.25 / span,
     bevel = scene.shape.bevel / scale;
+  // Curve detail that follows the output is measured in the artwork's own units, so every
+  // shape in this file is flattened finely enough for the frame it will be drawn in.
+  const tolerance = scene.shape.detail === 'auto' ? studioChordTolerance(pixels, span) : undefined;
   const object = new THREE.Group();
   const warnings: string[] = [];
   try {
@@ -261,7 +271,8 @@ function svgObject(
           shape,
           scene.shape.depth / scale,
           bevel,
-          scene.shape.smoothness
+          scene.shape.smoothness,
+          tolerance
         );
         if (result.bevel < bevel - 1e-8) {
           const message = `${material.name}: bevel reduced from ${scene.shape.bevel.toPrecision(3)} to ${(result.bevel * scale).toPrecision(3)} studio units to preserve narrow details. Reduce the requested bevel or widen the source detail for a stronger edge.`;
@@ -301,6 +312,22 @@ function disposeObject(object: THREE.Object3D): void {
   }
 }
 
+/**
+ * An STL whose facet normals are all zero, or that carries none, renders black: the file
+ * gives the shading nothing to work with, and three's loader keeps what the file says. The
+ * studio computes the normals from the triangles instead. STL is a facet format and the
+ * loader builds one unshared triangle per facet, so the computed normals are flat, one per
+ * facet, which is what the file describes. True when the studio had to compute them.
+ */
+function computeStlNormals(geometry: THREE.BufferGeometry): boolean {
+  const normals = geometry.getAttribute('normal');
+  if (normals)
+    for (let i = 0; i < normals.count; i++)
+      if (normals.getX(i) || normals.getY(i) || normals.getZ(i)) return false;
+  geometry.computeVertexNormals();
+  return true;
+}
+
 function inspectGlb(bytes: Uint8Array): void {
   if (bytes.byteLength < 20) throw new Error('The GLB file is incomplete.');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -336,17 +363,20 @@ export async function loadStudioSource(
   scene: StudioSceneV1,
   read: StudioRead,
   signal: AbortSignal,
-  shaper?: StudioShaper
+  shaper?: StudioShaper,
+  target?: StudioDetailTarget
 ): Promise<StudioAsset> {
   let raw = new THREE.Group();
   let info: StudioSourceInfo = { slots: [], triangles: 0, warnings: [] };
+  // Without a target the geometry is built for the studio's own preview frame.
+  const pixels = target?.pixels ?? STUDIO_PREVIEW_PIXELS;
   try {
     if (scene.source.kind === 'text') {
       if (!scene.source.text?.text) throw new Error('Type the words to set.');
       if (!shaper) throw new Error('This app cannot outline text; open the studio in the web app.');
       const svg = await studioTextSvg(scene.source.text, scene.materials.colorA, shaper, signal);
       signal.throwIfAborted();
-      ({ object: raw, info } = svgObject(svg, scene));
+      ({ object: raw, info } = svgObject(svg, scene, pixels));
       info.slots = [{ id: 'paint:words', label: '1: words', color: scene.materials.colorA }];
       // Letters are thin next to the whole word, so a long word or a large bevel gets
       // trimmed. One plain note replaces the per-colour report artwork gets.
@@ -362,7 +392,7 @@ export async function loadStudioSource(
     } else if (scene.source.kind === 'primitive') {
       if (scene.source.primitive === 'badge') {
         const example = `<svg xmlns="http://www.w3.org/2000/svg"><path fill="${scene.materials.colorA}" d="M20 0a20 20 0 1 1 0 40a20 20 0 1 1 0-40M20 5a15 15 0 1 0 0 30a15 15 0 1 0 0-30"/><path fill="${scene.materials.colorB}" d="M21 9L12 23h7v9l9-15h-7z"/></svg>`;
-        ({ object: raw, info } = svgObject(example, scene));
+        ({ object: raw, info } = svgObject(example, scene, pixels));
       } else {
         const geometry =
           scene.source.primitive === 'sphere'
@@ -383,7 +413,7 @@ export async function loadStudioSource(
       if (!bytes.length || bytes.length > MAX_BYTES)
         throw new Error('Use a source file between 1 byte and 32 MB.');
       if (scene.source.kind === 'svg')
-        ({ object: raw, info } = svgObject(new TextDecoder().decode(bytes), scene));
+        ({ object: raw, info } = svgObject(new TextDecoder().decode(bytes), scene, pixels));
       else if (scene.source.kind === 'stl') {
         const geometry = new STLLoader().parse(bytes.slice().buffer);
         const material = new THREE.MeshPhysicalMaterial({
@@ -395,6 +425,10 @@ export async function loadStudioSource(
         info.warnings.push(
           'STL has no standard units or materials. This is a visual preview; print dimensions are not inferred.'
         );
+        if (computeStlNormals(geometry))
+          info.warnings.push(
+            'This STL carried no facet normals; the studio computed them from the triangles.'
+          );
       } else {
         inspectGlb(bytes);
         const manager = new THREE.LoadingManager();

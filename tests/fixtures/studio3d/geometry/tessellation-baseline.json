@@ -1,5 +1,5 @@
 {
-  "about": "Tessellation record for plan 265 milestone 2, written by tests/studio3d-tessellation.test.ts with STUDIO_WRITE_BASELINE=1. No test compares against it.",
+  "about": "Tessellation record for plan 265 (B3, and D1 to D3 in milestone 2), written by tests/studio3d-tessellation.test.ts with STUDIO_WRITE_BASELINE=1. The triangle counts under fixtures and auto are asserted by that file; the pixel measures are a record.",
   "three": "0.186.0",
   "shape": {
     "bevel": 0.025,
@@ -114,6 +114,42 @@
             "4096": 0.01012
           }
         }
+      }
+    }
+  },
+  "auto": {
+    "ring-opposite.svg": {
+      "64": {
+        "segments": 8,
+        "triangles": 1536,
+        "fitted": 0.09883
+      },
+      "512": {
+        "segments": 17,
+        "triangles": 3264,
+        "fitted": 0.1778
+      },
+      "4096": {
+        "segments": 47,
+        "triangles": 9024,
+        "fitted": 0.1876
+      }
+    },
+    "letter-b-outfit.svg": {
+      "64": {
+        "segments": 8,
+        "triangles": 3964,
+        "fitted": 0.01012
+      },
+      "512": {
+        "segments": 8,
+        "triangles": 3964,
+        "fitted": 0.08096
+      },
+      "4096": {
+        "segments": 16,
+        "triangles": 7612,
+        "fitted": 0.162
       }
     }
   }

@@ -1,6 +1,103 @@
 // SPDX-License-Identifier: MPL-2.0
 
-async function compute(model) {
+// The controls a saved studio carries (plan 265 step 2). Tools never import from the
+// engine, so the list is data here too; tests/studio3d-look.test.ts fails if it drifts
+// from the engine's STUDIO_LOOK_INPUT_IDS.
+const STUDIO_LOOK_INPUTS = [
+  'studio',
+  'materialMode',
+  'colorA',
+  'colorB',
+  'finishA',
+  'finishB',
+  'glow',
+  'surfaceFinishes',
+  'faceFinishA',
+  'bevelFinishA',
+  'sideFinishA',
+  'faceFinishB',
+  'bevelFinishB',
+  'sideFinishB',
+  'drama',
+  'softness',
+  'exposure',
+  'lightMotion',
+  'lightMotionAmount',
+  'shape',
+  'curveDetail',
+  'projection',
+  'camera',
+  'depthOfField',
+  'aperture',
+  'atmosphere',
+  'atmosphereForms',
+  'atmosphereSpread',
+  'atmosphereCount',
+  'seed',
+  'backdrop',
+  'background',
+  'background2',
+  'backdropImage',
+  'backdropStrength',
+  'floor',
+  'floorColor',
+  'shadowOpacity',
+  'pedestal',
+  'keyColor',
+  'fillColor',
+  'rimColor',
+  'coolColor',
+  'warmColor',
+  'lightLevels',
+  'keyPosition',
+  'fillPosition',
+  'rimPosition',
+  'environment',
+  'environmentImage',
+  'environmentBackground',
+  'environmentBlur',
+  'environmentIntensity',
+  'environmentRotation',
+  'lights',
+  'samples',
+  'videoSamples',
+  'motion',
+  'cameraMotion',
+  'cameraKeys',
+  'cameraEase',
+  'cameraLoop',
+  'duration',
+  'turnDegrees',
+];
+
+/**
+ * A studio control the reader changed while a saved studio is attached becomes theirs:
+ * its id joins studioOverrides, and Update from studio then leaves it alone. Returns
+ * the new list as text, or null when there is nothing to write. The camera is recorded
+ * whole, because a hook is told which input changed and not which of its fields moved,
+ * so an orbit also keeps the field of view.
+ */
+function studioOverridesAfter(values, changedId) {
+  if (!String(values.studioRef || '').trim()) return null;
+  if (!STUDIO_LOOK_INPUTS.includes(changedId)) return null;
+  const raw = String(values.studioOverrides || '').trim();
+  let listed = [];
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) listed = parsed.map((id) => String(id));
+    } catch {
+      listed = [];
+    }
+  }
+  const ids = listed.filter((id) => STUDIO_LOOK_INPUTS.includes(id));
+  if (ids.includes(changedId)) return null;
+  ids.push(changedId);
+  const next = JSON.stringify([...new Set(ids)].sort());
+  return next === raw ? null : next;
+}
+
+async function compute(model, changedId) {
   const values = {};
   for (let i = 0; i < model.length; i++) values[model[i].id] = model[i].value;
   const flag = (value) => value === true || value === 'true' || value === 1;
@@ -104,6 +201,11 @@ async function compute(model) {
     );
     if (normalizeRows) patch[key] = rows;
   }
+  const overrides = changedId ? studioOverridesAfter(values, changedId) : null;
+  if (overrides !== null) {
+    patch.studioOverrides = overrides;
+    values.studioOverrides = overrides;
+  }
   return {
     ...patch,
     _studioState: JSON.stringify({ version: 1, values: values }),
@@ -132,5 +234,5 @@ function onInit(ctx) {
 }
 // biome-ignore lint/correctness/noUnusedVariables: The runtime calls this hook.
 function onInput(ctx) {
-  return compute(ctx.model);
+  return compute(ctx.model, ctx.id);
 }

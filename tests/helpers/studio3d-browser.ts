@@ -47,8 +47,9 @@
  *                an extracted tree outside the repo still resolves `three`.
  *
  * Default routes: /bundle.js, /fixture.svg, /duck.glb (community/3d/assets), /bad.glb,
- * /tetra.stl, /binary.stl, /light.hdr, /light.exr and /favicon.ico (204). With STUDIO_SUSE
- * set, /geeko/<id> and /suse/<id> serve the private SUSE models and icons.
+ * /tetra.stl, /binary.stl, /light.hdr, /light.exr, /icons/<file> (the twelve public icon
+ * fixtures, see studio3d-icons.ts) and /favicon.ico (204). With STUDIO_SUSE set,
+ * /geeko/<id> and /suse/<id> serve the private SUSE models and icons.
  *
  * Page API, window.studioTest:
  *   render(values)   mounts the template with studioDefaults under `values`, waits two
@@ -82,6 +83,7 @@ import { loadTool } from '../../engine/src/loader.ts';
 import { createRuntime } from '../../engine/src/runtime.ts';
 import { baseHost } from './host.ts';
 import { holdEncodeTier } from './sequence-browser.ts';
+import { studioIconsDir } from './studio3d-icons.ts';
 
 const root = resolve(import.meta.dirname, '..', '..');
 const MOUNT_MODULE = 'shells/web/src/lib/studio3d/mount.ts';
@@ -485,6 +487,7 @@ function defaultRoutes(): Record<string, StudioRoute> {
     '/binary.stl': tetraBinaryStl,
     '/light.hdr': async () => radianceHdr(),
     '/light.exr': async () => radianceExr(),
+    '/icons/*': (path) => readFile(join(studioIconsDir(), segment(path, '/icons/'))),
     '/favicon.ico': null,
   };
   if (process.env.STUDIO_SUSE) {

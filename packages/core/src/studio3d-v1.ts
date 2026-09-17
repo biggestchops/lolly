@@ -93,7 +93,12 @@ export interface StudioLightV1 {
 export interface StudioSceneV1 {
   version: 1;
   source: StudioSourceV1;
-  shape: { depth: number; bevel: number; smoothness: number };
+  /**
+   * detail 'count' flattens every curve into `smoothness` chords, the same number at any
+   * output size. 'auto' asks the shell to pick the count from the size it is rendering,
+   * keeping the flattening error under a quarter of a pixel; `smoothness` is then unused.
+   */
+  shape: { depth: number; bevel: number; smoothness: number; detail: 'count' | 'auto' };
   transform: { rotation: StudioVector3; position: StudioVector3; scale: number };
   camera: {
     projection: StudioProjection;
@@ -221,4 +226,32 @@ export interface StudioSourceInfo {
   slots: StudioSurfaceInfo[];
   triangles: number;
   warnings: string[];
+}
+
+/**
+ * A saved studio (plan 265 step 2): the reusable half of a 3D Studio document, kept
+ * as a user template with a `look` scope so it never appears in the chooser that
+ * starts a new document. Its `values` hold only the studio's own inputs, the engine's
+ * `STUDIO_LOOK_KEYS`; the subject, the framing and the delivery stay with each
+ * document that applies it.
+ *
+ * Applying a studio writes plain input values, so the recipe, URL mode, the CLI and
+ * MCP never see a reference. What a document remembers is `StudioLinkV1` below.
+ */
+export interface StudioLookScopeV1 {
+  scope: 'look';
+  /** Counts up by one on every save over the same saved studio, starting at 1. */
+  lookVersion: number;
+}
+
+/**
+ * What a document remembers about the studio it took its look from. `ref` is
+ * `<templateId>@<lookVersion>`, empty when no studio is attached; `overrides` names
+ * the input ids the reader changed since, which "Update from studio" leaves alone. A
+ * reference to a studio that has since been deleted is a note, never an error: the
+ * values are already in the document.
+ */
+export interface StudioLinkV1 {
+  ref: string;
+  overrides: string[];
 }

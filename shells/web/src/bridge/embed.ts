@@ -20,6 +20,7 @@
 
 import { parseEmbedUrl, parseUrlState } from '@lolly/engine';
 import type { HostV1, ExportFormat } from '@lolly-tools/core/host-v1';
+import type { WebComposeSpec } from './compose.ts';
 import { getTool } from './tool-loader.ts';
 
 // 1×1 transparent GIF - the placeholder a neutralised embed shows until (and if)
@@ -80,7 +81,7 @@ export async function resolveLollyToolUrl(
 
   const st = parseUrlState(parsed.query, tool.manifest); // query → safe input model
   try {
-    const ref = await host.compose.render({
+    const spec: WebComposeSpec = {
       toolId: parsed.toolId,
       inputs: st.values,
       format: parsed.format as ExportFormat, // the path extension is the explicit choice
@@ -89,7 +90,13 @@ export async function resolveLollyToolUrl(
       unit: st.unit ?? undefined,       // honour ?width=210&unit=mm
       dpi: st.dpi ?? undefined,
       _stack: embed?.stack ?? [],
-    });
+      // An embed is placed INSIDE the host tool's output, so it is part of the
+      // deliverable and takes export quality rather than a preview's sample count and
+      // 800 px ceiling (plan 265 milestone 2, E6). The same bytes then appear in the
+      // editor and in the export. Web-only and additive; see compose.ts.
+      thumbnail: false,
+    };
+    const ref = await host.compose.render(spec);
     return ref?.url ?? null;
   } catch (e) {
     host.log?.('warn', `embed "${parsed.toolId}": ${(e as Error).message}`);

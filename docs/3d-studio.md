@@ -11,7 +11,7 @@
 5. For SVG artwork, adjust **Depth** and **Bevel** under **Shape**. Small details need a smaller bevel.
 6. Choose the image contents under **Output**, then export.
 
-Use **Object with transparent shadow** and PNG for an object you can place over another background. **Object only** removes the cast shadow too. JPEG has no transparency. The export panel's size, scale and DPI settings render the scene again at that pixel size, up to 4096 pixels per side and 12 million pixels, so a large export carries real detail rather than an enlarged preview. A video or GIF frame takes **Clip samples** (16 by default) rather than the still's render samples, because motion hides sampling noise and a clip is hundreds of frames; raise it for a smoother depth of field at the cost of export time.
+Use **Object with transparent shadow** and PNG for an object you can place over another background. **Object only** removes the cast shadow too. JPEG has no transparency. The export panel's size, scale and DPI settings render the scene again at that pixel size, up to 4096 pixels per side and 12 million pixels, so a large export carries real detail rather than an enlarged preview. Every still format takes that route: TIFF as well as PNG, JPEG, WebP and AVIF, and the BMP and CMYK TIFF exports other tools offer. A video or GIF frame takes **Clip samples** (16 by default) rather than the still's render samples, because motion hides sampling noise and a clip is hundreds of frames; raise it for a smoother depth of field at the cost of export time.
 
 ## Light, materials and depth
 
@@ -27,7 +27,7 @@ Under **Stage**, choose a background colour, gradient or image. A PNG made with 
 
 ## Promotional backdrops
 
-The quickest route to an animated backdrop is a template: **Wordmark backdrop** sets your words in the brand font, **Icon backdrop** starts from an icon (swap in your own SVG under Start), and a SUSE install adds the SUSE wordmark and icon versions. Each combines the dramatic studio, copies of the subject drifting in depth, orbiting lights and a slow looping camera move, so the first export as video or GIF is already a finished loop. Change the words or the icon, adjust the depth spread and the camera keys, then export.
+The quickest route to an animated backdrop is a template: **Wordmark backdrop** sets your words in the brand font and **Icon backdrop** starts from an icon (swap in your own SVG under Start). Both ship with Lolly itself; **SUSE wordmark backdrop** and **SUSE icon backdrop** come with the SUSE brand pack, so they appear on a SUSE install only. Each combines the dramatic studio, copies of the subject drifting in depth, orbiting lights and a slow looping camera move, so the first export as video or GIF is already a finished loop. Change the words or the icon, adjust the depth spread and the camera keys, then export.
 
 ## Words in the brand font
 
@@ -59,18 +59,22 @@ Radiance maps are limited to 64 MB and 8192 by 4096 pixels. Maps narrower than 5
 
 Colour A and colour B are material colours, not output pixels. Lighting, finish and exposure all change how they render, so a lit face in colour A comes out lighter or darker than its swatch. A colour A edit reaches words and STL models straight away, without reloading the source.
 
-The stage background is part of the scene. A solid, gradient or image background passes through the same tone mapping and exposure as the subject, so it does not export as its exact swatch. At the default exposure of 1.1, a solid `#30ba78` background renders as `#61c992`; Chromium's software renderer (SwiftShader) and Metal on an Apple M4 both gave that value. The background also tints a soft fill light from below, with colour A from above, so changing the background changes the subject's shading slightly.
+An STL that carries no facet normals, or whose normals are all zero, used to render as a black solid with neither its colour nor its finish. The studio computes the normals from the triangles instead, and **Source notes** records that it did. STL is a facet format, so the computed normals are flat, one per facet.
 
-**Object only** and **Object with transparent shadow** keep their transparency in PNG, WebP and AVIF. The other formats fill the transparent areas:
+The stage background is part of the scene. A solid, gradient or image background passes through the same tone mapping and exposure as the subject, so it does not export as its exact swatch. At the default exposure of 1.1, a solid `#30ba78` background renders as `#61c992`; Chromium's software renderer (SwiftShader) and Metal on an Apple M4 both gave that value. The background also tints a soft fill light from below, with colour A from above, so changing the background changes the subject's shading slightly. That tie is part of the saved scene rather than an accident of the renderer, and it runs both ways: a colour A edit moves the fill light as well as the materials.
+
+**Object only** and **Object with transparent shadow** keep their transparency in PNG, WebP and AVIF, and in the two animated stills, APNG and animated WebP, which carry the full alpha channel frame by frame. The other formats fill the transparent areas, or keep less of them:
 
 - JPEG has no alpha channel.
 - TIFF flattens them onto white.
 - WebM and MP4 flatten every frame onto white.
-- GIF, with the default settings, turns them black, so a black transparent shadow disappears. For a GIF, choose **Complete scene** under Output with the background you want.
+- GIF keeps a hard-edged transparency: a pixel less than half opaque becomes a hole, and everything else is drawn. GIF has one bit of alpha, so a soft shadow edge steps rather than fades. For a soft edge, export APNG or animated WebP, which keep the full alpha channel. For a flat card behind the subject, choose **Complete scene** under Output with the background you want.
 
 ## Shape quality and framing
 
 The studio keeps the SVG outline at the sidewall and contracts the faces for an inward bevel. Before it builds the bevel, it follows the contracted outline and holes through every bevel step and checks three things: no edge reverses, no outline or hole collapses and no two edges touch or cross, which includes a hole growing past its outline. A requested size that fails is halved until it passes; bevel thickness is also limited to half the extrusion depth. Rings, letter counters and other shapes with curved holes keep their full bevel wherever the geometry allows it; a bevel is reduced only where a narrow or sharp detail would really fold. The one exception is a shape that would pass one million triangles once bevelled: it is extruded without a bevel. **Source notes** reports every reduction with the requested and applied sizes and correction guidance. The saved requested size stays intact, so changing the source or depth re-evaluates it.
+
+**Curve detail** chooses how a curve becomes straight pieces. **Fixed count** flattens every curve into the same number of pieces whatever size you export: the **Curve count** value, 8 to 64, 24 by default. **Follow the output size** reads the count from the image being made instead, keeping the flattening error inside a quarter of a pixel at the framing **Fit object** gives, and never going past 64 pieces or the one-million-triangle budget. A 4096 pixel image of a curved ring takes 47 pieces per curve where a 64 pixel thumbnail takes 8. The count is chosen for each shape from the artwork itself, so a plain outline stays light while a finely drawn one gets what it needs, and **Curve count** is ignored while the detail follows the output. The preview is built at preview size; an export is built at the size it renders: the width, height and DPI in the export bar, a link's own width and height, the size a batch row renders, and each page's own box in a paged set.
 
 **Fit object** centres the current transformed subject with a margin at the current image aspect ratio. It preserves the viewing angle and perspective field of view. The camera's target offsets record that framing relative to the expert camera target. Fit again after changing the output proportions or object pose. Camera gestures, fit, reset and focus picking use the normal undo history and saved session values.
 
@@ -80,7 +84,7 @@ Expert mode exposes object transforms, perspective or orthographic projection, c
 
 Choose **Custom lights** to build a rig with up to eight directional, point, spot or rectangular area lights. Up to four lights can cast shadows. Lights aim toward the centre of the studio. Rectangular area lights provide illumination and reflections; the other light types provide cast shadows. **Move lights** on the preview places any of them by dragging.
 
-Choose **Override selected slots** to set colour, roughness, metalness and clear coat for individual materials. Open **Material slots and source notes** on the preview to find their names or numbers. A colour override replaces that slot's colour texture. Unselected GLB materials stay intact.
+Choose **Override selected slots** to set colour, roughness, metalness and clear coat for individual materials. Open **Material slots and source notes** on the preview to find their names or numbers. A colour override replaces that slot's colour texture. Unselected GLB materials stay intact. An override names one slot by name or number, so in an arrangement or a collection every object needs that slot: an object without it stops the scene with an error, and in an arrangement the error names the object. Two overrides pointing at the same slot are an error as well.
 
 In colour-pair mode, **Material A slot** and **Material B slot** bind those finishes to exact source names or numbers. Leave both empty to alternate the pair across source slots. With explicit bindings, other slots keep their original materials. A missing slot or two roles pointing at the same slot produces an error.
 
@@ -98,11 +102,15 @@ In Expert mode each row can bind its own material A and B slots and carry a **St
 
 ## Build and review a collection
 
-Choose **A collection** under **Start with**. The sample badge, sphere and box provide a starting set. Replace them, drop several SVG or model files onto **Collection items** to add them at once, or use **Add item**, and give each a useful name. A collection holds up to 24 items.
+Choose **A collection** under **Start with**. The sample badge, sphere and box provide a starting set. Replace them, drop several SVG or model files onto **Collection items** to add them at once, or use **Add item**, and give each a useful name. **Add item** and the asset picker both add to the collection. An item can also be **Words**, set in the shared font under **Start** unless the row names its own. A collection holds up to 24 items.
 
 Lighting, colours, finishes, background and camera settings are shared. **Preview item** chooses the object on the main canvas. Dragging that preview records a framing override for that item. Its row then exposes its own camera numbers and target offsets. Fit and Reset also affect only that item. Focus picking records a separate per-item focus override; turn off **Own focus distance** to use the shared focus again. **Use shared framing** removes the override. In Expert mode, each row can also map its source slots to the shared material pair.
 
-Open **Review collection** to see a contact sheet. Its controls edit the same shared studio and refresh the previews. **Edit** opens one item on the main canvas. Failed sources are identified by item and must be fixed before exporting from the review.
+Each row carries its own **Item size** and **Nudge X** / **Nudge Y**. They are corrections, not a second studio: the size multiplies the shared object scale and the nudges are added to the shared object position, so twelve icons drawn at different weights can be brought to the same apparent size without touching anything the set shares. A row left at 1 and 0 renders exactly as it did before these existed. In Expert mode a row can also carry a **Stable id**. Every override is addressed by that id, so reordering a collection cannot move one item's framing onto another. Delivered file names still follow the saved order.
+
+Open **Review collection** to see a contact sheet. The sheet carries fifteen of the shared controls: the lighting studio, the materials mode, colour A and colour B, the two finishes, the **Separate face, bevel and side finishes** switch with its six face, bevel and side choices, the exposure and the collection image size. Editing one of them there edits the same shared studio and refreshes every preview. Where you have saved studios, a **Studio** control above those settings applies one to the whole set. **Edit** opens one item on the main canvas. Failed sources are identified by item and must be fixed before exporting from the review.
+
+The sheet renders each preview at the saved image size reduced to 512 pixels on the long side, and its footer states both numbers: what the sheet draws and what a delivered file will be. **Download sheet** saves the whole sheet as one PNG, the tiles in a grid with each name under its tile and the collection's name at the top.
 
 **Export PNG set** renders every item at **Collection image size** and the saved render sample count. It captures a snapshot of the current settings, so edits during the job apply to the next export. Numbered names keep repeated or unusual item names distinct. The existing batch job provides progress, cancellation and download recovery; cancellation stops subsequent items after the current render settles.
 
@@ -110,11 +118,21 @@ The contact sheet shows the start of the animation loop at reduced quality. PNG-
 
 ## SUSE models
 
-The SUSE brand pack adds Geeko, Geeko on a branch and Geeko sitting to the model library. Open their studio templates or **Geeko model collection** to review all three with shared lighting. The models retain their original materials by default. They are available when the SUSE brand pack is installed.
+The SUSE brand pack adds Geeko, Geeko on a branch and Geeko sitting to the model library. Their studio templates, and the **Geeko model collection** template that opens all three under shared lighting, come with the same pack, so all of them appear on a SUSE install only. The models retain their original materials by default.
 
 ## Save and reuse
 
-Save the scene as a session to reopen it, or use **Save as a template** for a reusable starting point. Asset selections refer to stored files. A share link carries settings and asset references; use an editable `.lolly` file when another device also needs your uploaded assets.
+Save the scene as a session to reopen it, or use **Save as a template** for a reusable starting point. Asset selections refer to stored files. A share link carries settings and asset references; use an editable `.lolly` file when another device also needs your uploaded assets. A studio link placed in another document, a Design image box or an embedded tool image, is rendered at export quality, at full samples and at its real size.
+
+### Save and reuse a studio
+
+**Save studio** keeps the look of the current document as a reusable studio: the lighting rig and its animation, the environment, the materials, finishes and colours, the stage, the extrusion, the depth of field and its forms, the exposure, the render quality, the camera projection and field of view, and the motion. It does not keep the subject, the framing, the collection or the output settings, so one studio photographs many different things. **Apply a studio** writes that look into the current document and leaves its subject, orbit, elevation, zoom, pan and focus where they are. The four actions sit in the sidebar's **Studio** section.
+
+Each document remembers which studio it took its look from, and which controls you changed yourself afterwards. Editing a saved studio changes nothing in the documents that use it: each one takes the change when you choose **Update from studio**, which refreshes every control except the ones you changed. **Detach** stops following the studio and leaves every value in place.
+
+A collection or an arrangement takes a studio the same way. The shared controls follow the studio; each item's own framing, focus and material roles stay as you set them.
+
+A studio lives on your profile, like a template, so it backs up and restores with everything else. A share link and a `.lolly` file carry the resolved values, not the studio, so the far side sees the look even when it does not have the studio itself.
 
 Lolly's batch workflow renders the same studio. Create rows with the same lighting, material and camera values, varying `artwork` or `modelAsset`. Save separate framing overrides where an object's shape needs them. A template provides a common starting point; later edits to it do not automatically change existing sessions.
 
@@ -125,6 +143,14 @@ Use **Make variants** for side-by-side editing. Its shared controls change the s
 Set **Motion** to **Turntable** for a rotating object, and see Move the camera above for camera paths. **Light motion** independently animates the studio: **Orbit the studio** sweeps the rig around the object and back; **Gently breathe** varies its intensity. Moving sources affect illumination, reflections and cast shadows. Brand light colours stay intact.
 
 **Light motion amount** controls the sweep or intensity range. **Loop seconds** controls both object and light timing and supplies the initial clip length. The export panel lets you override how much to record. The lights return to their starting position and intensity at each loop boundary. A turntable closes its object pose only when its turn angle is a whole number of rotations.
+
+## What an edit redraws
+
+Editing a studio rebuilds only what the edit changed. Moving the camera redraws the frame and, in a complete scene, the backdrop behind it. Moving a light rebuilds the lights alone. Changing a colour or a finish writes the materials onto the objects already in place, and only a change to the extrusion of an outline, its depth, bevel or curve detail, reads that artwork again. A model file is never read again for a camera, light, colour, finish or bevel change. The sample badge, sphere and box are drawn from the colour pair itself, so those are built again when a colour changes. Each of these steps is counted, so a test can prove an edit did no more work than it should.
+
+Batch rows, contact sheets and preview tiles share two graphics contexts rather than opening one each, and a renderer handed back keeps its environment and backdrop for the next one.
+
+If an export stops before it finishes, the studio takes itself back after thirty seconds, records why in the browser console and checks its next frame. A preview that is still loading when you leave the tool stops there instead of reporting a failure. A frame that comes out empty fails that export rather than saving a blank picture, and that check reads the pixels for a cut-out surface, one drawn with a clear-edged texture or a nearly clear opacity, instead of counting it as nothing.
 
 ## Current limits
 

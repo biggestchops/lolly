@@ -14,7 +14,7 @@ import { announce } from '../../a11y.js';
 import { t } from '../../i18n.ts';
 import { displayIn } from '../../lib/unit-steps.ts';
 import { bumpMetric } from '../../metrics.js';
-import { convertExportDimensionFields } from '../export-dimension-fields.ts';
+import { convertExportDimensionFields, exportPixelSize, type ExportDimensionOpts } from '../export-dimension-fields.ts';
 import { aspectWarning } from '../export-size.js';
 import type { RunExportOpts } from '../tool.ts';
 import { printEnabled } from './shared.ts';
@@ -71,6 +71,16 @@ export function exportDims(ta: ActionsCtx): { width?: number | string; height?: 
   };
   if (u !== 'px') out.dpi = dimDpi(ta);
   return out;
+}
+// The same dimensions in pixels, for an export path that hands the size to the tool it is
+// photographing - today the 3D studio, whose curve detail can follow the output size. Pass
+// the dims already resolved for the export bridge, so the number handed over and the file
+// written can never come from two different readings of the bar.
+export function exportPixels(
+  ta: ActionsCtx,
+  dims: ExportDimensionOpts = exportDims(ta)
+): { width: number; height: number } | undefined {
+  return exportPixelSize(dims);
 }
 // On-screen preview is CSS px: physical units shown at their 96-DPI px size.
 export function previewPx(ta: ActionsCtx): { width: number | undefined; height: number | undefined } {
@@ -270,6 +280,7 @@ export function dimsOps(ta: ActionsCtx) {
     c2paDaysVal: bindOp(ta, c2paDaysVal),
     rawDims: bindOp(ta, rawDims),
     exportDims: bindOp(ta, exportDims),
+    exportPixels: bindOp(ta, exportPixels),
     previewPx: bindOp(ta, previewPx),
     updateAspectWarning: bindOp(ta, updateAspectWarning),
     canvasUsesBackdropFilter: bindOp(ta, canvasUsesBackdropFilter),

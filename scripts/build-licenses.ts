@@ -477,13 +477,22 @@ const MANIFEST: {
     },
     {
       name: 'three.js',
+      version: '0.186.0 (r186)',
+      spdx: 'MIT',
+      copyright: 'Copyright © 2010-2026 three.js authors',
+      files: 'tools/3d/lib/three.min.js, tools/flythrough/lib/three.min.js',
+      text: `Copyright © 2010-2026 three.js authors\n\n${MIT_BODY}`,
+      note: "The 3d bundle is the WebGPU build (WebGPURenderer, with its WebGL 2 backend as the fallback) plus the GLTFLoader, RoomEnvironment and OrbitControls addons; the flythrough bundle is the WebGL build with the same addons. Both are rebuilt by scripts/build-three-bundle.ts from the root devDependency, and each publishes its own global (LollyThreeGpu, LollyThreeGl) so one page can hold both.",
+      where: 'web',
+    },
+    {
+      name: 'three.js',
       version: '0.185.1 (r185)',
       spdx: 'MIT',
       copyright: 'Copyright © 2010-2026 three.js authors',
-      files:
-        'tools/3d/lib/three.min.js, tools/flythrough/lib/three.min.js, tools/chart/lib/three-chart.min.js',
+      files: 'tools/chart/lib/three-chart.min.js',
       text: `Copyright © 2010-2026 three.js authors\n\n${MIT_BODY}`,
-      note: "The 3d bundle is the WebGPU build (WebGPURenderer, with its WebGL 2 backend as the fallback) plus the GLTFLoader, RoomEnvironment and OrbitControls addons, rebuilt by scripts/build-three-bundle.ts from the root devDependency; the flythrough bundle is the WebGL build with the same addons. Chart's lazy WebGL build carries only its scene, geometry, material and lighting primitives and is rebuilt by scripts/build-chart-three.ts.",
+      note: "Chart's lazy WebGL build carries only its scene, geometry, material and lighting primitives and is rebuilt by scripts/build-chart-three.ts. It stays at r185 until that bundle is next rebuilt.",
       where: 'web',
     },
     {

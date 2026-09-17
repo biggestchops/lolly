@@ -6,10 +6,17 @@ import { showScrubReadout, hideScrubReadout } from '../components/scrub-readout.
 import { playScrubTick } from '../lib/sfx.ts';
 import { cssEscape } from '../lib/util/escape.ts';
 
-/** Strip-scale → export → reapply wrapper shared by the tool mount and action helpers. */
+/** Strip-scale → export → reapply wrapper shared by the tool mount and action helpers.
+ *  `size` is the pixel size this export renders at, when the caller knows it: a tool whose
+ *  detail follows the output is built again for it (views/tool/exporting.ts). */
 export type ExportUnscaled = <T>(
   fn: (report?: (done: number, total: number) => void) => Promise<T>,
-  opts?: { shutter?: boolean; detail?: string; onCancel?: () => void }
+  opts?: {
+    shutter?: boolean;
+    detail?: string;
+    onCancel?: () => void;
+    size?: { width: number; height: number };
+  }
 ) => Promise<T>;
 
 // Export-target opt-in (plan: sandbox render). A tool whose exported output is

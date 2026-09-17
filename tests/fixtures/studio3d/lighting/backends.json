@@ -1,6 +1,6 @@
 {
   "darwin:ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)": {
-    "reviewed": false,
+    "reviewed": true,
     "recorded": "2026-09-16",
     "size": 512,
     "samples": 8,

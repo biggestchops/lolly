@@ -6,6 +6,19 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.208.0
+
+- Added `studio3d-look.ts`: `STUDIO_LOOK_KEYS` and `STUDIO_INSTANCE_KEYS` name the studio and document halves of a 3D Studio document, with `studioLookOf`, `studioApplyLook`, `studioParseRef`/`studioFormatRef`, `studioParseOverrides`/`studioFormatOverrides` and `studioRecordOverride`. All pure, all additive.
+- Add `shape.detail` to `StudioSceneV1`: `count` keeps the fixed curve count 0.5.1 used, `auto` lets the host choose the count from the output size, at or under a quarter of a pixel of chord error at the fitted framing and inside the one-million-triangle budget. Additive, with the default reproducing 0.5.1 exactly.
+- `studio3d-collection`: stable subject ids and id-addressed overrides (`studioSubjectIds`, `studioSubjectEdit`), per-item `scale`/`offsetX`/`offsetY` corrections, `kind: 'text'` subjects, and `studioSheetSize`/`STUDIO_SHEET_PIXELS` for the contact sheet. Additive: a collection at the defaults evaluates to the same values as before.
+- The web shell's studio renderer splits its update. A camera or light edit re-instantiates nothing and applies no material; the lights are their own rebuild, so an orbit leaves them standing. A colour or finish edit writes materials onto the objects already placed, and only an extrusion edit re-reads an outline. `sourceLoads` counts completed loads, with aborted ones under `sourceAborts`.
+- Batch rows and contact sheets take renderers from a pool of two contexts beside the interactive mount; a returned renderer keeps its environment, backdrop and the sources a caller asked it to retain, so a twelve-item sheet reads each source once.
+- A capture flag that an abandoned export never lowered clears itself after 30 seconds, with the reason logged and the next frame checked. The empty-frame check reads pixels for a cut-out surface (`alphaTest`, an alpha map, an alpha-carrying colour map or a nearly clear opacity) instead of trusting a ray hit.
+- The TIFF, BMP and CMYK TIFF still renderers run the export frame clock like PNG and JPEG, so a clocked tool draws its frame at the size that was asked for.
+- An animated GIF keeps a one-bit transparency: a frame holding pixels under half alpha is quantised in RGBA and written with a transparent index, and a frame with none keeps the palette it has always had, byte for byte.
+- A tool render placed inside another tool's output takes export quality and the box's real pixel size; a picker preview stays a thumbnail.
+- The legacy `3d` and `flythrough` bundles publish themselves as `LollyThreeGpu` and `LollyThreeGl`, each template takes a global only when it carries the renderer class it needs, and both bundles are rebuilt from the pinned three 0.186.0. Every error path in both dispatches `tool:failed`, which `waitForQuiescence` now rejects on, so an error panel cannot be delivered as a finished export.
+
 ## 1.207.0
 
 - Add `stage.fill` to `StudioSceneV1`: the hemisphere fill the web shell already drew (colour A from above, the stage background from below, intensity 0.12), now written by `buildStudioScene` and read by the stage, so the tie between the background and the fill light is part of the recipe. No input, option or URL parameter changes.

@@ -1,7 +1,7 @@
 {
   "id": "3d-studio",
   "name": "3D Studio",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "engineVersion": ">=1.205.0",
   "status": "official",
   "singleInstance": true,
@@ -34,7 +34,9 @@
       "tiff",
       "webm",
       "mp4",
-      "gif"
+      "gif",
+      "apng",
+      "webp-anim"
     ],
     "actions": [
       "copy",
@@ -48,6 +50,7 @@
     },
     "sectionIcons": {
       "Start": "box",
+      "Studio": "palette",
       "Collection": "box",
       "Look": "paintbrush",
       "Shape": "layers",
@@ -339,6 +342,31 @@
       ]
     },
     {
+      "id": "studioRef",
+      "label": "Studio in use",
+      "type": "text",
+      "default": "",
+      "section": "Studio",
+      "maxLength": 200,
+      "placeholder": "None",
+      "showIf": {
+        "controls": "expert"
+      },
+      "help": "The saved studio this document last took its look from, written as the studio's id and the version that was applied. Use Apply a studio, Update from studio and Detach instead of typing here."
+    },
+    {
+      "id": "studioOverrides",
+      "label": "Studio controls you changed",
+      "type": "longtext",
+      "default": "",
+      "rows": 2,
+      "section": "Studio",
+      "showIf": {
+        "controls": "expert"
+      },
+      "help": "A JSON list of the studio controls this document changed after a studio was applied. Update from studio leaves those controls alone and refreshes the rest."
+    },
+    {
       "id": "collectionName",
       "label": "Collection name",
       "type": "text",
@@ -416,6 +444,11 @@
             {
               "value": "primitive",
               "label": "Sample shape",
+              "repeatable": true
+            },
+            {
+              "value": "text",
+              "label": "Words",
               "repeatable": true
             }
           ]
@@ -612,6 +645,83 @@
           "showIf": {
             "ownFocus": true
           }
+        },
+        {
+          "id": "scale",
+          "label": "Item size",
+          "type": "number",
+          "default": 1,
+          "min": 0.5,
+          "max": 2,
+          "step": 0.01,
+          "help": "Brings one item to the same apparent size as the rest. 1 keeps the shared object scale."
+        },
+        {
+          "id": "offsetX",
+          "label": "Nudge X",
+          "type": "number",
+          "default": 0,
+          "min": -5,
+          "max": 5,
+          "step": 0.05,
+          "help": "Studio units, added to the shared object position. Useful when a tall or wide shape sits off centre."
+        },
+        {
+          "id": "offsetY",
+          "label": "Nudge Y",
+          "type": "number",
+          "default": 0,
+          "min": -5,
+          "max": 5,
+          "step": 0.05,
+          "help": "Studio units, added to the shared object position."
+        },
+        {
+          "id": "id",
+          "label": "Stable id",
+          "type": "text",
+          "default": "",
+          "showIf": {
+            "controls": "expert"
+          },
+          "help": "Optional name that survives reordering, for automation and saved overrides. Letters, digits, dots, dashes."
+        },
+        {
+          "id": "text",
+          "label": "Words",
+          "type": "text",
+          "default": "",
+          "showFor": [
+            "text"
+          ],
+          "help": "Set in the shared font under Start unless this item names its own. Up to 200 characters."
+        },
+        {
+          "id": "font",
+          "label": "Font",
+          "type": "select",
+          "default": "inherit",
+          "showFor": [
+            "text"
+          ],
+          "options": [
+            {
+              "value": "inherit",
+              "label": "Shared font"
+            },
+            {
+              "value": "sans",
+              "label": "Brand sans"
+            },
+            {
+              "value": "display",
+              "label": "Display"
+            },
+            {
+              "value": "mono",
+              "label": "Mono"
+            }
+          ]
         }
       ],
       "addMenu": {
@@ -1667,6 +1777,42 @@
       "help": "Orbit sweeps out and back; breathing gently varies light strength."
     },
     {
+      "id": "curveDetail",
+      "label": "Curve detail",
+      "type": "select",
+      "default": "count",
+      "section": "Shape",
+      "options": [
+        {
+          "value": "count",
+          "label": "Fixed count"
+        },
+        {
+          "value": "auto",
+          "label": "Follow the output size"
+        }
+      ],
+      "showIf": [
+        {
+          "source": "artwork"
+        },
+        {
+          "source": "primitive",
+          "primitive": "badge"
+        },
+        {
+          "source": "collection"
+        },
+        {
+          "source": "arrangement"
+        },
+        {
+          "source": "text"
+        }
+      ],
+      "help": "A fixed count draws every curve with the same number of straight pieces at any size. Follow the output size reads the count from the image you ask for, so a large export keeps its curves smooth and a small one stays light."
+    },
+    {
       "id": "shape",
       "label": "Extrusion and bevel",
       "type": "vector",
@@ -1690,7 +1836,7 @@
         },
         {
           "id": "smoothness",
-          "label": "Curve detail",
+          "label": "Curve count",
           "default": 24,
           "min": 8,
           "max": 64,
@@ -1715,7 +1861,7 @@
           "source": "text"
         }
       ],
-      "help": "SVG and badge depth and bevel in studio units, shared by every object in an arrangement. The studio reduces a bevel that would fold or erase narrow details and reports the applied size in Source notes."
+      "help": "SVG and badge depth and bevel in studio units, shared by every object in an arrangement. The studio reduces a bevel that would fold or erase narrow details and reports the applied size in Source notes. Curve count applies when Curve detail is a fixed count."
     },
     {
       "id": "rotation",

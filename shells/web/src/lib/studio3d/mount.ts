@@ -13,6 +13,7 @@ import {
 import type { StudioSceneV1 } from '../../../../../packages/core/src/studio3d-v1.ts';
 import { STUDIO_CONTEXT_LOST, StudioEmptyFrameError } from './capture.ts';
 import { syncStudioControls, wireStudioGestures } from './controls.ts';
+import type { StudioLease } from './pool.ts';
 import { StudioRenderer } from './renderer.ts';
 import type { StudioSceneCounters, StudioSceneQuality, StudioSceneState } from './scene-host.ts';
 import type { StudioRead, StudioShaper } from './source.ts';
@@ -99,7 +100,21 @@ export interface StudioMountOptions {
   /** Quality of the frames the export clock asks for: a tile takes preview samples. */
   frameQuality?: 'preview' | 'export';
   endGesture?: () => void;
+  /**
+   * A renderer leased from the pool (pool.ts) for one off-screen render, instead of a
+   * context of this mount's own. The lease owns the renderer: destroying the mount hands
+   * the canvas back rather than closing it, and the caller releases the lease.
+   */
+  lease?: StudioLease;
 }
+
+/**
+ * How long a raised capture flag may stand before the mount takes the studio back. Every
+ * export path clears the flag in a finally block, so reaching this means an export died
+ * between its two edges, and without it the studio would stay frozen for the session.
+ * Shortened by tests.
+ */
+export const STUDIO_CAPTURE_BUDGET = { ms: 30_000 };
 /** A mount that arrived during a capture, and every caller waiting for it. */
 interface DeferredMount {
   options: StudioMountOptions;
@@ -122,6 +137,12 @@ interface Entry {
   observer: ResizeObserver;
   /** True while an export drives the canvas (the canvas's __lollyFrameDriven flag). */
   capturing: boolean;
+  /** Clears a capture flag its export never lowered. */
+  captureTimer: ReturnType<typeof setTimeout> | undefined;
+  /** What the last capture render was for, named in the log when the flag is cleared. */
+  captureKind: StudioSceneQuality;
+  /** True when this mount borrowed its renderer and canvas from the pool. */
+  pooled: boolean;
   /** The first error a capture render threw since the last prepare or mount. */
   captureError: Error | null;
   /** Check the next export or clip frame for a missing subject. */
@@ -142,6 +163,13 @@ interface Entry {
   ): void;
 }
 const registry = new Map<Element, Entry>();
+/**
+ * The entry a canvas belongs to now. A pooled canvas outlives the mount that used it, so
+ * the listeners on it are registered once and read the live entry here instead of holding
+ * a mount that has already been destroyed.
+ */
+const owners = new WeakMap<HTMLCanvasElement, Entry>();
+const watched = new WeakSet<HTMLCanvasElement>();
 
 function status(entry: Entry, message: string, state: StudioSceneState): void {
   entry.state = state;
@@ -159,8 +187,12 @@ function destroy(entry: Entry): void {
   entry.generation++;
   cancelAnimationFrame(entry.frame);
   clearTimeout(entry.deferTimer);
+  clearTimeout(entry.captureTimer);
   entry.observer.disconnect();
-  entry.handle.dispose();
+  // A leased renderer goes back to the pool with its environment and backdrop; only a
+  // mount that opened its own context closes one.
+  if (!entry.pooled) entry.handle.dispose();
+  if (owners.get(entry.canvas) === entry) owners.delete(entry.canvas);
   delete entry.canvas.__lollyFrameRender;
   // Back to a plain property: a late end of an export's clock writes to nothing that listens.
   delete entry.canvas.__lollyFrameDriven;
@@ -181,11 +213,29 @@ function beginCapture(entry: Entry): void {
   entry.verifyNext = true;
   entry.canvas.dispatchEvent(new Event('studio-reset-gesture'));
   entry.handle.freeze(true);
+  clearTimeout(entry.captureTimer);
+  entry.captureTimer = setTimeout(() => expireCapture(entry), STUDIO_CAPTURE_BUDGET.ms);
 }
 
 function endCapture(entry: Entry): void {
+  clearTimeout(entry.captureTimer);
   entry.handle.freeze(false);
   if (entry.deferred) runDeferred(entry);
+}
+
+/**
+ * The export that raised the flag never lowered it. Take the studio back: log why, thaw it,
+ * run whatever mount was waiting, and check the next capture's frame, because the export
+ * that was abandoned may have left the scene part way through an edit.
+ */
+function expireCapture(entry: Entry): void {
+  if (!entry.capturing || entry.closed) return;
+  console.warn(
+    `The studio capture flag cleared after ${Math.round(STUDIO_CAPTURE_BUDGET.ms / 1000)} s (${entry.captureKind} export). The export that raised it did not finish.`
+  );
+  entry.capturing = false;
+  endCapture(entry);
+  entry.verifyNext = true;
 }
 
 /** Keep the latest mount that arrived during a capture; every earlier caller settles with it. */
@@ -249,7 +299,8 @@ export async function mountToolStudio(
     throw error;
   }
   if (!entry) {
-    const canvas = document.createElement('canvas') as FrameCanvas;
+    const lease = options.lease;
+    const canvas = (lease?.canvas ?? document.createElement('canvas')) as FrameCanvas;
     canvas.className = 'lolly-studio-canvas';
     canvas.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;';
     canvas.setAttribute(
@@ -258,7 +309,7 @@ export async function mountToolStudio(
     );
     let handle: StudioRenderer;
     try {
-      handle = new StudioRenderer(canvas);
+      handle = lease?.renderer ?? new StudioRenderer(canvas);
     } catch (error) {
       const label = marker.querySelector('[data-studio-status]');
       if (label) label.textContent = `Studio unavailable: ${(error as Error).message}`;
@@ -280,6 +331,9 @@ export async function mountToolStudio(
       generation: 0,
       frame: 0,
       capturing: false,
+      captureTimer: undefined,
+      captureKind: 'export',
+      pooled: !!lease,
       captureError: null,
       verifyNext: false,
       deferred: null,
@@ -320,6 +374,7 @@ export async function mountToolStudio(
                 width: Math.max(1, Math.round(bounds.width * scale)),
                 height: Math.max(1, Math.round(bounds.height * scale)),
               };
+        if (capture) current.captureKind = quality;
         try {
           if (capture && quality !== 'preview') {
             const verify = current.verifyNext;
@@ -353,15 +408,24 @@ export async function mountToolStudio(
         else endCapture(current);
       },
     });
-    canvas.addEventListener('webglcontextlost', () => {
-      if (current.closed) return;
-      current.error = new Error(STUDIO_CONTEXT_LOST);
-      current.ready = false;
-      status(current, current.error.message, 'error');
-    });
+    // Registered once per canvas, because a pooled canvas is mounted again and again.
+    if (!watched.has(canvas)) {
+      watched.add(canvas);
+      canvas.addEventListener('webglcontextlost', () => {
+        const owner = owners.get(canvas);
+        if (!owner || owner.closed) return;
+        owner.error = new Error(STUDIO_CONTEXT_LOST);
+        owner.ready = false;
+        status(owner, owner.error.message, 'error');
+      });
+    }
+    owners.set(canvas, current);
     entry = current;
     registry.set(container, entry);
-    wireStudioGestures(entry);
+    // Gestures are wired for a mount that owns its canvas. A pooled canvas is reused by
+    // the next off-screen render, which nobody points at, and a listener per mount on a
+    // canvas that outlives them all would pile up.
+    if (!lease) wireStudioGestures(entry);
     // The export clock names a clip length only for video and GIF frames; those take the
     // clip sample count, a still keeps the full export count, and a tile stays a preview.
     canvas.__lollyFrameRender = (t, seconds, size) =>
@@ -464,7 +528,9 @@ export async function mountToolStudio(
   entry.captureError = null;
   status(entry, 'Preparing the studio...', 'loading');
   try {
-    const info = await entry.handle.update(recipe, options.read, options.shapeText ?? undefined);
+    const info = await entry.handle.update(recipe, options.read, options.shapeText ?? undefined, {
+      pixels: previewPixels(entry),
+    });
     if (generation !== entry.generation || options.isCurrent?.() === false) return;
     entry.ready = true;
     syncStudioControls(entry);
@@ -485,6 +551,42 @@ export async function mountToolStudio(
     status(entry, entry.error.message, 'error');
     throw entry.error;
   }
+}
+
+/**
+ * The long side the preview is drawn at, which is what a source whose curve detail follows
+ * the output is built for while the studio is on screen. A preview is capped at 800 px by
+ * `render`, so this is the same number a source with no target would have chosen.
+ */
+function previewPixels(entry: Entry): number {
+  const bounds = entry.marker.getBoundingClientRect();
+  const longest = Math.max(bounds.width, bounds.height);
+  // A marker that is not laid out yet measures zero, and a mesh built for zero pixels is
+  // a polygon. The floor is the smallest output the preview is ever asked for.
+  return Math.max(256, Math.round(Math.min(longest, 800)));
+}
+
+/**
+ * Build the sources again for an export that is larger than the preview, when the recipe
+ * asks for curve detail that follows the output. It returns false when there is nothing to
+ * do, which is every recipe with a fixed curve count. Call it before the export runs:
+ * `prepareToolStudio` and the export clock both draw, and neither can wait for a read.
+ */
+export async function prepareStudioDetail(
+  container: Element,
+  size?: { width: number; height: number }
+): Promise<boolean> {
+  const entry = registry.get(container);
+  if (entry?.recipe.shape.detail !== 'auto' || !entry.ready) return false;
+  const target = size
+    ? Math.max(1, Math.round(Math.max(size.width, size.height)))
+    : previewPixels(entry);
+  if (target <= entry.handle.detailPixels) return false;
+  await entry.handle.update(entry.recipe, entry.options.read, entry.options.shapeText ?? undefined, {
+    pixels: target,
+  });
+  // The frame is drawn by whoever exports next: prepareToolStudio, or the export clock.
+  return true;
 }
 
 /** Draw the frame an export captures, checking once that the subject is not missing. */
