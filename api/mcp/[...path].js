@@ -3614,7 +3614,7 @@ var ENGINE_VERSION;
 var init_version = __esm({
   "engine/src/version.ts"() {
     "use strict";
-    ENGINE_VERSION = "1.206.0";
+    ENGINE_VERSION = "1.207.0";
   }
 });
 
@@ -89941,6 +89941,7 @@ function buildStudioScene(input) {
   }
   const camera = record7(v.camera), shape = record7(v.shape), transform2 = record7(v.transform), target = record7(v.target);
   const backdrop = asset(v.backdropImage);
+  const background = color(v.background, secondary);
   const environmentKind = choice2(
     v.environment,
     ["room", "softbox", "window", "studio", "gallery", "warehouse", "stage", "desert", "synthwave", "image"],
@@ -90043,7 +90044,7 @@ function buildStudioScene(input) {
       floor: choice2(v.floor, ["shadow", "matte", "cove"], "shadow"),
       floorColor: color(v.floorColor, secondary),
       shadowOpacity: number2(v.shadowOpacity, 0.4, 0, 1),
-      background: color(v.background, secondary),
+      background,
       background2: color(v.background2, primary),
       backdrop: choice2(v.backdrop, ["solid", "gradient", "image"], "gradient"),
       backdropUrl: backdrop.url,
@@ -90054,7 +90055,10 @@ function buildStudioScene(input) {
       atmosphereForms: choice2(v.atmosphereForms, ["spheres", "copies"], "copies"),
       atmosphereSpread: number2(v.atmosphereSpread, 0.5, 0, 1),
       atmosphereCount: Math.round(number2(v.atmosphereCount, 7, 1, 12)),
-      seed: Math.round(number2(v.seed, 1, 1, 99999))
+      seed: Math.round(number2(v.seed, 1, 1, 99999)),
+      // The hemisphere fill the stage has always used, declared so the tie to the
+      // background is visible in the recipe.
+      fill: { sky: primary, ground: background, intensity: 0.12 }
     },
     exposure: number2(v.exposure, 1.1, 0.1, 4),
     quality: {
