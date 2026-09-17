@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:f4221af5-9397-4a1f-8345-7edf8e2499c3",
+  "serialNumber": "urn:uuid:006c13a4-3d6f-4bb0-8bd1-fddfa3ee4518",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-16T19:37:17.138Z",
+    "timestamp": "2026-09-17T08:52:22.428Z",
     "tools": [
       {
         "vendor": "lolly",
@@ -34155,33 +34155,6 @@
         {
           "alg": "SHA-512",
           "content": "ed42cbc2c09d631fe7472ae9884c2fa9be53147acc559c81b7eae0fce0174fbae08ffcfe0ed4c3c8a15e2c074392e6c3543283f233ac9dd9b2ee6e795dc7d4b3"
-        }
-      ],
-      "properties": [
-        {
-          "name": "cdx:npm:package:development",
-          "value": "true"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/vite@8.2.2",
-      "name": "vite",
-      "version": "8.2.2",
-      "purl": "pkg:npm/vite@8.2.2",
-      "scope": "excluded",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "70528b57f3d18005252119b95a332327cea3adfb73a6a7201fe52cf834bc988dc20cd887df45a1af3f2e1cbdfe30e2cf020a9b30102a59d00702984e00cfb3fd"
         }
       ],
       "properties": [
