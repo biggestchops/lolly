@@ -543,26 +543,23 @@ describe('3D Studio lifecycle', { skip: studioSkip }, () => {
     });
   });
 
-  it(
-    'keeps GPU textures level across camera edits that rebuild the stage',
-    {
-      todo: 'stage.ts calls RectAreaLightUniformsLib.init() on every stage build, which makes a new pair of area-light tables each time and never frees the old pair; calling it once fixes this',
-    },
-    async () => {
-      await withPage(async (page) => {
-        const l = api(page);
-        const badge = { source: 'primitive', primitive: 'badge' };
-        const counts = [(await l.mount(badge)).counters!.memory];
-        for (const azimuth of [30, 50, 70, 90]) {
-          const status = await l.mount({ ...badge, camera: { azimuth } });
-          assert.equal(status.counters!.stageBuilds, counts.length + 1, 'each camera edit rebuilds the stage');
-          counts.push(status.counters!.memory);
-        }
-        console.log(`3D Studio GPU memory across stage rebuilds: ${JSON.stringify(counts)}`);
-        for (const memory of counts) assert.deepEqual(memory, counts[0]);
-      });
-    }
-  );
+  // stage.ts used to call RectAreaLightUniformsLib.init() on every stage build, which made
+  // a new pair of area-light tables each time and never freed the old pair (two textures
+  // per camera, light or colour edit). The tables are now made once.
+  it('keeps GPU textures level across camera edits that rebuild the stage', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
+      const badge = { source: 'primitive', primitive: 'badge' };
+      const counts = [(await l.mount(badge)).counters!.memory];
+      for (const azimuth of [30, 50, 70, 90]) {
+        const status = await l.mount({ ...badge, camera: { azimuth } });
+        assert.equal(status.counters!.stageBuilds, counts.length + 1, 'each camera edit rebuilds the stage');
+        counts.push(status.counters!.memory);
+      }
+      console.log(`3D Studio GPU memory across stage rebuilds: ${JSON.stringify(counts)}`);
+      for (const memory of counts) assert.deepEqual(memory, counts[0]);
+    });
+  });
 
   it('reports a studio destroyed while loading as cancelled, and resolves its mount', async () => {
     await withPage(async (page) => {

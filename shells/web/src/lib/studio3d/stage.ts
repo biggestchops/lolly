@@ -138,6 +138,19 @@ export function studioDepthForms(seed: number, count: number): [number, number, 
   ]);
 }
 
+let areaLightTables = false;
+
+/**
+ * Area lights read two lookup tables that three keeps in one shared place for every
+ * renderer. Each init() call makes a new set of textures and drops the old set without
+ * freeing it, so the tables are made once, not on every stage build.
+ */
+function prepareAreaLightTables(): void {
+  if (areaLightTables) return;
+  RectAreaLightUniformsLib.init();
+  areaLightTables = true;
+}
+
 export function buildStudioStage(
   recipe: StudioSceneV1,
   camera: THREE.Camera,
@@ -149,7 +162,7 @@ export function buildStudioStage(
   /** The placed subject; depth forms can be copies of it that share its geometry. */
   subject?: THREE.Object3D
 ): StudioStage {
-  RectAreaLightUniformsLib.init();
+  prepareAreaLightTables();
   const group = new THREE.Group(),
     geometries = new Set<THREE.BufferGeometry>(),
     materials = new Set<THREE.Material>();

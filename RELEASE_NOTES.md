@@ -45,7 +45,8 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   once instead of after a reload. The first frame of a video or GIF uses the
   requested size and clip samples like the rest of the clip; Gradient, Backdrop,
   Synth and Audiogram with captions also receive the clip length for their first
-  frame now.
+  frame now. Camera, light and colour edits no longer leave unused graphics memory
+  behind.
 - **Steadier 3D exports.** Dragging, resizing or editing while a 3D Studio export
   runs no longer changes the exported frame. A frame that fails to render fails
   the export instead of saving the wrong picture.

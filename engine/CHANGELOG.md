@@ -15,6 +15,7 @@ Moved verbatim from the comment block that used to live in `src/index.ts`.
 - The studio marker adds a `cancelled` state for a mount destroyed while loading, and a lost WebGL context reports an error. `inspectToolStudio` returns the renderer's update, load, build, frame, capture and memory counters.
 - The web shell names its retained renderer contract, `StudioSceneHost` in `lib/studio3d/scene-host.ts`, which `StudioRenderer` implements. It stays in the web shell until 3D in Design uses it.
 - Colour A edits reach words and STL models when materials are applied, without reloading the source. A bevel edit no longer re-reads GLB or STL bytes.
+- The web shell makes the area-light lookup tables once instead of on every stage build, so camera, light and colour edits no longer leave two GPU textures behind each time.
 
 ## 1.206.0
 
