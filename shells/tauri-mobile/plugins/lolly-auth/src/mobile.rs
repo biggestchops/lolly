@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 //! Glue to the native plugin classes: `LollyAuthPlugin.kt` on Android and
-//! `LollyAuthPlugin.swift` on iOS.
+//! `LollyAuthPlugin.swift` on iOS. `google_authorize` exists only on Android.
 
 use serde::de::DeserializeOwned;
 use tauri::{
@@ -10,6 +10,8 @@ use tauri::{
 };
 
 use crate::{AuthenticateRequest, AuthenticateResponse};
+#[cfg(target_os = "android")]
+use crate::{GoogleAuthorization, GoogleAuthorizeRequest};
 
 #[cfg(target_os = "android")]
 const PLUGIN_IDENTIFIER: &str = "tools.lolly.auth";
@@ -38,6 +40,19 @@ pub async fn authenticate<R: Runtime>(
 ) -> Result<AuthenticateResponse, String> {
     handle
         .run_mobile_plugin_async::<AuthenticateResponse>("authenticate", request)
+        .await
+        .map_err(describe)
+}
+
+/// Runs the Android `googleAuthorize` command (Google Play services). It can
+/// show a consent screen, so it waits the same way as `authenticate`.
+#[cfg(target_os = "android")]
+pub async fn google_authorize<R: Runtime>(
+    handle: &PluginHandle<R>,
+    request: &GoogleAuthorizeRequest,
+) -> Result<GoogleAuthorization, String> {
+    handle
+        .run_mobile_plugin_async::<GoogleAuthorization>("googleAuthorize", request)
         .await
         .map_err(describe)
 }

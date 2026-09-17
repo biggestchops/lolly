@@ -62,12 +62,15 @@ function oauthChoice(f: ShellFacts, id: 'dropbox' | 'gdrive' | 'o365', label: st
   if (isMobile(f) && !f.mobileSignIn.has(id)) {
     return {
       id, label, state: 'unavailable',
-      note: id === 'gdrive' && f.shell === 'android'
-        ? t('Google does not allow this kind of sign-in in Android apps.')
-        : t('This app is not registered for this sign-in yet.'),
+      note: t('This app is not registered for this sign-in yet.'),
     };
   }
-  return { id, label, state: 'setup', note: t('Connect it in Connected services.'), action: 'connections' };
+  return {
+    id, label, state: 'setup', action: 'connections',
+    note: id === 'gdrive' && f.shell === 'android'
+      ? t('Connect it in Connected services. Needs Google Play services on this phone.')
+      : t('Connect it in Connected services.'),
+  };
 }
 
 /** A person's own server (Nextcloud / WebDAV, an S3 bucket). */

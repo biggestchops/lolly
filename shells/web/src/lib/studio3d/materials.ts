@@ -21,6 +21,18 @@ export function cutoutFinish(spec: StudioFinishSpec, output: StudioSceneV1['stag
   };
 }
 
+/** True when any finish in play is self-lit, so the capture draws its halo. */
+export function studioHasEmissive(scene: StudioSceneV1): boolean {
+  const finishes = [
+    scene.materials.finishA,
+    scene.materials.finishB,
+    ...Object.values(scene.materials.surfaces?.a ?? {}),
+    ...Object.values(scene.materials.surfaces?.b ?? {}),
+    ...scene.materials.overrides.map((o) => o.finish),
+  ];
+  return finishes.some((f) => f && f !== 'inherit' && (studioFinish(f).emissive ?? 0) > 0);
+}
+
 /** True when any finish in play lets light through, which a transparent output cannot show. */
 export function studioHasTransmission(scene: StudioSceneV1): boolean {
   const finishes = [

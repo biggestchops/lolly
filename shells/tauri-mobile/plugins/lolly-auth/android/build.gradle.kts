@@ -16,6 +16,19 @@ require(Regex("^[a-z][a-z0-9+.-]*$").matches(lollyAuthExtraScheme) && lollyAuthE
     "lollyAuthExtraScheme must be a lower-case URI scheme with at least one dot, got '$lollyAuthExtraScheme'"
 }
 
+// Google Play services (for googleAuthorize) is not open source, so it can be
+// left out: build with -PlollyGooglePlayServices=false, or set
+// lollyGooglePlayServices=false in the app's gradle.properties, for F-Droid and
+// other builds without Google software. Then the dependency is not added, the
+// code in src/play/java is not compiled, and googleAuthorize rejects with
+// play-services-unavailable. The default is true.
+val lollyGooglePlayServices: Boolean =
+    when (val raw = findProperty("lollyGooglePlayServices")?.toString()?.trim()?.lowercase()) {
+        null, "", "true" -> true
+        "false" -> false
+        else -> throw GradleException("lollyGooglePlayServices must be true or false, got '$raw'")
+    }
+
 android {
     namespace = "tools.lolly.auth"
     compileSdk = 36
@@ -24,6 +37,14 @@ android {
         minSdk = 24
         consumerProguardFiles("consumer-rules.pro")
         manifestPlaceholders["lollyAuthExtraScheme"] = lollyAuthExtraScheme
+    }
+
+    sourceSets {
+        getByName("main") {
+            if (lollyGooglePlayServices) {
+                java.srcDir("src/play/java")
+            }
+        }
     }
 
     compileOptions {
@@ -40,4 +61,9 @@ dependencies {
     implementation("androidx.browser:browser:1.9.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation(project(":tauri-android"))
+    if (lollyGooglePlayServices) {
+        // AuthorizationClient (Identity.getAuthorizationClient). Licensed under
+        // the Android Software Development Kit License, not an open source licence.
+        implementation("com.google.android.gms:play-services-auth:22.0.0")
+    }
 }

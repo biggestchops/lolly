@@ -4,6 +4,11 @@ import test from 'node:test';
 import { getBrowser, closeBrowser } from '../packages/node-shell/src/browsers.ts';
 
 const origin = process.env.LOLLY_IMPORT_TEST_URL;
+
+/** The Navigation API fields the reload guard reads. TypeScript's DOM lib does not
+ *  declare the API yet, and the suite only runs in Chromium, which ships it. */
+type HistoryPosition = { navigation: { currentEntry: { index: number } | null; transition: unknown } };
+
 test('the Projects template picker renders previews and adds independent creations without changing the template', {
   skip: origin ? false : 'set LOLLY_IMPORT_TEST_URL to a local Vite shell', timeout: 120_000,
 }, async (ctx) => {
@@ -25,6 +30,13 @@ test('the Projects template picker renders previews and adds independent creatio
       return template.id;
     });
     await page.reload({ waitUntil: 'networkidle' });
+    // The picker is a modal, and a modal pushes one same-URL history entry for system
+    // Back when it opens (lib/overlay-back.ts). Closing it pops that entry again with a
+    // history.back() one task later. A reload issued before that pop finishes is
+    // cancelled by it (net::ERR_ABORTED), so record the current history index and
+    // reload only after the close has returned to it.
+    const historyBefore = await page.evaluate(() => (window as unknown as HistoryPosition).navigation.currentEntry?.index);
+    assert.equal(typeof historyBefore, 'number');
     await page.locator('[data-create-btn="tool"]').click();
     await page.getByRole('tab', { name: /^Templates/ }).click();
     const card = page.locator(`[data-template-ref="user:${id}"]`);
@@ -49,6 +61,11 @@ test('the Projects template picker renders previews and adds independent creatio
       return (await host.state.list()).filter((row: { toolId?: string }) => row.toolId === 'qr-code').length === 2;
     }, undefined, { polling: 250 });
     await page.keyboard.press('Escape');
+    await page.locator('.asset-picker-panel').waitFor({ state: 'detached' });
+    await page.waitForFunction((index) => {
+      const { navigation } = window as unknown as HistoryPosition;
+      return navigation.currentEntry?.index === index && !navigation.transition;
+    }, historyBefore);
     await page.reload({ waitUntil: 'networkidle' });
     const saved = await page.evaluate(async (id) => {
       const path = '/src/bridge/index.ts';

@@ -46,7 +46,10 @@
 import type { SendTarget } from './send-target.ts';
 import type { SyncRemote, SnapshotMeta, PutOpts } from './sync-remote.ts';
 import { SyncConflictError } from './sync-remote.ts';
-import { codeGrant, loopbackVia, mobileVia, popupOAuth, refreshGrant, type AuthorizeVia, type TokenSet } from './provider-auth.ts';
+import {
+  codeGrant, loopbackVia, mobileVia, nativeTransport, popupOAuth, refreshGrant,
+  type AuthorizeVia, type LoopbackTransport, type TokenSet,
+} from './provider-auth.ts';
 import {
   cachedToken, cacheToken, dropToken, getConnection, removeConnection, saveConnection, cachedConnection,
 } from './provider-connections.ts';
@@ -132,9 +135,8 @@ export function driveDesktopAvailable(): boolean { return !!driveDesktopClientId
 //
 // The iOS app signs in through the system sign-in sheet (provider-auth
 // mobileVia) with a Google "iOS" client: code + PKCE, no secret, refresh tokens,
-// and the reversed client id as the callback scheme. Android has no equivalent:
-// Google no longer accepts custom URI schemes for Android clients and blocks
-// loopback for them, so Drive stays unavailable in the Android app.
+// and the reversed client id as the callback scheme. Android is different, see
+// the Android section below.
 
 let iosClientOverride: string | null = null;
 
@@ -153,9 +155,92 @@ export function reversedClientScheme(clientId: string): string {
 
 const isAndroid = (): boolean => typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
 
+// ─── Android (plans/138 Tier D, WP-M1.4) ─────────────────────────────────────
+//
+// Google no longer accepts a browser sign-in from Android apps (custom URI
+// schemes are refused for Android clients, loopback is blocked). So the Android
+// app asks Google Play services for a token, through the lolly-auth plugin's
+// google_authorize command (Andy, 2026-09-16: "we'll have to use google
+// services"). Google matches the app by package name and signing certificate,
+// so no client id lives in code. Without a server there is no refresh token, but
+// once the person has agreed, Play services hands out a fresh token without
+// showing anything. Phones without Google Play services cannot use Drive, and a
+// build made without the Play services library (the plugin's
+// lollyGooglePlayServices=false) says so at sign-in. Dormant until
+// VITE_GOOGLE_ANDROID_SIGN_IN=1 says the Android client is registered.
+
+let androidSignInOverride: boolean | null = null;
+
+/** Runtime override (a test); null restores the env value. */
+export function setDriveAndroidSignIn(on: boolean | null): void { androidSignInOverride = on; }
+
+function driveAndroidRegistered(): boolean {
+  if (androidSignInOverride !== null) return androidSignInOverride;
+  return import.meta.env?.VITE_GOOGLE_ANDROID_SIGN_IN === '1';
+}
+
+/** Play services does not report a token's lifetime; Google's access tokens
+ *  last an hour, so a cached one is used for 45 minutes at most. */
+const PLAY_TOKEN_MS = 45 * 60 * 1000;
+
+let playTransportOverride: LoopbackTransport | null = null;
+
+/** Test seam: answer the plugin command without a native shell. */
+export function setDrivePlayTransportForTests(transport: LoopbackTransport | null): void {
+  playTransportOverride = transport;
+}
+
+/** Play services needs the person to agree first; nothing was shown. */
+class PlayConsentRequired extends Error {
+  constructor() {
+    super('consent-required');
+    this.name = 'PlayConsentRequired';
+  }
+}
+
+/** A Drive token from Google Play services. `interactive` false never shows
+ *  anything: it succeeds only when the person already agreed. */
+async function playServicesToken(interactive: boolean): Promise<string> {
+  const inv = playTransportOverride ?? nativeTransport();
+  let res: { accessToken?: unknown } | null;
+  try {
+    res = await inv.invoke<{ accessToken?: unknown }>('plugin:lolly-auth|google_authorize', { scopes: [SCOPE], interactive });
+  } catch (err) {
+    const message = String((err as Error)?.message ?? err);
+    if (/consent-required/.test(message)) {
+      // After the consent screen this means the person did not approve.
+      if (interactive) throw new Error(t('Google access was not approved.'));
+      throw new PlayConsentRequired();
+    }
+    if (/play-services-unavailable/.test(message)) throw new Error(t('Google Drive needs Google Play services on this phone.'));
+    if (/cancel/i.test(message)) throw new Error(t('Sign-in was cancelled.'));
+    throw err;
+  }
+  const token = typeof res?.accessToken === 'string' ? res.accessToken : '';
+  if (!token) throw new Error(t('Google sign-in failed: no token returned'));
+  cacheToken(KIND, token, Date.now() + PLAY_TOKEN_MS);
+  return token;
+}
+
+/** A Drive token in the Android app: the cached one, else a silent request,
+ *  else (only when `interactive`) the consent screen. */
+async function androidToken(interactive = true): Promise<string> {
+  const held = cachedToken(KIND);
+  if (held) return held;
+  try {
+    return await playServicesToken(false);
+  } catch (err) {
+    if (err instanceof PlayConsentRequired && interactive) return playServicesToken(true);
+    throw err;
+  }
+}
+
+const inAndroidApp = (): boolean => isTauriMobileShell() && isAndroid();
+
 /** Whether Drive sign-in can work in the mobile app on this device. */
 export function driveMobileAvailable(): boolean {
-  return isTauriMobileShell() && !isAndroid() && !!driveIosClientId();
+  if (!isTauriMobileShell()) return false;
+  return isAndroid() ? driveAndroidRegistered() : !!driveIosClientId();
 }
 
 /** Whether Drive sign-in can work in this Tauri app (desktop or mobile). */
@@ -191,6 +276,7 @@ async function nativeVia(): Promise<AuthorizeVia> {
 /** A valid desktop access token: cache → refresh (stored connection) →
  *  interactive system-browser sign-in. The dropbox custody pattern verbatim. */
 async function desktopToken(): Promise<string> {
+  if (inAndroidApp()) return androidToken();
   const held = cachedToken(KIND);
   if (held) return held;
   const conn = await getConnection(KIND);
@@ -212,7 +298,10 @@ async function desktopToken(): Promise<string> {
 
 /** Interactive connect from /profile (desktop): grant, identity, custody. */
 export async function connectDriveDesktop(persist: boolean): Promise<string> {
-  const set: TokenSet = await codeGrant(desktopGrantCfg(), driveFetch, await nativeVia());
+  // Android: Google Play services, no refresh token to keep (see above).
+  const set: TokenSet = inAndroidApp()
+    ? { accessToken: await playServicesToken(true), expiresAt: Date.now() + PLAY_TOKEN_MS }
+    : await codeGrant(desktopGrantCfg(), driveFetch, await nativeVia());
   cacheToken(KIND, set.accessToken, set.expiresAt);
   let account = t('Google account');
   try {
@@ -529,6 +618,12 @@ export function driveSyncRemote(fetchFn: typeof fetch = driveFetch, fileName: st
   };
 
   const canSyncSilently = async (): Promise<boolean> => {
+    if (inAndroidApp()) {
+      // A silent Play services request succeeds once the person has agreed.
+      if (cachedToken(KIND)) return true;
+      if (!(await getConnection(KIND))) return false;
+      try { await androidToken(false); return true; } catch { return false; }
+    }
     if (isTauriShell()) return !!cachedToken(KIND) || !!(await getConnection(KIND))?.refreshToken;
     return !!(cached && cached.expiresAt > Date.now());   // web: only after a session sign-in
   };

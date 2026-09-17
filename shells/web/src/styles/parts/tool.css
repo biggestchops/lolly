@@ -2196,8 +2196,10 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   transition: filter var(--dur-1);
 }
 .block-add--prominent:hover { filter: brightness(1.08); border-color: transparent; color: hsl(var(--primary-foreground)); }
+/* In flow, not floating: the add button is the last thing in its section card and the
+   card clips overflow, so a floating menu below it was cut off (Andy, 2026-09-16). */
 .block-add-options {
-  position: absolute; z-index: 6; top: calc(100% + 4px); left: 0; right: 0;
+  margin-top: 4px;
   display: flex; flex-direction: column; min-width: 150px; padding: var(--sp-2);
   background: hsl(var(--background)); border: 1px solid hsl(var(--border));
   border-radius: var(--radius); box-shadow: var(--ui-elevation-floating);

@@ -137,3 +137,25 @@
   border-color: #dff7eb;
   background: #1c4a3a;
 }
+
+/* Frames shown narrow (a phone, or a small render size) keep every control but show
+   short labels; the studio marks the frame from its visible width, not its layout width,
+   because a 1280 px layout is scaled to fit a phone. */
+.studio-label-short {
+  display: none;
+}
+.studio-frame[data-studio-narrow="true"] .studio-label-full {
+  display: none;
+}
+.studio-frame[data-studio-narrow="true"] .studio-label-short {
+  display: inline;
+}
+.studio-frame[data-studio-narrow="true"] .studio-collection-actions {
+  gap: calc(4px * var(--studio-ui-scale, 1));
+}
+.studio-frame[data-studio-narrow="true"] .studio-collection-actions button {
+  padding: calc(5px * var(--studio-ui-scale, 1)) calc(7px * var(--studio-ui-scale, 1));
+}
+.studio-frame[data-studio-narrow="true"] [data-studio-camera-note] {
+  font-size: calc(11px * var(--studio-ui-scale, 1));
+}

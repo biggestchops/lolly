@@ -169,6 +169,12 @@ export interface LoopbackTransport {
   invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T>;
 }
 
+/** The live Tauri invoke surface, for native commands other drivers call
+ *  (Google Play services sign-in in lib/google-drive.ts). */
+export function nativeTransport(): LoopbackTransport {
+  return tauriTransport();
+}
+
 function tauriTransport(): LoopbackTransport {
   const internals = (window as unknown as { __TAURI_INTERNALS__?: LoopbackTransport }).__TAURI_INTERNALS__;
   if (!internals) throw new Error(t('System-browser sign-in needs the desktop app'));

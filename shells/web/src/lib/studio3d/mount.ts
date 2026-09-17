@@ -306,6 +306,9 @@ export async function mountToolStudio(
           '--studio-ui-scale',
           String(current.marker.clientWidth / Math.max(1, bounds.width))
         );
+        // The frame's VISIBLE width decides the toolbar's labels: a phone shows a 1280 px
+        // layout at a third of its size, where the long labels wrap into four rows.
+        current.marker.dataset.studioNarrow = String(bounds.width < 560);
         const max = Math.max(bounds.width, bounds.height),
           scale = quality === 'preview' ? Math.min(1, 800 / Math.max(1, max)) : 1;
         // An export names its pixel size; the frame is resampled at that size (within

@@ -59,11 +59,15 @@ const subjects: { name: string; values: StudioValues }[] = [
   { name: 'duck', values: { source: 'model', upload: { url: '/duck.glb', name: 'duck.glb' } } },
 ];
 
-/** One constant colour on the subject: glow on both roles, no light or environment, shadows kept. */
+/**
+ * One constant colour on the subject: glow on both roles, no light or environment, shadows
+ * kept. The glow halo is off, because a halo draws colour outside the silhouette on purpose.
+ */
 const FLAT: StudioValues = {
   materialMode: 'pair',
   finishA: 'glow',
   finishB: 'glow',
+  glow: 0,
   studio: 'custom',
   lights: [{ kind: 'directional', intensity: 0, shadows: true }],
   environmentIntensity: 0,

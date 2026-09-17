@@ -1,7 +1,7 @@
 {
   "id": "3d-studio",
   "name": "3D Studio",
-  "version": "0.5.1",
+  "version": "0.5.0",
   "engineVersion": ">=1.205.0",
   "status": "official",
   "singleInstance": true,
@@ -1141,6 +1141,18 @@
           "source": "text"
         }
       ]
+    },
+    {
+      "id": "glow",
+      "label": "Glow halo",
+      "type": "number",
+      "default": 0.45,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "display": "slider",
+      "section": "Look",
+      "help": "The soft light that spills around Glow and Neon finishes. Drawn only when one of them is in use; a transparent output keeps the halo."
     },
     {
       "id": "surfaceFinishes",

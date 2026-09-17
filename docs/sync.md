@@ -27,7 +27,9 @@ Where the sign-in answer comes back to:
 - in a browser, the Lolly site you are using;
 - in the desktop app, the app itself on your computer;
 - in the mobile app, the app itself, through its own address
-  `tools.lolly.mobile:/oauth2redirect`.
+  `tools.lolly.mobile:/oauth2redirect`;
+- for Google Drive on Android, Google Play services on the phone, which gives
+  the answer straight to the app.
 
 The full list of every network request the app makes is on the
 [Privacy](/info/privacy.html) page.
@@ -61,7 +63,7 @@ other choices do not.
 | Storage | Browser, on lolly.tools | Browser, on a Lolly you host | Desktop app | Mobile app |
 |---|---|---|---|---|
 | Dropbox | Yes | Yes, with the site's Dropbox app or your own | Yes | Yes, with the app's Dropbox app or your own |
-| Google Drive | Yes, with the site's Google app or your own; you sign in once per visit | Yes, with the site's Google app or your own | Yes, when the app includes a Google app | iPhone and iPad, when the app includes a Google app for iOS. Not on Android |
+| Google Drive | Yes, with the site's Google app or your own; you sign in once per visit | Yes, with the site's Google app or your own | Yes, when the app includes a Google app | Yes, when the app includes a Google app; on Android, also needs Google Play services on the phone |
 | OneDrive | Yes, when the site includes a Microsoft app | Yes, when the site includes a Microsoft app | Yes, when the app includes a Microsoft app | Yes, when the app includes a Microsoft app for phones |
 | Nextcloud or WebDAV | No | When the site's admin allows your server | Yes | Yes |
 | S3-compatible bucket | No | When the site's admin allows your bucket | Yes | Yes |
@@ -155,8 +157,11 @@ Lolly can see only the files it created in your Drive.
   visit.
 - **On iPhone and iPad,** Google Drive works when the app includes a Google
   app for iOS.
-- **On Android,** Google Drive sync is not possible: Google no longer accepts
-  this kind of sign-in from Android apps. Use another storage there.
+- **On Android,** Google no longer accepts a browser sign-in from apps, so the
+  app asks Google Play services on your phone instead. You agree once; after
+  that, the app gets access without asking again. A phone without Google Play
+  services (for example a de-Googled phone) cannot use Google Drive: choose
+  another storage there.
 
 On a Lolly site with no Google app, use your own:
 
@@ -220,8 +225,14 @@ return addresses to trust.
   (`VITE_GOOGLE_CLIENT_ID`), a **Desktop app** client for the desktop apps
   (`VITE_GOOGLE_DESKTOP_CLIENT_ID` and its secret, which Google treats as not
   confidential for installed apps), and an **iOS** client for bundle id
-  `tools.lolly.mobile` (`VITE_GOOGLE_IOS_CLIENT_ID`). There is no Android
-  option.
+  `tools.lolly.mobile` (`VITE_GOOGLE_IOS_CLIENT_ID`). For Android, an
+  **Android** client for package `tools.lolly.mobile` with the SHA-1
+  fingerprint of each signing certificate (debug, release and, if you use it,
+  the Play App Signing key); no client id goes into the build, only
+  `VITE_GOOGLE_ANDROID_SIGN_IN=1`. The Android sign-in uses Google's Play
+  services library, which is not open source; a build for de-Googled phones
+  or F-Droid sets the Gradle property `lollyGooglePlayServices=false`, and
+  Google Drive is then unavailable in that build.
 - **Microsoft (Entra):** one app registration, with the scopes
   `Files.ReadWrite.AppFolder`, `User.Read` and `offline_access`, open to
   personal and work or school accounts. Under **Single-page application**, add
@@ -242,5 +253,6 @@ return addresses to trust.
   slowly.
 - **One person.** Sync keeps one person's devices in step. For two people
   working on the same thing, see [Working together](/info/collaborate.html).
-- **Android sign-in.** If Android closes the app while the sign-in page is
-  open, start the sign-in again.
+- **Android sign-in.** If Android closes the app while a sign-in page is
+  open, start the sign-in again. Google Drive on Android needs Google Play
+  services.

@@ -133,4 +133,9 @@ describe('3D Studio scene contract', () => {
     assert.equal(defaults.clipSamples, 16);
     assert.equal(buildStudioScene({ version: 1, values: { videoSamples: 0 } }).quality.clipSamples, 1);
   });
+  it('bounds the glow halo strength', () => {
+    assert.equal(buildStudioScene({ version: 1, values: {} }).materials.glow, 0.45);
+    assert.equal(buildStudioScene({ version: 1, values: { glow: 7 } }).materials.glow, 1);
+    assert.equal(buildStudioScene({ version: 1, values: { glow: -1 } }).materials.glow, 0);
+  });
 });

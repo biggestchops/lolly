@@ -2,6 +2,8 @@
 
 [default]
 description = """
-Allows the app to open the system sign-in sheet with `authenticate`.
+Allows the app to open the system sign-in sheet with `authenticate` and, on
+Android, to ask Google Play services for a Google access token with
+`google_authorize`.
 """
-permissions = ["allow-authenticate"]
+permissions = ["allow-authenticate", "allow-google-authorize"]

@@ -6,13 +6,36 @@ const copyShader =
   'uniform sampler2D frame;uniform float weight;varying vec2 vUv;void main(){gl_FragColor=texture2D(frame,vUv)*weight;}';
 const outputShader = `
 uniform sampler2D frame;
+uniform sampler2D glow;
+uniform float glowStrength;
 varying vec2 vUv;
 void main(){
-  vec4 pixel=texture2D(frame,vUv);
+  vec4 pixel=texture2D(frame,vUv)+texture2D(glow,vUv)*glowStrength;
   gl_FragColor=vec4(pixel.a>0.00001?pixel.rgb/pixel.a:vec3(0.),clamp(pixel.a,0.,1.));
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
   #include <premultiplied_alpha_fragment>
+}`;
+// Light beyond white, in premultiplied linear terms: what a self-lit surface adds on top
+// of a fully exposed one. Its luminance becomes the halo's alpha so a cutout keeps it.
+const brightShader = `
+uniform sampler2D frame;
+varying vec2 vUv;
+void main(){
+  vec4 pixel=texture2D(frame,vUv);
+  vec3 excess=max(pixel.rgb-vec3(pixel.a),vec3(0.));
+  float lum=dot(excess,vec3(0.2126,0.7152,0.0722));
+  gl_FragColor=vec4(excess,min(1.,lum));
+}`;
+const blurShader = `
+uniform sampler2D frame;
+uniform vec2 step;
+varying vec2 vUv;
+void main(){
+  vec4 sum=texture2D(frame,vUv)*0.227027;
+  sum+=(texture2D(frame,vUv+step*1.384615)+texture2D(frame,vUv-step*1.384615))*0.316216;
+  sum+=(texture2D(frame,vUv+step*3.230769)+texture2D(frame,vUv-step*3.230769))*0.070270;
+  gl_FragColor=sum;
 }`;
 
 /** Why a studio frame cannot be drawn after the browser dropped the graphics context. */
@@ -71,10 +94,41 @@ export class StudioCapture {
     blendDst: THREE.OneFactor,
     toneMapped: false,
   });
+  /** Half-size targets for the glow halo; ping-pong blurred, added at output. */
+  private readonly glowA = new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.HalfFloatType,
+    format: THREE.RGBAFormat,
+    depthBuffer: false,
+  });
+  private readonly glowB = new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.HalfFloatType,
+    format: THREE.RGBAFormat,
+    depthBuffer: false,
+  });
+  private readonly bright = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader: brightShader,
+    uniforms: { frame: { value: this.sum.texture } },
+    depthTest: false,
+    depthWrite: false,
+    blending: THREE.NoBlending,
+  });
+  private readonly blur = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader: blurShader,
+    uniforms: { frame: { value: null }, step: { value: new THREE.Vector2() } },
+    depthTest: false,
+    depthWrite: false,
+    blending: THREE.NoBlending,
+  });
   private readonly output = new THREE.ShaderMaterial({
     vertexShader,
     fragmentShader: outputShader,
-    uniforms: { frame: { value: this.sum.texture } },
+    uniforms: {
+      frame: { value: this.sum.texture },
+      glow: { value: this.glowB.texture },
+      glowStrength: { value: 0 },
+    },
     depthTest: false,
     depthWrite: false,
     blending: THREE.NoBlending,
@@ -116,7 +170,9 @@ export class StudioCapture {
     height: number,
     samples: number,
     exposure: number,
-    step: (i: number) => void
+    step: (i: number) => void,
+    /** Strength of the halo around self-lit surfaces; 0 skips the pass entirely. */
+    glow = 0
   ): void {
     if (this.disposed) throw new Error('The studio renderer has been released.');
     const w = Math.max(1, Math.round(width)),
@@ -129,6 +185,8 @@ export class StudioCapture {
       this.renderer.setSize(w, h, false);
       this.sample.setSize(w, h);
       this.sum.setSize(w, h);
+      this.glowA.setSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
+      this.glowB.setSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
     }
     const renderer = this.renderer,
       count = Math.max(1, Math.round(samples));
@@ -148,6 +206,32 @@ export class StudioCapture {
         renderer.setRenderTarget(this.sum);
         renderer.render(this.screen, this.screenCamera);
       }
+      if (glow > 0) {
+        // Bright pass into A, then two separable blurs at half size: A → B (across),
+        // B → A (down), A → B (across), B → A (down); the output reads the last target.
+        this.mesh.material = this.bright;
+        renderer.setRenderTarget(this.glowA);
+        renderer.clear(true, false, false);
+        renderer.render(this.screen, this.screenCamera);
+        this.mesh.material = this.blur;
+        const gw = this.glowA.width,
+          gh = this.glowA.height;
+        const passes: [THREE.WebGLRenderTarget, THREE.WebGLRenderTarget, number, number][] = [
+          [this.glowA, this.glowB, 2.2 / gw, 0],
+          [this.glowB, this.glowA, 0, 2.2 / gh],
+          [this.glowA, this.glowB, 4.4 / gw, 0],
+          [this.glowB, this.glowA, 0, 4.4 / gh],
+        ];
+        for (const [from, to, sx, sy] of passes) {
+          this.blur.uniforms.frame!.value = from.texture;
+          (this.blur.uniforms.step!.value as THREE.Vector2).set(sx, sy);
+          renderer.setRenderTarget(to);
+          renderer.clear(true, false, false);
+          renderer.render(this.screen, this.screenCamera);
+        }
+        this.output.uniforms.glow!.value = this.glowA.texture;
+      }
+      this.output.uniforms.glowStrength!.value = glow;
       renderer.setRenderTarget(null);
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = exposure;
@@ -187,6 +271,10 @@ export class StudioCapture {
     this.disposed = true;
     this.sample.dispose();
     this.sum.dispose();
+    this.glowA.dispose();
+    this.glowB.dispose();
+    this.bright.dispose();
+    this.blur.dispose();
     this.copy.dispose();
     this.output.dispose();
     this.quad.dispose();

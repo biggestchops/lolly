@@ -245,10 +245,12 @@ test('3D Studio imports, reopens a portable model and exports through editor and
     };
     await settle({ outputMode: 'object' });
     checkCutout('lit', shadowPng, await exportPng(), false);
+    // The glow halo is off: it draws colour outside the silhouette on purpose.
     const flat: Record<string, unknown> = {
       materialMode: 'pair',
       finishA: 'glow',
       finishB: 'glow',
+      glow: 0,
       studio: 'custom',
       lights: [
         {

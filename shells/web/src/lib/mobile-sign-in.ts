@@ -6,8 +6,8 @@
  *
  * - Dropbox: always, with the build's key when its Dropbox app lists the mobile
  *   redirect, else with the person's own key (lib/dropbox-send.ts).
- * - Google Drive: on iOS with an iOS client id; never on Android, where Google
- *   no longer accepts this kind of sign-in (lib/google-drive.ts).
+ * - Google Drive: on iOS with an iOS client id; on Android through Google Play
+ *   services once the Android client is registered (lib/google-drive.ts).
  * - OneDrive: with a mobile client id (lib/onedrive-send.ts).
  * - LinkedIn and Mastodon: not yet.
  */

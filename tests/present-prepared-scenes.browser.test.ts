@@ -7,7 +7,7 @@ const origin = process.env.LOLLY_PRESENT_TEST_URL;
 declare global { interface Window { __presentationCameraProbe: { requests: MediaStreamConstraints[]; tracks: MediaStreamTrack[] } } }
 
 test('private framing, camera selection and saved scenes stay separate from the audience', {
-  skip: origin ? false : 'LOLLY_PRESENT_TEST_URL not set', timeout: 90_000,
+  skip: origin ? false : 'set LOLLY_PRESENT_TEST_URL to a local Vite shell', timeout: 90_000,
 }, async () => {
   const browser = await chromium.launch({ headless: true, args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
   try {
@@ -90,7 +90,7 @@ test('private framing, camera selection and saved scenes stay separate from the 
 });
 
 test('a late logo upload cannot replace a selected saved scene', {
-  skip: origin ? false : 'LOLLY_PRESENT_TEST_URL not set', timeout: 30_000,
+  skip: origin ? false : 'set LOLLY_PRESENT_TEST_URL to a local Vite shell', timeout: 30_000,
 }, async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -128,7 +128,7 @@ test('a late logo upload cannot replace a selected saved scene', {
 });
 
 for (const hold of [false, true]) test(`saved scenes survive a pending Apply${hold ? ' interrupted by holding' : ''}`, {
-  skip: origin ? false : 'LOLLY_PRESENT_TEST_URL not set', timeout: 30_000,
+  skip: origin ? false : 'set LOLLY_PRESENT_TEST_URL to a local Vite shell', timeout: 30_000,
 }, async () => {
   const browser = await chromium.launch({ headless: true });
   try {

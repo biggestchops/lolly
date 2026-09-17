@@ -410,6 +410,7 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
         a: String(v.materialSlotA || '').trim(),
         b: String(v.materialSlotB || '').trim(),
       },
+      glow: number(v.glow, 0.45, 0, 1),
       ...(enabled(v.surfaceFinishes)
         ? {
             surfaces: Object.fromEntries(

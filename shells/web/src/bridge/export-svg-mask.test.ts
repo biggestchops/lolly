@@ -55,7 +55,7 @@ function sample(frame: Awaited<ReturnType<typeof pixels>>, x: number, y: number)
 
 for (const browserType of [chromium, webkit]) {
   test(`${browserType.name()}: SVG mask fades survive raster export`, {
-    skip: existsSync(browserType.executablePath()) ? false : `${browserType.name()} is not installed`,
+    skip: existsSync(browserType.executablePath()) ? false : `Playwright ${browserType.name()} browser is not installed`,
     timeout: 120_000,
   }, async (t) => {
     const browser = await browserType.launch();
