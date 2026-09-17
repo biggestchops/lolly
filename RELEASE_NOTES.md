@@ -34,6 +34,28 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   catalog and render path to AI agents (list, describe, build a link, render, transform,
   redact, verify) under the same rules as the app.
 
+### New in 1.0.9 (unreleased)
+
+- **Fuller 3D bevels.** The 3D Studio bevel check follows the inset the renderer
+  draws, so rings, letter counters and other shapes with curved holes keep their
+  full bevel. A bevel is reduced, with a source note, only where a narrow or
+  sharp detail would really fold. Some saved scenes show a fuller bevel when
+  reopened.
+- **3D Studio corrections.** A colour A edit on words or an STL model applies at
+  once instead of after a reload. The first frame of a video or GIF uses the
+  requested size and clip samples like the rest of the clip; Gradient, Backdrop,
+  Synth and Audiogram with captions also receive the clip length for their first
+  frame now.
+- **Steadier 3D exports.** Dragging, resizing or editing while a 3D Studio export
+  runs no longer changes the exported frame. A frame that fails to render fails
+  the export instead of saving the wrong picture.
+- **More about 3D Studio 0.3 scenes.** Besides the differences listed under 1.0.8,
+  a scene saved with 3D Studio 0.3 also changed in 1.0.8 in these ways: placed
+  inside another tool or shown as a thumbnail, it renders at preview quality; an
+  export at a size other than the canvas is rendered again at that size; and an
+  object placed far from the centre or scaled up gets a wider shadow map, so its
+  shadow is softer.
+
 ### New in 1.0.8
 
 - **3D Studio for icons and products.** Extrude and bevel SVG
@@ -45,12 +67,9 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   share lighting and finishes, retain each item's framing and material bindings,
   and export a named PNG set. Portable `.lolly` files carry uploaded models.
   Turntables and orbiting or breathing lights use repeatable animation timing.
-- **More dependable 3D shaping and framing.** The bevel check follows the inset
-  the renderer draws, so rings, letter counters and other shapes with curved
-  holes keep their full bevel; a bevel is reduced, with a source note, only
-  where a narrow or sharp detail would really fold. Fit the object, reset the
-  camera, orbit with the keyboard or click the subject to focus. Camera actions
-  use undo and redo.
+- **More dependable 3D shaping and framing.** Unsafe bevels are reduced with a
+  source note. Fit the object, reset the camera, orbit with the keyboard or click
+  the subject to focus. Camera actions use undo and redo.
 - **Whole scenes, not just one object.** Place several SVG files, 3D models and
   words in one scene, then select, move, nudge and turn each object, or add a
   group from the library at once. Light a scene with a generated studio, one of
@@ -59,12 +78,6 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
   move key, fill and rim lights in the preview, and choose finishes such as
   chrome, clay, velvet, glass, pearl and neon. Larger exports are re-rendered at
   the requested size rather than enlarged from the preview.
-- **3D Studio corrections.** A colour A edit on words or an STL model applies at
-  once instead of after a reload. The first frame of a video or GIF uses the
-  requested size and clip samples like the rest of the clip; Gradient, Backdrop,
-  Synth and Audiogram with captions also receive the clip length for their first
-  frame now. Because shapes with curved holes keep their full bevel, some saved
-  scenes show a fuller bevel when reopened.
 - **Share a whole project folder.** "Download project (.lolly)" in a Projects
   folder writes the folder, its sub-folders, every saved session and its
   pictures into one file. Opening it rebuilds the folder with fresh copies, so
@@ -361,8 +374,4 @@ carry a PREVIEW watermark for testing until graduated).
 - 3D Studio scenes saved with the first public version (0.3, on lolly.tools for one day
   before this release) can look slightly different when reopened: depth forms default to
   copies of the subject, clearcoat and imported-model materials follow the new finish
-  rules, and video frames use 16 samples each instead of 64. A 3D Studio scene placed
-  inside another tool, or shown as a thumbnail, now renders at preview quality. An
-  export at a size other than the canvas is rendered again at that size. An object
-  placed far from the centre or scaled up gets a wider shadow map, so its shadow is
-  softer.
+  rules, and video frames use 16 samples each instead of 64.
