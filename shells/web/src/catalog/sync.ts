@@ -223,7 +223,20 @@ function setCatalogMeta(key: string, value: CatalogMeta): void {
 // syncCorePrefetch can consume the core subset without re-fetching index.json.
 let cachedAssetIndex: AssetIndex | null = null;
 
-export async function syncCatalog(host: SyncHost, onAssetsReady?: () => void): Promise<void> {
+/**
+ * Sync the tool and asset indexes. `onAssetsReady` fires as soon as the asset
+ * metadata is stored (before the stale-asset prune), so first-run guidance can open
+ * early. `maintenanceGate`, when given, holds the prune back: it runs detached once
+ * the gate's promise resolves, and this sync resolves without waiting for it.
+ * main.ts passes the first-run welcome's gate (lib/welcome-gate.ts); injected rather
+ * than imported so this module stays free of welcome wiring. Without a gate the
+ * prune runs inline, as every other caller expects.
+ */
+export async function syncCatalog(
+  host: SyncHost,
+  onAssetsReady?: () => void,
+  maintenanceGate?: () => Promise<unknown>,
+): Promise<void> {
   // Load the persisted instance base BEFORE the first fetch. Wired here (not in
   // main.ts) so the sync bootstrap is self-contained: every entry point that
   // syncs gets the right base with no boot-order coordination. Never throws.
@@ -232,7 +245,7 @@ export async function syncCatalog(host: SyncHost, onAssetsReady?: () => void): P
   try {
     await Promise.all([
       syncTools(host),
-      syncAssets(host, onAssetsReady),
+      syncAssets(host, onAssetsReady, maintenanceGate),
     ]);
   } catch (e) {
     setOffline(true);
@@ -467,7 +480,12 @@ function absolutizeAssetUrls(index: AssetIndex): AssetIndex {
   return index;
 }
 
-async function syncAssets(host: SyncHost, onAssetsReady?: () => void): Promise<void> {
+// Counts asset syncs that fetched a fresh index. A prune that waited on a gate checks
+// it before starting: when a newer index has arrived since, that sync prunes against
+// it, and pruning against the old one would delete the newer index's metadata.
+let freshAssetSyncs = 0;
+
+async function syncAssets(host: SyncHost, onAssetsReady?: () => void, maintenanceGate?: () => Promise<unknown>): Promise<void> {
   const resp = await conditionalFetch(instancePath(`${CATALOG_BASE}/assets/index.json`), 'assets-index');
   if (!resp) {
     host.log('info', 'Asset catalog unchanged (304)');
@@ -475,6 +493,7 @@ async function syncAssets(host: SyncHost, onAssetsReady?: () => void): Promise<v
     return;
   }
   const index = absolutizeAssetUrls(await resp.json() as AssetIndex);
+  const generation = ++freshAssetSyncs;
   cachedAssetIndex = index; // let syncCorePrefetch reuse this fresh fetch
   if (Array.isArray(index.defaultFavourites)) {
     defaultFavouriteIds = index.defaultFavourites.filter((x): x is string => typeof x === 'string');
@@ -490,6 +509,20 @@ async function syncAssets(host: SyncHost, onAssetsReady?: () => void): Promise<v
   await host.assets._syncFromIndex(index.assets);
   onAssetsReady?.();
 
+  if (maintenanceGate) {
+    // Called before any await, so a hold that onAssetsReady just took is seen.
+    void (async () => {
+      await maintenanceGate();
+      if (generation !== freshAssetSyncs) return;
+      await pruneStaleAssets(host, index);
+    })().catch((e: unknown) => host.log('warn', 'Stale asset prune failed', { error: String(e) }));
+  } else {
+    await pruneStaleAssets(host, index);
+  }
+  host.log('info', `Asset catalog synced: ${index.assets.length} assets`);
+}
+
+async function pruneStaleAssets(host: SyncHost, index: AssetIndex): Promise<void> {
   // Remove stale blobs: old versions, removed assets, and on-demand blobs not
   // referenced by whatever saved session (browsed-but-unsaved fetches don't accumulate).
   const sessionRefs = await host.state._getAssetRefs();
@@ -514,8 +547,6 @@ async function syncAssets(host: SyncHost, onAssetsReady?: () => void): Promise<v
   if (pruned.blobs || pruned.meta) {
     host.log('info', `Pruned stale assets: ${pruned.blobs} blobs, ${pruned.meta} metadata entries`);
   }
-
-  host.log('info', `Asset catalog synced: ${index.assets.length} assets`);
 }
 
 async function prefetchAsset(host: SyncHost, meta: AssetMetaRecord, signal?: AbortSignal): Promise<void> {

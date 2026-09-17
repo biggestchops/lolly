@@ -29,7 +29,16 @@ const dialogProto = dom.window.HTMLDialogElement.prototype as unknown as Record<
 dialogProto.showModal = function showModal(this: { open: boolean }): void { this.open = true; };
 dialogProto.close = function close(this: { open: boolean }): void { this.open = false; };
 
-const { showWelcomeDialog } = await import('./welcome-dialog.ts');
+const { showWelcomeDialog, closeWelcomeDialog } = await import('./welcome-dialog.ts');
+const { welcomeSettled } = await import('../lib/welcome-gate.ts');
+
+/** Whether background maintenance waiting on the welcome gate would start now. */
+async function maintenanceMayStart(): Promise<boolean> {
+  let open = false;
+  void welcomeSettled().then(() => { open = true; });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  return open;
+}
 
 const dialog = (): HTMLElement => {
   const el = document.querySelector<HTMLElement>('.welcome-dialog');
@@ -122,4 +131,46 @@ test('taking a door persists the dismissal - the fork never re-asks after a deto
   // The door-taker never read page 2, so the privacy notice keeps its one-line
   // turn on a later visit - the door must NOT ack it.
   assert.equal(localStorage.getItem('lolly-privacy-ack'), null, 'privacy stays unacknowledged for the banner ladder');
+});
+
+test('the open dialog holds background maintenance until the visitor closes it', async () => {
+  assert.equal(await maintenanceMayStart(), true, 'nothing holds the gate before the welcome opens');
+  const settled = open();
+  assert.equal(showWelcomeDialog(), settled, 'a second call shares the open dialog');
+  assert.equal(await maintenanceMayStart(), false, 'the welcome is open');
+  dialog().querySelector<HTMLButtonElement>('[data-choice="explore"]')?.click();
+  assert.equal(await settled, 'explore');
+  assert.equal(await maintenanceMayStart(), true, 'closing it opens the gate, once, for the single shared dialog');
+});
+
+test('a navigation teardown and closeWelcomeDialog both release the gate without dismissing', async () => {
+  const first = open();
+  assert.equal(await maintenanceMayStart(), false);
+  window.dispatchEvent(new dom.window.Event('popstate'));
+  await first;
+  assert.equal(await maintenanceMayStart(), true, 'a route change is not a dismissal, but the visitor has left the dialog');
+  const second = open();
+  assert.equal(await maintenanceMayStart(), false);
+  closeWelcomeDialog();
+  await second;
+  assert.equal(await maintenanceMayStart(), true);
+  assert.equal(localStorage.getItem('lolly-welcome-dismissed'), null);
+});
+
+test('a dialog that fails to open releases the gate, and the next call tries again', async () => {
+  const showModal = dialogProto.showModal;
+  dialogProto.showModal = () => { throw new Error('showModal is not available'); };
+  try {
+    await assert.rejects(open(), /showModal is not available/);
+  } finally {
+    dialogProto.showModal = showModal;
+    // mountModal appended the element before showModal threw; clear it for the retry.
+    for (const el of document.querySelectorAll('.welcome-dialog')) el.remove();
+  }
+  assert.equal(await maintenanceMayStart(), true, 'the failed open must not hold maintenance forever');
+  const retry = open();
+  assert.equal(await maintenanceMayStart(), false, 'a fresh dialog, not the stored rejection');
+  dialog().querySelector<HTMLButtonElement>('.welcome-skip')?.click();
+  assert.equal(await retry, 'dismiss');
+  assert.equal(await maintenanceMayStart(), true);
 });

@@ -49,6 +49,94 @@ test('welcome defers tool preview rendering until the user enters the gallery', 
   } finally { releaseTools(); await browser.close(); }
 });
 
+test('the welcome leaves a complete gallery behind it and holds housekeeping until it closes', {
+  skip: origin ? false : 'set LOLLY_GALLERY_TEST_URL to a local Vite shell', timeout: 180_000,
+}, async () => {
+  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({ viewport: { width: 1200, height: 900 }, serviceWorkers: 'block' });
+  const probeId = 'welcome-gate-probe', staleId = 'welcome-gate/stale-probe';
+  const staleMeta = (id: string) => import('/src/bridge/db.ts' as string)
+    .then(async (m: { openDB(): Promise<{ get(store: string, key: string): Promise<unknown> }> }) => !!await (await m.openDB()).get('asset-meta', id));
+  try {
+    // Visit 1 creates the app's database. Seed an installed tool and a catalog record
+    // the next prune must remove, then forget everything localStorage knows, so the
+    // next visit is a cold first run whose welcome has not been settled.
+    const seed = await context.newPage();
+    await seed.goto(`${origin}/#/`, { waitUntil: 'domcontentloaded' });
+    await seed.locator('.welcome-dialog').waitFor();
+    await seed.waitForFunction(() => !!window.localStorage.getItem('sbt-tool-index'), undefined, { timeout: 60_000 });
+    await seed.evaluate(async ({ probeId, staleId }) => {
+      const enc = (text: string) => new TextEncoder().encode(text);
+      const manifest = {
+        id: probeId, name: 'Welcome Gate Probe', description: 'Installed from a .lolly file', version: '1.0.0',
+        category: 'everyone', status: 'community', inputs: [], render: { width: 400, height: 400, formats: ['svg'] },
+      };
+      const installed = await import('/src/lib/installed-tools.ts' as string);
+      await installed.installTool({ manifest, trust: 'custom', files: { 'tool.json': enc(JSON.stringify(manifest)), 'template.html': enc('<svg viewBox="0 0 10 10"></svg>') } });
+      const { openDB } = await import('/src/bridge/db.ts' as string);
+      await (await openDB()).put('asset-meta', { id: staleId, version: '1', tier: 'on-demand', formats: [] });
+    }, { probeId, staleId });
+    assert.equal(await seed.evaluate(staleMeta, staleId), true);
+    // Clear storage from a same-origin page that runs no app code.
+    await seed.goto(`${origin}/catalog/tools/index.slim.json`);
+    await seed.evaluate(() => window.localStorage.clear());
+    await seed.close();
+
+    // Visit 2: the cold first run under test.
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', e => errors.push(e.message));
+    let closedAt = Infinity;
+    const housekeeping: Array<{ url: string; at: number }> = [];
+    const prefetchOnly = /\/catalog\/assets\/lolly\/(?:logo\/(?:reverse|mono|mono-reverse)|demo\/(?:lolly-spin|app-screenshot))\.svg$/;
+    page.on('request', request => {
+      const url = request.url();
+      if (prefetchOnly.test(url) || url.endsWith('/src/lib/offline-manager.ts')) housekeeping.push({ url, at: Date.now() });
+    });
+    await page.goto(`${origin}/#/`, { waitUntil: 'domcontentloaded' });
+    const dialog = page.locator('.welcome-dialog');
+    await dialog.waitFor();
+
+    // Behind the open dialog: the full tool index with the installed tool merged in,
+    // painted into the gallery.
+    await page.waitForFunction((id) => {
+      const tools = window.__toolIndex?.tools ?? [];
+      return tools.length > 1 && tools.some(tool => tool.id === id);
+    }, probeId, { timeout: 60_000 });
+    await page.locator(`.gtile[data-tool-id="${probeId}"]`).waitFor({ state: 'attached', timeout: 60_000 });
+    const painted = await page.evaluate(() => ({
+      tiles: document.querySelectorAll('.gtile[data-tool-id]').length,
+      listed: (window.__toolIndex?.tools ?? []).filter(tool => tool.listed !== false).length,
+      slimOnly: !window.__toolIndex,
+    }));
+    assert.equal(painted.slimOnly, false);
+    assert.ok(painted.tiles > 20, `the gallery lists the catalog behind the welcome (${painted.tiles} tiles of ${painted.listed})`);
+
+    // Give maintenance every chance to start while the dialog stays open.
+    await page.waitForTimeout(4000);
+    assert.equal(await dialog.count(), 1, 'the welcome is still open');
+    assert.equal(housekeeping.length, 0, `no offline cache work or core prefetch behind the welcome: ${JSON.stringify(housekeeping)}`);
+    assert.equal(await page.evaluate(staleMeta, staleId), true, 'the stale-asset prune has not run behind the welcome');
+
+    closedAt = Date.now();
+    await page.locator('.welcome-dialog [data-choice="explore"]').click();
+    await dialog.waitFor({ state: 'detached' });
+    await page.waitForFunction(async (id) => {
+      const { openDB } = await import('/src/bridge/db.ts' as string);
+      return !await (await openDB()).get('asset-meta', id);
+    }, staleId, { timeout: 60_000, polling: 250 });
+    // The request log, not Resource Timing: a dev shell's module requests fill that buffer.
+    for (const deadline = Date.now() + 90_000; !housekeeping.some(entry => prefetchOnly.test(entry.url));) {
+      assert.ok(Date.now() < deadline, `the core prefetch never started after the welcome closed (${JSON.stringify(housekeeping)})`);
+      await page.waitForTimeout(250);
+    }
+    assert.ok(housekeeping.every(entry => entry.at >= closedAt), 'housekeeping starts after the welcome closes');
+    assert.equal(await page.locator(`.gtile[data-tool-id="${probeId}"]`).count(), 1, 'the installed tool is still listed');
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
 test('gallery renders branded templates, preserves their framing, and invalidates palette caches', {
   skip: origin ? false : 'set LOLLY_GALLERY_TEST_URL to a local Vite shell', timeout: 120_000,
 }, async () => {

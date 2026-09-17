@@ -63,23 +63,13 @@ import type { WebProfileAPI } from '../bridge/profile.ts';
 import type { PickerHost } from '../views/picker.ts';
 import { openDropFilePicker } from '../lib/drop-file-picker.ts';
 import { ackPrivacyNotice } from '../views/privacy-notice.ts';
+import { holdWelcomeGate, markWelcomeDismissed } from '../lib/welcome-gate.ts';
 import { mountModal } from './modal.ts';
 
-/** Persisted (localStorage, same tier as the theme) once the welcome is settled. */
-export const WELCOME_DISMISSED_KEY = 'lolly-welcome-dismissed';
+// The dismissed flag lives in lib/welcome-gate.ts so the boot path can read it
+// without loading this module; existing importers keep reaching it from here.
+export { WELCOME_DISMISSED_KEY, isWelcomeDismissed, markWelcomeDismissed } from '../lib/welcome-gate.ts';
 const TIPS_DISMISSED_KEY = 'lolly-tips-dismissed';
-
-/** True once the user has settled the welcome (or when storage is unavailable - 
- *  we'd re-prompt every visit otherwise, which is worse than never prompting). */
-export function isWelcomeDismissed(): boolean {
-  try { return localStorage.getItem(WELCOME_DISMISSED_KEY) === '1'; }
-  catch { return true; }
-}
-
-/** Persist the dismissal - also called by the #/start wizard after an install. */
-export function markWelcomeDismissed(): void {
-  try { localStorage.setItem(WELCOME_DISMISSED_KEY, '1'); } catch { /* storage off - just won't persist */ }
-}
 
 export type WelcomeChoice = 'brand' | 'import' | 'explore' | 'dismiss';
 
@@ -195,7 +185,10 @@ function renderWelcomeContent(withImport: boolean, langsOpen: boolean, page: Wel
  */
 export function showWelcomeDialog(profileApi?: WebProfileAPI, uploadHost?: PickerHost): Promise<WelcomeChoice> {
   if (openPromise) return openPromise;
-  openPromise = new Promise((resolve) => {
+  // Background maintenance waits while the welcome is open (lib/welcome-gate.ts).
+  // Released in onClose, which every exit reaches, a navigation teardown included.
+  const releaseGate = holdWelcomeGate();
+  const pending: Promise<WelcomeChoice> = new Promise((resolve) => {
     // Per-dialog, not persisted: a fresh welcome opens collapsed, on page 1.
     let langsOpen = false;
     let page: WelcomePage = 1;
@@ -217,6 +210,7 @@ export function showWelcomeDialog(profileApi?: WebProfileAPI, uploadHost?: Picke
         NAV_EVENTS.forEach(ev => window.removeEventListener(ev, onNav));
         settleOpen = null;
         openPromise = null;
+        releaseGate();
         resolve(result ?? 'dismiss');
       },
     });
@@ -301,7 +295,14 @@ export function showWelcomeDialog(profileApi?: WebProfileAPI, uploadHost?: Picke
     });
     NAV_EVENTS.forEach(ev => window.addEventListener(ev, onNav));
   });
-  return openPromise;
+  openPromise = pending;
+  // A dialog that failed to mount rejects here. It must not keep maintenance waiting,
+  // and the next call should try again rather than get this rejection back.
+  pending.catch(() => {
+    releaseGate();
+    if (openPromise === pending) { openPromise = null; settleOpen = null; }
+  });
+  return pending;
 }
 
 /** Tear down an open welcome without persisting the flag (safety hatch for hosts) - 

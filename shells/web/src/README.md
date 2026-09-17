@@ -9,18 +9,18 @@ Roughly 565,000 lines of TypeScript, tests included, and 49,000 lines of CSS.
 
 | Directory | Source | Tests | CSS |
 |---|---|---|---|
-| `views/` | 358 files, 156,807 lines | 161 files, 56,702 lines | 6 files, 1,427 lines |
-| `lib/` | 546 files, 123,063 lines | 316 files, 62,230 lines | 11 files, 1,780 lines |
+| `views/` | 358 files, 156,829 lines | 161 files, 56,702 lines | 6 files, 1,427 lines |
+| `lib/` | 547 files, 123,160 lines | 317 files, 62,346 lines | 11 files, 1,780 lines |
 | `bridge/` | 141 files, 46,326 lines | 97 files, 21,118 lines | none |
-| `components/` | 72 files, 22,189 lines | 36 files, 10,725 lines | 11 files, 796 lines |
+| `components/` | 72 files, 22,190 lines | 36 files, 10,776 lines | 11 files, 796 lines |
 | `collab/` | 20 files, 13,532 lines | 22 files, 14,132 lines | none |
 | `pro/` | 22 files, 8,460 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
 | `org/` | 19 files, 5,881 lines | 15 files, 4,257 lines | none |
-| `catalog/` | 2 files, 862 lines | 1 file, 86 lines | none |
+| `catalog/` | 2 files, 893 lines | 2 files, 220 lines | none |
 | `ext/` | 2 files, 136 lines | 1 file, 86 lines | none |
 | `styles/` | none | 4 files, 857 lines | 87 files, 43,921 lines |
 
-Plus 47 `.ts`/`.js` files at the top level of `src/`, 15,760 lines all told, of which 22 are tests and 3 are ambient declarations. `main.ts` is 2,086 of that.
+Plus 47 `.ts`/`.js` files at the top level of `src/`, 15,782 lines all told, of which 22 are tests and 3 are ambient declarations. `main.ts` is 2,108 of that.
 <!-- web-src-dirs:end -->
 
 ## How do I find a feature
@@ -65,17 +65,17 @@ Do not be ambushed by these. The largest source files, by line count:
 | 3,659 | `views/color-lab.ts` | yes |
 | 3,184 | `views/projects.ts` | none |
 | 3,143 | `bridge/sequence-render.ts` | yes |
-| 3,069 | `views/gallery.ts` | none |
+| 3,091 | `views/gallery.ts` | none |
 | 3,033 | `bridge/export-svg-walker.ts` | **none** |
 | 2,674 | `views/deck-editor.ts` | yes |
 | 2,462 | `views/design-import.ts` | **none** |
 | 2,363 | `views/free-canvas-math.ts` | yes |
 | 2,307 | `views/timeline-math.ts` | yes |
 | 2,151 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
+| 2,108 | `main.ts` | yes |
 | 2,103 | `lib/clip-thumbs.ts` | yes |
 | 2,092 | `components/color-field.ts` | yes |
 | 2,089 | `views/design-inspector.ts` | yes |
-| 2,086 | `main.ts` | yes |
 | 2,077 | `views/tool/session.ts` | yes |
 | 2,075 | `pro/index.ts` | yes |
 <!-- web-src-largest:end -->

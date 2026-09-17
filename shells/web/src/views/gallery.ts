@@ -45,6 +45,7 @@ import { mountFeaturedRow, resolveExamples } from '../components/featured-row.ts
 import { armMotionPreviews, playMotionIn, stopMotionIn } from '../lib/preview-media.ts';
 import { galleryPreviewLooks, galleryLookHref, renderGalleryLook, galleryPreviewPriority } from '../lib/gallery-preview.ts';
 import { createPreviewQueue } from '../lib/preview-queue.ts';
+import { decideWelcome } from '../lib/welcome-gate.ts';
 import { loadGalleryLook } from './gallery-look-loader.ts';
 import { renderFeaturedVariant, renderFeaturedPages, displayFormatOf } from '../lib/featured-render.ts';
 import { currentTheme } from '../theme.ts';
@@ -231,14 +232,35 @@ async function galleryNeedsWelcome(host: GalleryHost, isCurrent: () => boolean):
   } catch { return false; }
 }
 
-/** First-run guidance can open once the brand assets arrive, before tool metadata. */
+type WelcomeModule = typeof import('../components/welcome-dialog.ts');
+/** What the welcome decision found. A branded install loads no dialog module at all;
+ *  an unbranded one carries the module and, when the welcome opened, the promise
+ *  that settles as the dialog closes. */
+type WelcomeStep =
+  | { unbranded: false }
+  | { unbranded: true; welcome: WelcomeModule; closed: Promise<unknown> | null };
+
+/**
+ * Decide whether the unbranded first-run welcome opens, and open it when it should.
+ * Runs under lib/welcome-gate.ts's decision hold so background maintenance waits for
+ * the answer: an opened dialog keeps the gate shut until it closes, and a branded
+ * install, a settled welcome, a route change or an error releases it here. Null when
+ * the caller's view went away first. `force` is the `#/?welcome` deep link.
+ */
+function galleryWelcomeStep(host: GalleryHost & PickerHost, isCurrent: () => boolean, force = false): Promise<WelcomeStep | null> {
+  return decideWelcome(async (): Promise<WelcomeStep | null> => {
+    if (!await galleryNeedsWelcome(host, isCurrent)) return { unbranded: false };
+    const welcome = await import('../components/welcome-dialog.ts');
+    if (!isCurrent()) return null;
+    const due = force || !welcome.isWelcomeDismissed();
+    return { unbranded: true, welcome, closed: due ? welcome.showWelcomeDialog(host.profile, host) : null };
+  }, force);
+}
+
+/** First-run guidance can open once the brand assets arrive, before tool metadata.
+ *  Resolves once the decision is made; it never waits for the dialog to close. */
 export async function showGalleryWelcome(host: GalleryHost & PickerHost, isCurrent: () => boolean): Promise<void> {
-  const [unbranded, welcome] = await Promise.all([
-    galleryNeedsWelcome(host, isCurrent), import('../components/welcome-dialog.ts'),
-  ]);
-  if (unbranded && isCurrent() && !welcome.isWelcomeDismissed()) {
-    void welcome.showWelcomeDialog(host.profile, host);
-  }
+  await galleryWelcomeStep(host, isCurrent);
 }
 
 // Section order for the filter pills. 'utility' is intentionally absent: the
@@ -2236,17 +2258,18 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
   // still mounted before touching the DOM (the trigger must never surface on
   // another view), and the dialog itself closes on any route change (see
   // components/welcome-dialog.ts) - no cleanup entry here, so the same-route
-  // post-sync re-mount keeps it open without a flash.
+  // post-sync re-mount keeps it open without a flash. The decision and the open
+  // dialog both hold lib/welcome-gate.ts, so boot-time maintenance waits for them.
   const galleryRoot = viewEl.querySelector<HTMLElement>('.gallery');
   void (async () => {
-    const unbranded = await galleryNeedsWelcome(host, () => !!galleryRoot?.isConnected);
-    if (!galleryRoot?.isConnected) return;
+    const step = await galleryWelcomeStep(host as unknown as GalleryHost & PickerHost, () => !!galleryRoot?.isConnected, deepLink.has('welcome'));
+    if (!step || !galleryRoot?.isConnected) return;
     // Branded (or locked): no welcome to wait for, so the banner slot is free.
     // When no banner claims it, a first-run install gets the branded intro strip
     // (plans/140 S4) - same slot discipline, still one surface per visit. The
     // strip module gates itself out for installs with saved work and settles
     // when any tool opens.
-    if (!unbranded) {
+    if (!step.unbranded) {
       // Orientation FIRST on a branded install (plans/170 WP-4, audit 167
       // F-A16): a colleague's very first visit reads "Your brand is loaded…"
       // before any banner rung - the privacy one-liner is one line and keeps
@@ -2264,22 +2287,21 @@ export async function mountGallery(viewEl: HTMLElement, host: GalleryHost, opts:
       revealFirstRunBanner();
       return;
     }
-    const welcome = await import('../components/welcome-dialog.ts');
-    if (!galleryRoot.isConnected) return; // navigated away while the chunk loaded
-    // 'brand' navigates itself; the upload host enables the "Bring your design" card.
-    // A welcome visit is the whole ask - the banner stays hidden and the tips
-    // strip waits for a later visit.
+    // The step opened the welcome when it was due. 'brand' navigates itself; the
+    // upload host enables the "Bring your design" card. A welcome visit is the
+    // whole ask - the banner stays hidden and the tips strip waits for a later
+    // visit, and previews stay paused until the dialog closes.
     // `#/?welcome` forces it open past the dismissed flag, so docs and screenshot
     // runs can capture the greeting deterministically instead of needing a virgin
     // profile. It rides INSIDE the ladder on purpose: everything above still
     // applies, so a locked or already-branded install has already returned and the
     // flag is silently ignored there - a deep link can't nag someone who has a brand.
-    if (!welcome.isWelcomeDismissed() || deepLink.has('welcome')) {
-      await welcome.showWelcomeDialog(host.profile, host as unknown as PickerHost);
+    if (step.closed) {
+      await step.closed;
       return;
     }
     if (revealFirstRunBanner()) return;
-    welcome.mountBrandTips(viewEl.querySelector<HTMLElement>('.tool-masonry'));
+    step.welcome.mountBrandTips(viewEl.querySelector<HTMLElement>('.tool-masonry'));
   })().finally(() => previewQueue.setPaused(false));
 
 

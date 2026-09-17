@@ -19,6 +19,7 @@ import { saveFavouriteAssets } from './lib/asset-favourites.ts';
 import { settingsRoute } from './views/settings-route.ts';
 import { mountGallery, showGalleryWelcome } from './views/gallery.ts';
 import { openDropFilePicker } from './lib/drop-file-picker.ts';
+import { expectWelcomeDecision, isWelcomeDismissed, settleWelcomeDecision, welcomeSettled } from './lib/welcome-gate.ts';
 import { initTheme, applyTheme, urlThemeOverride } from './theme.ts';
 import { hydrateA11yPrefs, currentA11yPrefs, setA11yPref } from './lib/a11y-prefs.ts';
 import { hydrateChromeFollow } from './lib/chrome-follow.ts';
@@ -915,6 +916,13 @@ function afterLoadIdle(fn: () => void): void {
   });
 }
 
+/** …for maintenance that downloads or deletes in bulk: first the first-run welcome
+ *  closes (lib/welcome-gate.ts), then load + idle, and the gate is checked once more
+ *  as the work starts, in case a welcome opened while the idle slot was pending. */
+function afterWelcomeIdle(fn: () => void): void {
+  void welcomeSettled().then(() => afterLoadIdle(() => { void welcomeSettled().then(fn); }));
+}
+
 async function boot(): Promise<void> {
   const host = await createBridge();
   // The optional deployment control plane's probe (src/org/) is up to a 1,500 ms
@@ -1323,25 +1331,37 @@ async function boot(): Promise<void> {
   // Sideloaded tools (installed from a .lolly) are spliced into the tool index the moment
   // the catalog lands, so they appear in the galleries/pickers and pass the tool view's
   // existence check. Part of catalogReady so the first gallery paint already includes them.
+  //
+  // None of that waits for the first-run welcome: the gallery must be complete behind
+  // the dialog when the visitor closes it. Only the housekeeping does (lib/welcome-gate.ts):
+  // a gallery visit whose welcome is unsettled holds the gate from here until the first
+  // welcome decision (or the first mount, below) says whether the dialog opens, and
+  // syncCatalog runs its stale-asset prune once the gate opens, detached from catalogReady.
+  const welcomeRoute = parseRoute().name;
+  if ((welcomeRoute === 'gallery' || welcomeRoute === 'utilities') && !isWelcomeDismissed()) expectWelcomeDecision();
   const catalogHost = host as unknown as Parameters<typeof syncCatalog>[0] & Parameters<typeof showGalleryWelcome>[0];
   const catalogReady = syncCatalog(catalogHost, () => {
     if (coldGallery && parseRoute().name === 'gallery') {
       void showGalleryWelcome(catalogHost, () => parseRoute().name === 'gallery').catch(console.error);
     }
-  })
+  }, welcomeSettled)
     .then(async () => { try { await mergeInstalledToolsIntoIndex(); } catch { /* no installed tools / no index yet */ } });
   // Core-asset warming: 32 fetches / ~787 KB, fire-and-forget, and nothing on screen
   // waits for any of it. Firing at catalog-land put it in direct competition with the
   // first viewport's preview art, so it waits for load + idle now (plans/155 Task 3.6,
   // the components/featured-row.ts pattern) - same work, after the paint that matters.
-  catalogReady.then(() => afterLoadIdle(() => { void syncCorePrefetch(host as unknown as Parameters<typeof syncCorePrefetch>[0]); }));
+  // It also refreshes pinned tool files and downloaded offline parts, so it waits for
+  // the first-run welcome to close as well.
+  catalogReady.then(() => afterWelcomeIdle(() => { void syncCorePrefetch(host as unknown as Parameters<typeof syncCorePrefetch>[0]); }));
   // Hosted design systems (plans/186 section 3.6): once a day, and when the tab
   // comes back to the front after a day away, ask each host whether its design
   // system moved. Idle-scheduled and best-effort - a host that is away, or a
   // browser build whose CSP cannot reach it, answers "unreachable" and nothing
   // else changes. A change while a system is ACTIVE repaints through the switch.
+  // Neither the check nor that repaint belongs behind the first-run welcome, so both
+  // callers below go through its gate.
   const checkHosted = (): void => {
-    void import('./lib/design-system/hosted.ts').then(async m => {
+    void welcomeSettled().then(() => import('./lib/design-system/hosted.ts')).then(async m => {
       const outcomes = await m.checkHostedDesignSystems(host as unknown as Parameters<typeof m.checkHostedDesignSystems>[0]);
       const activeId = await (host as unknown as { designSystems?: { activeId(): Promise<string> } }).designSystems?.activeId();
       if (activeId && outcomes[activeId] === 'updated') {
@@ -1350,7 +1370,7 @@ async function boot(): Promise<void> {
       }
     }).catch(() => { /* no registry on this host */ });
   };
-  catalogReady.then(() => afterLoadIdle(checkHosted));
+  catalogReady.then(() => afterWelcomeIdle(checkHosted));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkHosted(); });
   // The Neurospicy dock mounts ABOVE, before this sync starts - on a cold install its
   // track list would be built from a not-yet-synced catalog. Rebuild it once assets land.
@@ -1426,7 +1446,7 @@ async function boot(): Promise<void> {
   // notification, so anyone opening a tool before that callback fired got no Send
   // section at all.
   const org = await orgPromise;
-  if (org?.gate) return;
+  if (org?.gate) { settleWelcomeDecision(); return; }
 
   const routeName = parseRoute().name;
   // A cold gallery visit gets ONE extra chance before it falls back to waiting on the
@@ -1471,9 +1491,11 @@ async function boot(): Promise<void> {
   // which is long enough for the locale chunk to land before the paint, and
   // re-rendering then would be pure churn.
   let paintedLang = loadedLang();
+  // By the time the first mount resolves, a gallery view has started its own welcome
+  // decision (views/gallery.ts), so the boot hold on the welcome gate can go.
   const firstNavigate = async (): Promise<void> => {
     paintedLang = loadedLang();
-    await navigate(host, { force: true });
+    try { await navigate(host, { force: true }); } finally { settleWelcomeDecision(); }
   };
 
   if (fastPath) {
