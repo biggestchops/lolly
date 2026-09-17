@@ -61,6 +61,7 @@ import { createPdfDoc } from './export-pdf-doc.ts';
 import { isOwnProfile, resolveEmbeddedProfile } from '../lib/press-profile-embed.ts';
 import type { EmbedResolution } from '../lib/press-profile-embed.ts';
 import { _host, imprintCanvas, exportDims, getDomToImage, swapBlobUrls, fontMetricsPx, blobToDataUrl, MAX_RASTER_PX, makeRoundedFill, setExportHost } from './export-shared.ts';
+import { beginFrameClock, renderFrameAt, endFrameClock } from './frame-clock.ts';
 import type { WebHost, ExportOpts, ExportDims, DtoRenderOpts, ImprintState, Rgba } from './export-shared.ts';
 import { renderSvgFromHtml, stripCommentNodes, inlineBlobUrlsInEl, inlineSvgFromImg, imprintEmbedCanvas, isPaintSkipped, rotationPivot, rasterizePosedNodeToDataUrl, effectSpillCss, detectUnsupportedCss, rasterizeNodeToDataUrl, firstCssUrl, cssUrlToHref, bakeImageFilter, visualLines, mergeDeco, decoFlags, pseudoDescriptor } from './export-svg-walker.ts';
 import type { Deco } from './export-svg-walker.ts';
@@ -5154,48 +5155,7 @@ function canCarrySoftSubtitles(): boolean {
 //   width / height - target pixel size (defaults to the node's box)
 //   frame() - Promise<HTMLCanvasElement> for the current moment
 //   dispose() - restore the blob:-URL swap; call once capture is done
-// ── Deterministic export-frame clock (opt-in) ────────────────────────────────
-// A canvas-animation tool can register `window.__lollyFrameRender(t)` to render a
-// deterministic frame at normalized loop time t∈[0,1). The snapshot export paths
-// drive it: they raise `window.__lollyFrameDriven` (so the tool's own rAF loop
-// bails - dom-to-image's toCanvas is async, and a stray repaint would otherwise
-// clobber the frame), paint the exact phase, then capture. Presence-keyed, so a
-// tool that never registers the hook is byte-for-byte unchanged. Scoped to these
-// snapshot paths ONLY - never the real-time captureStream path (which returns
-// before createFrameSource), so the two mechanisms can't both fire per export.
-// Per-NODE channel (not a window global): the hook lives ON the tool's canvas, so
-// it can't leak across SPA tool navigation - a detached canvas from a previous tool
-// is never inside the node being exported, so an unrelated tool never enters this path.
-// The second argument is the exported clip's real length in seconds. It is ADDITIVE:
-// a tool that declares `(t)` ignores it and behaves exactly as before. A tool that
-// maps t onto its own timeline (the audiogram's caption cues) must prefer it over
-// any span of its own, because the export's length is decided here - after a frame
-// plan the tool never sees - and a tool-side guess is what let captions drift.
-// The third argument is the export's target pixel size. Also ADDITIVE: a canvas tool
-// that draws at its on-screen size ignores it and the capture scales that bitmap, as
-// before. A tool that can resample (the 3D studio) re-renders at this size so a larger
-// export carries real detail rather than an upscaled preview.
-type FrameClockCanvas = HTMLCanvasElement & { __lollyFrameRender?: (t: number, clipSec?: number, size?: { width: number; height: number }) => void; __lollyFrameDriven?: boolean };
-function frameClockCanvas(node: Element): FrameClockCanvas | null {
-  const self = node as FrameClockCanvas;
-  if (typeof self.__lollyFrameRender === 'function') return self;
-  for (const c of Array.from(node.querySelectorAll?.('canvas') ?? [])) {
-    if (typeof (c as FrameClockCanvas).__lollyFrameRender === 'function') return c as FrameClockCanvas;
-  }
-  return null;
-}
-function beginFrameClock(node: Element): FrameClockCanvas | null {
-  const c = frameClockCanvas(node);
-  if (c) c.__lollyFrameDriven = true;   // freeze the tool's own rAF for the capture
-  return c;
-}
-function renderFrameAt(c: FrameClockCanvas | null, t: number, clipSec?: number, size?: { width: number; height: number }): void {
-  if (!c || typeof c.__lollyFrameRender !== 'function') return;
-  try { c.__lollyFrameRender(t, clipSec, size); } catch (e) { _host?.log?.('warn', `__lollyFrameRender threw: ${(e as Error)?.message ?? e}`); }
-}
-function endFrameClock(c: FrameClockCanvas | null): void {
-  if (c) c.__lollyFrameDriven = false;
-}
+// The deterministic export-frame clock (__lollyFrameRender) lives in frame-clock.ts.
 
 // ── CSS animation/transition scrubbing (no tool opt-in required) ────────────
 // A plain template that animates via CSS `animation`/`transition` (no canvas,

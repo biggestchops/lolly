@@ -5,6 +5,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { unzipSync } from 'fflate';
 import { chromium } from 'playwright';
+import { studioAlphaReport } from './helpers/studio3d-alpha.ts';
 
 const origin = process.env.STUDIO_SHELL_URL;
 const collectionPath =
@@ -16,7 +17,7 @@ const step = (message: string) => {
 test('3D Studio imports, reopens a portable model and exports through editor and batch', {
   skip: !origin && 'Set STUDIO_SHELL_URL to a running web shell.',
   timeout: 900_000,
-}, async () => {
+}, async (t) => {
   const browser = await chromium.launch({
     headless: true,
     ...(process.env.STUDIO_NATIVE
@@ -33,8 +34,11 @@ test('3D Studio imports, reopens a portable model and exports through editor and
     await page.routeWebSocket(/127\.0\.0\.1/, (socket) => socket.close());
     page.on('pageerror', (e) => errors.push(e.message));
     step('studio: browser ready');
+    // imprint=0: the alpha checks below read the renderer's own pixels, and the pixel
+    // watermark (on by default) moves RGB at the silhouette by up to 16 levels by design.
+    // With it off, the exported PNG matched the renderer's frame exactly (2026-09-16).
     await page.goto(
-      `${origin}/t/3d-studio?source=model&samples=8&outputMode=object-shadow&camera.azimuth=42&camera.elevation=20&camera.fov=35&camera.zoom=1.4&c2pa=0&width=360&height=360`
+      `${origin}/t/3d-studio?source=model&samples=8&outputMode=object-shadow&camera.azimuth=42&camera.elevation=20&camera.fov=35&camera.zoom=1.4&c2pa=0&imprint=0&width=360&height=360`
     );
     step('studio: page loaded');
     await page.locator('[data-input-id="modelAsset"]').click();
@@ -152,36 +156,124 @@ test('3D Studio imports, reopens a portable model and exports through editor and
     await waitValue('depthOfField', false);
     step('studio: fit, reset, separate keyboard undo, redo and focus picking passed');
 
-    await page.getByRole('button', { name: 'Export options', exact: true }).click();
-    step('studio: export opened');
-    const downloading = page.waitForEvent('download');
-    await page.locator('[data-action="download"]').click();
-    const downloaded = await downloading;
-    const bytes = await readFile((await downloaded.path())!);
-    assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
-    assert.ok(bytes.length > 10_000);
-    const alpha = await page.evaluate(async (bytes) => {
-      const image = await createImageBitmap(
-        new Blob([new Uint8Array(bytes)], { type: 'image/png' })
-      );
-      const canvas = document.createElement('canvas');
-      canvas.width = image.width;
-      canvas.height = image.height;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(image, 0, 0);
-      image.close();
-      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      let clear = 0,
-        solid = 0,
-        partial = 0;
-      for (let i = 3; i < pixels.length; i += 4) {
-        if (pixels[i] === 0) clear++;
-        else if (pixels[i] === 255) solid++;
-        else partial++;
-      }
-      return { clear, solid, partial };
-    }, Array.from(bytes));
+    const download = page.locator('[data-action="download"]');
+    // The Download button is laid out below the fold while the export panel is closed, so
+    // it reads as visible either way; the panel is closed while this opener is present,
+    // and it stays open after a download.
+    const opener = page.getByRole('button', { name: 'Export options', exact: true });
+    const exportPng = async () => {
+      if (await opener.count()) await opener.click();
+      const downloading = page.waitForEvent('download');
+      await download.click();
+      const bytes = await readFile((await (await downloading).path())!);
+      assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
+      assert.ok(bytes.length > 10_000);
+      // Decoded through a 2D canvas, which un-premultiplies, as the renderer suites read frames.
+      return page.evaluate(async (bytes) => {
+        const image = await createImageBitmap(
+          new Blob([new Uint8Array(bytes)], { type: 'image/png' })
+        );
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(image, 0, 0);
+        image.close();
+        const pixels = Array.from(ctx.getImageData(0, 0, canvas.width, canvas.height).data);
+        return { pixels, width: canvas.width, height: canvas.height };
+      }, Array.from(bytes));
+    };
+    const shadowPng = await exportPng();
+    step('studio: export opened and downloaded');
+    const alpha = { clear: 0, solid: 0, partial: 0 };
+    for (let i = 3; i < shadowPng.pixels.length; i += 4) {
+      if (shadowPng.pixels[i] === 0) alpha.clear++;
+      else if (shadowPng.pixels[i] === 255) alpha.solid++;
+      else alpha.partial++;
+    }
     assert.ok(alpha.clear > 100 && alpha.solid > 100 && alpha.partial > 100, JSON.stringify(alpha));
+    // The exported cutouts pass the renderer suite's alpha checks (plan 265, D2.1). Each
+    // object mask comes from an object export of the same view. The lit export asserts clear
+    // outside and the shadow bound and reports the halo measure, because lit silhouettes are
+    // shaded; a flat-lit pair (one constant colour, shadows kept) also asserts the halo check,
+    // so a fringe added by the export path itself would fail (tests/studio3d-quality-alpha).
+    type EditorCanvas = HTMLElement & {
+      __lollyCommit(id: string, value: unknown): void;
+      __lollyModel(): { id: string; value: unknown }[];
+    };
+    // Commit values, then wait until the studio shows the model's own copy of each and is ready.
+    const settle = async (changes: Record<string, unknown>) => {
+      const expected = await page.evaluate((changes) => {
+        const canvas = document.querySelector('[data-lolly-canvas]') as EditorCanvas;
+        for (const [id, value] of Object.entries(changes)) canvas.__lollyCommit(id, value);
+        const model = new Map(canvas.__lollyModel().map((input) => [input.id, input.value]));
+        return Object.fromEntries(Object.keys(changes).map((id) => [id, model.get(id)]));
+      }, changes);
+      await page.waitForFunction((expected) => {
+        const marker = document.querySelector<HTMLElement>('[data-lolly-studio]');
+        const current = marker && JSON.parse(marker.dataset.lollyStudio!).values;
+        return (
+          marker?.dataset.studioState === 'ready' &&
+          Object.entries(expected).every(
+            ([id, value]) => JSON.stringify(current[id]) === JSON.stringify(value)
+          )
+        );
+      }, expected);
+    };
+    const checkCutout = (
+      label: string,
+      shadow: typeof shadowPng,
+      object: typeof shadowPng,
+      halo: boolean
+    ) => {
+      const report = studioAlphaReport(shadow, object, 'object-shadow', 0.4);
+      const detail = `${label}: ${JSON.stringify(report)}`;
+      t.diagnostic(`exported cutout, ${detail}`);
+      assert.ok(report.objectPixels > 1000, detail);
+      assert.equal(report.strayAlpha, 0, `clear outside, ${detail}`);
+      assert.ok(report.shadowPixels > 100, detail);
+      assert.ok(report.shadowAlpha <= report.shadowLimit, `shadow bound, ${detail}`);
+      assert.ok(report.haloChecked > 50, detail);
+      const alone = studioAlphaReport(object, object, 'object', 0.4);
+      const aloneDetail = `${label} object output: ${JSON.stringify(alone)}`;
+      t.diagnostic(`exported cutout, ${aloneDetail}`);
+      assert.equal(alone.borderAlpha, 0, aloneDetail);
+      if (halo) {
+        assert.ok((report.haloWorst?.excess ?? 0) <= 8, `no halo, ${detail}`);
+        assert.ok((alone.haloWorst?.excess ?? 0) <= 8, `no halo, ${aloneDetail}`);
+      }
+    };
+    await settle({ outputMode: 'object' });
+    checkCutout('lit', shadowPng, await exportPng(), false);
+    const flat: Record<string, unknown> = {
+      materialMode: 'pair',
+      finishA: 'glow',
+      finishB: 'glow',
+      studio: 'custom',
+      lights: [
+        {
+          kind: 'directional',
+          color: '#ffffff',
+          x: -3,
+          y: 6,
+          z: 4,
+          intensity: 0,
+          size: 1.5,
+          shadows: true,
+        },
+      ],
+      environmentIntensity: 0,
+    };
+    const saved = await page.evaluate((ids) => {
+      const canvas = document.querySelector('[data-lolly-canvas]') as EditorCanvas;
+      const model = new Map(canvas.__lollyModel().map((input) => [input.id, input.value]));
+      return Object.fromEntries(ids.map((id) => [id, model.get(id)]));
+    }, Object.keys(flat));
+    await settle(flat);
+    const flatObject = await exportPng();
+    await settle({ outputMode: 'object-shadow' });
+    checkCutout('flat', await exportPng(), flatObject, true);
+    await settle(saved);
 
     step('studio: downloaded');
     const packed = await page.evaluate(async () => {

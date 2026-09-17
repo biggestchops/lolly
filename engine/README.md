@@ -329,7 +329,7 @@ The table is generated. Run `node scripts/gen-engine-modules.ts` after adding, r
 | `studio3d-camera-path.ts` | 167 | Camera paths: keys captured from the live view, sampled deterministically over the loop. | yes | `tests/studio3d-camera-path.test.ts` | – |
 | `studio3d-collection.ts` | 141 | One studio shared by a bounded collection, with explicit per-item overrides. | yes | `tests/studio3d-collection.test.ts` | – |
 | `studio3d-lights.ts` | 90 | Light placement on the preview: orbit a source about the subject and save it where the rig keeps it. | yes | `tests/studio3d-lights.test.ts` | – |
-| `studio3d.ts` | 547 | Portable studio recipe validation, material finishes and repeatable camera time. | yes | `tests/studio3d.test.ts` | – |
+| `studio3d.ts` | 551 | Portable studio recipe validation, material finishes and repeatable camera time. | yes | `tests/studio3d.test.ts` | – |
 | `svg-colors.ts` | 126 | Pure, DOM-free colour extraction from raw SVG source text. | yes | `tests/svg-colors.test.ts` | – |
 | `svg-custgeom.ts` | 609 | Flat-SVG to native PowerPoint shapes. | yes | `tests/svg-custgeom.test.ts` | – |
 | `svg-layers.ts` | 1790 | Lift layers - enumerate an SVG's own layers and derive a standalone document for each one (plans/104 section 7). | yes | `tests/svg-layers.test.ts` | – |

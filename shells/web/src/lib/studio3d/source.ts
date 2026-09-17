@@ -348,8 +348,8 @@ export async function loadStudioSource(
       signal.throwIfAborted();
       ({ object: raw, info } = svgObject(svg, scene));
       info.slots = [{ id: 'paint:words', label: '1: words', color: scene.materials.colorA }];
-      // Letters are thin next to the whole word, so the bevel check nearly always trims
-      // them. One plain note replaces the per-colour report artwork gets.
+      // Letters are thin next to the whole word, so a long word or a large bevel gets
+      // trimmed. One plain note replaces the per-colour report artwork gets.
       if (info.warnings.some((warning) => /bevel reduced/.test(warning)))
         info.warnings = [
           ...info.warnings.filter((warning) => !/bevel reduced/.test(warning)),

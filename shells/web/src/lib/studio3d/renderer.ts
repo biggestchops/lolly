@@ -13,7 +13,7 @@ import type {
   StudioSceneV1,
   StudioSourceInfo,
 } from '../../../../../packages/core/src/studio3d-v1.ts';
-import { halton, StudioCapture } from './capture.ts';
+import { halton, StudioCapture, StudioEmptyFrameError } from './capture.ts';
 import { fitStudioObject, pickStudioFocus, placeStudioScene } from './camera.ts';
 import { loadStudioEnvironment, type StudioEnvironment, studioPalette } from './environment.ts';
 import { applyStudioMaterials, studioHasTransmission } from './materials.ts';
@@ -24,6 +24,7 @@ import {
   type StudioRead,
   type StudioShaper,
 } from './source.ts';
+import type { StudioSceneCounters, StudioSceneHost } from './scene-host.ts';
 import { buildStudioStage, type StudioStage, studioBackdrop, studioCamera } from './stage.ts';
 
 const MAX_SCENE_TRIANGLES = 1_000_000;
@@ -49,17 +50,107 @@ function objectScene(recipe: StudioSceneV1, spec: StudioObjectV1): StudioSceneV1
   };
 }
 
+/**
+ * What one loaded source depends on. Only outlines (artwork, words and the badge) are
+ * extruded with the shared depth and bevel, so a shape edit never re-reads a model file.
+ * Primitives bake both colours at load. Words and STL bake colour A too, but materials.ts
+ * recolours them, so a colour edit does not reshape words or re-read an STL file.
+ */
 function assetKey(recipe: StudioSceneV1, spec: StudioObjectV1): string {
+  const { kind, primitive } = spec.source;
+  const extruded = kind === 'svg' || kind === 'text' || (kind === 'primitive' && primitive === 'badge');
   return JSON.stringify([
     spec.source,
-    recipe.shape,
-    spec.source.kind === 'primitive' ? [recipe.materials.colorA, recipe.materials.colorB] : null,
+    extruded ? recipe.shape : null,
+    kind === 'primitive' ? [recipe.materials.colorA, recipe.materials.colorB] : null,
   ]);
 }
 
-export class StudioRenderer {
+/** The recipe a frame at `time` is drawn with: on a camera path the camera is the sampled pose. */
+function framedRecipe(posed: StudioSceneV1, time: number, clipSeconds?: number): StudioSceneV1 {
+  const pose = studioCameraPose(posed, time, clipSeconds);
+  return {
+    ...posed,
+    camera: {
+      ...posed.camera,
+      azimuth: pose.azimuth,
+      elevation: pose.elevation,
+      fov: pose.fov,
+      zoom: pose.zoom,
+      target: pose.target,
+      focus: pose.focus,
+    },
+  };
+}
+
+/**
+ * The pixel rectangle a box covers in a frame, with y counted from the bottom, or null when
+ * part of the box is behind the camera, where a projection says nothing useful.
+ */
+function projectedBox(box: THREE.Box3, camera: THREE.PerspectiveCamera | THREE.OrthographicCamera, width: number, height: number): THREE.Box2 | null {
+  const rect = new THREE.Box2();
+  const corner = new THREE.Vector3();
+  for (let i = 0; i < 8; i++) {
+    corner.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z);
+    if (corner.clone().applyMatrix4(camera.matrixWorldInverse).z > -camera.near) return null;
+    corner.project(camera);
+    rect.expandByPoint(new THREE.Vector2(((corner.x + 1) / 2) * width, ((corner.y + 1) / 2) * height));
+  }
+  return rect;
+}
+
+/** True when a ray hit a mesh that is drawn: visible up to its object, with a material that shows. */
+function drawnHit(hit: THREE.Intersection, object: THREE.Object3D): boolean {
+  for (let node: THREE.Object3D | null = hit.object; node; node = node.parent) {
+    if (!node.visible) return false;
+    if (node === object) break;
+  }
+  if (!(hit.object instanceof THREE.Mesh)) return false;
+  const assigned: THREE.Material | THREE.Material[] = hit.object.material;
+  const material = Array.isArray(assigned) ? assigned[hit.face?.materialIndex ?? 0] : assigned;
+  return !!material && material.visible && !(material.transparent && material.opacity <= 0);
+}
+
+/**
+ * three's shadow pass draws most casters with one shared depth material and copies each
+ * caster's colour map onto it without recompiling it. Once a textured model has cast a
+ * shadow, that material keeps a map input, and an untextured caster drawn after the model
+ * was replaced uploads the disposed map again: one orphaned texture on every model swap.
+ * This caster is drawn first in every pass. It has no area, so it adds nothing to a shadow
+ * or a frame, and its own 1 pixel map replaces the stale one. Depth and distance output do
+ * not read the map unless alpha testing is on, and it is off here.
+ */
+function depthMapReset(): { mesh: THREE.Mesh; dispose(): void } {
+  const blank = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+  blank.needsUpdate = true;
+  const empty = new THREE.BufferGeometry();
+  empty.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(9), 3));
+  const material = new THREE.MeshBasicMaterial({ map: blank });
+  const mesh = new THREE.Mesh(empty, material);
+  mesh.castShadow = true;
+  mesh.frustumCulled = false;
+  return {
+    mesh,
+    dispose: () => {
+      blank.dispose();
+      material.dispose();
+      empty.dispose();
+    },
+  };
+}
+
+/** Relative points inside a rectangle a coverage probe tries, centre first. */
+const PROBE_POINTS: [number, number][] = [
+  [0, 0],
+  [-0.25, -0.25],
+  [0.25, -0.25],
+  [-0.25, 0.25],
+  [0.25, 0.25],
+];
+
+export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.Camera, THREE.Vector3> {
   readonly canvas: HTMLCanvasElement;
-  readonly capture: StudioCapture;
+  private readonly output: StudioCapture;
   private readonly scene = new THREE.Scene();
   private readonly pmrem: THREE.PMREMGenerator;
   private environment: StudioEnvironment | null = null;
@@ -67,6 +158,7 @@ export class StudioRenderer {
   /** Loaded sources shared by every object that names the same bytes and shape. */
   private readonly assets = new Map<string, StudioAsset>();
   private readonly root = new THREE.Group();
+  private readonly depthReset = depthMapReset();
   private instances: Instance[] = [];
   private backdrop: THREE.Texture | null = null;
   private backdropKey = '';
@@ -80,11 +172,43 @@ export class StudioRenderer {
   private disposed = false;
   private controller = new AbortController();
   private revision = 0;
+  /** Set while a capture holds the frame; updates wait on it before swapping anything in. */
+  private hold: { released: Promise<void>; release: () => void } | null = null;
+  private readonly counts = {
+    updates: 0,
+    sourceLoads: 0,
+    materialSets: 0,
+    stageBuilds: 0,
+    backdropBuilds: 0,
+    environmentBuilds: 0,
+    frames: 0,
+    captures: 0,
+  };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.capture = new StudioCapture(canvas);
-    this.pmrem = new THREE.PMREMGenerator(this.capture.renderer);
+    this.output = new StudioCapture(canvas);
+    this.pmrem = new THREE.PMREMGenerator(this.output.renderer);
+  }
+
+  /** Hold or release the current frame for a capture (see StudioSceneHost.freeze). */
+  freeze(on: boolean): void {
+    if (on && !this.hold) {
+      let release = () => {};
+      const released = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      this.hold = { released, release };
+    } else if (!on && this.hold) {
+      const { release } = this.hold;
+      this.hold = null;
+      release();
+    }
+  }
+
+  inspect(): StudioSceneCounters {
+    const { geometries, textures } = this.output.renderer.info.memory;
+    return { ...this.counts, memory: { geometries, textures } };
   }
 
   async update(
@@ -93,6 +217,7 @@ export class StudioRenderer {
     shaper?: StudioShaper
   ): Promise<StudioSourceInfo> {
     if (this.disposed) throw new Error('The studio has been closed.');
+    this.counts.updates++;
     this.controller.abort();
     this.controller = new AbortController();
     const signal = this.controller.signal,
@@ -121,6 +246,8 @@ export class StudioRenderer {
       backdrop: null,
       environment: null,
     };
+    if (backdropKey !== this.backdropKey) this.counts.backdropBuilds++;
+    if (environmentKey !== this.environmentKey) this.counts.environmentBuilds++;
     try {
       const missing = [...new Set(keys)].filter((key) => !this.assets.has(key));
       // Every load settles before anything is kept or thrown, so a failed object cannot
@@ -128,6 +255,7 @@ export class StudioRenderer {
       const settled = await Promise.allSettled([
         ...missing.map(async (key) => {
           const spec = specs[keys.indexOf(key)]!;
+          this.counts.sourceLoads++;
           try {
             loaded.set(key, await loadStudioSource(objectScene(recipe, spec), read, signal, shaper));
           } catch (error) {
@@ -154,6 +282,13 @@ export class StudioRenderer {
         (result): result is PromiseRejectedResult => result.status === 'rejected'
       );
       if (failed) throw failed.reason;
+      // A capture keeps the frame it started with: the new sources wait here until it ends.
+      while (this.hold) {
+        await this.hold.released;
+        signal.throwIfAborted();
+        if (revision !== this.revision || this.disposed)
+          throw new DOMException('Studio update cancelled', 'AbortError');
+      }
       for (const [key, asset] of loaded) this.assets.set(key, asset);
       loaded.clear();
       if (pending.backdrop) {
@@ -188,6 +323,7 @@ export class StudioRenderer {
           const asset = instantiateStudioAsset(shared);
           let restore = () => {};
           try {
+            this.counts.materialSets++;
             restore = applyStudioMaterials(asset, objectScene(recipe, spec));
           } catch (error) {
             asset.dispose();
@@ -258,19 +394,7 @@ export class StudioRenderer {
     if (!posed || !this.instances.length || !this.backdrop || !environment || this.disposed)
       throw new Error('Wait for the studio source to finish loading.');
     // On a camera path the frame's camera is the sampled pose; the saved camera is the rest view.
-    const pose = studioCameraPose(posed, time, clipSeconds);
-    const recipe: StudioSceneV1 = {
-      ...posed,
-      camera: {
-        ...posed.camera,
-        azimuth: pose.azimuth,
-        elevation: pose.elevation,
-        fov: pose.fov,
-        zoom: pose.zoom,
-        target: pose.target,
-        focus: pose.focus,
-      },
-    };
+    const recipe = framedRecipe(posed, time, clipSeconds);
     const showEnvironment = recipe.environment.background && recipe.stage.output === 'scene';
     const frameKey = JSON.stringify([
       this.revision,
@@ -283,6 +407,7 @@ export class StudioRenderer {
       quality === 'preview' ? this.lightHandles : null,
     ]);
     if (frameKey === this.frameKey) return;
+    this.counts.frames++;
     const camera = studioCamera(recipe, width / height),
       target = new THREE.Vector3(...recipe.camera.target);
     const footprint = this.boxes().reduce(
@@ -304,6 +429,7 @@ export class StudioRenderer {
       recipe.stage.atmosphere && recipe.stage.atmosphereForms === 'copies' ? this.revision : 0,
     ]);
     if (!this.stage || stageKey !== this.stageKey) {
+      this.counts.stageBuilds++;
       this.stage?.dispose();
       this.stage = buildStudioStage(
         recipe,
@@ -316,7 +442,7 @@ export class StudioRenderer {
       this.stageKey = stageKey;
     }
     this.scene.clear();
-    this.scene.add(this.stage.group, this.root);
+    this.scene.add(this.depthReset.mesh, this.stage.group, this.root);
     this.scene.environment = environment.texture;
     this.scene.environmentIntensity = recipe.environment.intensity;
     this.scene.environmentRotation.y = THREE.MathUtils.degToRad(recipe.environment.rotation);
@@ -360,7 +486,7 @@ export class StudioRenderer {
     const lightMotion = studioLightMotion(recipe, time, clipSeconds);
     const axis = new THREE.Vector3(0, 1, 0);
     try {
-      this.capture.render(this.scene, camera, width, height, samples, recipe.exposure, (i) => {
+      this.output.render(this.scene, camera, width, height, samples, recipe.exposure, (i) => {
         for (const light of this.stage!.lights) {
           light.light.position.copy(light.position).applyAxisAngle(axis, lightMotion.angle);
           light.light.intensity = light.intensity * lightMotion.strength;
@@ -403,16 +529,79 @@ export class StudioRenderer {
     this.frameKey = frameKey;
   }
 
+  /** Draw one export or clip frame; with `verify`, check once that the subject is not missing from it. */
+  capture(
+    width: number,
+    height: number,
+    quality: 'export' | 'clip',
+    time = 0,
+    clipSeconds?: number,
+    verify = false
+  ): void {
+    this.counts.captures++;
+    this.render(width, height, quality, time, clipSeconds);
+    if (verify) this.verifyFrame(width, height, time, clipSeconds);
+  }
+
+  /**
+   * A transparent output with its subject in frame must hold some opaque pixels. The check
+   * projects each visible object's bounds, confirms with a ray that the object covers a
+   * pixel there (a box corner can reach into the frame while the object does not), then
+   * reads the alpha of those pixels once. A scene output is exempt, because its backplate
+   * covers every pixel, and so is a subject outside the frame.
+   */
+  private verifyFrame(width: number, height: number, time: number, clipSeconds?: number): void {
+    const posed = this.recipe;
+    if (!posed || posed.stage.output === 'scene') return;
+    const w = Math.max(1, Math.round(width)),
+      h = Math.max(1, Math.round(height));
+    const camera = studioCamera(framedRecipe(posed, time, clipSeconds), w / h);
+    camera.updateMatrixWorld(true);
+    placeStudioScene(this.root, this.instances, posed, time, clipSeconds);
+    const frame = new THREE.Box2(new THREE.Vector2(0, 0), new THREE.Vector2(w, h));
+    const covered = new THREE.Box2();
+    const ray = new THREE.Raycaster();
+    let confirmed = false;
+    for (const instance of this.instances) {
+      if (!instance.spec.visible) continue;
+      const bounds = new THREE.Box3().setFromObject(instance.object);
+      const rect = bounds.isEmpty() ? null : projectedBox(bounds, camera, w, h);
+      if (!rect || rect.intersect(frame).isEmpty()) continue;
+      covered.union(rect);
+      const center = rect.getCenter(new THREE.Vector2()),
+        size = rect.getSize(new THREE.Vector2());
+      confirmed ||= PROBE_POINTS.some(([dx, dy]) => {
+        ray.setFromCamera(
+          new THREE.Vector2(((center.x + dx * size.x) / w) * 2 - 1, ((center.y + dy * size.y) / h) * 2 - 1),
+          camera
+        );
+        return ray.intersectObject(instance.object, true).some((hit) => drawnHit(hit, instance.object));
+      });
+    }
+    const extent = covered.getSize(new THREE.Vector2());
+    if (!confirmed || covered.isEmpty() || extent.x * extent.y < 16) return;
+    const x = Math.floor(covered.min.x),
+      y = Math.floor(covered.min.y);
+    const alpha = this.output.alphaIn(x, y, Math.ceil(covered.max.x) - x, Math.ceil(covered.max.y) - y);
+    if (alpha.some((value) => value > 0)) return;
+    // The blank frame is not kept, so the next capture of the same frame draws it again.
+    this.frameKey = '';
+    throw new StudioEmptyFrameError();
+  }
+
   view(camera: Partial<StudioSceneV1['camera']>): void {
-    if (!this.recipe) return;
-    this.recipe = { ...this.recipe, camera: { ...this.recipe.camera, ...camera } };
+    if (!this.recipe || this.hold) return;
+    const next = { ...this.recipe.camera, ...camera };
+    // Putting back the camera a frame was drawn with (a capture resets any orbit) keeps that frame.
+    if (JSON.stringify(next) === JSON.stringify(this.recipe.camera)) return;
+    this.recipe = { ...this.recipe, camera: next };
     this.frameKey = '';
   }
 
   /** Preview an object at a new position while it is dragged; the saved row changes on release. */
   moveObject(row: number, position: [number, number, number]): void {
     const instance = this.instances.find((candidate) => candidate.row === row);
-    if (!this.recipe?.objects || !instance) return;
+    if (!this.recipe?.objects || !instance || this.hold) return;
     const spec = { ...instance.spec, transform: { ...instance.spec.transform, position } };
     instance.spec = spec;
     this.recipe = {
@@ -466,14 +655,14 @@ export class StudioRenderer {
 
   /** Show light handles in previews only, marking one; exports never carry them. */
   showLightHandles(state: { selected: number | null } | null): void {
-    if (JSON.stringify(state) === JSON.stringify(this.lightHandles)) return;
+    if (this.hold || JSON.stringify(state) === JSON.stringify(this.lightHandles)) return;
     this.lightHandles = state;
     this.frameKey = '';
   }
 
   /** Preview a light at a new position while it is dragged; the saved rig changes on release. */
   moveLight(index: number, position: [number, number, number]): void {
-    if (!this.recipe?.lights[index]) return;
+    if (!this.recipe?.lights[index] || this.hold) return;
     const lights = this.recipe.lights.map((light, i) =>
       i === index ? { ...light, position } : light
     );
@@ -512,7 +701,7 @@ export class StudioRenderer {
 
   /** Outline one object in previews only; exports never carry it. */
   highlight(index: number | null): void {
-    if (this.highlighted === index) return;
+    if (this.hold || this.highlighted === index) return;
     this.highlighted = index;
     this.frameKey = '';
   }
@@ -564,6 +753,8 @@ export class StudioRenderer {
     this.disposed = true;
     this.revision++;
     this.controller.abort();
+    // An update held by a capture wakes, sees the abort and releases what it loaded.
+    this.freeze(false);
     for (const instance of this.instances) {
       instance.restore();
       instance.asset.dispose();
@@ -575,6 +766,7 @@ export class StudioRenderer {
     this.backdrop?.dispose();
     this.environment?.dispose();
     this.pmrem.dispose();
-    this.capture.dispose();
+    this.depthReset.dispose();
+    this.output.dispose();
   }
 }

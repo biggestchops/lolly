@@ -209,7 +209,8 @@ export function buildStudioStage(
       intensity: light.intensity,
     });
   }
-  group.add(new THREE.HemisphereLight(recipe.materials.colorA, recipe.stage.background, 0.12));
+  const fill = recipe.stage.fill;
+  group.add(new THREE.HemisphereLight(fill.sky, fill.ground, fill.intensity));
   const sceneOutput = recipe.stage.output === 'scene';
   if (recipe.stage.output !== 'object') {
     const shadow = !sceneOutput || recipe.stage.floor === 'shadow';

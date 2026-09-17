@@ -15,6 +15,24 @@ void main(){
   #include <premultiplied_alpha_fragment>
 }`;
 
+/** Why a studio frame cannot be drawn after the browser dropped the graphics context. */
+export const STUDIO_CONTEXT_LOST =
+  'The graphics context was lost. Reload the studio and try a smaller output.';
+/** Why a transparent capture with its subject in frame was refused. */
+export const STUDIO_EMPTY_FRAME =
+  'The studio frame came out empty. Export again, or reload the studio if it happens again.';
+
+/**
+ * A capture that drew without error but showed nothing of a subject in frame. It fails that
+ * capture only: the studio stays usable, and the next capture draws the frame again.
+ */
+export class StudioEmptyFrameError extends Error {
+  constructor() {
+    super(STUDIO_EMPTY_FRAME);
+    this.name = 'StudioEmptyFrameError';
+  }
+}
+
 export function halton(index: number, base: number): number {
   let f = 1,
     result = 0;
@@ -137,13 +155,31 @@ export class StudioCapture {
       this.mesh.material = this.output;
       renderer.clear(true, true, true);
       renderer.render(this.screen, this.screenCamera);
-      if (renderer.getContext().isContextLost())
-        throw new Error(
-          'The graphics context was lost. Reload the studio and try a smaller output.'
-        );
+      if (renderer.getContext().isContextLost()) throw new Error(STUDIO_CONTEXT_LOST);
     } finally {
       renderer.setRenderTarget(null);
     }
+  }
+
+  /**
+   * The alpha of a rectangle of the last drawn frame, one byte per pixel, rows counted from
+   * the bottom as WebGL counts them. The drawing buffer is preserved, so this reads what the
+   * page shows. The rectangle is clipped to the frame.
+   */
+  alphaIn(x: number, y: number, width: number, height: number): Uint8Array {
+    if (this.disposed) throw new Error('The studio renderer has been released.');
+    const left = Math.max(0, Math.min(this.width, Math.floor(x))),
+      bottom = Math.max(0, Math.min(this.height, Math.floor(y)));
+    const w = Math.max(0, Math.min(this.width, Math.ceil(x + width)) - left),
+      h = Math.max(0, Math.min(this.height, Math.ceil(y + height)) - bottom);
+    const alpha = new Uint8Array(w * h);
+    if (!alpha.length) return alpha;
+    this.renderer.setRenderTarget(null);
+    const gl = this.renderer.getContext();
+    const rgba = new Uint8Array(alpha.length * 4);
+    gl.readPixels(left, bottom, w, h, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+    for (let i = 0; i < alpha.length; i++) alpha[i] = rgba[i * 4 + 3]!;
+    return alpha;
   }
 
   dispose(): void {

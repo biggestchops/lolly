@@ -62,6 +62,32 @@ test('bevel safeguards prevent single and double folds while preserving holes an
   mesh.material.dispose();
 });
 
+function polygon(points: number): THREE.Shape {
+  const corners = Array.from({ length: points }, (_, i) => {
+    const angle = (i / points) * Math.PI * 2;
+    return new THREE.Vector2(10 * Math.cos(angle), 10 * Math.sin(angle));
+  });
+  return new THREE.Shape(corners);
+}
+
+test('a shape whose bevelled mesh would exceed the triangle budget keeps its plain extrusion', () => {
+  // A convex polygon bevels safely at any small size, so only the budget can refuse it.
+  const small = extrudeStudioShape(polygon(400), 1, 0.1, 24);
+  assert.equal(small.bevel, 0.1);
+  small.geometry.dispose();
+  // 42000 corners: the plain mesh has 167996 triangles, the bevelled one would have
+  // 83996 cap and 924000 sidewall triangles, which is over one million.
+  const points = 42000;
+  const heavy = extrudeStudioShape(polygon(points), 1, 0.1, 24);
+  assert.equal(heavy.bevel, 0);
+  assert.equal(heavy.geometry.getAttribute('position').count / 3, 4 * points - 4);
+  assert.deepEqual(
+    heavy.geometry.groups.map((g) => g.materialIndex),
+    [0, 2]
+  );
+  heavy.geometry.dispose();
+});
+
 test('fit accounts for transformed bounds and aspect; focus uses axial depth and misses stay unchanged', () => {
   const object = new THREE.Mesh(new THREE.BoxGeometry(3.25, 2, 1), new THREE.MeshBasicMaterial());
   for (const projection of ['perspective', 'orthographic'])

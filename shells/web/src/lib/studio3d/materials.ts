@@ -133,6 +133,14 @@ export function applyStudioMaterials(asset: StudioAsset, scene: StudioSceneV1): 
       physical.normalScale.copy(original.normalScale);
     }
     physical.name = original.name;
+    // Words and STL models keep the colour A they were loaded with, and a colour edit does
+    // not load them again, so the current colour A is set here. Finishes below copy it
+    // into the sheen and the glow.
+    if (
+      (scene.source.kind === 'text' && original.name === 'paint:words') ||
+      (scene.source.kind === 'stl' && original.name === 'surface')
+    )
+      physical.color.set(scene.materials.colorA);
     const useB = explicit ? roles.get(index) === 'b' : index % 2 !== 0;
     if (scene.materials.mode === 'pair') {
       physical.color.set(useB ? scene.materials.colorB : scene.materials.colorA);

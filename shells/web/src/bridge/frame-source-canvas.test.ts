@@ -140,3 +140,34 @@ test('frame(): with no frameBg, no bgcolor is set (alpha formats keep transparen
     } finally { src.dispose(); __setDomToImageForTest(null); }
   });
 });
+
+// A clocked tool gets the clip length and target size on every call, including the two
+// static-chrome probe phases and the repaint after them, which name only a time.
+test('frame(): every clock call of a clip carries its length and size, in the real order', async () => {
+  // The probe asks whether the node is itself a canvas; Node has no HTMLCanvasElement.
+  const g = globalThis as Record<string, unknown>;
+  const savedCanvas = g.HTMLCanvasElement;
+  g.HTMLCanvasElement ??= class {};
+  try {
+  await withNeutralGlobals(async () => {
+    const { lib } = fakeDomToImage();
+    __setDomToImageForTest(lib);
+    const calls: Array<[number, number | undefined, { width: number; height: number } | undefined]> = [];
+    const node = fakeNode({
+      __lollyFrameRender: (t: number, clipSec?: number, size?: { width: number; height: number }) => {
+        calls.push([t, clipSec, size]);
+      },
+    });
+    const src = await createFrameSource(node, { width: 200, height: 150, wait: 0, duration: 5 });
+    try {
+      await src.frame(0.1, 5);
+      await src.frame(0.2, 5);
+      assert.deepEqual(calls.map(([t]) => t), [0.1, 0.2, 0.37, 0.71, 0.2], 'frame 0, frame 1, the probe phases, then the repaint');
+      for (const [t, clipSec, size] of calls) {
+        assert.equal(clipSec, 5, `the call at ${t} names the clip length`);
+        assert.deepEqual(size, { width: 200, height: 150 }, `the call at ${t} names the target size`);
+      }
+    } finally { src.dispose(); __setDomToImageForTest(null); }
+  });
+  } finally { g.HTMLCanvasElement = savedCanvas; }
+});

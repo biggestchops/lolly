@@ -6,6 +6,16 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.207.0
+
+- Add `stage.fill` to `StudioSceneV1`: the hemisphere fill the web shell already drew (colour A from above, the stage background from below, intensity 0.12), now written by `buildStudioScene` and read by the stage, so the tie between the background and the fill light is part of the recipe. No input, option or URL parameter changes.
+- The web shell's bevel check follows the inset three.js draws (`lib/studio3d/inset.ts`): the contracted outline and holes are tested for reversed edges, collapse and crossings at every bevel step, so shapes with curved holes keep their full bevel and a reduction happens only where a fold is real. Artwork whose bevelled mesh would pass one million triangles keeps its plain extrusion, as before.
+- The web export frame clock moved to `bridge/frame-clock.ts`. Between the start and end of a capture it reuses a clip's length and pixel size for the static-chrome probe and the repaint, so the first frame of a video or GIF uses the requested size and the clip sample count. Tools that read the clip length get it on those calls too.
+- The studio holds its frame during a capture: preview renders, gestures and input updates wait until the capture ends. A frame that fails to render fails the export on the editor and batch paths; an object frame that comes out empty fails that export only, and the next export draws again.
+- The studio marker adds a `cancelled` state for a mount destroyed while loading, and a lost WebGL context reports an error. `inspectToolStudio` returns the renderer's update, load, build, frame, capture and memory counters.
+- The web shell names its retained renderer contract, `StudioSceneHost` in `lib/studio3d/scene-host.ts`, which `StudioRenderer` implements. It stays in the web shell until 3D in Design uses it.
+- Colour A edits reach words and STL models when materials are applied, without reloading the source. A bevel edit no longer re-reads GLB or STL bytes.
+
 ## 1.205.0
 
 - Add 3D studio arrangements: several SVG, GLB, STL or sample objects photographed in one scene, each with a stable id, pose, ground contact, visibility and material slot bindings.

@@ -164,6 +164,12 @@ export interface StudioSceneV1 {
     atmosphereSpread: number;
     atmosphereCount: number;
     seed: number;
+    /**
+     * The hemisphere fill light: `sky` lights surfaces that face up, `ground` those that
+     * face down. Today it is colour A over the stage background at 0.12, so changing the
+     * background also changes this fill light.
+     */
+    fill: { sky: string; ground: string; intensity: number };
   };
   exposure: number;
   /** Samples per frame: a still takes `exportSamples`, a video or GIF frame `clipSamples`. */

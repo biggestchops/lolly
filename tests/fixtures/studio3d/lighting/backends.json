@@ -1,0 +1,90 @@
+{
+  "darwin:ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)": {
+    "reviewed": false,
+    "recorded": "2026-09-16",
+    "size": 512,
+    "samples": 8,
+    "scenes": {
+      "matte-badge": {
+        "keyLightRatio": 1.0601,
+        "keyRatio": 1.0023,
+        "meanLuma": 0.6453,
+        "shadowAway": 0.9802,
+        "shadowCoverage": 0.1108,
+        "contactGap": 1,
+        "contactAlpha": 0.4,
+        "clipFraction": 0,
+        "darkFraction": 0.0352,
+        "darkSpread": 0.0368
+      },
+      "satin-torus": {
+        "keyLightRatio": 1.0453,
+        "keyRatio": 1.0814,
+        "meanLuma": 0.7263,
+        "shadowAway": 0.977,
+        "shadowCoverage": 0.1148,
+        "contactGap": 1,
+        "contactAlpha": 0.4,
+        "clipFraction": 0.0001,
+        "darkFraction": 0,
+        "darkSpread": 0
+      },
+      "chrome-bevel-ring": {
+        "keyLightRatio": 1.0491,
+        "keyRatio": 1.0579,
+        "meanLuma": 0.7246,
+        "shadowAway": 0.9786,
+        "shadowCoverage": 0.1033,
+        "contactGap": 1,
+        "contactAlpha": 0.4,
+        "clipFraction": 0.0008,
+        "darkFraction": 0,
+        "darkSpread": 0
+      }
+    }
+  },
+  "darwin:ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)": {
+    "reviewed": false,
+    "recorded": "2026-09-16",
+    "size": 512,
+    "samples": 8,
+    "scenes": {
+      "matte-badge": {
+        "keyLightRatio": 1.0596,
+        "keyRatio": 1.0021,
+        "meanLuma": 0.6459,
+        "shadowAway": 0.9802,
+        "shadowCoverage": 0.111,
+        "contactGap": 1,
+        "contactAlpha": 0.4,
+        "clipFraction": 0,
+        "darkFraction": 0.0352,
+        "darkSpread": 0.0368
+      },
+      "satin-torus": {
+        "keyLightRatio": 1.0449,
+        "keyRatio": 1.0811,
+        "meanLuma": 0.727,
+        "shadowAway": 0.977,
+        "shadowCoverage": 0.1148,
+        "contactGap": 1,
+        "contactAlpha": 0.4,
+        "clipFraction": 0.0001,
+        "darkFraction": 0,
+        "darkSpread": 0
+      },
+      "chrome-bevel-ring": {
+        "keyLightRatio": 1.0489,
+        "keyRatio": 1.0578,
+        "meanLuma": 0.7251,
+        "shadowAway": 0.9786,
+        "shadowCoverage": 0.1034,
+        "contactGap": 1,
+        "contactAlpha": 0.4,
+        "clipFraction": 0.0008,
+        "darkFraction": 0,
+        "darkSpread": 0
+      }
+    }
+  }
+}

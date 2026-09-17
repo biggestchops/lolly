@@ -9,6 +9,7 @@
  */
 import { hasVideoParams } from '@lolly/engine';
 import { mergeExportPrefs } from '../../lib/export-prefs.ts';
+import { withStudioExport } from '../../lib/studio-export-guard.ts';
 import { marksFromCsv } from './shared.ts';
 import type { ExportDefaults, ExportReport, PrintMarks } from './shared.ts';
 import { bindOp, type ToolViewCtx } from './context.ts';
@@ -58,6 +59,8 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   await tview.vizPending;
   await tview.studioPending;
   if (tview.studioError) throw tview.studioError;
+  // A studio scene draws its export frame first, and a frame that fails while the export
+  // runs fails the export (the frame clock only logs it).
   // Full-bleed tools (hideSidebar: export:false utilities and canvas-layout tools) have
   // no fixed-size artboard scaled-to-fit - canvasEl/outerEl are null - so there's no
   // transform to un-scale. Run the export directly (still behind the shutter). This is the
@@ -65,8 +68,7 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   if (!canvasEl || !outerEl) {
     if (shutter) await tview.designSystem.closeShutter(detail, onCancel);
     try {
-      tview.studioModule?.prepareToolStudio(tview.contentEl);
-      return await fn(report);
+      return await withStudioExport(tview.studioModule, tview.contentEl, () => fn(report), 'export');
     } finally {
       if (shutter) tview.designSystem.openShutter();
     }
@@ -91,8 +93,7 @@ export async function exportUnscaledRaw<T>(tview: ToolViewCtx,
   outerEl!.style.width = canvasEl!.style.width;
   outerEl!.style.height = canvasEl!.style.height;
   try {
-    tview.studioModule?.prepareToolStudio(tview.contentEl);
-    return await fn(report);
+    return await withStudioExport(tview.studioModule, tview.contentEl, () => fn(report), 'export');
   } finally {
     canvasEl!.style.transform = prevTransform;
     outerEl!.style.transform = prevOuterTransform;

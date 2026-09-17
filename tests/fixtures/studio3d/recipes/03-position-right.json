@@ -1,0 +1,287 @@
+{
+  "source": "05faef7a4",
+  "era": "0.3",
+  "values": {
+    "controls": "guided",
+    "source": "primitive",
+    "primitive": "badge",
+    "artwork": null,
+    "modelAsset": null,
+    "modelFormat": "auto",
+    "collectionName": "Studio collection",
+    "activeSubject": 1,
+    "subjects": [
+      {
+        "name": "Badge",
+        "kind": "primitive",
+        "primitive": "badge"
+      },
+      {
+        "name": "Sphere",
+        "kind": "primitive",
+        "primitive": "sphere"
+      },
+      {
+        "name": "Box",
+        "kind": "primitive",
+        "primitive": "box"
+      }
+    ],
+    "studio": "dramatic",
+    "materialMode": "source",
+    "colorA": "#30ba78",
+    "colorB": "#0c322c",
+    "finishA": "satin",
+    "finishB": "enamel",
+    "surfaceFinishes": false,
+    "faceFinishA": "inherit",
+    "bevelFinishA": "inherit",
+    "sideFinishA": "inherit",
+    "faceFinishB": "inherit",
+    "bevelFinishB": "inherit",
+    "sideFinishB": "inherit",
+    "drama": 0.7,
+    "softness": 1.5,
+    "exposure": 1.1,
+    "lightMotion": "still",
+    "lightMotionAmount": 0.35,
+    "shape": {
+      "depth": 0.25,
+      "bevel": 0.025,
+      "smoothness": 24
+    },
+    "rotation": {
+      "x": -6,
+      "y": -16,
+      "z": -7
+    },
+    "position": {
+      "x": 10,
+      "y": 10,
+      "z": -10
+    },
+    "transform": {
+      "scale": 1
+    },
+    "projection": "perspective",
+    "camera": {
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "panX": 0,
+      "panY": 0,
+      "panZ": 0
+    },
+    "target": {
+      "x": 0,
+      "y": 1.6,
+      "z": 0
+    },
+    "depthOfField": false,
+    "aperture": 0.12,
+    "focusDistance": 0,
+    "atmosphere": false,
+    "seed": 1,
+    "backdrop": "gradient",
+    "background": "#0c322c",
+    "background2": "#30ba78",
+    "backdropImage": null,
+    "backdropStrength": 0.5,
+    "floor": "shadow",
+    "floorColor": "#0c322c",
+    "shadowOpacity": 0.4,
+    "pedestal": false,
+    "keyColor": "#ffffff",
+    "fillColor": "#30ba78",
+    "rimColor": "#30ba78",
+    "coolColor": "#426dff",
+    "warmColor": "#ffc196",
+    "lightLevels": {
+      "key": 2.5,
+      "fill": 0.7,
+      "rim": 3
+    },
+    "environmentIntensity": 0.4,
+    "environmentRotation": 0,
+    "lights": [
+      {
+        "kind": "directional",
+        "color": "#ffffff",
+        "x": -3,
+        "y": 6,
+        "z": 4,
+        "intensity": 2,
+        "size": 1.5,
+        "shadows": true
+      }
+    ],
+    "materials": [],
+    "materialSlotA": "",
+    "materialSlotB": "",
+    "outputMode": "scene",
+    "collectionSize": {
+      "width": 1024,
+      "height": 1024
+    },
+    "samples": 64,
+    "motion": "still",
+    "duration": 5,
+    "turnDegrees": 360
+  },
+  "scene": {
+    "version": 1,
+    "source": {
+      "kind": "primitive",
+      "id": "",
+      "url": "",
+      "primitive": "badge"
+    },
+    "shape": {
+      "depth": 0.25,
+      "bevel": 0.025,
+      "smoothness": 24
+    },
+    "transform": {
+      "rotation": [
+        -6,
+        -16,
+        -7
+      ],
+      "position": [
+        10,
+        10,
+        -10
+      ],
+      "scale": 1
+    },
+    "camera": {
+      "projection": "perspective",
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0,
+      "aperture": 0
+    },
+    "materials": {
+      "mode": "source",
+      "finishA": "satin",
+      "finishB": "enamel",
+      "colorA": "#30ba78",
+      "colorB": "#0c322c",
+      "overrides": [],
+      "bindings": {
+        "a": "",
+        "b": ""
+      }
+    },
+    "lights": [
+      {
+        "id": "key",
+        "kind": "directional",
+        "color": "#ffffff",
+        "intensity": 2.5,
+        "position": [
+          -3.6,
+          6.8,
+          4
+        ],
+        "size": 1.5,
+        "shadows": true
+      },
+      {
+        "id": "fill",
+        "kind": "directional",
+        "color": "#30ba78",
+        "intensity": 0.3815,
+        "position": [
+          5,
+          3,
+          4
+        ],
+        "size": 1.5,
+        "shadows": false
+      },
+      {
+        "id": "rim",
+        "kind": "directional",
+        "color": "#30ba78",
+        "intensity": 3,
+        "position": [
+          3,
+          5,
+          -3
+        ],
+        "size": 1.5,
+        "shadows": false
+      },
+      {
+        "id": "key-card",
+        "kind": "area",
+        "color": "#ffffff",
+        "intensity": 3,
+        "position": [
+          -4,
+          4,
+          3
+        ],
+        "size": 3,
+        "shadows": false
+      }
+    ],
+    "environment": {
+      "intensity": 0.4,
+      "rotation": 0,
+      "kind": "room",
+      "url": "",
+      "id": "",
+      "background": false,
+      "blur": 0.3
+    },
+    "stage": {
+      "output": "scene",
+      "floor": "shadow",
+      "floorColor": "#0c322c",
+      "shadowOpacity": 0.4,
+      "background": "#0c322c",
+      "background2": "#30ba78",
+      "backdrop": "gradient",
+      "backdropUrl": "",
+      "backdropId": "",
+      "backdropStrength": 0.5,
+      "pedestal": false,
+      "atmosphere": false,
+      "atmosphereForms": "copies",
+      "atmosphereSpread": 0.5,
+      "atmosphereCount": 7,
+      "seed": 1
+    },
+    "exposure": 1.1,
+    "quality": {
+      "previewSamples": 8,
+      "exportSamples": 64,
+      "clipSamples": 16
+    },
+    "motion": {
+      "kind": "still",
+      "seconds": 5,
+      "degrees": 360
+    },
+    "lightAnimation": {
+      "kind": "still",
+      "amount": 0.35
+    },
+    "cameraMotion": {
+      "kind": "still",
+      "ease": "smooth",
+      "loop": false,
+      "keys": []
+    }
+  }
+}

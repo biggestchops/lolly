@@ -1,0 +1,27 @@
+{
+  "description": "What a flat 3D Studio backdrop colour becomes in the rendered output, per backend. Written by tests/studio3d-quality-alpha.browser.test.ts with STUDIO_WRITE_BASELINE=1; measured, not asserted.",
+  "entries": {
+    "darwin:ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)": {
+      "platform": "darwin",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Unspecified Version)",
+      "backdrop": "solid",
+      "background": "#30ba78",
+      "exposure": 1.1,
+      "toneMapping": "ACESFilmic",
+      "output": "#61c992",
+      "predicted": "#61c992",
+      "frameShare": 0.815
+    },
+    "darwin:ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)": {
+      "platform": "darwin",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+      "backdrop": "solid",
+      "background": "#30ba78",
+      "exposure": 1.1,
+      "toneMapping": "ACESFilmic",
+      "output": "#61c992",
+      "predicted": "#61c992",
+      "frameShare": 0.815
+    }
+  }
+}

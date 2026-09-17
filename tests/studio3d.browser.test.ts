@@ -1,272 +1,32 @@
 // SPDX-License-Identifier: MPL-2.0
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { createServer, type Server } from 'node:http';
-import { join, resolve } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { build } from 'esbuild';
-import { type Browser, chromium, type Page } from 'playwright';
-import { loadTool } from '../engine/src/loader.ts';
-import { createRuntime } from '../engine/src/runtime.ts';
-import { baseHost } from './helpers/host.ts';
-import { holdEncodeTier } from './helpers/sequence-browser.ts';
+import type { Page } from 'playwright';
+import {
+  type StudioHarness,
+  type StudioValues,
+  startStudioHarness,
+  studioSkip,
+} from './helpers/studio3d-browser.ts';
 
-const root = resolve(import.meta.dirname, '..');
-const svg =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path fill="#30ba78" d="M20 1a19 19 0 1 1 0 38a19 19 0 1 1 0-38M20 6a14 14 0 1 0 0 28a14 14 0 1 0 0-28"/><path fill="#0c322c" d="M21 8L11 24h7v9l12-17h-9z"/></svg>';
-const skip =
-  !existsSync(chromium.executablePath()) && 'Install Playwright Chromium for 3D Studio coverage';
-let browser: Browser, server: Server, origin: string, bundle: string, template: string;
-let releaseTier: (() => void) | undefined;
-const errors: string[] = [];
-const facets = [
-  [
-    [0, 0, 0],
-    [0, 1, 0],
-    [1, 0, 0],
-  ],
-  [
-    [0, 0, 0],
-    [1, 0, 0],
-    [0, 0, 1],
-  ],
-  [
-    [0, 0, 0],
-    [0, 0, 1],
-    [0, 1, 0],
-  ],
-  [
-    [1, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-  ],
-];
-const stl =
-  'solid tetra\n' +
-  facets
-    .map(
-      (f) =>
-        'facet normal 0 0 0\nouter loop\n' +
-        f.map((v) => 'vertex ' + v.join(' ')).join('\n') +
-        '\nendloop\nendfacet'
-    )
-    .join('\n') +
-  '\nendsolid tetra';
-const binaryStl = new Uint8Array(84 + facets.length * 50);
-const stlView = new DataView(binaryStl.buffer);
-stlView.setUint32(80, facets.length, true);
-for (const [i, f] of facets.entries())
-  for (const [j, n] of f.flat().entries()) stlView.setFloat32(84 + i * 50 + 12 + j * 4, n, true);
+let harness: StudioHarness | undefined;
 
-/**
- * A 16 by 8 radiance map lit over the longitudes that face +x, which is the middle half
- * of an equirectangular strip, and dark elsewhere, so one side of a mirror sphere reads bright.
- */
-function radianceHdr(width = 16, height = 8): Uint8Array {
-  const header = new TextEncoder().encode(`#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y ${height} +X ${width}\n`);
-  const pixels = new Uint8Array(width * height * 4);
-  for (let y = 0; y < height; y++)
-    for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 4;
-      // Exponent 129 doubles the mantissa: about 1.95 radiance on the lit side.
-      if (x >= width / 4 && x < (3 * width) / 4) pixels.set([250, 220, 170, 129], i);
-      else pixels.set([6, 6, 8, 128], i);
-    }
-  const out = new Uint8Array(header.length + pixels.length);
-  out.set(header);
-  out.set(pixels, header.length);
-  return out;
-}
-/** The same map as an uncompressed OpenEXR file with FLOAT channels. */
-function radianceExr(): Uint8Array {
-  const width = 16,
-    height = 8;
-  const parts: Uint8Array[] = [];
-  const text = (value: string) => new TextEncoder().encode(value + '\0');
-  const int32 = (...values: number[]) => {
-    const view = new DataView(new ArrayBuffer(values.length * 4));
-    for (const [i, value] of values.entries()) view.setInt32(i * 4, value, true);
-    return new Uint8Array(view.buffer);
-  };
-  const float32 = (...values: number[]) => {
-    const view = new DataView(new ArrayBuffer(values.length * 4));
-    for (const [i, value] of values.entries()) view.setFloat32(i * 4, value, true);
-    return new Uint8Array(view.buffer);
-  };
-  const attribute = (name: string, type: string, value: Uint8Array) =>
-    parts.push(text(name), text(type), int32(value.length), value);
-  parts.push(int32(20000630, 2));
-  const channels: Uint8Array[] = [];
-  for (const channel of ['B', 'G', 'R'])
-    channels.push(text(channel), int32(2), new Uint8Array([0, 0, 0, 0]), int32(1, 1));
-  channels.push(new Uint8Array([0]));
-  attribute('channels', 'chlist', Uint8Array.from(channels.flatMap((c) => [...c])));
-  attribute('compression', 'compression', new Uint8Array([0]));
-  attribute('dataWindow', 'box2i', int32(0, 0, width - 1, height - 1));
-  attribute('displayWindow', 'box2i', int32(0, 0, width - 1, height - 1));
-  attribute('lineOrder', 'lineOrder', new Uint8Array([0]));
-  attribute('pixelAspectRatio', 'float', float32(1));
-  attribute('screenWindowCenter', 'v2f', float32(0, 0));
-  attribute('screenWindowWidth', 'float', float32(1));
-  parts.push(new Uint8Array([0]));
-  const headerLength = parts.reduce((n, part) => n + part.length, 0);
-  const chunkLength = 8 + width * 4 * 3;
-  const offsets = new DataView(new ArrayBuffer(height * 8));
-  for (let y = 0; y < height; y++)
-    offsets.setBigUint64(y * 8, BigInt(headerLength + height * 8 + y * chunkLength), true);
-  parts.push(new Uint8Array(offsets.buffer));
-  for (let y = 0; y < height; y++) {
-    const line: number[] = [];
-    for (const channel of ['B', 'G', 'R'])
-      for (let x = 0; x < width; x++) {
-        const bright = x >= 4 && x < 12;
-        line.push(bright ? { B: 1.33, G: 1.72, R: 1.95 }[channel]! : 0.023);
-      }
-    parts.push(int32(y, width * 4 * 3), float32(...line));
-  }
-  const out = new Uint8Array(parts.reduce((n, part) => n + part.length, 0));
-  let at = 0;
-  for (const part of parts) {
-    out.set(part, at);
-    at += part.length;
-  }
-  return out;
+function studio(): StudioHarness {
+  if (!harness) throw new Error('The 3D Studio harness did not start.');
+  return harness;
 }
 
-async function open(): Promise<Page> {
-  const page = await browser.newPage({ viewport: { width: 360, height: 360 } });
-  page.on('pageerror', (error) => errors.push(error.message));
-  page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
-  });
-  await page.goto(origin + '/');
-  await page.waitForFunction(() => Boolean((window as any).studioTest));
-  return page;
-}
+const open = () => studio().open();
+const render = (page: Page, values: StudioValues) => studio().render(page, values);
 
-async function render(
-  page: Page,
-  values: Record<string, unknown>
-): Promise<{
-  png: string;
-  pixels: number[];
-  width: number;
-  height: number;
-  info: string;
-  state: string;
-  reads: number;
-  reused: boolean;
-}> {
-  return page.evaluate(async (values) => (window as any).studioTest.render(values), values);
-}
-
-describe('3D Studio actual renderer', { skip }, () => {
+describe('3D Studio actual renderer', { skip: studioSkip }, () => {
   before(async () => {
-    // Software WebGL starves the video encode suites of CPU, so take their tier.
-    releaseTier = await holdEncodeTier();
-    const result = await build({
-      stdin: {
-        resolveDir: root,
-        loader: 'ts',
-        contents: `
-      import {mountToolStudio,prepareToolStudio,destroyToolStudio} from './shells/web/src/lib/studio3d/mount.ts';
-      const container=document.querySelector('#content');let reads=0;
-      const read=async(url,signal)=>{reads++;const res=await fetch(url,{signal});if(!res.ok)throw new Error('Fixture missing');return new Uint8Array(await res.arrayBuffer())};
-      // A stand-in for the host's HarfBuzz shaper: every letter is a box, so the text
-      // pipeline (lines, alignment, extrusion) is exercised without a font file.
-      window.shaped=[];
-      const shapeText=async(line,font,size)=>{window.shaped.push([line,font.font,font.weight,size]);if(font.font==='missing')throw new Error('The font "missing" is not available on this device.');const w=size*0.6,adv=w+size*0.1+font.tracking*size;let d='';for(let i=0;i<line.length;i++){if(line[i]===' ')continue;const x=i*adv;d+='M'+x+' '+(-size*0.7)+'h'+w+'v'+(size*0.7)+'h'+(-w)+'Z'}return {d,advance:line.length*adv}};
-      window.studioTest={
-        async render(values){
-          const previous=container.querySelector('canvas');if(previous)previous.__lollyFrameDriven=true;
-          container.innerHTML=window.fixtureTemplate;
-          const marker=container.querySelector('[data-lolly-studio]');
-          marker.dataset.lollyStudio=JSON.stringify({version:1,values:{colorA:'#30ba78',colorB:'#0c322c',background:'#0c322c',background2:'#30ba78',samples:8,...values}});
-          await mountToolStudio(container,{read,shapeText:values.__noShaper?undefined:shapeText});prepareToolStudio(container);
-          const canvas=container.querySelector('canvas');const copy=document.createElement('canvas');copy.width=canvas.width;copy.height=canvas.height;const ctx=copy.getContext('2d');ctx.drawImage(canvas,0,0);
-          return {png:canvas.toDataURL(),pixels:Array.from(ctx.getImageData(0,0,copy.width,copy.height).data),width:canvas.width,height:canvas.height,info:marker.querySelector('[data-studio-info]')?.textContent||'',state:marker.dataset.studioState,reads,reused:!previous||previous===canvas};
-        },
-        prepare(){prepareToolStudio(container)},destroy(){destroyToolStudio(container)},
-        sample(time){const canvas=container.querySelector('canvas');canvas.__lollyFrameDriven=true;canvas.__lollyFrameRender(time,5);return canvas.toDataURL()},
-        resample(size){const canvas=container.querySelector('canvas');canvas.__lollyFrameDriven=true;canvas.__lollyFrameRender(0,undefined,size);const box=canvas.getBoundingClientRect();return {width:canvas.width,height:canvas.height,cssWidth:Math.round(box.width),cssHeight:Math.round(box.height)}},
-        async race(){
-          container.innerHTML=window.fixtureTemplate;const marker=container.querySelector('[data-lolly-studio]');
-          marker.dataset.lollyStudio=JSON.stringify({version:1,values:{source:'artwork',artwork:{url:'/slow.svg'},samples:8}});
-          let release;const delayed=new Promise(resolve=>release=resolve);const slow=mountToolStudio(container,{read:async(url,signal)=>{await delayed;signal.throwIfAborted();return read('/fixture.svg',signal)}});
-          marker.dataset.lollyStudio=JSON.stringify({version:1,values:{source:'primitive',primitive:'sphere',samples:8}});
-          await mountToolStudio(container,{read});release();await slow;prepareToolStudio(container);return marker.dataset.studioState;
-        }
-      };`,
-      },
-      bundle: true,
-      write: false,
-      format: 'iife',
-      platform: 'browser',
-      target: 'es2022',
-      logLevel: 'silent',
-    });
-    bundle = result.outputFiles[0]!.text;
-    const tool = await loadTool('3d-studio', (p) => readFile(join(root, 'community', p), 'utf8'));
-    const runtime = await createRuntime(tool, baseHost(), { controls: 'expert' });
-    template = runtime.getHydrated();
-    runtime.destroy();
-    server = createServer(async (req, res) => {
-      try {
-        if (req.url === '/bundle.js') {
-          res.setHeader('Content-Type', 'text/javascript');
-          res.end(bundle);
-        } else if (req.url === '/fixture.svg') {
-          res.setHeader('Content-Type', 'image/svg+xml');
-          res.end(svg);
-        } else if (req.url === '/duck.glb')
-          res.end(await readFile(join(root, 'community/3d/assets/duck.glb')));
-        else if (req.url === '/bad.glb') res.end('not a model');
-        else if (req.url === '/tetra.stl') res.end(stl);
-        else if (req.url === '/binary.stl') res.end(binaryStl);
-        else if (req.url === '/light.hdr') res.end(radianceHdr());
-        else if (req.url === '/light.exr') res.end(radianceExr());
-        else if (req.url === '/favicon.ico') res.writeHead(204).end();
-        else if (req.url?.startsWith('/geeko/') && process.env.STUDIO_SUSE)
-          res.end(
-            await readFile(
-              join(root, 'brands/suse/catalog/assets/suse/models', req.url.slice(7) + '.glb')
-            )
-          );
-        else if (req.url?.startsWith('/suse/') && process.env.STUDIO_SUSE)
-          res.end(
-            await readFile(
-              join(
-                root,
-                'brands/suse/catalog/assets/suse/icons',
-                'icon-' + req.url.slice(6) + '.svg'
-              )
-            )
-          );
-        else
-          res.end(
-            `<html><style>html,body{margin:0}#content{width:360px;height:360px}${tool.styles}</style><div id="content"></div><script>window.fixtureTemplate=${JSON.stringify(template).replace(/</g, '\\u003c')}</script><script src="/bundle.js"></script></html>`
-          );
-      } catch {
-        res.writeHead(404).end();
-      }
-    });
-    await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
-    origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-    browser = await chromium.launch({
-      headless: true,
-      ...(process.env.STUDIO_NATIVE
-        ? { executablePath: chromium.executablePath(), args: ['--use-angle=metal'] }
-        : {}),
-    });
+    harness = await startStudioHarness();
   });
   after(async () => {
-    try {
-      await browser?.close();
-      if (server) await new Promise<void>((done) => server.close(() => done()));
-    } finally {
-      releaseTier?.();
-    }
+    await harness?.close();
   });
 
   it('renders real geometry, reuses its canvas and source, and keeps alpha shadows bounded', async () => {
@@ -379,11 +139,11 @@ describe('3D Studio actual renderer', { skip }, () => {
         /incomplete|self-contained/
       );
       await assert.rejects(
-        page.evaluate(() => (window as any).studioTest.prepare()),
+        page.evaluate(() => window.studioTest!.prepare()),
         /incomplete|self-contained/
       );
-      assert.equal(await page.evaluate(() => (window as any).studioTest.race()), 'ready');
-      await page.evaluate(() => (window as any).studioTest.destroy());
+      assert.equal(await page.evaluate(() => window.studioTest!.race()), 'ready');
+      await page.evaluate(() => window.studioTest!.destroy());
       assert.equal(await page.locator('canvas').count(), 0);
     } finally {
       await page.close();
@@ -404,7 +164,7 @@ describe('3D Studio actual renderer', { skip }, () => {
       assert.equal(ascii.png, binary.png);
       assert.match(binary.info, /print dimensions are not inferred/);
       await render(page, { source: 'primitive', motion: 'turntable', duration: 5 });
-      const at = (t: number) => page.evaluate((t) => (window as any).studioTest.sample(t), t);
+      const at = (t: number) => page.evaluate((t) => window.studioTest!.sample(t), t);
       const first = await at(0.25),
         next = await at(0.5),
         repeated = await at(0.25);
@@ -494,7 +254,7 @@ describe('3D Studio actual renderer', { skip }, () => {
       const again = await render(page, { ...base, objects });
       assert.equal(again.png, first.png);
       await render(page, { ...base, objects, motion: 'turntable', duration: 5 });
-      const at = (t: number) => page.evaluate((t) => (window as any).studioTest.sample(t), t);
+      const at = (t: number) => page.evaluate((t) => window.studioTest!.sample(t), t);
       const quarter = await at(0.25),
         half = await at(0.5),
         repeat = await at(0.25);
@@ -508,7 +268,7 @@ describe('3D Studio actual renderer', { skip }, () => {
         }),
         /Broken: The GLB file is incomplete/
       );
-      await assert.rejects(page.evaluate(() => (window as any).studioTest.prepare()), /Broken: /);
+      await assert.rejects(page.evaluate(() => window.studioTest!.prepare()), /Broken: /);
       if (process.env.STUDIO_SHOTS) {
         await mkdir(process.env.STUDIO_SHOTS, { recursive: true });
         await writeFile(
@@ -675,7 +435,7 @@ describe('3D Studio actual renderer', { skip }, () => {
       let solid = 0;
       for (let i = 3; i < words.pixels.length; i += 4) if (words.pixels[i] === 255) solid++;
       assert.ok(solid > 500, 'the letters are solid geometry');
-      const shaped = await page.evaluate(() => (window as any).shaped);
+      const shaped = await page.evaluate(() => window.shaped ?? []);
       assert.deepEqual(shaped[shaped.length - 1], ['AB', 'display', 800, 100]);
       const twoLines = await render(page, { source: 'text', words: 'AB\nCDE', wordAlign: 'right', outputMode: 'object' });
       assert.notEqual(twoLines.png, words.png);
@@ -706,7 +466,7 @@ describe('3D Studio actual renderer', { skip }, () => {
       ];
       const base = { source: 'primitive', outputMode: 'object', duration: 4 };
       const still = await render(page, { ...base, camera: { azimuth: 0, elevation: 10, fov: 30, zoom: 1 } });
-      const at = (t: number) => page.evaluate((t) => (window as any).studioTest.sample(t), t);
+      const at = (t: number) => page.evaluate((t) => window.studioTest!.sample(t), t);
       // A clip frame takes the clip sample count, so compare clip frames with clip frames.
       const stillFrame = await at(0);
       await render(page, { ...base, cameraMotion: 'keys', cameraKeys: keys, camera: { azimuth: 77 } });
@@ -817,7 +577,7 @@ describe('3D Studio actual renderer', { skip }, () => {
     try {
       await render(page, { source: 'primitive' });
       const resample = (size: { width: number; height: number }) =>
-        page.evaluate((size) => (window as any).studioTest.resample(size), size);
+        page.evaluate((size) => window.studioTest!.resample(size), size);
       const large = await resample({ width: 1440, height: 1440 });
       assert.deepEqual(large, { width: 1440, height: 1440, cssWidth: 360, cssHeight: 360 });
       const wide = await resample({ width: 1200, height: 600 });
@@ -878,5 +638,5 @@ describe('3D Studio actual renderer', { skip }, () => {
     }
   });
 
-  it('has no browser or shader errors', () => assert.deepEqual(errors, []));
+  it('has no browser or shader errors', () => assert.deepEqual(studio().errors, []));
 });

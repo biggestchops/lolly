@@ -2675,6 +2675,20 @@
       "reason": "STUDIO_SUSE is not set; private SUSE fixtures are opt-in.",
       "capability": "brand:suse",
       "owner": "tests"
+    },
+    {
+      "file": "tests/studio3d-recipe-compat.test.ts",
+      "fullName": "3D Studio pinned recipe (pushed 0.4.0) > builds 0.3-era sets only from inputs the 0.3.0 manifest declared",
+      "reason": "Commit d7b4593dd is not in this clone (shallow checkout), so the 0.3 manifest fixture cannot be read; a full clone runs this check",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/studio3d-geometry-fixtures.test.ts",
+      "fullName": "private SUSE icons keep a bevel on every shape",
+      "reason": "STUDIO_SUSE is not set; private SUSE fixtures are opt-in.",
+      "capability": "brand:suse",
+      "owner": "tests"
     }
   ]
 }

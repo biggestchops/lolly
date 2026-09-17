@@ -1,0 +1,120 @@
+{
+  "about": "Tessellation record for plan 265 milestone 2, written by tests/studio3d-tessellation.test.ts with STUDIO_WRITE_BASELINE=1. No test compares against it.",
+  "three": "0.186.0",
+  "shape": {
+    "bevel": 0.025,
+    "depth": 0.25
+  },
+  "outputs": [
+    64,
+    512,
+    4096
+  ],
+  "framings": {
+    "default": "the default recipe camera (zoom 1, target at the object middle), square output",
+    "fitted": "the same camera after fitStudioObject at aspect 1"
+  },
+  "method": "chordError is the largest distance from the true curve to its chord in studio units (32 samples per chord, front face); pixels projects the same distance through each framing",
+  "fixtures": {
+    "ring-opposite.svg": {
+      "8": {
+        "triangles": 1536,
+        "chordError": 0.008317,
+        "pixels": {
+          "default": {
+            "64": 0.09647,
+            "512": 0.7718,
+            "4096": 6.174
+          },
+          "fitted": {
+            "64": 0.09883,
+            "512": 0.7906,
+            "4096": 6.325
+          }
+        }
+      },
+      "24": {
+        "triangles": 4608,
+        "chordError": 0.0009396,
+        "pixels": {
+          "default": {
+            "64": 0.01092,
+            "512": 0.08733,
+            "4096": 0.6987
+          },
+          "fitted": {
+            "64": 0.01119,
+            "512": 0.08954,
+            "4096": 0.7164
+          }
+        }
+      },
+      "64": {
+        "triangles": 12288,
+        "chordError": 0.0001328,
+        "pixels": {
+          "default": {
+            "64": 0.001543,
+            "512": 0.01234,
+            "4096": 0.09874
+          },
+          "fitted": {
+            "64": 0.001582,
+            "512": 0.01266,
+            "4096": 0.1013
+          }
+        }
+      }
+    },
+    "letter-b-outfit.svg": {
+      "8": {
+        "triangles": 3964,
+        "chordError": 0.0009719,
+        "pixels": {
+          "default": {
+            "64": 0.009111,
+            "512": 0.07289,
+            "4096": 0.5831
+          },
+          "fitted": {
+            "64": 0.01012,
+            "512": 0.08096,
+            "4096": 0.6477
+          }
+        }
+      },
+      "24": {
+        "triangles": 11260,
+        "chordError": 0.0001081,
+        "pixels": {
+          "default": {
+            "64": 0.001013,
+            "512": 0.008103,
+            "4096": 0.06482
+          },
+          "fitted": {
+            "64": 0.001125,
+            "512": 0.008999,
+            "4096": 0.07199
+          }
+        }
+      },
+      "64": {
+        "triangles": 29500,
+        "chordError": 0.0000152,
+        "pixels": {
+          "default": {
+            "64": 0.0001424,
+            "512": 0.001139,
+            "4096": 0.009116
+          },
+          "fitted": {
+            "64": 0.0001582,
+            "512": 0.001265,
+            "4096": 0.01012
+          }
+        }
+      }
+    }
+  }
+}

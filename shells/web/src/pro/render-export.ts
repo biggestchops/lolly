@@ -16,6 +16,7 @@
 import { toCssPx, serializeUrlState, packQuery, isPackAvailable, PACK_PARAM } from '@lolly/engine';
 import { createToolRuntime as createRuntime } from '../lib/mount-runtime.ts';
 import { csvToMarks } from '../lib/print-marks-csv.ts';
+import { type StudioExportHooks, withStudioExport } from '../lib/studio-export-guard.ts';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import type { InputValue, InputModelItem } from '../../../../engine/src/inputs.ts';
 import type { CanvasCommitEl } from '../lib/canvas-commit.ts';
@@ -171,7 +172,7 @@ async function mountToolCanvas(
   styles: string | null | undefined,
   hydrated: string,
   { layoutW, fixedHeight, composeStack, host, settleMs, getModel, mountEmoji, thumbnail }: { layoutW: number; fixedHeight?: number; composeStack?: readonly string[]; host: HostV1; settleMs?: number; getModel?: () => InputModelItem[]; mountEmoji?: (canvas: HTMLElement) => Promise<unknown>; thumbnail?: boolean },
-): Promise<{ stage: ExportStage; canvas: HTMLDivElement }> {
+): Promise<{ stage: ExportStage; canvas: HTMLDivElement; studio: StudioExportHooks<Element> | null }> {
   const stage: ExportStage = document.createElement('div');
   stage.setAttribute('aria-hidden', 'true');
   // `contain:paint` makes the stage the containing block for `position:fixed` descendants (and
@@ -249,8 +250,10 @@ async function mountToolCanvas(
       const { mountVideoPlayers } = await import('../views/video-mount.ts');
       await mountVideoPlayers(canvas);
     }
+    let mountedStudio: StudioExportHooks<Element> | null = null;
     if (canvas.querySelector('[data-lolly-studio]')) {
       const studio = await import('../lib/studio3d/mount.ts');
+      mountedStudio = studio;
       const cleanup = stage._lottieCleanup;
       stage._lottieCleanup = () => { studio.destroyToolStudio(canvas); cleanup?.(); };
       // A gallery or chooser tile is a small picture: preview quality keeps a scene with
@@ -265,7 +268,9 @@ async function mountToolCanvas(
       }, shapeText: studio.studioShaperFor(host), frameQuality });
       studio.prepareToolStudio(canvas, frameQuality);
     }
-    return { stage, canvas };
+    // The caller exports through withStudioExport with this module, so a studio frame that
+    // fails during the export fails the row (the frame above is already drawn).
+    return { stage, canvas, studio: mountedStudio };
   } catch (e) {
     stage._lottieCleanup?.();
     stage.remove();
@@ -409,7 +414,7 @@ export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, wid
       exportOpts.height = rect.height;
     }
     signal?.throwIfAborted();
-    const blob = await runtime.export(target, fmt, exportOpts);
+    const blob = await withStudioExport(mounted.studio, canvas, () => runtime.export(target, fmt, exportOpts));
     signal?.throwIfAborted();
     return { blob, format: fmt, url };
   } finally {
@@ -476,7 +481,7 @@ export async function renderToolPages(row: BatchRow, host: HostV1, { format, thu
     const pages: Blob[] = [];
     for (const el of targets) {
       signal?.throwIfAborted();
-      pages.push(await runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail, signal }));
+      pages.push(await withStudioExport(mounted.studio, canvas, () => runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail, signal })));
       signal?.throwIfAborted();
     }
     return { pages, format: fmt };

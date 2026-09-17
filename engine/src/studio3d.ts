@@ -332,6 +332,7 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
     transform = record(v.transform),
     target = record(v.target);
   const backdrop = asset(v.backdropImage);
+  const background = color(v.background, secondary);
   const environmentKind = choice(
     v.environment,
     ['room', 'softbox', 'window', 'studio', 'gallery', 'warehouse', 'stage', 'desert', 'synthwave', 'image'] as const,
@@ -444,7 +445,7 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       floor: choice(v.floor, ['shadow', 'matte', 'cove'] as const, 'shadow'),
       floorColor: color(v.floorColor, secondary),
       shadowOpacity: number(v.shadowOpacity, 0.4, 0, 1),
-      background: color(v.background, secondary),
+      background,
       background2: color(v.background2, primary),
       backdrop: choice(v.backdrop, ['solid', 'gradient', 'image'] as const, 'gradient'),
       backdropUrl: backdrop.url,
@@ -456,6 +457,9 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       atmosphereSpread: number(v.atmosphereSpread, 0.5, 0, 1),
       atmosphereCount: Math.round(number(v.atmosphereCount, 7, 1, 12)),
       seed: Math.round(number(v.seed, 1, 1, 99999)),
+      // The hemisphere fill the stage has always used, declared so the tie to the
+      // background is visible in the recipe.
+      fill: { sky: primary, ground: background, intensity: 0.12 },
     },
     exposure: number(v.exposure, 1.1, 0.1, 4),
     quality: {

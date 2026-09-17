@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+<!-- A letter B outlined once from the platform Outfit face at weight 700, 40 px, moved to (8, 34).
+Font: shells/web/public/fonts/Outfit[wght].ttf, SHA-256 fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade
+Command, run from the repository root:
+node -e "import { createNodeTextAPI } from './packages/node-shell/src/text.ts'; const { d } = await createNodeTextAPI({ repoRoot: '.' }).toPath({ text: 'B', fontUrl: '/fonts/Outfit[wght].ttf', fontSize: 40, variations: ['wght=700'] }); let i = 0; console.log(d.replace(/-?[0-9.]+/g, (n) => String(Math.round((Number(n) + (i++ % 2 ? 34 : 8)) * 100) / 100)))"
+The glyph is two overlapping contours; the studio's union turns the open bowls into two counters. -->
+<path fill="#0c322c" d="M15.52,34L15.52,29.12L22.16,29.12Q23.98,29.12 25.02,28.05Q26.06,26.98 26.06,25.4Q26.06,24.34 25.59,23.49Q25.12,22.64 24.25,22.16Q23.38,21.68 22.16,21.68L15.52,21.68L15.52,16.92L21.64,16.92Q23.18,16.92 24.14,16.14Q25.1,15.36 25.1,13.78Q25.1,12.2 24.14,11.42Q23.18,10.64 21.64,10.64L15.52,10.64L15.52,5.76L22.82,5.76Q25.54,5.76 27.45,6.77Q29.36,7.78 30.36,9.45Q31.36,11.12 31.36,13.16Q31.36,15.78 29.67,17.58Q27.98,19.38 24.72,20.04L24.86,17.94Q28.44,18.62 30.38,20.7Q32.32,22.78 32.32,25.82Q32.32,28.14 31.17,29.99Q30.02,31.84 27.88,32.92Q25.74,34 22.76,34L15.52,34ZM10.7,34L10.7,5.76L16.92,5.76L16.92,34L10.7,34Z"/>
+</svg>

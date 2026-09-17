@@ -55,9 +55,22 @@ Choose **Imported radiance map** to light the scene with your own equirectangula
 
 Radiance maps are limited to 64 MB and 8192 by 4096 pixels. Maps narrower than 512 pixels are replicated pixel for pixel before filtering. Image-based light does not cast shadows of its own: the studio's directional and spot lights remain the shadow sources.
 
+## Colour and alpha
+
+Colour A and colour B are material colours, not output pixels. Lighting, finish and exposure all change how they render, so a lit face in colour A comes out lighter or darker than its swatch. A colour A edit reaches words and STL models straight away, without reloading the source.
+
+The stage background is part of the scene. A solid, gradient or image background passes through the same tone mapping and exposure as the subject, so it does not export as its exact swatch. At the default exposure of 1.1, a solid `#30ba78` background renders as `#61c992`; Chromium's software renderer (SwiftShader) and Metal on an Apple M4 both gave that value. The background also tints a soft fill light from below, with colour A from above, so changing the background changes the subject's shading slightly.
+
+**Object only** and **Object with transparent shadow** keep their transparency in PNG, WebP and AVIF. The other formats fill the transparent areas:
+
+- JPEG has no alpha channel.
+- TIFF flattens them onto white.
+- WebM and MP4 flatten every frame onto white.
+- GIF, with the default settings, turns them black, so a black transparent shadow disappears. For a GIF, choose **Complete scene** under Output with the background you want.
+
 ## Shape quality and framing
 
-The studio keeps the SVG outline at the sidewall and contracts the faces for an inward bevel. It checks the cap triangles throughout that contraction. A bevel that folds or erases a thin detail is reduced until it passes; bevel thickness is also limited to half the extrusion depth. **Source notes** reports the requested and applied sizes with correction guidance. The saved requested size stays intact, so changing the source or depth re-evaluates it.
+The studio keeps the SVG outline at the sidewall and contracts the faces for an inward bevel. Before it builds the bevel, it follows the contracted outline and holes through every bevel step and checks three things: no edge reverses, no outline or hole collapses and no two edges touch or cross, which includes a hole growing past its outline. A requested size that fails is halved until it passes; bevel thickness is also limited to half the extrusion depth. Rings, letter counters and other shapes with curved holes keep their full bevel wherever the geometry allows it; a bevel is reduced only where a narrow or sharp detail would really fold. The one exception is a shape that would pass one million triangles once bevelled: it is extruded without a bevel. **Source notes** reports every reduction with the requested and applied sizes and correction guidance. The saved requested size stays intact, so changing the source or depth re-evaluates it.
 
 **Fit object** centres the current transformed subject with a margin at the current image aspect ratio. It preserves the viewing angle and perspective field of view. The camera's target offsets record that framing relative to the expert camera target. Fit again after changing the output proportions or object pose. Camera gestures, fit, reset and focus picking use the normal undo history and saved session values.
 

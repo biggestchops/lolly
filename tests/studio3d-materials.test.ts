@@ -174,3 +174,98 @@ test('every finish resolves to a physical description and the new ones set what 
   assert.deepEqual(scene.materials.overrides.map((o) => o.finish), ['glow', undefined, undefined]);
   assert.equal(buildStudioScene({ version: 1, values: { finishA: 'velvet', finishB: 'glass' } }).materials.finishA, 'velvet');
 });
+
+test('words and STL models take colour A when materials are applied, so a colour edit needs no reload', () => {
+  const white = new THREE.Color('#ffffff');
+  const loaded = (kind: 'stl' | 'text' | 'svg' | 'glb') => {
+    // Built as source.ts builds them: the studio bakes the colour A of the load into
+    // `surface` (STL) and `paint:words` (text); SVG and GLB materials are the file's own.
+    const name = kind === 'stl' ? 'surface' : kind === 'text' ? 'paint:words' : kind === 'svg' ? 'paint:#111111' : 'surface';
+    const material =
+      kind === 'glb'
+        ? new THREE.MeshStandardMaterial({ color: '#111111' })
+        : new THREE.MeshPhysicalMaterial({ color: '#111111', roughness: 0.4 });
+    material.name = name;
+    const geometry = new THREE.BoxGeometry();
+    const surfaces = kind === 'text' || kind === 'svg';
+    const mesh = new THREE.Mesh(geometry, surfaces ? [material, material, material] : material);
+    mesh.userData.studioSurfaces = surfaces;
+    const asset: StudioAsset = {
+      object: new THREE.Group().add(mesh),
+      originals: new Map([[mesh, mesh.material]]),
+      info: { triangles: 12, warnings: [], slots: [{ id: name, label: name, color: '#111111' }] },
+      dispose() {},
+    };
+    const colours = () =>
+      (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).map((m) => {
+        assert.ok(m instanceof THREE.MeshStandardMaterial);
+        return {
+          color: m.color.getHexString(),
+          emissive: m.emissive.getHexString(),
+          sheen: m instanceof THREE.MeshPhysicalMaterial ? m.sheenColor.getHexString() : null,
+        };
+      });
+    return {
+      asset,
+      colours,
+      original: material,
+      mesh,
+      dispose() {
+        geometry.dispose();
+        material.dispose();
+      },
+    };
+  };
+  const source = {
+    stl: { source: 'model', modelAsset: { url: 'blob:part', name: 'part.stl' } },
+    text: { source: 'text', words: 'Hi' },
+    svg: { source: 'artwork', artwork: { url: 'blob:art.svg' } },
+    glb: { source: 'model', modelAsset: { url: 'blob:model.glb' } },
+  };
+  const scene = (kind: keyof typeof source, extra: Record<string, unknown>) =>
+    buildStudioScene({
+      version: 1,
+      values: { ...source[kind], colorA: '#ff0000', colorB: '#0000ff', ...extra },
+    });
+  const apply = (kind: keyof typeof source, extra: Record<string, unknown>) => {
+    const item = loaded(kind);
+    try {
+      const reset = applyStudioMaterials(item.asset, scene(kind, extra));
+      const result = item.colours();
+      reset();
+      assert.equal(item.mesh.material, item.asset.originals.get(item.mesh));
+      assert.equal(item.original.color.getHexString(), '111111', 'the loaded material is left as it was');
+      return result;
+    } finally {
+      item.dispose();
+    }
+  };
+  const red = { color: 'ff0000', emissive: '000000', sheen: new THREE.Color('#ff0000').lerp(white, 0.5).getHexString() };
+  for (const kind of ['stl', 'text'] as const) {
+    const groups = kind === 'text' ? 3 : 1;
+    const expect = (value: object) => Array.from({ length: groups }, () => value);
+    assert.deepEqual(apply(kind, {}), expect(red), `${kind} in source mode`);
+    assert.deepEqual(apply(kind, { materialMode: 'custom', materials: [] }), expect(red), `${kind} in custom mode`);
+    // The finish copies the new colour into the sheen and the glow.
+    assert.deepEqual(apply(kind, { finishA: 'velvet' }), expect(red), `${kind} velvet`);
+    assert.deepEqual(
+      apply(kind, { finishA: 'neon' }),
+      expect({ ...red, emissive: 'ff0000' }),
+      `${kind} neon`
+    );
+    // Pair mode already painted role A, and an override still wins.
+    assert.deepEqual(apply(kind, { materialMode: 'pair' }), expect(red), `${kind} pair`);
+    assert.deepEqual(
+      apply(kind, { materialMode: 'custom', materials: [{ slot: '1', color: '#00ff00' }] })[0]!.color,
+      '00ff00',
+      `${kind} override`
+    );
+  }
+  // Artwork and model files keep their own colours.
+  const own = { color: '111111', emissive: '000000', sheen: new THREE.Color('#111111').lerp(white, 0.5).getHexString() };
+  assert.deepEqual(apply('svg', {}), [own, own, own]);
+  assert.deepEqual(apply('glb', {}), [{ color: '111111', emissive: '000000', sheen: null }]);
+  assert.deepEqual(apply('glb', { materialMode: 'custom', materials: [] }), [
+    { color: '111111', emissive: '000000', sheen: null },
+  ]);
+});
