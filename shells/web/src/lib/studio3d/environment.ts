@@ -44,11 +44,32 @@ function panel(
   scene.add(mesh);
 }
 
-/** Direction of an equirectangular pixel: longitude across, latitude down. */
+/**
+ * Direction of an equirectangular pixel as the builders paint it: longitude across, latitude
+ * down, with the middle column facing +z and longitude growing towards +x, as in place().
+ */
 function direction(u: number, v: number): [number, number, number] {
   const lon = (u - 0.5) * 2 * Math.PI,
     lat = (0.5 - v) * Math.PI;
   return [Math.sin(lon) * Math.cos(lat), Math.sin(lat), Math.cos(lon) * Math.cos(lat)];
+}
+/**
+ * three reads an equirectangular map with longitude atan2(z, x), so its middle column faces +x.
+ * Painted column u belongs in stored column 1.25 - u (a quarter turn and a mirror). Moving
+ * every column there makes three show each painted pixel in the direction it was painted
+ * for, which is also where place() puts the lamps.
+ */
+function threeLayout(painted: ImageData): ImageData {
+  const stored = new ImageData(PANO_W, PANO_H);
+  const from = new Uint32Array(painted.data.buffer),
+    to = new Uint32Array(stored.data.buffer);
+  // Column centres: (x + 0.5) / W = 1.25 - (source + 0.5) / W.
+  const turn = (PANO_W * 5) / 4 - 1;
+  for (let y = 0; y < PANO_H; y++) {
+    const row = y * PANO_W;
+    for (let x = 0; x < PANO_W; x++) to[row + x] = from[row + ((turn - x) % PANO_W)]!;
+  }
+  return stored;
 }
 /** The position of a panel at a longitude and latitude in degrees, at a radius. */
 function place(lonDeg: number, latDeg: number, radius: number): [number, number, number] {
@@ -81,9 +102,9 @@ function paintPanorama(
   canvas.height = PANO_H;
   const ctx = canvas.getContext('2d')!;
   sky(ctx);
+  const painted = ctx.getImageData(0, 0, PANO_W, PANO_H);
   if (pixel) {
-    const image = ctx.getImageData(0, 0, PANO_W, PANO_H);
-    const data = image.data;
+    const data = painted.data;
     for (let y = 0; y < PANO_H; y++)
       for (let x = 0; x < PANO_W; x++) {
         const u = (x + 0.5) / PANO_W,
@@ -95,8 +116,8 @@ function paintPanorama(
         data[i + 1] = Math.min(255, Math.round(colour[1] * 255));
         data[i + 2] = Math.min(255, Math.round(colour[2] * 255));
       }
-    ctx.putImageData(image, 0, 0);
   }
+  ctx.putImageData(threeLayout(painted), 0, 0);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.mapping = THREE.EquirectangularReflectionMapping;
@@ -110,7 +131,9 @@ function panoramaScene(backdrop: THREE.Texture): THREE.Scene {
     new THREE.SphereGeometry(40, 48, 32),
     new THREE.MeshBasicMaterial({ map: backdrop, side: THREE.BackSide, toneMapped: false })
   );
-  sphere.scale.x = -1;
+  // A sphere's column u faces atan2(z, x) = 180 - 360u. Mirroring z gives 360u - 180, which
+  // is three's own lookup, so the lighting map agrees with the stored background.
+  sphere.scale.z = -1;
   scene.add(sphere);
   return scene;
 }

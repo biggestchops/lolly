@@ -36,6 +36,11 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
 
 ### New in 1.0.9 (unreleased)
 
+- **Painted environments light the way they look.** The six painted 3D Studio
+  environments were mirrored in the lighting map, so a shiny object reflected the
+  painted sun or windows far from the lamp that lit it. Reflections and the crisp
+  background now agree with the lamps; scenes saved with a painted environment
+  look slightly different when reopened.
 - **Fuller 3D bevels.** The 3D Studio bevel check follows the inset the renderer
   draws, so rings, letter counters and other shapes with curved holes keep their
   full bevel. A bevel is reduced, with a source note, only where a narrow or

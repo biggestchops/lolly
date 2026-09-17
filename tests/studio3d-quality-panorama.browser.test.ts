@@ -14,13 +14,9 @@
  * of them together. The lamp outshines the painted sun, so the highlight alone could not see
  * a lighting map whose painted pixels face the wrong way; the warm glow can.
  *
- * The pushed 3D Studio 0.4 code fails this: the lighting map mirrors the painted pixels, so
- * the reflected painted sun is about 96 degrees from the lamp. The correction (environment.ts
- * stores the painting in the layout three's lookup reads) changes pushed painted-environment
- * output, so it waits for the maintainer's answer to question Q6 of plan 265. Until then the
- * case is a todo: Node still runs it and prints every measure, but a failure does not fail the
- * run. When Q6 is accepted, the correction goes in with CORRECTIONS['painted-environment'] in
- * studio3d-compat.browser.test.ts, and the todo option comes off.
+ * 3D Studio 0.4 failed this: its lighting map mirrored the painted pixels, so the reflected
+ * painted sun was about 96 degrees from the lamp. environment.ts now stores the painting in the
+ * layout three's lookup reads (accepted as a correction under plan 265 Q6).
  *
  * Directions are measured from the rendered pixels with the scene's own camera
  * (studioCamera) and the placed sphere (loadStudioSource and placeStudioScene), both
@@ -100,9 +96,6 @@ window.panoramaView = async (values, width, height) => {
 const LAMP = { lon: 43, lat: 34 };
 const TOLERANCE_DEGREES = 10;
 const SIZE = 256;
-/** Why the case is a todo; remove the option from the case once Q6 is answered. */
-const AWAITING_Q6 =
-  'plan 265 Q6: the orientation correction changes pushed 0.4 painted environments and waits for acceptance';
 
 const rad = (degrees: number) => (degrees * Math.PI) / 180;
 const deg = (radians: number) => (radians * 180) / Math.PI;
@@ -220,9 +213,7 @@ describe('3D Studio painted environment orientation', { skip: studioSkip }, () =
     await harness?.close();
   });
 
-  it('reflects and shows the desert sun where its lamp is, and turns all of them together', {
-    todo: AWAITING_Q6,
-  }, async () => {
+  it('reflects and shows the desert sun where its lamp is, and turns all of them together', async () => {
     if (!harness) throw new Error('The 3D Studio harness did not start.');
     const page = await harness.open();
     try {

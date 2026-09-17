@@ -297,10 +297,12 @@ const TOLERANCES: Record<string, { maxDelta: number; changedFraction: number; re
 
 /**
  * Sets whose difference from the pushed renderer is an accepted correction, with the
- * decision that accepted it. A listed set must still differ. Empty until Andy decides Q6
- * (the painted panorama orientation, lane D1.2).
+ * decision that accepted it. A listed set must still differ.
  */
-const CORRECTIONS: Record<string, string> = {};
+const CORRECTIONS: Record<string, string> = {
+  'painted-environment':
+    'Q6, accepted by Andy on 2026-09-17: painted panoramas are no longer mirrored, so reflections and the crisp background agree with the lamps',
+};
 
 describe('3D Studio pushed renderer compatibility', { skip: pushedSkip }, () => {
   let harness: StudioHarness | undefined;
