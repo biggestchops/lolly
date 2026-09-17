@@ -1,6 +1,6 @@
 # Lolly 1.0.8
 
-_Release notes: **1.0.8** (2026-09-16). Builds and release verification are in progress. First public release was 1.0.1 (2026-08-30). Free
+_Release notes: **1.0.8** (2026-09-16). First public release was 1.0.1 (2026-08-30). Free
 software under the **Mozilla Public License 2.0**; the content below is brand-agnostic and
 reflects the current platform._
 
