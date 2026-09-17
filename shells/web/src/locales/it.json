@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Aggiornato dallo studio.",
   "Using {name}.": "Utilizzo di {name}.",
   "{count} controls you changed stay yours.": "{count} controlli che hai modificato restano tuoi.",
-  "{name} has been saved again since this document took its look.": "{name} è stato salvato di nuovo da quando questo documento ha preso il suo aspetto."
+  "{name} has been saved again since this document took its look.": "{name} è stato salvato di nuovo da quando questo documento ha preso il suo aspetto.",
+  "3D scene": "Scena 3D",
+  "Arrangement": "Disposizione",
+  "Artwork": "Grafica",
+  "Collection": "Collezione",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Trascina sul canvas per posizionare una scena 3D, poi modificala nello studio.",
+  "Edit in 3D Studio": "Modifica in 3D Studio",
+  "Empty scene": "Scena vuota",
+  "Lighting studio": "Studio di illuminazione",
+  "Scene": "Scena",
+  "Studio defaults": "Predefiniti dello studio",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "Non è stato possibile caricare 3D Studio, quindi questa scena non si può modificare qui.",
+  "This scene could not be drawn.": "Non è stato possibile disegnare questa scena.",
+  "one of your uploads": "uno dei tuoi caricamenti"
 }

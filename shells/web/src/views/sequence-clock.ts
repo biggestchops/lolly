@@ -66,6 +66,10 @@ import { clipGainEvents, clipGainValueAt, isTrivialGain, scheduleGainEvents } fr
 // stays out of this module's eager graph; the composer itself is imported lazily in
 // renderZzfxmToBuffer below.
 import { volumeKeysOf } from '../bridge/sequence-plan.ts';
+// The one place the scene grammar turns milliseconds into a renderer's phase, so the
+// preview and the export compositor cannot disagree about which frame of a scene a
+// moment is. A pure engine helper: no studio module is reached from here.
+import { designSceneTime } from '../../../../engine/src/design-scene.ts';
 import { isZzfxmRef } from '../../../../engine/src/zzfxm-ref.ts';
 import type { ZzfxSong } from '../../../../engine/src/zzfxm.ts';
 import {
@@ -243,6 +247,15 @@ export interface SequenceClock {
 /** The (optional) host slice this module uses - logging only. */
 export interface ClockHost {
   log?(level: string, msg: string): void;
+}
+
+/**
+ * The live 3D scene box's canvas, as lib/studio3d/mount.ts leaves it: one call that draws
+ * the frame at a normalised position in a clip of `seconds`. Absent until a renderer has
+ * started, which is a no-op here rather than an error, exactly as an unmounted Lottie is.
+ */
+interface SceneFrameCanvas extends HTMLCanvasElement {
+  __lollyFrameRender?: (t: number, seconds?: number) => void;
 }
 
 export interface SequenceClockOpts {
@@ -1145,6 +1158,24 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
         }
       }
       return;
+    }
+    // A 3D scene box (plan 265 milestone 3): only the LIVE one follows the playhead. Every
+    // other scene box on the board is a poster, and a poster does not scrub - redrawing
+    // twenty scenes per frame is exactly what the one-live-renderer rule exists to avoid.
+    // The renderer takes a normalised position in the recipe's own clip length, which the
+    // Design host stamps on the marker as `data-scene-seconds`. The position that was drawn
+    // goes back on the marker as `data-scene-t`, so a STILL export of a parked timeline can
+    // embed the frame the editor is showing instead of the scene at rest
+    // (bridge/export-design-scenes.ts reads it).
+    const scene = el.querySelector<HTMLElement>('[data-lolly-scene][data-scene-state="live"]');
+    if (scene && active) {
+      const canvas = scene.querySelector<SceneFrameCanvas>('canvas');
+      const seconds = Number(scene.dataset.sceneSeconds);
+      if (canvas?.__lollyFrameRender && Number.isFinite(seconds) && seconds > 0) {
+        const phase = designSceneTime(sourceMs, seconds);
+        try { canvas.__lollyFrameRender(phase, seconds); scene.dataset.sceneT = String(phase); }
+        catch { /* the renderer is mid-teardown */ }
+      }
     }
     // Lottie: the player is mounted asynchronously by lottie-mount, so it is simply
     // absent for the first frames after a repaint - that is a no-op, not an error.

@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Diperbarui dari preset.",
   "Using {name}.": "Menggunakan {name}.",
   "{count} controls you changed stay yours.": "{count} kontrol yang Anda ubah tetap milik Anda.",
-  "{name} has been saved again since this document took its look.": "{name} telah disimpan lagi sejak dokumen ini mengambil tampilannya."
+  "{name} has been saved again since this document took its look.": "{name} telah disimpan lagi sejak dokumen ini mengambil tampilannya.",
+  "3D scene": "Scene 3D",
+  "Arrangement": "Susunan",
+  "Artwork": "Artwork",
+  "Collection": "Koleksi",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Seret di kanvas untuk menempatkan scene 3D, lalu edit di studio.",
+  "Edit in 3D Studio": "Edit di 3D Studio",
+  "Empty scene": "Scene kosong",
+  "Lighting studio": "Preset pencahayaan",
+  "Scene": "Scene",
+  "Studio defaults": "Default studio",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio tidak dapat dimuat, jadi scene ini tidak bisa diedit di sini.",
+  "This scene could not be drawn.": "Scene ini tidak dapat digambar.",
+  "one of your uploads": "salah satu unggahan Anda"
 }

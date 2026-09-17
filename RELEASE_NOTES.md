@@ -36,6 +36,33 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
 
 ### New in 1.0.9 (unreleased)
 
+- **3D scenes in Design.** A Design document can hold 3D scenes. Add one from
+  the Add menu, drag out a frame and 3D Studio opens on the new box; afterwards
+  the inspector's **3D scene** section opens it again with **Edit in 3D Studio**,
+  and what you apply is written back as one undo step. Every scene box shows a
+  still poster drawn through the studio's shared renderer, and the selected box
+  is the document's one live scene, so a document with twenty scenes never opens
+  twenty drawing contexts. A scene box on the timeline follows the playhead like a
+  video clip, at the length you set in the studio. Every export draws each scene
+  again at the size that file needs instead of photographing the screen, so the
+  result does not depend on which box was selected, and a scene that cannot be
+  drawn fails the export with the studio's own message. A scene travels in share
+  links, saved sessions, templates and `.lolly` files, and the uploads it uses
+  travel with it.
+- **Older readers and a document with a 3D scene.** Such a document reads as
+  invalid to a Lolly client from before this release, because `3d` is a layer
+  kind those clients do not know. Nothing in the document is lost. Every earlier
+  link decodes exactly as it did: `design:boxes` gained one appended field,
+  `scene`, at position 101, and nothing already there moved.
+- **3D Studio: a GLB or STL model now reports the size it measures in its own
+  file.** Source notes read `Model spans 120 by 48 by 9 units in its file; shown
+  at 3.25 studio units.`, beside the standing note that STL carries no units.
+  Artwork, words and the built-in shapes report no size, because they are drawn
+  to fit.
+- **3D Studio: camera keys can be named.** Type a name in the key's row and the
+  list shows it; **Go to key** on the preview steps through the saved views and
+  says which one it reached. A key with no name reads and renders exactly as it
+  did before.
 - **3D Studio turns in APNG and animated WebP.** The two animated still formats
   join WebM, MP4 and GIF under the studio's export menu, and both keep the
   transparency of **Object only** and **Object with transparent shadow**, so a

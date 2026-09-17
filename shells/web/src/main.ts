@@ -12,6 +12,7 @@
 import { recordFeaturedRoute } from './lib/featured-activity.ts';
 import { mountIOSTextScale } from './lib/ios-text-scale.ts';
 import { createBridge } from './bridge/index.ts';
+import { setSceneManifestLoader, SCENE_TOOL_ID } from './bridge/asset-dependencies.ts';
 import type { Profile } from '@lolly-tools/core/host-v1';
 import { syncCatalog, syncCorePrefetch, defaultFavouriteAssetIds, toolIndexChanged, localizeToolIndex, loadSlimToolIndex } from './catalog/sync.ts';
 import { mergeInstalledToolsIntoIndex } from './lib/installed-tools.ts';
@@ -953,6 +954,20 @@ async function boot(): Promise<void> {
   if (!isTauriShell()) void initInstanceBase().then(releaseOrgProbe, releaseOrgProbe);
   trackVisualViewport();
   initMobilePlatformFit();
+  // A Design 3D scene box keeps its uploads as asset ids inside its scene query, and only
+  // the 3D Studio manifest says which values in that query are ids (plan 265 milestone 3).
+  // The two asset walkers are synchronous and have no manifest to hand, so the way to one
+  // is registered here, once, for the whole session. Registered rather than loaded: this
+  // is a function nobody calls until a walker or the editor door asks for it, and the tool
+  // loader it reaches for pulls in the engine barrel, which must stay off the boot path
+  // (shells/web/src/boot-path-guard.test.ts). Packing a project to a .lolly from Projects
+  // is the case that needs it: no Design canvas has painted, so nothing else would have
+  // had a reason to load the studio's manifest and the scene's upload would be left out.
+  setSceneManifestLoader(() =>
+    import('./bridge/tool-loader.ts')
+      .then(({ getTool }) => getTool(SCENE_TOOL_ID))
+      .then(tool => tool.manifest)
+      .catch(error => { console.warn('3D scene manifest unavailable:', error); return null; }));
   // Native app menus (Tauri shells): the iPadOS menu bar / macOS menu drive
   // the tiny window.__lollyMenu surface this registers. The web build never
   // loads the module, and boot never waits on it.

@@ -1,7 +1,7 @@
 {
   "id": "3d-studio",
   "name": "3D Studio",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "engineVersion": ">=1.205.0",
   "status": "official",
   "singleInstance": true,
@@ -3107,6 +3107,14 @@
           "min": 0,
           "max": 500,
           "step": 0.1
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "text",
+          "default": "",
+          "placeholder": "Optional",
+          "help": "Your own name for this view, shown in this list and by Go to key on the preview."
         }
       ]
     },

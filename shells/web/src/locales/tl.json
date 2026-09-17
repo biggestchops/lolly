@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Na-update mula sa studio.",
   "Using {name}.": "Ginagamit ang {name}.",
   "{count} controls you changed stay yours.": "Mananatiling sa'yo ang {count} control na binago mo.",
-  "{name} has been saved again since this document took its look.": "Na-save ulit ang {name} mula nang na-apply ang itsura nito sa dokumentong ito."
+  "{name} has been saved again since this document took its look.": "Na-save ulit ang {name} mula nang na-apply ang itsura nito sa dokumentong ito.",
+  "3D scene": "3D scene",
+  "Arrangement": "Pagkakaayos",
+  "Artwork": "Artwork",
+  "Collection": "Koleksyon",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "I-drag sa canvas para maglagay ng 3D scene, pagkatapos ay i-edit ito sa studio.",
+  "Edit in 3D Studio": "I-edit sa 3D Studio",
+  "Empty scene": "Walang lamang scene",
+  "Lighting studio": "Studio ng ilaw",
+  "Scene": "Scene",
+  "Studio defaults": "Mga default ng studio",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "Hindi na-load ang 3D Studio, kaya hindi puwedeng i-edit dito ang scene na ito.",
+  "This scene could not be drawn.": "Hindi naiguhit ang scene na ito.",
+  "one of your uploads": "isa sa iyong mga upload"
 }

@@ -221,4 +221,5 @@ are timing. Generated from the `boxes` block.
 | `locked` | - | boolean | false | Locked |
 | `slideTransition` | - | select | `""` | Transition to next |
 | `plainText` | - | boolean | false | Plain text |
+| `scene` | - | text | `""` | Scene |
 <!-- /GEN:design-boxes -->

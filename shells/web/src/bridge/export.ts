@@ -162,8 +162,13 @@ export function createExportAPI(host: WebHost) {
       // A detached clone loses getComputedStyle context: CSS variables do not
       // resolve, animations do not run, and getBoundingClientRect returns zero.
       const removeWatermark = watermark ? addWatermarkOverlay(node as HTMLElement) : null;
-      // Pull any editor-only chrome out of the tree for the duration of the capture.
-      const restoreHidden = detachExportHidden(node);
+      // Pull any editor-only chrome out of the tree for the duration of the capture. A
+      // document holding 3D scene boxes (plan 265 milestone 3) also has each one drawn at
+      // THIS export's size through the studio pool first, so nothing below depends on a live
+      // WebGL canvas being in the right state at capture time; that module hands back one
+      // restore covering both halves. It is reached with an import() gated on the marker, so
+      // a tool with no scene box loads neither it nor three.js and pays one selector.
+      const restoreHidden = node.querySelector('[data-lolly-scene]') ? await (await import('./export-design-scenes.ts')).prepareDesignScenePosters(node, format, opts, detachExportHidden) : detachExportHidden(node);
       // The timeline panel photographs its own clip boxes with the same dom-to-image
       // instance. Its options, url cache, and sandbox iframe are module-global and
       // get cleared by whichever call finishes first. detachExportHidden removes the

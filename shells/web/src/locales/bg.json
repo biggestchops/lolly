@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Обновено от студиото.",
   "Using {name}.": "Използва се {name}.",
   "{count} controls you changed stay yours.": "{count} контрола, които промени, остават твои.",
-  "{name} has been saved again since this document took its look.": "{name} е запазвано отново, откакто този документ придоби този вид."
+  "{name} has been saved again since this document took its look.": "{name} е запазвано отново, откакто този документ придоби този вид.",
+  "3D scene": "3D сцена",
+  "Arrangement": "Подредба",
+  "Artwork": "Графика",
+  "Collection": "Колекция",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Провлачи върху платното, за да поставиш 3D сцена, после я редактирай в студиото.",
+  "Edit in 3D Studio": "Редактирай в 3D Studio",
+  "Empty scene": "Празна сцена",
+  "Lighting studio": "Светлинно студио",
+  "Scene": "Сцена",
+  "Studio defaults": "Настройки по подразбиране на студиото",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio не можа да се зареди, затова тази сцена не може да се редактира тук.",
+  "This scene could not be drawn.": "Тази сцена не можа да бъде начертана.",
+  "one of your uploads": "един от твоите качени файлове"
 }

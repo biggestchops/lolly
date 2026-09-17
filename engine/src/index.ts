@@ -595,6 +595,9 @@ export type {
   PenpotShapesByPage, PenpotComponent, PenpotComponentVariant, PenpotComponentSlot,
   PenpotComponentCollection, PenpotExternalCensus, PenpotExternalComponent,
 } from './design-components.ts';
+// The Design scene grammar: what a `kind:'3d'` box's `scene` field holds (plan 265 m3).
+export { designSceneEncode, designSceneDecode, designSceneAssetIds } from './design-scene.ts';
+export type { DesignSceneValues } from './design-scene.ts';
 export {
   interpretPdfPage, parseToUnicode, toUnicodeDecoder,
   PDF_MAP_MAX_ARRAY_DEPTH, PDF_MAP_MAX_BF_RANGE, PDF_MAP_MAX_RUN_DEPTH,

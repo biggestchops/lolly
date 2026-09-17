@@ -65,6 +65,12 @@ export const SVG = {
   // Type glyph - the Text add-kind + the "Aa" text panel.
   type: '<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>',
   boxKind: '<rect x="3" y="5" width="18" height="14" rx="2.5"/>',
+  // 3D scene add-kind (plan 265 milestone 3) - the isometric cube, byte-for-byte the
+  // `box` glyph lib/icons.ts registers, which is what the 3D Studio already wears over
+  // its own Start, Collection and Arrangement sections and what the inspector's Scene
+  // header carries. Deliberately NOT `boxKind` above, which is the flat plate a plain
+  // box add-kind draws: the whole point of this picture is that it has depth.
+  sceneKind: '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>',
   // Animation (Lottie) add-kind - a play triangle inside a rounded frame, echoing the picker's "▶ LOTTIE" badge.
   anim: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M10 9l5 3-5 3z"/>',
   // Video add-kind - a film clap/frame with a play triangle (a fatter play than `anim`).

@@ -135,7 +135,8 @@
       "hidden",
       "locked",
       "slideTransition",
-      "plainText"
+      "plainText",
+      "scene"
     ],
     "diagram-builder:nodes": [
       "shape",
@@ -498,7 +499,8 @@
       "panX",
       "panY",
       "panZ",
-      "focusDistance"
+      "focusDistance",
+      "name"
     ]
   }
 }

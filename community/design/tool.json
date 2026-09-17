@@ -2,7 +2,7 @@
   "id": "design",
   "name": "Design",
   "description": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system.",
-  "version": "1.29.0",
+  "version": "1.30.0",
   "engineVersion": "^1.199.0",
   "status": "community",
   "category": "designer",
@@ -576,6 +576,16 @@
               "bg": "var(--brand-surface, #ffffff)",
               "shape": "rect"
             }
+          },
+          {
+            "id": "3d",
+            "label": "3D scene",
+            "seed": {
+              "kind": "3d",
+              "w": 640,
+              "h": 640,
+              "scene": "source=primitive&primitive=badge&studio=dramatic"
+            }
           }
         ]
       },
@@ -623,6 +633,11 @@
             {
               "value": "frame",
               "label": "Artboard",
+              "repeatable": true
+            },
+            {
+              "value": "3d",
+              "label": "3D scene",
               "repeatable": true
             }
           ]
@@ -2092,6 +2107,14 @@
           "label": "Plain text",
           "default": false,
           "help": "Print every character as entered, including Markdown markers. Useful for linked briefs and imported copy. Appended to preserve existing compact URLs."
+        },
+        {
+          "id": "scene",
+          "type": "text",
+          "label": "Scene",
+          "default": "",
+          "showFor": [],
+          "help": "For a 3D SCENE box: the 3D Studio's own settings as its link query, with everything left at the studio's default omitted (source=primitive&primitive=badge&studio=dramatic). It is the same string a 3D Studio share link carries after the '?', so the Edit in 3D Studio door is a plain round trip. Machine-written by the Edit in 3D Studio door, never typed, so showFor:[] keeps it out of the sidebar - `text` for the same reason `path` and `kf` are, since a blocks field has no longtext control and the value never reaches one. APPENDED after plainText - the compact-blocks URL wire format is append-only."
         }
       ],
       "default": [

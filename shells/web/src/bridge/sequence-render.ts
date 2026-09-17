@@ -29,11 +29,12 @@
  * `runSequenceJob`. Which thread that executor runs on is the only difference
  * between the two paths, so determinism is structural rather than asserted:
  *
- *   • no lottie layer  ⇒ the whole frame loop (decode, composite, encode, mux)
+ *   • no live layer    ⇒ the whole frame loop (decode, composite, encode, mux)
  *     runs in the Worker and the main thread only awaits the result;
- *   • a lottie layer   ⇒ HYBRID. lottie-web cannot run in a worker, so the worker
- *     asks the main thread for that layer's raster per frame ('need-live') and
- *     blocks on the answer, at most ONE request outstanding;
+ *   • a lottie box or a 3D scene box ⇒ HYBRID. lottie-web cannot run in a worker and
+ *     neither can the studio's WebGL context, so the worker asks the main thread for
+ *     that layer's picture per frame ('need-live') and blocks on the answer, at most
+ *     ONE request outstanding;
  *   • gif / apng / the MediaRecorder fallback, or any missing capability
  *     (`supportsWorkerSequenceRender()`), ⇒ the executor runs in-thread, exactly
  *     as it did before this change.
@@ -185,6 +186,9 @@ import {
 } from '@lolly/engine';
 import type { CaptionCue, HdrBoostOptions } from '@lolly/engine';
 import { activitySpans, createTruePeakLimiter, createLoudnessMeter, normalizeGain, parseFxChain, processFxPcm } from '@lolly/engine';
+// The scene grammar's ms-to-phase conversion, the same one the preview clock uses, so a
+// scene's exported frames and its scrubbed ones are the same picture at the same moment.
+import { designSceneTime } from '../../../../engine/src/design-scene.ts';
 // The compositor photographs the LIVE artboard, and the phase-2 clock has been
 // writing `.seq-off` (display:none) onto every box that is not under the playhead.
 // Without clearing it, every clip except the one being scrubbed rasterises blank.
@@ -1810,9 +1814,9 @@ async function renderSequenceAuthored(
         pad: d?.pad ?? 0,
         maxEff: d?.maxEff ?? 1,
         // The lottie player is not consulted until the loop below, so a lottie layer is
-        // priced as if it WILL go live (two plates). Over-counting is the safe direction
-        // for a memory budget - and a size-tweened layer goes live for certain.
-        needsLiveRaster: L.kind === 'lottie' || (d?.sized ?? false),
+        // priced as if it WILL go live (two plates). Over-counting is safe for a memory
+        // budget - and a size tween, like a 3D scene box, goes live for certain.
+        needsLiveRaster: L.kind === 'lottie' || L.kind === 'scene' || (d?.sized ?? false),
       };
     }),
     scale: S,
@@ -2018,9 +2022,9 @@ async function renderSequenceAuthored(
             liveBoxes.set(L.idx, { marker: null, box: el, hide: [] });
             needsLiveRaster = true;
           }
-          // A size tween re-photographs per frame whatever kind the layer is - the
-          // static plate above stays as the fallback for a frame whose shot fails.
-          if (sizedLayers.has(L.idx) && !liveBoxes.has(L.idx)) {
+          // A size tween re-photographs per frame whatever kind the layer is, and a 3D scene
+          // box redraws per frame too (see makeLiveRaster); the static plate is the fallback.
+          if ((sizedLayers.has(L.idx) || L.kind === 'scene') && !liveBoxes.has(L.idx)) {
             liveBoxes.set(L.idx, { marker: null, box: el, hide: plateHide });
             needsLiveRaster = true;
           }
@@ -2155,7 +2159,7 @@ async function renderSequenceAuthored(
     // renderVideo path skips its worker for HDR.
     if (pick && !hdrActive && supportsWorkerSequenceRender()) {
       log('info', `sequence: worker offload - ${hybrid
-        ? `HYBRID (${liveBoxes.size} lottie layer(s) rastered on the main thread, one request in flight)`
+        ? `HYBRID (${liveBoxes.size} live layer(s) drawn on the main thread, one request in flight)`
         : 'fully worker-side (decode, composite, encode and mux all off the main thread)'}`);
       try {
         const blob = await renderSequenceInWorker(job, pick, bitrate, audioPick,
@@ -2622,10 +2626,60 @@ async function renderSequenceAuthored(
   }
 }
 
-// ── the live (lottie) raster, the one thing the worker cannot do ────────────
+// ── the live raster, the one thing the worker cannot do ────────────────────
 
 /** The slice of a lottie-web player the exporter scrubs. */
 interface LottieScrubber { goToAndStop?(v: number, isFrame?: boolean): void; frameRate?: number }
+
+/** The box's own size in stage-native px, measured exactly as `rasterBox` measures it. */
+function boxNativeSize(el: HTMLElement, size: { w: number; h: number } | null): { w: number; h: number } {
+  if (size && size.w > 0 && size.h > 0) return size;
+  return {
+    w: Math.max(1, parseFloat(el.style.width) || el.offsetWidth || 1),
+    h: Math.max(1, parseFloat(el.style.height) || el.offsetHeight || 1),
+  };
+}
+
+/**
+ * One frame of a 3D scene box, as a plate (plan 265 milestone 3, decision Q19).
+ *
+ * A scene's picture does not come from the DOM at all: it is rendered through the studio
+ * pool at this moment and handed back as an ImageBitmap. Decision Q19 makes that the ONE
+ * path for every export - still, video, batch and pages - because the browser lends about
+ * sixteen WebGL contexts and a document may hold twenty scenes, so nothing may depend on a
+ * live canvas being mounted, let alone on being in the right state at the right frame.
+ *
+ * `pad` is the capture margin the layer's static plates were shot with (plans/104 section
+ * 5.5). The compositor draws a plate with its origin at (-pad, -pad) in box space, so when
+ * there is a margin the scene is drawn INSIDE one rather than stretched across it; with no
+ * margin - which is every scene box carrying no blur or shadow - the bitmap goes straight
+ * through and nothing is copied.
+ *
+ * The studio module is reached with an `await import()` so a sequence with no scene box
+ * loads no three.js.
+ */
+async function sceneLivePlate(
+  marker: Element,
+  box: HTMLElement,
+  size: { w: number; h: number } | null,
+  sourceSec: number,
+  S: number,
+  pad: number,
+): Promise<CanvasImageSource | null> {
+  const { w, h } = boxNativeSize(box, size);
+  const seconds = Number((marker as HTMLElement).dataset?.sceneSeconds);
+  const frame = plateShotFrame(w, h, S, pad);
+  const { designSceneFrame } = await import('./export-design-scenes.ts');
+  return await designSceneFrame(marker, {
+    width: Math.max(1, Math.round(w * S)),
+    height: Math.max(1, Math.round(h * S)),
+    time: designSceneTime(sourceSec * 1000, Number.isFinite(seconds) ? seconds : 0),
+    // The margin is expressed as the finished plate's own size and the inset the scene sits
+    // at inside it, measured HERE with `plateShotFrame` so a scene plate and a photographed
+    // one can never disagree about how big a padded plate is.
+    plate: pad > 0 ? { width: frame.width, height: frame.height, inset: Math.round(pad * S) } : null,
+  });
+}
 
 /**
  * Build the per-frame live-raster function, or `undefined` when no layer needs one.
@@ -2656,7 +2710,7 @@ function makeLiveRaster(
   // Keyed by layer AND slot: a video layer's two plates are two different pictures of
   // the same box (opaque with the media hidden, then transparent), so one memo slot per
   // layer would answer the `over` request with the `under` shot.
-  const memo = new Map<string, { key: number; shot: HTMLCanvasElement }>();
+  const memo = new Map<string, { key: number; shot: CanvasImageSource }>();
   return async (layerIdx, frameIndex, sourceSec, slot = 'under') => {
     const entry = boxes.get(layerIdx);
     if (!entry) return null;
@@ -2664,6 +2718,24 @@ function makeLiveRaster(
     const size = sizeAt(layerIdx, frameIndex);
     let key: number;
     let slideHide: Element[] = [];
+    // A 3D scene box is answered first and by a different route: its picture is rendered,
+    // not photographed, so none of the DOM handling below applies to it. The memo key is
+    // the moment (to the millisecond) and the size, which is the whole of what changes it -
+    // the recipe cannot move during a render, and each layer already has its own slot.
+    const scene = entry.box.matches?.('[data-lolly-scene]')
+      ? entry.box
+      : entry.box.querySelector?.('[data-lolly-scene]');
+    if (scene) {
+      const { w, h } = boxNativeSize(entry.box, size);
+      key = Math.round(sourceSec * 1000) * 65537 + Math.round(w * 100) + Math.round(h * 100) * 4093;
+      const held = memo.get(memoKey);
+      if (held && held.key === key) return held.shot;
+      const drawn = await sceneLivePlate(scene, entry.box, size, sourceSec, scaleOf(layerIdx), padOf(layerIdx));
+      if (!drawn) return held?.shot ?? null;
+      if (held?.shot instanceof ImageBitmap) held.shot.close();
+      memo.set(memoKey, { key, shot: drawn });
+      return drawn;
+    }
     if (entry.marker) {
       const player = lottiePlayerFor(entry.marker) as LottieScrubber | null;
       if (!player?.goToAndStop) return null;

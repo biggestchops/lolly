@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Aktualizováno ze studia.",
   "Using {name}.": "Používá se {name}.",
   "{count} controls you changed stay yours.": "{count} upravených nastavení zůstává zachováno.",
-  "{name} has been saved again since this document took its look.": "{name} bylo znovu uloženo od chvíle, kdy tento dokument převzal svůj vzhled."
+  "{name} has been saved again since this document took its look.": "{name} bylo znovu uloženo od chvíle, kdy tento dokument převzal svůj vzhled.",
+  "3D scene": "3D scéna",
+  "Arrangement": "Uspořádání",
+  "Artwork": "Grafika",
+  "Collection": "Kolekce",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Přetáhni na plátno, kam chceš umístit 3D scénu, pak ji uprav ve studiu.",
+  "Edit in 3D Studio": "Upravit ve 3D Studiu",
+  "Empty scene": "Prázdná scéna",
+  "Lighting studio": "Světelné studio",
+  "Scene": "Scéna",
+  "Studio defaults": "Výchozí hodnoty studia",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio se nepodařilo načíst, takže tuhle scénu tady nelze upravit.",
+  "This scene could not be drawn.": "Tuhle scénu se nepodařilo vykreslit.",
+  "one of your uploads": "jeden z tvých nahraných souborů"
 }

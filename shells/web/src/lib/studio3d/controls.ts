@@ -11,7 +11,11 @@ import {
   studioFocusEdit,
   type StudioValues,
 } from '../../../../../engine/src/studio3d-collection.ts';
-import { studioAddCameraKey } from '../../../../../engine/src/studio3d-camera-path.ts';
+import {
+  studioAddCameraKey,
+  studioCameraFromKey,
+  studioCameraKeyLabel,
+} from '../../../../../engine/src/studio3d-camera-path.ts';
 import {
   studioLightEdit,
   studioOrbitLight,
@@ -38,7 +42,7 @@ export interface StudioControls {
   selectedLight?: number;
   render(quality: 'preview'): void;
 }
-const FOCUSABLE = ['fit', 'fit-selected', 'reset', 'focus', 'auto-focus', 'move', 'lights', 'orbit', 'add', 'add-key', 'play'];
+const FOCUSABLE = ['fit', 'fit-selected', 'reset', 'focus', 'auto-focus', 'move', 'lights', 'orbit', 'add', 'add-key', 'go-key', 'play'];
 
 function commit(entry: StudioControls, ...edits: { id: string; value: unknown }[]): void {
   const focused = document.activeElement;
@@ -491,6 +495,26 @@ export function syncStudioControls(entry: StudioControls): void {
       count >= 2
         ? `Key ${count} saved. Play path shows the move; export as video or GIF to keep it.`
         : 'First key saved. Orbit to the next view and add another key.'
+    );
+  });
+  // Each press shows the next saved key, wrapping at the end, so a view already in the
+  // path can be recalled and composed from. It moves the camera and nothing else.
+  button('[data-studio-go-key]', () => {
+    const rows = Array.isArray(entry.inputValues.cameraKeys)
+      ? (entry.inputValues.cameraKeys as StudioValues[])
+      : [];
+    if (!rows.length) throw new Error('Add a camera key first.');
+    const last = Number(entry.canvas.dataset.cameraKey);
+    const next = Number.isInteger(last) && last >= 0 ? (last + 1) % rows.length : 0;
+    entry.canvas.dataset.cameraKey = String(next);
+    commit(entry, ...studioCameraFromKey(entry.inputValues, next));
+    note(
+      entry,
+      `${studioCameraKeyLabel(entry.inputValues, next)}.${
+        entry.inputValues.cameraMotion === 'keys' && rows.length >= 2
+          ? ' Turn Play path off to hold this view.'
+          : ''
+      }`
     );
   });
   button('[data-studio-play]', () =>

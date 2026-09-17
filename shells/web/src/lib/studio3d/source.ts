@@ -490,6 +490,16 @@ export async function loadStudioSource(
       size = bounds.getSize(new THREE.Vector3()),
       span = Math.max(size.x, size.y, size.z);
     if (!Number.isFinite(span) || span < 1e-9) throw new Error('The model has no measurable size.');
+    // What the file itself measures, kept before the longest side is scaled to 3.25. Only a
+    // model file has units of its own to report: artwork, words and the built-in shapes are
+    // drawn to fit, so a size in their own space would mean nothing to the reader.
+    if (scene.source.kind === 'glb' || scene.source.kind === 'stl') {
+      info.bounds = { x: size.x, y: size.y, z: size.z, span };
+      const units = (value: number) => Math.round(value * 100) / 100;
+      info.warnings.push(
+        `Model spans ${units(size.x)} by ${units(size.y)} by ${units(size.z)} units in its file; shown at 3.25 studio units.`
+      );
+    }
     if (
       scene.source.kind !== 'svg' &&
       !(scene.source.kind === 'primitive' && scene.source.primitive === 'badge')

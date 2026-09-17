@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Đã cập nhật từ studio.",
   "Using {name}.": "Đang dùng {name}.",
   "{count} controls you changed stay yours.": "{count} điều khiển bạn đã thay đổi vẫn được giữ nguyên.",
-  "{name} has been saved again since this document took its look.": "{name} đã được lưu lại kể từ khi tài liệu này áp dụng vẻ ngoài đó."
+  "{name} has been saved again since this document took its look.": "{name} đã được lưu lại kể từ khi tài liệu này áp dụng vẻ ngoài đó.",
+  "3D scene": "Cảnh 3D",
+  "Arrangement": "Sắp xếp",
+  "Artwork": "Hình minh họa",
+  "Collection": "Bộ sưu tập",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Kéo trên canvas để đặt một cảnh 3D, rồi chỉnh sửa nó trong studio.",
+  "Edit in 3D Studio": "Chỉnh sửa trong 3D Studio",
+  "Empty scene": "Cảnh trống",
+  "Lighting studio": "Studio ánh sáng",
+  "Scene": "Cảnh",
+  "Studio defaults": "Mặc định của studio",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "Không tải được 3D Studio nên không thể chỉnh sửa cảnh này ở đây.",
+  "This scene could not be drawn.": "Không vẽ được cảnh này.",
+  "one of your uploads": "một trong các tệp bạn tải lên"
 }

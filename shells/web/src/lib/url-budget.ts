@@ -220,6 +220,18 @@ export function encodeModelParam(input: InputModelItem): EncodedModelParam[] {
 
   if (type === 'blocks') {
     if (!Array.isArray(value) || value.length === 0) return [row({ status: 'default' })];
+    // A blocks SUB-FIELD is never costed or capped on its own: the whole value is one
+    // param, so a long machine-written field rides with it. That is what carries a
+    // Design box's `path`, its `kf` track and (plan 265 milestone 3) a 3D scene box's
+    // `scene` - the 3D Studio's settings as a link query - into a share link intact.
+    // SCALAR_CAP is about top-level single-line inputs and reaches none of them.
+    //
+    // ONE thing a sub-field does not get from this branch: the user/ policy below is
+    // applied by encodeBlocksCompact per FIELD TYPE, so an `asset` sub-field is blanked
+    // but a device-local id written inside a longtext `scene` query still travels. Worth
+    // closing, and not silently: it needs a decision about how a shared scene should
+    // degrade, so it is recorded here rather than patched in passing.
+    //
     // Share policy: encodeBlocksCompact WITHOUT keepUserIds (never export user/ ids
     // off-device); JSON fallback only when there are no declared fields.
     const compact = encodeBlocksCompact(value, input.fields ?? []);

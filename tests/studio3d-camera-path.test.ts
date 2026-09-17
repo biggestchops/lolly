@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { JSDOM } from 'jsdom';
 import { loadTool } from '../engine/src/loader.ts';
 import { createRuntime } from '../engine/src/runtime.ts';
 import {
   STUDIO_CAMERA_KEY_LIMIT,
   studioAddCameraKey,
   studioCameraFromKey,
+  studioCameraKeyLabel,
   studioCameraPose,
   studioCameraTravels,
   studioRestPose,
@@ -122,21 +124,120 @@ test('the live view becomes a key, keys are spaced evenly, and a key restores th
   );
 });
 
+test('a key name is the reader\'s own label, and a named key can be recalled by that name', () => {
+  const scene = buildStudioScene({
+    version: 1,
+    values: {
+      cameraMotion: 'keys',
+      cameraKeys: [
+        { ...keys[0], name: '  Hero  ' },
+        { ...keys[1], name: 'W'.repeat(60) },
+        keys[2],
+      ],
+    },
+  });
+  const path = scene.cameraMotion!.keys;
+  assert.equal(path[0]!.name, 'Hero', 'a name is trimmed');
+  assert.equal(path[1]!.name!.length, 40, 'a name is capped at 40 characters');
+  assert.equal('name' in path[2]!, false, 'an unnamed key carries no name at all');
+  // A path saved before naming existed evaluates to exactly the fields it always had.
+  const plain = buildStudioScene({ version: 1, values: { cameraMotion: 'keys', cameraKeys: keys } });
+  assert.deepEqual(Object.keys(plain.cameraMotion!.keys[0]!).sort(), [
+    'at',
+    'azimuth',
+    'elevation',
+    'focus',
+    'fov',
+    'target',
+    'zoom',
+  ]);
+  assert.deepEqual(studioCameraPose(scene, 0.25), studioCameraPose(plain, 0.25), 'names do not move the camera');
+
+  const values = {
+    camera: { azimuth: 40, elevation: 20, fov: 35, zoom: 0.9, panX: 0, panY: 0, panZ: 0 },
+    target: { x: 0, y: 1.6, z: 0 },
+    cameraKeys: [{ ...keys[0], name: 'Hero' }, keys[1]],
+  };
+  assert.deepEqual(studioCameraFromKey(values, 'hero'), studioCameraFromKey(values, 0), 'letter case does not matter');
+  assert.throws(() => studioCameraFromKey(values, 'Nowhere'), /does not exist/);
+  assert.throws(() => studioCameraFromKey(values, '   '), /does not exist/, 'an empty name matches no key');
+  assert.equal(studioCameraKeyLabel(values, 0), 'Key 1 of 2: Hero');
+  assert.equal(studioCameraKeyLabel(values, 1), 'Key 2 of 2');
+});
+
+/**
+ * Go to key, the preview's own control, on the real hydrated template: each press asks
+ * the shell for the next key's view and says which key that is. The renderer is a stub,
+ * because the button only reads values and writes inputs (plan 265 milestone 3, F2).
+ */
+test('Go to key steps through the saved views and names the one it reached', async () => {
+  const tool = await loadTool('3d-studio', (p) => readFile(join('community', p), 'utf8'));
+  const runtime = await createRuntime(tool, baseHost(), {
+    cameraMotion: 'keys',
+    cameraKeys: [{ ...keys[0]!, name: 'Hero' }, keys[1]!],
+  });
+  const { window } = new JSDOM(`<body>${runtime.getHydrated()}</body>`);
+  const previous = globalThis.document;
+  globalThis.document = window.document;
+  try {
+    const { syncStudioControls } = await import('../shells/web/src/lib/studio3d/controls.ts');
+    const marker = window.document.querySelector('[data-lolly-studio]')!;
+    const values = {
+      cameraMotion: 'keys',
+      cameraKeys: [{ ...keys[0], name: 'Hero' }, keys[1]],
+      camera: {},
+      target: { x: 0, y: 1.6, z: 0 },
+    };
+    const edits: { id: string; value: unknown }[] = [];
+    const entry = {
+      canvas: window.document.createElement('canvas'),
+      marker,
+      handle: { highlight() {}, showLightHandles() {}, fit: () => null },
+      ready: true,
+      recipe: buildStudioScene({ version: 1, values }),
+      inputValues: values,
+      inputCamera: {},
+      options: { setInput: (id: string, value: unknown) => edits.push({ id, value }) },
+      render() {},
+    };
+    syncStudioControls(entry as never);
+    const go = marker.querySelector('[data-studio-go-key]') as HTMLButtonElement;
+    const note = () => marker.querySelector('[data-studio-camera-note]')?.textContent;
+    assert.ok(go, 'the camera path group offers Go to key');
+    assert.equal(go.disabled, false);
+    go.click();
+    assert.deepEqual(edits, studioCameraFromKey(values, 0));
+    assert.equal(note(), 'Key 1 of 2: Hero. Turn Play path off to hold this view.');
+    edits.length = 0;
+    go.click();
+    assert.deepEqual(edits, studioCameraFromKey(values, 1));
+    assert.equal(note(), 'Key 2 of 2. Turn Play path off to hold this view.');
+    edits.length = 0;
+    go.click();
+    assert.deepEqual(edits, studioCameraFromKey(values, 0), 'the last key wraps round to the first');
+  } finally {
+    globalThis.document = previous;
+    runtime.destroy();
+  }
+});
+
 test('the real tool carries a camera path through URL mode and reports the clip length', async () => {
   const tool = await loadTool('3d-studio', (p) => readFile(join('community', p), 'utf8'));
   const host = baseHost();
   const runtime = await createRuntime(tool, host, {
     cameraMotion: 'keys',
-    cameraKeys: keys,
+    cameraKeys: keys.map((key, i) => (i === 1 ? { ...key, name: 'Hero shot' } : key)),
     duration: 6,
   });
   assert.match(runtime.getHydrated(), /data-clip-ms="6000"/);
   assert.match(runtime.getHydrated(), /data-studio-play aria-pressed="true"/);
+  assert.match(runtime.getHydrated(), /data-studio-go-key/);
   const parsed = parseUrlState(serializeUrlState(runtime.getModel()), tool.manifest);
   const reopened = await createRuntime(tool, host, parsed.values);
   const values = Object.fromEntries(reopened.getModel().map((i) => [i.id, i.value]));
   const scene = buildStudioScene({ version: 1, values });
   assert.equal(scene.cameraMotion?.keys.length, 3);
+  assert.equal(scene.cameraMotion?.keys[1]?.name, 'Hero shot', 'a key name travels in the link');
   assert.equal(studioCameraPose(scene, 0.5).azimuth, 90);
   await reopened.setInput('cameraMotion', 'still');
   assert.match(reopened.getHydrated(), /data-clip-ms="0"/);

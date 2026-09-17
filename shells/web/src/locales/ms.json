@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Dikemas kini daripada studio.",
   "Using {name}.": "Menggunakan {name}.",
   "{count} controls you changed stay yours.": "{count} kawalan yang anda ubah kekal milik anda.",
-  "{name} has been saved again since this document took its look.": "{name} telah disimpan semula sejak dokumen ini mengambil rupanya."
+  "{name} has been saved again since this document took its look.": "{name} telah disimpan semula sejak dokumen ini mengambil rupanya.",
+  "3D scene": "Adegan 3D",
+  "Arrangement": "Susunan",
+  "Artwork": "Karya seni",
+  "Collection": "Koleksi",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Seret pada kanvas untuk meletakkan adegan 3D, kemudian suntingnya dalam studio.",
+  "Edit in 3D Studio": "Sunting dalam 3D Studio",
+  "Empty scene": "Adegan kosong",
+  "Lighting studio": "Studio pencahayaan",
+  "Scene": "Adegan",
+  "Studio defaults": "Lalai studio",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio tidak dapat dimuatkan, jadi adegan ini tidak boleh disunting di sini.",
+  "This scene could not be drawn.": "Adegan ini tidak dapat dilukis.",
+  "one of your uploads": "salah satu muat naik anda"
 }

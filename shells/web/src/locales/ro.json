@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Actualizat din studio.",
   "Using {name}.": "Se folosește {name}.",
   "{count} controls you changed stay yours.": "{count} controale pe care le-ai schimbat rămân ale tale.",
-  "{name} has been saved again since this document took its look.": "{name} a fost salvat din nou de când acest document și-a preluat aspectul."
+  "{name} has been saved again since this document took its look.": "{name} a fost salvat din nou de când acest document și-a preluat aspectul.",
+  "3D scene": "Scenă 3D",
+  "Arrangement": "Aranjament",
+  "Artwork": "Grafică",
+  "Collection": "Colecție",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Trage pe canvas pentru a plasa o scenă 3D, apoi editeaz-o în studio.",
+  "Edit in 3D Studio": "Editează în 3D Studio",
+  "Empty scene": "Scenă goală",
+  "Lighting studio": "Studio de iluminare",
+  "Scene": "Scenă",
+  "Studio defaults": "Valorile implicite ale studioului",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio nu a putut fi încărcat, așa că această scenă nu poate fi editată aici.",
+  "This scene could not be drawn.": "Această scenă nu a putut fi desenată.",
+  "one of your uploads": "una dintre încărcările tale"
 }

@@ -96,7 +96,15 @@ function walkStudioFree(
   return { modules: [...seen].map(name).sort(), offenders };
 }
 
-for (const entry of ['main.ts', join('views', 'tool.ts')]) {
+for (const entry of [
+  'main.ts',
+  join('views', 'tool.ts'),
+  // The Design views (plan 265 milestone 3). A scene box is the only reason a Design
+  // document loads three.js, so lib/design-scene-mount.ts and everything under
+  // lib/studio3d/ are reached with an import() at the use site, gated on a scene marker.
+  join('views', 'free-canvas.ts'),
+  join('views', 'design-inspector.ts'),
+]) {
   test(`the static import graph from ${entry} reaches neither three nor lib/studio3d/`, () => {
     const { modules, offenders } = walkStudioFree(join(SRC, entry));
     assert.ok(modules.length > 20, `the walk found ${modules.length} modules; did the entry or the resolver move?`);

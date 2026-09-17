@@ -1,0 +1,90 @@
+{
+  "id": "lane",
+  "name": "Sequence lane: a badge turning",
+  "description": "A sequence-lane document. The 3D box starts at 0.5 s and runs for 3 s beside a timed caption and a procedural music bed, and its scene turns a badge over 4 s. The public brand catalog has no video asset, so there is no video box here.",
+  "boxes": [
+    {
+      "id": "scene1",
+      "name": "Scene 1",
+      "kind": "frame",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "bg": "var(--brand-primary, #1e293b)",
+      "clipChildren": true,
+      "order": 0
+    },
+    {
+      "id": "caption",
+      "name": "Caption",
+      "kind": "text",
+      "frame": "scene1",
+      "x": 160,
+      "y": 760,
+      "w": 1120,
+      "h": 160,
+      "text": "A badge, turning",
+      "fg": "var(--brand-on-primary, #ffffff)",
+      "fontSize": 72,
+      "align": "left",
+      "valign": "top",
+      "weight": "700",
+      "lane": "seq",
+      "start": 0,
+      "dur": 4,
+      "order": 1
+    },
+    {
+      "id": "badge",
+      "name": "Badge scene",
+      "kind": "3d",
+      "frame": "scene1",
+      "x": 1120,
+      "y": 220,
+      "w": 640,
+      "h": 640,
+      "lane": "seq",
+      "start": 0.5,
+      "dur": 3,
+      "scene": "motion=turntable&duration=4",
+      "order": 2
+    },
+    {
+      "id": "bed",
+      "name": "Music bed",
+      "kind": "audio",
+      "frame": "scene1",
+      "x": 0,
+      "y": 940,
+      "w": 320,
+      "h": 120,
+      "bg": "transparent",
+      "image": "zzfxm:20260807",
+      "lane": "seq",
+      "start": 0,
+      "dur": 4,
+      "mute": false,
+      "order": 3
+    }
+  ],
+  "scenes": [
+    {
+      "boxId": "badge",
+      "values": {
+        "source": "primitive",
+        "primitive": "badge",
+        "motion": "turntable",
+        "duration": 4
+      },
+      "scene": "motion=turntable&duration=4",
+      "sceneFull": "source=primitive&primitive=badge&motion=turntable&duration=4"
+    }
+  ],
+  "assetIds": [
+    "zzfxm:20260807"
+  ],
+  "query": "background=%7Bcolor.semantic.surface%7D&documentUnit=px&documentDpi=300&transition=slide&autoAdvance=0&narrationSpeed=1&narrationLeadInMs=400&narrationTailMs=600&showCaptionsWhenPresenting=0&boxes=scene1%2Cframe%2C0%2C0%2C1920%2C1080%2C0%2Crect%2C16%2Cvar%28--brand-primary%252C%2520%25231e293b%29%2C100%2C%2Ccontain%2Cnormal%2C%2C%257Bcolor.semantic.text%257D%2C48%2Ccenter%2Cmiddle%2C500%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C%2C%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2C%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2C%2C0%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CScene%25201%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse%7Ecaption%2Ctext%2C160%2C760%2C1120%2C160%2C0%2Crect%2C16%2C%2C100%2C%2Ccontain%2Cnormal%2CA%2520badge%252C%2520turning%2Cvar%28--brand-on-primary%252C%2520%2523ffffff%29%2C72%2Cleft%2Ctop%2C700%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C0%2C4%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2Cseq%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2Cscene1%2C1%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CCaption%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse%7Ebadge%2C3d%2C1120%2C220%2C640%2C640%2C0%2Crect%2C16%2C%2C100%2C%2Ccontain%2Cnormal%2C%2C%257Bcolor.semantic.text%257D%2C48%2Ccenter%2Cmiddle%2C500%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C0.5%2C3%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2Cseq%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2Cscene1%2C2%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CBadge%2520scene%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse%2Cmotion%253Dturntable%2526duration%253D4%7Ebed%2Caudio%2C0%2C940%2C320%2C120%2C0%2Crect%2C16%2Ctransparent%2C100%2Czzfxm%253A20260807%2Ccontain%2Cnormal%2C%2C%257Bcolor.semantic.text%257D%2C48%2Ccenter%2Cmiddle%2C500%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C0%2C4%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2Cseq%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2Cscene1%2C3%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CMusic%2520bed%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse&transparentBg=1&convertPaths=1",
+  "packed": "z=13ZVNj9owEIZ_jXNbZDsQ4JADmB4qFWmlbdWziQewmoxT26GUX1_Z4SMpW62QYKs2UsbJTPzOOH5sr2TxbWNNgyon43lhSmMHDiqJXhcD19i1LICMF4kyRVMB-i-ofV7vz--LWucppYm3Ep322mDuSq0gkY03M7WTWEBOE5TWyhB9qQFUzi6OTyDVR1y6fEg7n32Wuly6PKM0cVvzQ8g6eN3XLeCzBQfoNW5ymqzMHlzuCkBghIu1lRUQLujxZlMeGzo5eSwUPngywsVOWsInT08rK1E91VZX0v4kfMRFMDSYlAGfpivCp1EmKBAuCoNeaiRcoLGVLFsv4aOrP-hh74N_QbgYTkJXQA-WcFFppcpQ6yiqOokupBgwfqzU2yaE17J0cEogJjEnxjHGazTqDpd2M_R70rbnAazp-dhF8dgMY0Gt7WtETjptJ_Xp7mkfh9CXv1Lt9bwKdXydWKj6Jcx6nCnWD2YXOfab1Buy7eP4Q9HyFoYQJ1CwqDmOlrEWquw1pt7AZBbrXUm1gQtovrGocXNFpME_QLmOVwvlOPBSwjpU4E0dPH8DqIjMTUg5-H4jVedlzh7OljgDcFeujhMvUnXhiEebDS_2Rqb-sa2HDkK_9L1Y4Q9nZX5azdS1O9I9meGiMi2Jo3QRNgovV2XMlqmmPStjaBjogvBLZKP0aUVOI09pu1_x19iK53YtLaA_Y3Y4rPdVUJ1xyjM6oeP_A7z33KLSh2O3bJwu2uMkzvv9oEs6UMw3OUsKgzuw_ln6rcvZLw",
+  "sceneFieldFromManifest": true
+}

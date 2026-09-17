@@ -14,6 +14,9 @@ import type { OutlineGroup } from '../outline-text.ts';
 import type { MatteHost, MatteSource } from '../matte-dialog.ts';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import type { InputValue } from '../../../../../engine/src/inputs.ts';
+import { designSceneDecode, designSceneEncode } from '../../../../../engine/src/design-scene.ts';
+import { buildEmbedUrl, parseToolUrl } from '../../../../../engine/src/tool-url.ts';
+import { ensureSceneManifest, setSceneManifest, SCENE_TOOL_ID } from '../../bridge/asset-dependencies.ts';
 import { announce } from '../../a11y.ts';
 import { t } from '../../i18n.ts';
 import { boolOf } from './shared.ts';
@@ -99,6 +102,91 @@ export async function pickImage(fc: FcCtx, pickOpts?: {
   } catch {
     /* user cancelled */
   }
+}
+
+/** The tool a scene box is edited in, and the still format its editor previews with. */
+export const STUDIO_TOOL_ID = SCENE_TOOL_ID;
+const STUDIO_PREVIEW_FORMAT = 'png';
+/** The box field a scene lives in. Named literally, like `notes` and `cls`: the Design
+ *  manifest declares `scene` as machine-written, so it has no `canvas` key of its own. */
+export const SCENE_FIELD = 'scene';
+
+/**
+ * EDIT A 3D SCENE BOX (plan 265 milestone 3, D3) - the only door a scene box has.
+ *
+ * A `kind: '3d'` box stores its scene as the 3D Studio's own readable query with every
+ * value that matches a studio default left out (`engine/src/design-scene.ts`). So
+ * "edit this scene" is exactly the tool-link round trip `pickImage` above already runs
+ * for an image box filled by a Lolly render: mint the studio's embed URL from the field,
+ * hand it to `editTool` - the same overlay the picker's "from <tool>" badge opens, with
+ * the studio's own inputs and a live preview - and read the edited link back.
+ *
+ * Three things are deliberate.
+ *
+ * The manifest is read BEFORE the door opens. What comes back is a canonical embed URL
+ * whose query is EXPANDED - every input, defaults included, about 2.5 KB - and only the
+ * manifest can say which of those are defaults. Opening an editor whose answer could not
+ * be stored would throw the work away at the last step, so a studio that will not load
+ * is reported before anything is edited rather than after. It is the SAME registered
+ * manifest the two asset walkers read (`bridge/asset-dependencies.ts`), which the canvas
+ * mount primes from the first scene it draws; the loader below is the fallback for a door
+ * reached before any scene painted, and it primes that registry in turn, so a `.lolly`
+ * packed afterwards carries the scene's uploads.
+ *
+ * Cancelling writes nothing. Every dismissal resolves null, and the picker's own cancel
+ * path rejects, so both land on the same silent return.
+ *
+ * The write is one `setFieldOn`, which is one commit and so one undo step - the promise
+ * every other door in this editor makes.
+ */
+export async function openStudio(fc: FcCtx, ids: readonly string[]): Promise<void> {
+  const { editTool } = fc;
+  const id = ids[0];
+  if (!editTool || !id) return;
+  const boxes = fc.select.getBoxes();
+  const box = boxes[fc.select.indexOfId(boxes, id)];
+  if (!box) return;
+
+  const manifest = (await ensureSceneManifest()) ?? (await import('../../bridge/tool-loader.ts')
+    .then(({ getTool }) => getTool(STUDIO_TOOL_ID))
+    .then((tool) => { setSceneManifest(tool.manifest); return tool.manifest; })
+    .catch(() => null));
+  if (!manifest) {
+    announce(t('The 3D Studio could not be loaded, so this scene cannot be edited here.'));
+    console.warn(`openStudio: ${STUDIO_TOOL_ID} did not load`);
+    return;
+  }
+
+  const url = buildEmbedUrl({
+    toolId: STUDIO_TOOL_ID,
+    format: STUDIO_PREVIEW_FORMAT,
+    query: String(box[SCENE_FIELD] ?? ''),
+  });
+  if (!url) return;
+
+  let edited: Awaited<ReturnType<typeof editTool>> = null;
+  try {
+    edited = await editTool(url, 'edit');
+  } catch {
+    return; // cancelled
+  }
+  if (!edited) return; // cancelled
+
+  // The asset the editor hands back carries its source link as `meta.toolUrl`, which is
+  // also its id (bridge/compose.ts mints one from the other). The picture itself is
+  // thrown away here: a scene box paints through the renderer, so the query is the whole
+  // point of the trip.
+  const meta = edited.meta as { toolUrl?: unknown } | undefined;
+  const back = parseToolUrl(typeof meta?.toolUrl === 'string' ? meta.toolUrl : edited.id);
+  if (!back || back.toolId !== STUDIO_TOOL_ID) return;
+  // Back through the grammar, so the field holds something small and canonical: decode
+  // fills every input in (dropping the size params the embed URL carries), encode writes
+  // out only what differs from a studio default, with the user's own upload ids kept.
+  //
+  // Written to the ONE box the trip was opened on, never the rest of `ids`: one scene was
+  // edited, and stamping it across a multi-selection is not an edit anyone asked for.
+  fc.editorState.setFieldOn([id], SCENE_FIELD,
+    designSceneEncode(designSceneDecode(back.query, manifest), manifest));
 }
 // Cut the background out of the single selected image box on-device (host.matte)
 // and drop the cutout back over that box - the exact tail of pickImage, so the
@@ -663,6 +751,7 @@ export function applyFlip(fc: FcCtx, axis: 'h' | 'v'): void {
 export function objectsOps(fc: FcCtx) {
   return {
     pickImage: bindOp(fc, pickImage),
+    openStudio: bindOp(fc, openStudio),
     removeBackgroundOnSelection: bindOp(fc, removeBackgroundOnSelection),
     isOutlinableTextBox: bindOp(fc, isOutlinableTextBox),
     paintsBesidesText: bindOp(fc, paintsBesidesText),

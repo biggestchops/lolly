@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "স্টুডিও থেকে আপডেট করা হয়েছে।",
   "Using {name}.": "{name} ব্যবহার হচ্ছে।",
   "{count} controls you changed stay yours.": "আপনি যে {count}টি কন্ট্রোল পরিবর্তন করেছেন, সেগুলো আপনারই থেকে যায়।",
-  "{name} has been saved again since this document took its look.": "এই ডকুমেন্ট তার লুক নেওয়ার পর থেকে {name} আবার সেভ করা হয়েছে।"
+  "{name} has been saved again since this document took its look.": "এই ডকুমেন্ট তার লুক নেওয়ার পর থেকে {name} আবার সেভ করা হয়েছে।",
+  "3D scene": "3D দৃশ্য",
+  "Arrangement": "বিন্যাস",
+  "Artwork": "আর্টওয়ার্ক",
+  "Collection": "কালেকশন",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "3D দৃশ্য বসাতে ক্যানভাসে টেনে আনুন, তারপর সেটি স্টুডিওতে সম্পাদনা করুন।",
+  "Edit in 3D Studio": "3D Studio-তে সম্পাদনা করুন",
+  "Empty scene": "খালি দৃশ্য",
+  "Lighting studio": "আলোর স্টুডিও",
+  "Scene": "দৃশ্য",
+  "Studio defaults": "স্টুডিওর ডিফল্ট",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio লোড করা যায়নি, তাই এই দৃশ্য এখানে সম্পাদনা করা যাবে না।",
+  "This scene could not be drawn.": "এই দৃশ্য আঁকা যায়নি।",
+  "one of your uploads": "আপনার আপলোডগুলোর একটি"
 }

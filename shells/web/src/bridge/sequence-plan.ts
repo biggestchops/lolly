@@ -280,8 +280,13 @@ export interface SeqLayer {
    * `camera` is the plan-104 section 5.4 non-visual marker: a timeline citizen with no
    * picture at all, exactly like `audio`. It contributes no plate, no draw and no
    * pixel; it exists so a scene can carry a pose over time.
+   *
+   * `scene` is a Design 3D box (plan 265 milestone 3). It paints, and its picture comes
+   * from a studio renderer rather than from the DOM, so the compositor asks the main
+   * thread for one raster per frame the way it does for a mounted Lottie. Its source time
+   * is read like a video's: clip-in plus the local position times the speed.
    */
-  kind: 'static' | 'video' | 'lottie' | 'audio' | 'camera';
+  kind: 'static' | 'video' | 'lottie' | 'audio' | 'camera' | 'scene';
   /** Native px, straight off the inline style - the renderRecord read. */
   rect: { x: number; y: number; w: number; h: number; rot: number };
   /** Authored inline opacity, 0–1 (1 when unset). */
@@ -417,6 +422,12 @@ export function layerKind(el: HTMLElement): SeqLayer['kind'] {
   if (hasClass(el, 'lolly-box-audio') || el.querySelector?.('[data-audio-src]')) return 'audio';
   if (hasClass(el, 'lolly-box-lottie') || el.querySelector?.('[data-lottie-src]')) return 'lottie';
   if (el.querySelector?.('video') || hasClass(el, 'lolly-box-video')) return 'video';
+  // A 3D scene box (plan 265 milestone 3), before the static fallback. Detection is the
+  // marker the Design hook promises both evaluators, never the class name, and it is
+  // checked last among the media probes because a scene box holds nothing else: the
+  // poster `<img>` the host puts inside it would otherwise read as an ordinary picture and
+  // the box would freeze on frame one.
+  if (el.getAttribute?.('data-lolly-scene') != null || el.querySelector?.('[data-lolly-scene]')) return 'scene';
   return 'static';
 }
 

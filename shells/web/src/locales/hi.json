@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "स्टूडियो से अपडेट हो गया।",
   "Using {name}.": "{name} इस्तेमाल में है।",
   "{count} controls you changed stay yours.": "आपने बदले हुए {count} कंट्रोल आपके ही रहते हैं।",
-  "{name} has been saved again since this document took its look.": "इस दस्तावेज़ के अपना लुक लेने के बाद {name} को दोबारा सेव किया जा चुका है।"
+  "{name} has been saved again since this document took its look.": "इस दस्तावेज़ के अपना लुक लेने के बाद {name} को दोबारा सेव किया जा चुका है।",
+  "3D scene": "3D सीन",
+  "Arrangement": "अरेंजमेंट",
+  "Artwork": "आर्टवर्क",
+  "Collection": "कलेक्शन",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "3D सीन रखने के लिए कैनवास पर खींचें, फिर उसे स्टूडियो में एडिट करें।",
+  "Edit in 3D Studio": "3D Studio में एडिट करें",
+  "Empty scene": "खाली सीन",
+  "Lighting studio": "लाइटिंग स्टूडियो",
+  "Scene": "सीन",
+  "Studio defaults": "स्टूडियो डिफ़ॉल्ट",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio लोड नहीं हो सका, इसलिए यह सीन यहाँ एडिट नहीं किया जा सकता।",
+  "This scene could not be drawn.": "यह सीन बनाया नहीं जा सका।",
+  "one of your uploads": "आपके अपलोड में से एक"
 }

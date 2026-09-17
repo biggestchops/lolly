@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Bijgewerkt vanuit de studio.",
   "Using {name}.": "{name} wordt gebruikt.",
   "{count} controls you changed stay yours.": "{count} instellingen die je hebt gewijzigd, blijven behouden.",
-  "{name} has been saved again since this document took its look.": "{name} is opnieuw opgeslagen sinds dit document zijn look overnam."
+  "{name} has been saved again since this document took its look.": "{name} is opnieuw opgeslagen sinds dit document zijn look overnam.",
+  "3D scene": "3D-scène",
+  "Arrangement": "Opstelling",
+  "Artwork": "Illustratie",
+  "Collection": "Collectie",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Sleep op het canvas om een 3D-scène te plaatsen en bewerk die dan in de studio.",
+  "Edit in 3D Studio": "Bewerken in 3D Studio",
+  "Empty scene": "Lege scène",
+  "Lighting studio": "Lichtstudio",
+  "Scene": "Scène",
+  "Studio defaults": "Standaardwaarden van de studio",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio kon niet worden geladen, dus deze scène kan hier niet worden bewerkt.",
+  "This scene could not be drawn.": "Deze scène kon niet worden getekend.",
+  "one of your uploads": "een van je uploads"
 }

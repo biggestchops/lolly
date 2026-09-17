@@ -1,0 +1,79 @@
+{
+  "id": "still",
+  "name": "Still: a text scene beside a logo",
+  "description": "One artboard with a text box, a catalog logo and one 3D box. The scene is two words under the dramatic studio, which is the studio default, so the canonical query carries only the source and the words.",
+  "boxes": [
+    {
+      "id": "board",
+      "name": "Board",
+      "kind": "frame",
+      "x": 0,
+      "y": 0,
+      "w": 1920,
+      "h": 1080,
+      "bg": "var(--brand-surface, #ffffff)",
+      "clipChildren": true,
+      "order": 0
+    },
+    {
+      "id": "headline",
+      "name": "Headline",
+      "kind": "text",
+      "frame": "board",
+      "x": 96,
+      "y": 140,
+      "w": 900,
+      "h": 240,
+      "text": "Lolly tools",
+      "fg": "var(--brand-text, #0f172a)",
+      "fontSize": 96,
+      "align": "left",
+      "valign": "top",
+      "weight": "700",
+      "order": 1
+    },
+    {
+      "id": "logo",
+      "name": "Logo",
+      "kind": "image",
+      "frame": "board",
+      "x": 96,
+      "y": 470,
+      "w": 320,
+      "h": 120,
+      "image": "lolly/logo/primary",
+      "fit": "contain",
+      "order": 2
+    },
+    {
+      "id": "hero",
+      "name": "Hero scene",
+      "kind": "3d",
+      "frame": "board",
+      "x": 1120,
+      "y": 220,
+      "w": 640,
+      "h": 640,
+      "scene": "source=text&words=Lolly+tools",
+      "order": 3
+    }
+  ],
+  "scenes": [
+    {
+      "boxId": "hero",
+      "values": {
+        "source": "text",
+        "words": "Lolly tools",
+        "studio": "dramatic"
+      },
+      "scene": "source=text&words=Lolly+tools",
+      "sceneFull": "source=text&words=Lolly+tools&studio=dramatic"
+    }
+  ],
+  "assetIds": [
+    "lolly/logo/primary"
+  ],
+  "query": "background=%7Bcolor.semantic.surface%7D&documentUnit=px&documentDpi=300&transition=slide&autoAdvance=0&narrationSpeed=1&narrationLeadInMs=400&narrationTailMs=600&showCaptionsWhenPresenting=0&boxes=board%2Cframe%2C0%2C0%2C1920%2C1080%2C0%2Crect%2C16%2Cvar%28--brand-surface%252C%2520%2523ffffff%29%2C100%2C%2Ccontain%2Cnormal%2C%2C%257Bcolor.semantic.text%257D%2C48%2Ccenter%2Cmiddle%2C500%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C%2C%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2C%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2C%2C0%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CBoard%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse%7Eheadline%2Ctext%2C96%2C140%2C900%2C240%2C0%2Crect%2C16%2C%2C100%2C%2Ccontain%2Cnormal%2CLolly%2520tools%2Cvar%28--brand-text%252C%2520%25230f172a%29%2C96%2Cleft%2Ctop%2C700%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C%2C%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2C%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2Cboard%2C1%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CHeadline%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse%7Elogo%2Cimage%2C96%2C470%2C320%2C120%2C0%2Crect%2C16%2C%2C100%2Clolly%252Flogo%252Fprimary%2Ccontain%2Cnormal%2C%2C%257Bcolor.semantic.text%257D%2C48%2Ccenter%2Cmiddle%2C500%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C%2C%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2C%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2Cboard%2C2%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CLogo%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse%7Ehero%2C3d%2C1120%2C220%2C640%2C640%2C0%2Crect%2C16%2C%2C100%2C%2Ccontain%2Cnormal%2C%2C%257Bcolor.semantic.text%257D%2C48%2Ccenter%2Cmiddle%2C500%2Csans%2C1.12%2C0%2Ctrue%2Cfalse%2C%2C%2C8%2Cnone%2C00000055%2C0%2C0%2C10%2Ccenter%2Cfalse%2C%2C%2C0%2Cnonzero%2C%2C%2C0%2C1%2Cnone%2Cnone%2C400%2C400%2Cfalse%2C%2C%2Cround%2Cround%2C%2C0%2C0%2C0%2C0%2C%2C%2Cboard%2C3%2Ctrue%2Cnone%2Cnone%2C%2Cfalse%2C%2C%2C%2C0%2C%2C%2Cfalse%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2C1%2CHero%2520scene%2Cfalse%2C%2C60%2C%2C%2C1%2C%2C%2C%2C%2C%2C%2C%2C%2Cfalse%2Cfalse%2C%2Cfalse%2Csource%253Dtext%2526words%253DLolly%252Btools&transparentBg=1&convertPaths=1",
+  "packed": "z=17VZRb5swEP415q2RMRCSBx4WZ9UmpVKlbdrzBY7EmrGRbdJ0v36yCQ001bpJ6R6mInGGz_i7s-_zmS2UP3ZGd6oqSL4qtdRmZrEB5UQ5s52poUSSr6NKl12Dyn1TwhXt8el93YoioTRyBpQVTmhVWCkqjKBz-kN1AFViQSMFxoDv_dIiVkV8BjYI1Wd1Z4uUjj77CkLe2WJOaWT3-oFD61H7fY_q3qBF5YTaFTTa6iPaYqvBVITx2kCDhHF6uuMlCw1dDIjB0nlkThg_gCFscXOzNaCqm2GuLGPcG-pNUoeLsGWg8QyE8VIrB0IRxpU2DcgeJSy7WECHR-fxNWE8XfihqBwawngjqkr6WLPAakFZ72IWs1OkznS-uwZpcXDAF8GnCnMMV5aNp0vHHqYjaT_yJxo9weIz46lJQ0C9nXIEmYzakevhnnCfpjClv2CdjLzoGmGjPh_1akj6GZ6fieJnJK8Q9o_5xz1CJUUItM8dX3qpxKlnXoY1YelLYnpFHxst5WOQldNa2gv1nYQylh6t45xBL70QhMTau3O6JYzn_6Fshm0cv7l2Pp3TfFX5SL3z6yQa2OGQtjT3tElfidhvtSMHldz2RBm7bY1owDy-V50_lw97c_ls-jRfufKENUrCBuh1woKdp2f7l1XnXR8v6SP5B-XFhN1LbYnXLjKMW92Z8KOSrIdjY_6gTWUD9HTSrMJJ0_-YtWBQudWuiKNSqwMadw9ub4v4Fw",
+  "sceneFieldFromManifest": true
+}

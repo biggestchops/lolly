@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Оновлено зі студії.",
   "Using {name}.": "Використовується {name}.",
   "{count} controls you changed stay yours.": "{count} змінених вами елементів керування залишаються вашими.",
-  "{name} has been saved again since this document took its look.": "{name} збережено ще раз відтоді, як цей документ перейняв її вигляд."
+  "{name} has been saved again since this document took its look.": "{name} збережено ще раз відтоді, як цей документ перейняв її вигляд.",
+  "3D scene": "3D-сцена",
+  "Arrangement": "Композиція",
+  "Artwork": "Графіка",
+  "Collection": "Колекція",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Перетягніть на полотно, щоб розмістити 3D-сцену, тоді відредагуйте її в студії.",
+  "Edit in 3D Studio": "Редагувати в 3D Studio",
+  "Empty scene": "Порожня сцена",
+  "Lighting studio": "Світлова студія",
+  "Scene": "Сцена",
+  "Studio defaults": "Значення студії за замовчуванням",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "Не вдалося завантажити 3D Studio, тож цю сцену тут не відредагувати.",
+  "This scene could not be drawn.": "Не вдалося намалювати цю сцену.",
+  "one of your uploads": "один із ваших завантажених файлів"
 }

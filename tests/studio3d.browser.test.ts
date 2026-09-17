@@ -96,6 +96,11 @@ describe('3D Studio actual renderer', { skip: studioSkip }, () => {
         upload: { url: '/duck.glb', name: 'duck.glb' },
       });
       assert.equal(model.state, 'ready');
+      // A GLB carries real units, so its file size is reported too (milestone 3, F1).
+      assert.match(
+        model.info,
+        /Model spans [\d.]+ by [\d.]+ by [\d.]+ units in its file; shown at 3\.25 studio units\./
+      );
       const sharp = await render(page, {
         source: 'primitive',
         atmosphere: true,
@@ -163,7 +168,14 @@ describe('3D Studio actual renderer', { skip: studioSkip }, () => {
       });
       assert.equal(ascii.png, binary.png);
       assert.match(binary.info, /print dimensions are not inferred/);
-      await render(page, { source: 'primitive', motion: 'turntable', duration: 5 });
+      // The file's own size is reported beside that disclaimer, and reads the same from
+      // either STL form, since both hold the same unit tetrahedron (milestone 3, F1).
+      const spans = 'Model spans 1 by 1 by 1 units in its file; shown at 3.25 studio units.';
+      assert.ok(binary.info.includes(spans), binary.info);
+      assert.ok(ascii.info.includes(spans), ascii.info);
+      const shape = await render(page, { source: 'primitive', motion: 'turntable', duration: 5 });
+      // A built-in shape is drawn to fit, so it has no file size to report.
+      assert.doesNotMatch(shape.info, /Model spans/);
       const at = (t: number) => page.evaluate((t) => window.studioTest!.sample(t), t);
       const first = await at(0.25),
         next = await at(0.5),

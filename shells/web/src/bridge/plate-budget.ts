@@ -41,7 +41,7 @@
  */
 
 /** Plate kinds the budget prices. Mirrors `SeqLayer['kind']`, without importing it. */
-export type PlateKind = 'static' | 'video' | 'lottie' | 'audio' | 'camera';
+export type PlateKind = 'static' | 'video' | 'lottie' | 'audio' | 'camera' | 'scene';
 
 /** Bytes at 100 % deviceMemory. Half a gigabyte of plates is already a large export. */
 export const PLATE_BUDGET_FULL_BYTES = 512 * 1024 * 1024;
@@ -90,6 +90,11 @@ export function platesPerLayer(kind: PlateKind, needsLiveRaster = false): number
   if (kind === 'video') return 2;
   // A live lottie keeps its static fallback AND a re-shot frame plate at once.
   if (kind === 'lottie' && needsLiveRaster) return 2;
+  // A 3D scene box is priced the same way and unconditionally (plan 265 milestone 3): its
+  // picture is rendered per frame through the studio pool, and the still plate stays as
+  // the fallback for a frame the renderer could not answer. Unconditional because a scene
+  // ALWAYS goes live, unlike a lottie box whose player may never have mounted.
+  if (kind === 'scene') return 2;
   return 1;
 }
 

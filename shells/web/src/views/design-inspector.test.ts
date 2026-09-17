@@ -189,7 +189,7 @@ function mount(initial: Box[] = BOXES, extra: Partial<Parameters<typeof initDesi
     onChange: (cb) => { artSubs.push(cb); return () => { const i = artSubs.indexOf(cb); if (i >= 0) artSubs.splice(i, 1); }; },
   };
 
-  const calls: Record<string, unknown[][]> = { pickImage: [], openGradient: [], arrange: [], openTimeline: [] };
+  const calls: Record<string, unknown[][]> = { pickImage: [], openGradient: [], arrange: [], openTimeline: [], openStudio: [] };
   const handle = initDesignInspector({
     stageEl, canvasEl, model, selection, artboard,
     actions: {
@@ -197,6 +197,7 @@ function mount(initial: Box[] = BOXES, extra: Partial<Parameters<typeof initDesi
       openGradient: (ids) => calls.openGradient!.push([ids]),
       arrange: (op) => calls.arrange!.push([op]),
       openTimeline: (group, id) => calls.openTimeline!.push([group, id]),
+      openStudio: (ids) => calls.openStudio!.push([ids]),
     },
     fields: FIELDS,
     fonts: { options: () => [['sans', 'Sans'], ['mono', 'Mono']], weights: (f) => (f === 'mono' ? [['400', 'Regular']] : [['400', 'Regular'], ['700', 'Bold']]) },
@@ -1316,7 +1317,7 @@ test('the panel is built detached and positions nothing - the dock owns where it
     model: { blockId: 'boxes', cfg: CFG, frame: FRAME, getBoxes: () => [], commit: () => {}, setField: () => {}, subscribe: () => () => {}, getInput: () => undefined, setInput: () => {} },
     selection: { get: () => [], set: () => {}, onChange: () => () => {} },
     artboard: { active: () => '', focus: () => {}, onChange: () => () => {} },
-    actions: { pickImage: () => {}, openGradient: () => {}, arrange: () => {}, openTimeline: () => {} },
+    actions: { pickImage: () => {}, openGradient: () => {}, arrange: () => {}, openTimeline: () => {}, openStudio: () => {} },
   });
   assert.equal(el.el.parentElement, null, 'nothing was appended to the stage');
   assert.equal(el.width(), 0, 'and it reserves no stage width in any state');

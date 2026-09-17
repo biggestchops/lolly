@@ -6,6 +6,14 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.209.0
+
+- `DESIGN_LAYER_KINDS` gains `'3d'`, appended, so a Design document can hold 3D scene boxes. The list is extended and never reordered, so every existing wire value is unchanged; a reader from before this minor marks a document holding a 3D box invalid.
+- `inspectDesignV1` reports a `3d` layer's `scene`: the 3D Studio settings that box carries, as the studio's own link query. Absent for every other kind and for an empty scene, and no new issue is raised.
+- Added `design-scene.ts`, the one place the scene grammar lives: `designSceneEncode(values, manifest)` writes the query with everything at a manifest default left out and user upload ids kept, `designSceneDecode(query, manifest)` expands it back to a full value bag, `designSceneAssetIds(query, manifest)` reads the catalog and upload ids a scene references, and `designSceneTime(sourceMs, seconds)` converts a timeline source time to the normalised position a studio renderer takes. All pure and DOM-free; the manifest comes from the caller.
+- `StudioSourceInfo.bounds` records what a model file itself measures, before the studio scales its longest side to 3.25 studio units. Additive, and absent for artwork, words and the built-in shapes, which have no size of their own.
+- `StudioCameraKeyV1` gains `name`, appended, so a saved camera key can carry a name of its own; `studioCameraFromKey` accepts a name as well as a position, and `studioCameraKeyLabel` reads a key's number and its name. A key with no name evaluates exactly as before.
+
 ## 1.208.0
 
 - Added `studio3d-look.ts`: `STUDIO_LOOK_KEYS` and `STUDIO_INSTANCE_KEYS` name the studio and document halves of a 3D Studio document, with `studioLookOf`, `studioApplyLook`, `studioParseRef`/`studioFormatRef`, `studioParseOverrides`/`studioFormatOverrides` and `studioRecordOverride`. All pure, all additive.

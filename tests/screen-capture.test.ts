@@ -78,7 +78,7 @@ test('the sensor capabilities still validate (screen is additive, not a replacem
 
 // ─── version ─────────────────────────────────────────────────────────────────
 
-test('ENGINE_VERSION is 1.208.0', () => {
+test('ENGINE_VERSION is 1.209.0', () => {
   // A literal pin: the screencap surface shipped at 1.54, and tools declare
   // ^1.54.0 to require it. session-record only checks the stamp equals whatever
   // ENGINE_VERSION happens to be (tautological) - this catches an errant bump.
@@ -494,7 +494,9 @@ test('ENGINE_VERSION is 1.208.0', () => {
   // 1.207.0: the studio recipe's declared stage fill (stage.fill) is additive; capture is unchanged.
   // 1.208.0: saved studios (studio3d-look.ts) and the studio recipe's shape.detail are
   //          additive; capture is unchanged.
-  assert.equal(ENGINE_VERSION, '1.208.0');
+  // 1.209.0: the Design scene grammar (design-scene.ts) and the '3d' Design layer kind
+  //          are additive; capture is unchanged.
+  assert.equal(ENGINE_VERSION, '1.209.0');
 });
 
 // ─── loadTool: a ^1.54.0 tool loads against this engine ───────────────────────

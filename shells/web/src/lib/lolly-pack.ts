@@ -30,6 +30,7 @@
 import { strToU8 } from 'fflate';
 import type { Profile, UserTemplateRecord } from '@lolly-tools/core/host-v1';
 import { assetDependency } from '../../../../engine/src/asset-version.ts';
+import { ensureSceneManifest } from '../bridge/asset-dependencies.ts';
 import { base64ToBytes, bytesToBin } from '../../../../engine/src/bytes.ts';
 import { resolveSessionUserAsset, rebaseImportedAssetPins } from './session-asset-versions.ts';
 import { zipAsync } from './zip.ts';
@@ -531,6 +532,12 @@ export async function buildLollyFile(input: LollyBuildInput): Promise<LollyBuild
     const problem = projectShapeProblem(project.name, project.folders, project.sessions);
     if (problem) throw new Error(problem);
   }
+  // A 3D scene box carries its uploads as ids inside its `scene` query, and only the 3D
+  // Studio manifest can find them (plan 265 milestone 3). Primed HERE as well as in
+  // beam-pack's own walk, because a pack built from Projects never had the Design view
+  // open, so nothing else had a reason to load that manifest and the scene's upload would
+  // have been left out of the file.
+  await ensureSceneManifest();
   // A project's closure is every session plus every image filed in its folders, so a
   // folder's pictures travel with it even when no session uses them.
   const refs = collectSessionAssetRefs(project ? projectClosure(project) : input.session);

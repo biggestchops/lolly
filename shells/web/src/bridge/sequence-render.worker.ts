@@ -27,14 +27,14 @@
  *      styles. Statics are shot ONCE up front and arrive here as ImageBitmaps.
  *   2. the OfflineAudioContext mix, main-thread only. It arrives here as planar
  *      Float32Array PCM.
- *   3. a LOTTIE layer, which must be advanced on the live lottie-web player and
- *      re-rasterised per frame. lottie-web is not runnable in a worker, so a
- *      lottie frame is requested back over the message channel (`need-lottie`)
- *      and the worker blocks on it. At most ONE such request is ever outstanding,
- *      the tightest possible bound on the queue, so a slow main thread cannot
- *      balloon worker memory.
- * Consequently: a sequence with NO lottie layer runs 100% worker-side; one with
- * a lottie layer runs hybrid, and the compositor reports which.
+ *   3. a LIVE layer, redrawn per frame on the main thread: a LOTTIE box advanced on
+ *      its lottie-web player, or a 3D SCENE box rendered through the studio's WebGL
+ *      pool (plan 265 milestone 3). Neither runs in a worker, so that frame is
+ *      requested back over the message channel (`need-live`) and the worker blocks on
+ *      it. At most ONE such request is ever outstanding, the tightest possible bound
+ *      on the queue, so a slow main thread cannot balloon worker memory.
+ * Consequently: a sequence with NO live layer runs 100% worker-side; one with a
+ * lottie or a scene box runs hybrid, and the compositor reports which.
  *
  * MEMORY. Unchanged from the in-thread path: one canvas, at most two decoded
  * samples per open provider, at most HIGH_WATER+1 VideoFrames in the mux, and at
@@ -475,9 +475,11 @@ export interface SeqJobIO {
   /** A composed frame is on the canvas. `tsUs` is its presentation time, µs. */
   frame(canvas: AnyCanvas, ctx: AnyCtx, i: number, tsUs: number): Promise<void>;
   /**
-   * The live-DOM raster for a `needsLiveRaster` layer at this frame, or null to
-   * fall back to the layer's static plate. Called at most once per layer per
-   * SLOT per frame, and never concurrently - that IS the bounded queue.
+   * The live picture for a `needsLiveRaster` layer at this frame, or null to fall back
+   * to the layer's static plate. A raster of the live DOM for a lottie or size-tweened
+   * box; a studio render for a 3D scene box, which has no DOM picture at all. Called at
+   * most once per layer per SLOT per frame, and never concurrently - that IS the
+   * bounded queue.
    *
    * `slot` names which of the layer's two plates is being re-shot. Everything but a
    * video layer has one (`under`); a video layer is photographed twice - opaque with

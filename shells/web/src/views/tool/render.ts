@@ -29,6 +29,14 @@ import { armAutoCopy, resolveCanvasAnnotations } from './shared.ts';
 import type { RunExportOpts, } from './shared.ts';
 import { bindOp, type ToolViewCtx } from './context.ts';
 
+/**
+ * The Design scene enhancer, once it has been loaded. Module scope rather than a context
+ * field because the module is the registry: it holds the posters and the one live
+ * renderer for whatever canvas is on screen, and a paint with no scene markers still has
+ * to reach it so an emptied document hands its renderer back.
+ */
+let sceneModule: typeof import('../../lib/design-scene-mount.ts') | null = null;
+
 // Drive a [data-preview] control through a capture. `btn` is the control the user
 // actually clicked (auto-preview passes none → the first control, the placeholder
 // button). Busy/error land on THAT control, and a PERSISTENT control (e.g. a
@@ -285,6 +293,24 @@ export function paint(tview: ToolViewCtx): void {
             }))
             .catch(error => console.warn('studio library mount failed:', error));
         }
+      }
+      // 3D scene boxes in a Design document (plan 265 milestone 3). The Design tool paints
+      // a marker per scene box and nothing else; the shell gives each box a poster drawn
+      // through the renderer pool, and the selected box a live renderer. Loaded only where
+      // a marker exists, so a document without a scene never loads three.js; once loaded,
+      // the pass runs on marker-less paints too, so a deleted box hands its renderer back.
+      if (sceneModule || contentEl.querySelector('[data-lolly-scene]')) {
+        void (sceneModule
+          ? Promise.resolve(sceneModule)
+          : import('../../lib/design-scene-mount.ts').then(m => (sceneModule = m)))
+          .then(m => { const { contentEl } = tview; return m.mountDesignScenes(contentEl, {
+            host: tview.host,
+            isCurrent: () => gen === tview.renderGen,
+            manifest: () => import('../../bridge/tool-loader.ts')
+              .then(loader => loader.getTool(m.DESIGN_SCENE_TOOL))
+              .then(tool => tool.manifest),
+          }); })
+          .catch(error => console.warn('design scene mount failed:', error));
       }
       clearCanvasError(tview);
       tview.lastPainted = hydrated;

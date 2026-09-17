@@ -109,6 +109,14 @@ export interface InspectorActions {
   arrange(op: string): void;
   /** Open the timeline panel on the given box's inspector group ('time' | 'animate' | 'keyframes'). */
   openTimeline(group: string, id: string): void;
+  /**
+   * Open the 3D Studio on the first given box's scene, and write the edited scene back
+   * (plan 265 milestone 3). The one door a `kind: '3d'` box has. The overlay runs the
+   * same tool-link round trip an image box's "from <tool>" badge runs, so there is no
+   * second scene editor to keep in step, and the return is ONE `setField`, which is one
+   * undo step. Cancelling writes nothing at all.
+   */
+  openStudio(ids: string[]): void;
 }
 
 /**
@@ -207,7 +215,7 @@ export interface DesignCanvasPorts {
    * Register the mounted inspector so the object bar's Text / More / Dims / Stroke buttons
    * reveal its sections instead of opening the one-slot panels; null restores the panels.
    */
-  setInspector(inspector: { reveal(section: 'document' | 'artboard' | 'object' | 'text' | 'image' | 'motion' | 'present' | 'guide'): void } | null): void;
+  setInspector(inspector: { reveal(section: 'document' | 'artboard' | 'object' | 'text' | 'image' | 'scene' | 'motion' | 'present' | 'guide'): void } | null): void;
 }
 
 /** Chrome the tool view already owns and lends to the overlay's mark menu (theme, sounds, profile). */

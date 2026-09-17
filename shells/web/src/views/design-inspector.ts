@@ -136,7 +136,7 @@ const DOCK_ID = 'inspector';
  * to be sub-headings inside Object.
  */
 export type InspectorSection =
-  | 'document' | 'artboard' | 'object' | 'text' | 'image' | 'motion' | 'present'
+  | 'document' | 'artboard' | 'object' | 'text' | 'image' | 'scene' | 'motion' | 'present'
   | 'fill' | 'appearance' | 'shadow' | 'tilt' | 'arrange' | 'guide';
 
 /**
@@ -341,6 +341,10 @@ const WATCHED: Record<InspectorSection, (c: Cfg, m: FlagFields) => Array<string 
   text: (c) => [c.textField, c.fontField, c.fontSizeField, c.weightField, c.lineHeightField, c.trackingField,
     c.ligaturesField, c.alternatesField, c.fitTextField, c.alignField, c.valignField, c.padField, c.textColorField],
   image: (c) => [c.imageField, c.fitField, c.imgPosField],
+  // The 3D scene box's one field (plan 265 milestone 3). Named literally, like `build`
+  // and `lane` above: the Design manifest declares `scene` as a machine-written field
+  // with no `canvas` key of its own, so there is no cfg name to read it through.
+  scene: () => ['scene'],
   // `build` and `lane` have no cfg key of their own (the manifest names them literally,
   // as `notes` and `cls` are named), and the Appears control is derived from all four of
   // build/start/dur/lane - so a build step written anywhere else has to move this memo.
@@ -369,6 +373,10 @@ const SECTION_META: Record<InspectorSection, { title: () => string; glyph: IconN
   arrange: { title: () => t('Arrange'), glyph: 'layers' },
   text: { title: () => t('Text'), glyph: 'font' },
   image: { title: () => t('Image'), glyph: 'image' },
+  // `box` is the registry's isometric cube, and it is already the 3D Studio's own
+  // section glyph for Start, Collection, Lighting and Arrangement, so the studio and
+  // the door onto it wear one picture.
+  scene: { title: () => t('3D scene'), glyph: 'box' },
   motion: { title: () => t('Motion'), glyph: 'animate' },
   present: { title: () => t('Present'), glyph: 'play' },
 };
@@ -389,7 +397,7 @@ export const SECTIONS_KEY = 'lolly-design-inspector-sections';
 const DEFAULT_OPEN: Record<InspectorSection, boolean> = {
   document: true, guide: true, artboard: true, object: true, fill: true, appearance: true,
   shadow: false, tilt: false, arrange: false,
-  text: true, image: true, motion: false, present: false,
+  text: true, image: true, scene: true, motion: false, present: false,
 };
 
 /** The remembered state, section by section. Storage can be absent or refuse. */
@@ -442,6 +450,44 @@ function clampN(v: unknown, dflt: number, lo: number, hi: number): number {
  */
 const fv = (b: Box, field: string | undefined): unknown => (field ? b[field] : undefined);
 
+/**
+ * WHAT A SCENE FIELD SAYS, in one short line (plan 265 milestone 3, D2).
+ *
+ * A `kind: '3d'` box stores the 3D Studio's own readable query with every value that
+ * matches a studio default left out (see `engine/src/design-scene.ts`), so reading the
+ * query IS reading what the author chose - which is the only thing a summary can
+ * honestly report from here. This column is mounted against fakes and is handed no tool
+ * manifest, so it never claims to know a default: a query that carries nothing reads as
+ * "Studio defaults", and an empty field as "Empty scene".
+ *
+ * The six source words are the studio's wire values, pinned by its own compat suite. A
+ * source this table has not met falls through to the wire word itself, so a studio that
+ * grows a seventh still reads rather than going blank.
+ */
+const SCENE_SOURCE_LABEL: Record<string, () => string> = {
+  primitive: () => t('Shape'),
+  artwork: () => t('Artwork'),
+  model: () => t('Model'),
+  text: () => t('Words'),
+  collection: () => t('Collection'),
+  arrangement: () => t('Arrangement'),
+};
+
+/** A scene asset id as a person can read it: a catalog id says itself, an upload cannot. */
+const sceneAssetLabel = (id: string): string => (id.startsWith('user/') ? t('one of your uploads') : id);
+
+/** The scene's subject and its lighting studio, both empty when the query says nothing. */
+function sceneSummary(query: string): { subject: string; studio: string } {
+  const q = new URLSearchParams(query);
+  const source = (q.get('source') ?? '').trim();
+  const detail = (q.get('words') ?? '').replace(/\s+/g, ' ').trim()
+    || (q.get('primitive') ?? '').trim()
+    || sceneAssetLabel((q.get('artwork') ?? '').trim() || (q.get('modelAsset') ?? '').trim() || '')
+    || '';
+  const parts = [source ? (SCENE_SOURCE_LABEL[source]?.() ?? source) : '', detail.slice(0, 80)].filter(Boolean);
+  return { subject: parts.join(' · '), studio: (q.get('studio') ?? '').trim() };
+}
+
 /** The picker hands back either a plain colour or `{ ref, value }` - the box stores the string. */
 const unwrapColor = (v: ColorFieldValue): string => (v && typeof v === 'object' && 'value' in v ? v.value : String(v ?? ''));
 
@@ -477,6 +523,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   const F_LOCKED = declaredField(frame?.lockedField || 'locked');
   /** The same three, in the shape {@link WATCHED} reads them. */
   const m4: FlagFields = { trans: F_TRANS, hidden: F_HIDDEN, locked: F_LOCKED };
+  /** The 3D scene field (plan 265 milestone 3), or undefined on a tool without one. */
+  const F_SCENE = declaredField('scene');
 
   // ── the column ──────────────────────────────────────────────────────────────
   const el = document.createElement('aside');
@@ -591,7 +639,14 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     const secs: InspectorSection[] = [];
     const hasText = kindOf(box) === 'text' || (!!cfg.textField && String(box[cfg.textField] ?? '') !== '');
     if (hasText) secs.push('text');
-    if (cfg.imageField && box[cfg.imageField]) secs.push('image');
+    // A 3D scene box takes Scene where any other box takes Image, and never both: its
+    // picture comes from the studio, so an image door here would offer to paint over the
+    // scene with something the renderer then covers. Everything else a box has - Object,
+    // the paint groups, Motion, Present - it keeps, because a scene box moves, tilts,
+    // shadows and arrives on its slide like the rest of them. Gated on the field the
+    // manifest declares, so a canvas tool with no `scene` field grows no empty header.
+    if (kindOf(box) === '3d' && F_SCENE) secs.push('scene');
+    else if (cfg.imageField && box[cfg.imageField]) secs.push('image');
     secs.push('object', ...paintSecs(true));
     secs.push('motion');
     // …and Present LAST, for the three per-box fields only a box can carry (see
@@ -600,7 +655,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     // asked for. Collapsed away by the section head for a document that never presents.
     secs.push('present');
     if (opts.videoWorkspace?.()) {
-      const first: InspectorSection[] = ['text', 'image', 'motion'];
+      const first: InspectorSection[] = ['text', 'image', 'scene', 'motion'];
       secs.sort((a, b) => {
         const rank = (s: InspectorSection) => first.includes(s) ? first.indexOf(s) : first.length;
         return rank(a) - rank(b);
@@ -1275,6 +1330,27 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   }
 
   /**
+   * THE SCENE SECTION: one door and one honest line (plan 265 milestone 3, D2).
+   *
+   * Everything a 3D box is made of is the 3D Studio's answer, not this column's, so the
+   * only control here is the door back into that studio - no second scene editor to keep
+   * in step with it, and one undo step on return (see `InspectorActions.openStudio`). The
+   * read-only lines exist so the section is not a bare button: they name what the author
+   * set, read straight off the scene query by `sceneSummary`.
+   *
+   * The box's own geometry, paint and timing stay where they always were - Object, the
+   * paint groups, Motion - because a scene box is an ordinary box that happens to paint
+   * through a renderer.
+   */
+  function sceneBody(b: Box): string {
+    const query = String(fv(b, F_SCENE) ?? '');
+    const { subject, studio } = sceneSummary(query);
+    return doorBtn(t('Edit in 3D Studio'), 'editscene', 'box')
+      + readRow(t('Scene'), query ? (subject || t('Studio defaults')) : t('Empty scene'))
+      + (studio ? readRow(t('Lighting studio'), studio) : '');
+  }
+
+  /**
    * APPEARS: the one control that says when a box arrives on its slide.
    *
    * Design grew three ways to answer that - a build step, a timeline start, and
@@ -1477,6 +1553,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     if (sec === 'arrange') return arrangeGrid(g.ids.length);
     if (sec === 'text') return textBody(b);
     if (sec === 'image') return imageBody(b);
+    if (sec === 'scene') return sceneBody(b);
     if (sec === 'motion') return motionBody(b, g.kind === 'frame');
     return presentBody(b, g.kind === 'frame');
   }
@@ -1711,6 +1788,10 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
           case 'delete-guide': if (renderedGuideId) opts.guides?.remove(renderedGuideId); break;
           case 'gradient': actions.openGradient(ids); break;
           case 'pickimage': actions.pickImage(ids); break;
+          // The scene editor opens on the rows this section was BUILT for, like every
+          // other door here: the studio round trip is asynchronous, and the selection can
+          // move while it is open.
+          case 'editscene': actions.openStudio(ids); break;
           case 'timeline': actions.openTimeline('animate', ids[0] ?? ''); break;
           // Back to the deck's own transition. '' is the manifest default and the value
           // the players read as "follow the document", so clearing it is the whole verb.

@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "已從影棚更新。",
   "Using {name}.": "正在使用 {name}。",
   "{count} controls you changed stay yours.": "你調整過的 {count} 個控制項仍會保留你的設定。",
-  "{name} has been saved again since this document took its look.": "自從這個文件套用該外觀後，{name} 已再次儲存。"
+  "{name} has been saved again since this document took its look.": "自從這個文件套用該外觀後，{name} 已再次儲存。",
+  "3D scene": "3D 場景",
+  "Arrangement": "組合",
+  "Artwork": "圖形",
+  "Collection": "合集",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "在畫布上拖曳以放置 3D 場景,然後在影棚中編輯。",
+  "Edit in 3D Studio": "在 3D Studio 中編輯",
+  "Empty scene": "空場景",
+  "Lighting studio": "燈光影棚",
+  "Scene": "場景",
+  "Studio defaults": "影棚預設值",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio 載入失敗,無法在此編輯這個場景。",
+  "This scene could not be drawn.": "無法繪製這個場景。",
+  "one of your uploads": "你上傳的檔案之一"
 }

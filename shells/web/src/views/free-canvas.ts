@@ -1360,6 +1360,11 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     // The scene camera (plans/104 section 5.4). Same glyph the timeline's add menu and the
     // Camera inspector group wear, so one thing looks like one thing.
     camera: SVG.camera,
+    // A 3D scene (plan 265 milestone 3) - the isometric cube, which is the glyph the
+    // 3D Studio already wears over its own Start, Collection and Arrangement sections
+    // and the one the inspector's Scene header carries, so the add-kind, the section and
+    // the studio all look like one thing.
+    '3d': SVG.sceneKind,
   }; fc.ADD_KIND_ICON = ADD_KIND_ICON;
 
   // ── what a KIND can carry (plan 179 C3 / A5) ─────────────────────────────────
@@ -1390,11 +1395,17 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
   // Maker, every non-Design canvas) must keep the bar it has always had, and a gate that
   // read `String(undefined)` would have hidden the lot.
   const STROKE_KINDS = new Set(['path', 'box', 'image', 'frame']); fc.STROKE_KINDS = STROKE_KINDS;
-  /** Kinds that render NO text node, so "Edit text" would open nothing. */
-  const NO_TEXT_KINDS = new Set(['frame', 'audio', 'camera']); fc.NO_TEXT_KINDS = NO_TEXT_KINDS;
+  /** Kinds that render NO text node, so "Edit text" would open nothing. `3d` is here for
+   *  a different reason from the other three (plan 265 milestone 3): a scene box's words
+   *  are part of the SCENE, set in the studio, so a second caption typed on the canvas is
+   *  two places to write the same sentence. A row that already carries text keeps the
+   *  inspector's Text section, which is where such a caption is repaired or cleared. */
+  const NO_TEXT_KINDS = new Set(['frame', 'audio', 'camera', '3d']); fc.NO_TEXT_KINDS = NO_TEXT_KINDS;
   /** Kinds that paint no picture from the image field. (An `audio` box DOES use it - that
-   *  field is where its track lives - and a frame page paints it as the board's fill.) */
-  const NO_IMAGE_KINDS = new Set(['camera']); fc.NO_IMAGE_KINDS = NO_IMAGE_KINDS;
+   *  field is where its track lives - and a frame page paints it as the board's fill.) A
+   *  `3d` box paints through the studio's renderer, and the hook returns its scene marker
+   *  before ever reading the image field, so an image set here would never be drawn. */
+  const NO_IMAGE_KINDS = new Set(['camera', '3d']); fc.NO_IMAGE_KINDS = NO_IMAGE_KINDS;
 
   /**
    * The DOLLY, coalesced (section 8: "wheel coalesces one commit per pause").
@@ -1959,6 +1970,11 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     },
     arrange: fc.editorState.runArrange,
     openTimeline: fc.editorState.openTimelineOn,
+    // The 3D scene door (plan 265 milestone 3). Unlike pickImage it does NOT move the
+    // selection first: the round trip is a modal over the editor, and it writes to the
+    // rows the inspector handed it, so moving the canvas selection under the dialog
+    // would only change what the user comes back to.
+    openStudio: (ids) => { void fc.objects.openStudio(ids); },
   }; fc.inspectorActions = inspectorActions;
 
   const designPorts: DesignCanvasPorts = {
@@ -2054,12 +2070,30 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     subscribe: fn => { const a = selectionPort.onChange(fn); const b = artboardPort.onChange(fn); return () => { a(); b(); }; },
   });
 
+  // 3D scene boxes (plan 265 milestone 3, lane B). Exactly one selected scene box becomes
+  // the document's single live renderer; everything else stays a poster. The enhancer that
+  // owns those posters lives in lib/design-scene-mount.ts and is reached with an import()
+  // at this use site, so a canvas with no scene marker loads neither it nor three.js - the
+  // gate is the marker, not the selection. A selection change that arrives while the module
+  // is still loading is applied with the ids that change carried.
+  let sceneSelection: Promise<typeof import('../lib/design-scene-mount.ts')> | null = null;
+  const unwatchScenes = selectionPort.onChange(ids => {
+    if (!sceneSelection && !canvasEl.querySelector('[data-lolly-scene]')) return;
+    sceneSelection ??= import('../lib/design-scene-mount.ts');
+    void sceneSelection
+      .then(m => { if (!fc.disposed) m.setSelectedScenes(ids); })
+      .catch(error => console.warn('design scene selection failed:', error));
+  });
 
   return {
     design: designPorts,
     destroy() {
       fc.rules?.destroy();
       unregisterCollabSurface();
+      unwatchScenes();
+      // Hand the scene renderer back now. Nothing repaints this canvas again, so waiting
+      // for the enhancer's own reap would hold a WebGL context until some other tool paints.
+      void sceneSelection?.then(m => m.destroyDesignScenes()).catch(() => {});
       fc.disposed = true;
       // FIRST, so nothing that throws later in this teardown can leave the stage's
       // bottom band reserved for a panel that no longer exists.

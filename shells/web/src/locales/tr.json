@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Stüdyodan güncellendi.",
   "Using {name}.": "{name} kullanılıyor.",
   "{count} controls you changed stay yours.": "Değiştirdiğin {count} kontrol sana ait kalır.",
-  "{name} has been saved again since this document took its look.": "Bu belge görünümünü aldığından beri {name} tekrar kaydedildi."
+  "{name} has been saved again since this document took its look.": "Bu belge görünümünü aldığından beri {name} tekrar kaydedildi.",
+  "3D scene": "3D sahne",
+  "Arrangement": "Yerleşim",
+  "Artwork": "Grafik",
+  "Collection": "Koleksiyon",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Bir 3D sahne yerleştirmek için tuvale sürükle, sonra stüdyoda düzenle.",
+  "Edit in 3D Studio": "3D Studio'da düzenle",
+  "Empty scene": "Boş sahne",
+  "Lighting studio": "Işık stüdyosu",
+  "Scene": "Sahne",
+  "Studio defaults": "Stüdyo varsayılanları",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio yüklenemedi, bu yüzden bu sahne burada düzenlenemiyor.",
+  "This scene could not be drawn.": "Bu sahne çizilemedi.",
+  "one of your uploads": "yüklediklerinden biri"
 }

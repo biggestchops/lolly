@@ -125,6 +125,7 @@
 import { extractC2paStore, sniffFormat } from '../../../../engine/src/c2pa-extract.ts';
 import { sniffContainer } from '../../../../engine/src/media-sniff.ts';
 import { assetDependency } from '../../../../engine/src/asset-version.ts';
+import { ensureSceneManifest, sceneRowAssetIds } from '../bridge/asset-dependencies.ts';
 import { resolveSessionUserAsset, rebaseImportedAssetPins } from './session-asset-versions.ts';
 import {
   MAX_ITEM_BYTES,
@@ -585,6 +586,19 @@ export function collectSessionAssetRefs(data: unknown): SessionAssetRefs {
       return;
     }
     const record = value as Record<string, unknown>;
+    // A 3D scene box (plan 265 milestone 3) carries its uploads as ids INSIDE its
+    // `scene` query, so nothing below would ever see them: the row holds no ref object
+    // to walk. Read them out first, then carry on walking the row for its other fields.
+    // The namespace is the only evidence of which bucket an id belongs in, the same
+    // fallback refKind applies to a bare `{ id }` from URL mode.
+    for (const sceneId of sceneRowAssetIds(record)) {
+      const base = assetDependency({ id: sceneId }).key;
+      if (sceneId.startsWith('user/')) {
+        if (!seenUser.has(base)) { seenUser.add(base); user.push(base); }
+      } else if (!seenLibrary.has(base)) {
+        seenLibrary.add(base); library.push(base);
+      }
+    }
     const id = refIdOf(record);
     if (id !== null) {
       // A baked ref carries its own bytes in a `data:` URL. Nothing to send, and
@@ -874,6 +888,10 @@ export async function buildBeamOffer(source: BeamPackSource): Promise<BuiltBeamO
     sessionSlot = source.slot;
     sessionData = loaded as Record<string, unknown>;
     sessionRow = (await host.state.list()).find(r => r.slot === source.slot);
+    // A 3D scene box's uploads are only visible once the studio manifest is loaded
+    // (see bridge/asset-dependencies.ts). The walk is synchronous, so the load happens
+    // here, where there is already an await.
+    await ensureSceneManifest();
     const refs = collectSessionAssetRefs(sessionData);
     wantedAssetIds = refs.user;
     libraryIds = refs.library;

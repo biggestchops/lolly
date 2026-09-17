@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Uppdaterad från studion.",
   "Using {name}.": "Använder {name}.",
   "{count} controls you changed stay yours.": "{count} inställningar du ändrat finns kvar.",
-  "{name} has been saved again since this document took its look.": "{name} har sparats igen sedan det här dokumentet tog sin look."
+  "{name} has been saved again since this document took its look.": "{name} har sparats igen sedan det här dokumentet tog sin look.",
+  "3D scene": "3D-scen",
+  "Arrangement": "Arrangemang",
+  "Artwork": "Illustration",
+  "Collection": "Samling",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Dra på duken för att placera en 3D-scen, och redigera den sedan i studion.",
+  "Edit in 3D Studio": "Redigera i 3D Studio",
+  "Empty scene": "Tom scen",
+  "Lighting studio": "Ljusstudio",
+  "Scene": "Scen",
+  "Studio defaults": "Studions standardvärden",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio kunde inte laddas, så den här scenen kan inte redigeras här.",
+  "This scene could not be drawn.": "Den här scenen kunde inte ritas.",
+  "one of your uploads": "en av dina uppladdningar"
 }

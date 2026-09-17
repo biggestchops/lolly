@@ -93,6 +93,11 @@ test('platesPerLayer: two for video, two for a LIVE lottie, none for a citizen w
   assert.equal(platesPerLayer('lottie', true), 2);
   assert.equal(platesPerLayer('audio'), 0);
   assert.equal(platesPerLayer('camera'), 0, 'a camera is a pose, not a picture (section 5.4)');
+  // A 3D scene box (plan 265 milestone 3) is priced at two UNCONDITIONALLY: it always
+  // draws per frame through the studio pool, so unlike a lottie box there is no case
+  // where the still plate is the whole picture and one plate would be right.
+  assert.equal(platesPerLayer('scene'), 2, 'a scene keeps its poster plate and a drawn one');
+  assert.equal(platesPerLayer('scene', true), 2);
 });
 
 // ── rule 1: today's quality is the floor ────────────────────────────────────

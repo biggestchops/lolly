@@ -491,13 +491,22 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
   };
 }
 
+/** A key name is a label, not a description: long enough to name a view, short enough to read. */
+const STUDIO_CAMERA_KEY_NAME_LIMIT = 40;
+
 function cameraKeys(v: Values): StudioCameraKeyV1[] {
   const rows = Array.isArray(v.cameraKeys) ? v.cameraKeys : [];
   if (rows.length > STUDIO_CAMERA_KEY_LIMIT)
     throw new Error(`A camera path holds up to ${STUDIO_CAMERA_KEY_LIMIT} keys.`);
   return rows.map((row, i) => {
     const k = record(row);
+    // A name is the reader's own label for the view. An unnamed key carries no name at
+    // all, so a path saved before naming existed evaluates exactly as it always did.
+    const name = String(k.name || '')
+      .trim()
+      .slice(0, STUDIO_CAMERA_KEY_NAME_LIMIT);
     return {
+      ...(name ? { name } : {}),
       at: number(k.at, rows.length > 1 ? (i / (rows.length - 1)) * 100 : 0, 0, 100) / 100,
       azimuth: number(k.azimuth, 25, -720, 720),
       elevation: number(k.elevation, 14, -60, 80),

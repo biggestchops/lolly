@@ -214,6 +214,11 @@ export interface StudioCameraKeyV1 {
   target: StudioVector3;
   /** 0 keeps automatic focus on the target. */
   focus: number;
+  /**
+   * What the reader called this view, trimmed and at most 40 characters. Absent when
+   * the key has no name, which is how every key saved before naming reads.
+   */
+  name?: string;
 }
 
 export interface StudioSurfaceInfo {
@@ -226,6 +231,13 @@ export interface StudioSourceInfo {
   slots: StudioSurfaceInfo[];
   triangles: number;
   warnings: string[];
+  /**
+   * The size the source measures in its own file, before the studio scales its longest
+   * side to 3.25 studio units. Present for a model file (GLB or STL), where the numbers
+   * are the file's own; absent for artwork, words and the built-in shapes, which are
+   * drawn to fit and carry no size of their own.
+   */
+  bounds?: { x: number; y: number; z: number; span: number };
 }
 
 /**

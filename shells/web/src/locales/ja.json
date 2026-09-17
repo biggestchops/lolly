@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "スタジオから更新しました。",
   "Using {name}.": "{name} を使用中です。",
   "{count} controls you changed stay yours.": "変更した {count} 件のコントロールはそのまま維持されます。",
-  "{name} has been saved again since this document took its look.": "このドキュメントがこのルックを取得してから、{name} は再度保存されています。"
+  "{name} has been saved again since this document took its look.": "このドキュメントがこのルックを取得してから、{name} は再度保存されています。",
+  "3D scene": "3D シーン",
+  "Arrangement": "配置",
+  "Artwork": "アートワーク",
+  "Collection": "コレクション",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "キャンバス上でドラッグして 3D シーンを配置し、スタジオで編集してください。",
+  "Edit in 3D Studio": "3D Studio で編集",
+  "Empty scene": "空のシーン",
+  "Lighting studio": "ライティングスタジオ",
+  "Scene": "シーン",
+  "Studio defaults": "スタジオの初期値",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio を読み込めなかったため、このシーンはここで編集できません。",
+  "This scene could not be drawn.": "このシーンを描画できませんでした。",
+  "one of your uploads": "アップロードしたファイルの1つ"
 }

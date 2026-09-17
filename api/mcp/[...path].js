@@ -3614,7 +3614,7 @@ var ENGINE_VERSION;
 var init_version = __esm({
   "engine/src/version.ts"() {
     "use strict";
-    ENGINE_VERSION = "1.208.0";
+    ENGINE_VERSION = "1.209.0";
   }
 });
 
@@ -8086,6 +8086,10 @@ function inspectDesignV1(boxes, opts = {}) {
       locked: row.locked === true,
       ...kind === "text" ? { text: text2(row.text) } : {},
       ...["image", "audio", "camera"].includes(kind) && assetId(row.image) ? { assetId: assetId(row.image) } : {},
+      // A 3D scene box reads its `scene` field and raises nothing: an empty scene is
+      // a new, unedited box, not a fault, and the assets it references live inside
+      // the query rather than in `image` (engine/src/design-scene.ts reads them out).
+      ...kind === "3d" && text2(row.scene) ? { scene: text2(row.scene) } : {},
       ...timed ? {
         timing: {
           start,
@@ -8233,7 +8237,8 @@ var init_design_v1 = __esm({
       "path",
       "audio",
       "camera",
-      "frame"
+      "frame",
+      "3d"
     ];
     KINDS = new Set(DESIGN_LAYER_KINDS);
     REQUIRES_MOUNT = ["text-overflow", "computed-contrast", "resolved-fonts"];
@@ -76963,6 +76968,72 @@ var init_design_components = __esm({
   }
 });
 
+// engine/src/design-scene.ts
+function sceneQuery(manifest, values) {
+  const model2 = buildInputModel(manifest, values ? { initial: values } : {});
+  return new URLSearchParams(serializeUrlState(model2, { keepUserIds: true }));
+}
+function designSceneEncode(values, manifest) {
+  const full = sceneQuery(manifest, values);
+  const base = sceneQuery(manifest);
+  const out = new URLSearchParams();
+  for (const [key, value] of full) {
+    if (base.get(key) !== value) out.set(key, value);
+  }
+  for (const [key] of base) {
+    if (!full.has(key)) out.set(key, "");
+  }
+  return out.toString();
+}
+function designSceneDecode(query, manifest) {
+  const state = parseUrlState(query ?? "", manifest);
+  const out = {};
+  for (const item of buildInputModel(manifest, { initial: state.values })) out[item.id] = item.value;
+  return out;
+}
+function idOf2(value) {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const id2 = value.id;
+    if (typeof id2 === "string") return id2;
+  }
+  return "";
+}
+function designSceneAssetIds(query, manifest) {
+  const values = designSceneDecode(query, manifest);
+  const out = [];
+  const seen = /* @__PURE__ */ new Set();
+  const add = (raw) => {
+    if (!raw || seen.has(raw)) return;
+    seen.add(raw);
+    out.push(raw);
+  };
+  for (const input of manifest.inputs ?? []) {
+    if (input.type === "asset") {
+      add(idOf2(values[input.id]));
+      continue;
+    }
+    if (input.type !== "blocks") continue;
+    const assetFields = (input.fields ?? []).filter((f) => f.type === "asset");
+    if (!assetFields.length) continue;
+    const rows2 = values[input.id];
+    if (!Array.isArray(rows2)) continue;
+    for (const row of rows2) {
+      if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+      const record10 = row;
+      for (const field2 of assetFields) add(idOf2(record10[field2.id]));
+    }
+  }
+  return out;
+}
+var init_design_scene = __esm({
+  "engine/src/design-scene.ts"() {
+    "use strict";
+    init_inputs();
+    init_url_mode();
+  }
+});
+
 // engine/src/pdf-smask.ts
 function maskRegion(bbox, m2) {
   if (!Array.isArray(bbox) || bbox.length < 4) return null;
@@ -89417,9 +89488,16 @@ function studioAddCameraKey(values) {
     }))
   };
 }
-function studioCameraFromKey(values, index2) {
-  const rows2 = Array.isArray(values.cameraKeys) ? values.cameraKeys : [];
-  const key = rows2[index2];
+function cameraKeyRows(values) {
+  return Array.isArray(values.cameraKeys) ? values.cameraKeys : [];
+}
+function studioCameraKeyName(row) {
+  return String(row?.name || "").trim().slice(0, 40);
+}
+function studioCameraFromKey(values, which) {
+  const rows2 = cameraKeyRows(values);
+  const wanted = typeof which === "string" ? which.trim().toLowerCase() : "";
+  const key = typeof which === "number" ? rows2[which] : wanted ? rows2.find((row) => studioCameraKeyName(row).toLowerCase() === wanted) : void 0;
   if (!key) throw new Error("That camera key does not exist.");
   const target = record4(values.target);
   return [
@@ -90139,7 +90217,9 @@ function cameraKeys(v) {
     throw new Error(`A camera path holds up to ${STUDIO_CAMERA_KEY_LIMIT} keys.`);
   return rows2.map((row, i) => {
     const k = record7(row);
+    const name = String(k.name || "").trim().slice(0, STUDIO_CAMERA_KEY_NAME_LIMIT);
     return {
+      ...name ? { name } : {},
       at: number3(k.at, rows2.length > 1 ? i / (rows2.length - 1) * 100 : 0, 0, 100) / 100,
       azimuth: number3(k.azimuth, 25, -720, 720),
       elevation: number3(k.elevation, 14, -60, 80),
@@ -90172,7 +90252,7 @@ function studioTime(scene, time, clipSeconds) {
   const seconds = Number.isFinite(time) ? Math.max(0, time) * (clipSeconds && clipSeconds > 0 ? clipSeconds : scene.motion.seconds) : 0;
   return seconds / scene.motion.seconds * scene.motion.degrees * Math.PI / 180;
 }
-var STUDIO_FINISHES, FINISHES;
+var STUDIO_FINISHES, FINISHES, STUDIO_CAMERA_KEY_NAME_LIMIT;
 var init_studio3d = __esm({
   "engine/src/studio3d.ts"() {
     "use strict";
@@ -90196,6 +90276,7 @@ var init_studio3d = __esm({
       "iridescent"
     ];
     FINISHES = STUDIO_FINISHES;
+    STUDIO_CAMERA_KEY_NAME_LIMIT = 40;
   }
 });
 
@@ -90958,6 +91039,9 @@ __export(src_exports, {
   deserializeCurve: () => deserializeCurve,
   designExportSize: () => designExportSize,
   designMaterialOf: () => designMaterialOf,
+  designSceneAssetIds: () => designSceneAssetIds,
+  designSceneDecode: () => designSceneDecode,
+  designSceneEncode: () => designSceneEncode,
   designSystemHeadId: () => designSystemHeadId,
   designSystemNamespace: () => designSystemNamespace,
   designTextRuns: () => designTextRuns,
@@ -91792,6 +91876,7 @@ var init_src2 = __esm({
     init_docx();
     init_design_map();
     init_design_components();
+    init_design_scene();
     init_pdf_map();
     init_pdf_smask();
     init_pdf_svg();

@@ -274,6 +274,21 @@ async function mountToolCanvas(
       }, shapeText: studio.studioShaperFor(host), frameQuality, lease });
       studio.prepareToolStudio(canvas, frameQuality);
     }
+    // A Design row holding 3D scene boxes (plan 265 milestone 3). The enhancer decodes each
+    // box's scene and resolves its assets; the export funnel then draws every one through the
+    // studio pool at this row's own pixel size (bridge/export-design-scenes.ts), and a page
+    // export does the same per page, because each page is its own render target. Nothing here
+    // calls setSelectedScenes, so an offscreen row opens no live renderer and is all posters.
+    if (canvas.querySelector('[data-lolly-scene]')) {
+      const scenes = await import('../lib/design-scene-mount.ts');
+      const sceneCleanup = stage._lottieCleanup;
+      stage._lottieCleanup = () => { scenes.destroyDesignScenes(canvas); sceneCleanup?.(); };
+      await scenes.mountDesignScenes(canvas, {
+        host,
+        manifest: async () => (await getTool(scenes.DESIGN_SCENE_TOOL)).manifest,
+      });
+      await scenes.designScenesSettled();
+    }
     // The caller exports through withStudioExport with this module, so a studio frame that
     // fails during the export fails the row (the frame above is already drawn).
     return { stage, canvas, studio: mountedStudio };

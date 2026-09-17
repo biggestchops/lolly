@@ -127,7 +127,7 @@ function mount(emoji?: InspectorEmojiPort): Harness {
 
   const handle = initDesignInspector({
     stageEl, canvasEl, model, selection, artboard,
-    actions: { pickImage: () => {}, openGradient: () => {}, arrange: () => {}, openTimeline: () => {} },
+    actions: { pickImage: () => {}, openGradient: () => {}, arrange: () => {}, openTimeline: () => {}, openStudio: () => {} },
     ...(emoji ? { emoji } : {}),
   });
   const slot = document.createElement('div');

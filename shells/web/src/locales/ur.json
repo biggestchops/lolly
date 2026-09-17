@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "اسٹوڈیو سے اپ ڈیٹ کر دیا گیا۔",
   "Using {name}.": "{name} زیرِ استعمال ہے۔",
   "{count} controls you changed stay yours.": "جو {count} کنٹرولز آپ نے تبدیل کیے، وہ آپ ہی کے رہتے ہیں۔",
-  "{name} has been saved again since this document took its look.": "{name} کو اس دستاویز کی شکل حاصل کرنے کے بعد دوبارہ محفوظ کیا جا چکا ہے۔"
+  "{name} has been saved again since this document took its look.": "{name} کو اس دستاویز کی شکل حاصل کرنے کے بعد دوبارہ محفوظ کیا جا چکا ہے۔",
+  "3D scene": "3D منظر",
+  "Arrangement": "ترتیب",
+  "Artwork": "آرٹ ورک",
+  "Collection": "کلیکشن",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "3D منظر رکھنے کے لیے کینوس پر ڈریگ کریں، پھر اسے اسٹوڈیو میں ترمیم کریں۔",
+  "Edit in 3D Studio": "3D Studio میں ترمیم کریں",
+  "Empty scene": "خالی منظر",
+  "Lighting studio": "لائٹنگ اسٹوڈیو",
+  "Scene": "منظر",
+  "Studio defaults": "اسٹوڈیو ڈیفالٹس",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio لوڈ نہیں ہو سکا، اس لیے یہ منظر یہاں ترمیم نہیں کیا جا سکتا۔",
+  "This scene could not be drawn.": "یہ منظر بنایا نہیں جا سکا۔",
+  "one of your uploads": "آپ کے اپ لوڈز میں سے ایک"
 }

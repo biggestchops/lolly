@@ -41,6 +41,8 @@ A still image holds the view you compose. For motion, orbit to a first view and 
 
 Under **Motion**, each key lists the moment it is reached as a percentage of the loop, its angle, field of view, zoom, target and focus distance, so every value can be typed. Keys are spaced evenly when added. **Camera easing** slows into and out of each move, flows through every key with continuous speed, or keeps a constant speed. **Return to the first key** closes the loop for a GIF. A camera path, a turntable and animated lights combine over the same loop seconds.
 
+Each key takes a name of your own, kept to 40 characters. **Go to key** on the preview shows the next saved key, one press per key, and names the one it reached, so you can return to a view and compose the next one from it. It moves the camera and nothing else, so with **Play path** on, the preview carries on travelling; turn **Play path** off to hold the view. A key left unnamed reads and renders exactly as it did before.
+
 ## Place the lights
 
 Choose **Move lights** on the preview to see each studio light as a coloured handle with a line to the subject. Drag a handle to orbit that light around the subject at its current distance. With the preview focused, the arrow keys turn the selected light, plus and minus bring it closer or push it further away, and the square brackets select the previous or next light. Shift makes larger turns. Each step is one undo entry. Escape returns the preview to camera orbiting.
@@ -122,7 +124,7 @@ The SUSE brand pack adds Geeko, Geeko on a branch and Geeko sitting to the model
 
 ## Save and reuse
 
-Save the scene as a session to reopen it, or use **Save as a template** for a reusable starting point. Asset selections refer to stored files. A share link carries settings and asset references; use an editable `.lolly` file when another device also needs your uploaded assets. A studio link placed in another document, a Design image box or an embedded tool image, is rendered at export quality, at full samples and at its real size.
+Save the scene as a session to reopen it, or use **Save as a template** for a reusable starting point. Asset selections refer to stored files. A share link carries settings and asset references; use an editable `.lolly` file when another device also needs your uploaded assets.
 
 ### Save and reuse a studio
 
@@ -137,6 +139,10 @@ A studio lives on your profile, like a template, so it backs up and restores wit
 Lolly's batch workflow renders the same studio. Create rows with the same lighting, material and camera values, varying `artwork` or `modelAsset`. Save separate framing overrides where an object's shape needs them. A template provides a common starting point; later edits to it do not automatically change existing sessions.
 
 Use **Make variants** for side-by-side editing. Its shared controls change the selected sessions together. Activate a cell to orbit its scene; the other cells retain still previews.
+
+### Place a scene in Design
+
+Add a **3D scene** from Design's add menu, then use **Edit in 3D Studio** to open the studio on that box's scene. What you change comes back as one undo step. Unlike an image box, which keeps a rendered picture, a scene box keeps the recipe, so it re-renders at whatever size and moment the document asks for. Each scene box shows a still poster of itself, the selected one is live, and every export draws each scene again at the size that file needs. A studio link placed in another document, or embedded as a tool image, still arrives as a picture: it is rendered at export quality, at full samples and at its real size.
 
 ## Animate objects and lights
 
@@ -156,6 +162,7 @@ If an export stops before it finishes, the studio takes itself back after thirty
 
 - SVG: up to 1 MB, 128 paths and 16 solid colours. Convert text, linked content, filters, masks, gradients and transformed or dashed strokes to plain filled paths first. Very narrow or acute features may need a smaller bevel or no bevel.
 - Models: self-contained glTF 2.0 GLB or STL, up to 32 MB and one million triangles. Export GLB without Draco, Meshopt or KTX2 compression. Embedded textures may be up to 8192 pixels per side. Model animation clips are not played.
+- Model size: the studio always scales the longest side to 3.25 studio units, so a bolt and a building photograph the same. The **Source notes** line says what the file itself measures, in the form `Model spans 120 by 48 by 9 units in its file; shown at 3.25 studio units.`, so you can tell the two apart. Artwork, words and the built-in shapes report no size, because they are drawn to fit.
 - STL supplies a visual mesh. The studio normalizes its size for photography and does not infer print units or certify a printable object. Native CAD documents must first be exported as a supported mesh.
 - Output: SDR rendering, up to 4096 pixels per side and 12 million pixels total. Preview uses fewer samples than export. A WebGL2 device with float render targets is required.
 - Arrangements: up to 16 objects and one million visible triangles. Objects share one extrusion depth and bevel. Separate render passes and editable mesh export are not yet available.

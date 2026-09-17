@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "스튜디오에서 업데이트했어요.",
   "Using {name}.": "{name} 사용 중이에요.",
   "{count} controls you changed stay yours.": "변경한 컨트롤 {count}개는 그대로 유지돼요.",
-  "{name} has been saved again since this document took its look.": "이 문서가 룩을 적용한 뒤 {name}이(가) 다시 저장됐어요."
+  "{name} has been saved again since this document took its look.": "이 문서가 룩을 적용한 뒤 {name}이(가) 다시 저장됐어요.",
+  "3D scene": "3D 장면",
+  "Arrangement": "배치",
+  "Artwork": "아트워크",
+  "Collection": "컬렉션",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "캔버스에서 드래그해 3D 장면을 배치하고 스튜디오에서 편집하세요.",
+  "Edit in 3D Studio": "3D Studio에서 편집",
+  "Empty scene": "빈 장면",
+  "Lighting studio": "조명 스튜디오",
+  "Scene": "장면",
+  "Studio defaults": "스튜디오 기본값",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio를 불러오지 못해서 이 장면은 여기서 편집할 수 없어요.",
+  "This scene could not be drawn.": "이 장면을 그리지 못했어요.",
+  "one of your uploads": "내 업로드 중 하나"
 }

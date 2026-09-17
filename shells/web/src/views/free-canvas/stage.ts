@@ -191,6 +191,11 @@ export function showArmHint(fc: FcCtx, kind: AddKind | null | undefined): void {
       : t('Tap the canvas to place it');
   } else if (kind.id === 'audio' || seedKind === 'audio') {
     armHintTxt.textContent = t('Drag on the canvas to place a sound, then choose one.');
+  } else if (kind.id === '3d' || seedKind === '3d') {
+    // Shaped like the audio line above, and said for the same reason: this drag ends in a
+    // dialog rather than in a finished object. The dialog is the 3D Studio, not the asset
+    // library, so the sentence promises the studio (plan 265 milestone 3).
+    armHintTxt.textContent = t('Drag on the canvas to place a 3D scene, then edit it in the studio.');
   } else if (asset) {
     armHintTxt.textContent = asset;
   } else if (seedKind === 'image') {

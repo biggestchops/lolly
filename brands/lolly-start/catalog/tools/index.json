@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generatedAt": "2026-09-17T14:05:04.444Z",
+  "generatedAt": "2026-09-17T19:49:26.205Z",
   "tools": [
     {
       "id": "compress-pdf",
@@ -3815,7 +3815,7 @@
       "id": "design",
       "name": "Design",
       "description": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system.",
-      "version": "1.29.0",
+      "version": "1.30.0",
       "status": "community",
       "category": "designer",
       "tags": [
@@ -13992,7 +13992,7 @@
       "id": "3d-studio",
       "name": "3D Studio",
       "description": "Turn SVG artwork and 3D models into coordinated images, alone or arranged together in one scene. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "status": "official",
       "category": "designer",
       "tags": [

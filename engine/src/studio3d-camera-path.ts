@@ -143,10 +143,41 @@ export function studioAddCameraKey(values: StudioValues): { id: string; value: u
   };
 }
 
-/** The saved camera values that show a key's view, for a jump to it. */
-export function studioCameraFromKey(values: StudioValues, index: number): { id: string; value: unknown }[] {
-  const rows = Array.isArray(values.cameraKeys) ? (values.cameraKeys as StudioValues[]) : [];
-  const key = rows[index];
+function cameraKeyRows(values: StudioValues): StudioValues[] {
+  return Array.isArray(values.cameraKeys) ? (values.cameraKeys as StudioValues[]) : [];
+}
+
+/** A key's own name, as the recipe normalises it: trimmed, at most 40 characters, often empty. */
+export function studioCameraKeyName(row: StudioValues | undefined): string {
+  return String(row?.name || '')
+    .trim()
+    .slice(0, 40);
+}
+
+/** How a key reads in the preview: its number in the path, and its name when it has one. */
+export function studioCameraKeyLabel(values: StudioValues, index: number): string {
+  const rows = cameraKeyRows(values);
+  const name = studioCameraKeyName(rows[index]);
+  return `Key ${index + 1} of ${rows.length}${name ? `: ${name}` : ''}`;
+}
+
+/**
+ * The saved camera values that show a key's view, for a jump to it. `which` is the key's
+ * position in the path, or a name the reader gave one, matched whatever the letter case.
+ */
+export function studioCameraFromKey(
+  values: StudioValues,
+  which: number | string
+): { id: string; value: unknown }[] {
+  const rows = cameraKeyRows(values);
+  // An empty name matches nothing: unnamed keys are reached by position, never by name.
+  const wanted = typeof which === 'string' ? which.trim().toLowerCase() : '';
+  const key =
+    typeof which === 'number'
+      ? rows[which]
+      : wanted
+        ? rows.find((row) => studioCameraKeyName(row).toLowerCase() === wanted)
+        : undefined;
   if (!key) throw new Error('That camera key does not exist.');
   const target = record(values.target);
   return [

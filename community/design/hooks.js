@@ -271,6 +271,15 @@ function isCameraBox(b) {
   return !!b && String(b.kind) === 'camera';
 }
 
+// plan 265 milestone 3 - "is this box a 3D scene?". Like a camera, keyed off `kind`
+// ALONE: a scene carries no asset, only its `scene` field (the 3D Studio's own settings
+// as a link query), so there is no second signal to reconcile. Unlike a camera it
+// PAINTS, which is why it is not part of isBareBox below: the shell fills its marker
+// with a poster, and the selected one with a live renderer.
+function isSceneBox(b) {
+  return !!b && String(b.kind) === '3d';
+}
+
 // The boxes that leave NO MARK on the frame: an audio bed and a camera marker. One
 // predicate so every "paints nothing" site (fill, gradient, clip, blur, shadow, text)
 // stays in one vocabulary and a new bare kind is added in exactly one place.
@@ -439,6 +448,18 @@ function mediaHtmlFor(b) {
   // styles.css hiding it.
   if (isCameraBox(b)) {
     return '<div class="lolly-box-cam" data-cam="1" data-export-hide aria-hidden="true"></div>';
+  }
+  // plan 265 milestone 3 - a 3D SCENE box. Checked before the `url` guard for the same
+  // reason as the camera: a scene carries no asset, so an early return on "no url" would
+  // swallow the marker. The div is the whole contract with the shell - it fills it with a
+  // poster rendered through the studio's renderer pool, and with a live renderer while the
+  // box is the selected one (data-scene-state says which). The CLI and a plain browser
+  // render leave it inert and empty, exactly like the Lottie and audio markers. An empty
+  // scene still emits the marker with an empty attribute: a freshly added box is a scene
+  // box before anyone has edited it.
+  if (isSceneBox(b)) {
+    return '<div class="lolly-box-img lolly-box-scene" data-lolly-scene="' +
+      esc(b.scene == null ? '' : b.scene) + '" data-scene-state="poster"></div>';
   }
   var img = b && b.image;
   var url = img && img.url ? String(img.url) : '';

@@ -338,6 +338,39 @@ test('an audio box outranks any other marker it happens to carry', () => {
   assert.equal(layerKind(el), 'audio');
 });
 
+// ── 3D scene boxes (plan 265 milestone 3) ───────────────────────────────────
+
+test('a 3D scene box is its own kind, marker or poster', () => {
+  // The marker as the Design hook writes it: no source, no child, just the query.
+  assert.equal(layerKind(layerFrom(boxHtml({
+    inner: '<div class="lolly-box-img lolly-box-scene" data-lolly-scene="words=Hi" data-scene-state="poster"></div>',
+  })).el), 'scene');
+  // …and once the shell has given it a picture. The poster is a plain <img>, which is
+  // exactly what would otherwise make the box read as static and freeze on frame one.
+  assert.equal(layerKind(layerFrom(boxHtml({
+    inner: '<div class="lolly-box-img lolly-box-scene" data-lolly-scene="words=Hi" data-scene-state="poster">'
+      + '<img class="lolly-scene-poster" src="blob:poster"></div>',
+  })).el), 'scene');
+  // The marker ON the element is accepted too, the way a camera marker is.
+  const bare = layerFrom('<div class="lolly-box" data-lolly-scene="words=Hi" style="width:10px;height:10px;"></div>').el;
+  assert.equal(layerKind(bare), 'scene');
+});
+
+test('a scene box has a source time, so the compositor asks for a frame per moment', () => {
+  const node = stageOf(boxHtml({
+    time: 'data-t-start="500" data-t-dur="3000"',
+    inner: '<div class="lolly-box-scene" data-lolly-scene="motion=turntable" data-scene-seconds="4"></div>',
+  }), 4000);
+  const stage = parseSequenceStage(node)!;
+  assert.equal(stage.layers[0]?.kind, 'scene');
+  const at = (t: number): number | null =>
+    (sequenceDrawPlan(stage.layers, t, 4000, PLAN_ENV)[0] as PlanItem).sourceSec;
+  assert.equal(at(500), 0, 'the clip starts at its own zero, like a video');
+  assert.equal(at(1500), 1, 'and advances with the playhead');
+  // …and it is NOT the frozen `static` answer, which is what a scene box used to get.
+  assert.notEqual(at(1500), null);
+});
+
 test('a hostile data-seq-ms cannot make the sequence infinite', () => {
   assert.equal(parseSequenceStage(stageOf(boxHtml(), 'Infinity'))?.totalMs, 0);
   assert.equal(parseSequenceStage(stageOf(boxHtml(), '-1'))?.totalMs, 0);

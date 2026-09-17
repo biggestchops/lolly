@@ -1011,6 +1011,10 @@ export function onGestureEnd(fc: FcCtx, e: PointerEvent): void {
     const wasCard = fc.armedKind?.id === 'card';
     const wasTool = fc.armedKind?.id === 'tool';
     const wasCamera = fc.armedKind?.id === 'camera' || g.seed?.[cfg.kindField] === 'camera';
+    // A 3D SCENE (plan 265 milestone 3). Read off the seeded kind as well as the add-kind
+    // id, exactly like `camera` above: it is a kind of its own, so the seed alone
+    // identifies it wherever the gesture came from.
+    const wasScene = fc.armedKind?.id === '3d' || g.seed?.[cfg.kindField] === '3d';
     const wasImage =
       !wasLottie &&
       !wasVideo &&
@@ -1050,7 +1054,13 @@ export function onGestureEnd(fc: FcCtx, e: PointerEvent): void {
     // OPEN timeline. Without this, adding a camera left the timeline shut and a shift-drag
     // fell through to the marquee - "tilt doesn't work" until you happened to open it.
     if (timeCfg && (wasClip || wasCard || wasAudio || wasCamera)) fc.timeline.openTimeline();
-    if (wasLottie) setTimeout(() => fc.objects.pickImage({ pickType: 'lottie', initialTab: 'library' }), 0);
+    // A scene box arrives carrying the manifest's seeded scene, which is the same badge
+    // for everyone, so the studio opens straight away - the same promise the media kinds
+    // make by opening a picker. It is the SCENE editor rather than an asset picker, and
+    // it is deferred by a macrotask for the same reason they are: the commit above has to
+    // reach the model (and the box has to exist) before a modal reads it back.
+    if (wasScene) setTimeout(() => { void fc.objects.openStudio([id]); }, 0);
+    else if (wasLottie) setTimeout(() => fc.objects.pickImage({ pickType: 'lottie', initialTab: 'library' }), 0);
     else if (wasVideo || wasClip)
       setTimeout(() => fc.objects.pickImage({ pickType: 'video', initialTab: 'library' }), 0);
     else if (wasAudio)

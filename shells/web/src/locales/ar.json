@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "تم التحديث من الاستوديو.",
   "Using {name}.": "قيد استخدام {name}.",
   "{count} controls you changed stay yours.": "{count} عناصر تحكم غيّرتها تظل خاصة بك.",
-  "{name} has been saved again since this document took its look.": "تم حفظ {name} مرة أخرى منذ أن اكتسب هذا المستند مظهره منه."
+  "{name} has been saved again since this document took its look.": "تم حفظ {name} مرة أخرى منذ أن اكتسب هذا المستند مظهره منه.",
+  "3D scene": "مشهد ثلاثي الأبعاد",
+  "Arrangement": "ترتيب",
+  "Artwork": "عمل فني",
+  "Collection": "مجموعة",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "اسحب على اللوحة لوضع مشهد ثلاثي الأبعاد، ثم حرّره في الاستوديو.",
+  "Edit in 3D Studio": "التحرير في 3D Studio",
+  "Empty scene": "مشهد فارغ",
+  "Lighting studio": "استوديو الإضاءة",
+  "Scene": "المشهد",
+  "Studio defaults": "افتراضيات الاستوديو",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "تعذّر تحميل 3D Studio، لذا لا يمكن تحرير هذا المشهد هنا.",
+  "This scene could not be drawn.": "تعذّر رسم هذا المشهد.",
+  "one of your uploads": "أحد مرفوعاتك"
 }

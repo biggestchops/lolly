@@ -5749,5 +5749,18 @@
   "Updated from the studio.": "Oppdatert fra studioet.",
   "Using {name}.": "Bruker {name}.",
   "{count} controls you changed stay yours.": "{count} innstillinger du endret, beholdes.",
-  "{name} has been saved again since this document took its look.": "{name} er lagret på nytt siden dette dokumentet tok looken sin."
+  "{name} has been saved again since this document took its look.": "{name} er lagret på nytt siden dette dokumentet tok looken sin.",
+  "3D scene": "3D-scene",
+  "Arrangement": "Oppstilling",
+  "Artwork": "Illustrasjon",
+  "Collection": "Samling",
+  "Drag on the canvas to place a 3D scene, then edit it in the studio.": "Dra på lerretet for å plassere en 3D-scene, og rediger den deretter i studioet.",
+  "Edit in 3D Studio": "Rediger i 3D Studio",
+  "Empty scene": "Tom scene",
+  "Lighting studio": "Lysstudio",
+  "Scene": "Scene",
+  "Studio defaults": "Studioets standardverdier",
+  "The 3D Studio could not be loaded, so this scene cannot be edited here.": "3D Studio kunne ikke lastes, så denne scenen kan ikke redigeres her.",
+  "This scene could not be drawn.": "Denne scenen kunne ikke tegnes.",
+  "one of your uploads": "en av opplastingene dine"
 }

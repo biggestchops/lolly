@@ -549,7 +549,10 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
     const active =
       this.instances.find((candidate) => candidate.row === (recipe.activeObject ?? 0)) ??
       this.instances[0]!;
-    return { slots: active.asset.info.slots, triangles, warnings };
+    // The selected subject's own file size travels with its slots; a source that has
+    // none (artwork, words, a built-in shape) reports no bounds at all.
+    const bounds = active.asset.info.bounds;
+    return { slots: active.asset.info.slots, triangles, warnings, ...(bounds ? { bounds } : {}) };
   }
 
   /** World-space bounds of every visible subject at time zero. */
