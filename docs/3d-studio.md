@@ -29,6 +29,8 @@ Under **Stage**, choose a background colour, gradient or image. A PNG made with 
 
 The quickest route to an animated backdrop is a template: **Wordmark backdrop** sets your words in the brand font and **Icon backdrop** starts from an icon (swap in your own SVG under Start). Both ship with Lolly itself; **SUSE wordmark backdrop** and **SUSE icon backdrop** come with the SUSE brand pack, so they appear on a SUSE install only. Each combines the dramatic studio, copies of the subject drifting in depth, orbiting lights and a slow looping camera move, so the first export as video or GIF is already a finished loop. Change the words or the icon, adjust the depth spread and the camera keys, then export.
 
+Three more templates open on a finished loop of the subject itself: **Logo drop** drops a badge in turning and bounces it to a stop under dramatic light, **Bouncing icon** jumps an icon under a soft studio with the lights orbiting, and **Shatter reveal** breaks the subject into its own triangles while the camera swings round onto the view. Motion below says what each loop and each camera move does.
+
 ## Words in the brand font
 
 Choose **Words in the brand font** under **Start with** and type the words, up to eight lines. **Font** offers the brand roles, brand sans, display and mono, plus any font added under Brand fonts; **Weight** picks the instance, and Expert mode adds letter spacing, line height and alignment. Words face the camera by default, because a wordmark reads best square to the lens; **Pose** applies the object rotation from Camera instead. The letters are shaped on this device by the same engine that outlines text in exports, so ligatures and kerning are the font's own, and the outlines are extruded and bevelled exactly like artwork. Words are one material region and take colour A. A role the brand does not define falls back to its main face, and a font that is not available on this device says so rather than substituting silently.
@@ -40,6 +42,8 @@ In an arrangement, a **Words** row sets its own text and shares the scene's font
 A still image holds the view you compose. For motion, orbit to a first view and choose **Add camera key** on the preview, then orbit to the next view and add another. Two keys make a move; up to twelve make a path. **Play path** plays it in the preview, and the export panel offers the clip as video or GIF at the loop length. Choose **Hold the current view** (or Play path again) to compose the next key while the picture stands still; the saved keys stay.
 
 Under **Motion**, each key lists the moment it is reached as a percentage of the loop, its angle, field of view, zoom, target and focus distance, so every value can be typed. Keys are spaced evenly when added. **Camera easing** slows into and out of each move, flows through every key with continuous speed, or keeps a constant speed. **Return to the first key** closes the loop for a GIF. A camera path, a turntable and animated lights combine over the same loop seconds.
+
+**Camera** also offers five ready-made moves built from the view you have composed, listed under Motion below. A move hides the key list while it is chosen, and **Convert to keys** on the preview hands you its rows so you can edit them like any other key.
 
 Each key takes a name of your own, kept to 40 characters. **Go to key** on the preview shows the next saved key, one press per key, and names the one it reached, so you can return to a view and compose the next one from it. It moves the camera and nothing else, so with **Play path** on, the preview carries on travelling; turn **Play path** off to hold the view. A key left unnamed reads and renders exactly as it did before.
 
@@ -144,11 +148,49 @@ Use **Make variants** for side-by-side editing. Its shared controls change the s
 
 Add a **3D scene** from Design's add menu, then use **Edit in 3D Studio** to open the studio on that box's scene. What you change comes back as one undo step. Unlike an image box, which keeps a rendered picture, a scene box keeps the recipe, so it re-renders at whatever size and moment the document asks for. Each scene box shows a still poster of itself, the selected one is live, and every export draws each scene again at the size that file needs. A studio link placed in another document, or embedded as a tool image, still arrives as a picture: it is rendered at export quality, at full samples and at its real size.
 
-## Animate objects and lights
+## Motion
 
-Set **Motion** to **Turntable** for a rotating object, and see Move the camera above for camera paths. **Light motion** independently animates the studio: **Orbit the studio** sweeps the rig around the object and back; **Gently breathe** varies its intensity. Moving sources affect illumination, reflections and cast shadows. Brand light colours stay intact.
+**Motion** chooses what the subject does over the loop. **Loop seconds** sets how long one loop takes and supplies the initial clip length; the export panel lets you override how much to record. **Still image**, the default, holds the subject where you put it, and the rest are loops.
 
-**Light motion amount** controls the sweep or intensity range. **Loop seconds** controls both object and light timing and supplies the initial clip length. The export panel lets you override how much to record. The lights return to their starting position and intensity at each loop boundary. A turntable closes its object pose only when its turn angle is a whole number of rotations.
+- **Turntable** turns the subject through the turn angle over the loop.
+- **Hover** floats the subject up and back down, with a small sway.
+- **Pulse** breathes the whole subject in and out by a few percent, evenly.
+- **Wobble** rocks the subject side to side three times and lets it settle.
+- **Pop** winds up, collapses the subject away, then brings it back past its own size and settles.
+- **Coin flip** throws the subject up through one whole flip and squashes it a little as it touches down.
+- **Jump** crouches, stretches through the arc, squashes as it comes down and settles.
+- **Spin and land** lifts the subject, drops it turning once, bounces it to a stop and holds it there.
+- **Burst** breaks the subject into its own triangles, flies them out and brings them back whole.
+
+**Motion amount** scales how far any of them travel: 1 is the motion as drawn, below 1 is quieter, above 1 is bolder. It does nothing for a turntable, which has **Turn angle** as its own scale. **Rest between loops** is how long Pop, Coin flip, Jump, Spin and land and Burst sit still at the end of the loop before they go again; Hover, Pulse and Wobble run without stopping.
+
+Every loop starts and ends at the place you put the subject, so a poster or a contact sheet at time zero is the subject as you placed it.
+
+The subject also keeps its footing. Whatever a loop does to its size or its tilt, its lowest point stays on the floor and only the loop's own lift takes it off, so a squash flattens onto the floor and a stretch grows upward. An arrangement moves as one group about the middle of its footprint. At the largest amount, every loop stays inside the studio's shadow.
+
+### Burst
+
+Each triangle spins about its own centre, flies outward, falls a little and shrinks away, then the object comes back together. Nothing is random, so the same moment of a loop draws the same picture on every device and in every export. The cast shadow shatters with the object. Nothing fades: a piece shrinks rather than going see-through, so a burst works in every output, the cut-out ones included. Pieces fly about 2 studio units at a motion amount of 1.
+
+Burst shatters up to 250,000 triangles per object. A heavier model keeps its whole shape and the **Source notes** line gives the count that refused it.
+
+### Camera moves
+
+Beside holding the view still and travelling through your own keys, **Camera** offers five moves made from the view you have composed.
+
+- **Orbit sweep** turns a little each way about the view you set and comes back.
+- **Push in** comes closer over the loop. With **Return to the first key** off it holds the close view.
+- **Dolly zoom** narrows the lens while the camera pulls back, so the subject keeps its size and the background slides. An orthographic camera has no lens to change, so the move does nothing there.
+- **Reveal turn** swings in from one side, starting a little further back and at an elevation of 30 degrees, and settles on your view, once.
+- **Crane** comes down from above onto your view while the framing closes in.
+
+**Camera amount** scales how far a move travels. A dolly zoom always goes from a 60 degree lens to a 24 degree one, so the amount does not change it. **Convert to keys** on the preview turns any move into ordinary camera keys you can edit, as one step that undo takes back.
+
+### Light motion
+
+**Light motion** animates the studio on its own: **Orbit the studio** sweeps the rig around the object and back; **Gently breathe** varies its intensity. Moving sources affect illumination, reflections and cast shadows. Brand light colours stay intact. **Light motion amount** controls the sweep or intensity range, and the lights return to their starting position and intensity at each loop boundary.
+
+An object loop, a camera move and animated lights combine over the same loop seconds. A turntable closes its object pose only when its turn angle is a whole number of rotations.
 
 ## What an edit redraws
 

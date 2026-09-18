@@ -7,9 +7,11 @@ import {
 } from '../../../../../engine/src/studio3d-arrangement.ts';
 import { STUDIO_LIGHT_TARGET, studioPlaceableLights } from '../../../../../engine/src/studio3d-lights.ts';
 import { studioCameraPose } from '../../../../../engine/src/studio3d-camera-path.ts';
+import { studioObjectPose } from '../../../../../engine/src/studio3d-motion.ts';
 import { studioAnimated, studioLightMotion } from '../../../../../engine/src/studio3d.ts';
 import type {
   StudioObjectV1,
+  StudioPoseV1,
   StudioSceneV1,
   StudioSourceInfo,
 } from '../../../../../packages/core/src/studio3d-v1.ts';
@@ -26,6 +28,7 @@ import {
   type StudioShaper,
 } from './source.ts';
 import type { StudioSceneCounters, StudioSceneHost } from './scene-host.ts';
+import { clearShatter, prepareShatter, setShatter } from './shatter.ts';
 import {
   buildStudioRig,
   buildStudioStage,
@@ -46,6 +49,10 @@ interface Instance {
   asset: StudioAsset;
   object: THREE.Group;
   restore: () => void;
+  /** Why this subject cannot shatter, from the burst preparation; absent when it can. */
+  refusedBurst?: string;
+  /** True once the burst uniforms have been written, so a non-burst loop can clear them. */
+  shattered: boolean;
 }
 
 /** The scene values one object is evaluated with: its own source and slot bindings. */
@@ -97,14 +104,21 @@ export function studioAssetKeys(recipe: StudioSceneV1, pixels?: number): string[
 
 /**
  * What re-instantiating depends on: which rows are placed, the source each one loaded,
- * and the placement and slot bindings of every one of them. A name is left out, because
- * it only prefixes a warning, which every update composes afresh.
+ * the placement and slot bindings of every one of them, and the loop, because the burst
+ * prepares each placed subject's geometry for the shatter as it is placed. A name is left
+ * out, because it only prefixes a warning, which every update composes afresh.
  */
-function instanceKeyOf(rows: number[], keys: string[], specs: StudioObjectV1[]): string {
+function instanceKeyOf(
+  rows: number[],
+  keys: string[],
+  specs: StudioObjectV1[],
+  motion: string
+): string {
   return JSON.stringify([
     rows,
     keys,
     specs.map((spec) => [spec.transform, spec.visible, spec.grounded, spec.bindings]),
+    motion,
   ]);
 }
 
@@ -319,7 +333,7 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
     const keys = specs.map((spec) => assetKey(recipe, spec, detailPixels));
     // What this edit actually changed. An edit that moves the camera or a light changes
     // neither, so the placed objects and their materials are kept exactly as they are.
-    const instanceKey = instanceKeyOf(rows, keys, specs),
+    const instanceKey = instanceKeyOf(rows, keys, specs, recipe.motion.kind),
       materialKey = materialKeyOf(recipe);
     const sameInstances = instanceKey === this.instanceKey && !!this.instances.length,
       sameMaterials = materialKey === this.materialKey;
@@ -435,6 +449,9 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
   /** Put every placed object back the way it was loaded and empty the scene's subject group. */
   private releaseInstances(): void {
     for (const instance of this.instances) {
+      // A bursting copy wears patched materials of its own: they go first, so the
+      // source's materials are what the restore below puts back.
+      if (instance.shattered) clearShatter(instance.object);
       instance.restore();
       instance.asset.dispose();
     }
@@ -485,7 +502,17 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
             ? new Error(`${spec.name}: ${error.message}`)
             : error;
         }
-        instances.push({ spec, row: rows[i]!, key: keys[i]!, asset, object: asset.object, restore });
+        const instance: Instance = {
+          spec,
+          row: rows[i]!,
+          key: keys[i]!,
+          asset,
+          object: asset.object,
+          restore,
+          shattered: false,
+        };
+        instances.push(instance);
+        this.prepareBurst(recipe, instance);
         if (spec.visible) triangles += shared.info.triangles;
       }
       if (triangles > MAX_SCENE_TRIANGLES)
@@ -523,13 +550,47 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
     }
   }
 
+  /**
+   * Ready one placed subject for the burst, when the loop is a burst: its geometry is
+   * converted and given its per-triangle attributes. A subject too big to shatter says so
+   * in the notes and renders whole. Any other loop leaves the subject as it was loaded,
+   * and the loop is part of the instance key, so a subject is prepared as it is placed.
+   */
+  private prepareBurst(recipe: StudioSceneV1, instance: Instance): void {
+    if (recipe.motion.kind !== 'burst') return;
+    const prepared = prepareShatter(instance.asset);
+    if (prepared.refused) instance.refusedBurst = prepared.refused;
+  }
+
+  /**
+   * Write this frame's burst onto every placed subject, and take a subject that was
+   * bursting a moment ago back to its own shape. The spread and the fall follow the
+   * loop's amount, so one slider carries how far the pieces fly.
+   */
+  private applyBurst(recipe: StudioSceneV1, pose: StudioPoseV1): void {
+    const bursting = recipe.motion.kind === 'burst';
+    const amount = recipe.motion.amount;
+    for (const instance of this.instances) {
+      if (bursting && !instance.refusedBurst) {
+        setShatter(instance.object, pose.burst, 2 * amount, 1.5 * amount);
+        instance.shattered = true;
+      } else if (instance.shattered) {
+        // Changing the loop places the subjects again, so this is belt and braces: whoever
+        // holds a placed copy, it is drawn with its own materials unless a burst is running.
+        clearShatter(instance.object);
+        instance.shattered = false;
+      }
+    }
+  }
+
   /** The slots, triangle count and notes this update reports to the mount. */
   private sceneInfo(recipe: StudioSceneV1, everySpec: StudioObjectV1[]): StudioSourceInfo {
     let triangles = 0;
     const warnings: string[] = [];
     for (const instance of this.instances) {
       if (instance.spec.visible) triangles += instance.asset.info.triangles;
-      for (const warning of instance.asset.info.warnings) {
+      const notes = [...instance.asset.info.warnings, ...(instance.refusedBurst ? [instance.refusedBurst] : [])];
+      for (const warning of notes) {
         const message = recipe.objects ? `${instance.spec.name}: ${warning}` : warning;
         if (!warnings.includes(message)) warnings.push(message);
       }
@@ -573,6 +634,9 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
       throw new Error('Wait for the studio source to finish loading.');
     // On a camera path the frame's camera is the sampled pose; the saved camera is the rest view.
     const recipe = framedRecipe(posed, time, clipSeconds);
+    // One pose for the whole frame: the subjects take it, the burst takes it, and the
+    // empty-frame check reads the same one back.
+    const pose = studioObjectPose(recipe, time, clipSeconds);
     const showEnvironment = recipe.environment.background && recipe.stage.output === 'scene';
     const frameKey = JSON.stringify([
       this.revision,
@@ -641,7 +705,8 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
     this.scene.backgroundIntensity = recipe.environment.intensity;
     this.scene.backgroundBlurriness = recipe.environment.blur;
     this.scene.backgroundRotation.y = THREE.MathUtils.degToRad(recipe.environment.rotation);
-    placeStudioScene(this.root, this.instances, recipe, time, clipSeconds);
+    placeStudioScene(this.root, this.instances, recipe, time, clipSeconds, pose);
+    this.applyBurst(recipe, pose);
     let outline: THREE.Box3Helper | null = null;
     const selected =
       this.highlighted === null
@@ -741,11 +806,16 @@ export class StudioRenderer implements StudioSceneHost<HTMLCanvasElement, THREE.
   private verifyFrame(width: number, height: number, time: number, clipSeconds?: number): void {
     const posed = this.recipe;
     if (!posed || posed.stage.output === 'scene') return;
+    const pose = studioObjectPose(posed, time, clipSeconds);
+    // A burst moves each triangle in the vertex shader, so the surface a ray meets is not
+    // where the pixels were drawn, and at the end of the loop there is deliberately nothing
+    // left to draw. The intact subject at phase zero is the frame this check is for.
+    if (pose.burst > 0) return;
     const w = Math.max(1, Math.round(width)),
       h = Math.max(1, Math.round(height));
     const camera = studioCamera(framedRecipe(posed, time, clipSeconds), w / h);
     camera.updateMatrixWorld(true);
-    placeStudioScene(this.root, this.instances, posed, time, clipSeconds);
+    placeStudioScene(this.root, this.instances, posed, time, clipSeconds, pose);
     const frame = new THREE.Box2(new THREE.Vector2(0, 0), new THREE.Vector2(w, h));
     const covered = new THREE.Box2();
     const ray = new THREE.Raycaster();

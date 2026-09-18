@@ -1,7 +1,7 @@
 {
   "id": "3d-studio",
   "name": "3D Studio",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "engineVersion": ">=1.205.0",
   "status": "official",
   "singleInstance": true,
@@ -2993,8 +2993,86 @@
         {
           "value": "turntable",
           "label": "Turntable"
+        },
+        {
+          "value": "hover",
+          "label": "Hover"
+        },
+        {
+          "value": "pulse",
+          "label": "Pulse"
+        },
+        {
+          "value": "wobble",
+          "label": "Wobble"
+        },
+        {
+          "value": "pop",
+          "label": "Pop"
+        },
+        {
+          "value": "coin",
+          "label": "Coin flip"
+        },
+        {
+          "value": "jump",
+          "label": "Jump"
+        },
+        {
+          "value": "spinland",
+          "label": "Spin and land"
+        },
+        {
+          "value": "burst",
+          "label": "Burst"
         }
-      ]
+      ],
+      "help": "What the subject does over the loop. Hover floats, Pulse breathes and Wobble rocks, and those three run without stopping. Pop, Coin flip, Jump, Spin and land and Burst play once and then hold still before they go again. Every loop starts and ends at the place you put the subject, so a still of an animated document is the subject as you placed it."
+    },
+    {
+      "id": "motionAmount",
+      "label": "Motion amount",
+      "type": "number",
+      "default": 1,
+      "section": "Motion",
+      "min": 0.25,
+      "max": 2,
+      "step": 0.05,
+      "display": "slider",
+      "showIf": {
+        "motion": [
+          "hover",
+          "pulse",
+          "wobble",
+          "pop",
+          "coin",
+          "jump",
+          "spinland",
+          "burst"
+        ]
+      },
+      "help": "How far the loop travels. 1 is the motion as drawn, below 1 is quieter, above 1 is bolder. A jump stays inside its own shadow at every setting."
+    },
+    {
+      "id": "motionRest",
+      "label": "Rest between loops",
+      "type": "number",
+      "default": 0.25,
+      "section": "Motion",
+      "min": 0,
+      "max": 0.6,
+      "step": 0.05,
+      "display": "slider",
+      "showIf": {
+        "motion": [
+          "pop",
+          "coin",
+          "jump",
+          "spinland",
+          "burst"
+        ]
+      },
+      "help": "How much of the loop the subject sits still at the end, as a fraction of it. At 0 the move starts again as soon as it finishes."
     },
     {
       "id": "cameraMotion",
@@ -3010,9 +3088,49 @@
         {
           "value": "keys",
           "label": "Travel through the camera keys"
+        },
+        {
+          "value": "sweep",
+          "label": "Orbit sweep"
+        },
+        {
+          "value": "pushin",
+          "label": "Push in"
+        },
+        {
+          "value": "dolly",
+          "label": "Dolly zoom"
+        },
+        {
+          "value": "reveal",
+          "label": "Reveal turn"
+        },
+        {
+          "value": "crane",
+          "label": "Crane"
         }
       ],
-      "help": "Orbit to a view and choose Add camera key on the preview; two keys make a move, more make a path. Hold the view to compose the next key."
+      "help": "Orbit to a view and choose Add camera key on the preview; two keys make a move, more make a path. Hold the view to compose the next key. The moves below are made from the current view instead. Orbit sweep turns a little each way and comes back. Push in comes closer over the loop. Dolly zoom narrows the lens while the camera pulls back, so the subject keeps its size and the background slides; an orthographic camera ignores the lens, so it does nothing there. Reveal turn swings in from the side and settles on the current view. Crane comes down onto the current view. Convert to keys on the preview hands you the rows to edit."
+    },
+    {
+      "id": "cameraAmount",
+      "label": "Camera amount",
+      "type": "number",
+      "default": 1,
+      "section": "Motion",
+      "min": 0.25,
+      "max": 2,
+      "step": 0.05,
+      "display": "slider",
+      "showIf": {
+        "cameraMotion": [
+          "sweep",
+          "pushin",
+          "reveal",
+          "crane"
+        ]
+      },
+      "help": "How far the camera move travels: the sweep angle, the push, the crane and the turn a reveal comes round. Dolly zoom always goes from a 60 degree lens to a 24 degree one, so this does not change it."
     },
     {
       "id": "cameraKeys",
@@ -3125,7 +3243,14 @@
       "default": "smooth",
       "section": "Motion",
       "showIf": {
-        "cameraMotion": "keys"
+        "cameraMotion": [
+          "keys",
+          "sweep",
+          "pushin",
+          "dolly",
+          "reveal",
+          "crane"
+        ]
       },
       "options": [
         {
@@ -3149,9 +3274,16 @@
       "default": false,
       "section": "Motion",
       "showIf": {
-        "cameraMotion": "keys"
+        "cameraMotion": [
+          "keys",
+          "sweep",
+          "pushin",
+          "dolly",
+          "reveal",
+          "crane"
+        ]
       },
-      "help": "Closes the loop for a GIF or a looping clip."
+      "help": "Closes the loop for a GIF or a looping clip. A camera move that ends where it started, such as an orbit sweep, is already closed."
     },
     {
       "id": "duration",
@@ -3165,7 +3297,17 @@
       "display": "slider",
       "showIf": [
         {
-          "motion": "turntable"
+          "motion": [
+            "turntable",
+            "hover",
+            "pulse",
+            "wobble",
+            "pop",
+            "coin",
+            "jump",
+            "spinland",
+            "burst"
+          ]
         },
         {
           "lightMotion": [
@@ -3174,7 +3316,14 @@
           ]
         },
         {
-          "cameraMotion": "keys"
+          "cameraMotion": [
+            "keys",
+            "sweep",
+            "pushin",
+            "dolly",
+            "reveal",
+            "crane"
+          ]
         }
       ]
     },

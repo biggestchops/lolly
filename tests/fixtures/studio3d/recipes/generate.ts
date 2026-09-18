@@ -14,6 +14,14 @@
  * Once the studio code moves past that commit the script stops by design: the files
  * are a record of the pushed output, not something to regenerate after a change.
  *
+ *   node tests/fixtures/studio3d/recipes/generate.ts --motion    # only 05-motion-*.json
+ *
+ * The motion library is new behaviour, so its pins are their own family, written from
+ * today's manifest and today's engine: one 05-motion-<kind>.json per loop holding the
+ * value set, the recipe it builds and the object pose at nine phases of that loop.
+ * tests/studio3d-motion.test.ts reads them, so a loop that changes shape is re-pinned
+ * on purpose. They are written only by --motion, never by a bare run.
+ *
  * Each recipe file is { source, era, values, scene }. `values` is the whole value set a
  * saved session carries: the manifest defaults of its era (0.3.0 from d7b4593dd, 0.4.0
  * from 05faef7a4), with brand colour tokens replaced by the browser harness colours,
@@ -22,7 +30,7 @@
  * render the same values. `scene` is buildStudioScene(values) at the pushed commit.
  */
 import { execFileSync } from 'node:child_process';
-import { readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
@@ -30,6 +38,7 @@ import {
   type InputManifest,
   modelToValues,
 } from '../../../../engine/src/inputs.ts';
+import { studioObjectPose } from '../../../../engine/src/studio3d-motion.ts';
 import { buildStudioScene } from '../../../../engine/src/studio3d.ts';
 import { MATERIAL_FIELDS, materialCases, recordMaterialCase } from './material-cases.ts';
 
@@ -40,7 +49,7 @@ const here = import.meta.dirname;
 const root = resolve(here, '..', '..', '..', '..');
 
 type Values = Record<string, unknown>;
-type Era = '0.3' | '0.4';
+type Era = '0.3' | '0.4' | '0.5';
 
 /** The browser harness colours (tests/helpers/studio3d-browser.ts). */
 const HARNESS = {
@@ -371,6 +380,46 @@ function sets04(m: InputManifest): ValueSet[] {
   ];
 }
 
+/** What the motion pins record as their origin: today's code, not the pushed commit. */
+export const MOTION_SOURCE = 'plan-267';
+
+/** The moments of the loop each motion pin records a pose at. */
+export const MOTION_PHASES = [0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1];
+
+/**
+ * One value set per loop, with an amount, a rest and a length chosen so the pins also
+ * hold the ends of each range: amount 0.5 and 2, rest 0 and 0.6, lengths 3 to 8.
+ */
+function sets05(m: InputManifest): ValueSet[] {
+  const base = defaults(m);
+  const set = (kind: string, values: Values): ValueSet => ({
+    id: `05-motion-${kind}`,
+    era: '0.5',
+    values: { ...base, motion: kind, ...values },
+  });
+  return [
+    set('still', {}),
+    set('turntable', { duration: 6, turnDegrees: 180 }),
+    set('hover', { motionAmount: 1.5, duration: 4 }),
+    set('pulse', { motionAmount: 0.5 }),
+    set('wobble', { motionAmount: 2, duration: 3 }),
+    set('pop', { motionAmount: 1.25, motionRest: 0.4 }),
+    set('coin', { motionAmount: 1, motionRest: 0.25, duration: 6 }),
+    set('jump', { motionAmount: 2, motionRest: 0 }),
+    set('spinland', { motionAmount: 1.75, motionRest: 0.6, duration: 8 }),
+    set('burst', { motionAmount: 0.75, motionRest: 0.15 }),
+  ];
+}
+
+/** The 3D Studio manifest as it stands, which is what the motion pins are built from. */
+function manifestToday(): InputManifest {
+  return JSON.parse(readFileSync(join(root, 'community/3d-studio/tool.json'), 'utf8'));
+}
+
+export function motionValueSets(): ValueSet[] {
+  return sets05(manifestToday());
+}
+
 export function valueSets(): ValueSet[] {
   return [...sets03(manifest(MANIFEST_03_COMMIT)), ...sets04(manifest(PINNED_COMMIT))];
 }
@@ -420,10 +469,37 @@ function writeMaterials(): number {
   return cases.length;
 }
 
+function writeMotion(): number {
+  const sets = motionValueSets();
+  for (const { id, era, values } of sets) {
+    const scene = buildStudioScene({ version: 1, values });
+    writeFileSync(
+      join(here, `${id}.json`),
+      json({
+        source: MOTION_SOURCE,
+        era,
+        kind: scene.motion.kind,
+        phases: MOTION_PHASES,
+        values,
+        scene: JSON.parse(JSON.stringify(scene)),
+        poses: MOTION_PHASES.map((phase) =>
+          JSON.parse(JSON.stringify(studioObjectPose(scene, phase)))
+        ),
+      })
+    );
+  }
+  return sets.length;
+}
+
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   const args = process.argv.slice(2);
-  const both = !args.includes('--recipes') && !args.includes('--materials');
-  if (both || args.includes('--recipes')) console.log(`wrote ${writeRecipes()} recipe fixtures`);
-  if (both || args.includes('--materials'))
-    console.log(`wrote materials.json with ${writeMaterials()} cases`);
+  // --motion writes only its own family; a bare run is the pushed-output pins it always was.
+  if (args.includes('--motion')) {
+    console.log(`wrote ${writeMotion()} motion fixtures`);
+  } else {
+    const both = !args.includes('--recipes') && !args.includes('--materials');
+    if (both || args.includes('--recipes')) console.log(`wrote ${writeRecipes()} recipe fixtures`);
+    if (both || args.includes('--materials'))
+      console.log(`wrote materials.json with ${writeMaterials()} cases`);
+  }
 }

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generatedAt": "2026-09-17T19:49:26.205Z",
+  "generatedAt": "2026-09-18T00:06:02.607Z",
   "tools": [
     {
       "id": "compress-pdf",
@@ -13992,7 +13992,7 @@
       "id": "3d-studio",
       "name": "3D Studio",
       "description": "Turn SVG artwork and 3D models into coordinated images, alone or arranged together in one scene. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "status": "official",
       "category": "designer",
       "tags": [
@@ -14029,10 +14029,28 @@
       "preview": "/catalog/previews/3d-studio.svg",
       "templates": [
         {
+          "id": "bouncing-icon",
+          "name": "Bouncing icon",
+          "category": "Promotion",
+          "description": "An icon crouches, jumps and comes down again under soft light, with the studio orbiting gently as it goes. Swap in your own SVG under Start."
+        },
+        {
           "id": "icon-backdrop",
           "name": "Icon backdrop",
           "category": "Promotion",
           "description": "An icon or logo as an extruded object, lit dramatically, with copies drifting in depth and a slow camera move. Swap in your own SVG under Start."
+        },
+        {
+          "id": "logo-drop",
+          "name": "Logo drop",
+          "category": "Promotion",
+          "description": "A badge drops in turning, bounces to a stop and holds still under dramatic light. Swap in your own SVG under Start, or choose Words in the brand font for a wordmark."
+        },
+        {
+          "id": "shatter-reveal",
+          "name": "Shatter reveal",
+          "category": "Promotion",
+          "description": "The subject breaks into its own triangles, flies apart and comes back together while the camera swings round from the side onto the finished view. Swap in your own SVG under Start."
         },
         {
           "id": "wordmark-backdrop",

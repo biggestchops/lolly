@@ -13,8 +13,11 @@ import {
 } from '../../../../../engine/src/studio3d-collection.ts';
 import {
   studioAddCameraKey,
+  studioCameraApparentSize,
   studioCameraFromKey,
   studioCameraKeyLabel,
+  studioCameraPresetEdit,
+  studioIsCameraPreset,
 } from '../../../../../engine/src/studio3d-camera-path.ts';
 import {
   studioLightEdit,
@@ -523,6 +526,30 @@ export function syncStudioControls(entry: StudioControls): void {
       value: entry.inputValues.cameraMotion === 'keys' ? 'still' : 'keys',
     })
   );
+  // A camera move draws its keys from the live view. Convert to keys hands those rows
+  // over as one edit, so one undo takes the move back, and the button is here only
+  // while a move is chosen: authored keys are already editable.
+  const moveKeys = studioIsCameraPreset(entry.recipe.cameraMotion?.kind ?? 'still')
+    ? (entry.recipe.cameraMotion?.keys ?? [])
+    : [];
+  const convert = button('[data-studio-convert-keys]', () => {
+    const edits = studioCameraPresetEdit(entry.recipe);
+    // A dolly holds the subject's size by trading lens for distance. Where the zoom
+    // range cannot go that far, the framing moves, and the reader is told so. Both are
+    // read before the commit, because the commit hands this view its next recipe.
+    const live = studioCameraApparentSize(entry.recipe.camera);
+    const framed = moveKeys.every(
+      (key) => Math.abs(studioCameraApparentSize(key) - live) <= live * 0.02
+    );
+    commit(entry, ...edits);
+    note(
+      entry,
+      `Converted to ${moveKeys.length} keys. Edit them under Motion.${
+        framed ? '' : ' The zoom range limited this move, so the subject changes size.'
+      }`
+    );
+  });
+  if (convert) convert.hidden = moveKeys.length < 2;
   const lightsButton = entry.marker.querySelector<HTMLButtonElement>('[data-studio-lights]');
   if (lightsButton) lightsButton.hidden = !studioPlaceableLights(entry.recipe).length;
   picking(entry, false);

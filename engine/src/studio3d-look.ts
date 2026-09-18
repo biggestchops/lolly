@@ -100,7 +100,10 @@ export const STUDIO_LOOK_KEYS: readonly string[] = [
   'videoSamples',
   // Motion and the camera path
   'motion',
+  'motionAmount',
+  'motionRest',
   'cameraMotion',
+  'cameraAmount',
   'cameraKeys',
   'cameraEase',
   'cameraLoop',

@@ -1,0 +1,156 @@
+{
+  "source": "plan 267 lane D",
+  "values": {
+    "cameraMotion": "reveal",
+    "cameraAmount": 0.5,
+    "camera": {
+      "azimuth": -30,
+      "elevation": 40,
+      "zoom": 0.9
+    },
+    "focusDistance": 6
+  },
+  "camera": {
+    "projection": "perspective",
+    "azimuth": -30,
+    "elevation": 40,
+    "fov": 29,
+    "zoom": 0.9,
+    "target": [
+      0,
+      1.6,
+      0
+    ],
+    "focus": 6,
+    "aperture": 0
+  },
+  "cameraMotion": {
+    "kind": "reveal",
+    "ease": "smooth",
+    "loop": false,
+    "amount": 0.5,
+    "keys": [
+      {
+        "at": 0,
+        "azimuth": -75,
+        "elevation": 30,
+        "fov": 29,
+        "zoom": 0.72,
+        "target": [
+          0,
+          1.6,
+          0
+        ],
+        "focus": 6
+      },
+      {
+        "at": 1,
+        "azimuth": -30,
+        "elevation": 40,
+        "fov": 29,
+        "zoom": 0.9,
+        "target": [
+          0,
+          1.6,
+          0
+        ],
+        "focus": 6
+      }
+    ]
+  },
+  "rows": [
+    {
+      "at": 0,
+      "azimuth": -75,
+      "elevation": 30,
+      "fov": 29,
+      "zoom": 0.72,
+      "panX": 0,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 6,
+      "name": "Reveal 1"
+    },
+    {
+      "at": 100,
+      "azimuth": -30,
+      "elevation": 40,
+      "fov": 29,
+      "zoom": 0.9,
+      "panX": 0,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 6,
+      "name": "Reveal 2"
+    }
+  ],
+  "travels": true,
+  "animated": true,
+  "poses": [
+    {
+      "at": 0,
+      "azimuth": -75,
+      "elevation": 30,
+      "fov": 29,
+      "zoom": 0.72,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 6
+    },
+    {
+      "at": 0.25,
+      "azimuth": -67.96875,
+      "elevation": 31.5625,
+      "fov": 29,
+      "zoom": 0.7481249999999999,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 6
+    },
+    {
+      "at": 0.5,
+      "azimuth": -52.5,
+      "elevation": 35,
+      "fov": 29,
+      "zoom": 0.81,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 6
+    },
+    {
+      "at": 0.75,
+      "azimuth": -37.03125,
+      "elevation": 38.4375,
+      "fov": 29,
+      "zoom": 0.871875,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 6
+    },
+    {
+      "at": 1,
+      "azimuth": -30,
+      "elevation": 40,
+      "fov": 29,
+      "zoom": 0.9,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 6
+    }
+  ]
+}

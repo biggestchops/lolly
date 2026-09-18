@@ -1054,6 +1054,27 @@ describe('3D Studio lifecycle', { skip: studioSkip }, () => {
     });
   });
 
+  it('draws one frame per phase of an animated loop and keeps a repeated phase', async () => {
+    await withPage(async (page) => {
+      const l = api(page);
+      const hover = { source: 'primitive', motion: 'hover', duration: 5, videoSamples: 8 };
+      assert.equal((await l.mount(hover)).state, 'ready');
+      assert.equal(await l.begin(), true);
+      await l.frame(0, 5, CLIP_SIZE);
+      const first = (await l.status()).counters!.frames;
+      for (const phase of [0.25, 0.5, 0.75]) await l.frame(phase, 5, CLIP_SIZE);
+      const drawn = (await l.status()).counters!.frames;
+      assert.equal(drawn, first + 3, 'each phase of the loop is a frame of its own');
+      await l.frame(0.75, 5, CLIP_SIZE);
+      assert.equal(
+        (await l.status()).counters!.frames,
+        drawn,
+        'the same phase again is the frame that is already drawn'
+      );
+      await l.end();
+    });
+  });
+
   it('marks the studio as failed when the browser drops its graphics context', async () => {
     await withPage(async (page) => {
       const l = api(page);

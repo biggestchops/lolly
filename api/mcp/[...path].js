@@ -3298,9 +3298,9 @@ function derOid(oid) {
 function derTime(date) {
   const p = (v, w = 2) => String(v).padStart(w, "0");
   const y = date.getUTCFullYear();
-  const rest = p(date.getUTCMonth() + 1) + p(date.getUTCDate()) + p(date.getUTCHours()) + p(date.getUTCMinutes()) + p(date.getUTCSeconds()) + "Z";
-  if (y >= 1950 && y < 2050) return der(23, te.encode(p(y % 100) + rest));
-  return der(24, te.encode(p(y, 4) + rest));
+  const rest2 = p(date.getUTCMonth() + 1) + p(date.getUTCDate()) + p(date.getUTCHours()) + p(date.getUTCMinutes()) + p(date.getUTCSeconds()) + "Z";
+  if (y >= 1950 && y < 2050) return der(23, te.encode(p(y % 100) + rest2));
+  return der(24, te.encode(p(y, 4) + rest2));
 }
 function asDate(v, fallback) {
   const d = v == null ? new Date(fallback) : v instanceof Date ? v : new Date(v);
@@ -3614,7 +3614,7 @@ var ENGINE_VERSION;
 var init_version = __esm({
   "engine/src/version.ts"() {
     "use strict";
-    ENGINE_VERSION = "1.209.0";
+    ENGINE_VERSION = "1.210.0";
   }
 });
 
@@ -3725,24 +3725,24 @@ function applyManifestI18n(manifest, overlay) {
     }
     const m2 = /^inputs\.([^.]+)\.(.+)$/.exec(key);
     if (!m2) continue;
-    const [, inputId, rest] = m2;
+    const [, inputId, rest2] = m2;
     const input = manifest.inputs?.find((i) => i.id === inputId);
     if (!input) continue;
-    if (rest === "label" || rest === "help" || rest === "notice" || rest === "placeholder" || rest === "section" || rest === "suffix") {
-      input[rest] = value;
+    if (rest2 === "label" || rest2 === "help" || rest2 === "notice" || rest2 === "placeholder" || rest2 === "section" || rest2 === "suffix") {
+      input[rest2] = value;
       continue;
     }
-    const optMatch = /^options\.(.*)$/.exec(rest);
+    const optMatch = /^options\.(.*)$/.exec(rest2);
     if (optMatch) {
       const opt = input.options?.find((o) => o.value === optMatch[1]);
       if (opt) opt.label = value;
       continue;
     }
-    if (rest === "addMenu.label") {
+    if (rest2 === "addMenu.label") {
       if (input.addMenu) input.addMenu.label = value;
       continue;
     }
-    const fieldMatch = /^fields\.([^.]+)\.(.+)$/.exec(rest);
+    const fieldMatch = /^fields\.([^.]+)\.(.+)$/.exec(rest2);
     if (fieldMatch) {
       const [, fieldId, fieldRest] = fieldMatch;
       const field2 = input.fields?.find((f) => f.id === fieldId);
@@ -3772,14 +3772,14 @@ function applyManifestI18n(manifest, overlay) {
     }
   }
 }
-function applyGuideI18n(manifest, rest, value) {
+function applyGuideI18n(manifest, rest2, value) {
   const guide = manifest.guide;
   if (!guide) return;
-  if (rest === "title") {
+  if (rest2 === "title") {
     guide.title = value;
     return;
   }
-  const m2 = /^tracks\.([^.]+)\.(.+)$/.exec(rest);
+  const m2 = /^tracks\.([^.]+)\.(.+)$/.exec(rest2);
   if (!m2) return;
   const [, trackId, field2] = m2;
   const track = guide.tracks?.find((t) => t.id === trackId);
@@ -4116,12 +4116,12 @@ function mixOklch(a, b, t) {
   const carry = 0.02;
   const ha = a.c < carry && b.c >= carry ? b.h : a.h;
   const hb = b.c < carry && a.c >= carry ? a.h : b.h;
-  const arc = ((hb - ha) % 360 + 540) % 360 - 180;
+  const arc2 = ((hb - ha) % 360 + 540) % 360 - 180;
   const lerp = (x, y) => x + (y - x) * k;
   const out = {
     l: clamp01(lerp(a.l, b.l)),
     c: Math.max(0, lerp(a.c, b.c)),
-    h: normHue(ha + arc * k)
+    h: normHue(ha + arc2 * k)
   };
   const alpha = lerp(a.alpha ?? 1, b.alpha ?? 1);
   if (alpha < 1) out.alpha = alpha;
@@ -5640,14 +5640,14 @@ function parseGradientSpec(input) {
     else if (Object.hasOwn(HUE_TOKENS, tok)) hue = HUE_TOKENS[tok];
     else return null;
   }
-  let rest = parts.slice(1);
+  let rest2 = parts.slice(1);
   let angle = kind === "linear" ? 180 : 0;
-  if (rest.length && /^[+-]?\d+(?:\.\d+)?$/.test(rest[0])) {
-    angle = normAngle(parseFloat(rest[0]));
-    rest = rest.slice(1);
+  if (rest2.length && /^[+-]?\d+(?:\.\d+)?$/.test(rest2[0])) {
+    angle = normAngle(parseFloat(rest2[0]));
+    rest2 = rest2.slice(1);
   }
   const stops = [];
-  for (const tok of rest) {
+  for (const tok of rest2) {
     if (stops.length >= MAX_GRADIENT_STOPS) break;
     const at = Math.max(tok.lastIndexOf("-"), tok.lastIndexOf("@"));
     const hasPos = at > 0 && /^\d+(?:\.\d+)?$/.test(tok.slice(at + 1));
@@ -8727,8 +8727,8 @@ var init_tokens2 = __esm({
     readSpotColor = (v) => {
       if (!isSpotColor(v)) return null;
       if (v.finish === void 0 || typeof v.finish === "string") return v;
-      const { finish: _malformed, ...rest } = v;
-      return rest;
+      const { finish: _malformed, ...rest2 } = v;
+      return rest2;
     };
   }
 });
@@ -35549,8 +35549,8 @@ var init_embed = __esm({
 // engine/src/tool-url.ts
 function lollySchemeToHttps(src) {
   if (!LOLLY_SCHEME_RE.test(src)) return src;
-  const rest = src.replace(LOLLY_SCHEME_RE, "").replace(LOLLY_HOST_RE, "");
-  return `https://lolly.tools/${rest}`;
+  const rest2 = src.replace(LOLLY_SCHEME_RE, "").replace(LOLLY_HOST_RE, "");
+  return `https://lolly.tools/${rest2}`;
 }
 function parseToolUrl(src) {
   if (typeof src !== "string") return null;
@@ -38754,9 +38754,9 @@ async function buildC2paManifest({
 }
 async function buildExternalC2paStore(bytes, opts = {}) {
   if (!(bytes instanceof Uint8Array)) throw new Error("c2pa: buildExternalC2paStore needs the asset bytes as a Uint8Array");
-  const { hashName, ...rest } = opts;
+  const { hashName, ...rest2 } = opts;
   return buildC2paManifest({
-    ...rest,
+    ...rest2,
     // No exclusions: the whole asset is inside the hash, because the manifest is
     // outside the asset. buildC2paManifest omits the CDDL-empty `exclusions` key
     // entirely for this case rather than writing a non-conformant `[]`.
@@ -40547,11 +40547,11 @@ function parseSuperbox(bytes, box2) {
   const desc = kids[0];
   if (!kids.length || !desc || desc.type !== "jumd") throw new Error("jumbf: superbox missing description box");
   const uuid = bytesToHex(bytes.slice(desc.payloadStart, desc.payloadStart + 16));
-  const rest = bytes.slice(desc.payloadStart + 17, desc.end);
-  const nul = rest.indexOf(0);
+  const rest2 = bytes.slice(desc.payloadStart + 17, desc.end);
+  const nul = rest2.indexOf(0);
   return {
     uuid,
-    label: nul >= 0 ? td.decode(rest.slice(0, nul)) : "",
+    label: nul >= 0 ? td.decode(rest2.slice(0, nul)) : "",
     children: kids.slice(1),
     box: box2
   };
@@ -41311,8 +41311,8 @@ function extractC2paDetailed(bytes, format) {
   if (!fmt3) return null;
   if (!Object.hasOwn(TEXT_READERS, fmt3) && !Object.hasOwn(EXTRACTORS, fmt3)) return null;
   if (Object.hasOwn(TEXT_READERS, fmt3)) {
-    const { fatal, ...rest } = TEXT_READERS[fmt3](bytes);
-    return { ...rest, ...fatal && !rest.detail ? { detail: fatal } : {}, format: fmt3 };
+    const { fatal, ...rest2 } = TEXT_READERS[fmt3](bytes);
+    return { ...rest2, ...fatal && !rest2.detail ? { detail: fatal } : {}, format: fmt3 };
   }
   try {
     const ex = EXTRACTORS[fmt3](bytes) ?? null;
@@ -43905,15 +43905,15 @@ function designSystemHeadId(id2) {
   }
   return `${designSystemNamespace(id2)}tokens/brand`;
 }
-function kindOfRest(rest) {
-  if (rest.some((seg) => !seg)) return null;
-  const [head2, second] = rest;
+function kindOfRest(rest2) {
+  if (rest2.some((seg) => !seg)) return null;
+  const [head2, second] = rest2;
   if (head2 === "tokens" && second === "brand") {
-    if (rest.length === 2) return "tokens";
-    return rest.length === 3 ? "version" : null;
+    if (rest2.length === 2) return "tokens";
+    return rest2.length === 3 ? "version" : null;
   }
-  if (head2 === "fonts") return rest.length === 3 ? "font" : null;
-  if (head2 === "logo") return rest.length === 2 || rest.length === 3 ? "logo" : null;
+  if (head2 === "fonts") return rest2.length === 3 ? "font" : null;
+  if (head2 === "logo") return rest2.length === 2 || rest2.length === 3 ? "logo" : null;
   return null;
 }
 function designMaterialOf(id2) {
@@ -45839,10 +45839,10 @@ function orderEntries(entries, mimetypeFirst) {
   if (!mimetypeFirst) return entries.map((entry2) => ({ entry: entry2, forceStored: false }));
   const idx = entries.findIndex((e) => e.name === "mimetype");
   if (idx < 0) return entries.map((entry2) => ({ entry: entry2, forceStored: false }));
-  const rest = entries.filter((_, i) => i !== idx);
+  const rest2 = entries.filter((_, i) => i !== idx);
   return [
     { entry: entries[idx], forceStored: true },
-    ...rest.map((entry2) => ({ entry: entry2, forceStored: false }))
+    ...rest2.map((entry2) => ({ entry: entry2, forceStored: false }))
   ];
 }
 var SIG_LOCAL, SIG_CENTRAL, SIG_EOCD, METHOD_STORED, METHOD_DEFLATE, U32_MAX, U16_MAX, DOS_DATE_1980, GPBF_UTF8, encoder, decoder, ZIP_READ_MAX_INPUT_BYTES, ZIP_READ_MAX_ENTRIES, ZIP_READ_MAX_ENTRY_BYTES, ZIP_READ_MAX_TOTAL_BYTES;
@@ -49950,8 +49950,8 @@ function evalDist(d, c, acc2) {
   const ray = evalRay(d, c, acc2);
   if (!Number.isFinite(ray)) return Infinity;
   if (!d.spicy) return ray;
-  const arc = evalArc(d, c, acc2);
-  return arc > ray ? arc : ray;
+  const arc2 = evalArc(d, c, acc2);
+  return arc2 > ray ? arc2 : ray;
 }
 function fitError(src, c, t0, t1) {
   const d = curveDist(src, t0, t1);
@@ -63729,12 +63729,12 @@ function wrapLong(sentence) {
         chunks.push(cur);
         cur = "";
       }
-      let rest = w;
-      while (rest.length > MAX_SENTENCE_CHARS) {
-        chunks.push(rest.slice(0, MAX_SENTENCE_CHARS));
-        rest = rest.slice(MAX_SENTENCE_CHARS);
+      let rest2 = w;
+      while (rest2.length > MAX_SENTENCE_CHARS) {
+        chunks.push(rest2.slice(0, MAX_SENTENCE_CHARS));
+        rest2 = rest2.slice(MAX_SENTENCE_CHARS);
       }
-      cur = rest;
+      cur = rest2;
       continue;
     }
     if (cur && cur.length + 1 + w.length > MAX_SENTENCE_CHARS) {
@@ -65074,8 +65074,8 @@ function parseBoxShadow(value) {
     const body = part.replace(/\binset\b/g, " ");
     const colorMatch = findColorToken(body, true);
     const color2 = colorMatch ?? "rgb(0,0,0)";
-    const rest = colorMatch ? body.replace(colorMatch, " ") : body;
-    const nums = (rest.match(/-?\d*\.?\d+(?:px)?/g) || []).map((s) => parseFloat(s)).filter(Number.isFinite);
+    const rest2 = colorMatch ? body.replace(colorMatch, " ") : body;
+    const nums = (rest2.match(/-?\d*\.?\d+(?:px)?/g) || []).map((s) => parseFloat(s)).filter(Number.isFinite);
     if (nums.length < 2) continue;
     const [x, y, blur = 0, spread = 0] = nums;
     if (x === void 0 || y === void 0) continue;
@@ -65091,8 +65091,8 @@ function parseTextShadow(value) {
     if (!part) continue;
     const colorMatch = findColorToken(part);
     const color2 = colorMatch ?? "rgb(0,0,0)";
-    const rest = colorMatch ? part.replace(colorMatch, " ") : part;
-    const nums = (rest.match(/-?\d*\.?\d+(?:px)?/g) || []).map((v) => parseFloat(v)).filter(Number.isFinite);
+    const rest2 = colorMatch ? part.replace(colorMatch, " ") : part;
+    const nums = (rest2.match(/-?\d*\.?\d+(?:px)?/g) || []).map((v) => parseFloat(v)).filter(Number.isFinite);
     if (nums.length < 2) continue;
     const [x, y, blur = 0] = nums;
     if (x === void 0 || y === void 0) continue;
@@ -65507,9 +65507,9 @@ function parseDropShadowFilter(filterStr) {
     const body = fn.slice(fn.indexOf("(") + 1, fn.lastIndexOf(")")).trim();
     let color2 = "rgb(0,0,0)";
     const cm = findColorToken(body);
-    const rest = cm ? body.replace(cm, " ") : body;
+    const rest2 = cm ? body.replace(cm, " ") : body;
     if (cm) color2 = cm;
-    const nums = (rest.match(/-?\d*\.?\d+(?:px)?/g) || []).map(parseFloat).filter(Number.isFinite);
+    const nums = (rest2.match(/-?\d*\.?\d+(?:px)?/g) || []).map(parseFloat).filter(Number.isFinite);
     if (nums.length < 2) return null;
     const [dx, dy, blur = 0] = nums;
     shadows.push({ dx, dy, blur: Math.max(0, blur), color: color2 });
@@ -65620,10 +65620,10 @@ function fitRuns(spanLengths, pattern, opts) {
     covered += span.covered;
     if (span.covered < L - EPS3) break;
   }
-  const rest = total - covered;
-  if (rest > EPS3) {
+  const rest2 = total - covered;
+  if (rest2 > EPS3) {
     if (out.length % 2 === 0) out.push(0);
-    out.push(rest);
+    out.push(rest2);
   }
   if (out.length % 2 === 1) out.push(0);
   return quantise(out);
@@ -67184,10 +67184,10 @@ function fadeFxXml(id2, spid, dur, entering, fx) {
 }
 function flyAnimXml(id2, spid, dur, dir, entering, fx) {
   const attr4 = dir === "l" || dir === "r" ? "ppt_x" : "ppt_y";
-  const rest = `#${attr4}`;
+  const rest2 = `#${attr4}`;
   const off = dir === "r" ? "1+#ppt_w/2" : dir === "l" ? "0-#ppt_w/2" : dir === "b" ? "1+#ppt_h/2" : "0-#ppt_h/2";
-  const from = entering ? off : rest;
-  const to = entering ? rest : off;
+  const from = entering ? off : rest2;
+  const to = entering ? rest2 : off;
   return `<p:anim calcmode="lin" valueType="num"><p:cBhvr additive="base">${bhvrCTn(id2, dur, fx)}${tgt(spid)}<p:attrNameLst><p:attrName>${attr4}</p:attrName></p:attrNameLst></p:cBhvr><p:tavLst><p:tav tm="0"><p:val><p:strVal val="${from}"/></p:val></p:tav><p:tav tm="100000"><p:val><p:strVal val="${to}"/></p:val></p:tav></p:tavLst></p:anim>`;
 }
 function scaleFxXml(id2, spid, dur, fromPct, toPct, fx) {
@@ -69312,8 +69312,8 @@ function fileList(opts) {
     const rel = relPath(f);
     if (rel) seen.add(rel);
   }
-  const rest = [...seen].filter((f) => f !== href).sort();
-  return { href, files: [href, ...rest] };
+  const rest2 = [...seen].filter((f) => f !== href).sort();
+  return { href, files: [href, ...rest2] };
 }
 function scormManifest12(opts) {
   const id2 = xmlId(opts.identifier, "lolly-package");
@@ -82196,7 +82196,7 @@ function scanPenpotUsage(entries) {
   const pagePaths = penpotPagePaths(entries, warnings, budget3);
   if (budget3.refused) return { colors: [], gradients: [], fonts: [] };
   const colors = /* @__PURE__ */ new Map();
-  const bump = (hex2, key) => {
+  const bump2 = (hex2, key) => {
     if (!hex2) return;
     let t = colors.get(hex2);
     if (!t) {
@@ -82214,7 +82214,7 @@ function scanPenpotUsage(entries) {
     for (const raw of rawStops) {
       const st = isRecord2(raw) ? raw : null;
       const color2 = normHex3(st ? pv(st, "color") : void 0);
-      if (color2) bump(color2, "gradientStops");
+      if (color2) bump2(color2, "gradientStops");
       if (!st || !color2) {
         usable = false;
         continue;
@@ -82242,7 +82242,7 @@ function scanPenpotUsage(entries) {
     if (!Array.isArray(list2)) return;
     for (const p of list2) {
       if (!isRecord2(p)) continue;
-      bump(normHex3(pv(p, colorKey)), tally);
+      bump2(normHex3(pv(p, colorKey)), tally);
       seeGradient(pv(p, gradKey));
     }
   };
@@ -82304,7 +82304,7 @@ function scanPenpotAppliedTokens(entries) {
   const warnings = [];
   const budget3 = newParseBudget();
   const rows2 = /* @__PURE__ */ new Map();
-  const bump = (name, cls) => {
+  const bump2 = (name, cls) => {
     let r3 = rows2.get(name);
     if (!r3) {
       r3 = { fills: 0, strokes: 0, text: 0, type: 0, geometry: 0 };
@@ -82322,7 +82322,7 @@ function scanPenpotAppliedTokens(entries) {
     for (const [rawAttr, rawName] of Object.entries(applied)) {
       if (typeof rawName !== "string" || !rawName) continue;
       const cls = appliedClassOf(camelOf(rawAttr), isText);
-      if (cls) bump(rawName, cls);
+      if (cls) bump2(rawName, cls);
     }
   }
   return [...rows2.entries()].map(([name, r3]) => ({ name, ...r3, total: r3.fills + r3.strokes + r3.text + r3.type + r3.geometry })).sort((a, b) => b.total - a.total || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -83258,14 +83258,14 @@ function designTextRuns(line) {
     if (text4) out.push({ text: text4, ...style });
   };
   const unesc = (s) => s.replace(/\\\*/g, "*").replace(/\\_/g, "_");
-  let rest = line;
-  while (rest.length) {
-    const m2 = /\{([^|{}]+)\|([^{}]*)\}|\*\*([^*]+)\*\*|`([^`]+)`|(?<![\w\\])\*([^*\s][^*]*?)\*(?!\w)|(?<![\w\\])_([^_\s][^_]*?)_(?!\w)/.exec(rest);
+  let rest2 = line;
+  while (rest2.length) {
+    const m2 = /\{([^|{}]+)\|([^{}]*)\}|\*\*([^*]+)\*\*|`([^`]+)`|(?<![\w\\])\*([^*\s][^*]*?)\*(?!\w)|(?<![\w\\])_([^_\s][^_]*?)_(?!\w)/.exec(rest2);
     if (!m2) {
-      push(unesc(rest), {});
+      push(unesc(rest2), {});
       break;
     }
-    push(unesc(rest.slice(0, m2.index)), {});
+    push(unesc(rest2.slice(0, m2.index)), {});
     if (m2[1] != null) {
       const style = {};
       let known = true;
@@ -83283,7 +83283,7 @@ function designTextRuns(line) {
       if (!known) {
         const head2 = `{${m2[1]}|`;
         push(unesc(head2), {});
-        rest = rest.slice(m2.index + head2.length);
+        rest2 = rest2.slice(m2.index + head2.length);
         continue;
       }
       push(unesc(m2[2] ?? ""), style);
@@ -83291,7 +83291,7 @@ function designTextRuns(line) {
     else if (m2[4] != null) push(m2[4], { family: "mono" });
     else if (m2[5] != null) push(unesc(m2[5]), { italic: true });
     else if (m2[6] != null) push(unesc(m2[6]), { italic: true });
-    rest = rest.slice(m2.index + m2[0].length);
+    rest2 = rest2.slice(m2.index + m2[0].length);
   }
   return out;
 }
@@ -89441,7 +89441,7 @@ function mix(keys2, leg, t, ease) {
 }
 function studioCameraPose(scene, time, clipSeconds) {
   const motion = scene.cameraMotion;
-  if (motion?.kind !== "keys" || motion.keys.length < 2) return studioRestPose(scene);
+  if (!motion || motion.kind === "still" || motion.keys.length < 2) return studioRestPose(scene);
   const seconds = Number.isFinite(time) ? Math.max(0, time) * (clipSeconds && clipSeconds > 0 ? clipSeconds : scene.motion.seconds) : 0;
   const progress = seconds / scene.motion.seconds;
   const phase = motion.loop ? progress % 1 : Math.min(1, progress);
@@ -89460,7 +89460,68 @@ function studioCameraPose(scene, time, clipSeconds) {
   return { ...last, at: phase };
 }
 function studioCameraTravels(scene) {
-  return !!scene.cameraMotion && scene.cameraMotion.kind === "keys" && scene.cameraMotion.keys.length >= 2;
+  return !!scene.cameraMotion && scene.cameraMotion.kind !== "still" && scene.cameraMotion.keys.length >= 2;
+}
+function clamp2(value, min, max) {
+  const held = Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
+  return Math.round(held * 1e3) / 1e3;
+}
+function presetKey(view, at, over) {
+  return {
+    at,
+    azimuth: clamp2(over.azimuth ?? view.azimuth, -720, 720),
+    elevation: clamp2(over.elevation ?? view.elevation, -60, 80),
+    fov: clamp2(over.fov ?? view.fov, 15, 80),
+    zoom: clamp2(over.zoom ?? view.zoom, 0.05, 3),
+    target: view.target.map((n2) => clamp2(n2, -25, 25)),
+    focus: clamp2(view.focus, 0, 500)
+  };
+}
+function studioIsCameraPreset(kind) {
+  return STUDIO_CAMERA_PRESETS.includes(kind);
+}
+function studioCameraPreset(kind, view, amount = 1) {
+  const a = Math.min(2, Math.max(0.25, Number.isFinite(amount) ? amount : 1));
+  switch (kind) {
+    case "sweep": {
+      const angle = 20 * a;
+      return [
+        presetKey(view, 0, { azimuth: view.azimuth - angle }),
+        presetKey(view, 0.5, { azimuth: view.azimuth + angle }),
+        presetKey(view, 1, { azimuth: view.azimuth - angle })
+      ];
+    }
+    case "pushin":
+      return [
+        presetKey(view, 0, { zoom: view.zoom * (1 - 0.15 * a) }),
+        presetKey(view, 1, { zoom: view.zoom * (1 + 0.15 * a) })
+      ];
+    case "dolly": {
+      if (view.projection === "orthographic") return [];
+      const half = (fov) => Math.tan(fov * Math.PI / 360);
+      const zoomFor = (fov) => view.zoom * half(fov) / half(view.fov);
+      return [60, 42, 24].map(
+        (fov, i) => presetKey(view, i / 2, { fov, zoom: zoomFor(fov) })
+      );
+    }
+    case "reveal":
+      return [
+        presetKey(view, 0, {
+          azimuth: view.azimuth - 90 * a,
+          elevation: 30,
+          zoom: view.zoom * 0.8
+        }),
+        presetKey(view, 1, {})
+      ];
+    case "crane":
+      return [
+        presetKey(view, 0, {
+          elevation: view.elevation + 25 * a,
+          zoom: view.zoom * (1 - 0.15 * a)
+        }),
+        presetKey(view, 1, {})
+      ];
+  }
 }
 function studioCameraKeyFromView(values) {
   const camera = record4(values.camera), target = record4(values.target);
@@ -89516,7 +89577,7 @@ function studioCameraFromKey(values, which) {
     { id: "focusDistance", value: num7(key.focusDistance, 0) }
   ];
 }
-var STUDIO_CAMERA_KEY_LIMIT, num7;
+var STUDIO_CAMERA_KEY_LIMIT, num7, STUDIO_CAMERA_PRESETS, STUDIO_CAMERA_MOTIONS;
 var init_studio3d_camera_path = __esm({
   "engine/src/studio3d-camera-path.ts"() {
     "use strict";
@@ -89525,6 +89586,8 @@ var init_studio3d_camera_path = __esm({
       const n2 = Number(value);
       return Number.isFinite(n2) ? Math.round(n2 * 1e3) / 1e3 : fallback;
     };
+    STUDIO_CAMERA_PRESETS = ["sweep", "pushin", "dolly", "reveal", "crane"];
+    STUDIO_CAMERA_MOTIONS = ["still", "keys", ...STUDIO_CAMERA_PRESETS];
   }
 });
 
@@ -89836,6 +89899,167 @@ var init_studio3d_lights = __esm({
   }
 });
 
+// engine/src/studio3d-motion.ts
+function rest() {
+  return { spin: 0, tilt: [0, 0], lift: 0, scale: [1, 1, 1], burst: 0 };
+}
+function freeze(pose) {
+  Object.freeze(pose.tilt);
+  Object.freeze(pose.scale);
+  return Object.freeze(pose);
+}
+function clamp3(value, min, max, fallback) {
+  if (!Number.isFinite(value)) return fallback;
+  return value < min ? min : value > max ? max : value;
+}
+function clamp0110(u) {
+  return u < 0 ? 0 : u > 1 ? 1 : u;
+}
+function radians(degrees) {
+  return degrees * Math.PI / 180;
+}
+function smoothstep3(u) {
+  const t = clamp0110(u);
+  return t * t * (3 - 2 * t);
+}
+function bump(value, from, to) {
+  if (!(to > from)) return 0;
+  const u = (value - from) / (to - from);
+  return u <= 0 || u >= 1 ? 0 : Math.sin(Math.PI * u);
+}
+function backOut(u, overshoot) {
+  const t = clamp0110(u);
+  const settle = 1 - (1 - t) ** 3;
+  const swell = 6.75 * t * t * (1 - t);
+  return settle + overshoot * swell;
+}
+function anticipate(u, depth) {
+  const t = clamp0110(u);
+  return smoothstep3(t) - depth * 6.75 * t * (1 - t) ** 2;
+}
+function bounceOut(u) {
+  const t = clamp0110(u);
+  const n2 = 7.5625;
+  const d = 2.75;
+  if (t < 1 / d) return n2 * t * t;
+  if (t < 2 / d) {
+    const x2 = t - 1.5 / d;
+    return n2 * x2 * x2 + 0.75;
+  }
+  if (t < 2.5 / d) {
+    const x2 = t - 2.25 / d;
+    return n2 * x2 * x2 + 0.9375;
+  }
+  const x = t - 2.625 / d;
+  return n2 * x * x + 0.984375;
+}
+function arc(u) {
+  const t = clamp0110(u);
+  return 4 * t * (1 - t);
+}
+function travel(units2, amount) {
+  return Math.min(STUDIO_POSE_MAX_LIFT, units2 * amount);
+}
+function squash2(pose, drop) {
+  const up = Math.max(MIN_SCALE, 1 - drop);
+  const side = 1 / Math.sqrt(up);
+  pose.scale = [side, up, side];
+}
+function studioObjectPose(scene, time, clipSeconds) {
+  const motion = scene.motion;
+  const kind = motion.kind;
+  if (kind === "still") return rest();
+  if (kind === "turntable") {
+    const turning = rest();
+    turning.spin = studioTime(scene, time, clipSeconds);
+    return turning;
+  }
+  const seconds = Number.isFinite(time) ? Math.max(0, time) * (clipSeconds && clipSeconds > 0 ? clipSeconds : motion.seconds) : 0;
+  const p = seconds / motion.seconds % 1;
+  const amount = clamp3(motion.amount, 0.25, 2, 1);
+  const pose = rest();
+  if (kind === "hover") {
+    pose.lift = 0.25 * amount * ((1 - Math.cos(2 * Math.PI * p)) / 2);
+    pose.spin = radians(6) * amount * Math.sin(2 * Math.PI * p);
+    return pose;
+  }
+  if (kind === "pulse") {
+    const s = 1 + 0.06 * amount * Math.sin(2 * Math.PI * p);
+    pose.scale = [s, s, s];
+    return pose;
+  }
+  if (kind === "wobble") {
+    const damping = (1 - p) ** 2;
+    pose.tilt = [0, radians(8) * amount * Math.sin(2 * Math.PI * 3 * p) * damping];
+    return pose;
+  }
+  const held = clamp3(motion.rest, 0, 0.9, 0.25);
+  const active = 1 - held;
+  if (!(active > 0)) return pose;
+  const q = p / active;
+  if (q >= 1) return pose;
+  if (kind === "pop") {
+    const collapse = Math.min(0.9, 0.35 * amount);
+    const s = q < 0.45 ? 1 - collapse * anticipate(q / 0.45, 0.18) : 1 - collapse * (1 - backOut((q - 0.45) / 0.55, 0.43));
+    const even = Math.max(MIN_SCALE, s);
+    pose.scale = [even, even, even];
+    return pose;
+  }
+  if (kind === "coin") {
+    const flight = clamp0110(q / 0.8);
+    pose.lift = travel(1.2, amount) * arc(flight);
+    pose.tilt = [flight >= 1 ? 0 : 2 * Math.PI * flight, 0];
+    squash2(pose, 0.12 * amount * bump(q, 0.8, 1));
+    return pose;
+  }
+  if (kind === "jump") {
+    pose.lift = travel(1.6, amount) * arc((q - 0.2) / 0.65);
+    const drop = 0.18 * amount * bump(q, 0, 0.2) + 0.22 * amount * bump(q, 0.85, 0.95) + 0.07 * amount * bump(q, 0.95, 1) - 0.1 * amount * bump(q, 0.2, 0.85);
+    squash2(pose, drop);
+    return pose;
+  }
+  if (kind === "spinland") {
+    const from = 0.3;
+    const span = 1 - from;
+    const lands = BOUNCE_LANDINGS.map((stage) => from + span * stage);
+    const height = travel(3, amount);
+    pose.lift = q < from ? height * smoothstep3(q / from) : height * (1 - bounceOut((q - from) / span));
+    pose.spin = 2 * Math.PI * clamp0110(q / lands[0]);
+    squash2(
+      pose,
+      0.22 * amount * bump(q, lands[0], lands[0] + 0.09) + 0.09 * amount * bump(q, lands[1], lands[1] + 0.05)
+    );
+    return pose;
+  }
+  pose.burst = (1 - Math.cos(2 * Math.PI * q)) / 2;
+  squash2(pose, 0.1 * amount * bump(q, 0, 0.14));
+  return pose;
+}
+var STUDIO_MOTION_KINDS, STUDIO_ONE_SHOT_KINDS, STUDIO_POSE_MAX_LIFT, MIN_SCALE, STUDIO_POSE_REST, BOUNCE_LANDINGS;
+var init_studio3d_motion = __esm({
+  "engine/src/studio3d-motion.ts"() {
+    "use strict";
+    init_studio3d();
+    STUDIO_MOTION_KINDS = [
+      "still",
+      "turntable",
+      "hover",
+      "pulse",
+      "wobble",
+      "pop",
+      "coin",
+      "jump",
+      "spinland",
+      "burst"
+    ];
+    STUDIO_ONE_SHOT_KINDS = ["pop", "coin", "jump", "spinland", "burst"];
+    STUDIO_POSE_MAX_LIFT = 4;
+    MIN_SCALE = 0.05;
+    STUDIO_POSE_REST = freeze(rest());
+    BOUNCE_LANDINGS = [1 / 2.75, 2.25 / 2.75];
+  }
+});
+
 // engine/src/studio3d.ts
 function record7(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -90093,6 +90317,23 @@ function buildStudioScene(input) {
       ...finish2 && finish2 !== "satin" ? { finish: finish2 } : {}
     };
   });
+  const view = {
+    projection,
+    azimuth: number3(camera.azimuth, 25, -180, 180),
+    elevation: number3(camera.elevation, 14, -60, 80),
+    fov: number3(camera.fov, 29, 15, 80),
+    zoom: number3(camera.zoom, 1, 0.05, 3),
+    target: [
+      number3(target.x, 0, -5, 5) + number3(camera.panX, 0, -20, 20),
+      number3(target.y, 1.6, -5, 10) + number3(camera.panY, 0, -20, 20),
+      number3(target.z, 0, -5, 5) + number3(camera.panZ, 0, -20, 20)
+    ],
+    focus: number3(v.focusDistance, 0, 0, 500),
+    aperture: projection === "perspective" && v.depthOfField === true ? number3(v.aperture, 0.12, 0.01, 0.5) : 0
+  };
+  const cameraKind = choice2(v.cameraMotion, STUDIO_CAMERA_MOTIONS, "still");
+  const cameraAmount = number3(v.cameraAmount, 1, 0.25, 2);
+  const authoredKeys = cameraKeys(v);
   return {
     version: 1,
     source,
@@ -90111,20 +90352,7 @@ function buildStudioScene(input) {
       position: vector(v.position, ["x", "y", "z"], [0, 0.1, 0], 10),
       scale: number3(transform2.scale, 1, 0.1, 5)
     },
-    camera: {
-      projection,
-      azimuth: number3(camera.azimuth, 25, -180, 180),
-      elevation: number3(camera.elevation, 14, -60, 80),
-      fov: number3(camera.fov, 29, 15, 80),
-      zoom: number3(camera.zoom, 1, 0.05, 3),
-      target: [
-        number3(target.x, 0, -5, 5) + number3(camera.panX, 0, -20, 20),
-        number3(target.y, 1.6, -5, 10) + number3(camera.panY, 0, -20, 20),
-        number3(target.z, 0, -5, 5) + number3(camera.panZ, 0, -20, 20)
-      ],
-      focus: number3(v.focusDistance, 0, 0, 500),
-      aperture: projection === "perspective" && v.depthOfField === true ? number3(v.aperture, 0.12, 0.01, 0.5) : 0
-    },
+    camera: view,
     materials: {
       mode: choice2(v.materialMode, ["source", "pair", "custom"], "source"),
       finishA: choice2(v.finishA, FINISHES, "satin"),
@@ -90194,9 +90422,13 @@ function buildStudioScene(input) {
       clipSamples: Math.round(number3(v.videoSamples, 16, 1, 64))
     },
     motion: {
-      kind: choice2(v.motion, ["still", "turntable"], "still"),
+      kind: choice2(v.motion, STUDIO_MOTION_KINDS, "still"),
       seconds: number3(v.duration, 5, 1, 30),
-      degrees: number3(v.turnDegrees, 360, -720, 720)
+      degrees: number3(v.turnDegrees, 360, -720, 720),
+      // How far a loop travels, and how much of it a one-shot loop holds the rest
+      // pose at the end. The defaults are the shapes the library was drawn at.
+      amount: number3(v.motionAmount, 1, 0.25, 2),
+      rest: number3(v.motionRest, 0.25, 0, 0.6)
     },
     lightAnimation: {
       kind: choice2(v.lightMotion, ["still", "orbit", "breathe"], "still"),
@@ -90204,10 +90436,11 @@ function buildStudioScene(input) {
     },
     ...arrangement ? { objects, activeObject: studioActiveObject(v) } : {},
     cameraMotion: {
-      kind: choice2(v.cameraMotion, ["still", "keys"], "still"),
+      kind: cameraKind,
       ease: choice2(v.cameraEase, ["linear", "smooth", "flow"], "smooth"),
       loop: enabled2(v.cameraLoop),
-      keys: cameraKeys(v)
+      amount: cameraAmount,
+      keys: studioIsCameraPreset(cameraKind) ? studioCameraPreset(cameraKind, view, cameraAmount) : authoredKeys
     }
   };
 }
@@ -90260,6 +90493,7 @@ var init_studio3d = __esm({
     init_studio3d_arrangement();
     init_studio3d_collection();
     init_studio3d_lights();
+    init_studio3d_motion();
     STUDIO_FINISHES = [
       "matte",
       "satin",
@@ -90443,7 +90677,10 @@ var init_studio3d_look = __esm({
       "videoSamples",
       // Motion and the camera path
       "motion",
+      "motionAmount",
+      "motionRest",
       "cameraMotion",
+      "cameraAmount",
       "cameraKeys",
       "cameraEase",
       "cameraLoop",
@@ -90768,6 +91005,10 @@ __export(src_exports, {
   STUDIO_LIGHT_TARGET: () => STUDIO_LIGHT_TARGET,
   STUDIO_LOOK_INPUT_IDS: () => STUDIO_LOOK_INPUT_IDS,
   STUDIO_LOOK_KEYS: () => STUDIO_LOOK_KEYS,
+  STUDIO_MOTION_KINDS: () => STUDIO_MOTION_KINDS,
+  STUDIO_ONE_SHOT_KINDS: () => STUDIO_ONE_SHOT_KINDS,
+  STUDIO_POSE_MAX_LIFT: () => STUDIO_POSE_MAX_LIFT,
+  STUDIO_POSE_REST: () => STUDIO_POSE_REST,
   STUDIO_PRESET_LIGHT_POSITIONS: () => STUDIO_PRESET_LIGHT_POSITIONS,
   STUDIO_SHEET_PIXELS: () => STUDIO_SHEET_PIXELS,
   SVG_COLORS_MAX_CHARS: () => SVG_COLORS_MAX_CHARS,
@@ -91632,6 +91873,7 @@ __export(src_exports, {
   studioObjectEdit: () => studioObjectEdit,
   studioObjectId: () => studioObjectId,
   studioObjectName: () => studioObjectName,
+  studioObjectPose: () => studioObjectPose,
   studioObjectSelect: () => studioObjectSelect,
   studioOrbitLight: () => studioOrbitLight,
   studioOverlaps: () => studioOverlaps,
@@ -91963,6 +92205,7 @@ var init_src2 = __esm({
     init_studio3d_lights();
     init_studio3d_arrangement();
     init_studio3d_look();
+    init_studio3d_motion();
   }
 });
 
@@ -92243,8 +92486,8 @@ function toolFile(id2, rel, r3) {
     const p = join2(dir, ...segs);
     return existsSync2(p) ? p : null;
   }
-  const pick = (level2, rest, overlayDir, baseDir) => {
-    const [name, ...tail] = rest;
+  const pick = (level2, rest2, overlayDir, baseDir) => {
+    const [name, ...tail] = rest2;
     const overlayPath = join2(overlayDir, name);
     const basePath = join2(baseDir, name);
     if (!tail.length) {
@@ -92261,15 +92504,15 @@ function toolFile(id2, rel, r3) {
   return pick(0, segs, dir, base);
 }
 async function readToolText(path, r3) {
-  const [id2, ...rest] = path.split(/[\\/]/).filter(Boolean);
+  const [id2, ...rest2] = path.split(/[\\/]/).filter(Boolean);
   let abs = null;
-  if (id2 && rest.length && !rest.includes("..")) {
+  if (id2 && rest2.length && !rest2.includes("..")) {
     try {
-      abs = toolFile(id2, rest.join("/"), r3);
+      abs = toolFile(id2, rest2.join("/"), r3);
     } catch {
       abs = null;
     }
-    if (abs && rest.join("/") === "tool.json") return readToolManifestText(id2, r3);
+    if (abs && rest2.join("/") === "tool.json") return readToolManifestText(id2, r3);
   }
   if (!abs) {
     const err = new Error(`ENOENT: no such tool file, open '${path}'`);
@@ -92358,16 +92601,16 @@ function readAssetIndex(r3) {
 }
 function contentUrlFile(url, r3) {
   const segs = url.split("?")[0].split("#")[0].split("/").filter(Boolean);
-  const [head2, ...rest] = segs;
-  if (!head2 || !rest.length) return null;
+  const [head2, ...rest2] = segs;
+  if (!head2 || !rest2.length) return null;
   try {
     const roots2 = r3 ?? contentRoots();
     if (head2 === "catalog") {
-      const p = catalogFile(rest.join("/"), roots2);
+      const p = catalogFile(rest2.join("/"), roots2);
       return existsSync2(p) ? p : null;
     }
-    if (head2 === "tools" && rest.length > 1) {
-      return toolFile(rest[0], rest.slice(1).join("/"), roots2);
+    if (head2 === "tools" && rest2.length > 1) {
+      return toolFile(rest2[0], rest2.slice(1).join("/"), roots2);
     }
   } catch {
   }
@@ -95173,7 +95416,7 @@ init_pixels();
 init_exr();
 init_radiance();
 init_png();
-var clamp0110 = (v) => v <= 0 ? 0 : v >= 1 ? 1 : v;
+var clamp0111 = (v) => v <= 0 ? 0 : v >= 1 ? 1 : v;
 function encodeExr(frame, opts = {}) {
   return packExr(frame, opts);
 }
@@ -95187,10 +95430,10 @@ function encodePng16(frame, opts = {}) {
   const out = new Uint16Array(px * channels);
   const src = f.data;
   for (let p = 0, s = 0, d = 0; p < px; p++, s += 4, d += channels) {
-    out[d] = Math.round(clamp0110(linearToSrgb3(clamp0110(src[s]))) * 65535);
-    out[d + 1] = Math.round(clamp0110(linearToSrgb3(clamp0110(src[s + 1]))) * 65535);
-    out[d + 2] = Math.round(clamp0110(linearToSrgb3(clamp0110(src[s + 2]))) * 65535);
-    if (channels === 4) out[d + 3] = Math.round(clamp0110(src[s + 3]) * 65535);
+    out[d] = Math.round(clamp0111(linearToSrgb3(clamp0111(src[s]))) * 65535);
+    out[d + 1] = Math.round(clamp0111(linearToSrgb3(clamp0111(src[s + 1]))) * 65535);
+    out[d + 2] = Math.round(clamp0111(linearToSrgb3(clamp0111(src[s + 2]))) * 65535);
+    if (channels === 4) out[d + 3] = Math.round(clamp0111(src[s + 3]) * 65535);
   }
   return packPng(out, {
     width: f.width,
@@ -95213,8 +95456,8 @@ function encodeDither8(frame, opts = {}) {
     for (let x = 0; x < W; x++) {
       const s = (y * W + x) * 4, d = (y * W + x) * channels, e = (x + 1) * 3;
       for (let c = 0; c < 3; c++) {
-        const want = linearToSrgb3(clamp0110(src[s + c])) * 255 + errCur[e + c];
-        const q = clamp0110(Math.round(want) / 255) * 255;
+        const want = linearToSrgb3(clamp0111(src[s + c])) * 255 + errCur[e + c];
+        const q = clamp0111(Math.round(want) / 255) * 255;
         out[d + c] = q;
         const err = want - q;
         errCur[e + 3 + c] = (errCur[e + 3 + c] ?? 0) + err * (7 / 16);
@@ -95222,7 +95465,7 @@ function encodeDither8(frame, opts = {}) {
         errNext[e + c] = (errNext[e + c] ?? 0) + err * (5 / 16);
         errNext[e + 3 + c] = (errNext[e + 3 + c] ?? 0) + err * (1 / 16);
       }
-      if (channels === 4) out[d + 3] = Math.round(clamp0110(src[s + 3]) * 255);
+      if (channels === 4) out[d + 3] = Math.round(clamp0111(src[s + 3]) * 255);
     }
     errCur.set(errNext);
   }
@@ -96712,7 +96955,7 @@ async function runDriveSteps(page2, steps, opts = {}) {
     await page2.waitForTimeout(DRIVE_SETTLE_MS);
   }
 }
-var clamp0111 = (n2) => Number.isFinite(n2) ? Math.min(0.9, Math.max(0, n2)) : 0;
+var clamp0112 = (n2) => Number.isFinite(n2) ? Math.min(0.9, Math.max(0, n2)) : 0;
 function recolorCss(p) {
   switch (p.recolor) {
     case "invert":
@@ -96802,8 +97045,8 @@ async function captureUrl(params2, format, dims, opts = {}) {
       });
       return { bytes: new Uint8Array(pdf), mime: "application/pdf" };
     }
-    const l = clamp0111(params2.cropLeft), r3 = clamp0111(params2.cropRight);
-    const t = clamp0111(params2.cropTop), b = clamp0111(params2.cropBottom);
+    const l = clamp0112(params2.cropLeft), r3 = clamp0112(params2.cropRight);
+    const t = clamp0112(params2.cropTop), b = clamp0112(params2.cropBottom);
     const clipW = Math.max(1, Math.round(width * (1 - l - r3)));
     const clipH = Math.max(1, Math.round(height * (1 - t - b)));
     const clip3 = { x: Math.round(width * l), y: Math.round(height * t), width: clipW, height: clipH };
@@ -98869,9 +99112,9 @@ var LEADING_MARKS = /^[^\p{L}\p{N}]*/u;
 var TRAILING_MARKS = /[^\p{L}\p{N}]*$/u;
 function phonemesForWord(word, ipa) {
   const lead = LEADING_MARKS.exec(word)?.[0] ?? "";
-  const rest = word.slice(lead.length);
-  const tail = TRAILING_MARKS.exec(rest)?.[0] ?? "";
-  if (rest.length === tail.length) return filterToVocab(word);
+  const rest2 = word.slice(lead.length);
+  const tail = TRAILING_MARKS.exec(rest2)?.[0] ?? "";
+  if (rest2.length === tail.length) return filterToVocab(word);
   return filterToVocab(lead) + filterToVocab(ipa) + filterToVocab(tail);
 }
 

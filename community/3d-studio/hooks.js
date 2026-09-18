@@ -62,7 +62,10 @@ const STUDIO_LOOK_INPUTS = [
   'samples',
   'videoSamples',
   'motion',
+  'motionAmount',
+  'motionRest',
   'cameraMotion',
+  'cameraAmount',
   'cameraKeys',
   'cameraEase',
   'cameraLoop',
@@ -217,12 +220,18 @@ async function compute(model, changedId) {
       values.cameraMotion === 'keys' &&
       Array.isArray(values.cameraKeys) &&
       values.cameraKeys.length >= 2,
+    // A clip has a length when anything moves: any motion but Still image, any light
+    // animation, a camera move, or a camera path with two keys to travel between. A
+    // dolly zoom changes the lens against the distance, and an orthographic camera has
+    // no lens to change, so that one pair draws the same frame throughout.
     _clipMs:
-      values.motion === 'turntable' ||
+      (values.motion && values.motion !== 'still') ||
       (values.lightMotion && values.lightMotion !== 'still') ||
-      (values.cameraMotion === 'keys' &&
-        Array.isArray(values.cameraKeys) &&
-        values.cameraKeys.length >= 2)
+      (values.cameraMotion === 'keys'
+        ? Array.isArray(values.cameraKeys) && values.cameraKeys.length >= 2
+        : !!values.cameraMotion &&
+          values.cameraMotion !== 'still' &&
+          !(values.cameraMotion === 'dolly' && values.projection === 'orthographic'))
         ? Math.max(1, Math.min(30, Number(values.duration) || 5)) * 1000
         : 0,
   };

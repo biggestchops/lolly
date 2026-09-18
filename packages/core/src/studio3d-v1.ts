@@ -89,6 +89,42 @@ export interface StudioLightV1 {
   shadows: boolean;
 }
 
+/**
+ * What the subject does over the loop. `still` and `turntable` are the original two,
+ * and they still mean exactly what they always did. The rest are the motion library:
+ * `hover`, `pulse` and `wobble` run continuously, `pop`, `coin`, `jump`, `spinland`
+ * and `burst` play once and then hold the rest pose before going again. The engine
+ * keeps the list itself (`STUDIO_MOTION_KINDS` in `engine/src/studio3d-motion.ts`).
+ */
+export type StudioMotionKind =
+  | 'still'
+  | 'turntable'
+  | 'hover'
+  | 'pulse'
+  | 'wobble'
+  | 'pop'
+  | 'coin'
+  | 'jump'
+  | 'spinland'
+  | 'burst';
+
+/**
+ * Where a loop puts the subject at one moment, as a change from where the recipe
+ * places it. Every field is a difference from the rest pose, so a host applies the
+ * pose on top of the row it already reads: `spin` turns about the up axis, `tilt`
+ * rocks about the depth-to-camera and side axes, `lift` raises the subject in studio
+ * units, `scale` multiplies the subject's own scale per axis, and `burst` is how far
+ * the shatter effect has gone, 0 for the whole object and 1 for fully flown apart.
+ * Angles are radians.
+ */
+export interface StudioPoseV1 {
+  spin: number;
+  tilt: [number, number];
+  lift: number;
+  scale: [number, number, number];
+  burst: number;
+}
+
 /** Portable evaluated scene. URLs are resolved by the shell; source IDs are retained. */
 export interface StudioSceneV1 {
   version: 1;
@@ -181,7 +217,19 @@ export interface StudioSceneV1 {
   exposure: number;
   /** Samples per frame: a still takes `exportSamples`, a video or GIF frame `clipSamples`. */
   quality: { previewSamples: number; exportSamples: number; clipSamples: number };
-  motion: { kind: 'still' | 'turntable'; seconds: number; degrees: number };
+  /**
+   * What the subject does over the loop. `kind` names the loop, `seconds` is its
+   * length, `degrees` the turntable's turn. `amount` scales how far the loop travels
+   * and `rest` is the fraction of the loop a one-shot loop sits still at the end;
+   * both were added with the motion library and both default to the shape it ships.
+   */
+  motion: {
+    kind: StudioMotionKind;
+    seconds: number;
+    degrees: number;
+    amount: number;
+    rest: number;
+  };
   lightAnimation?: { kind: 'still' | 'orbit' | 'breathe'; amount: number };
   /**
    * Present for an arrangement: several subjects photographed together. `source` and
@@ -195,11 +243,15 @@ export interface StudioSceneV1 {
    * A camera path for motion: with `kind: 'keys'` and two or more keys the camera
    * travels through them over the loop; `still` keeps the live camera. `flow` passes
    * through every key with continuous velocity, `smooth` eases each leg, `linear` does not.
+   * The other kinds are camera moves made from the live view: their rows are written
+   * into `keys` when the recipe is built, so one evaluator draws every move, and
+   * `amount` (0.25 to 2, default 1) scales how far the move travels.
    */
   cameraMotion?: {
-    kind: 'still' | 'keys';
+    kind: 'still' | 'keys' | 'sweep' | 'pushin' | 'dolly' | 'reveal' | 'crane';
     ease: 'linear' | 'smooth' | 'flow';
     loop: boolean;
+    amount?: number;
     keys: StudioCameraKeyV1[];
   };
 }

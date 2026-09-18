@@ -84,7 +84,8 @@ export function studioCameraPose(
   clipSeconds?: number
 ): StudioCameraKeyV1 {
   const motion = scene.cameraMotion;
-  if (motion?.kind !== 'keys' || motion.keys.length < 2) return studioRestPose(scene);
+  // A preset carries its synthesised rows in `keys`, so one evaluator draws every move.
+  if (!motion || motion.kind === 'still' || motion.keys.length < 2) return studioRestPose(scene);
   const seconds = Number.isFinite(time)
     ? Math.max(0, time) * (clipSeconds && clipSeconds > 0 ? clipSeconds : scene.motion.seconds)
     : 0;
@@ -109,7 +110,159 @@ export function studioCameraPose(
 }
 
 export function studioCameraTravels(scene: StudioSceneV1): boolean {
-  return !!scene.cameraMotion && scene.cameraMotion.kind === 'keys' && scene.cameraMotion.keys.length >= 2;
+  return (
+    !!scene.cameraMotion &&
+    scene.cameraMotion.kind !== 'still' &&
+    scene.cameraMotion.keys.length >= 2
+  );
+}
+
+/** The camera moves that are made from the live view rather than authored key by key. */
+export const STUDIO_CAMERA_PRESETS = ['sweep', 'pushin', 'dolly', 'reveal', 'crane'] as const;
+export type StudioCameraPreset = (typeof STUDIO_CAMERA_PRESETS)[number];
+/** Every value the Camera select offers, in the order it offers them. */
+export const STUDIO_CAMERA_MOTIONS = ['still', 'keys', ...STUDIO_CAMERA_PRESETS] as const;
+export type StudioCameraMotion = (typeof STUDIO_CAMERA_MOTIONS)[number];
+
+/** What a preset calls its rows once they are handed over as keys. */
+const PRESET_NAMES: Record<StudioCameraPreset, string> = {
+  sweep: 'Sweep',
+  pushin: 'Push in',
+  dolly: 'Dolly',
+  reveal: 'Reveal',
+  crane: 'Crane',
+};
+
+/** How far the shell puts the camera from the target at zoom 1 (shells/web stage.ts). */
+export const STUDIO_CAMERA_DISTANCE = 11.3;
+
+type StudioCameraView = StudioSceneV1['camera'];
+
+/**
+ * Every synthesised number is clamped to the range a saved key holds and rounded to
+ * three decimals, so a preset reads the same on every host and the rows the author
+ * receives from Convert to keys are the rows the preset itself drew.
+ */
+function clamp(value: number, min: number, max: number): number {
+  const held = Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
+  return Math.round(held * 1000) / 1000;
+}
+
+function presetKey(
+  view: StudioCameraView,
+  at: number,
+  over: { azimuth?: number; elevation?: number; fov?: number; zoom?: number }
+): StudioCameraKeyV1 {
+  return {
+    at,
+    azimuth: clamp(over.azimuth ?? view.azimuth, -720, 720),
+    elevation: clamp(over.elevation ?? view.elevation, -60, 80),
+    fov: clamp(over.fov ?? view.fov, 15, 80),
+    zoom: clamp(over.zoom ?? view.zoom, 0.05, 3),
+    target: view.target.map((n) => clamp(n, -25, 25)) as StudioVector3,
+    focus: clamp(view.focus, 0, 500),
+  };
+}
+
+/**
+ * How big the subject looks at a key: the half width of the view where the subject is,
+ * which is the distance times the tangent of half the field of view. A dolly zoom holds
+ * this while the lens changes, which is what makes the background slide.
+ */
+export function studioCameraApparentSize(view: { fov: number; zoom: number }): number {
+  return (STUDIO_CAMERA_DISTANCE / view.zoom) * Math.tan((view.fov * Math.PI) / 360);
+}
+
+export function studioIsCameraPreset(kind: string): kind is StudioCameraPreset {
+  return (STUDIO_CAMERA_PRESETS as readonly string[]).includes(kind);
+}
+
+/**
+ * The keys a camera move is made of, drawn from the live view. `amount` (0.25 to 2)
+ * scales the sweep angle, the push, the crane and the reveal's arc. An orthographic
+ * camera ignores the field of view, so a dolly zoom under one makes no keys at all and
+ * the camera holds still.
+ */
+export function studioCameraPreset(
+  kind: StudioCameraPreset,
+  view: StudioCameraView,
+  amount = 1
+): StudioCameraKeyV1[] {
+  const a = Math.min(2, Math.max(0.25, Number.isFinite(amount) ? amount : 1));
+  switch (kind) {
+    case 'sweep': {
+      const angle = 20 * a;
+      return [
+        presetKey(view, 0, { azimuth: view.azimuth - angle }),
+        presetKey(view, 0.5, { azimuth: view.azimuth + angle }),
+        presetKey(view, 1, { azimuth: view.azimuth - angle }),
+      ];
+    }
+    case 'pushin':
+      return [
+        presetKey(view, 0, { zoom: view.zoom * (1 - 0.15 * a) }),
+        presetKey(view, 1, { zoom: view.zoom * (1 + 0.15 * a) }),
+      ];
+    case 'dolly': {
+      if (view.projection === 'orthographic') return [];
+      // Hold distance * tan(fov / 2) at the live view, so the subject keeps its size
+      // while the lens goes wide. distance is 11.3 / zoom, so zoom follows tan(fov / 2).
+      // The path between two keys is a straight line in both, and tan is not, so a key
+      // in the middle of the lens travel keeps the subject inside 1 percent all through
+      // where two keys alone let it shrink by nearly 3 percent halfway.
+      const half = (fov: number) => Math.tan((fov * Math.PI) / 360);
+      const zoomFor = (fov: number) => (view.zoom * half(fov)) / half(view.fov);
+      return [60, 42, 24].map((fov, i) =>
+        presetKey(view, i / 2, { fov, zoom: zoomFor(fov) })
+      );
+    }
+    case 'reveal':
+      return [
+        presetKey(view, 0, {
+          azimuth: view.azimuth - 90 * a,
+          elevation: 30,
+          zoom: view.zoom * 0.8,
+        }),
+        presetKey(view, 1, {}),
+      ];
+    case 'crane':
+      return [
+        presetKey(view, 0, {
+          elevation: view.elevation + 25 * a,
+          zoom: view.zoom * (1 - 0.15 * a),
+        }),
+        presetKey(view, 1, {}),
+      ];
+  }
+}
+
+/** The preset's keys as saved rows, named so the author can tell them apart. */
+export function studioCameraPresetRows(scene: StudioSceneV1): StudioValues[] {
+  const motion = scene.cameraMotion;
+  const kind = motion?.kind ?? 'still';
+  if (!motion || !studioIsCameraPreset(kind)) throw new Error('No camera move is chosen.');
+  return motion.keys.map((key, i) => ({
+    at: Math.round(key.at * 1000) / 10,
+    azimuth: key.azimuth,
+    elevation: key.elevation,
+    fov: key.fov,
+    zoom: key.zoom,
+    panX: key.target[0],
+    panY: key.target[1],
+    panZ: key.target[2],
+    focusDistance: key.focus,
+    name: `${PRESET_NAMES[kind]} ${i + 1}`,
+  }));
+}
+
+/** Convert to keys: the move becomes editable rows, in one edit so one undo takes it back. */
+export function studioCameraPresetEdit(scene: StudioSceneV1): { id: string; value: unknown }[] {
+  const rows = studioCameraPresetRows(scene);
+  if (rows.length < 2) throw new Error('This camera move makes no keys for the current view.');
+  return [
+    { id: 'cameraKeys', value: rows },
+    { id: 'cameraMotion', value: 'keys' },
+  ];
 }
 
 /** A key row from the live camera values, as the sidebar stores them. */

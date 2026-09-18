@@ -1,0 +1,153 @@
+{
+  "source": "plan 267 lane D",
+  "values": {
+    "cameraMotion": "crane",
+    "camera": {
+      "elevation": 60,
+      "panX": 0.4
+    }
+  },
+  "camera": {
+    "projection": "perspective",
+    "azimuth": 25,
+    "elevation": 60,
+    "fov": 29,
+    "zoom": 1,
+    "target": [
+      0.4,
+      1.6,
+      0
+    ],
+    "focus": 0,
+    "aperture": 0
+  },
+  "cameraMotion": {
+    "kind": "crane",
+    "ease": "smooth",
+    "loop": false,
+    "amount": 1,
+    "keys": [
+      {
+        "at": 0,
+        "azimuth": 25,
+        "elevation": 80,
+        "fov": 29,
+        "zoom": 0.85,
+        "target": [
+          0.4,
+          1.6,
+          0
+        ],
+        "focus": 0
+      },
+      {
+        "at": 1,
+        "azimuth": 25,
+        "elevation": 60,
+        "fov": 29,
+        "zoom": 1,
+        "target": [
+          0.4,
+          1.6,
+          0
+        ],
+        "focus": 0
+      }
+    ]
+  },
+  "rows": [
+    {
+      "at": 0,
+      "azimuth": 25,
+      "elevation": 80,
+      "fov": 29,
+      "zoom": 0.85,
+      "panX": 0.4,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 0,
+      "name": "Crane 1"
+    },
+    {
+      "at": 100,
+      "azimuth": 25,
+      "elevation": 60,
+      "fov": 29,
+      "zoom": 1,
+      "panX": 0.4,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 0,
+      "name": "Crane 2"
+    }
+  ],
+  "travels": true,
+  "animated": true,
+  "poses": [
+    {
+      "at": 0,
+      "azimuth": 25,
+      "elevation": 80,
+      "fov": 29,
+      "zoom": 0.85,
+      "target": [
+        0.4,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.25,
+      "azimuth": 25,
+      "elevation": 76.875,
+      "fov": 29,
+      "zoom": 0.8734375,
+      "target": [
+        0.4,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.5,
+      "azimuth": 25,
+      "elevation": 70,
+      "fov": 29,
+      "zoom": 0.925,
+      "target": [
+        0.4,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.75,
+      "azimuth": 25,
+      "elevation": 63.125,
+      "fov": 29,
+      "zoom": 0.9765625,
+      "target": [
+        0.4,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 1,
+      "azimuth": 25,
+      "elevation": 60,
+      "fov": 29,
+      "zoom": 1,
+      "target": [
+        0.4,
+        1.6,
+        0
+      ],
+      "focus": 0
+    }
+  ]
+}

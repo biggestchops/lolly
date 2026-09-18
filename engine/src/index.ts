@@ -886,3 +886,5 @@ export { studioOrbitLight, studioScaleLightDistance, studioPlaceableLights, stud
 export { studioSceneObjects, studioObjectEdit, studioObjectSelect, studioActiveObject, studioArrangementRows, studioObjectId, studioObjectName, studioOverlaps, studioArrangementPivot, STUDIO_ARRANGEMENT_LIMIT, STUDIO_ARRANGEMENT_EXTENT } from './studio3d-arrangement.ts';
 export { studioLookOf, studioApplyLook, studioKeyInput, studioKeyField, studioParseRef, studioFormatRef, studioParseOverrides, studioFormatOverrides, studioRecordOverride, STUDIO_LOOK_KEYS, STUDIO_INSTANCE_KEYS, STUDIO_LOOK_INPUT_IDS } from './studio3d-look.ts';
 export type { StudioLookValues, StudioRef } from './studio3d-look.ts';
+export { studioObjectPose, STUDIO_MOTION_KINDS, STUDIO_ONE_SHOT_KINDS, STUDIO_POSE_REST, STUDIO_POSE_MAX_LIFT } from './studio3d-motion.ts';
+export type { StudioPoseV1 } from './studio3d-motion.ts';

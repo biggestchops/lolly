@@ -1,0 +1,153 @@
+{
+  "source": "plan 267 lane D",
+  "values": {
+    "cameraMotion": "pushin",
+    "cameraAmount": 2,
+    "camera": {
+      "zoom": 1.4
+    }
+  },
+  "camera": {
+    "projection": "perspective",
+    "azimuth": 25,
+    "elevation": 14,
+    "fov": 29,
+    "zoom": 1.4,
+    "target": [
+      0,
+      1.6,
+      0
+    ],
+    "focus": 0,
+    "aperture": 0
+  },
+  "cameraMotion": {
+    "kind": "pushin",
+    "ease": "smooth",
+    "loop": false,
+    "amount": 2,
+    "keys": [
+      {
+        "at": 0,
+        "azimuth": 25,
+        "elevation": 14,
+        "fov": 29,
+        "zoom": 0.98,
+        "target": [
+          0,
+          1.6,
+          0
+        ],
+        "focus": 0
+      },
+      {
+        "at": 1,
+        "azimuth": 25,
+        "elevation": 14,
+        "fov": 29,
+        "zoom": 1.82,
+        "target": [
+          0,
+          1.6,
+          0
+        ],
+        "focus": 0
+      }
+    ]
+  },
+  "rows": [
+    {
+      "at": 0,
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 0.98,
+      "panX": 0,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 0,
+      "name": "Push in 1"
+    },
+    {
+      "at": 100,
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1.82,
+      "panX": 0,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 0,
+      "name": "Push in 2"
+    }
+  ],
+  "travels": true,
+  "animated": true,
+  "poses": [
+    {
+      "at": 0,
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 0.98,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.25,
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1.11125,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.5,
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1.4,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.75,
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1.6887500000000002,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 1,
+      "azimuth": 25,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1.82,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    }
+  ]
+}

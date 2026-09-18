@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -8,15 +9,23 @@ import { loadTool } from '../engine/src/loader.ts';
 import { createRuntime } from '../engine/src/runtime.ts';
 import {
   STUDIO_CAMERA_KEY_LIMIT,
+  STUDIO_CAMERA_PRESETS,
   studioAddCameraKey,
+  studioCameraApparentSize,
   studioCameraFromKey,
   studioCameraKeyLabel,
   studioCameraPose,
+  studioCameraPresetEdit,
+  studioCameraPresetRows,
   studioCameraTravels,
   studioRestPose,
 } from '../engine/src/studio3d-camera-path.ts';
 import { buildStudioScene, studioAnimated } from '../engine/src/studio3d.ts';
 import { parseUrlState, serializeUrlState } from '../engine/src/url-mode.ts';
+import {
+  CAMERA_PRESET_SETS,
+  presetFixture,
+} from './fixtures/studio3d/recipes/generate-camera-presets.ts';
 import { baseHost } from './helpers/host.ts';
 
 const keys = [
@@ -244,4 +253,288 @@ test('the real tool carries a camera path through URL mode and reports the clip 
   assert.match(reopened.getHydrated(), /data-studio-play aria-pressed="false"/);
   runtime.destroy();
   reopened.destroy();
+});
+
+/**
+ * The camera moves (plan 267, lane D). A move is key data: buildStudioScene makes its
+ * rows from the live view and puts them in `cameraMotion.keys`, so the path evaluator
+ * draws a move exactly as it draws authored keys, and Convert to keys hands the rows
+ * over unchanged. These tests pin that equality, the keys each move makes, and the one
+ * case a move refuses: a dolly zoom under an orthographic camera.
+ */
+const PRESET_EASES = ['smooth', 'linear', 'flow'] as const;
+/** The fields a pose carries; a converted key also carries the name it was given. */
+const POSE_FIELDS = ['at', 'azimuth', 'elevation', 'fov', 'zoom', 'focus'] as const;
+
+function samePose(a: ReturnType<typeof studioCameraPose>, b: typeof a, where: string): void {
+  for (const field of POSE_FIELDS)
+    assert.ok(Math.abs(a[field] - b[field]) < 1e-9, `${where}: ${field} ${a[field]} vs ${b[field]}`);
+  for (let i = 0; i < 3; i++)
+    assert.ok(Math.abs(a.target[i]! - b.target[i]!) < 1e-9, `${where}: target ${i}`);
+}
+
+test('a camera move draws the same frames as the keys it converts to', () => {
+  for (const kind of STUDIO_CAMERA_PRESETS)
+    for (const ease of PRESET_EASES)
+      for (const loop of [false, true]) {
+        const camera = { azimuth: -12, elevation: 22, fov: 34, zoom: 1.1, panX: 0.3 };
+        const values = {
+          cameraMotion: kind,
+          cameraAmount: 1.25,
+          cameraEase: ease,
+          cameraLoop: loop,
+          camera,
+          focusDistance: 5,
+        };
+        const move = buildStudioScene({ version: 1, values });
+        assert.equal(move.cameraMotion?.kind, kind, 'the recipe keeps the move by name');
+        assert.equal(studioCameraTravels(move), true);
+        assert.equal(studioAnimated(move), true);
+        const edit = studioCameraPresetEdit(move);
+        assert.deepEqual(
+          edit.map((e) => e.id),
+          ['cameraKeys', 'cameraMotion'],
+          'one edit writes the rows and one switches to keys, so one undo takes it back'
+        );
+        assert.equal(edit[1]!.value, 'keys');
+        const converted = buildStudioScene({
+          version: 1,
+          values: { ...values, cameraMotion: 'keys', cameraKeys: edit[0]!.value },
+        });
+        for (let i = 0; i <= 31; i++) {
+          const phase = i / 31;
+          samePose(
+            studioCameraPose(move, phase),
+            studioCameraPose(converted, phase),
+            `${kind} ${ease} loop ${loop} at ${phase}`
+          );
+        }
+      }
+});
+
+test('each camera move is made from the live view, and the amount says how far it goes', () => {
+  const live = { azimuth: 25, elevation: 14, fov: 29, zoom: 1 };
+  const keysOf = (values: Record<string, unknown>) =>
+    buildStudioScene({ version: 1, values }).cameraMotion!.keys;
+  // Orbit sweep: a little each way about the live azimuth, and back where it started.
+  for (const [amount, angle] of [
+    [0.25, 5],
+    [1, 20],
+    [2, 40],
+  ] as const) {
+    const keys = keysOf({ cameraMotion: 'sweep', cameraAmount: amount });
+    assert.deepEqual(
+      keys.map((k) => k.azimuth),
+      [live.azimuth - angle, live.azimuth + angle, live.azimuth - angle],
+      `sweep at amount ${amount}`
+    );
+    assert.deepEqual(
+      keys.map((k) => k.at),
+      [0, 0.5, 1]
+    );
+  }
+  // An amount outside the range is held to it, as the input is.
+  assert.equal(keysOf({ cameraMotion: 'sweep', cameraAmount: 9 })[1]!.azimuth, live.azimuth + 40);
+  // Push in: closer over the loop, and with the loop off the close view holds.
+  const push = keysOf({ cameraMotion: 'pushin' });
+  assert.deepEqual(
+    push.map((k) => k.zoom),
+    [0.85, 1.15]
+  );
+  const pushScene = buildStudioScene({ version: 1, values: { cameraMotion: 'pushin' } });
+  assert.equal(studioCameraPose(pushScene, 2).zoom, 1.15, 'an open move holds its last view');
+  // Reveal turn: in from the side and down to the live view, one shot.
+  const reveal = keysOf({ cameraMotion: 'reveal', cameraAmount: 0.5 });
+  assert.deepEqual(
+    reveal.map((k) => [k.azimuth, k.elevation, k.zoom]),
+    [
+      [live.azimuth - 45, 30, 0.8],
+      [live.azimuth, live.elevation, 1],
+    ]
+  );
+  // Crane: down onto the live view while the zoom rises, held inside the key range.
+  assert.deepEqual(
+    keysOf({ cameraMotion: 'crane' }).map((k) => [k.elevation, k.zoom]),
+    [
+      [live.elevation + 25, 0.85],
+      [live.elevation, 1],
+    ]
+  );
+  assert.equal(
+    keysOf({ cameraMotion: 'crane', camera: { elevation: 70 } })[0]!.elevation,
+    80,
+    'the elevation range holds a crane that would start above it'
+  );
+  // Authored keys are left alone while a move is chosen, and come back with them.
+  const both = buildStudioScene({
+    version: 1,
+    values: { cameraMotion: 'sweep', cameraKeys: keys },
+  });
+  assert.equal(both.cameraMotion!.keys.length, 3);
+  assert.deepEqual(both.cameraMotion!.keys[0]!.target, [0, 1.6, 0]);
+  assert.equal(
+    buildStudioScene({ version: 1, values: { cameraMotion: 'keys', cameraKeys: keys } })
+      .cameraMotion!.keys[1]!.azimuth,
+    90,
+    'switching back to keys draws the authored path again'
+  );
+});
+
+test('a dolly zoom holds the subject size, and does nothing under an orthographic camera', () => {
+  const values = { cameraMotion: 'dolly', camera: { fov: 34, zoom: 1.1 } };
+  const scene = buildStudioScene({ version: 1, values });
+  const live = studioCameraApparentSize(scene.camera);
+  assert.deepEqual(
+    scene.cameraMotion!.keys.map((k) => k.fov),
+    [60, 42, 24],
+    'the lens goes wide and then long, through a key that keeps the framing on the way'
+  );
+  for (const phase of [0, 0.25, 0.5, 0.75, 1]) {
+    const pose = studioCameraPose(scene, phase);
+    const size = studioCameraApparentSize(pose);
+    assert.ok(
+      Math.abs(size - live) <= live * 0.02,
+      `at ${phase} the subject measures ${size} where the live view measures ${live}`
+    );
+  }
+  // An orthographic camera ignores the field of view, so the move makes no keys at all
+  // and the camera holds the live view; the recipe still records what was chosen.
+  const flat = buildStudioScene({
+    version: 1,
+    values: { ...values, projection: 'orthographic' },
+  });
+  assert.equal(flat.cameraMotion!.kind, 'dolly');
+  assert.deepEqual(flat.cameraMotion!.keys, []);
+  assert.equal(studioCameraTravels(flat), false);
+  assert.equal(studioAnimated(flat), false);
+  assert.deepEqual(studioCameraPose(flat, 0.4), studioRestPose(flat));
+  assert.throws(() => studioCameraPresetEdit(flat), /makes no keys/);
+  // Where the zoom range cannot go far enough the framing moves, and the shell says so.
+  const tight = buildStudioScene({ version: 1, values: { cameraMotion: 'dolly', camera: { zoom: 2 } } });
+  assert.equal(tight.cameraMotion!.keys[0]!.zoom, 3, 'the zoom range holds the wide end');
+  assert.ok(
+    studioCameraApparentSize(tight.cameraMotion!.keys[0]!) >
+      studioCameraApparentSize(tight.camera) * 1.02
+  );
+});
+
+test('the rows a camera move hands over are named and carry the view whole', () => {
+  const scene = buildStudioScene({
+    version: 1,
+    values: {
+      cameraMotion: 'reveal',
+      camera: { azimuth: 40, elevation: 10, fov: 35, zoom: 0.9, panX: 0.5 },
+      focusDistance: 7,
+    },
+  });
+  const rows = studioCameraPresetRows(scene);
+  assert.deepEqual(
+    rows.map((r) => r.name),
+    ['Reveal 1', 'Reveal 2']
+  );
+  assert.deepEqual(
+    rows.map((r) => r.at),
+    [0, 100],
+    'a row holds the moment as a percentage, the way the sidebar shows it'
+  );
+  assert.deepEqual(rows[1], {
+    at: 100,
+    azimuth: 40,
+    elevation: 10,
+    fov: 35,
+    zoom: 0.9,
+    panX: 0.5,
+    panY: 1.6,
+    panZ: 0,
+    focusDistance: 7,
+    name: 'Reveal 2',
+  });
+  assert.throws(
+    () => studioCameraPresetRows(buildStudioScene({ version: 1, values: {} })),
+    /No camera move is chosen/
+  );
+});
+
+test('the pinned camera moves evaluate as they were pinned', () => {
+  for (const { kind, values } of CAMERA_PRESET_SETS) {
+    const pinned = JSON.parse(
+      readFileSync(join('tests/fixtures/studio3d/recipes', `05-camera-${kind}.json`), 'utf8')
+    );
+    assert.deepEqual(
+      { source: pinned.source, ...presetFixture(values) },
+      pinned,
+      `05-camera-${kind}.json: rerun node tests/fixtures/studio3d/recipes/generate-camera-presets.ts to re-pin a deliberate change`
+    );
+  }
+});
+
+/**
+ * Convert to keys on the real hydrated template, with a stub renderer: the button hands
+ * the move's rows to the sidebar and switches to keys in one commit, and it is only
+ * there while a move is chosen (plan 267, D3).
+ */
+test('Convert to keys hands the move over as editable rows', async () => {
+  const tool = await loadTool('3d-studio', (p) => readFile(join('community', p), 'utf8'));
+  const runtime = await createRuntime(tool, baseHost(), { cameraMotion: 'sweep' });
+  const { window } = new JSDOM(`<body>${runtime.getHydrated()}</body>`);
+  const previous = globalThis.document;
+  globalThis.document = window.document;
+  try {
+    const { syncStudioControls } = await import('../shells/web/src/lib/studio3d/controls.ts');
+    const marker = window.document.querySelector('[data-lolly-studio]')!;
+    const edits: { id: string; value: unknown }[] = [];
+    const values: Record<string, unknown> = { cameraMotion: 'sweep', camera: {}, target: {} };
+    const entry = {
+      canvas: window.document.createElement('canvas'),
+      marker,
+      handle: { highlight() {}, showLightHandles() {}, fit: () => null },
+      ready: true,
+      recipe: buildStudioScene({ version: 1, values }),
+      inputValues: values,
+      inputCamera: {},
+      options: { setInput: (id: string, value: unknown) => edits.push({ id, value }) },
+      render() {},
+    };
+    syncStudioControls(entry as never);
+    const convert = marker.querySelector('[data-studio-convert-keys]') as HTMLButtonElement;
+    const note = () => marker.querySelector('[data-studio-camera-note]')?.textContent;
+    assert.ok(convert, 'the camera path group offers Convert to keys');
+    assert.equal(convert.hidden, false, 'a chosen move offers the conversion');
+    convert.click();
+    assert.deepEqual(edits, studioCameraPresetEdit(entry.recipe));
+    assert.equal((edits[0]!.value as unknown[]).length, 3);
+    assert.equal(edits[1]!.value, 'keys');
+    assert.equal(note(), 'Converted to 3 keys. Edit them under Motion.');
+
+    // A dolly the zoom range cannot follow says so, rather than looking like a mistake.
+    const tight = { cameraMotion: 'dolly', camera: { zoom: 2 }, target: {} };
+    entry.recipe = buildStudioScene({ version: 1, values: tight });
+    entry.inputValues = tight;
+    syncStudioControls(entry as never);
+    edits.length = 0;
+    (marker.querySelector('[data-studio-convert-keys]') as HTMLButtonElement).click();
+    assert.equal(
+      note(),
+      'Converted to 3 keys. Edit them under Motion. The zoom range limited this move, so the subject changes size.'
+    );
+
+    // Authored keys are already editable, and an orthographic dolly has nothing to give.
+    for (const held of [
+      { cameraMotion: 'keys', cameraKeys: keys, target: {} },
+      { cameraMotion: 'still', target: {} },
+      { cameraMotion: 'dolly', projection: 'orthographic', target: {} },
+    ]) {
+      entry.recipe = buildStudioScene({ version: 1, values: held });
+      entry.inputValues = held;
+      syncStudioControls(entry as never);
+      assert.equal(
+        (marker.querySelector('[data-studio-convert-keys]') as HTMLButtonElement).hidden,
+        true,
+        `${held.cameraMotion} hides Convert to keys`
+      );
+    }
+  } finally {
+    globalThis.document = previous;
+    runtime.destroy();
+  }
 });

@@ -615,6 +615,30 @@ describe('3D Studio actual renderer', { skip: studioSkip }, () => {
     }
   });
 
+  it('samples every motion loop reproducibly and starts each one at rest', async () => {
+    const page = await open();
+    try {
+      const at = (t: number) => page.evaluate((t) => window.studioTest!.sample(t), t);
+      const source = { source: 'artwork', artwork: { url: '/fixture.svg' }, duration: 5 };
+      assert.equal((await render(page, { ...source, motion: 'still' })).state, 'ready');
+      const rest = await at(0);
+      for (const motion of ['hover', 'pulse', 'wobble', 'pop', 'coin', 'jump', 'spinland', 'burst']) {
+        assert.equal((await render(page, { ...source, motion })).state, 'ready');
+        // A burst flies out and comes back, so it is equally far along at 0.25 and at
+        // 0.5 by design; its pair reads either side of the moment it is furthest out.
+        const [a, b] = motion === 'burst' ? [0.2, 0.4] : [0.25, 0.5];
+        const first = await at(a),
+          next = await at(b),
+          repeated = await at(a);
+        assert.notEqual(first, next, `${motion} must draw a different frame at ${b} than at ${a}`);
+        assert.equal(first, repeated, `${motion} must draw the same frame at ${a} twice`);
+        assert.equal(await at(0), rest, `${motion} must start from the rest pose`);
+      }
+    } finally {
+      await page.close();
+    }
+  });
+
   it('renders the private SUSE fixtures when explicitly requested', {
     skip: !process.env.STUDIO_SUSE && 'STUDIO_SUSE is not set; private SUSE fixtures are opt-in.',
   }, async () => {

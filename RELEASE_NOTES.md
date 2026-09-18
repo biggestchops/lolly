@@ -36,6 +36,37 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
 
 ### New in 1.0.9 (unreleased)
 
+- **3D Studio motion presets.** The subject can do more than turn. Beside
+  **Still image** and **Turntable**, Motion now offers **Hover**, **Pulse**,
+  **Wobble**, **Pop**, **Coin flip**, **Jump**, **Spin and land** and **Burst**.
+  Hover, Pulse and Wobble run without stopping; the other five play once and then
+  hold still before they go again. **Motion amount** scales how far any of them
+  travel and **Rest between loops** sets that held pause. Every loop starts and
+  ends at the place you put the subject, so a still of an animated document, a
+  poster and a contact sheet are all the subject as you placed it, and whatever a
+  loop does to the subject's size or tilt, its lowest point stays on the floor
+  until the loop itself lifts it. Three templates open on a finished loop:
+  **Logo drop**, **Bouncing icon** and **Shatter reveal**.
+- **3D Studio camera moves.** Beside holding the view and travelling through your
+  own keys, **Camera** offers five moves built from the view you have composed:
+  **Orbit sweep**, **Push in**, **Dolly zoom**, **Reveal turn** and **Crane**.
+  **Camera amount** scales how far a move travels, and **Convert to keys** on the
+  preview turns the move into ordinary camera keys you can edit, as one step that
+  undo takes back. A dolly zoom narrows the lens while the camera pulls back so
+  the subject keeps its size and the background slides; an orthographic camera has
+  no lens to change, so the move does nothing there.
+- **Burst.** The subject breaks into its own triangles, which spin, fly outward,
+  fall a little and shrink away before the object comes back together. Nothing is
+  random, so the same moment of the loop draws the same picture on every device
+  and in every export, and the cast shadow shatters with the object rather than
+  staying whole underneath it. Nothing fades either: a piece shrinks instead of
+  going see-through, so a burst works in every output, the transparent ones
+  included. Burst shatters up to 250,000 triangles per object; a heavier model
+  keeps its whole shape and the Source notes line gives the count that refused it.
+- The new 3D Studio motion and camera copy, and the three template names and
+  descriptions, read in English in every locale for this release. The tool
+  locale pipeline covers a tool's gallery card rather than its per-input
+  labels, so these strings are pending a translation wave.
 - **3D scenes in Design.** A Design document can hold 3D scenes. Add one from
   the Add menu, drag out a frame and 3D Studio opens on the new box; afterwards
   the inspector's **3D scene** section opens it again with **Edit in 3D Studio**,

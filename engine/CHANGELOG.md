@@ -6,6 +6,12 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.210.0
+
+- Added `studio3d-motion.ts`: `STUDIO_MOTION_KINDS` names the ten loops the subject can run, `studioObjectPose(scene, time, clipSeconds)` answers where one of them puts the subject at a moment as a change from the rest pose, `STUDIO_POSE_REST` is that rest pose and `STUDIO_POSE_MAX_LIFT` the height no loop passes. The easings (`smoothstep`, `bump`, `backOut`, `anticipate`, `bounceOut`) are exported from the module for the tests. Pure, closed form in the phase, with no clock and no random number, so two hosts asked for the same moment return the same numbers, and at phase 0 every kind gives the rest pose, which keeps a poster and a contact sheet what they were.
+- `StudioSceneV1.motion` gains `amount` (0.25 to 2, from the manifest's Motion amount) and `rest` (0 to 0.6 of the loop, from Rest between loops), and `kind` accepts the eight new loops beside `still` and `turntable`. Additive: the defaults evaluate to the output 1.209.0 drew, and `still` and `turntable` are unchanged to the last bit. `StudioMotionKind` and `StudioPoseV1` are in the SDK (`packages/core/src/studio3d-v1.ts`).
+- `studio3d-camera-path.ts` gains the camera moves made from the live view: `STUDIO_CAMERA_PRESETS` (`sweep`, `pushin`, `dolly`, `reveal`, `crane`), `studioCameraPreset(kind, camera, amount)` synthesising their rows, `studioIsCameraPreset`, `studioCameraApparentSize`, and `studioCameraPresetRows`/`studioCameraPresetEdit` behind Convert to keys, which hands the rows to the author as one edit. `StudioSceneV1.cameraMotion.kind` accepts those five beside `still` and `keys`, with `amount` scaling the travel; the rows are written into `keys` when the recipe is built, so `studioCameraPose` draws every move through the one evaluator. An orthographic camera has no lens to change, so a dolly zoom under one makes no keys and the camera holds still.
+
 ## 1.209.0
 
 - `DESIGN_LAYER_KINDS` gains `'3d'`, appended, so a Design document can hold 3D scene boxes. The list is extended and never reordered, so every existing wire value is unchanged; a reader from before this minor marks a document holding a 3D box invalid.

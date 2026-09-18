@@ -1,0 +1,33 @@
+{
+  "id": "shatter-reveal",
+  "name": "Shatter reveal",
+  "category": "Promotion",
+  "description": "The subject breaks into its own triangles, flies apart and comes back together while the camera swings round from the side onto the finished view. Swap in your own SVG under Start.",
+  "values": {
+    "studio": "dramatic",
+    "drama": 0.8,
+    "outputMode": "scene",
+    "motion": "burst",
+    "motionAmount": 1,
+    "motionRest": 0.25,
+    "duration": 5,
+    "cameraMotion": "reveal",
+    "cameraAmount": 1,
+    "cameraEase": "smooth",
+    "cameraLoop": false,
+    "camera": {
+      "azimuth": 20,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 0.7,
+      "panX": 0,
+      "panY": 0.8,
+      "panZ": 0
+    },
+    "source": "primitive",
+    "primitive": "badge",
+    "materialMode": "pair",
+    "finishA": "satin",
+    "finishB": "metal"
+  }
+}

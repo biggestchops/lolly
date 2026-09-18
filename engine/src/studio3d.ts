@@ -10,7 +10,13 @@ import type {
   StudioSourceV1,
   StudioVector3,
 } from '@lolly-tools/core';
-import { STUDIO_CAMERA_KEY_LIMIT, studioCameraTravels } from './studio3d-camera-path.ts';
+import {
+  STUDIO_CAMERA_KEY_LIMIT,
+  STUDIO_CAMERA_MOTIONS,
+  studioCameraPreset,
+  studioCameraTravels,
+  studioIsCameraPreset,
+} from './studio3d-camera-path.ts';
 import {
   STUDIO_ARRANGEMENT_EXTENT,
   studioActiveObject,
@@ -20,6 +26,7 @@ import {
 } from './studio3d-arrangement.ts';
 import { studioActiveValues } from './studio3d-collection.ts';
 import { STUDIO_KEY_CARD_OFFSET, STUDIO_PRESET_LIGHT_POSITIONS } from './studio3d-lights.ts';
+import { STUDIO_MOTION_KINDS } from './studio3d-motion.ts';
 
 type Values = Record<string, unknown>;
 function record(value: unknown): Values {
@@ -362,6 +369,30 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       ...(finish && finish !== 'satin' ? { finish } : {}),
     };
   });
+  // The live view, named before the recipe is assembled because a camera move is made
+  // from it (studio3d-camera-path.ts) while the recipe is being built.
+  const view: StudioSceneV1['camera'] = {
+    projection,
+    azimuth: number(camera.azimuth, 25, -180, 180),
+    elevation: number(camera.elevation, 14, -60, 80),
+    fov: number(camera.fov, 29, 15, 80),
+    zoom: number(camera.zoom, 1, 0.05, 3),
+    target: [
+      number(target.x, 0, -5, 5) + number(camera.panX, 0, -20, 20),
+      number(target.y, 1.6, -5, 10) + number(camera.panY, 0, -20, 20),
+      number(target.z, 0, -5, 5) + number(camera.panZ, 0, -20, 20),
+    ],
+    focus: number(v.focusDistance, 0, 0, 500),
+    aperture:
+      projection === 'perspective' && v.depthOfField === true
+        ? number(v.aperture, 0.12, 0.01, 0.5)
+        : 0,
+  };
+  const cameraKind = choice(v.cameraMotion, STUDIO_CAMERA_MOTIONS, 'still');
+  const cameraAmount = number(v.cameraAmount, 1, 0.25, 2);
+  // A camera move is key data: its rows are made here, once, from the live view, so the
+  // path evaluator and every shell draw a move exactly as they draw authored keys.
+  const authoredKeys = cameraKeys(v);
   return {
     version: 1,
     source,
@@ -385,23 +416,7 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
           position: vector(v.position, ['x', 'y', 'z'], [0, 0.1, 0], 10),
           scale: number(transform.scale, 1, 0.1, 5),
         },
-    camera: {
-      projection,
-      azimuth: number(camera.azimuth, 25, -180, 180),
-      elevation: number(camera.elevation, 14, -60, 80),
-      fov: number(camera.fov, 29, 15, 80),
-      zoom: number(camera.zoom, 1, 0.05, 3),
-      target: [
-        number(target.x, 0, -5, 5) + number(camera.panX, 0, -20, 20),
-        number(target.y, 1.6, -5, 10) + number(camera.panY, 0, -20, 20),
-        number(target.z, 0, -5, 5) + number(camera.panZ, 0, -20, 20),
-      ],
-      focus: number(v.focusDistance, 0, 0, 500),
-      aperture:
-        projection === 'perspective' && v.depthOfField === true
-          ? number(v.aperture, 0.12, 0.01, 0.5)
-          : 0,
-    },
+    camera: view,
     materials: {
       mode: choice(v.materialMode, ['source', 'pair', 'custom'] as const, 'source'),
       finishA: choice(v.finishA, FINISHES, 'satin'),
@@ -473,9 +488,13 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
       clipSamples: Math.round(number(v.videoSamples, 16, 1, 64)),
     },
     motion: {
-      kind: choice(v.motion, ['still', 'turntable'] as const, 'still'),
+      kind: choice(v.motion, STUDIO_MOTION_KINDS, 'still'),
       seconds: number(v.duration, 5, 1, 30),
       degrees: number(v.turnDegrees, 360, -720, 720),
+      // How far a loop travels, and how much of it a one-shot loop holds the rest
+      // pose at the end. The defaults are the shapes the library was drawn at.
+      amount: number(v.motionAmount, 1, 0.25, 2),
+      rest: number(v.motionRest, 0.25, 0, 0.6),
     },
     lightAnimation: {
       kind: choice(v.lightMotion, ['still', 'orbit', 'breathe'] as const, 'still'),
@@ -483,10 +502,13 @@ export function buildStudioScene(input: unknown): StudioSceneV1 {
     },
     ...(arrangement ? { objects, activeObject: studioActiveObject(v) } : {}),
     cameraMotion: {
-      kind: choice(v.cameraMotion, ['still', 'keys'] as const, 'still'),
+      kind: cameraKind,
       ease: choice(v.cameraEase, ['linear', 'smooth', 'flow'] as const, 'smooth'),
       loop: enabled(v.cameraLoop),
-      keys: cameraKeys(v),
+      amount: cameraAmount,
+      keys: studioIsCameraPreset(cameraKind)
+        ? studioCameraPreset(cameraKind, view, cameraAmount)
+        : authoredKeys,
     },
   };
 }

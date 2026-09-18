@@ -15,6 +15,7 @@
         <button type="button" data-studio-add-key title="Save the current view as the next key of the camera path" aria-label="Add camera key"><span class="studio-label-full">Add camera key</span><span class="studio-label-short">Add key</span></button>
         {{#if _cameraKeys}}<button type="button" data-studio-go-key title="Show the next saved key's view in the preview" aria-label="Go to key"><span class="studio-label-full">Go to key</span><span class="studio-label-short">Go to</span></button>{{/if}}
         {{#if _cameraKeys}}<button type="button" data-studio-play aria-pressed="{{#if _cameraPlays}}true{{else}}false{{/if}}" title="Play the camera path in the preview; off to compose the next view" aria-label="Play path"><span class="studio-label-full">Play path</span><span class="studio-label-short">Play</span></button>{{/if}}
+        <button type="button" data-studio-convert-keys title="Turn the chosen camera move into keys you can edit" aria-label="Convert to keys"><span class="studio-label-full">Convert to keys</span><span class="studio-label-short">To keys</span></button>
       </div>
       {{#if depthOfField}}
       <div class="studio-group" role="group" aria-label="Focus">

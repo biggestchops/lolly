@@ -1,0 +1,177 @@
+{
+  "source": "plan 267 lane D",
+  "values": {
+    "cameraMotion": "sweep",
+    "cameraAmount": 1.5,
+    "cameraEase": "flow",
+    "cameraLoop": true
+  },
+  "camera": {
+    "projection": "perspective",
+    "azimuth": 25,
+    "elevation": 14,
+    "fov": 29,
+    "zoom": 1,
+    "target": [
+      0,
+      1.6,
+      0
+    ],
+    "focus": 0,
+    "aperture": 0
+  },
+  "cameraMotion": {
+    "kind": "sweep",
+    "ease": "flow",
+    "loop": true,
+    "amount": 1.5,
+    "keys": [
+      {
+        "at": 0,
+        "azimuth": -5,
+        "elevation": 14,
+        "fov": 29,
+        "zoom": 1,
+        "target": [
+          0,
+          1.6,
+          0
+        ],
+        "focus": 0
+      },
+      {
+        "at": 0.5,
+        "azimuth": 55,
+        "elevation": 14,
+        "fov": 29,
+        "zoom": 1,
+        "target": [
+          0,
+          1.6,
+          0
+        ],
+        "focus": 0
+      },
+      {
+        "at": 1,
+        "azimuth": -5,
+        "elevation": 14,
+        "fov": 29,
+        "zoom": 1,
+        "target": [
+          0,
+          1.6,
+          0
+        ],
+        "focus": 0
+      }
+    ]
+  },
+  "rows": [
+    {
+      "at": 0,
+      "azimuth": -5,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "panX": 0,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 0,
+      "name": "Sweep 1"
+    },
+    {
+      "at": 50,
+      "azimuth": 55,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "panX": 0,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 0,
+      "name": "Sweep 2"
+    },
+    {
+      "at": 100,
+      "azimuth": -5,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "panX": 0,
+      "panY": 1.6,
+      "panZ": 0,
+      "focusDistance": 0,
+      "name": "Sweep 3"
+    }
+  ],
+  "travels": true,
+  "animated": true,
+  "poses": [
+    {
+      "at": 0,
+      "azimuth": -5,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.25,
+      "azimuth": 28.75,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.5,
+      "azimuth": 55,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "target": [
+        0,
+        1.6000000000000003,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0.75,
+      "azimuth": 28.75,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    },
+    {
+      "at": 0,
+      "azimuth": -5,
+      "elevation": 14,
+      "fov": 29,
+      "zoom": 1,
+      "target": [
+        0,
+        1.6,
+        0
+      ],
+      "focus": 0
+    }
+  ]
+}
