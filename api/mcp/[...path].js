@@ -7449,42 +7449,42 @@ function assertFileOperationRequest(value) {
 }
 function assertFileOperationReport(value) {
   if (!reportValidator(value)) throw new Error(`Invalid file report: ${ajv2.errorsText(reportValidator.errors)}`);
-  const report = value;
-  if (report.state === "succeeded" && !report.outputs.length) throw new Error("A successful file report needs an output.");
-  if (["failed", "cancelled"].includes(report.state) && report.outputs.length) throw new Error("An unsuccessful single operation cannot claim outputs.");
+  const report2 = value;
+  if (report2.state === "succeeded" && !report2.outputs.length) throw new Error("A successful file report needs an output.");
+  if (["failed", "cancelled"].includes(report2.state) && report2.outputs.length) throw new Error("An unsuccessful single operation cannot claim outputs.");
 }
 async function executeFileOperationV1(input, request, adapter, context = {}) {
   assertFileOperationRequest(request);
-  const report = { version: 1, operation: request.operation, state: "failed", inputs: [], outputs: [], options: { ...request.options, target: request.target }, changes: [], findings: [], metadata: "not-checked", execution: context.execution ?? "device" };
+  const report2 = { version: 1, operation: request.operation, state: "failed", inputs: [], outputs: [], options: { ...request.options, target: request.target }, changes: [], findings: [], metadata: "not-checked", execution: context.execution ?? "device" };
   try {
     context.signal?.throwIfAborted();
     const original = await adapter.describe(input, context.signal);
-    report.inputs = [original];
-    Object.assign(report, adapter.effects(original, request));
+    report2.inputs = [original];
+    Object.assign(report2, adapter.effects(original, request));
     const output = await adapter.execute(input, request, context.signal);
     context.signal?.throwIfAborted();
     const produced = await adapter.describe(output, context.signal);
     context.signal?.throwIfAborted();
-    report.outputs = [produced];
-    report.state = "succeeded";
-    report.changes = [`${original.format.toUpperCase()} \u2192 ${produced.format.toUpperCase()}`, `${original.size} \u2192 ${produced.size} bytes`];
-    if (original.width && produced.width) report.changes.push(`${original.width} \xD7 ${original.height} \u2192 ${produced.width} \xD7 ${produced.height} pixels`);
-    assertFileOperationReport(report);
-    return { output, report };
+    report2.outputs = [produced];
+    report2.state = "succeeded";
+    report2.changes = [`${original.format.toUpperCase()} \u2192 ${produced.format.toUpperCase()}`, `${original.size} \u2192 ${produced.size} bytes`];
+    if (original.width && produced.width) report2.changes.push(`${original.width} \xD7 ${original.height} \u2192 ${produced.width} \xD7 ${produced.height} pixels`);
+    assertFileOperationReport(report2);
+    return { output, report: report2 };
   } catch (error) {
-    report.outputs = [];
-    report.state = context.signal?.aborted ? "cancelled" : "failed";
-    report.findings.push({ code: report.state === "cancelled" ? "operation-cancelled" : "operation-failed", severity: "error", message: (error instanceof Error ? error.message : String(error)).slice(0, 4096) });
+    report2.outputs = [];
+    report2.state = context.signal?.aborted ? "cancelled" : "failed";
+    report2.findings.push({ code: report2.state === "cancelled" ? "operation-cancelled" : "operation-failed", severity: "error", message: (error instanceof Error ? error.message : String(error)).slice(0, 4096) });
     try {
-      assertFileOperationReport(report);
+      assertFileOperationReport(report2);
     } catch {
-      report.inputs = [];
-      report.metadata = "not-checked";
-      report.changes = [];
-      report.findings = [{ code: "adapter-contract-error", severity: "error", message: "The adapter returned invalid facts or findings. No output has been accepted." }];
-      assertFileOperationReport(report);
+      report2.inputs = [];
+      report2.metadata = "not-checked";
+      report2.changes = [];
+      report2.findings = [{ code: "adapter-contract-error", severity: "error", message: "The adapter returned invalid facts or findings. No output has been accepted." }];
+      assertFileOperationReport(report2);
     }
-    return { report };
+    return { report: report2 };
   }
 }
 var text, options, facts, fileOperationRequestSchemaV1, fileOperationReportSchemaV1, ajv2, requestValidator, reportValidator;
@@ -34784,10 +34784,10 @@ function withoutUndefined(value) {
   }
   return value;
 }
-function checkAttributionReadback(expected, report, outputHash, fingerprint) {
-  const valid2 = report.found && report.state === "valid";
-  const activeLabel = report.claim?.manifestLabel ?? "";
-  const ingredients = (report.ingredients ?? []).filter((record10) => Boolean(activeLabel) && record10.manifest === activeLabel);
+function checkAttributionReadback(expected, report2, outputHash, fingerprint) {
+  const valid2 = report2.found && report2.state === "valid";
+  const activeLabel = report2.claim?.manifestLabel ?? "";
+  const ingredients = (report2.ingredients ?? []).filter((record10) => Boolean(activeLabel) && record10.manifest === activeLabel);
   const observed = [];
   const missing = [];
   const licenceGaps = [];
@@ -34819,7 +34819,7 @@ function checkAttributionReadback(expected, report, outputHash, fingerprint) {
       rule: "readback-licence-v1"
     });
   }
-  if (report.found && !valid2 && expected.required.length) {
+  if (report2.found && !valid2 && expected.required.length) {
     remaining.push({
       code: "credential.ingredient-missing",
       summary: "This file carries a Content Credential that did not verify, so nothing in it counts as a credit delivered.",
@@ -34831,8 +34831,8 @@ function checkAttributionReadback(expected, report, outputHash, fingerprint) {
     });
   }
   const checks = [
-    { name: "credential.found", ok: report.found, detail: report.state },
-    { name: "credential.valid", ok: valid2, detail: report.found ? report.state : "no credential" },
+    { name: "credential.found", ok: report2.found, detail: report2.state },
+    { name: "credential.valid", ok: valid2, detail: report2.found ? report2.state : "no credential" },
     { name: "ingredients.present", ok: expected.required.length === 0 || ingredients.length > 0, detail: `${ingredients.length} recorded by this export` },
     { name: "sources.expected", ok: missing.length === 0, detail: missing.length ? missing.map((notice) => notice.work).sort(byString2).join(", ") : "all found" },
     { name: "licences.match", ok: licenceGaps.length === 0, detail: licenceGaps.sort(byString2).join("; ") || "as planned" }
@@ -40310,25 +40310,25 @@ kobBXzvjqTDLGG570BbSQfNmS3HRC6u5YTIpElpb
 });
 
 // engine/src/c2pa-verdict.ts
-function isExpiredOnly(report) {
-  const fails = report.checks.filter((c) => !c.ok && c.code !== C2PA_CHECK.signingCredentialUntrusted);
+function isExpiredOnly(report2) {
+  const fails = report2.checks.filter((c) => !c.ok && c.code !== C2PA_CHECK.signingCredentialUntrusted);
   return fails.length === 1 && fails[0].code === C2PA_CHECK.signingCredentialExpired;
 }
-function resolveVerdict(report) {
-  const expiredOnly = isExpiredOnly(report);
-  const trusted = report.trusted && report.state === "valid";
-  const state = report.madeWithLolly ? "lolly" : trusted && report.delivered ? "delivered" : trusted ? "trusted" : report.state === "invalid" && report.likelyMadeWithLolly ? "likelyLolly" : report.state === "invalid" && expiredOnly ? "expired" : report.state === "valid" || report.state === "invalid" || report.state === "none" ? report.state : "none";
+function resolveVerdict(report2) {
+  const expiredOnly = isExpiredOnly(report2);
+  const trusted = report2.trusted && report2.state === "valid";
+  const state = report2.madeWithLolly ? "lolly" : trusted && report2.delivered ? "delivered" : trusted ? "trusted" : report2.state === "invalid" && report2.likelyMadeWithLolly ? "likelyLolly" : report2.state === "invalid" && expiredOnly ? "expired" : report2.state === "valid" || report2.state === "invalid" || report2.state === "none" ? report2.state : "none";
   const tone = state === "invalid" ? "bad" : state === "expired" || state === "likelyLolly" ? "warn" : state === "none" ? "none" : "good";
   return {
     state,
     tone,
     trusted,
     expiredOnly,
-    madeWithLolly: report.madeWithLolly,
-    likelyMadeWithLolly: report.likelyMadeWithLolly,
-    partsMadeWithLolly: report.partsMadeWithLolly,
-    delivered: report.delivered,
-    identity: report.signer?.identity ?? null
+    madeWithLolly: report2.madeWithLolly,
+    likelyMadeWithLolly: report2.likelyMadeWithLolly,
+    partsMadeWithLolly: report2.partsMadeWithLolly,
+    delivered: report2.delivered,
+    identity: report2.signer?.identity ?? null
   };
 }
 function defaultTrustAnchors({ includeLollyRoot = false, includeVendored = true, extra = [] } = {}) {
@@ -42098,11 +42098,11 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     checks.push({ code, ok: true, explanation });
   };
   const format = sniffFormat(bytes);
-  const report = { found: false, state: "none", trusted: false, madeWithLolly: false, likelyMadeWithLolly: false, partsMadeWithLolly: false, delivered: false, format, checks };
+  const report2 = { found: false, state: "none", trusted: false, madeWithLolly: false, likelyMadeWithLolly: false, partsMadeWithLolly: false, delivered: false, format, checks };
   const pdfBytes = bytes;
   if (!format) {
-    report.reason = "no Content Credentials - these are embedded only in pdf, png, jpg, gif, svg, tiff, webp, avif, mp4, webm, mkv, mp3, wav and ogg files, in HTML documents, and in text carrying a C2PA manifest block or wrapper";
-    return report;
+    report2.reason = "no Content Credentials - these are embedded only in pdf, png, jpg, gif, svg, tiff, webp, avif, mp4, webm, mkv, mp3, wav and ogg files, in HTML documents, and in text carrying a C2PA manifest block or wrapper";
+    return report2;
   }
   let carrier = null;
   let advisoryExclusions = null;
@@ -42115,7 +42115,7 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     advisoryExclusions = detailed.exclusions ?? null;
     advisoryAlternates = detailed.exclusionAlternates ?? null;
     const binding = { kind: bindingKind };
-    report.textBinding = binding;
+    report2.textBinding = binding;
     if (detailed.externalUrl) binding.manifestUrl = detailed.externalUrl;
     if (carrier) binding.wrappers = carrier.wrappers.length;
     if (carrier?.truncated) binding.wrappersTruncated = true;
@@ -42123,8 +42123,8 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     if (detailed.detail) binding.detail = detailed.detail;
     if (carrier?.wrappers.some(isCutWrapper)) binding.fragment = true;
     if (detailed.status === C2PA_TEXT_STATUS.tooLarge) {
-      report.reason = detailed.detail ? `no Content Credentials read - ${detailed.detail}` : "no Content Credentials read - this asset is past the size limit for on-device text inspection";
-      return report;
+      report2.reason = detailed.detail ? `no Content Credentials read - ${detailed.detail}` : "no Content Credentials read - this asset is past the size limit for on-device text inspection";
+      return report2;
     }
     if (detailed.store) {
       const picked = carrier ? selectWrapperByExclusions(carrier) : null;
@@ -42138,42 +42138,42 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
       binding.externalManifestUsed = true;
       extracted = { manifest: externalManifest };
     } else if (detailed.externalUrl) {
-      report.found = true;
-      report.state = "invalid";
-      report.reason = `this ${bindingKind === "html" ? "document" : "file"} references an external C2PA manifest at ${detailed.externalUrl} - the engine never fetches, so it could not be checked against these bytes`;
+      report2.found = true;
+      report2.state = "invalid";
+      report2.reason = `this ${bindingKind === "html" ? "document" : "file"} references an external C2PA manifest at ${detailed.externalUrl} - the engine never fetches, so it could not be checked against these bytes`;
       fail3(C2PA_CHECK.manifestInaccessible, `references an external manifest (${detailed.externalUrl}); fetch it and verify it against these bytes`);
-      return report;
+      return report2;
     } else if (detailed.status === C2PA_TEXT_STATUS.structuredTextNoManifest) {
-      report.reason = "no Content Credentials found - the section A.9 manifest block delimiters are not both present";
-      return report;
+      report2.reason = "no Content Credentials found - the section A.9 manifest block delimiters are not both present";
+      return report2;
     } else if (detailed.status) {
-      report.found = true;
-      report.state = "invalid";
-      report.reason = detailed.detail || `C2PA text binding unusable: ${detailed.status}`;
-      fail3(textStatusCheck(bindingKind, detailed.status), report.reason);
-      return report;
+      report2.found = true;
+      report2.state = "invalid";
+      report2.reason = detailed.detail || `C2PA text binding unusable: ${detailed.status}`;
+      fail3(textStatusCheck(bindingKind, detailed.status), report2.reason);
+      return report2;
     } else {
-      report.reason = "no Content Credentials found";
-      return report;
+      report2.reason = "no Content Credentials found";
+      return report2;
     }
   } else {
     try {
       extracted = EXTRACTORS[format](bytes);
     } catch (err) {
       const msg2 = err.message;
-      report.reason = msg2;
-      if (/not a PDF/.test(msg2)) return report;
-      report.found = true;
-      report.state = "invalid";
+      report2.reason = msg2;
+      if (/not a PDF/.test(msg2)) return report2;
+      report2.found = true;
+      report2.state = "invalid";
       fail3(C2PA_CHECK.credentialUnreadable, msg2);
-      return report;
+      return report2;
     }
     if (!extracted) {
-      report.reason = "no Content Credentials found";
-      return report;
+      report2.reason = "no Content Credentials found";
+      return report2;
     }
   }
-  report.found = true;
+  report2.found = true;
   let parts;
   let claim;
   try {
@@ -42182,10 +42182,10 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     if (!(decodedClaim instanceof Map)) throw new Error("claim is not a CBOR map");
     claim = decodedClaim;
   } catch (err) {
-    report.state = "invalid";
-    report.reason = `credential is malformed: ${err.message}`;
+    report2.state = "invalid";
+    report2.reason = `credential is malformed: ${err.message}`;
     fail3(C2PA_CHECK.credentialUnreadable, err.message);
-    return report;
+    return report2;
   }
   const actionsAssertion = parts.assertions.find((a) => a.label === "c2pa.actions" || a.label === "c2pa.actions.v2");
   let actions = [];
@@ -42218,7 +42218,7 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     return o;
   };
   const genInfo = claim.get("claim_generator_info");
-  report.claim = {
+  report2.claim = {
     title: claim.get("dc:title"),
     format: claim.get("dc:format"),
     claimGenerator: claim.get("claim_generator"),
@@ -42227,22 +42227,22 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     manifestLabel: parts.manifestLabel,
     actions
   };
-  const declaredSpec = report.claim.generatorInfo?.specVersion ?? claim.get("specVersion");
-  if (typeof declaredSpec === "string" && declaredSpec.trim()) report.specVersion = declaredSpec.trim();
+  const declaredSpec = report2.claim.generatorInfo?.specVersion ?? claim.get("specVersion");
+  if (typeof declaredSpec === "string" && declaredSpec.trim()) report2.specVersion = declaredSpec.trim();
   const AI_DISCLOSURE_LABEL = /^c2pa\.ai-disclosure(\.v\d+)?(__\d+)?$/;
   const disclosures = parts.assertions.filter((a) => AI_DISCLOSURE_LABEL.test(a.label)).map((a) => readAiDisclosure(a.content)).filter((d) => !!d);
   if (disclosures.length) {
-    report.aiDisclosure = disclosures[0];
-    if (disclosures.length > 1) report.aiDisclosures = disclosures;
+    report2.aiDisclosure = disclosures[0];
+    if (disclosures.length > 1) report2.aiDisclosures = disclosures;
   }
   const chain2 = collectActionChain(extracted.manifest);
-  if (chain2.length) report.history = chain2;
+  if (chain2.length) report2.history = chain2;
   const ingredientRecords = collectIngredientRecords(extracted.manifest);
-  if (ingredientRecords.length) report.ingredients = ingredientRecords;
+  if (ingredientRecords.length) report2.ingredients = ingredientRecords;
   for (const s of chain2) {
     const kind = aiKind(s.digitalSourceType);
-    if (kind && (!report.aiGenerated || kind === "generated")) {
-      report.aiGenerated = { kind, sourceType: s.digitalSourceType };
+    if (kind && (!report2.aiGenerated || kind === "generated")) {
+      report2.aiGenerated = { kind, sourceType: s.digitalSourceType };
       if (kind === "generated") break;
     }
   }
@@ -42258,7 +42258,7 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
           for (const [k, v] of rawInputs) if (typeof k === "string" && typeof v === "string") inputs[k] = v;
           if (Object.keys(inputs).length) env.inputs = inputs;
         }
-        report.environment = env;
+        report2.environment = env;
       }
     } catch {
     }
@@ -42269,27 +42269,27 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
       const meta = JSON.parse(td2.decode(metaAssertion.content));
       const creator = meta?.["dc:creator"];
       const name = Array.isArray(creator) ? creator[0] : creator;
-      if (name) report.author = parseCreatorEntry(String(name));
+      if (name) report2.author = parseCreatorEntry(String(name));
       const rights = meta?.["dc:rights"];
-      if (typeof rights === "string" && rights.trim()) report.rights = rights.trim();
+      if (typeof rights === "string" && rights.trim()) report2.rights = rights.trim();
     } catch {
     }
   }
   const creativeWork = parts.assertions.find((a) => a.label === "stds.schema-org.CreativeWork");
-  if (creativeWork && (!report.author || !report.rights)) {
+  if (creativeWork && (!report2.author || !report2.rights)) {
     try {
       const work = JSON.parse(td2.decode(creativeWork.content));
       const person = work?.author?.[0];
-      if (!report.author && person?.name) {
-        report.author = {
+      if (!report2.author && person?.name) {
+        report2.author = {
           name: String(person.name),
           ...person.email ? { email: String(person.email) } : {},
           ...person.url ? { url: String(person.url) } : {}
         };
       }
-      if (!report.rights) {
+      if (!report2.rights) {
         const notice = [work?.copyrightNotice, work?.license].filter((v) => typeof v === "string" && v.trim()).join(" \xB7 ");
-        if (notice) report.rights = notice;
+        if (notice) report2.rights = notice;
       }
     } catch {
     }
@@ -42335,7 +42335,7 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     if (!(certDer instanceof Uint8Array)) throw new Error("no x5chain certificate in signature headers");
     const cert = parseCertificate(certDer);
     signerAlg = alg?.name || `COSE alg ${String(prot.get(1))}`;
-    report.signer = {
+    report2.signer = {
       commonName: cert.subject.commonName,
       organization: cert.subject.organization,
       notBefore: cert.notBefore.toISOString(),
@@ -42420,8 +42420,8 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
     }
   } else if (!hashData) {
     fail3(C2PA_CHECK.assertionDataHashMismatch, "no hard binding (c2pa.hash.data or c2pa.hash.bmff) in the manifest");
-  } else if (carrier && report.textBinding?.kind === "text") {
-    const binding = report.textBinding;
+  } else if (carrier && report2.textBinding?.kind === "text") {
+    const binding = report2.textBinding;
     try {
       const hd = decodeCbor(hashData.content);
       if ((hd.get("alg") || "sha256") !== "sha256") throw new Error(`unsupported hash alg ${String(hd.get("alg"))}`);
@@ -42484,9 +42484,9 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
         at = e.start + e.length;
       }
       spans.push(pdfBytes.subarray(at));
-      const carve = htmlCodeExclusionConformance(report.textBinding, advisoryExclusions, advisoryAlternates, exclusions);
+      const carve = htmlCodeExclusionConformance(report2.textBinding, advisoryExclusions, advisoryAlternates, exclusions);
       if (carve) {
-        report.textBinding.exclusionsConform = carve.kind;
+        report2.textBinding.exclusionsConform = carve.kind;
         if (carve.kind === "other") fail3(C2PA_CHECK.assertionDataHashAdditionalExclusions, carve.message);
       }
       const qualifier = carve ? ` (the declared exclusion does not match the carrier: ${carve.message})` : "";
@@ -42496,7 +42496,7 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
         fail3(C2PA_CHECK.assertionDataHashMismatch, `the file bytes do not match the credential - the file changed after signing${qualifier}`);
       }
     } catch (err) {
-      const malformed = !!err.malformed && !!report.textBinding;
+      const malformed = !!err.malformed && !!report2.textBinding;
       fail3(
         malformed ? C2PA_CHECK.assertionDataHashMalformed : C2PA_CHECK.assertionDataHashMismatch,
         `hard binding could not be checked: ${err.message}`
@@ -42506,32 +42506,32 @@ async function verifyC2pa(bytes, { trustAnchors, externalManifest } = {}) {
   if (anchorMatch && claimSigValid === true) {
     const otherFailure = checks.some((c) => !c.ok && c.code !== C2PA_CHECK.signingCredentialExpired);
     if (!otherFailure) {
-      report.signer.identity = {
+      report2.signer.identity = {
         email: leafSanEmail,
         issuer: anchorMatch.subject.commonName || anchorMatch.subject.organization
       };
-      report.trusted = leafInsideValidity;
+      report2.trusted = leafInsideValidity;
     }
   }
-  if (report.signer?.identity) {
-    const who = report.signer.identity.email || report.signer.commonName;
-    pass(C2PA_CHECK.signingCredentialTrusted, report.trusted ? `signing certificate chains to a pinned CA root - verified identity: ${who}` : `signing certificate chains to a pinned CA root - verified identity: ${who} (certificate has since expired; signing time cannot be proven - no timestamp authority yet)`);
+  if (report2.signer?.identity) {
+    const who = report2.signer.identity.email || report2.signer.commonName;
+    pass(C2PA_CHECK.signingCredentialTrusted, report2.trusted ? `signing certificate chains to a pinned CA root - verified identity: ${who}` : `signing certificate chains to a pinned CA root - verified identity: ${who} (certificate has since expired; signing time cannot be proven - no timestamp authority yet)`);
   } else {
-    fail3(C2PA_CHECK.signingCredentialUntrusted, untrustedReason(report.signer));
+    fail3(C2PA_CHECK.signingCredentialUntrusted, untrustedReason(report2.signer));
   }
-  report.state = checks.every((c) => c.ok || c.code === C2PA_CHECK.signingCredentialUntrusted) ? "valid" : "invalid";
-  const acts = report.claim.actions || [];
+  report2.state = checks.every((c) => c.ok || c.code === C2PA_CHECK.signingCredentialUntrusted) ? "valid" : "invalid";
+  const acts = report2.claim.actions || [];
   const created = acts.some((a) => a.action === "c2pa.created");
-  const names = [report.claim.claimGenerator, report.claim.generatorInfo?.name].filter(Boolean).join(" ");
+  const names = [report2.claim.claimGenerator, report2.claim.generatorInfo?.name].filter(Boolean).join(" ");
   const claimsLolly = created && /\blolly\b/i.test(names);
-  report.madeWithLolly = report.state === "valid" && claimsLolly;
+  report2.madeWithLolly = report2.state === "valid" && claimsLolly;
   const onlyBindingUnverified = checks.every((c) => c.ok || c.code === C2PA_CHECK.signingCredentialUntrusted || c.code === C2PA_CHECK.assertionDataHashMismatch || c.code === C2PA_CHECK.assertionBmffHashMismatch);
-  report.likelyMadeWithLolly = !report.madeWithLolly && onlyBindingUnverified && claimsLolly;
-  report.partsMadeWithLolly = report.state === "valid" && !report.madeWithLolly && !report.likelyMadeWithLolly && (report.history ?? []).some((s) => /\blolly\b/i.test(
+  report2.likelyMadeWithLolly = !report2.madeWithLolly && onlyBindingUnverified && claimsLolly;
+  report2.partsMadeWithLolly = report2.state === "valid" && !report2.madeWithLolly && !report2.likelyMadeWithLolly && (report2.history ?? []).some((s) => /\blolly\b/i.test(
     `${typeof s.softwareAgent === "string" ? s.softwareAgent : ""} ${typeof s.generator === "string" ? s.generator : ""}`
   ));
-  report.delivered = report.state === "valid" && !created && acts.some((a) => a.action === "c2pa.published");
-  return report;
+  report2.delivered = report2.state === "valid" && !created && acts.some((a) => a.action === "c2pa.published");
+  return report2;
 }
 var td2, te7, tdText, subtle4, SIG_ALGS, SIG_OID_RSA_PSS, SIG_OID_ED25519, HASH_OIDS, MAX_CHAIN_INTERMEDIATES, COSE_ALGS, OID_RSASSA_PSS, ALGID_RSA_ENCRYPTION, HASHED_URI_PREFIX, EPHEMERAL_CN, TEXT_BINDING_KIND, isCutWrapper, excludesWrapper, MAX_WRAPPER_CANDIDATES, sameRanges, verifyC2paPdf;
 var init_c2pa_verify = __esm({
@@ -42633,10 +42633,10 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     const started = Date.now();
     const seq = onLate ? ++hookRunSeq : 0;
     let finished = false;
-    const report = onLate ? (patch) => {
+    const report2 = onLate ? (patch) => {
       if (!finished && seq === hookRunSeq) onLate(patch);
     } : void 0;
-    const out = invoke(report);
+    const out = invoke(report2);
     if (out == null || typeof out.then !== "function") {
       const elapsed = Date.now() - started;
       if (elapsed > budget3) {
@@ -42677,7 +42677,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     const onInit = hooks.onInit;
     if (onInit) {
       try {
-        const patch = await runHook("onInit", (report) => onInit({ model: modelForHooks(model2), host, report }), applyLatePatch);
+        const patch = await runHook("onInit", (report2) => onInit({ model: modelForHooks(model2), host, report: report2 }), applyLatePatch);
         if (patch) ({ model: model2, extras } = mergePatch(model2, extras, patch, inputIds));
       } catch (e) {
         hookErrors.push({ hook: "onInit", message: e.message });
@@ -43079,7 +43079,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       const onInput = hooks?.onInput;
       if (onInput) {
         try {
-          const patch = await runHook("onInput", (report) => onInput({ id: id2, value: flattenValue(value), model: modelForHooks(model2), host, report }), applyLatePatch);
+          const patch = await runHook("onInput", (report2) => onInput({ id: id2, value: flattenValue(value), model: modelForHooks(model2), host, report: report2 }), applyLatePatch);
           if (patch) {
             ({ model: model2, extras } = mergePatch(model2, extras, patch, inputIds));
             emit();
@@ -43158,7 +43158,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       if (onInput) {
         for (const { id: id2, value } of applied) {
           try {
-            const patch = await runHook("onInput", (report) => onInput({ id: id2, value, model: modelForHooks(model2), host, report }), applyLatePatch);
+            const patch = await runHook("onInput", (report2) => onInput({ id: id2, value, model: modelForHooks(model2), host, report: report2 }), applyLatePatch);
             if (patch) ({ model: model2, extras } = mergePatch(model2, extras, patch, inputIds));
           } catch (e) {
             host.log("warn", `onInput ${e.message}`, { toolId: tool.manifest.id });
@@ -48411,62 +48411,83 @@ function intersectSegments(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1) {
   const tc = Math.min(1, Math.max(0, t)), uc = Math.min(1, Math.max(0, u));
   return { t1: tc, t2: uc, x: ax0 + rx * tc, y: ay0 + ry * tc };
 }
-function cubicRoots01(a, b, c, d) {
-  const out = [];
-  const push = (t) => {
-    if (t >= -T_EPS && t <= 1 + T_EPS) out.push(Math.min(1, Math.max(0, t)));
-  };
-  if (Math.abs(a) < 1e-12) {
-    if (Math.abs(b) < 1e-12) {
-      if (Math.abs(c) > 1e-12) push(-d / c);
-      return dedupeRoots(out);
+function cubicRoots01(a, b, c, d, dirs) {
+  const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d));
+  if (!(scale > 0) || !Number.isFinite(scale)) return [];
+  const out = [], sg = [];
+  const push = (t, dir) => {
+    if (t >= -T_EPS && t <= 1 + T_EPS) {
+      out.push(Math.min(1, Math.max(0, t)));
+      sg.push(dir);
     }
-    const disc2 = c * c - 4 * b * d;
-    if (disc2 < 0) return [];
-    const s = Math.sqrt(disc2);
-    push((-c + s) / (2 * b));
-    push((-c - s) / (2 * b));
-    return dedupeRoots(out);
+  };
+  const f = (t) => ((a * t + b) * t + c) * t + d;
+  const df = (t) => (3 * a * t + 2 * b) * t + c;
+  const tiny = ROOT_SNAP * Number.EPSILON * scale;
+  const cuts = [-T_EPS, 1 + T_EPS];
+  const qa = 3 * a, qb = 2 * b, qc = c;
+  if (Math.abs(qa) > 1e-300) {
+    const disc = qb * qb - 4 * qa * qc;
+    if (disc >= 0) {
+      const sq = Math.sqrt(disc);
+      const q = -0.5 * (qb + (qb < 0 ? -sq : sq));
+      for (const r3 of q !== 0 ? [q / qa, qc / q] : [-qb / (2 * qa)]) if (r3 > -T_EPS && r3 < 1 + T_EPS) cuts.push(r3);
+    }
+  } else if (Math.abs(qb) > 1e-300) {
+    const r3 = -qc / qb;
+    if (r3 > -T_EPS && r3 < 1 + T_EPS) cuts.push(r3);
   }
-  const b1 = b / a, c1 = c / a, d1 = d / a;
-  const p = c1 - b1 * b1 / 3;
-  const q = 2 * b1 * b1 * b1 / 27 - b1 * c1 / 3 + d1;
-  const shift = -b1 / 3;
-  const disc = q * q / 4 + p * p * p / 27;
-  if (disc > 1e-18) {
-    const s = Math.sqrt(disc);
-    push(Math.cbrt(-q / 2 + s) + Math.cbrt(-q / 2 - s) + shift);
-  } else if (disc > -1e-18) {
-    const u = Math.cbrt(-q / 2);
-    push(2 * u + shift);
-    push(-u + shift);
-  } else {
-    const r3 = Math.sqrt(-(p * p * p) / 27);
-    const phi = Math.acos(Math.min(1, Math.max(-1, -q / (2 * r3))));
-    const m2 = 2 * Math.cbrt(r3);
-    for (let k = 0; k < 3; k++) push(m2 * Math.cos((phi + 2 * Math.PI * k) / 3) + shift);
+  cuts.sort((x, y) => x - y);
+  const vals = cuts.map(f);
+  for (let i = 0; i < cuts.length; i++) if (Math.abs(vals[i]) <= tiny) vals[i] = 0;
+  for (let i = 0; i < cuts.length; i++) {
+    if (vals[i] !== 0) continue;
+    let j = i;
+    while (j + 1 < cuts.length && vals[j + 1] === 0) j++;
+    const before = i > 0 ? vals[i - 1] : 0, after = j + 1 < cuts.length ? vals[j + 1] : 0;
+    const dir = before < 0 && after > 0 ? 1 : before > 0 && after < 0 ? -1 : 0;
+    push((cuts[i] + cuts[j]) / 2, dir);
+    i = j;
   }
-  const polished = out.map((t0) => {
-    let t = t0;
-    for (let i = 0; i < 2; i++) {
-      const f = ((a * t + b) * t + c) * t + d;
-      const df = (3 * a * t + 2 * b) * t + c;
-      if (Math.abs(df) < 1e-14) break;
-      const next = t - f / df;
-      if (next < -T_EPS || next > 1 + T_EPS) break;
+  for (let i = 1; i < cuts.length; i++) {
+    const lo = cuts[i - 1], hi = cuts[i], flo = vals[i - 1], fhi = vals[i];
+    if (flo === 0 || fhi === 0 || flo < 0 === fhi < 0) continue;
+    let x0 = lo, x1 = hi, f0 = flo, t = (lo + hi) / 2;
+    for (let k = 0; k < 80; k++) {
+      const ft = f(t);
+      if (ft === 0) break;
+      if (ft < 0 === f0 < 0) {
+        x0 = t;
+        f0 = ft;
+      } else x1 = t;
+      if (x1 - x0 <= 4e-16) break;
+      const slope = df(t);
+      let next = slope !== 0 ? t - ft / slope : (x0 + x1) / 2;
+      if (!(next > x0 && next < x1)) next = (x0 + x1) / 2;
       t = next;
     }
-    return Math.min(1, Math.max(0, t));
-  });
-  return dedupeRoots(polished);
+    push(t, fhi > 0 ? 1 : -1);
+  }
+  return dedupeRoots(out, sg, dirs);
 }
-function dedupeRoots(ts) {
-  const s = ts.slice().sort((x, y) => x - y);
+function dedupeRoots(ts, sg, dirs) {
+  const order = ts.map((_, i) => i).sort((i, j) => ts[i] - ts[j]);
   const out = [];
-  for (const t of s) if (!out.length || t - out[out.length - 1] > 1e-9) out.push(t);
+  const dd = [];
+  for (const i of order) {
+    const t = ts[i];
+    if (!out.length || t - out[out.length - 1] > 1e-9) {
+      out.push(t);
+      dd.push(sg[i]);
+    } else dd[dd.length - 1] = Math.sign(dd[dd.length - 1] + sg[i]);
+  }
+  if (dirs) {
+    dirs.length = 0;
+    dirs.push(...dd);
+  }
   return out;
 }
-function intersectLineCubic(x0, y0, x1, y1, c, tol = EPS2) {
+function intersectLineCubic(x0, y0, x1, y1, c, tol = EPS2, clamp4 = true) {
   const dx = x1 - x0, dy = y1 - y0;
   const len2 = Math.hypot(dx, dy);
   if (len2 < 1e-12) return [];
@@ -48478,11 +48499,14 @@ function intersectLineCubic(x0, y0, x1, y1, c, tol = EPS2) {
   const C = -3 * d0 + 3 * d1;
   const D = d0;
   const out = [];
-  for (const t of cubicRoots01(A, B, C, D)) {
+  const dirs = [];
+  const roots2 = cubicRoots01(A, B, C, D, dirs);
+  for (let i = 0; i < roots2.length; i++) {
+    const t = roots2[i];
     const p = evalCubic(c, t);
     const u = ((p.x - x0) * dx + (p.y - y0) * dy) / (len2 * len2);
     if (u < -tol / len2 || u > 1 + tol / len2) continue;
-    out.push({ t1: Math.min(1, Math.max(0, u)), t2: t, x: p.x, y: p.y });
+    out.push({ t1: clamp4 ? Math.min(1, Math.max(0, u)) : u, t2: t, x: p.x, y: p.y, dir: dirs[i] });
   }
   return out;
 }
@@ -48503,7 +48527,7 @@ function fatLine(c) {
   const dMax = k * Math.max(0, d1, d2);
   return { nx, ny, c0, dMin, dMax };
 }
-function clipToFatLine(c, fat) {
+function clipToFatLine(c, fat, pad = 1e-12) {
   const d = [
     fat.nx * c[0] + fat.ny * c[1] - fat.c0,
     fat.nx * c[2] + fat.ny * c[3] - fat.c0,
@@ -48531,51 +48555,329 @@ function clipToFatLine(c, fat) {
     }
     return ts2;
   };
-  const inBand = (v) => v >= fat.dMin - 1e-12 && v <= fat.dMax + 1e-12;
+  const lo = fat.dMin - pad, hi = fat.dMax + pad;
+  const inBand = (v) => v >= lo && v <= hi;
   const ts = [];
   for (const h of [upper, lower3]) {
-    ts.push(...crossings(h, fat.dMin), ...crossings(h, fat.dMax));
+    ts.push(...crossings(h, lo), ...crossings(h, hi));
   }
   if (inBand(d[0])) ts.push(0);
   if (inBand(d[3])) ts.push(1);
   if (!ts.length) return null;
-  const lo = Math.max(0, Math.min(...ts)), hi = Math.min(1, Math.max(...ts));
-  return hi < lo ? null : [lo, hi];
+  const t0 = Math.max(0, Math.min(...ts)), t1 = Math.min(1, Math.max(...ts));
+  return t1 < t0 ? null : [t0, t1];
 }
-function clipIntersect(c1, c2, t1lo, t1hi, t2lo, t2hi, tol, depth, out, swap = false) {
+function withinFatLine(c, fat, pad) {
+  const lo = fat.dMin - pad, hi = fat.dMax + pad;
+  for (let i = 0; i < 8; i += 2) {
+    const d = fat.nx * c[i] + fat.ny * c[i + 1] - fat.c0;
+    if (!(d >= lo && d <= hi)) return false;
+  }
+  return true;
+}
+function atResolutionFloor(c1, c2, s1, s2, fat2, tol) {
+  const minSize = FLOOR_MIN_SIZE * tol;
+  if (!(s1 > minSize && s2 > minSize)) return false;
+  if (!withinFatLine(c1, fat2, tol)) return false;
+  if (flatnessCubic(c1) > tol || flatnessCubic(c2) > tol) return false;
+  const fat1 = fatLine(c1);
+  return fat1 !== null && withinFatLine(c2, fat1, tol);
+}
+function coincideAtParams(a, b, tol) {
+  for (let i = 0; i < 8; i += 2) {
+    if (Math.hypot(a[i] - b[i], a[i + 1] - b[i + 1]) > tol) return false;
+  }
+  return true;
+}
+function coincidentTwin(search, swap, c1, lo, hi, tol) {
+  const other = swap ? search.c1 : search.c2;
+  if (coincideAtParams(c1, subCubic(other, lo, hi), tol)) return [lo, hi];
+  const rev = subCubic(other, 1 - hi, 1 - lo);
+  const flipped = [rev[6], rev[7], rev[4], rev[5], rev[2], rev[3], rev[0], rev[1]];
+  if (coincideAtParams(c1, flipped, tol)) return [1 - hi, 1 - lo];
+  return null;
+}
+function nearest2(c, x, y) {
+  const n2 = nearestOnCubic(c, x, y);
+  let t = n2.t, best = n2.distance, bestT = n2.t, bestP = n2.point, worse = 0, prev = n2.distance;
+  for (let i = 0; i < POLISH_STEPS; i++) {
+    const p = evalCubic(c, t), d1 = tangentAt(c, t);
+    const d2 = secondDerivative(c, t);
+    const f = (p.x - x) * d1.x + (p.y - y) * d1.y;
+    const df = d1.x * d1.x + d1.y * d1.y + (p.x - x) * d2.x + (p.y - y) * d2.y;
+    if (!(Math.abs(df) > 0)) break;
+    const step = f / df;
+    if (!(Math.abs(step) > POLISH_STEP_MIN)) break;
+    const tn = Math.min(1, Math.max(0, t - step));
+    if (tn === t) break;
+    const pn = evalCubic(c, tn);
+    const dn = Math.hypot(pn.x - x, pn.y - y);
+    if (dn < best) {
+      best = dn;
+      bestT = tn;
+      bestP = pn;
+    }
+    if (!(dn < prev)) {
+      if (++worse >= POLISH_PATIENCE) break;
+    } else worse = 0;
+    prev = dn;
+    t = tn;
+  }
+  return best < n2.distance ? { t: bestT, point: bestP, distance: best } : n2;
+}
+function secondDerivative(c, t) {
+  const mt = 1 - t;
+  return {
+    x: 6 * (mt * (c[4] - 2 * c[2] + c[0]) + t * (c[6] - 2 * c[4] + c[2])),
+    y: 6 * (mt * (c[5] - 2 * c[3] + c[1]) + t * (c[7] - 2 * c[5] + c[3]))
+  };
+}
+function reach(c) {
+  return Math.max(
+    Math.hypot(c[2] - c[0], c[3] - c[1]),
+    Math.hypot(c[4] - c[0], c[5] - c[1]),
+    Math.hypot(c[6] - c[0], c[7] - c[1])
+  );
+}
+function mayLieOn(c, fat, x, y, pad) {
+  const b = hullBounds(c);
+  if (x < b.x0 - pad || x > b.x1 + pad || y < b.y0 - pad || y > b.y1 + pad) return false;
+  if (!fat) return true;
+  const d = fat.nx * x + fat.ny * y - fat.c0;
+  return d >= fat.dMin - pad && d <= fat.dMax + pad;
+}
+function sharedRun(c1, c2, tol) {
+  let mag = 0;
+  for (let i = 0; i < 8; i++) mag = Math.max(mag, Math.abs(c1[i]), Math.abs(c2[i]));
+  const eps = Math.max(tol, mag * 64 * Number.EPSILON);
+  const onC2 = [null, null];
+  const onC1 = [null, null];
+  let shared = 0;
+  for (const t of [0, 1]) {
+    for (const u of [0, 1]) {
+      if (onC2[t] !== null) continue;
+      if (Math.hypot(c1[6 * t] - c2[6 * u], c1[6 * t + 1] - c2[6 * u + 1]) <= eps) {
+        onC2[t] = u;
+        onC1[u] ??= t;
+        shared++;
+      }
+    }
+  }
+  const fat1 = fatLine(c1), fat2 = fatLine(c2);
+  const try1 = [0, 1].filter((t) => onC2[t] === null && mayLieOn(c2, fat2, c1[6 * t], c1[6 * t + 1], eps));
+  const try2 = [0, 1].filter((u) => onC1[u] === null && mayLieOn(c1, fat1, c2[6 * u], c2[6 * u + 1], eps));
+  if (shared + try1.length + try2.length < 2) return null;
+  for (const t of try1) {
+    const n2 = nearestOnCubic(c2, c1[6 * t], c1[6 * t + 1]);
+    if (n2.distance <= eps) onC2[t] = n2.t;
+  }
+  for (const u of try2) {
+    const n2 = nearestOnCubic(c1, c2[6 * u], c2[6 * u + 1]);
+    if (n2.distance <= eps) onC1[u] = n2.t;
+  }
+  const ends = [];
+  for (const t of [0, 1]) if (onC2[t] !== null) ends.push([t, onC2[t]]);
+  for (const u of [0, 1]) if (onC1[u] !== null) ends.push([onC1[u], u]);
+  if (ends.length < 2) return null;
+  let a0 = 1, a1 = 0, b0 = 1, b1 = 0;
+  for (const [t, u] of ends) {
+    a0 = Math.min(a0, t);
+    a1 = Math.max(a1, t);
+    b0 = Math.min(b0, u);
+    b1 = Math.max(b1, u);
+  }
+  if (!(a1 - a0 > T_EPS && b1 - b0 > T_EPS)) return null;
+  const s1 = subCubic(c1, a0, a1), s2 = subCubic(c2, b0, b1);
+  if (reach(s1) <= eps || reach(s2) <= eps) return null;
+  for (const dir of [1, -1]) {
+    let same = true;
+    for (const t of [0, 1 / 3, 2 / 3, 1]) {
+      const p = evalCubic(s1, t), q = evalCubic(s2, dir === 1 ? t : 1 - t);
+      if (Math.abs(p.x - q.x) > eps || Math.abs(p.y - q.y) > eps) {
+        same = false;
+        break;
+      }
+    }
+    if (!same) continue;
+    const start = evalCubic(c1, a0), end = evalCubic(c1, a1);
+    return [
+      { t1: a0, t2: dir === 1 ? b0 : b1, x: start.x, y: start.y },
+      { t1: a1, t2: dir === 1 ? b1 : b0, x: end.x, y: end.y }
+    ];
+  }
+  return null;
+}
+function shallow(search, swap, a, b) {
+  if ((a <= TOUCH || a >= 1 - TOUCH) && (b <= TOUCH || b >= 1 - TOUCH)) return false;
+  const d1 = tangentAt(search.c1, swap ? b : a), d2 = tangentAt(search.c2, swap ? a : b);
+  const l1 = Math.hypot(d1.x, d1.y), l2 = Math.hypot(d2.x, d2.y);
+  const still = FOOT_SPEED * search.size;
+  if (!(l1 > still && l2 > still)) return true;
+  return Math.abs(d1.x * d2.y - d1.y * d2.x) < SHALLOW * l1 * l2;
+}
+function stall(search, swap, t1lo, t1hi, t2lo, t2hi) {
+  if (search.stalled.length >= SCAN_LIMITS.maxStalledPairs * 4) return;
+  if (swap) search.stalled.push(t2lo, t2hi, t1lo, t1hi);
+  else search.stalled.push(t1lo, t1hi, t2lo, t2hi);
+}
+function clipIntersect(c1, c2, t1lo, t1hi, t2lo, t2hi, tol, depth, search, swap = false) {
+  const out = search.out;
   const emit = (t1, t2, x, y) => out.push(swap ? { t1: t2, t2: t1, x, y } : { t1, t2, x, y });
-  if (out.length > 128 || depth > 60) return;
-  if (!boxesOverlap(hullBounds(c1), hullBounds(c2), tol)) return;
+  if (out.length > MAX_HITS) return;
+  if (!boxesOverlap(hullBounds(c1), hullBounds(c2), tol + BOX_SLACK * search.pad)) return;
+  if (depth > MAX_DEPTH) {
+    stall(search, swap, t1lo, t1hi, t2lo, t2hi);
+    return;
+  }
+  const res = Math.max(tol, search.pad);
   const s1 = Math.hypot(c1[6] - c1[0], c1[7] - c1[1]) + flatnessCubic(c1);
   const s2 = Math.hypot(c2[6] - c2[0], c2[7] - c2[1]) + flatnessCubic(c2);
-  if (s1 <= tol && s2 <= tol) {
-    const p = evalCubic(c1, 0.5);
-    emit((t1lo + t1hi) / 2, (t2lo + t2hi) / 2, p.x, p.y);
+  if (s1 <= res && s2 <= res) {
+    const m1 = (t1lo + t1hi) / 2, m2 = (t2lo + t2hi) / 2;
+    const p = evalCubic(c1, 0.5), q = evalCubic(c2, 0.5);
+    const apart = Math.hypot(p.x - q.x, p.y - q.y);
+    if (apart > res) {
+      if (apart <= POINT_OFF_SLACK * tol) stall(search, swap, t1lo, t1hi, t2lo, t2hi);
+      return;
+    }
+    if (shallow(search, swap, m1, m2)) stall(search, swap, t1lo, t1hi, t2lo, t2hi);
+    else emit(m1, m2, p.x, p.y);
     return;
   }
   const fat = fatLine(c2);
-  const clipped = fat ? clipToFatLine(c1, fat) : [0, 1];
+  if (!fat && s2 <= res) {
+    const p = evalCubic(c2, 0.5);
+    const n2 = nearestOnCubic(c1, p.x, p.y);
+    if (n2.distance > tol + s2) {
+      if (n2.distance <= POINT_OFF_SLACK * tol) stall(search, swap, t1lo, t1hi, t2lo, t2hi);
+      return;
+    }
+    const m1 = t1lo + (t1hi - t1lo) * n2.t, m2 = (t2lo + t2hi) / 2;
+    if (shallow(search, swap, m1, m2)) stall(search, swap, t1lo, t1hi, t2lo, t2hi);
+    else emit(m1, m2, n2.point.x, n2.point.y);
+    return;
+  }
+  const clipped = fat ? clipToFatLine(c1, fat, search.pad) : [0, 1];
   if (!clipped) return;
   const [lo, hi] = clipped;
   const shrink = hi - lo;
   if (shrink > 0.8) {
+    if (search.twin !== 0 && twinNode(search, swap, c1, t1lo, t1hi, t2lo, t2hi, tol)) return;
+    if (s1 > FLOOR_MIN_SIZE * tol && s2 > FLOOR_MIN_SIZE * tol) {
+      const twin = coincidentTwin(search, swap, c1, t1lo, t1hi, tol);
+      if (twin) {
+        stall(search, swap, t1lo, t1hi, Math.min(t2lo, twin[0]), Math.max(t2hi, twin[1]));
+        return;
+      }
+    }
+    if (fat && atResolutionFloor(c1, c2, s1, s2, fat, res)) {
+      stall(search, swap, t1lo, t1hi, t2lo, t2hi);
+      return;
+    }
     if (s1 >= s2) {
       const [a, b] = splitCubic(c1, 0.5);
       const mid3 = (t1lo + t1hi) / 2;
-      clipIntersect(a, c2, t1lo, mid3, t2lo, t2hi, tol, depth + 1, out, swap);
-      clipIntersect(b, c2, mid3, t1hi, t2lo, t2hi, tol, depth + 1, out, swap);
+      clipIntersect(a, c2, t1lo, mid3, t2lo, t2hi, tol, depth + 1, search, swap);
+      clipIntersect(b, c2, mid3, t1hi, t2lo, t2hi, tol, depth + 1, search, swap);
     } else {
       const [a, b] = splitCubic(c2, 0.5);
       const mid3 = (t2lo + t2hi) / 2;
-      clipIntersect(c1, a, t1lo, t1hi, t2lo, mid3, tol, depth + 1, out, swap);
-      clipIntersect(c1, b, t1lo, t1hi, mid3, t2hi, tol, depth + 1, out, swap);
+      clipIntersect(c1, a, t1lo, t1hi, t2lo, mid3, tol, depth + 1, search, swap);
+      clipIntersect(c1, b, t1lo, t1hi, mid3, t2hi, tol, depth + 1, search, swap);
     }
     return;
   }
   const nc1 = subCubic(c1, lo, hi);
   const nt1lo = t1lo + (t1hi - t1lo) * lo;
   const nt1hi = t1lo + (t1hi - t1lo) * hi;
-  clipIntersect(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, out, !swap);
+  clipIntersect(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, search, !swap);
+}
+function bernMul(p, q) {
+  const m2 = p.length - 1, n2 = q.length - 1;
+  const out = new Array(m2 + n2 + 1).fill(0);
+  const bm = BINOM[m2], bn = BINOM[n2], bmn = BINOM[m2 + n2];
+  for (let i = 0; i <= m2; i++) {
+    for (let j = 0; j <= n2; j++) out[i + j] = out[i + j] + bm[i] * bn[j] / bmn[i + j] * p[i] * q[j];
+  }
+  return out;
+}
+function bernRuns(c, t0, t1, depth, out) {
+  let lo = Infinity, hi = -Infinity;
+  for (const v of c) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  if (lo > 0) return;
+  if (hi <= 0 || depth >= TWIN_RUN_DEPTH) {
+    if (out.length && out[out.length - 1] === t0) out[out.length - 1] = t1;
+    else out.push(t0, t1);
+    return;
+  }
+  const n2 = c.length, left = new Array(n2), right = new Array(n2);
+  const w = c.slice();
+  left[0] = w[0];
+  right[n2 - 1] = w[n2 - 1];
+  for (let k = 1; k < n2; k++) {
+    for (let i = 0; i < n2 - k; i++) w[i] = (w[i] + w[i + 1]) * 0.5;
+    left[k] = w[0];
+    right[n2 - 1 - k] = w[n2 - 1 - k];
+  }
+  const mid3 = (t0 + t1) / 2;
+  bernRuns(left, t0, mid3, depth + 1, out);
+  bernRuns(right, mid3, t1, depth + 1, out);
+}
+function twinNode(search, swap, c1, t1lo, t1hi, t2lo, t2hi, tol) {
+  const twin = search.twin;
+  const W = swap ? twin === 1 ? search.c1 : search.c1r : twin === 1 ? search.c2 : search.c2r;
+  const m2lo = twin === 1 ? t2lo : 1 - t2hi, m2hi = twin === 1 ? t2hi : 1 - t2lo;
+  const lo0 = Math.min(t1lo, m2lo), hi0 = Math.max(t1hi, m2hi);
+  const half = (hi0 - lo0) * 0.5;
+  const R0 = Math.max(0, lo0 - half), R1 = Math.min(1, hi0 + half);
+  if (!(R1 > R0)) return false;
+  const q = subCubic(W, R0, R1);
+  const k = 3 / (R1 - R0);
+  const dx0 = (q[2] - q[0]) * k, dy0 = (q[3] - q[1]) * k;
+  const dx1 = (q[4] - q[2]) * k, dy1 = (q[5] - q[3]) * k;
+  const dx2 = (q[6] - q[4]) * k, dy2 = (q[7] - q[5]) * k;
+  let ux = dx0 + dx1 + dx2, uy = dy0 + dy1 + dy2;
+  const ul = Math.hypot(ux, uy);
+  if (!(ul > 0)) return false;
+  ux /= ul;
+  uy /= ul;
+  const still = FOOT_SPEED * search.size;
+  let vlo = Infinity;
+  for (const [dx, dy] of [[dx0, dy0], [dx1, dy1], [dx2, dy2]]) {
+    const along2 = dx * ux + dy * uy;
+    if (!(along2 >= TWIN_TURN * Math.hypot(dx, dy)) || along2 < still) return false;
+    if (along2 < vlo) vlo = along2;
+  }
+  const kappa = 2 * Math.max(Math.hypot(dx1 - dx0, dy1 - dy0), Math.hypot(dx2 - dx1, dy2 - dy1)) / ((R1 - R0) * vlo * vlo);
+  const m2 = subCubic(W, t1lo, t1hi);
+  const dX = [c1[0] - m2[0], c1[2] - m2[2], c1[4] - m2[4], c1[6] - m2[6]];
+  const dY = [c1[1] - m2[1], c1[3] - m2[3], c1[5] - m2[5], c1[7] - m2[7]];
+  let T = 0;
+  for (let i = 0; i < 4; i++) T = Math.max(T, Math.hypot(dX[i], dY[i]));
+  const rho = tol + T;
+  if (kappa * rho * rho > TWIN_BEND * tol) return false;
+  const eX = [3 * (m2[2] - m2[0]), 3 * (m2[4] - m2[2]), 3 * (m2[6] - m2[4])];
+  const eY = [3 * (m2[3] - m2[1]), 3 * (m2[5] - m2[3]), 3 * (m2[7] - m2[5])];
+  const pa = bernMul(eX, dY), pb = bernMul(eY, dX);
+  const P = pa.map((v, i) => v - pb[i]);
+  const sa = bernMul(eX, eX), sb = bernMul(eY, eY);
+  const S2 = bernMul(sa.map((v, i) => v + sb[i]), ONES_6);
+  const thr2 = (TWIN_REACH * tol) ** 2;
+  const pp = bernMul(P, P);
+  const Q = pp.map((v, i) => v - thr2 * S2[i]);
+  const runs = [];
+  bernRuns(Q, 0, 1, 0, runs);
+  const deltaP = rho / vlo;
+  for (let i = 0; i < runs.length; i += 2) {
+    const r0 = t1lo + (t1hi - t1lo) * runs[i], r1 = t1lo + (t1hi - t1lo) * runs[i + 1];
+    const w0 = Math.max(0, r0 - deltaP), w1 = Math.min(1, r1 + deltaP);
+    if (twin === 1) stall(search, swap, r0, r1, w0, w1);
+    else stall(search, swap, r0, r1, 1 - w1, 1 - w0);
+  }
+  return true;
 }
 function dedupe(list2, tol) {
   const out = [];
@@ -48631,17 +48933,612 @@ function intersectCubics(c1, c2, tol = EPS2) {
   if (l2) {
     return dedupe(intersectLineCubic(c2[0], c2[1], c2[6], c2[7], c1, tol).map((i) => ({ t1: i.t2, t2: chordFractionToParam(c2, i.t1), x: i.x, y: i.y })), tol);
   }
-  const out = [];
-  clipIntersect(c1, c2, 0, 1, 0, 1, tol, 0, out);
-  return dedupe(out, tol);
+  const run = sharedRun(c1, c2, tol);
+  if (run) return run;
+  let mag = 0;
+  for (let i = 0; i < 8; i++) mag = Math.max(mag, Math.abs(c1[i]), Math.abs(c2[i]));
+  const b1 = boundsCubic(c1), b2 = boundsCubic(c2);
+  const size = Math.max(1, Math.max(b1.x1, b2.x1) - Math.min(b1.x0, b2.x0), Math.max(b1.y1, b2.y1) - Math.min(b1.y0, b2.y0));
+  let twin = coincideAtParams(c1, c2, TWIN_BAND * size) ? 1 : 0;
+  let c1r = null, c2r = null;
+  if (!twin) {
+    const rev = [c2[6], c2[7], c2[4], c2[5], c2[2], c2[3], c2[0], c2[1]];
+    if (coincideAtParams(c1, rev, TWIN_BAND * size)) {
+      twin = -1;
+      c2r = rev;
+      c1r = [c1[6], c1[7], c1[4], c1[5], c1[2], c1[3], c1[0], c1[1]];
+    }
+  }
+  const search = { c1, c2, out: [], stalled: [], pad: Math.max(1e-12, mag * 64 * Number.EPSILON), size, twin, c1r, c2r };
+  clipIntersect(c1, c2, 0, 1, 0, 1, tol, 0, search);
+  if (search.stalled.length) scanStalled(c1, c2, search.stalled, tol, search.out);
+  return dedupe(search.out, tol);
 }
-var EPS2, T_EPS;
+function scanStalled(c1, c2, stalled, tol, out) {
+  let mag = 0;
+  for (let i = 0; i < 8; i++) mag = Math.max(mag, Math.abs(c1[i]), Math.abs(c2[i]));
+  const groups = stretches(stalled);
+  const b1 = boundsCubic(c1), b2 = boundsCubic(c2);
+  const scan2 = {
+    c1,
+    c2,
+    tol,
+    out,
+    size: Math.max(1, Math.max(b1.x1, b2.x1) - Math.min(b1.x0, b2.x0), Math.max(b1.y1, b2.y1) - Math.min(b1.y0, b2.y0)),
+    noise: mag * 64 * Number.EPSILON,
+    budget: GAP_BUDGET,
+    // Half the budget samples the stretches, shared between them, so that a touch spread
+    // over many stretches cannot leave a crossing elsewhere unsampled.
+    share: Math.max(MIN_STRETCH_SAMPLES, Math.floor(GAP_BUDGET / 2 / groups.length))
+  };
+  const sides = [];
+  const clear = Math.max(tol, scan2.noise);
+  const sampled = groups.map((members) => sampleStretch(scan2, stalled, members));
+  sampled.sort((p, q) => p.a0 - q.a0);
+  const zones = [];
+  for (const g2 of sampled) {
+    const cur = zones[zones.length - 1];
+    if (cur && g2.a0 <= cur.reach) {
+      cur.samples.push(...g2.samples);
+      cur.a1 = Math.max(cur.a1, g2.a1);
+      cur.b0 = Math.min(cur.b0, g2.b0);
+      cur.b1 = Math.max(cur.b1, g2.b1);
+      if (cur.a1 > cur.reach) {
+        const r5 = sentinel(scan2, cur.a1, 1);
+        if (r5) {
+          cur.samples.push(r5);
+          cur.reach = r5.t;
+        } else cur.reach = 1;
+      }
+      continue;
+    }
+    const l = g2.a0 > TOUCH ? sentinel(scan2, g2.a0, -1) : null;
+    const r3 = g2.a1 < 1 - TOUCH ? sentinel(scan2, g2.a1, 1) : null;
+    if (l) {
+      g2.samples.push(l);
+      if (l.t === 0 && Math.abs(l.g) <= clear) g2.a0 = 0;
+    }
+    if (r3) {
+      g2.samples.push(r3);
+      g2.reach = r3.t;
+      if (r3.t === 1 && Math.abs(r3.g) <= clear) g2.a1 = 1;
+    } else {
+      g2.reach = 1;
+    }
+    if (g2.b0 <= END_NEAR) g2.b0 = 0;
+    if (g2.b1 >= 1 - END_NEAR) g2.b1 = 1;
+    zones.push(g2);
+  }
+  const touches = [];
+  for (const g2 of zones) {
+    g2.samples.sort((p, q) => p.t - q.t);
+    orientZone(scan2, g2.samples);
+    for (const part of splitZone(scan2, g2)) decideZone(scan2, part, sides, touches);
+  }
+  for (const run of sides) {
+    const at = touchPoint(scan2, run);
+    if (at) touches.push(at);
+  }
+  touches.sort((p, q) => p.t - q.t);
+  let kept = null;
+  for (const at of touches) {
+    if (kept && oneTouch(scan2, kept, at)) {
+      if (Math.abs(at.g) < Math.abs(kept.g)) kept = at;
+      continue;
+    }
+    if (kept) report(scan2, kept);
+    kept = at;
+  }
+  if (kept) report(scan2, kept);
+}
+function report(scan2, at) {
+  if (scan2.out.length > MAX_HITS) return;
+  for (const h of scan2.out) {
+    if (Math.abs(h.t1 - at.t) <= TOUCH_MERGE && Math.abs(h.t2 - at.u) <= TOUCH_MERGE) return;
+  }
+  scan2.out.push({ t1: at.t, t2: at.u, x: at.px, y: at.py });
+}
+function oneTouch(scan2, a, b) {
+  for (let k = 1; k <= TOUCH_JOIN_SAMPLES; k++) {
+    const s = gapAt(scan2, a.t + (b.t - a.t) * k / (TOUCH_JOIN_SAMPLES + 1));
+    if (!s) return true;
+    if (Math.abs(s.g) > scan2.tol) return false;
+    orientTo(s, a);
+    if (readable(scan2, s) && readable(scan2, a) && side(s) < 0 !== side(a) < 0) return false;
+  }
+  return true;
+}
+function stretches(r3) {
+  const n2 = r3.length / 4;
+  const parent = Array.from({ length: n2 }, (_, i) => i);
+  const root = (i) => {
+    while (parent[i] !== i) {
+      parent[i] = parent[parent[i]];
+      i = parent[i];
+    }
+    return i;
+  };
+  const order = parent.slice().sort((i, j) => r3[4 * i] - r3[4 * j]);
+  for (let k = 0; k < n2; k++) {
+    const i = order[k];
+    const side2 = Math.min(r3[4 * i + 1] - r3[4 * i], r3[4 * i + 3] - r3[4 * i + 2]);
+    const reach2 = TOUCH + STRETCH_REACH * side2;
+    for (let m2 = k + 1; m2 < n2; m2++) {
+      const j = order[m2];
+      if (r3[4 * j] > r3[4 * i + 1] + reach2) break;
+      if (r3[4 * j + 2] <= r3[4 * i + 3] + reach2 && r3[4 * i + 2] <= r3[4 * j + 3] + reach2) {
+        parent[root(i)] = root(j);
+      }
+    }
+  }
+  const groups = /* @__PURE__ */ new Map();
+  for (const i of order) {
+    const g2 = root(i);
+    const list2 = groups.get(g2);
+    if (list2) list2.push(i);
+    else groups.set(g2, [i]);
+  }
+  return [...groups.values()];
+}
+function orientZone(scan2, samples) {
+  let px = 0, py = 0, o = 1, have = false;
+  for (const s of samples) {
+    if (!readable(scan2, s)) {
+      s.o = o;
+      continue;
+    }
+    if (!have) {
+      s.o = 1;
+      px = s.nx;
+      py = s.ny;
+      o = 1;
+      have = true;
+      continue;
+    }
+    const dot = s.nx * px + s.ny * py;
+    o = dot < 0 ? -1 : 1;
+    s.o = o;
+    px = o * s.nx;
+    py = o * s.ny;
+  }
+}
+function orientTo(s, ref) {
+  const dot = s.nx * (ref.o * ref.nx) + s.ny * (ref.o * ref.ny);
+  s.o = dot < 0 ? -1 : 1;
+  return s;
+}
+function sampleStretch(scan2, r3, members) {
+  let a0 = 1, a1 = 0, b0 = 1, b1 = 0;
+  const bounds = [];
+  for (const i of members) {
+    a0 = Math.min(a0, r3[4 * i]);
+    a1 = Math.max(a1, r3[4 * i + 1]);
+    b0 = Math.min(b0, r3[4 * i + 2]);
+    b1 = Math.max(b1, r3[4 * i + 3]);
+    bounds.push(r3[4 * i], r3[4 * i + 1]);
+  }
+  bounds.sort((p, q) => p - q);
+  const cap = Math.min(MAX_STRETCH_SAMPLES, scan2.share);
+  const step = Math.ceil(bounds.length / cap);
+  const knots = [];
+  for (let k = 0; k < bounds.length; k += step) knots.push(bounds[k]);
+  if (knots[knots.length - 1] !== bounds[bounds.length - 1]) knots.push(bounds[bounds.length - 1]);
+  const per = Math.max(1, Math.min(SAMPLES_PER_PIECE, Math.floor(cap / knots.length)));
+  const ts = [knots[0]];
+  let prev = knots[0];
+  for (const k of knots) {
+    if (!(k > prev)) continue;
+    for (let s = 1; s <= per; s++) ts.push(s === per ? k : prev + (k - prev) * s / per);
+    prev = k;
+  }
+  const samples = [];
+  for (const t of ts) {
+    const s = gapAt(scan2, t);
+    if (s) samples.push(s);
+  }
+  return { samples, a0, a1, b0, b1, reach: a1 };
+}
+function sentinel(scan2, from, dir) {
+  const clear = Math.max(scan2.tol, scan2.noise);
+  let last = null;
+  for (let k = 0; k <= LOOK_OUT_STEPS; k++) {
+    const t = Math.min(1, Math.max(0, from + dir * 4 * Number.EPSILON * 4 ** k));
+    const s = gapAt(scan2, t);
+    if (!s) return last;
+    last = s;
+    if (Math.abs(s.g) > clear || t === 0 || t === 1) return s;
+  }
+  return last;
+}
+function decideZone(scan2, g2, sides, touches) {
+  if (decideByParity(scan2, g2, touches)) {
+    if (g2.a0 <= TOUCH) endContact(scan2, 1, 0);
+    if (g2.a1 >= 1 - TOUCH) endContact(scan2, 1, 1);
+    if (g2.b0 <= TOUCH) endContact(scan2, 2, 0);
+    if (g2.b1 >= 1 - TOUCH) endContact(scan2, 2, 1);
+    return;
+  }
+  let last = null;
+  let run = [];
+  let pending = [];
+  for (const s of g2.samples) {
+    if (!readable(scan2, s)) {
+      pending.push(s);
+      continue;
+    }
+    if (last && side(last) < 0 !== side(s) < 0) {
+      refineCrossing(scan2, last, s);
+      sides.push(run);
+      run = [];
+    } else {
+      run.push(...pending);
+    }
+    pending = [];
+    run.push(s);
+    last = s;
+  }
+  run.push(...pending);
+  sides.push(run);
+  if (g2.a0 <= TOUCH) endContact(scan2, 1, 0);
+  if (g2.a1 >= 1 - TOUCH) endContact(scan2, 1, 1);
+  if (g2.b0 <= TOUCH) endContact(scan2, 2, 0);
+  if (g2.b1 >= 1 - TOUCH) endContact(scan2, 2, 1);
+}
+function splitZone(scan2, g2) {
+  const clear = Math.max(scan2.tol, scan2.noise);
+  const samples = g2.samples;
+  if (samples.length < 3) return [g2];
+  const parts = [];
+  let start = 0;
+  for (let i = 1; i < samples.length - 1; i++) {
+    const s = samples[i];
+    if (!(Math.abs(s.g) > clear && readable(scan2, s))) continue;
+    let back = false;
+    for (let k = i - 1; k > start; k--) if (Math.abs(samples[k].g) <= clear) {
+      back = true;
+      break;
+    }
+    if (!back) continue;
+    let ahead = false;
+    for (let k = i + 1; k < samples.length - 1; k++) if (Math.abs(samples[k].g) <= clear) {
+      ahead = true;
+      break;
+    }
+    if (!ahead) continue;
+    parts.push(subZone(g2, samples.slice(start, i + 1), parts.length === 0, false));
+    start = i;
+  }
+  if (!parts.length) return [g2];
+  parts.push(subZone(g2, samples.slice(start), false, true));
+  return parts;
+}
+function subZone(g2, samples, first, last) {
+  let b0 = 1, b1 = 0;
+  for (const s of samples) {
+    b0 = Math.min(b0, s.u);
+    b1 = Math.max(b1, s.u);
+  }
+  return {
+    samples,
+    a0: first ? g2.a0 : samples[0].t,
+    a1: last ? g2.a1 : samples[samples.length - 1].t,
+    b0: first ? Math.min(g2.b0, b0) : b0,
+    b1: last ? Math.max(g2.b1, b1) : b1,
+    reach: last ? g2.reach : samples[samples.length - 1].t
+  };
+}
+function decideByParity(scan2, g2, touches) {
+  const { tol, noise } = scan2;
+  const clear = Math.max(tol, noise);
+  const samples = g2.samples;
+  if (samples.length < 2) return false;
+  const first = samples[0], last = samples[samples.length - 1];
+  if (!(Math.abs(first.g) > clear && Math.abs(last.g) > clear)) return false;
+  if (!(readable(scan2, first) && readable(scan2, last))) return false;
+  reportRunEnds(scan2, samples);
+  let best = first;
+  for (const s of samples) if (s.d < best.d) best = s;
+  let k = samples.indexOf(best);
+  const odd = side(first) < 0 !== side(last) < 0;
+  if (odd && best.d <= tol) {
+    let lo2 = k, hi2 = k;
+    while (lo2 > 0 && samples[lo2 - 1].d <= tol) lo2--;
+    while (hi2 < samples.length - 1 && samples[hi2 + 1].d <= tol) hi2++;
+    const mid3 = (samples[lo2].t + samples[hi2].t) / 2;
+    for (let i = lo2; i <= hi2; i++) if (Math.abs(samples[i].t - mid3) < Math.abs(samples[k].t - mid3)) k = i;
+    best = samples[k];
+  }
+  const lo = samples[Math.max(0, k - 1)], hi = samples[Math.min(samples.length - 1, k + 1)];
+  if (odd) {
+    if (scan2.out.length > MAX_HITS) return true;
+    let prev = null;
+    let at = null;
+    let after = null;
+    for (const s of samples) {
+      if (!readable(scan2, s)) continue;
+      if (prev && side(prev) < 0 !== side(s) < 0) {
+        at = narrow(scan2, prev, s);
+        after = s;
+        break;
+      }
+      prev = s;
+    }
+    if (at && at.d <= tol) best = at;
+    const u0 = Math.min(lo.u, hi.u), u1 = Math.max(lo.u, hi.u);
+    for (const h of scan2.out) {
+      if (h.t1 >= lo.t && h.t1 <= hi.t && h.t2 >= u0 && h.t2 <= u1) return true;
+    }
+    if (best.d > tol) best = closest(scan2, best, lo.t, hi.t) ?? best;
+    if (best.d > tol && at && prev && after) best = closest(scan2, at, Math.min(prev.t, after.t), Math.max(prev.t, after.t)) ?? best;
+    if (best.d > tol) return true;
+    scan2.out.push({ t1: best.t, t2: best.u, x: best.px, y: best.py });
+    return true;
+  }
+  if (best.d > tol) {
+    best = closest(scan2, best, lo.t, hi.t) ?? best;
+    if (best.d > tol) return true;
+  }
+  touches.push(best);
+  return true;
+}
+function reportRunEnds(scan2, samples) {
+  const { tol, out } = scan2;
+  let lo = -1, hi = -1;
+  for (let i = 0; i < samples.length; i++) {
+    if (samples[i].d <= tol) {
+      if (lo < 0) lo = i;
+      hi = i;
+    }
+  }
+  if (lo < 0 || hi <= lo) return;
+  const a = lo > 0 ? runEnd(scan2, samples[lo - 1], samples[lo]) : samples[lo];
+  const b = hi < samples.length - 1 ? runEnd(scan2, samples[hi + 1], samples[hi]) : samples[hi];
+  if (Math.hypot(a.px - b.px, a.py - b.py) < RUN_MIN_REL * scan2.size) return;
+  if (out.length > MAX_HITS - 2) return;
+  for (const s of [a, b]) {
+    if (!out.some((h) => Math.abs(h.t1 - s.t) <= TOUCH_MERGE && Math.abs(h.t2 - s.u) <= TOUCH_MERGE)) {
+      out.push({ t1: s.t, t2: s.u, x: s.px, y: s.py });
+    }
+  }
+}
+function runEnd(scan2, outside, inside) {
+  const limit = scan2.tol * RUN_END_SHARE;
+  let a = outside.t, b = inside.t, best = inside;
+  for (let i = 0; i < RUN_END_STEPS && Math.abs(b - a) > 4 * Number.EPSILON; i++) {
+    const s = gapAt(scan2, (a + b) / 2);
+    if (!s) break;
+    if (s.d <= limit) {
+      best = s;
+      b = s.t;
+    } else a = s.t;
+  }
+  return best;
+}
+function gapAt(scan2, t) {
+  if (scan2.budget-- <= 0) return null;
+  const { c1, c2 } = scan2;
+  const p = evalCubic(c1, t);
+  const near = nearest2(c2, p.x, p.y);
+  const u = near.t, q = near.point;
+  const beyond = u <= 0 || u >= 1;
+  let d = beyond ? endDirection(c2, u <= 0 ? 0 : 1) : tangentAt(c2, u);
+  if (d.x === 0 && d.y === 0) d = { x: c2[6] - c2[0], y: c2[7] - c2[1] };
+  const len2 = Math.hypot(d.x, d.y);
+  if (!(len2 > 0)) return null;
+  const g2 = (d.x * (p.y - q.y) - d.y * (p.x - q.x)) / len2;
+  return { t, u, g: g2, beyond, d: near.distance, sp: len2 / scan2.size, nx: -d.y / len2, ny: d.x / len2, o: 1, px: p.x, py: p.y, qx: q.x, qy: q.y };
+}
+function endDirection(c, end) {
+  if (end === 0) {
+    for (let i = 2; i < 8; i += 2) {
+      const dx = c[i] - c[0], dy = c[i + 1] - c[1];
+      if (dx !== 0 || dy !== 0) return { x: dx, y: dy };
+    }
+  } else {
+    for (let i = 4; i >= 0; i -= 2) {
+      const dx = c[6] - c[i], dy = c[7] - c[i + 1];
+      if (dx !== 0 || dy !== 0) return { x: dx, y: dy };
+    }
+  }
+  return { x: 0, y: 0 };
+}
+function refineCrossing(scan2, lo, hi) {
+  const { out, noise, tol } = scan2;
+  if (out.length > MAX_HITS) return;
+  const u0 = Math.min(lo.u, hi.u), u1 = Math.max(lo.u, hi.u);
+  for (const h of out) {
+    if (h.t1 >= lo.t && h.t1 <= hi.t && h.t2 >= u0 && h.t2 <= u1) return;
+  }
+  let a = lo.t, fa = side(lo), b = hi.t, fb = side(hi), stuck = 0;
+  let at = null;
+  let best = lo.d <= hi.d ? lo : hi;
+  for (let i = 0; i < 100; i++) {
+    let t = (a * fb - b * fa) / (fb - fa);
+    if (!(t > a && t < b)) t = (a + b) / 2;
+    const s = gapAt(scan2, t);
+    if (!s) break;
+    orientTo(s, lo);
+    at = s;
+    if (s.d < best.d) best = s;
+    if (Math.abs(s.g) <= noise || !readable(scan2, s)) break;
+    if (side(s) < 0 === fa < 0) {
+      a = t;
+      fa = side(s);
+      if (stuck === -1) fb /= 2;
+      stuck = -1;
+    } else {
+      b = t;
+      fb = side(s);
+      if (stuck === 1) fa /= 2;
+      stuck = 1;
+    }
+    if (b - a <= 4 * Number.EPSILON) break;
+  }
+  if (!at) return;
+  if (best.d > tol) best = closest(scan2, best, a, b) ?? best;
+  if (best.d > tol) return;
+  out.push({ t1: best.t, t2: best.u, x: best.px, y: best.py });
+}
+function narrow(scan2, lo, hi) {
+  const { noise } = scan2;
+  let a = lo.t, fa = side(lo), b = hi.t, fb = side(hi), stuck = 0;
+  let at = null, best = lo.d <= hi.d ? lo : hi;
+  for (let i = 0; i < 100; i++) {
+    let t = (a * fb - b * fa) / (fb - fa);
+    if (!(t > a && t < b)) t = (a + b) / 2;
+    const s = gapAt(scan2, t);
+    if (!s) break;
+    orientTo(s, lo);
+    at = s;
+    if (s.d < best.d) best = s;
+    if (Math.abs(s.g) <= noise || !readable(scan2, s)) break;
+    if (side(s) < 0 === fa < 0) {
+      a = t;
+      fa = side(s);
+      if (stuck === -1) fb /= 2;
+      stuck = -1;
+    } else {
+      b = t;
+      fb = side(s);
+      if (stuck === 1) fa /= 2;
+      stuck = 1;
+    }
+    if (b - a <= 4 * Number.EPSILON) break;
+  }
+  if (!at) return null;
+  return best.d <= at.d ? best : at;
+}
+function closest(scan2, from, a, b) {
+  const R2 = 0.6180339887498949;
+  let lo = Math.max(a, from.t - (b - a) * 0.5), hi = Math.min(b, from.t + (b - a) * 0.5);
+  let best = from;
+  let c = hi - R2 * (hi - lo), d = lo + R2 * (hi - lo);
+  let fc = gapAt(scan2, c), fd = gapAt(scan2, d);
+  for (let i = 0; i < CLOSEST_STEPS && fc && fd && hi - lo > 4 * Number.EPSILON; i++) {
+    if (fc.d < best.d) best = fc;
+    if (fd.d < best.d) best = fd;
+    if (fc.d <= fd.d) {
+      hi = d;
+      d = c;
+      fd = fc;
+      c = hi - R2 * (hi - lo);
+      fc = gapAt(scan2, c);
+    } else {
+      lo = c;
+      c = d;
+      fc = fd;
+      d = lo + R2 * (hi - lo);
+      fd = gapAt(scan2, d);
+    }
+  }
+  if (fc && fc.d < best.d) best = fc;
+  if (fd && fd.d < best.d) best = fd;
+  return best;
+}
+function endContact(scan2, curve, end) {
+  const { c1, c2, out, tol } = scan2;
+  if (out.length > MAX_HITS) return;
+  const own2 = curve === 1 ? c1 : c2, other = curve === 1 ? c2 : c1;
+  const x = own2[6 * end], y = own2[6 * end + 1];
+  const near = nearest2(other, x, y);
+  if (near.distance > tol) return;
+  let u = near.t;
+  for (const e of [0, 1]) {
+    if (Math.hypot(other[6 * e] - x, other[6 * e + 1] - y) <= tol) u = e;
+  }
+  out.push(curve === 1 ? { t1: end, t2: u, x, y } : { t1: u, t2: end, x: near.point.x, y: near.point.y });
+}
+function touchPoint(scan2, samples) {
+  const { noise, tol } = scan2;
+  if (samples.length < 3) return null;
+  const size = (s) => Math.abs(s.g) <= noise ? 0 : Math.abs(s.g);
+  let k = 0;
+  for (let i = 1; i < samples.length; i++) if (size(samples[i]) < size(samples[k])) k = i;
+  let e = k;
+  while (e + 1 < samples.length && size(samples[e + 1]) === size(samples[k])) e++;
+  if (k === 0 || e === samples.length - 1) return null;
+  const dip = Math.min(size(samples[0]), size(samples[samples.length - 1])) - size(samples[k]);
+  if (!(dip > noise)) return null;
+  k = k + e >> 1;
+  let best = samples[k];
+  const R2 = 0.6180339887498949;
+  let lo = samples[k - 1].t, hi = samples[k + 1].t;
+  let c = hi - R2 * (hi - lo), d = lo + R2 * (hi - lo);
+  let fc = gapAt(scan2, c), fd = gapAt(scan2, d);
+  for (let i = 0; i < TOUCH_STEPS && fc && fd && hi - lo > 4 * Number.EPSILON; i++) {
+    if (size(fc) < size(best)) best = fc;
+    if (size(fd) < size(best)) best = fd;
+    if (size(fc) <= size(fd)) {
+      hi = d;
+      d = c;
+      fd = fc;
+      c = hi - R2 * (hi - lo);
+      fc = gapAt(scan2, c);
+    } else {
+      lo = c;
+      c = d;
+      fc = fd;
+      d = lo + R2 * (hi - lo);
+      fd = gapAt(scan2, d);
+    }
+  }
+  if (fc && size(fc) < size(best)) best = fc;
+  if (fd && size(fd) < size(best)) best = fd;
+  return Math.hypot(best.px - best.qx, best.py - best.qy) > tol ? null : best;
+}
+var EPS2, T_EPS, ROOT_SNAP, FLOOR_MIN_SIZE, POLISH_STEPS, POLISH_STEP_MIN, POLISH_PATIENCE, MAX_DEPTH, BOX_SLACK, POINT_OFF_SLACK, SHALLOW, TWIN_BAND, TWIN_TURN, TWIN_BEND, TWIN_REACH, TWIN_RUN_DEPTH, BINOM, ONES_6, MAX_HITS, SCAN_LIMITS, SAMPLES_PER_PIECE, MAX_STRETCH_SAMPLES, MIN_STRETCH_SAMPLES, GAP_BUDGET, LOOK_OUT_STEPS, END_NEAR, TOUCH, TOUCH_MERGE, TOUCH_JOIN_SAMPLES, STRETCH_REACH, side, readable, FOOT_SPEED, FOOT_SHARE, RUN_MIN_REL, RUN_END_STEPS, RUN_END_SHARE, CLOSEST_STEPS, TOUCH_STEPS;
 var init_intersect = __esm({
   "engine/src/geom/intersect.ts"() {
     "use strict";
     init_bezier();
     EPS2 = 1e-9;
     T_EPS = 1e-9;
+    ROOT_SNAP = 32;
+    FLOOR_MIN_SIZE = 16;
+    POLISH_STEPS = 64;
+    POLISH_STEP_MIN = 4 * Number.EPSILON;
+    POLISH_PATIENCE = 2;
+    MAX_DEPTH = 60;
+    BOX_SLACK = 16;
+    POINT_OFF_SLACK = 1e3;
+    SHALLOW = 1e-3;
+    TWIN_BAND = 1e-4;
+    TWIN_TURN = 0.5;
+    TWIN_BEND = 0.35;
+    TWIN_REACH = 1.5;
+    TWIN_RUN_DEPTH = 12;
+    BINOM = (() => {
+      const rows2 = [[1]];
+      for (let n2 = 1; n2 <= 10; n2++) {
+        const prev = rows2[n2 - 1], row = [1];
+        for (let k = 1; k < n2; k++) row.push(prev[k - 1] + prev[k]);
+        row.push(1);
+        rows2.push(row);
+      }
+      return rows2;
+    })();
+    ONES_6 = [1, 1, 1, 1, 1, 1, 1];
+    MAX_HITS = 128;
+    SCAN_LIMITS = { maxStalledPairs: 65536 };
+    SAMPLES_PER_PIECE = 8;
+    MAX_STRETCH_SAMPLES = 2048;
+    MIN_STRETCH_SAMPLES = 16;
+    GAP_BUDGET = 16384;
+    LOOK_OUT_STEPS = 30;
+    END_NEAR = 1e-3;
+    TOUCH = 1e-12;
+    TOUCH_MERGE = 1e-6;
+    TOUCH_JOIN_SAMPLES = 7;
+    STRETCH_REACH = 64;
+    side = (s) => s.o * s.g;
+    readable = (scan2, s) => Math.abs(s.g) > scan2.noise && Math.abs(s.g) >= FOOT_SHARE * s.d && s.sp >= FOOT_SPEED;
+    FOOT_SPEED = 1e-3;
+    FOOT_SHARE = 0.5;
+    RUN_MIN_REL = 1e-3;
+    RUN_END_STEPS = 40;
+    RUN_END_SHARE = 0.9;
+    CLOSEST_STEPS = 40;
+    TOUCH_STEPS = 48;
   }
 });
 
@@ -48671,23 +49568,42 @@ function booleanPath(a, b, op, opts = {}) {
   const splitsA = idxA.curves.map(() => []);
   const splitsB = idxB.curves.map(() => []);
   crossSplits(idxA.curves, idxB.curves, splitsA, splitsB, tol, weld, budget3);
+  const srcA = [], srcB = [];
+  const rangesA = [], rangesB = [];
   const edges = [
-    ...splitIntoEdges(idxA.curves, splitsA, weld),
-    ...splitIntoEdges(idxB.curves, splitsB, weld)
+    ...splitIntoEdges(idxA.curves, splitsA, weld, srcA, rangesA),
+    ...splitIntoEdges(idxB.curves, splitsB, weld, srcB, rangesB)
   ];
+  const nA = srcA.length;
+  const twins = findTwins(edges, weld, budget3);
+  const bundleOf = (i, ofA) => {
+    if (!twins[i].length) return null;
+    const map = /* @__PURE__ */ new Map();
+    for (const j of twins[i]) {
+      const inA = j < nA;
+      if (inA !== ofA) continue;
+      const ci = inA ? srcA[j] : srcB[j - nA], range = inA ? rangesA[j] : rangesB[j - nA];
+      const list2 = map.get(ci);
+      if (list2) list2.push(range);
+      else map.set(ci, [range]);
+    }
+    return map.size ? map : null;
+  };
   const kept = [];
-  for (const e of edges) {
-    const m2 = evalCubic(e, 0.5);
-    const ref = midTangent(e);
-    const wa = sideWindings(idxA, m2.x, m2.y, ref.x, ref.y, near, budget3);
-    const wb = sideWindings(idxB, m2.x, m2.y, ref.x, ref.y, near, budget3);
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    const tm = decideAt(e);
+    const m2 = evalCubic(e, tm);
+    const ref = midTangent(e, tm);
+    const wa = sideWindings(idxA, m2.x, m2.y, ref.x, ref.y, near, budget3, bundleOf(i, true));
+    const wb = sideWindings(idxB, m2.x, m2.y, ref.x, ref.y, near, budget3, bundleOf(i, false));
     const left = combine(wa.left !== 0, wb.left !== 0, op);
     const right = combine(wa.right !== 0, wb.right !== 0, op);
     if (left === right) continue;
     kept.push(left ? e : reverseCubic(e));
   }
   if (budget3.work <= 0) return abandon(A, B, op, "the work budget ran out mid-classification");
-  return compactPath(walkLoops(dedupeEdges(kept, weld), weld));
+  return compactPath(walkLoops(dedupeEdges(kept, weld, budget3), weld));
 }
 function unionPath(a, b, opts) {
   return booleanPath(a, b, "union", opts);
@@ -48719,22 +49635,38 @@ function selfUnion(p, opts = {}) {
   if (path.length === 1 && !splits.some((s) => s.length) && !selfTouching(path[0], weld)) {
     const only = path[0];
     const probe = only.curves[0];
-    const m2 = evalCubic(probe, 0.5);
-    const ref = midTangent(probe);
+    const tm = decideAt(probe);
+    const m2 = evalCubic(probe, tm);
+    const ref = midTangent(probe, tm);
     const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3);
     return [filled(w.left, rule) ? only : reverseContour(only)];
   }
   const kept = [];
-  for (const c of splitIntoEdges(idx.curves, splits, weld)) {
-    const m2 = evalCubic(c, 0.5);
-    const ref = midTangent(c);
-    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3);
+  const src = [];
+  const ranges = [];
+  const pieces = splitIntoEdges(idx.curves, splits, weld, src, ranges);
+  const twins = findTwins(pieces, weld, budget3);
+  for (let i = 0; i < pieces.length; i++) {
+    const c = pieces[i];
+    const tm = decideAt(c);
+    const m2 = evalCubic(c, tm);
+    const ref = midTangent(c, tm);
+    let bundle = null;
+    if (twins[i].length) {
+      bundle = /* @__PURE__ */ new Map();
+      for (const j of twins[i]) {
+        const list2 = bundle.get(src[j]);
+        if (list2) list2.push(ranges[j]);
+        else bundle.set(src[j], [ranges[j]]);
+      }
+    }
+    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3, bundle);
     const left = filled(w.left, rule), right = filled(w.right, rule);
     if (left === right) continue;
     kept.push(left ? c : reverseCubic(c));
   }
   if (budget3.work <= 0) return path;
-  return compactPath(walkLoops(dedupeEdges(kept, weld), weld));
+  return compactPath(walkLoops(dedupeEdges(kept, weld, budget3), weld));
 }
 function windingNumber(p, x, y) {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return 0;
@@ -48850,12 +49782,26 @@ function buildIndex(p) {
   }
   return { curves, box: box2 };
 }
-function midTangent(c) {
-  const t = tangentAt(c, 0.5);
+function midTangent(c, at = 0.5) {
+  const t = tangentAt(c, at);
   if (Math.hypot(t.x, t.y) > 1e-12) return t;
   const dx = c[6] - c[0], dy = c[7] - c[1];
   if (Math.hypot(dx, dy) > 1e-12) return { x: dx, y: dy };
   return { x: 1, y: 0 };
+}
+function decideAt(c) {
+  const ext = extent(c);
+  let bestT = 0.5, bestS = -1;
+  for (const t of DECIDE_TS) {
+    const d = tangentAt(c, t);
+    const sp = Math.hypot(d.x, d.y);
+    if (t === 0.5 && sp >= DECIDE_SPEED * ext) return 0.5;
+    if (sp > bestS) {
+      bestS = sp;
+      bestT = t;
+    }
+  }
+  return bestT;
 }
 function sweepPairs(a, b, self, budget3, visit) {
   const byStart = (list2) => list2.map((_, i) => i).sort((p, q) => list2[p].box.x0 - list2[q].box.x0);
@@ -48978,7 +49924,7 @@ function pairSplits(ci, cj, tol, weld, budget3) {
       b0 = Math.min(b0, h.t2);
       b1 = Math.max(b1, h.t2);
     }
-    if (hits2.length > 9 || continuesAsSameCurve(ci, a0, a1, cj, b0, b1, weld) !== 0) {
+    if (continuesAsSameCurve(ci, a0, a1, cj, b0, b1, weld) !== 0) {
       return overlapSplits(ci, cj, weld, budget3);
     }
   }
@@ -49011,8 +49957,19 @@ function overlapRun(ci, cj, weld, budget3) {
   }
   const sa = subCubic(ci, a0, a1), sb = subCubic(cj, b0, b1);
   if (extent(sa) <= weld || extent(sb) <= weld) return null;
-  if (coincidence(sa, sb, weld) === 0) return null;
+  if (coincidence(sa, sb, weld) === 0 && !sameTrace(sa, sb, weld, budget3)) return null;
   return { a: [a0, a1], b: [b0, b1] };
+}
+function sameTrace(a, b, weld, budget3) {
+  budget3.work -= 32 * 2 * TRACE_SAMPLES;
+  for (let k = 1; k < TRACE_SAMPLES; k++) {
+    const t = k / TRACE_SAMPLES;
+    const p = evalCubic(a, t);
+    if (nearestOnCubic(b, p.x, p.y).distance > weld) return false;
+    const q = evalCubic(b, t);
+    if (nearestOnCubic(a, q.x, q.y).distance > weld) return false;
+  }
+  return true;
 }
 function inflated(b, x, y, pad) {
   return x >= b.x0 - pad && x <= b.x1 + pad && y >= b.y0 - pad && y <= b.y1 + pad;
@@ -49103,6 +50060,33 @@ function overlapSplits(ci, cj, weld, budget3) {
   }
   return { a, b };
 }
+function alignSplits(groups, weld, budget3) {
+  const points = [];
+  for (const g2 of groups) {
+    for (let i = 0; i < g2.curves.length; i++) {
+      for (const t of g2.splits[i]) {
+        const p = evalCubic(g2.curves[i].c, t);
+        points.push(p);
+      }
+    }
+  }
+  if (!points.length) return;
+  let curveCount = 0;
+  for (const g2 of groups) curveCount += g2.curves.length;
+  if (points.length * curveCount > MAX_ALIGN_PAIRS) return;
+  for (const g2 of groups) {
+    for (let j = 0; j < g2.curves.length; j++) {
+      const ic = g2.curves[j];
+      for (const p of points) {
+        if (!inflated(ic.box, p.x, p.y, weld)) continue;
+        if (budget3.work <= 0) return;
+        budget3.work -= 32;
+        const n2 = nearestOnCubic(ic.c, p.x, p.y);
+        if (n2.distance <= weld) addSplit(g2.splits, j, n2.t, budget3);
+      }
+    }
+  }
+}
 function selfSplits(curves, splits, tol, weld, budget3) {
   for (let i = 0; i < curves.length; i++) {
     const loop = selfIntersectCubic(curves[i].c);
@@ -49117,6 +50101,7 @@ function selfSplits(curves, splits, tol, weld, budget3) {
     for (const t of found.a) addSplit(splits, i, t, budget3);
     for (const t of found.b) addSplit(splits, j, t, budget3);
   });
+  alignSplits([{ curves, splits }], weld, budget3);
 }
 function crossSplits(a, b, splitsA, splitsB, tol, weld, budget3) {
   sweepPairs(a, b, false, budget3, (i, j) => {
@@ -49125,14 +50110,19 @@ function crossSplits(a, b, splitsA, splitsB, tol, weld, budget3) {
     for (const t of found.a) addSplit(splitsA, i, t, budget3);
     for (const t of found.b) addSplit(splitsB, j, t, budget3);
   });
+  alignSplits([{ curves: a, splits: splitsA }, { curves: b, splits: splitsB }], weld, budget3);
 }
-function splitIntoEdges(curves, splits, weld) {
+function splitIntoEdges(curves, splits, weld, src, ranges) {
   const out = [];
   for (let i = 0; i < curves.length; i++) {
     const ts = splits[i];
     const c = curves[i].c;
     if (!ts.length) {
-      if (extent(c) > weld) out.push(c);
+      if (extent(c) > weld) {
+        out.push(c);
+        src?.push(i);
+        ranges?.push([0, 1]);
+      }
       continue;
     }
     const cuts = [0];
@@ -49147,10 +50137,69 @@ function splitIntoEdges(curves, splits, weld) {
     else cuts[cuts.length - 1] = 1;
     for (let k = 1; k < cuts.length; k++) {
       const piece = subCubic(c, cuts[k - 1], cuts[k]);
-      if (extent(piece) > weld) out.push(piece);
+      if (extent(piece) > weld) {
+        out.push(piece);
+        src?.push(i);
+        ranges?.push([cuts[k - 1], cuts[k]]);
+      }
     }
   }
   return out;
+}
+function inBundle(bundle, ci, t) {
+  const ranges = bundle.get(ci);
+  if (!ranges) return false;
+  for (const [t0, t1] of ranges) if (t >= t0 - 1e-6 && t <= t1 + 1e-6) return true;
+  return false;
+}
+function findTwins(edges, weld, budget3) {
+  const twins = edges.map(() => []);
+  const spans = edges.map(extent);
+  nearPieces(edges, weld, (i, j) => {
+    if (spans[i] <= 2 * weld || spans[j] <= 2 * weld) return true;
+    if (budget3.work <= 0) return false;
+    if (coincidence(edges[i], edges[j], weld) !== 0 || sameTrace(edges[i], edges[j], weld, budget3)) {
+      twins[i].push(j);
+      twins[j].push(i);
+    }
+    return true;
+  });
+  return twins;
+}
+function nearPieces(edges, weld, visit) {
+  const cell = Math.max(weld * 4, 1e-12);
+  const buckets = /* @__PURE__ */ new Map();
+  const put = (x, y, i) => {
+    const key = `${Math.round(x / cell)},${Math.round(y / cell)}`;
+    const bucket = buckets.get(key);
+    if (bucket) {
+      if (bucket[bucket.length - 1] !== i) bucket.push(i);
+    } else buckets.set(key, [i]);
+  };
+  const mids = edges.map((e) => evalCubic(e, 0.5));
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    put(e[0], e[1], i);
+    put(mids[i].x, mids[i].y, i);
+    put(e[6], e[7], i);
+  }
+  const seen = /* @__PURE__ */ new Set();
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    seen.clear();
+    for (const [x, y] of [[e[0], e[1]], [mids[i].x, mids[i].y], [e[6], e[7]]]) {
+      const cx = Math.round(x / cell), cy = Math.round(y / cell);
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          for (const j of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
+            if (j <= i || seen.has(j)) continue;
+            seen.add(j);
+            if (!visit(i, j)) return;
+          }
+        }
+      }
+    }
+  }
 }
 function buildRayDirs() {
   const out = [[1, 0], [0, 1]];
@@ -49173,18 +50222,21 @@ function reachFrom(idx, px, py) {
   const dx = Math.max(b.x0 - px, px - b.x1, 0), dy = Math.max(b.y0 - py, py - b.y1, 0);
   return 2 * (diag + Math.hypot(dx, dy)) + 1;
 }
-function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false) {
-  const reach = reachFrom(idx, px, py);
-  const qx = px + ux * reach, qy = py + uy * reach;
-  const rx0 = Math.min(px, qx) - near, rx1 = Math.max(px, qx) + near;
-  const ry0 = Math.min(py, qy) - near, ry1 = Math.max(py, qy) + near;
+function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false, bundle = null) {
+  const twin = near * 100;
+  const reach2 = reachFrom(idx, px, py);
+  const qx = px + ux * reach2, qy = py + uy * reach2;
   const nx = -uy, ny = ux;
   const hitTol = Math.max(
     near,
     64 * Number.EPSILON * Math.max(Math.abs(px), Math.abs(py), Math.abs(qx), Math.abs(qy), 1)
   );
+  const look2 = Math.max(hitTol, 4 * twin, near * 32);
+  const rx0 = Math.min(px, qx) - look2, rx1 = Math.max(px, qx) + look2;
+  const ry0 = Math.min(py, qy) - look2, ry1 = Math.max(py, qy) + look2;
   let far = 0, net = 0, ok3 = true;
-  for (const ic of idx.curves) {
+  for (let ci = 0; ci < idx.curves.length; ci++) {
+    const ic = idx.curves[ci];
     if (budget3.work <= 0) return { far, net, ok: false };
     budget3.work -= 1;
     const b = ic.box;
@@ -49196,18 +50248,31 @@ function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false) {
       continue;
     }
     budget3.work -= 8;
-    for (const hit of intersectLineCubic(px, py, qx, qy, c, hitTol)) {
+    const hits2 = intersectLineCubic(px - ux * reach2, py - uy * reach2, qx, qy, c, hitTol, false);
+    for (const hit of hits2) {
       const t = hit.t2;
-      const s = hit.t1 * reach;
+      const s = (hit.t1 * 2 - 1) * reach2;
+      if (s < -look2) continue;
       const tg = tangentAt(c, t);
-      if (s <= near && ref) {
+      const off = Math.abs(s);
+      if (bundle && ref && off <= 4 * twin && inBundle(bundle, ci, t)) {
         net += Math.sign(tg.x * ref.x + tg.y * ref.y);
         continue;
       }
-      const mag = Math.hypot(tg.x, tg.y);
-      const cr = ux * tg.y - uy * tg.x;
-      const sideless = mag < 1e-12 || Math.abs(cr) < 1e-6 * mag;
-      if (sideless || t < T_GUARD || t > 1 - T_GUARD || ref !== null && s <= near * 32) {
+      if (ref && off <= near) {
+        net += Math.sign(tg.x * ref.x + tg.y * ref.y);
+        continue;
+      }
+      const cr = hit.dir ?? Math.sign(ux * tg.y - uy * tg.x);
+      if (s < 0) {
+        if (off <= near * 32 && !complete) {
+          ok3 = false;
+          return { far, net, ok: ok3 };
+        }
+        continue;
+      }
+      const sideless = cr === 0;
+      if (sideless || t < T_GUARD || t > 1 - T_GUARD || ref !== null && off <= near * 32) {
         ok3 = false;
         if (!complete) return { far, net, ok: ok3 };
         if (sideless || t > 1 - T_GUARD) continue;
@@ -49217,7 +50282,7 @@ function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false) {
   }
   return { far, net, ok: ok3 };
 }
-function sideWindings(idx, px, py, rx, ry, near, budget3) {
+function sideWindings(idx, px, py, rx, ry, near, budget3, bundle = null) {
   const dirs = rayDirections(rx, ry);
   const sidesOf = (d2, cast2) => {
     const g2 = d2[0] * ry - d2[1] * rx;
@@ -49225,13 +50290,13 @@ function sideWindings(idx, px, py, rx, ry, near, budget3) {
   };
   let last = null;
   for (const d2 of dirs) {
-    const cast2 = castRay(idx, px, py, d2[0], d2[1], { x: rx, y: ry }, near, budget3);
+    const cast2 = castRay(idx, px, py, d2[0], d2[1], { x: rx, y: ry }, near, budget3, false, bundle);
     if (cast2.ok) return sidesOf(d2, cast2);
     last = sidesOf(d2, cast2);
     if (budget3.work <= 0) return last;
   }
   const d = dirs[0];
-  const cast = castRay(idx, px, py, d[0], d[1], { x: rx, y: ry }, near, budget3, true);
+  const cast = castRay(idx, px, py, d[0], d[1], { x: rx, y: ry }, near, budget3, true, bundle);
   return cast.ok || budget3.work > 0 ? sidesOf(d, cast) : last ?? { left: 0, right: 0 };
 }
 function coincidence(a, b, weld) {
@@ -49268,39 +50333,22 @@ function continuesAsSameCurve(ci, a0, a1, cj, b0, b1, weld) {
   }
   return 0;
 }
-function dedupeEdges(edges, weld) {
-  const cell = Math.max(weld * 4, 1e-12);
-  const buckets = /* @__PURE__ */ new Map();
-  const mids = edges.map((e) => evalCubic(e, 0.5));
+function dedupeEdges(edges, weld, budget3) {
   const spans = edges.map(extent);
   const dead = new Uint8Array(edges.length);
-  for (let i = 0; i < edges.length; i++) {
-    const m2 = mids[i];
-    const key = `${Math.round(m2.x / cell)},${Math.round(m2.y / cell)}`;
-    const bucket = buckets.get(key);
-    if (bucket) bucket.push(i);
-    else buckets.set(key, [i]);
-  }
-  for (let i = 0; i < edges.length; i++) {
-    if (dead[i]) continue;
-    const m2 = mids[i];
-    const cx = Math.round(m2.x / cell), cy = Math.round(m2.y / cell);
-    for (let ox = -1; ox <= 1 && !dead[i]; ox++) {
-      for (let oy = -1; oy <= 1 && !dead[i]; oy++) {
-        for (const j of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
-          if (j <= i || dead[j]) continue;
-          if (spans[i] <= 2 * weld || spans[j] <= 2 * weld) continue;
-          const rel = coincidence(edges[i], edges[j], weld);
-          if (rel === 0) continue;
-          dead[j] = 1;
-          if (rel === -1) {
-            dead[i] = 1;
-            break;
-          }
-        }
-      }
+  nearPieces(edges, weld, (i, j) => {
+    if (dead[i] || dead[j]) return true;
+    if (spans[i] <= 2 * weld || spans[j] <= 2 * weld) return true;
+    let rel = coincidence(edges[i], edges[j], weld);
+    if (rel === 0 && budget3.work > 0 && sameTrace(edges[i], edges[j], weld, budget3)) {
+      const ti = midTangent(edges[i]), tj = midTangent(edges[j]);
+      rel = ti.x * tj.x + ti.y * tj.y >= 0 ? 1 : -1;
     }
-  }
+    if (rel === 0) return true;
+    dead[j] = 1;
+    if (rel === -1) dead[i] = 1;
+    return true;
+  });
   return edges.filter((_, i) => !dead[i]);
 }
 function walkLoops(edges, weld) {
@@ -49316,7 +50364,26 @@ function walkLoops(edges, weld) {
   });
   const used = new Uint8Array(edges.length);
   const out = [];
-  const candidatesAt = (x, y) => {
+  const nearestStart = (x, y, radius) => {
+    const cx = Math.round(x / cell), cy = Math.round(y / cell);
+    const span = Math.ceil(radius / cell) + 1;
+    let best = -1, bestD = radius;
+    for (let ox = -span; ox <= span; ox++) {
+      for (let oy = -span; oy <= span; oy++) {
+        for (const i of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
+          if (used[i]) continue;
+          const e = edges[i];
+          const d = Math.hypot(e[0] - x, e[1] - y);
+          if (d <= bestD) {
+            bestD = d;
+            best = i;
+          }
+        }
+      }
+    }
+    return best;
+  };
+  const candidatesAt = (x, y, radius) => {
     const cx = Math.round(x / cell), cy = Math.round(y / cell);
     const found = [];
     for (let ox = -1; ox <= 1; ox++) {
@@ -49324,7 +50391,7 @@ function walkLoops(edges, weld) {
         for (const i of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
           if (used[i]) continue;
           const e = edges[i];
-          if (Math.hypot(e[0] - x, e[1] - y) <= weld) found.push(i);
+          if (Math.hypot(e[0] - x, e[1] - y) <= radius) found.push(i);
         }
       }
     }
@@ -49337,21 +50404,44 @@ function walkLoops(edges, weld) {
     const sx = start[0], sy = start[1];
     let cur = seed;
     let joined = false;
+    let slack = false;
     for (let guard2 = 0; guard2 <= edges.length; guard2++) {
       used[cur] = 1;
-      const e = edges[cur];
+      let e = edges[cur];
+      if (curves.length) {
+        const prev = curves[curves.length - 1];
+        if (e[0] !== prev[6] || e[1] !== prev[7]) e = [prev[6], prev[7], e[2], e[3], e[4], e[5], e[6], e[7]];
+      }
       curves.push(e);
       const ex = e[6], ey = e[7];
       if (Math.hypot(ex - sx, ey - sy) <= weld) {
         joined = true;
         break;
       }
-      const options2 = candidatesAt(ex, ey);
-      if (!options2.length) break;
+      let options2 = candidatesAt(ex, ey, weld);
+      if (!options2.length) {
+        options2 = candidatesAt(ex, ey, WALK_SLACK * weld);
+        if (options2.length) slack = true;
+      }
+      if (!options2.length) {
+        const hop = nearestStart(ex, ey, WALK_HOP * weld);
+        if (hop >= 0) {
+          options2 = [hop];
+          slack = true;
+        }
+      }
+      if (!options2.length) {
+        if (Math.hypot(ex - sx, ey - sy) <= WALK_SLACK * weld) slack = true;
+        break;
+      }
       cur = options2.length === 1 ? options2[0] : pickTurn(edges, e, options2);
     }
     if (!curves.length) continue;
-    if (!joined && Math.abs(contourArea({ curves, closed: true })) <= weld * chainSpan(curves)) continue;
+    if ((!joined || slack) && Math.abs(contourArea({ curves, closed: true })) <= weld * chainSpan(curves)) continue;
+    if (joined || slack) {
+      const last = curves[curves.length - 1], first = curves[0];
+      if (last[6] !== first[0] || last[7] !== first[1]) curves[curves.length - 1] = [last[0], last[1], last[2], last[3], last[4], last[5], first[0], first[1]];
+    }
     out.push({ curves, closed: true });
   }
   return out;
@@ -49369,7 +50459,7 @@ function pickTurn(edges, incoming, options2) {
     const d = startTangent(edges[i]);
     let delta = back - Math.atan2(d.y, d.x);
     delta -= Math.floor(delta / (Math.PI * 2)) * (Math.PI * 2);
-    if (delta <= 1e-12) delta = Math.PI * 2;
+    if (delta <= TURN_TIE || delta >= Math.PI * 2 - TURN_TIE) delta = Math.PI * 2;
     if (delta < bestDelta) {
       bestDelta = delta;
       best = i;
@@ -49387,7 +50477,7 @@ function endTangent(c) {
   if (Math.hypot(t.x, t.y) > 1e-12) return t;
   return { x: c[6] - c[0], y: c[7] - c[1] };
 }
-var GeomLimitError, MAX_CURVES, MAX_SPLITS, MAX_PAIRS, MAX_WORK, MAX_CONTACT_NODES, CONTACT_SEED, MAX_CONTACT_LEAVES, T_GUARD, reverseCubic, RAY_DIRS;
+var GeomLimitError, MAX_CURVES, MAX_SPLITS, MAX_PAIRS, MAX_WORK, MAX_CONTACT_NODES, CONTACT_SEED, MAX_CONTACT_LEAVES, T_GUARD, reverseCubic, DECIDE_TS, DECIDE_SPEED, TRACE_SAMPLES, MAX_ALIGN_PAIRS, RAY_DIRS, WALK_SLACK, WALK_HOP, TURN_TIE;
 var init_boolean = __esm({
   "engine/src/geom/boolean.ts"() {
     "use strict";
@@ -49411,7 +50501,14 @@ var init_boolean = __esm({
     MAX_CONTACT_LEAVES = 24;
     T_GUARD = 1e-7;
     reverseCubic = (k) => [k[6], k[7], k[4], k[5], k[2], k[3], k[0], k[1]];
+    DECIDE_TS = [0.5, 0.25, 0.75, 0.375, 0.625];
+    DECIDE_SPEED = 0.1;
+    TRACE_SAMPLES = 7;
+    MAX_ALIGN_PAIRS = 2e6;
     RAY_DIRS = buildRayDirs();
+    WALK_SLACK = 4;
+    WALK_HOP = 64;
+    TURN_TIE = 1e-6;
   }
 });
 
@@ -50048,7 +51145,7 @@ function fitAdaptive(src, t0, t1, tol, b) {
       continue;
     }
     const mid3 = 0.5 * (a + z);
-    if (depth >= MAX_DEPTH || b.out.length + pending.length + 2 > b.max || !(mid3 > a && mid3 < z)) {
+    if (depth >= MAX_DEPTH2 || b.out.length + pending.length + 2 > b.max || !(mid3 > a && mid3 < z)) {
       b.out.push(chordCubic(start.x, start.y, end.x, end.y));
       continue;
     }
@@ -50183,7 +51280,7 @@ function simplifyCubics(curves, tol = DEFAULT_TOL) {
   if (!fitted.length || fitted.length >= curves.length) return curves.slice();
   return fitted;
 }
-var D_PENALTY_ELBOW, D_PENALTY_SLOPE, MAX_ARM_RATIO, N_SAMPLE, SPICY_THRESH, DEFAULT_TOL, DEFAULT_MAX_SEGMENTS, MAX_DEPTH, GL16, REFINE_ITERS, INV_PHI, ARC_SPANS;
+var D_PENALTY_ELBOW, D_PENALTY_SLOPE, MAX_ARM_RATIO, N_SAMPLE, SPICY_THRESH, DEFAULT_TOL, DEFAULT_MAX_SEGMENTS, MAX_DEPTH2, GL16, REFINE_ITERS, INV_PHI, ARC_SPANS;
 var init_fit = __esm({
   "engine/src/geom/fit.ts"() {
     "use strict";
@@ -50196,7 +51293,7 @@ var init_fit = __esm({
     SPICY_THRESH = 0.2;
     DEFAULT_TOL = 0.1;
     DEFAULT_MAX_SEGMENTS = 512;
-    MAX_DEPTH = 20;
+    MAX_DEPTH2 = 20;
     GL16 = [
       [0.1894506104550685, -0.0950125098376374],
       [0.1894506104550685, 0.0950125098376374],
@@ -50614,17 +51711,17 @@ function distanceToPath(p, x, y) {
 function regionProber(region) {
   const box2 = pathBounds(region);
   const curves = region.flatMap((c) => c.curves).map((k) => ({ k, box: boundsCubic(k) }));
-  const reach = box2 ? Math.hypot(box2.x1 - box2.x0, box2.y1 - box2.y0) : 0;
-  const skip = reach * 1e-9;
+  const reach2 = box2 ? Math.hypot(box2.x1 - box2.x0, box2.y1 - box2.y0) : 0;
+  const skip = reach2 * 1e-9;
   const firstCrossing = (m2, dx, dy) => {
-    const x1 = m2.x + dx * reach, y1 = m2.y + dy * reach;
+    const x1 = m2.x + dx * reach2, y1 = m2.y + dy * reach2;
     const lo = { x: Math.min(m2.x, x1), y: Math.min(m2.y, y1) };
     const hi = { x: Math.max(m2.x, x1), y: Math.max(m2.y, y1) };
     let best = null;
     for (const { k, box: b } of curves) {
       if (b.x1 < lo.x || b.x0 > hi.x || b.y1 < lo.y || b.y0 > hi.y) continue;
       for (const hit of intersectLineCubic(m2.x, m2.y, x1, y1, k)) {
-        const at = hit.t1 * reach;
+        const at = hit.t1 * reach2;
         if (at <= skip) continue;
         if (best === null || at < best) best = at;
       }
@@ -50632,7 +51729,7 @@ function regionProber(region) {
     return best;
   };
   return (c, limit = PROBE_CURVES) => {
-    if (!(reach > 0)) return [];
+    if (!(reach2 > 0)) return [];
     const order = [...c.curves].map((k, i) => ({ k, i, span: Math.hypot(k[6] - k[0], k[7] - k[1]) })).sort((a, b) => b.span - a.span || a.i - b.i).slice(0, limit);
     const out = [];
     for (const { k } of order) {
@@ -50642,7 +51739,7 @@ function regionProber(region) {
       const nx = -tan.y, ny = tan.x;
       const hl = firstCrossing(m2, nx, ny);
       const hr = firstCrossing(m2, -nx, -ny);
-      const room = hl === null ? hr : hr === null ? Math.min(hl, reach) : Math.min(hl, hr);
+      const room = hl === null ? hr : hr === null ? Math.min(hl, reach2) : Math.min(hl, hr);
       if (room === null || !(room > 0)) continue;
       const s = room / 2;
       out.push({
@@ -50968,8 +52065,8 @@ function keptContours(resolved2, centreline, r3) {
 function ring(c, r3, off) {
   const cc = closeContour(c);
   const out = [];
-  for (const side of [cc, reverseContour(cc)]) {
-    const sweep = offsetSweep(side, r3, off);
+  for (const side2 of [cc, reverseContour(cc)]) {
+    const sweep = offsetSweep(side2, r3, off);
     if (sweep) out.push(sweep);
   }
   return out;
@@ -50978,7 +52075,7 @@ function openOutline(c, r3, cap, off) {
   const fwd = offsetSide(c, r3, off);
   const back = offsetSide(reverseContour(c), r3, off);
   if (!fwd.length || !back.length) return null;
-  const ahead = endDirection(c);
+  const ahead = endDirection2(c);
   const behind = startDirection(c);
   if (!ahead || !behind) return null;
   const curves = [
@@ -51078,7 +52175,7 @@ function unit(x, y) {
   const l = Math.hypot(x, y);
   return l < 1e-12 ? null : { x: x / l, y: y / l };
 }
-function endDirection(c) {
+function endDirection2(c) {
   for (let i = c.curves.length - 1; i >= 0; i--) {
     const k = c.curves[i];
     const d = unit(k[6] - k[4], k[7] - k[5]) ?? unit(k[6] - k[2], k[7] - k[3]) ?? unit(k[6] - k[0], k[7] - k[1]);
@@ -53348,13 +54445,13 @@ function packBitsEncode(src) {
   let o = 0;
   let i = 0;
   while (i < n2) {
-    let runEnd = i + 1;
-    while (runEnd < n2 && runEnd - i < 128 && src[runEnd] === src[i]) runEnd++;
-    const runLen = runEnd - i;
+    let runEnd2 = i + 1;
+    while (runEnd2 < n2 && runEnd2 - i < 128 && src[runEnd2] === src[i]) runEnd2++;
+    const runLen = runEnd2 - i;
     if (runLen >= 3) {
       out[o++] = 257 - runLen;
       out[o++] = src[i];
-      i = runEnd;
+      i = runEnd2;
     } else {
       let j = i + 1;
       while (j < n2 && j - i < 128) {
@@ -56755,26 +57852,26 @@ function insertAvifExif(bytes, meta) {
   }
 }
 function carryImageMetadata(src, out, opts = {}) {
-  const report = { carried: [], dropped: [] };
+  const report2 = { carried: [], dropped: [] };
   try {
     const meta = extractFileMetadata(src.bytes);
     const fields = pickCarryFields(meta);
     const gpsOn = opts.gps === true;
     if (extractC2paStore(src.bytes)) {
-      report.dropped.push({ field: "content credential", why: "bound to the original bytes" });
+      report2.dropped.push({ field: "content credential", why: "bound to the original bytes" });
     }
-    if (meta.gps && !gpsOn) report.dropped.push({ field: "location", why: "off" });
+    if (meta.gps && !gpsOn) report2.dropped.push({ field: "location", why: "off" });
     if (meta.fields.some((f) => f.group === "capture" || f.group === "device")) {
-      report.dropped.push({ field: "camera and capture details", why: "not carried" });
+      report2.dropped.push({ field: "camera and capture details", why: "not carried" });
     }
     let xmp = extractXmpPacket(src.bytes);
     if (xmp && !gpsOn && /GPS(Latitude|Longitude|Position|Coordinates)/i.test(xmp)) {
       xmp = null;
-      report.dropped.push({ field: "embedded metadata (XMP)", why: "contains location (location off)" });
+      report2.dropped.push({ field: "embedded metadata (XMP)", why: "contains location (location off)" });
     }
     const gps = gpsOn ? meta.gps : void 0;
     const tiff = buildCarryExifTiff(fields, gps);
-    if (!tiff && !xmp) return { bytes: out.bytes, carried: report };
+    if (!tiff && !xmp) return { bytes: out.bytes, carried: report2 };
     let result = null;
     let xmpDropped = false;
     if (out.mime === "image/jpeg") {
@@ -56788,20 +57885,20 @@ function carryImageMetadata(src, out, opts = {}) {
     } else if (out.mime === "image/webp") {
       result = carryIntoWebp(out.bytes, tiff, xmp);
     } else {
-      report.dropped.push({ field: "metadata", why: `no carrier in ${out.mime}` });
-      return { bytes: out.bytes, carried: report };
+      report2.dropped.push({ field: "metadata", why: `no carrier in ${out.mime}` });
+      return { bytes: out.bytes, carried: report2 };
     }
     if (!result || result === out.bytes) {
-      report.dropped.push({ field: "metadata", why: "could not be written to the output" });
-      return { bytes: out.bytes, carried: report };
+      report2.dropped.push({ field: "metadata", why: "could not be written to the output" });
+      return { bytes: out.bytes, carried: report2 };
     }
-    if (xmpDropped) report.dropped.push({ field: "embedded metadata (XMP)", why: "too large for the output format" });
-    for (const spec of META_CARRY_FIELDS) if (fields[spec.key]) report.carried.push(spec.key);
-    if (gps) report.carried.push("location");
-    if (xmp && !xmpDropped) report.carried.push("embedded metadata (XMP)");
-    return { bytes: result, carried: report };
+    if (xmpDropped) report2.dropped.push({ field: "embedded metadata (XMP)", why: "too large for the output format" });
+    for (const spec of META_CARRY_FIELDS) if (fields[spec.key]) report2.carried.push(spec.key);
+    if (gps) report2.carried.push("location");
+    if (xmp && !xmpDropped) report2.carried.push("embedded metadata (XMP)");
+    return { bytes: result, carried: report2 };
   } catch {
-    return { bytes: out.bytes, carried: report };
+    return { bytes: out.bytes, carried: report2 };
   }
 }
 var readU322, xmlEsc, META_CARRY_FIELDS, XMP_JPEG_ID, riffChunk, VP8X_ICC, VP8X_ALPHA, VP8X_EXIF, VP8X_XMP, be16, be322, boxOf;
@@ -58518,8 +59615,8 @@ function computePrintGeometry({ trimWpt, trimHpt, bleedPt = 0, marks = {}, palet
   const { markLengthPt: L, markReachPt: R2, regRadiusPt: rr, regCrossPt: rc, barCellPt: bc, barPairGapPt: bg, barGroupGapPt: bgap, barMaxCells: bmax, labelSizePt: ls, labelInsetPt: li } = PRINT_MARK_DEFAULTS;
   const cellR = Math.max(0, Math.min(barRadiusPt, bc / 2));
   const anyMark = m2.crop || m2.registration || m2.bleed || m2.colorBars || m2.provenance;
-  const reach = anyMark ? R2 : 0;
-  const M2 = bleedPt + reach;
+  const reach2 = anyMark ? R2 : 0;
+  const M2 = bleedPt + reach2;
   const pageW = trimWpt + 2 * M2;
   const pageH = trimHpt + 2 * M2;
   const trim2 = { x: M2, y: M2, w: trimWpt, h: trimHpt };
@@ -58557,14 +59654,14 @@ function computePrintGeometry({ trimWpt, trimHpt, bleedPt = 0, marks = {}, palet
       line(cx, cy - rc, cx, cy + rc, "registration");
       line(cx - rc, cy, cx + rc, cy, "registration");
     };
-    const midX = pageW / 2, midY = pageH / 2, half = reach / 2;
+    const midX = pageW / 2, midY = pageH / 2, half = reach2 / 2;
     reg(midX, bT - half);
     reg(midX, bB + half);
     reg(bL - half, midY);
     reg(bR + half, midY);
   }
   if (m2.colorBars) {
-    const y = bB + reach / 2 - bc / 2;
+    const y = bB + reach2 / 2 - bc / 2;
     const maxX = m2.registration ? pageW / 2 - rc - 6 : pageW - M2;
     let x = trimL;
     if (palette.length && barStyle === "rgb-swatches") {
@@ -58601,10 +59698,10 @@ function computePrintGeometry({ trimWpt, trimHpt, bleedPt = 0, marks = {}, palet
       }
     }
   }
-  if (m2.provenance && reach > 0) {
+  if (m2.provenance && reach2 > 0) {
     labels.push({ slot: "topLeft", x: trimL + li, y: li + ls, size: ls, rotation: 0, align: "left", mark: "label" });
     labels.push({ slot: "topRight", x: trimR - li, y: li + ls, size: ls, rotation: 0, align: "right", mark: "label" });
-    labels.push({ slot: "bottomLeftUp", x: reach / 2, y: trimB - li, size: ls, rotation: 90, align: "left", mark: "label" });
+    labels.push({ slot: "bottomLeftUp", x: reach2 / 2, y: trimB - li, size: ls, rotation: 90, align: "left", mark: "label" });
   }
   return {
     page: { w: pageW, h: pageH },
@@ -63114,8 +64211,8 @@ function analyzeTextSignals(text4, opts) {
     summary: summaryFor(band, score, pixelSourced, docKind, findings.length)
   };
 }
-function applyModelEstimate(report, estimate) {
-  if (!(estimate.probAi >= estimate.threshold)) return report;
+function applyModelEstimate(report2, estimate) {
+  if (!(estimate.probAi >= estimate.threshold)) return report2;
   const pct = Math.round(estimate.probAi * 100);
   const finding3 = {
     tier: "heuristic",
@@ -63125,9 +64222,9 @@ function applyModelEstimate(report, estimate) {
     weight: estimate.probAi,
     heat: 0.7
   };
-  const capped = AI_BAND_ORDER.indexOf(report.band) >= AI_BAND_ORDER.indexOf("notable") ? report.band : "notable";
-  const score = report.band === "strong" ? report.score : Math.min(Math.max(report.score, pct), 79);
-  return { ...report, band: capped, score, findings: [finding3, ...report.findings] };
+  const capped = AI_BAND_ORDER.indexOf(report2.band) >= AI_BAND_ORDER.indexOf("notable") ? report2.band : "notable";
+  const score = report2.band === "strong" ? report2.score : Math.min(Math.max(report2.score, pct), 79);
+  return { ...report2, band: capped, score, findings: [finding3, ...report2.findings] };
 }
 var KIND_HEAT, heatOf, INVISIBLE_CORE, ZW_JOINERS, TAG_CHARS, VS_SUPPLEMENTARY, VS_BMP_RUN, BIDI_OVERRIDE, ANOMALOUS_SPACE, PICTOGRAPHIC, CONFUSABLE_WITH_LATIN, withinSpans, WORD_RE, HEAT_WINDOW_WORDS, HEAT_MIN_WORDS, STYLE_CAP, BOILERPLATE_CAP, DECAY, AI_BAND_ORDER;
 var init_text_signals = __esm({
@@ -63959,12 +65056,12 @@ function parseScriptMarks(text4, opts = {}) {
       mark = { kind: "speed", speed: m2[4].toLowerCase() === "slow" ? SLOW_SPEED : FAST_SPEED };
     } else if (m2[5] !== void 0) mark = { kind: "speed", speed: clampSpeed(Number(m2[5])) };
     else mark = { kind: "pause", seconds: m2[3] === void 0 ? PAUSE_DEFAULT_S : Number(m2[3]) };
-    const sentinel = String.fromCodePoint(SENTINEL_BASE + marks.length);
+    const sentinel2 = String.fromCodePoint(SENTINEL_BASE + marks.length);
     if (/\s/.test(word)) phrases.add(marks.length);
     marks.push(mark);
     words.push(word);
     stripped += word;
-    seeded += word.replace(/\s+/g, PHRASE_SPACE) + sentinel;
+    seeded += word.replace(/\s+/g, PHRASE_SPACE) + sentinel2;
   }
   stripped += text4.slice(prev);
   seeded += text4.slice(prev);
@@ -65110,12 +66207,12 @@ function gaussianShadowBands(blur, alpha, bands) {
   const sigma = blur / 2;
   if (!(sigma > 0) || !(alpha > 0)) return [];
   const n2 = Math.max(8, Math.min(bands ?? 160, Math.round(4 * sigma)));
-  const reach = 3 * sigma;
-  const step = 2 * reach / n2;
+  const reach2 = 3 * sigma;
+  const step = 2 * reach2 / n2;
   const out = [];
   let acc = 0;
   for (let i = 0; i < n2; i++) {
-    const outer = reach - i * step;
+    const outer = reach2 - i * step;
     const target = alpha * (1 - normalCdf((outer - step / 2) / sigma));
     if (target <= acc) continue;
     const a = (target - acc) / (1 - acc);
@@ -68311,7 +69408,7 @@ function stripFntDataDefault(xml) {
 }
 function rebrandPptxParts(parts, plan = {}) {
   const out = {};
-  const report = {
+  const report2 = {
     themesPatched: 0,
     colorsRemapped: 0,
     fontsRemapped: 0,
@@ -68325,7 +69422,7 @@ function rebrandPptxParts(parts, plan = {}) {
   for (const [path, value] of Object.entries(parts)) {
     const p = norm(path);
     if (drop && isFntData(p)) {
-      report.embeddedFontsStripped++;
+      report2.embeddedFontsStripped++;
       continue;
     }
     const inScope = theme && isTheme(p) || colorMap && isColorRemapPart(p) || fontMap && isFontRemapPart(p) || drop && (isPresentation(p) || isPresentationRels(p) || isContentTypes(p));
@@ -68342,17 +69439,17 @@ function rebrandPptxParts(parts, plan = {}) {
     if (theme && isTheme(p)) {
       const r3 = patchTheme(text4, theme);
       text4 = r3.text;
-      if (r3.changed) report.themesPatched++;
+      if (r3.changed) report2.themesPatched++;
     }
     if (colorMap && isColorRemapPart(p)) {
       const r3 = remapColors(text4, colorMap);
       text4 = r3.text;
-      report.colorsRemapped += r3.count;
+      report2.colorsRemapped += r3.count;
     }
     if (fontMap && isFontRemapPart(p)) {
       const r3 = remapFonts(text4, fontMap);
       text4 = r3.text;
-      report.fontsRemapped += r3.count;
+      report2.fontsRemapped += r3.count;
     }
     if (drop && isPresentation(p)) text4 = stripEmbeddedFontLst(text4);
     if (drop && isPresentationRels(p)) text4 = stripFontRels(text4);
@@ -68361,10 +69458,10 @@ function rebrandPptxParts(parts, plan = {}) {
       out[path] = value;
       continue;
     }
-    if (isSlide(p)) report.slidesTouched.push(path);
+    if (isSlide(p)) report2.slidesTouched.push(path);
     out[path] = typeof value === "string" ? text4 : ENC.encode(text4);
   }
-  return { parts: out, report };
+  return { parts: out, report: report2 };
 }
 var MAX_PART_CHARS, DEC, ENC, SLOT_ORDER, norm, isTheme, isSlide, isLayout, isMaster, isChart, isDiagramColors, isPresentation, isTableStyles, isPresentationRels, isContentTypes, isFntData, isColorRemapPart, isFontRemapPart, reEsc;
 var init_pptx_patch = __esm({
@@ -70988,13 +72085,13 @@ function sourceFrom(record10) {
   };
   return { ...partial, credit: creditFor(partial) };
 }
-function rightsReportFromC2pa(report) {
-  const ingredients = report.ingredients ?? [];
+function rightsReportFromC2pa(report2) {
+  const ingredients = report2.ingredients ?? [];
   const recorded = ingredients.map(sourceFrom);
   const credentialed = recorded.filter((source) => source.carried.credentialed).length;
   const limits = [];
-  if (!report.found) limits.push("This file carries no Content Credential, so no source list was read from it.");
-  else if (report.state !== "valid") limits.push("The credential did not verify, so every rights statement in it is an unchecked assertion.");
+  if (!report2.found) limits.push("This file carries no Content Credential, so no source list was read from it.");
+  else if (report2.state !== "valid") limits.push("The credential did not verify, so every rights statement in it is an unchecked assertion.");
   if (ingredients.length) {
     limits.push("This list is what the signer declared. It is not a check that every work in the pixels was identified.");
     limits.push("Whether a readable credit travels beside this file was not inspected.");
@@ -71002,17 +72099,17 @@ function rightsReportFromC2pa(report) {
   const unnamed = recorded.filter((source) => !source.creator || !source.licence).length;
   if (unnamed) limits.push(`${unnamed} of ${recorded.length} recorded sources are missing a creator or a licence.`);
   return {
-    summary: summaryFor2(report, recorded, credentialed),
+    summary: summaryFor2(report2, recorded, credentialed),
     recorded,
     carried: { ingredients: ingredients.length, credentialed, recorded: recorded.length - credentialed, limits },
     reuse: null,
-    ownRights: report.rights ?? null
+    ownRights: report2.rights ?? null
   };
 }
-function summaryFor2(report, recorded, credentialed) {
+function summaryFor2(report2, recorded, credentialed) {
   const parts = [];
-  if (!report.found) parts.push("No Content Credential was found in this file.");
-  else if (report.state === "valid") parts.push("Credential intact.");
+  if (!report2.found) parts.push("No Content Credential was found in this file.");
+  else if (report2.state === "valid") parts.push("Credential intact.");
   else parts.push("The credential did not verify.");
   if (!recorded.length) {
     parts.push("It records no creative sources.");
@@ -71025,13 +72122,13 @@ function summaryFor2(report, recorded, credentialed) {
     else if (exporter) parts.push(exporter === 1 ? "The exporter recorded it; the source did not sign a credential of its own." : "The exporter recorded them; the sources did not sign credentials of their own.");
     else parts.push(count2 === 1 ? "The source signed its own credential." : "The sources signed their own credentials.");
   }
-  if (report.rights) parts.push("The composition's own rights statement is separate from its sources'.");
+  if (report2.rights) parts.push("The composition's own rights statement is separate from its sources'.");
   return parts.join(" ");
 }
-function evaluateReuse(report, context, options2 = {}) {
+function evaluateReuse(report2, context, options2 = {}) {
   const works = [];
   const uses = [];
-  for (const [index2, record10] of (report.ingredients ?? []).entries()) {
+  for (const [index2, record10] of (report2.ingredients ?? []).entries()) {
     const rights = record10.rights;
     const id2 = record10.instanceId ?? rights?.sourceUrl ?? record10.data?.url ?? `ingredient-${index2 + 1}`;
     const work = {
@@ -79392,8 +80489,8 @@ function cluster(items2) {
           const [ra, rectA] = list2[a];
           const [rb, rectB] = list2[b];
           if (find(ra) === find(rb)) continue;
-          const reach = Math.min(diagonal(rectA), diagonal(rectB)) * GROUP_REACH;
-          if (gapBetween(rectA, rectB) <= Math.max(gap, reach)) {
+          const reach2 = Math.min(diagonal(rectA), diagonal(rectB)) * GROUP_REACH;
+          if (gapBetween(rectA, rectB) <= Math.max(gap, reach2)) {
             join16(ra, rb);
             merged = true;
           }
@@ -79703,11 +80800,11 @@ function findGutters(items2, bodySize) {
   const spans = items2.map((i) => [i.x, Math.max(i.right, i.x + 1)]).sort((a, b) => a[0] - b[0]);
   if (!spans.length) return [];
   const cuts = [];
-  let reach = spans[0][1];
+  let reach2 = spans[0][1];
   for (const [x0, x1] of spans) {
-    const gap = x0 - reach;
-    if (gap >= bodySize * GUTTER_SIZES) cuts.push({ x: (reach + x0) / 2, gap });
-    reach = Math.max(reach, x1);
+    const gap = x0 - reach2;
+    if (gap >= bodySize * GUTTER_SIZES) cuts.push({ x: (reach2 + x0) / 2, gap });
+    reach2 = Math.max(reach2, x1);
   }
   return cuts.slice(0, MAX_COLUMNS - 1);
 }
@@ -86806,7 +87903,7 @@ async function applyPreparation(sources, inspection, choices2, removeScopes = []
     }
   }
   const after = await inspectPreparation(outputs, inspection.rules, { ...options2, progress: (p) => options2.progress?.({ ...p, phase: "output" }) });
-  const report = {
+  const report2 = {
     version: 1,
     operation: "prepare-for-sharing",
     execution: "device",
@@ -86832,8 +87929,8 @@ async function applyPreparation(sources, inspection, choices2, removeScopes = []
     limitations: GENERAL_LIMITS,
     ...failed.size ? { stages: [...failed].map((sourceId) => ({ sourceId, operation: "replace-values", status: "failed", inputSha256: fresh.inspection.sources.find((s) => s.id === sourceId).sha256, outputSha256: after.sources.find((s) => s.id === sourceId).sha256, limitations: ["Selected changes failed. Original retained."] })) } : {}
   };
-  report.replaced = report.scopes.reduce((n2, s) => n2 + s.replaced, 0);
-  return { outputs, report, inspection: after };
+  report2.replaced = report2.scopes.reduce((n2, s) => n2 + s.replaced, 0);
+  return { outputs, report: report2, inspection: after };
 }
 function createPrepareAPI() {
   return { inspect: inspectPreparation, apply: applyPreparation };
@@ -88215,7 +89312,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
     }
     case "redact": {
       const literals = s("literals").split("\n").filter(Boolean);
-      const report = inspectPrivateText(
+      const report2 = inspectPrivateText(
         text4,
         literals.map((value, i) => ({
           id: `text-${i}`,
@@ -88228,7 +89325,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       const values = /* @__PURE__ */ new Map();
       out = replacePrivateSpans(
         text4,
-        report.spans.map((span) => {
+        report2.spans.map((span) => {
           let alias = values.get(span.value);
           if (!alias) {
             alias = `[PRIVATE_${values.size + 1}]`;
@@ -88239,11 +89336,11 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
           return { span, replacement: alias };
         })
       );
-      details = { aliases: map, findings: report.spans };
+      details = { aliases: map, findings: report2.spans };
       notes.push(
         "Review suggestions before replacing. The alias map contains the original private values."
       );
-      if (report.truncated) notes.push("The finding limit was reached. Review the remaining text.");
+      if (report2.truncated) notes.push("The finding limit was reached. Review the remaining text.");
       break;
     }
     case "restore": {
@@ -88262,8 +89359,8 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       break;
     }
     case "logs": {
-      const report = parseTextLogs(text4);
-      const visible = filterTextLogs(report.events, {
+      const report2 = parseTextLogs(text4);
+      const visible = filterTextLogs(report2.events, {
         query: s("query"),
         exact: s("match") === "exact",
         severity: s("severity"),
@@ -88272,10 +89369,10 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
         until: s("until")
       });
       const groups = groupTextLogs(visible);
-      details = { ...report, visible, groups };
+      details = { ...report2, visible, groups };
       out = visible.map((e) => e.raw).join("");
       notes.push(
-        `${visible.length} of ${report.events.length} events. Unclassified lines are retained.`
+        `${visible.length} of ${report2.events.length} events. Unclassified lines are retained.`
       );
       if (s("from") || s("until"))
         notes.push("Time filters omit events without a complete date and timestamp.");
@@ -89962,8 +91059,8 @@ function travel(units2, amount) {
 }
 function squash2(pose, drop) {
   const up = Math.max(MIN_SCALE, 1 - drop);
-  const side = 1 / Math.sqrt(up);
-  pose.scale = [side, up, side];
+  const side2 = 1 / Math.sqrt(up);
+  pose.scale = [side2, up, side2];
 }
 function studioObjectPose(scene, time, clipSeconds) {
   const motion = scene.motion;
@@ -93556,7 +94653,7 @@ function count(n2, one, many = `${one}s`) {
   return `${n2} ${n2 === 1 ? one : many}`;
 }
 function walkNameTree(ctx, node, out, seen = /* @__PURE__ */ new Set(), depth = 0) {
-  if (depth > MAX_DEPTH2 || out.length >= MAX_ITEMS) return out;
+  if (depth > MAX_DEPTH3 || out.length >= MAX_ITEMS) return out;
   const tag2 = refTag(node);
   if (tag2) {
     if (seen.has(tag2)) return out;
@@ -93625,7 +94722,7 @@ function emptySink() {
   return { scripts: [], uris: [], launches: [], submits: [], remotes: [] };
 }
 function walkAction(ctx, action, sink, seen, depth = 0) {
-  if (depth > MAX_DEPTH2) return;
+  if (depth > MAX_DEPTH3) return;
   const tag2 = refTag(action);
   if (tag2) {
     if (seen.has(tag2)) return;
@@ -93704,7 +94801,7 @@ function fieldValue(ctx, v) {
   return null;
 }
 function walkFields(ctx, node, out, seen, prefix = "", inheritedType = null, depth = 0) {
-  if (depth > MAX_DEPTH2 || out.length >= MAX_ITEMS) return;
+  if (depth > MAX_DEPTH3 || out.length >= MAX_ITEMS) return;
   const tag2 = refTag(node);
   if (tag2) {
     if (seen.has(tag2)) return;
@@ -93856,11 +94953,11 @@ function scanPdfStructure(doc) {
   if (pages.length) add("Pages", count(pages.length, "page"));
   return out;
 }
-var MAX_DEPTH2, MAX_ITEMS, LIST_CAP, DETAIL_CAP, NON_MARKUP;
+var MAX_DEPTH3, MAX_ITEMS, LIST_CAP, DETAIL_CAP, NON_MARKUP;
 var init_pdf_structure = __esm({
   "packages/node-shell/src/pdf-structure.ts"() {
     "use strict";
-    MAX_DEPTH2 = 32;
+    MAX_DEPTH3 = 32;
     MAX_ITEMS = 500;
     LIST_CAP = 8;
     DETAIL_CAP = 400;
@@ -95111,22 +96208,22 @@ init_src2();
 function cleanControlChars(v) {
   return String(v).replace(/[\u0000-\u001f\u007f-\u009f]/g, " ");
 }
-function verdictFacts(report) {
-  const c = report.claim;
+function verdictFacts(report2) {
+  const c = report2.claim;
   if (!c) return [];
-  const s = report.signer ?? {};
-  const env = report.environment ?? {};
+  const s = report2.signer ?? {};
+  const env = report2.environment ?? {};
   const signedAt = c.actions?.find((a) => a.when)?.when;
   const generator = c.generatorInfo?.name ? `${c.generatorInfo.name}${c.generatorInfo.version ? " " + c.generatorInfo.version : ""}` : c.claimGenerator;
-  const id2 = report.signer?.identity;
+  const id2 = report2.signer?.identity;
   const raw = [
     ["Title", c.title],
-    ["Identity", report.trusted && id2 && `${id2.email || s.commonName}${id2.issuer ? ` - verified by ${id2.issuer}` : ""}`],
+    ["Identity", report2.trusted && id2 && `${id2.email || s.commonName}${id2.issuer ? ` - verified by ${id2.issuer}` : ""}`],
     ["Tool", env.tool],
-    ["Produced by", report.author && `${report.author.name}${report.author.email ? ` <${report.author.email}>` : ""}`],
-    ["Contact", report.author?.url],
-    ["Rights / licence", report.rights],
-    [report.delivered ? "Delivered by" : "Made with", generator],
+    ["Produced by", report2.author && `${report2.author.name}${report2.author.email ? ` <${report2.author.email}>` : ""}`],
+    ["Contact", report2.author?.url],
+    ["Rights / licence", report2.rights],
+    [report2.delivered ? "Delivered by" : "Made with", generator],
     ["Signed", signedAt],
     ["Where", [env.surface, env.engine, env.os].filter(Boolean).join(" \xB7 ")],
     ["Signer", s.commonName],
@@ -95138,16 +96235,16 @@ function verdictFacts(report) {
   for (const [k, v] of raw) if (v) out.push([k, cleanControlChars(v)]);
   return out;
 }
-function verdictChecks(report) {
-  return report.checks.map((chk) => ({
+function verdictChecks(report2) {
+  return report2.checks.map((chk) => ({
     mark: chk.ok ? "ok" : chk.code === "signingCredential.untrusted" ? "info" : "bad",
     code: cleanControlChars(chk.code),
     explanation: cleanControlChars(chk.explanation)
   }));
 }
-function verdictSources(report) {
-  if (!report.ingredients?.length) return null;
-  const rights = rightsReportFromC2pa(report);
+function verdictSources(report2) {
+  if (!report2.ingredients?.length) return null;
+  const rights = rightsReportFromC2pa(report2);
   return {
     summary: cleanControlChars(rights.summary),
     sources: rights.recorded.map((source) => ({
@@ -95658,14 +96755,14 @@ async function rebrandPptx(bytes, plan) {
     if (fontMap.size > 0) enginePlan.fontMap = fontMap;
   }
   if (plan?.dropEmbeddedFonts === true) enginePlan.dropEmbeddedFonts = true;
-  const { parts: outParts, report } = rebrandPptxParts2(parts, enginePlan);
+  const { parts: outParts, report: report2 } = rebrandPptxParts2(parts, enginePlan);
   const { zipSync: zipSync3 } = await import("fflate");
   const enc5 = new TextEncoder();
   const files = {};
   for (const [path, content2] of Object.entries(outParts)) {
     files[path] = typeof content2 === "string" ? enc5.encode(content2) : content2;
   }
-  return { bytes: zipSync3(files), report };
+  return { bytes: zipSync3(files), report: report2 };
 }
 function createPptxAPI(opts = {}) {
   const parseXml = opts.parseXml ?? ((xml) => new DOMParser().parseFromString(xml, "application/xml"));
@@ -96662,8 +97759,8 @@ function createNodeTextAPI({ repoRoot: repoRoot2 }) {
       const pool = matches3.filter((f) => f.url.startsWith(dir.url));
       const variable = pool.find((f) => f.variable);
       if (variable) return { url: variable.url, variations: [`wght=${weight}`] };
-      const nearest2 = pool.reduce((a, b) => Math.abs(b.weight - weight) < Math.abs(a.weight - weight) ? b : a);
-      return { url: nearest2.url };
+      const nearest3 = pool.reduce((a, b) => Math.abs(b.weight - weight) < Math.abs(a.weight - weight) ? b : a);
+      return { url: nearest3.url };
     }
   };
 }
@@ -101798,8 +102895,8 @@ async function rightsResult(evaluation, bytes) {
   let creditsInFile = false;
   if (evaluation.plan.required.length) {
     try {
-      const report = await verifyC2pa(bytes);
-      creditsInFile = checkAttributionReadback(evaluation.plan, report).state === "readback-confirmed";
+      const report2 = await verifyC2pa(bytes);
+      creditsInFile = checkAttributionReadback(evaluation.plan, report2).state === "readback-confirmed";
     } catch {
     }
   }
@@ -102546,9 +103643,9 @@ function validateToolInputs(manifest, inputs) {
   }
   return { ok: errors.length === 0, errors, warnings, info, ...design ? { design } : {} };
 }
-function invalidInputs(report) {
-  const summary = report.errors.map((item) => `${item.path}: ${item.message}`).join("\n");
-  return errorResult(`Invalid inputs (${report.errors.length}):
+function invalidInputs(report2) {
+  const summary = report2.errors.map((item) => `${item.path}: ${item.message}`).join("\n");
+  return errorResult(`Invalid inputs (${report2.errors.length}):
 ${summary}
 
 Call lolly_validate for the complete report.`);
@@ -102613,18 +103710,18 @@ function exampleLooks(m2, cap) {
   return ex.slice(0, cap).map((v) => ({ ...v.label ? { label: v.label } : {}, inputs: v.values }));
 }
 var clean = cleanControlChars;
-function verifyVerdict(report) {
-  const resolved2 = resolveVerdict(report);
+function verifyVerdict(report2) {
+  const resolved2 = resolveVerdict(report2);
   return { ...VERDICT_SLUGS[resolved2.state], resolved: resolved2 };
 }
-function verifyText(name, report, headline) {
-  const lines = [`${name}${report.format ? `  [${report.format}]` : ""}`, headline];
-  if (report.reason && report.state !== "invalid") lines.push(`  ${clean(report.reason)}`);
-  if (report.claim && !report.madeWithLolly) {
-    lines.push(report.trusted ? "  (fields below are the CA-verified signer's own claim)" : "  (fields below are self-asserted by whoever signed the file)");
+function verifyText(name, report2, headline) {
+  const lines = [`${name}${report2.format ? `  [${report2.format}]` : ""}`, headline];
+  if (report2.reason && report2.state !== "invalid") lines.push(`  ${clean(report2.reason)}`);
+  if (report2.claim && !report2.madeWithLolly) {
+    lines.push(report2.trusted ? "  (fields below are the CA-verified signer's own claim)" : "  (fields below are self-asserted by whoever signed the file)");
   }
-  for (const [k, v] of verdictFacts(report)) lines.push(`  ${k.padEnd(11)} ${v}`);
-  const history = report.history ?? [];
+  for (const [k, v] of verdictFacts(report2)) lines.push(`  ${k.padEnd(11)} ${v}`);
+  const history = report2.history ?? [];
   if (history.length) {
     lines.push("Edit history (incl. ingredient/parent manifests):");
     for (const h of history) {
@@ -102632,11 +103729,11 @@ function verifyText(name, report, headline) {
       lines.push(`  - ${clean(h.action)}${h.when ? ` @ ${clean(h.when)}` : ""}${who ? ` (${clean(who)})` : ""}${h.description ? ` - ${clean(h.description)}` : ""}`);
     }
   }
-  for (const chk of verdictChecks(report)) {
+  for (const chk of verdictChecks(report2)) {
     const mark = chk.mark === "ok" ? "\u2713" : chk.mark === "info" ? "\u2139" : "\u2715";
     lines.push(`  ${mark} ${chk.code} - ${chk.explanation}`);
   }
-  const sources = verdictSources(report);
+  const sources = verdictSources(report2);
   if (sources) {
     lines.push("Sources:", `  ${sources.summary}`);
     for (const s of sources.sources) {
@@ -102883,17 +103980,17 @@ Rights: ${result.rights.status}` + result.rights.issues.map((issue2) => `
         const file = args.file;
         if (!file?.base64) return errorResult("file.base64 is required.");
         const bytes = Uint8Array.from(Buffer.from(file.base64, "base64"));
-        const report = await verifyC2pa(bytes, { trustAnchors: defaultTrustAnchors({ includeLollyRoot: true }) });
+        const report2 = await verifyC2pa(bytes, { trustAnchors: defaultTrustAnchors({ includeLollyRoot: true }) });
         let metadata = null;
         try {
           metadata = extractFileMetadata(bytes);
         } catch {
         }
-        const { verdict, headline, resolved: resolved2 } = verifyVerdict(report);
-        const rights = verdictSources(report);
+        const { verdict, headline, resolved: resolved2 } = verifyVerdict(report2);
+        const rights = verdictSources(report2);
         return {
           content: [
-            { type: "text", text: verifyText(file.name ?? "file", report, headline) },
+            { type: "text", text: verifyText(file.name ?? "file", report2, headline) },
             // `verdict` (legacy slug) and `report` are the compatibility surface.
             // Shapes unchanged; `resolved` is ADDITIVE: the engine's semantic
             // verdict (state/tone + the flags that drove it) from resolveVerdict.
@@ -102901,7 +103998,7 @@ Rights: ${result.rights.status}` + result.rights.issues.map((issue2) => `
             // the file records about its creative sources, in the engine's own
             // wording, with stable per-source facts an agent can act on. Absent
             // when the file records no sources.
-            { type: "text", text: JSON.stringify({ verdict, resolved: resolved2, report, metadata, ...rights ? { rights } : {} }, null, 2) }
+            { type: "text", text: JSON.stringify({ verdict, resolved: resolved2, report: report2, metadata, ...rights ? { rights } : {} }, null, 2) }
           ]
         };
       }
@@ -103403,7 +104500,7 @@ var PrivateFileResources = class {
     if (!entry2 || entry2.owner !== owner || entry2.expires <= Date.now()) throw new Error("File handle not found or expired.");
     return entry2;
   }
-  async save(owner, file, role, source, report) {
+  async save(owner, file, role, source, report2) {
     const release = this.reserve(owner, file.size);
     const id2 = randomUUID();
     let path;
@@ -103413,7 +104510,7 @@ var PrivateFileResources = class {
       const facts2 = await describeOperationFile(file);
       await writeFile3(path, Buffer.from(await file.arrayBuffer()), { flag: "wx", mode: 384 });
       const ref = { id: id2, version: facts2.sha256, role, facts: facts2, ...source ? { derivedFrom: { id: source.ref.id, version: source.ref.version, sha256: source.ref.facts.sha256 } } : {} };
-      this.entries.set(id2, { owner, ref, expires: Date.now() + TTL_MS, path, report });
+      this.entries.set(id2, { owner, ref, expires: Date.now() + TTL_MS, path, report: report2 });
       return ref;
     } catch (error) {
       if (path) await unlink(path).catch(() => {
