@@ -228,8 +228,9 @@ export function booleanPath(a: GeomPath, b: GeomPath, op: BooleanOp, opts: Boole
 
   const kept: Cubic[] = [];
   for (const e of edges) {
-    const m = evalCubic(e, 0.5);
-    const ref = midTangent(e);
+    const tm = decideAt(e);
+    const m = evalCubic(e, tm);
+    const ref = midTangent(e, tm);
     // Always A then B, never "own then other": difference is the one operator that
     // cares which operand is which, and a piece of B classified as if it were a piece
     // of A turns A−B silently into a union.
@@ -314,16 +315,23 @@ export function selfUnion(p: GeomPath, opts: BooleanOptions = {}): GeomPath {
   if (path.length === 1 && !splits.some((s) => s.length) && !selfTouching(path[0]!, weld)) {
     const only = path[0]!;
     const probe = only.curves[0]!;
-    const m = evalCubic(probe, 0.5);
-    const ref = midTangent(probe);
+    // Decided where the curve has a direction, as every piece is: probed at its midpoint,
+    // a contour whose first curve is a cusp was asked at the apex, where the tangent is
+    // zero, every line through the point touches the curve rather than crossing it, and the
+    // side test had nothing to count the curve's own passage with. One orientation was
+    // then a coin toss, and a union with that operand came back as a fifth of itself.
+    const tm = decideAt(probe);
+    const m = evalCubic(probe, tm);
+    const ref = midTangent(probe, tm);
     const w = sideWindings(idx, m.x, m.y, ref.x, ref.y, near, budget);
     return [filled(w.left, rule) ? only : reverseContour(only)];
   }
 
   const kept: Cubic[] = [];
   for (const c of splitIntoEdges(idx.curves, splits, weld)) {
-    const m = evalCubic(c, 0.5);
-    const ref = midTangent(c);
+    const tm = decideAt(c);
+    const m = evalCubic(c, tm);
+    const ref = midTangent(c, tm);
     const w = sideWindings(idx, m.x, m.y, ref.x, ref.y, near, budget);
     const left = filled(w.left, rule), right = filled(w.right, rule);
     if (left === right) continue;
@@ -511,12 +519,40 @@ const reverseCubic = (k: Cubic): Cubic => [k[6], k[7], k[4], k[5], k[2], k[3], k
 /** Direction at the midpoint, falling back to the chord - a cubic's derivative
  *  vanishes at a cusp, and a zero reference vector would make every side test
  *  meaningless rather than merely imprecise. */
-function midTangent(c: Cubic): { x: number; y: number } {
-  const t = tangentAt(c, 0.5);
+function midTangent(c: Cubic, at = 0.5): { x: number; y: number } {
+  const t = tangentAt(c, at);
   if (Math.hypot(t.x, t.y) > 1e-12) return t;
   const dx = c[6] - c[0], dy = c[7] - c[1];
   if (Math.hypot(dx, dy) > 1e-12) return { x: dx, y: dy };
   return { x: 1, y: 0 };
+}
+
+/** Parameters tried for a piece's decision point, in order of preference. */
+const DECIDE_TS = [0.5, 0.25, 0.75, 0.375, 0.625];
+/** The speed at the midpoint, as a share of the piece's extent, below which the midpoint is
+ *  treated as stationary and the decision point moves. A cubic's speed is of the order of its
+ *  extent away from a cusp; at a cusp it is zero, and a piece with a cusp or a very tight turn
+ *  at its midpoint has no direction there for the side test to use, while the other branch of
+ *  the cusp passes within the weld radius of the point and reads as a curve through it. */
+const DECIDE_SPEED = 0.1;
+
+/**
+ * Where along a piece its side is decided: the midpoint, unless the piece is nearly
+ * stationary there, in which case the parameter with the most speed among a few
+ * candidates. A whole cusp curve (its tangent vanishes at exactly t = 0.5 for the symmetric
+ * cusp) reaches the side test as one piece whenever the intersector does not cut it, and its
+ * two copies were decided differently at the apex.
+ */
+function decideAt(c: Cubic): number {
+  const ext = extent(c);
+  let bestT = 0.5, bestS = -1;
+  for (const t of DECIDE_TS) {
+    const d = tangentAt(c, t);
+    const sp = Math.hypot(d.x, d.y);
+    if (t === 0.5 && sp >= DECIDE_SPEED * ext) return 0.5;
+    if (sp > bestS) { bestS = sp; bestT = t; }
+  }
+  return bestT;
 }
 
 // ── splitting ─────────────────────────────────────────────────────────────────
@@ -1091,12 +1127,18 @@ function castRay(
         net += Math.sign(tg.x * ref.x + tg.y * ref.y);
         continue;
       }
-      const mag = Math.hypot(tg.x, tg.y);
-      const cr = ux * tg.y - uy * tg.x;
+      // Which way the curve crosses the ray's line, read from the sign change of its distance
+      // to the line at the root rather than from the tangent there: at the apex of a cusp
+      // the tangent is a rounding-sized vector pointing anywhere, and a ray through the apex
+      // (the bottom of a cusp shape, probed at its midpoint) counted that crossing with a
+      // sign of its own, so the bottom read as filled on both sides and was deleted. A root
+      // the curve touches without crossing has direction 0, which is the graze the old
+      // tangent test was looking for and could only guess at.
+      const cr = hit.dir ?? Math.sign(ux * tg.y - uy * tg.x);
       // Three degeneracies a rotated ray does avoid: a hit at a curve end would be counted
       // once per adjoining curve, a tangential graze has no side at all, and a hit just
       // outside the bundle radius cannot be told from one inside it.
-      const sideless = mag < 1e-12 || Math.abs(cr) < 1e-6 * mag;
+      const sideless = cr === 0;
       if (sideless || t < T_GUARD || t > 1 - T_GUARD || (ref !== null && s <= near * 32)) {
         ok = false;
         if (!complete) return { far, net, ok };

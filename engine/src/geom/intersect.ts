@@ -28,6 +28,15 @@
  * cannot make progress: near-tangential contact, where the fat line barely clips
  * anything.
  *
+ * ## The root solve is by isolation, and it carries a direction
+ *
+ * `cubicRoots01` finds its roots between the derivative's zeros rather than from Cardano's
+ * formula, reports a repeated root once, and hands each root the sign the cubic changes by
+ * there. That direction reaches a caller as `Intersection.dir` on the line paths, and the
+ * boolean's ray cast counts a crossing from it instead of from the tangent at the root,
+ * which at the apex of a cusp is a rounding-sized vector pointing anywhere. See
+ * `cubicRoots01` for what the closed form got wrong and where.
+ *
  * ## What "clean" means here
  *
  * Results are parameters on the ORIGINAL curves. The point is then computed FROM the
@@ -47,6 +56,13 @@ export interface Intersection {
   t2: number;
   x: number;
   y: number;
+  /** Set by `intersectLineCubic` only: which way the curve crosses the line, as the sign
+   *  change of its signed distance to the line at the root. +1 where the curve passes from
+   *  the line's right to its left (the side its normal points to), -1 the other way, 0 where
+   *  it touches the line without crossing. A winding count reads the crossing from this
+   *  rather than from the tangent at the root, which at a cusp is a rounding-sized vector
+   *  pointing anywhere. */
+  dir?: number;
 }
 
 /** Default positional tolerance, in the caller's units (CSS px throughout Lolly).
@@ -80,72 +96,140 @@ export function intersectSegments(
 /**
  * Real roots of a·t³ + b·t² + c·t + d within [0,1].
  *
- * Uses Cardano's formula, with a Newton polish on each root. The polish matters more
- * than the formula: Cardano's trigonometric branch loses several digits of precision
- * in the three-real-root case, and two Newton steps recover them at negligible cost.
+ * By isolation, not by the closed form. The derivative's roots cut [0, 1] into at most
+ * three intervals on which the cubic is monotone, each interval whose end values differ in
+ * sign holds exactly one root, and that root is found by Newton steps kept inside the
+ * interval, with bisection where a step leaves it. A root the cubic touches without
+ * crossing (a double root) sits at a critical point where the value is zero to rounding,
+ * and is reported once; a triple root, where both critical points fall together, is one
+ * root. So the count of reported roots matches the cubic's sign changes, which is what a
+ * winding count needs, and a double root is still there for a caller after a tangency.
+ *
+ * Cardano's formula was used before this, with a Newton polish, and it was wrong in the
+ * two places the geometry visits most: a leading coefficient small against the others (a
+ * copy of a symmetric curve nudged by a billionth, against a horizontal line) cancelled
+ * catastrophically and returned NO root where the line crossed the curve twice; and a
+ * repeated root (any line through the apex of a cusp) put the discriminant within rounding
+ * of zero, the branch taken depended on the sign of that rounding, and the polish, dividing
+ * a rounding-sized value by a rounding-sized slope, walked one copy of the root a hundredth
+ * of the curve away, to a point where the cubic was nowhere near zero. A ray cast then
+ * counted that point as a crossing. Isolation has no branch to get wrong and no closed form
+ * to cancel, and it is exact to rounding for any coefficients, a leading coefficient of
+ * exactly zero included.
+ *
+ * `dirs`, when given, is filled with one direction per reported root: the sign the cubic
+ * changes by there, or 0 where it touches zero without changing sign.
  */
-export function cubicRoots01(a: number, b: number, c: number, d: number): number[] {
-  const out: number[] = [];
-  const push = (t: number) => {
-    if (t >= -T_EPS && t <= 1 + T_EPS) out.push(Math.min(1, Math.max(0, t)));
-  };
-
-  if (Math.abs(a) < 1e-12) {
-    // Degenerates to a quadratic (or lower). Not a rare path: an axis-aligned line
-    // against a curve with a symmetric control net hits it constantly.
-    if (Math.abs(b) < 1e-12) {
-      if (Math.abs(c) > 1e-12) push(-d / c);
-      return dedupeRoots(out);
+export function cubicRoots01(a: number, b: number, c: number, d: number, dirs?: number[]): number[] {
+  const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d));
+  if (!(scale > 0) || !Number.isFinite(scale)) return [];
+  // A value this close to zero is zero to rounding: the coefficients carry a few ulps of
+  // their own size, and evaluating the cubic at a parameter in [0, 1] adds a few more.
+  const tiny = ROOT_SNAP * Number.EPSILON * scale;
+  // The cuts: the two ends, plus the derivative's zeros where they fall between them. Four
+  // at most, in fixed slots rather than a growing array, because this runs once per curve
+  // per ray cast and the allocation showed up in the boolean's profile.
+  //
+  // The ends carry the parameter slack every root is accepted at: a curve starting exactly
+  // on a line has its root a rounding error outside [0, 1], at -1e-19, and isolating over
+  // [0, 1] alone found no sign change there. Every end cap of a band against the curve it
+  // caps lost its vertex that way.
+  const cuts = [-T_EPS, 1 + T_EPS, 0, 0];
+  let nc = 2;
+  // Critical points, by the stable form of the quadratic formula so that a tiny leading
+  // coefficient does not cancel the root that lies in [0, 1].
+  const qa = 3 * a, qb = 2 * b, qc = c;
+  if (Math.abs(qa) > 1e-300) {
+    const disc = qb * qb - 4 * qa * qc;
+    if (disc >= 0) {
+      const sq = Math.sqrt(disc);
+      const q = -0.5 * (qb + (qb < 0 ? -sq : sq));
+      const r0 = q !== 0 ? q / qa : -qb / (2 * qa), r1 = q !== 0 ? qc / q : r0;
+      if (r0 > -T_EPS && r0 < 1 + T_EPS) cuts[nc++] = r0;
+      if (q !== 0 && r1 > -T_EPS && r1 < 1 + T_EPS) cuts[nc++] = r1;
     }
-    const disc = c * c - 4 * b * d;
-    if (disc < 0) return [];
-    const s = Math.sqrt(disc);
-    push((-c + s) / (2 * b)); push((-c - s) / (2 * b));
-    return dedupeRoots(out);
+  } else if (Math.abs(qb) > 1e-300) {
+    const r = -qc / qb;
+    if (r > -T_EPS && r < 1 + T_EPS) cuts[nc++] = r;
   }
-
-  // Depressed cubic t = y - b/3a  ⇒  y³ + py + q = 0
-  const b1 = b / a, c1 = c / a, d1 = d / a;
-  const p = c1 - (b1 * b1) / 3;
-  const q = (2 * b1 * b1 * b1) / 27 - (b1 * c1) / 3 + d1;
-  const shift = -b1 / 3;
-  const disc = (q * q) / 4 + (p * p * p) / 27;
-
-  if (disc > 1e-18) {
-    const s = Math.sqrt(disc);
-    push(Math.cbrt(-q / 2 + s) + Math.cbrt(-q / 2 - s) + shift);
-  } else if (disc > -1e-18) {
-    // Repeated root(s).
-    const u = Math.cbrt(-q / 2);
-    push(2 * u + shift); push(-u + shift);
-  } else {
-    // Three distinct real roots - the trigonometric form.
-    const r = Math.sqrt(-(p * p * p) / 27);
-    const phi = Math.acos(Math.min(1, Math.max(-1, -q / (2 * r))));
-    const m = 2 * Math.cbrt(r);
-    for (let k = 0; k < 3; k++) push(m * Math.cos((phi + 2 * Math.PI * k) / 3) + shift);
+  // Insertion sort: four entries at most.
+  for (let i = 1; i < nc; i++) {
+    const v = cuts[i]!;
+    let j = i - 1;
+    while (j >= 0 && cuts[j]! > v) { cuts[j + 1] = cuts[j]!; j--; }
+    cuts[j + 1] = v;
   }
-
-  // Newton polish against the ORIGINAL coefficients.
-  const polished = out.map((t0) => {
-    let t = t0;
-    for (let i = 0; i < 2; i++) {
-      const f = ((a * t + b) * t + c) * t + d;
-      const df = (3 * a * t + 2 * b) * t + c;
-      if (Math.abs(df) < 1e-14) break;
-      const next = t - f / df;
-      if (next < -T_EPS || next > 1 + T_EPS) break;
+  const vals = [0, 0, 0, 0];
+  for (let i = 0; i < nc; i++) {
+    const v = ((a * cuts[i]! + b) * cuts[i]! + c) * cuts[i]! + d;
+    vals[i] = Math.abs(v) <= tiny ? 0 : v;
+  }
+  // Roots in the order they are found: repeated ones first, then the sign changes. Both
+  // sequences run left to right, so the merge below sorts four entries at most.
+  const out: number[] = [], sg: number[] = [];
+  // A critical point where the cubic is zero to rounding is a repeated root. Two of them
+  // are a triple root (a cubic has no other way to touch zero twice), reported once, in the
+  // middle: a vertical line through the apex of a cusp nudged sideways by a billionth has
+  // exactly that, and reporting both critical points counted one crossing as two. The
+  // direction of a repeated root is read from the values either side of it: a double root
+  // touches without crossing, a triple root crosses.
+  for (let i = 0; i < nc; i++) {
+    if (vals[i] !== 0) continue;
+    let j = i;
+    while (j + 1 < nc && vals[j + 1] === 0) j++;
+    const before = i > 0 ? vals[i - 1]! : 0, after = j + 1 < nc ? vals[j + 1]! : 0;
+    const t = (cuts[i]! + cuts[j]!) / 2;
+    if (t >= -T_EPS && t <= 1 + T_EPS) {
+      out.push(Math.min(1, Math.max(0, t)));
+      sg.push(before < 0 && after > 0 ? 1 : before > 0 && after < 0 ? -1 : 0);
+    }
+    i = j;
+  }
+  for (let i = 1; i < nc; i++) {
+    const lo = cuts[i - 1]!, hi = cuts[i]!, flo = vals[i - 1]!, fhi = vals[i]!;
+    if (flo === 0 || fhi === 0 || (flo < 0) === (fhi < 0)) continue;
+    let x0 = lo, x1 = hi, f0 = flo, t = (lo + hi) / 2;
+    for (let k = 0; k < 80; k++) {
+      const ft = ((a * t + b) * t + c) * t + d;
+      if (ft === 0) break;
+      if ((ft < 0) === (f0 < 0)) { x0 = t; f0 = ft; } else x1 = t;
+      if (x1 - x0 <= 4e-16) break;
+      const slope = (3 * a * t + 2 * b) * t + c;
+      let next = slope !== 0 ? t - ft / slope : (x0 + x1) / 2;
+      if (!(next > x0 && next < x1)) next = (x0 + x1) / 2;
       t = next;
     }
-    return Math.min(1, Math.max(0, t));
-  });
-  return dedupeRoots(polished);
+    if (t >= -T_EPS && t <= 1 + T_EPS) { out.push(Math.min(1, Math.max(0, t))); sg.push(fhi > 0 ? 1 : -1); }
+  }
+  return dedupeRoots(out, sg, dirs);
 }
 
-function dedupeRoots(ts: number[]): number[] {
-  const s = ts.slice().sort((x, y) => x - y);
+/** Ulps of the largest coefficient within which a value of the cubic counts as zero. */
+const ROOT_SNAP = 32;
+
+/** Roots sorted and merged where they fall within 1e-9 of each other. Two crossings that
+ *  merge cancel their directions, as the curve comes back to the side it started on.
+ *
+ *  Sorted by insertion, and the common counts answered before that: a cubic has three roots
+ *  at most, this is called once per curve per ray cast, and a comparator sort allocates. */
+function dedupeRoots(ts: number[], sg: number[], dirs?: number[]): number[] {
+  const n = ts.length;
+  if (n === 0) { if (dirs) dirs.length = 0; return ts; }
+  if (n === 1) { if (dirs) { dirs.length = 0; dirs.push(sg[0]!); } return ts; }
+  for (let i = 1; i < n; i++) {
+    const t = ts[i]!, g = sg[i]!;
+    let j = i - 1;
+    while (j >= 0 && ts[j]! > t) { ts[j + 1] = ts[j]!; sg[j + 1] = sg[j]!; j--; }
+    ts[j + 1] = t; sg[j + 1] = g;
+  }
   const out: number[] = [];
-  for (const t of s) if (!out.length || t - out[out.length - 1]! > 1e-9) out.push(t);
+  const dd: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = ts[i]!;
+    if (!out.length || t - out[out.length - 1]! > 1e-9) { out.push(t); dd.push(sg[i]!); }
+    else dd[dd.length - 1] = Math.sign(dd[dd.length - 1]! + sg[i]!);
+  }
+  if (dirs) { dirs.length = 0; for (const v of dd) dirs.push(v); }
   return out;
 }
 
@@ -157,7 +241,7 @@ function dedupeRoots(ts: number[]): number[] {
  * closed form. No iteration, no subdivision, and the roots are the true parameters.
  */
 export function intersectLineCubic(
-  x0: number, y0: number, x1: number, y1: number, c: Cubic, tol = EPS,
+  x0: number, y0: number, x1: number, y1: number, c: Cubic, tol = EPS, clamp = true,
 ): Intersection[] {
   const dx = x1 - x0, dy = y1 - y0;
   const len = Math.hypot(dx, dy);
@@ -173,12 +257,19 @@ export function intersectLineCubic(
   const D = d0;
 
   const out: Intersection[] = [];
-  for (const t of cubicRoots01(A, B, C, D)) {
+  const dirs: number[] = [];
+  const roots = cubicRoots01(A, B, C, D, dirs);
+  for (let i = 0; i < roots.length; i++) {
+    const t = roots[i]!;
     const p = evalCubic(c, t);
     // Where along the line does it land? Outside the segment is not an intersection.
     const u = ((p.x - x0) * dx + (p.y - y0) * dy) / (len * len);
     if (u < -tol / len || u > 1 + tol / len) continue;
-    out.push({ t1: Math.min(1, Math.max(0, u)), t2: t, x: p.x, y: p.y });
+    // A caller that looks a little way past the segment's ends (the boolean's ray cast, which
+    // looks behind its origin) needs the fraction as it is, sign and all; a clamped fraction
+    // put every hit just behind the origin AT the origin, where it read as a curve through
+    // the point.
+    out.push({ t1: clamp ? Math.min(1, Math.max(0, u)) : u, t2: t, x: p.x, y: p.y, dir: dirs[i] });
   }
   return out;
 }
