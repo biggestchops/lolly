@@ -48032,8 +48032,10 @@ function subCubic(c, t0, t1) {
 }
 function quadRoots01(a, b, c) {
   const out = [];
-  if (Math.abs(a) < 1e-12) {
-    if (Math.abs(b) > 1e-12) {
+  const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c));
+  if (!(scale > 0)) return out;
+  if (Math.abs(a) <= 1e-14 * scale) {
+    if (Math.abs(b) > 1e-14 * scale) {
       const t = -c / b;
       if (t > 0 && t < 1) out.push(t);
     }
@@ -48042,7 +48044,10 @@ function quadRoots01(a, b, c) {
   const disc = b * b - 4 * a * c;
   if (disc < 0) return out;
   const s = Math.sqrt(disc);
-  for (const t of [(-b + s) / (2 * a), (-b - s) / (2 * a)]) if (t > 0 && t < 1) out.push(t);
+  const q = -0.5 * (b + (b < 0 ? -s : s));
+  const r1 = q / a, r23 = q !== 0 ? c / q : r1;
+  if (r1 > 0 && r1 < 1) out.push(r1);
+  if (r23 !== r1 && r23 > 0 && r23 < 1) out.push(r23);
   return out;
 }
 function extremaCubic(c) {

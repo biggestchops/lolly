@@ -20,14 +20,17 @@
  *    where the pieces are regular (`twinNode`), not by cutting the pieces down until their
  *    fat lines part. Two loops a ten-millionth apart spent a million clip nodes and most of
  *    a second that way.
- * 5. The boolean finds twins and duplicates through a spatial hash of each piece's start,
+ * 5. `quadRoots01` in bezier.ts judges degeneracy against the coefficients and uses the
+ *    cancellation-free formula: the bounding box of an arc symmetric to within rounding at
+ *    coordinates near 3e4 was its chord, and a ray cast skipped the arc as out of reach.
+ * 6. The boolean finds twins and duplicates through a spatial hash of each piece's start,
  *    midpoint and end. Two copies cut at parameters a millionth apart have their cut points
  *    together but their midpoints a hundred weld radii apart, and bucketed by midpoint alone
  *    the second copy survived as a contour of its own.
  */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Cubic, evalCubic } from '../engine/src/geom/bezier.ts';
+import { type Cubic, boundsCubic, evalCubic, extremaCubic } from '../engine/src/geom/bezier.ts';
 import { cubicRoots01, intersectCubics, intersectLineCubic } from '../engine/src/geom/intersect.ts';
 import { makeGeomApi } from '../engine/src/geom-api.ts';
 
@@ -159,6 +162,24 @@ test('two curves agreeing to high order at a shared vertex part quickly', () => 
     const ms = cpuMs(() => { hits = intersectCubics(c1, c2); });
     assert.deepEqual(hits.map((h) => [h.t1, h.t2]), [[0, 0]], JSON.stringify(hits));
     assert.ok(ms < 100, `${ms.toFixed(0)} ms`);
+  }
+});
+
+test('the bounding box of an arc symmetric to within rounding reaches its apex', () => {
+  // The derivative's leading coefficient is 1e-11 against terms of 4e4: solved as a
+  // quadratic in the textbook form, the root at t = 0.5 cancelled to nothing and the box
+  // was the chord. A boolean's ray cast then skipped the arc as out of reach.
+  const arc: Cubic = [123.456, -78.9, 9423.456, 6121.1, 21823.456, 6121.1, 31123.456, -78.9];
+  assert.deepEqual(extremaCubic(arc).map((t) => +t.toFixed(9)), [0.5]);
+  near(boundsCubic(arc).y1, 4571.1, 1e-6, 'apex of the arc');
+  // The shape under that arc against the shape above a copy of it offset by (t - 1)^2
+  // (t - 0.1) times 0.031: their self-union is the whole band minus a hairline sliver, in
+  // either order. Before the fix the region under the arc was deleted whole.
+  const under = 'M123.456 -78.9 C9423.456 6121.1 21823.456 6121.1 31123.456 -78.9 L31123.456 -9378.9 L123.456 -9378.9 Z';
+  const over = 'M123.456 -78.90310000000001 C9423.456 6121.1093 21823.456 6121.1 31123.456 -78.9 L31123.456 15421.1 L123.456 15421.1 Z';
+  for (const d of [`${under} ${over}`, `${over} ${under}`]) {
+    const r = api.selfUnion(d, EXACT) as Res;
+    near(areaOf(r.d), 768799946, 200, 'the band');
   }
 });
 
