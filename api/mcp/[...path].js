@@ -49966,8 +49966,8 @@ function overlapRun(ci, cj, weld, budget3) {
   return { a: [a0, a1], b: [b0, b1] };
 }
 function sameTrace(a, b, weld, budget3) {
-  budget3.work -= 32 * 2 * TRACE_SAMPLES;
-  for (let k = 1; k < TRACE_SAMPLES; k++) {
+  budget3.work -= 32 * 2 * (TRACE_SAMPLES + 1);
+  for (let k = 0; k <= TRACE_SAMPLES; k++) {
     const t = k / TRACE_SAMPLES;
     const p = evalCubic(a, t);
     if (nearestOnCubic(b, p.x, p.y).distance > weld) return false;

@@ -845,14 +845,20 @@ const TRACE_SAMPLES = 7;
  * radius and agree at no parameter at all. Those pairs used to reach the intersector, which
  * reported their true crossings, a handful at angles far below anything the weld can
  * resolve, and the pieces between the cuts were then decided by a coin toss. So the pieces
- * are compared as point sets: each is sampled and every sample projected onto the other,
- * both ways, because one piece can lie along part of the other without the reverse holding.
- * A measurement at seven points a side, not a proof; a pair that crosses twice inside one
- * sample gap while staying within the weld radius is a shared run at the weld's resolution.
+ * are compared as point sets: each is sampled, ends included, and every sample projected
+ * onto the other, both ways, because one piece can lie along part of the other without the
+ * reverse holding. A measurement at eight points a side, not a proof; a pair that crosses
+ * twice inside one sample gap while staying within the weld radius is a shared run at the
+ * weld's resolution.
  */
 function sameTrace(a: Cubic, b: Cubic, weld: number, budget: Budget): boolean {
-  budget.work -= 32 * 2 * TRACE_SAMPLES;
-  for (let k = 1; k < TRACE_SAMPLES; k++) {
+  budget.work -= 32 * 2 * (TRACE_SAMPLES + 1);
+  // The ends are measured as well as the interior: a piece one seventh longer than another
+  // at one end has every interior sample within the weld radius of the other, and was
+  // called the same trace; the longer one was then deleted as a duplicate and the boundary
+  // it alone carried was gone (a stroke of thirty jittered copies came back as fourteen
+  // contours). The ends are where two pieces of one boundary differ, so they are asked.
+  for (let k = 0; k <= TRACE_SAMPLES; k++) {
     const t = k / TRACE_SAMPLES;
     const p = evalCubic(a, t);
     if (nearestOnCubic(b, p.x, p.y).distance > weld) return false;
