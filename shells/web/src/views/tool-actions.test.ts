@@ -421,7 +421,7 @@ test('Design runs mounted assurance only while Export is open', async () => {
   );
 
   h.panel.dispatchEvent(new dom.window.CustomEvent('lolly:export-open'));
-  for (let attempt = 0; attempt < 20 && card.style.display === 'none'; attempt++) {
+  for (let attempt = 0; attempt < 50 && !card.querySelector('[data-preflight-verdict]')!.textContent!.includes('to fix'); attempt++) {
     await settle();
   }
   assert.equal(card.style.display, 'flex');

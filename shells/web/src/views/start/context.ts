@@ -32,6 +32,7 @@ import type { candidatesOps } from './candidates.ts';
 import type { imagesOps } from './images.ts';
 import type { pdfOps } from './pdf.ts';
 import type { siteOps } from './site.ts';
+import type { looksOps } from './looks.ts';
 import type { referenceOps } from './reference.ts';
 import type { savedPageOps } from './saved-page.ts';
 import type { sourcesOps } from './sources.ts';
@@ -123,6 +124,8 @@ export interface StartCtx {
   pdf: ReturnType<typeof pdfOps>;
   site: ReturnType<typeof siteOps>;
   reference: ReturnType<typeof referenceOps>;
+  looks: ReturnType<typeof looksOps>;
+  looksModal?: ModalHandle<void> | null;
   savedPage: ReturnType<typeof savedPageOps>;
   referenceRevision: number;
   referenceCancel?: () => void;

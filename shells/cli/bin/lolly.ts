@@ -38,6 +38,8 @@ Usage:
   lolly system import <file>                import .lolly, tokens, Penpot, token zip or SVG
   lolly system add <file…>                  retain logos, fonts and other source material
   lolly system export [--output=brand.lolly] export a portable system pack
+  lolly system context [--file=tokens.json] export tokens, source evidence and rules as JSON
+  lolly system check <design-inputs.json>   review colours, type and asset references locally
   lolly system list | use <id>              list or switch on-device systems
   lolly list                               list tools (explicit spelling)
   lolly describe <tool-id> [--all]         show essential inputs; --all shows every input

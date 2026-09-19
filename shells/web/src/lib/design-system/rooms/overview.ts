@@ -52,6 +52,7 @@ export interface OverviewCtx {
   goto: (area: string, focus?: string) => void;
   /** Open the source modal ("Add from…"). */
   openImport: () => void;
+  openLooks?: () => void;
 }
 
 export interface OverviewRoom {
@@ -447,6 +448,7 @@ export function overviewHtml(model: OverviewModel | null): string {
           ${doorHtml('logos', icon('shapes'), t('Add a logo'),
             t('Drop a mark; Lolly reads its shape and offers the right slot.'))}
         </div>
+        <button type="button" class="be-btn" data-ds-door="looks">${t('Find a look')}</button>
         <p class="ds-ov-bring">${t('Nothing installs until you choose one.')} <a class="ds-ov-inline" href="#/">${escape(t('Explore the tools'))}</a>.</p>
       </div>`;
   }
@@ -478,6 +480,7 @@ export function overviewHtml(model: OverviewModel | null): string {
         ${cardHtml('catalogue', t('Files'), escape(t('Uploads and downloads')), cardSub(files))}
       </div>
       <div class="ds-ov-more">
+        <button type="button" class="be-btn" data-ds-door="looks">${t('Find a look')}</button>
         <button type="button" class="be-btn" data-ds-door="file">${t('Add from…')}</button>
         <button type="button" class="be-btn" data-ds-door="color-pick">${t('Pick a colour')}</button>
         <a class="ds-ov-exit" href="#/">${t('Explore the tools')}</a>
@@ -515,7 +518,8 @@ export function mountOverviewRoom(el: HTMLElement, ctx: OverviewCtx): OverviewRo
     // Each door is a room plus the control that should be open in it - the same
     // pair a `#/start?area=…&focus=…` link carries, so the door and the link
     // cannot describe different places.
-    if (door === 'file') ctx.openImport();
+    if (door === 'looks') ctx.openLooks?.();
+    else if (door === 'file') ctx.openImport();
     else if (door === 'color-pick') ctx.goto('color', 'pick');
     else if (door === 'type-stage') ctx.goto('type', 'stage');
     else if (door === 'logos') ctx.goto('logos');

@@ -6,6 +6,12 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.211.0
+
+- Added portable `brandContext` and `contextTokens`: resolved colours, font families, asset IDs, recorded source coverage and explicit rules travel with a token document. No font availability, rights or subjective quality verdict is inferred.
+- Added `checkBrandDesign` and `applyBrandFix`: authored Design colours, references, fonts and assets can be compared with a chosen system. Custom values are review items, missing evidence is unknown, and a suggested change checks the original value, layer identity and lock before writing. Rendered contrast and layout remain mounted checks.
+- Added bounded style observations through `summarizeBrandStyles` and `readBrandStyleEvidence`, distinguishing declared values from measured browser samples. The schema records missing fields and capture viewport conditions without carrying selectors or page text.
+
 ## 1.210.0
 
 - Added `studio3d-motion.ts`: `STUDIO_MOTION_KINDS` names the ten loops the subject can run, `studioObjectPose(scene, time, clipSeconds)` answers where one of them puts the subject at a moment as a change from the rest pose, `STUDIO_POSE_REST` is that rest pose and `STUDIO_POSE_MAX_LIFT` the height no loop passes. The easings (`smoothstep`, `bump`, `backOut`, `anticipate`, `bounceOut`) are exported from the module for the tests. Pure, closed form in the phase, with no clock and no random number, so two hosts asked for the same moment return the same numbers, and at phase 0 every kind gives the rest pose, which keeps a poster and a contact sheet what they were.

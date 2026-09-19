@@ -109,6 +109,7 @@ export const selectRoom = (start: StartCtx, area: StartArea, opts: { focus?: boo
  * and `stage` put a decision in front of the person and wait for it.
  */
 export function openFocus(start: StartCtx, area: StartArea, focus: string): void {
+  if (focus === 'looks') { void start.looks.openLooks(); return; }
   if (area === 'type') {
     if (focus === 'stage') start.editor?.openTypeStage?.('brand');
     return;
@@ -177,6 +178,7 @@ export function wireRooms(start: StartCtx): void {
     // bare `() => void` - the room never learns the picker has stages.
     // Same picker, same first stage as the rail's "Add from…" (Andy, 2026-09-04: two
     // buttons, two different modals - unify). The door used to skip to the file stage.
+    openLooks: start.looks.openLooks,
     openImport: () => {
       start.sources.openImport();
       playSfx('click');

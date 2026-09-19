@@ -96,6 +96,17 @@ test('lolly://tokens serves the catalog design system', async () => {
   assert.ok(Array.isArray(doc.colors), 'expected a colors array');
 });
 
+test('lolly://design-context carries catalog tokens, explicit rules and coverage', async () => {
+  const read = await rpc('resources/read', { uri: 'lolly://design-context' });
+  const content = (read.contents as { text?: string }[])[0]!;
+  const context = JSON.parse(content.text!);
+  assert.equal(context.format, 'lolly-design-context');
+  assert.ok(context.tokens);
+  assert.ok(Array.isArray(context.colors));
+  assert.ok(context.rules.contrast.includes('actual background'));
+  assert.ok(context.coverage.notAssessed.includes('subjective quality'));
+});
+
 test('a published version never gets picked as the design system', async () => {
   // The rule the resource applies, over the two-asset index the real catalog
   // cannot supply today. `user/tokens/brand/jupiter` is a snapshot of the head,

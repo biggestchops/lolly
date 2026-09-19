@@ -112,7 +112,7 @@ export const MCP_TOOLS: readonly string[] = [
 ];
 
 export const MCP_RESOURCES: readonly string[] = [
-  'lolly://catalog', 'lolly://assets', 'lolly://tokens',
+  'lolly://catalog', 'lolly://assets', 'lolly://tokens', 'lolly://design-context',
   'lolly://tool/{id}', 'lolly://tool/{id}/preview', 'lolly://asset/{id}',
 ];
 

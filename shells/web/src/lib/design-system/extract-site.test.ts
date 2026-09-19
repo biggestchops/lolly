@@ -68,6 +68,16 @@ const EXPECTED: SiteExtract = {
       { family: 'Space Grotesk', usage: 'heading', count: 1 },
       { family: 'IBM Plex Mono', usage: 'mono', count: 1 },
     ],
+    styles: {
+      version: 1, mode: 'declared', sampled: 4, truncated: false,
+      values: [
+        { property: 'font-family', value: '"IBM Plex Mono", ui-monospace, monospace', count: 1 },
+        { property: 'font-family', value: '"Space Grotesk", Inter, sans-serif', count: 1 },
+        { property: 'font-family', value: 'Inter, sans-serif', count: 1 },
+        { property: 'font-family', value: 'Inter, system-ui, sans-serif', count: 1 },
+      ],
+      missing: ['font-size', 'font-weight', 'line-height', 'letter-spacing', 'gap', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'border-top-left-radius'],
+    },
     name: 'Northwind Coffee',
     source: { kind: 'site', label: 'northwind.example' },
   },

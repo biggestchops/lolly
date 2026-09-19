@@ -1264,7 +1264,7 @@ export async function serverInstructions(): Promise<string> {
     `lolly_redact to destroy regions of an image/SVG/PDF from one reusable instruction string, ` +
     `and lolly_verify to check a file's Content Credentials (C2PA). ` +
     `Brand assets, tokens, and tool docs are available as resources (lolly://catalog, lolly://assets, lolly://tool/{id}, ` +
-    `lolly://tool/{id}/preview, lolly://asset/{id}, lolly://tokens).`
+    `lolly://tool/{id}/preview, lolly://asset/{id}, lolly://tokens, lolly://design-context).`
   );
 }
 

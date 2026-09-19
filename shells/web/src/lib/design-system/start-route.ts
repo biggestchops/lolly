@@ -58,7 +58,7 @@ export function isStartArea(value: string | null | undefined): value is StartAre
  * somebody sends can only ever put a person in front of a decision, never make
  * one for them.
  */
-export const START_FOCUS = ['generate', 'curves', 'contrast', 'print', 'chart', 'pick', 'stage'] as const;
+export const START_FOCUS = ['generate', 'curves', 'contrast', 'print', 'chart', 'pick', 'stage', 'looks'] as const;
 
 export type StartFocus = (typeof START_FOCUS)[number];
 

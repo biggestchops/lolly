@@ -67,6 +67,8 @@ export interface DesignSystemRecord {
   /** Slug, `DESIGN_SYSTEM_ID_RE` - the server's profile-name grammar. */
   id: string;
   label: string;
+  /** Optional search terms authored on this device. */
+  tags?: string[];
   /** Asset-id namespace prefix: `user/` for the migrated default, `user/ds/<id>/`
    *  for everything minted since, `` for the shipped catalog system. */
   ns: string;

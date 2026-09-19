@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
+import { extractSite } from '../../shells/web/src/lib/design-system/extract-site.ts';
+import { readBrandStyleEvidence, summarizeBrandStyles } from '../../engine/src/brand-evidence.ts';
+import { contextTokens } from '../../engine/src/brand-context.ts';
 /**
  * Fuzz targets: the engine's untrusted-input parsers, each with a small seed
  * corpus of VALID inputs (built from the engine's own writers / real container
@@ -480,6 +483,22 @@ const BRAND_PAGE_SEED = JSON.stringify({
   appliedTokens: { fill: 'global.color.primary' },
   content: { children: [{ text: 'Lolly', fills: [{ fillColor: '#ffffff' }], fontId: 'Inter' }] },
 });
+
+export const brandReferenceTarget: FuzzTarget = {
+  name: 'brand-reference',
+  async seeds() {
+    return ['<style>body{color:#123456;font-size:18px;border-radius:12px}</style>', JSON.stringify({ version: 1, mode: 'computed', sampled: 1, values: [{ property: 'font-size', value: '24px', count: 1 }] })].map(s => new TextEncoder().encode(s));
+  },
+  async invoke(bytes) {
+    const text = new TextDecoder().decode(bytes);
+    extractSite({ html: text, cssTexts: [text] });
+    let parsed: unknown;
+    try { parsed = JSON.parse(text); } catch { return; }
+    readBrandStyleEvidence(parsed);
+    summarizeBrandStyles('declared', parsed);
+    coerceTokensDoc(contextTokens(parsed));
+  },
+};
 
 export const brandImportTarget: FuzzTarget = {
   name: 'brand-import',
@@ -1607,7 +1626,7 @@ export const emojiTextTarget: FuzzTarget = {
 export const ALL_TARGETS: FuzzTarget[] = [
   emojiPackTarget, emojiSvgTarget, emojiTextTarget,
   prepareTarget, c2paVerifyTarget, cborTarget, mediaSniffTarget, pdfMapTarget, pdfDerivedTarget, x509Target,
-  fileMetadataTarget, stripMetadataTarget, videoMetaTarget, dataImportTarget, brandImportTarget, tarReadTarget,
+  fileMetadataTarget, stripMetadataTarget, videoMetaTarget, dataImportTarget, brandImportTarget, brandReferenceTarget, tarReadTarget,
   epubReadTarget, jpegStructureTarget,
   rasterDecodeTarget,
   pptxReadTarget, pptxPatchTarget, pptxBridgeTarget, iccTarget,

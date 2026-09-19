@@ -10,6 +10,18 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 const EXPECTED: readonly string[] = [
+  'BRAND_STYLE_PROPERTIES',
+  'BrandFinding',
+  'BrandFix',
+  'BrandStyleEvidence',
+  'BrandStyleProperty',
+  'BrandStyleValue',
+  'applyBrandFix',
+  'brandContext',
+  'checkBrandDesign',
+  'contextTokens',
+  'readBrandStyleEvidence',
+  'summarizeBrandStyles',
   'APP_PATH_WORDS',
   'ASSET_PROVIDER_REF_RE',
   'ApcaSolveOptions',

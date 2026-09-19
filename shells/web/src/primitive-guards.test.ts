@@ -1603,6 +1603,15 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // name, is escaped before it is written. Nothing here reads a document or a network
   // response.
   'lib/studio-library.ts': 2,
+  // 2026-09-19: the local look library paints its controls, cards and comparison.
+  // Stored labels, IDs, tags and font names pass through the shared escape helper.
+  // Specimens use normalized token colours and validated font stacks; their labels
+  // and attributes are escaped. Source observations use styleEvidenceHtml below.
+  'views/start/looks.ts': 3,
+  // The source-details sink accepts only styleEvidenceHtml output: values and
+  // translated labels are escaped, properties are allowlisted, and counts and
+  // viewport dimensions were bounded by readBrandStyleEvidence before rendering.
+  'views/start/reference.ts': 1,
 };
 
 test('R10: raw-HTML sinks are a pinned inventory, not a growing one', () => {

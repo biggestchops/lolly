@@ -112,6 +112,7 @@ export interface SiteReadResult {
   html: string;
   /** Stylesheet text the markup does not already carry, in document order. */
   cssTexts: string[];
+  styles?: unknown;
   assets: SiteAsset[];
   /** Where the page actually ended up after redirects - the census's base URL. */
   finalUrl: string;
@@ -151,6 +152,7 @@ interface SiteResultMessage {
   ok?: boolean;
   html?: unknown;
   cssTexts?: unknown;
+  styles?: unknown;
   assets?: unknown;
   finalUrl?: unknown;
   screenshotBase64?: unknown;
@@ -238,6 +240,7 @@ export function createExtensionSiteTransport(): SiteTransport {
           resolve({
             html: typeof m.html === 'string' ? m.html : '',
             cssTexts: readCssTexts(m.cssTexts),
+            styles: m.styles,
             assets: readAssets(m.assets),
             finalUrl: typeof m.finalUrl === 'string' && m.finalUrl ? m.finalUrl : url,
             ...(screenshot && screenshot.length ? { screenshotPng: screenshot } : {}),

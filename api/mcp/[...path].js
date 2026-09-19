@@ -3501,11 +3501,11 @@ function canonicalJson(value) {
   if (Array.isArray(value)) {
     return "[" + value.map((v) => canonicalJson(v)).join(",") + "]";
   }
-  const record10 = value;
+  const record13 = value;
   const parts = [];
-  for (const key of Object.keys(record10).sort()) {
-    if (record10[key] === void 0) continue;
-    parts.push(JSON.stringify(key) + ":" + canonicalJson(record10[key]));
+  for (const key of Object.keys(record13).sort()) {
+    if (record13[key] === void 0) continue;
+    parts.push(JSON.stringify(key) + ":" + canonicalJson(record13[key]));
   }
   return "{" + parts.join(",") + "}";
 }
@@ -3614,7 +3614,7 @@ var ENGINE_VERSION;
 var init_version = __esm({
   "engine/src/version.ts"() {
     "use strict";
-    ENGINE_VERSION = "1.210.0";
+    ENGINE_VERSION = "1.211.0";
   }
 });
 
@@ -3802,8 +3802,8 @@ async function assertEnvelopeTrusted(integrity) {
     throw new ToolLoadError(`catalog integrity: envelope rejected - ${result.reason}`, []);
   }
 }
-async function assertFileIntegrity(integrity, toolId, filename, text4) {
-  if (text4 == null) {
+async function assertFileIntegrity(integrity, toolId, filename, text5) {
+  if (text5 == null) {
     if (integrity.envelope.files?.[`${toolId}/${filename}`]) {
       throw new ToolLoadError(
         `catalog integrity: "${toolId}/${filename}" is signed in the catalog but failed to load - refusing to run without it`,
@@ -3812,7 +3812,7 @@ async function assertFileIntegrity(integrity, toolId, filename, text4) {
     }
     return;
   }
-  const result = await verifyToolFile(integrity.envelope, toolId, filename, integrityTextEncoder.encode(text4));
+  const result = await verifyToolFile(integrity.envelope, toolId, filename, integrityTextEncoder.encode(text5));
   if (!result.ok) {
     throw new ToolLoadError(`catalog integrity: ${result.reason}`, []);
   }
@@ -4269,7 +4269,7 @@ function buildSemantic(spec, ramps, p, F, high, foreground) {
     surface = { step, value: neutral[step - 1] };
   }
   const surfaceHex = emitHex(surface.value);
-  const text4 = pickByContrast(neutral, spec.dark ? at(1) : at(0), surfaceHex, F.text, tie);
+  const text5 = pickByContrast(neutral, spec.dark ? at(1) : at(0), surfaceHex, F.text, tie);
   const muted = pickByContrast(neutral, spec.dark ? at(0.625) : at(0.375), surfaceHex, F.muted, tie);
   const edge = pickByContrast(neutral, spec.dark ? at(0.25) : at(0.75), surfaceHex, F.edge, tie);
   let primary = null;
@@ -4307,7 +4307,7 @@ function buildSemantic(spec, ramps, p, F, high, foreground) {
     "on-primary": slotTok(onPrimary, "primary", "Semantic"),
     "secondary": aliasTok(`color.ramp.secondary.${anchor}`, "Semantic"),
     "surface": slotTok(surface, "neutral", "Semantic"),
-    "text": slotTok(text4, "neutral", "Semantic"),
+    "text": slotTok(text5, "neutral", "Semantic"),
     "muted": slotTok(muted, "neutral", "Semantic"),
     "edge": slotTok(edge, "neutral", "Semantic")
   };
@@ -5225,8 +5225,8 @@ function hueComp(tok) {
   const h = parseHueToken(tok);
   return h == null ? null : { v: h, none: false };
 }
-function findColorToken(text4, allowBareIdent = false) {
-  const m2 = (allowBareIdent ? COLOR_TOKEN_OR_IDENT : COLOR_TOKEN).exec(String(text4));
+function findColorToken(text5, allowBareIdent = false) {
+  const m2 = (allowBareIdent ? COLOR_TOKEN_OR_IDENT : COLOR_TOKEN).exec(String(text5));
   return m2 ? m2[0] : null;
 }
 function parseColorToSrgb8(input) {
@@ -6799,8 +6799,8 @@ function apcaUse(lc) {
   if (!Number.isFinite(a)) return "invisible";
   return (APCA_BANDS.find((b) => a >= b.min) ?? APCA_BANDS[APCA_BANDS.length - 1]).use;
 }
-function apcaVerdict(text4, bg) {
-  const lc = apcaContrast(text4, bg);
+function apcaVerdict(text5, bg) {
+  const lc = apcaContrast(text5, bg);
   if (!Number.isFinite(lc)) return null;
   const use = apcaUse(lc);
   return {
@@ -32566,10 +32566,10 @@ function index() {
   }
   return sequenceIndex;
 }
-function emojiSequenceKey(text4) {
-  if (!text4 || text4.length > EMOJI_SEQUENCE_MAX_SCALARS * 2) return null;
+function emojiSequenceKey(text5) {
+  if (!text5 || text5.length > EMOJI_SEQUENCE_MAX_SCALARS * 2) return null;
   const points = [];
-  for (const char of text4) {
+  for (const char of text5) {
     const point2 = char.codePointAt(0);
     if (point2 >= 55296 && point2 <= 57343) return null;
     points.push(point2.toString(16).padStart(4, "0"));
@@ -32577,20 +32577,20 @@ function emojiSequenceKey(text4) {
   }
   return points.join("-");
 }
-function lookupEmojiSequence(text4) {
-  const key = emojiSequenceKey(text4);
+function lookupEmojiSequence(text5) {
+  const key = emojiSequenceKey(text5);
   const found = key === null ? void 0 : index().get(key);
   return found ? { ...found } : null;
 }
 function isCanonicalEmojiKey(key) {
   return index().get(key)?.alias === false;
 }
-function usesTextPresentation(text4, presentation2 = "auto") {
+function usesTextPresentation(text5, presentation2 = "auto") {
   textVariations ??= new Set(__default.textVariations);
-  const key = emojiSequenceKey(text4);
+  const key = emojiSequenceKey(text5);
   if (key && textVariations.has(key)) return true;
-  const found = lookupEmojiSequence(text4);
-  return presentation2 === "auto" && !!found?.alias && Array.from(text4).length === 1;
+  const found = lookupEmojiSequence(text5);
+  return presentation2 === "auto" && !!found?.alias && Array.from(text5).length === 1;
 }
 var EMOJI_SEQUENCE_MAX_SCALARS, sequenceIndex, textVariations;
 var init_emoji_sequence = __esm({
@@ -32683,21 +32683,21 @@ async function readEmojiPack(bytes, expected) {
   return { ok: true, pack };
 }
 function inspectEmojiPack(pack) {
-  const record10 = admitted.get(pack);
-  return record10 ? clone(record10.manifest) : null;
+  const record13 = admitted.get(pack);
+  return record13 ? clone(record13.manifest) : null;
 }
 function describeEmojiPack(pack) {
-  const record10 = admitted.get(pack);
-  return record10 ? { id: record10.manifest.id, version: record10.manifest.version, family: record10.manifest.family, style: record10.manifest.style } : null;
+  const record13 = admitted.get(pack);
+  return record13 ? { id: record13.manifest.id, version: record13.manifest.version, family: record13.manifest.family, style: record13.manifest.style } : null;
 }
 function matchesEmojiPack(pack, pin) {
-  const record10 = admitted.get(pack);
-  return !!record10 && emojiPackPinKey(record10.pin) === emojiPackPinKey(pin);
+  const record13 = admitted.get(pack);
+  return !!record13 && emojiPackPinKey(record13.pin) === emojiPackPinKey(pin);
 }
 function findEmojiGlyph(pack, meaning) {
-  const record10 = admitted.get(pack);
-  const glyph = record10?.glyphs.get(meaningKey(meaning));
-  return record10 && glyph ? clone({ glyph, metrics: glyph.metrics ?? record10.manifest.metrics }) : null;
+  const record13 = admitted.get(pack);
+  const glyph = record13?.glyphs.get(meaningKey(meaning));
+  return record13 && glyph ? clone({ glyph, metrics: glyph.metrics ?? record13.manifest.metrics }) : null;
 }
 async function verifyEmojiArtwork(pack, meaning, bytes) {
   if (!admitted.has(pack)) return failure("invalid-pack", "Emoji pack has not been validated.");
@@ -32999,19 +32999,19 @@ async function prepareEmojiSvg(pack, meaning, bytes, parseXml) {
   const entry2 = findEmojiGlyph(pack, meaning);
   try {
     const source = new TextDecoder("utf-8", { fatal: true }).decode(verified.bytes);
-    const record10 = normalize(source, entry2.glyph.viewBox, parseXml);
-    const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(record10.tree, "emoji")))}`;
+    const record13 = normalize(source, entry2.glyph.viewBox, parseXml);
+    const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(record13.tree, "emoji")))}`;
     const svg = Object.freeze({ checksum, sourceChecksum: entry2.glyph.asset.checksum, normalizer: EMOJI_SVG_VERSION });
-    prepared.set(svg, record10);
+    prepared.set(svg, record13);
     return { ok: true, svg };
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "SVG admission failed." };
   }
 }
 function emojiSvgMarkup(svg, prefix = "emoji") {
-  const record10 = prepared.get(svg);
-  if (!record10 || !idPattern2.test(prefix)) throw new Error("Invalid prepared SVG or placement prefix.");
-  return serialize(record10.tree, prefix);
+  const record13 = prepared.get(svg);
+  if (!record13 || !idPattern2.test(prefix)) throw new Error("Invalid prepared SVG or placement prefix.");
+  return serialize(record13.tree, prefix);
 }
 function recolor(node, map) {
   const attributes = { ...node.attributes };
@@ -33025,10 +33025,10 @@ function recolor(node, map) {
   return { tag: node.tag, attributes, children: node.children.map((child) => recolor(child, map)) };
 }
 async function recolorPreparedEmojiSvg(svg, map, change) {
-  const record10 = prepared.get(svg);
-  if (!record10) throw new Error("SVG has not been admitted.");
-  const tree = recolor(record10.tree, map);
-  const changes = [.../* @__PURE__ */ new Set([...record10.changes, change])];
+  const record13 = prepared.get(svg);
+  if (!record13) throw new Error("SVG has not been admitted.");
+  const tree = recolor(record13.tree, map);
+  const changes = [.../* @__PURE__ */ new Set([...record13.changes, change])];
   const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(tree, "emoji")))}`;
   const treated = Object.freeze({ checksum, sourceChecksum: svg.sourceChecksum, normalizer: EMOJI_TREATED_SVG_VERSION });
   prepared.set(treated, { tree, changes });
@@ -33054,21 +33054,21 @@ function inkTree(node, counted) {
   return { tag: node.tag, attributes, children: node.children.map((child) => inkTree(child, counted)) };
 }
 async function inkPreparedEmojiSvg(svg) {
-  const record10 = prepared.get(svg);
-  if (!record10) throw new Error("SVG has not been admitted.");
-  if (!singleInk(record10.tree)) return svg;
+  const record13 = prepared.get(svg);
+  if (!record13) throw new Error("SVG has not been admitted.");
+  if (!singleInk(record13.tree)) return svg;
   const counted = { value: 0 };
-  const tree = inkTree(record10.tree, counted);
+  const tree = inkTree(record13.tree, counted);
   if (!counted.value) return svg;
-  const changes = [.../* @__PURE__ */ new Set([...record10.changes, EMOJI_SINGLE_INK_CHANGE])];
+  const changes = [.../* @__PURE__ */ new Set([...record13.changes, EMOJI_SINGLE_INK_CHANGE])];
   const checksum = `sha256:${await sha256Hex(new TextEncoder().encode(serialize(tree, "emoji")))}`;
   const inked = Object.freeze({ checksum, sourceChecksum: svg.sourceChecksum, normalizer: EMOJI_INK_SVG_VERSION });
   prepared.set(inked, { tree, changes });
   return inked;
 }
 function visitPreparedEmojiPaints(svg, visit) {
-  const record10 = prepared.get(svg);
-  if (!record10) throw new Error("SVG has not been admitted.");
+  const record13 = prepared.get(svg);
+  if (!record13) throw new Error("SVG has not been admitted.");
   const walk2 = (node) => {
     for (const name of paintNames) {
       const value = node.attributes[name];
@@ -33077,12 +33077,12 @@ function visitPreparedEmojiPaints(svg, visit) {
     }
     for (const child of node.children) walk2(child);
   };
-  walk2(record10.tree);
+  walk2(record13.tree);
 }
 function emojiSvgChanges(svg) {
-  const record10 = prepared.get(svg);
-  if (!record10) throw new Error("SVG has not been admitted.");
-  return [...record10.changes];
+  const record13 = prepared.get(svg);
+  if (!record13) throw new Error("SVG has not been admitted.");
+  return [...record13.changes];
 }
 var EMOJI_SVG_VERSION, EMOJI_TREATED_SVG_VERSION, EMOJI_INK_SVG_VERSION, prepared, namespace, idPattern2, tags, xlinkNamespace, shapes, referenceOnly, presentation, inert, units, nonnegative, choices, referenceTargets, localId, paintNames, hexPaint, EMOJI_SINGLE_INK_CHANGE, BLACK_PAINT, WHITE_PAINT;
 var init_emoji_svg = __esm({
@@ -33758,21 +33758,21 @@ function licenceDisplayName(id2, extra = []) {
 }
 function publicLocator(value) {
   if (typeof value !== "string") return "";
-  const text4 = value.trim();
-  if (!text4 || text4.length > LOCATOR_MAX || !/^https?:\/\//i.test(text4)) return "";
-  if (/[\s<>"]/.test(text4)) return "";
+  const text5 = value.trim();
+  if (!text5 || text5.length > LOCATOR_MAX || !/^https?:\/\//i.test(text5)) return "";
+  if (/[\s<>"]/.test(text5)) return "";
   let url;
   try {
-    url = new URL(text4);
+    url = new URL(text5);
   } catch {
     return "";
   }
   if (url.username || url.password) return "";
-  return text4;
+  return text5;
 }
-function normaliseLicence(text4, extra = []) {
-  const original = text4;
-  const trimmed = text4.trim().replace(/\s+/g, " ");
+function normaliseLicence(text5, extra = []) {
+  const original = text5;
+  const trimmed = text5.trim().replace(/\s+/g, " ");
   if (!trimmed) return { id: null, original, reviewed: false, status: "unparsed" };
   const supplied = extra.find((profile) => profile.id === trimmed);
   if (supplied) {
@@ -33783,10 +33783,10 @@ function normaliseLicence(text4, extra = []) {
   const alias = ALIASES.get(trimmed.toLowerCase());
   if (alias) return described(alias, original);
   if (PROFILES.has(trimmed)) return described(trimmed, original);
-  const family = CC_FAMILY.exec(trimmed);
-  if (family) {
-    const elements = family[1].replace(/[ _]/g, "-").toLowerCase();
-    const version = family[2];
+  const family2 = CC_FAMILY.exec(trimmed);
+  if (family2) {
+    const elements = family2[1].replace(/[ _]/g, "-").toLowerCase();
+    const version = family2[2];
     const id2 = `CC-${elements.toUpperCase()}-${version}`;
     const known = PROFILES.get(id2);
     return known ? described(id2, original) : { id: id2, version, url: ccUrl(elements, version), reviewed: false, original };
@@ -33806,16 +33806,16 @@ function described(id2, original) {
   if (profile.version) out.version = profile.version;
   return out;
 }
-function readLicenceExpression(text4, extra = []) {
-  const trimmed = text4.trim().replace(/\s+/g, " ");
+function readLicenceExpression(text5, extra = []) {
+  const trimmed = text5.trim().replace(/\s+/g, " ");
   const hasOr = / OR /i.test(trimmed);
   const hasAnd = / AND /i.test(trimmed);
   const simple = !trimmed.includes("(") && !trimmed.includes(")") && hasOr !== hasAnd;
-  const one = () => ({ original: text4, operator: "single", terms: [normaliseLicence(text4, extra)], selected: null });
+  const one = () => ({ original: text5, operator: "single", terms: [normaliseLicence(text5, extra)], selected: null });
   if (!simple) return one();
   const parts = trimmed.split(hasOr ? / OR /i : / AND /i).map((part) => part.trim()).filter(Boolean);
   if (parts.length < 2) return one();
-  return { original: text4, operator: hasOr ? "or" : "and", terms: parts.map((part) => normaliseLicence(part, extra)), selected: null };
+  return { original: text5, operator: hasOr ? "or" : "and", terms: parts.map((part) => normaliseLicence(part, extra)), selected: null };
 }
 var RIGHTS_RULES_VERSION, NO_CREDIT, CC_BY_CREDIT, REVIEWED, RECOGNISED, PROFILES, LOCATOR_MAX, ALIASES, CC_FAMILY, CC_ZERO, LICENSE_REF, ccUrl;
 var init_rights_profiles = __esm({
@@ -34146,7 +34146,7 @@ function changeWords(use) {
   return [...new Set(use.operations.filter((op) => !NOT_A_CHANGE.has(op)))].sort(byString);
 }
 function changesFor(use, detail) {
-  const recorded = (detail?.modifications ?? []).map((text4) => text4.trim()).filter(Boolean);
+  const recorded = (detail?.modifications ?? []).map((text5) => text5.trim()).filter(Boolean);
   return recorded.length ? [...new Set(recorded)] : changeWords(use);
 }
 function workLicence(work, use, extra) {
@@ -34223,7 +34223,7 @@ function noticeFor(work, licence, changes, required, parts, detail) {
   const source = publicLocator(work.sourceUrl);
   if (source) notice.sourceUrl = source;
   notice.changes = changes.length ? changes.join(", ") : "unchanged";
-  const notices = licence.evidence?.notices?.filter((text4) => text4.trim().length > 0) ?? [];
+  const notices = licence.evidence?.notices?.filter((text5) => text5.trim().length > 0) ?? [];
   if (notices.length && (licence.profile?.noticeRequired || licence.profile?.retainSuppliedNotices)) notice.noticeText = notices.join("\n\n");
   return notice;
 }
@@ -34681,7 +34681,7 @@ function attributionCredits(plan) {
   const blocks = [];
   const required = plan.required.map((notice) => notice.credit).filter(Boolean);
   if (required.length) blocks.push(required.join("\n"));
-  const notices = plan.required.map((notice) => notice.noticeText).filter((text4) => Boolean(text4));
+  const notices = plan.required.map((notice) => notice.noticeText).filter((text5) => Boolean(text5));
   if (notices.length) blocks.push(`Notices that travel with this work
 ${notices.join("\n\n")}`);
   const optional = plan.optional.map((notice) => notice.credit).filter(Boolean);
@@ -34787,12 +34787,12 @@ function withoutUndefined(value) {
 function checkAttributionReadback(expected, report, outputHash, fingerprint) {
   const valid2 = report.found && report.state === "valid";
   const activeLabel = report.claim?.manifestLabel ?? "";
-  const ingredients = (report.ingredients ?? []).filter((record10) => Boolean(activeLabel) && record10.manifest === activeLabel);
+  const ingredients = (report.ingredients ?? []).filter((record13) => Boolean(activeLabel) && record13.manifest === activeLabel);
   const observed = [];
   const missing = [];
   const licenceGaps = [];
   for (const notice of expected.required) {
-    const found = valid2 ? ingredients.find((record10) => matches(notice, record10)) : void 0;
+    const found = valid2 ? ingredients.find((record13) => matches(notice, record13)) : void 0;
     if (!found) {
       missing.push(notice);
       continue;
@@ -34851,10 +34851,10 @@ function checkAttributionReadback(expected, report, outputHash, fingerprint) {
   if (outputHash) receipt.outputHash = outputHash;
   return receipt;
 }
-function matches(notice, record10) {
-  const url = ingredientSourceUrl(record10);
+function matches(notice, record13) {
+  const url = ingredientSourceUrl(record13);
   if (notice.sourceUrl && url) return notice.sourceUrl === url;
-  const instance = record10.instanceId?.split("@")[0];
+  const instance = record13.instanceId?.split("@")[0];
   return Boolean(instance && instance === notice.work);
 }
 var CHECKSUM2, byString2, EXTENSION_FORMATS, ROLE_RELATIONSHIP, ingredientSourceUrl;
@@ -34882,7 +34882,7 @@ var init_rights_attribution = __esm({
       woff2: "font/woff2"
     }));
     ROLE_RELATIONSHIP = /* @__PURE__ */ new Map([["incorporated", "componentOf"]]);
-    ingredientSourceUrl = (record10) => record10.rights?.sourceUrl || record10.data?.url;
+    ingredientSourceUrl = (record13) => record13.rights?.sourceUrl || record13.data?.url;
   }
 });
 
@@ -35053,10 +35053,10 @@ function annotateTemplate(source, inputIds) {
   const double = new RegExp(`(?<!\\{)\\{\\{(?![{#/!>^])[^}]*\\b(${idAlt})\\b[^}]*\\}\\}(?!\\})`, "g");
   const tripleAttr = new RegExp(`\\{\\{\\{[^}]*\\b(${idAlt})\\b[^}]*\\}\\}\\}`);
   const doubleAttr = new RegExp(`(?<!\\{)\\{\\{(?![{#/!>^])[^}]*\\b(${idAlt})\\b[^}]*\\}\\}(?!\\})`);
-  function annotateContent(text4) {
-    text4 = text4.replace(triple, (m2, id2) => `<!-- ci:${id2} -->${m2}<!-- /ci:${id2} -->`);
-    text4 = text4.replace(double, (m2, id2) => `<!-- ci:${id2} -->${m2}<!-- /ci:${id2} -->`);
-    return text4;
+  function annotateContent(text5) {
+    text5 = text5.replace(triple, (m2, id2) => `<!-- ci:${id2} -->${m2}<!-- /ci:${id2} -->`);
+    text5 = text5.replace(double, (m2, id2) => `<!-- ci:${id2} -->${m2}<!-- /ci:${id2} -->`);
+    return text5;
   }
   const idInValue = new RegExp(`\\{\\{[^}]*\\b(${idAlt})\\b`);
   const attrRe = /([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
@@ -35208,7 +35208,7 @@ var init_template = __esm({
     ARROW_GLYPHS = { ">": "\u2192", "<": "\u2190", "^": "\u2191", "v": "\u2193" };
     ARROW_CLASSES = { ">": "md-arrow", "<": "md-arrow-left", "^": "md-arrow-up", "v": "md-arrow-down" };
     LEADING_ARROW = /^\s*([<>^v])\s+/;
-    Handlebars.registerHelper("arrow", (text4) => text4 == null ? "" : String(text4).replace(LEADING_ARROW, (_, m2) => (ARROW_GLYPHS[m2] ?? m2) + " "));
+    Handlebars.registerHelper("arrow", (text5) => text5 == null ? "" : String(text5).replace(LEADING_ARROW, (_, m2) => (ARROW_GLYPHS[m2] ?? m2) + " "));
     MD_ESCAPE = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
     MD_BULLET = /^\s*([-*<>^v])\s+/;
     MD_ORDERED = /^\s*\d+[.)]\s+/;
@@ -35217,8 +35217,8 @@ var init_template = __esm({
     MD_LINK = /\[([^\]]+)\]\(([^)\s]+)\)/g;
     MD_LINK_SCHEMES = /^(https?|mailto|tel):/i;
     MD_IMAGE_SCHEMES = /^(https?|data|blob):/i;
-    Handlebars.registerHelper("markdown", (text4) => {
-      if (text4 == null || text4 === "") return new Handlebars.SafeString("");
+    Handlebars.registerHelper("markdown", (text5) => {
+      if (text5 == null || text5 === "") return new Handlebars.SafeString("");
       const inline = (raw) => {
         const urls = [];
         const park = (u) => `\0${urls.push(u) - 1}\0`;
@@ -35246,7 +35246,7 @@ var init_template = __esm({
         }
         return `<p>${lines.map((l) => inline(l)).join("<br>")}</p>`;
       };
-      const html = String(text4).split(/\n{2,}/).filter((b) => b.trim()).map((block) => {
+      const html = String(text5).split(/\n{2,}/).filter((b) => b.trim()).map((block) => {
         const lines = block.split("\n").filter((l) => l.trim() !== "");
         const out = [];
         let run = [];
@@ -35925,12 +35925,12 @@ function property(point2, table, fallback = "") {
   }
   return fallback;
 }
-function emojiGraphemes(text4) {
-  if (text4.length > EMOJI_TEXT_MAX_UNITS) throw new Error("Emoji text exceeds the supported length.");
+function emojiGraphemes(text5) {
+  if (text5.length > EMOJI_TEXT_MAX_UNITS) throw new Error("Emoji text exceeds the supported length.");
   const result = [];
   let offset = 0, start = 0, previous = "", regionalCount = 0;
   let epExtend = false, previousZwjAfterEp = false, conjunct = 0;
-  for (const char of text4) {
+  for (const char of text5) {
     const point2 = char.codePointAt(0);
     if (point2 >= 55296 && point2 <= 57343) throw new Error("Emoji text contains an unpaired surrogate.");
     const current = property(point2, text_17_0_default.grapheme, "Other");
@@ -35949,7 +35949,7 @@ function emojiGraphemes(text4) {
       else if (current === "Regional_Indicator" && previous === "Regional_Indicator" && regionalCount % 2 === 1) joined = true;
     }
     if (!joined) {
-      result.push({ text: text4.slice(start, offset), start, end: offset });
+      result.push({ text: text5.slice(start, offset), start, end: offset });
       start = offset;
     }
     previousZwjAfterEp = current === "ZWJ" && epExtend;
@@ -35961,12 +35961,12 @@ function emojiGraphemes(text4) {
     previous = current;
     offset += char.length;
   }
-  if (offset > 0) result.push({ text: text4.slice(start), start, end: offset });
+  if (offset > 0) result.push({ text: text5.slice(start), start, end: offset });
   return result;
 }
-function segmentEmojiText(text4) {
+function segmentEmojiText(text5) {
   const result = [];
-  for (const cluster2 of emojiGraphemes(text4)) {
+  for (const cluster2 of emojiGraphemes(text5)) {
     const sequence = lookupEmojiSequence(cluster2.text);
     let kind = "text";
     if (!usesTextPresentation(cluster2.text)) {
@@ -36008,7 +36008,7 @@ function emojiInlineStyle(metrics) {
   const margin = metrics.marginRightEm > 0 ? `;margin-right:${em(metrics.marginRightEm)}em` : "";
   return `display:inline-block;position:relative;width:${em(metrics.widthEm)}em;height:${em(metrics.heightEm)}em;vertical-align:${em(-metrics.descentEm)}em${margin}`;
 }
-async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
+async function prepareEmojiText(text5, style, packs, io, options2 = {}) {
   const cache3 = options2.cache ?? /* @__PURE__ */ new Map();
   const prefix = options2.prefix ?? "emoji";
   const treatment = style?.treatment ?? { mode: "original", strengthBps: 0 };
@@ -36021,7 +36021,7 @@ async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
     if (previous?.kind === "text") previous.text += value;
     else segments.push({ kind: "text", text: value });
   };
-  for (const span of segmentEmojiText(text4)) {
+  for (const span of segmentEmojiText(text5)) {
     if (span.kind === "text") {
       pushText(span.text);
       continue;
@@ -36040,15 +36040,15 @@ async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
       continue;
     }
     const value = resolution.value;
-    const record10 = await artworkFor(value, treatment, packs, io, cache3);
-    if ("reason" in record10) {
-      segments.push({ kind: "unresolved", text: span.text, label: value.glyph.label, reason: record10.reason });
+    const record13 = await artworkFor(value, treatment, packs, io, cache3);
+    if ("reason" in record13) {
+      segments.push({ kind: "unresolved", text: span.text, label: value.glyph.label, reason: record13.reason });
       continue;
     }
     const key = cacheKey(value.pack, value.meaning, treatment);
     let source = used.get(key);
     if (!source) {
-      source = { ...structuredClone(record10.base), occurrences: [] };
+      source = { ...structuredClone(record13.base), occurrences: [] };
       used.set(key, source);
       census.push(source);
     }
@@ -36056,10 +36056,10 @@ async function prepareEmojiText(text4, style, packs, io, options2 = {}) {
     segments.push({
       kind: "emoji",
       text: span.text,
-      key: record10.key,
-      label: record10.label,
-      markup: emojiSvgMarkup(record10.svg, `${prefix}-${placement++}`),
-      metrics: record10.metrics,
+      key: record13.key,
+      label: record13.label,
+      markup: emojiSvgMarkup(record13.svg, `${prefix}-${placement++}`),
+      metrics: record13.metrics,
       source
     });
   }
@@ -36087,7 +36087,7 @@ async function artworkFor(value, treatment, packs, io, cache3) {
   } catch {
     return { reason: "unsupported-metrics" };
   }
-  const record10 = {
+  const record13 = {
     svg,
     metrics,
     label: value.glyph.label,
@@ -36107,8 +36107,8 @@ async function artworkFor(value, treatment, packs, io, cache3) {
       changes: emojiSvgChanges(svg)
     }
   };
-  cache3.set(key, record10);
-  return record10;
+  cache3.set(key, record13);
+  return record13;
 }
 var em, meaningKey2, cacheKey;
 var init_emoji_inline = __esm({
@@ -36159,16 +36159,16 @@ function collect(root, options2, everything = false) {
   while (stack.length) {
     const node = stack.pop();
     if (node.nodeType === TEXT_NODE) {
-      const text4 = node.data ?? node.textContent ?? "";
-      if (emojiTextTrigger(text4)) work.push({ kind: "text", node, text: text4, at: 0 });
+      const text5 = node.data ?? node.textContent ?? "";
+      if (emojiTextTrigger(text5)) work.push({ kind: "text", node, text: text5, at: 0 });
       continue;
     }
     if (node.nodeType !== ELEMENT_NODE) continue;
     const element = node;
     if (isEmojiSpan(element)) {
-      const text4 = element.getAttribute("data-emoji") ?? "";
+      const text5 = element.getAttribute("data-emoji") ?? "";
       const at = Number(element.getAttribute("data-emoji-at") ?? "0");
-      if (text4) work.push({ kind: "span", node: element, text: text4, at: Number.isFinite(at) ? at : 0 });
+      if (text5) work.push({ kind: "span", node: element, text: text5, at: Number.isFinite(at) ? at : 0 });
       continue;
     }
     if (!everything && skipElement(element, options2)) continue;
@@ -36180,11 +36180,11 @@ function collect(root, options2, everything = false) {
 function artworkMarkup(markup) {
   return markup.startsWith("<svg") ? `<svg${ARTWORK_ATTRIBUTES}${markup.slice(4)}` : markup;
 }
-function escapeChars(text4) {
-  return escapeXml(text4).replace(/\r/g, "&#13;");
+function escapeChars(text5) {
+  return escapeXml(text5).replace(/\r/g, "&#13;");
 }
-function hiddenText(text4) {
-  return `<span class="${EMOJI_TEXT_CLASS}" style="${HIDDEN_TEXT_STYLE}">${escapeChars(text4)}</span>`;
+function hiddenText(text5) {
+  return `<span class="${EMOJI_TEXT_CLASS}" style="${HIDDEN_TEXT_STYLE}">${escapeChars(text5)}</span>`;
 }
 function spanMarkup(segment, at) {
   if (segment.kind === "text") return escapeChars(segment.text);
@@ -36195,31 +36195,31 @@ function spanMarkup(segment, at) {
   }
   return `<span class="${EMOJI_SPAN_CLASS}" ${common} aria-label="${escapeChars(segment.label)}" data-emoji-key="${escapeXml(segment.key)}" data-emoji-sum="${shortSum(segment.source.canonicalChecksum)}" style="${escapeXml(emojiInlineStyle(segment.metrics))}">${artworkMarkup(segment.markup)}${hiddenText(segment.text)}</span>`;
 }
-function chunkText(text4) {
-  if (text4.length <= EMOJI_TEXT_MAX_UNITS) return [text4];
+function chunkText(text5) {
+  if (text5.length <= EMOJI_TEXT_MAX_UNITS) return [text5];
   const out = [];
   let at = 0;
-  while (at < text4.length) {
-    let end = Math.min(at + CHUNK_UNITS, text4.length);
-    if (end < text4.length) {
+  while (at < text5.length) {
+    let end = Math.min(at + CHUNK_UNITS, text5.length);
+    if (end < text5.length) {
       const floor = Math.max(at + 1, end - CHUNK_BACKOFF);
-      while (end > floor && (JOINER.test(text4[end]) || text4[end - 1] === ZWJ)) end -= 1;
+      while (end > floor && (JOINER.test(text5[end]) || text5[end - 1] === ZWJ)) end -= 1;
     }
-    out.push(text4.slice(at, end));
+    out.push(text5.slice(at, end));
     at = end;
   }
   return out;
 }
-function refusedSegments(text4) {
+function refusedSegments(text5) {
   const segments = [];
   let at = 0;
   TRIGGER_ALL.lastIndex = 0;
-  for (let hit = TRIGGER_ALL.exec(text4); hit; hit = TRIGGER_ALL.exec(text4)) {
-    if (hit.index > at) segments.push({ kind: "text", text: text4.slice(at, hit.index) });
+  for (let hit = TRIGGER_ALL.exec(text5); hit; hit = TRIGGER_ALL.exec(text5)) {
+    if (hit.index > at) segments.push({ kind: "text", text: text5.slice(at, hit.index) });
     segments.push({ kind: "unresolved", text: hit[0], reason: "unreadable-text" });
     at = hit.index + hit[0].length;
   }
-  if (at < text4.length) segments.push({ kind: "text", text: text4.slice(at) });
+  if (at < text5.length) segments.push({ kind: "text", text: text5.slice(at) });
   return segments;
 }
 function insertMarkup(doc, parent, target, html) {
@@ -36314,7 +36314,7 @@ var init_emoji_dom = __esm({
     ARTWORK_ATTRIBUTES = ' aria-hidden="true" focusable="false" style="display:block;width:100%;height:100%"';
     SKIP_TAGS = /* @__PURE__ */ new Set(["SCRIPT", "STYLE", "TEXTAREA", "INPUT", "SELECT", "OPTION", "SVG", "CANVAS", "NOSCRIPT"]);
     TRIGGER = /[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u200D\u20E3\uFE0F\u00A9\u00AE\u203C\u2049\u2122\u2139\u2194-\u21AA\u231A-\u231B\u2328\u23CF-\u23FA\u24C2\u25AA-\u25FE\u2600-\u27BF\u2934-\u2935\u2B00-\u2BFF\u3030\u303D\u3297\u3299]/;
-    emojiTextTrigger = (text4) => TRIGGER.test(text4);
+    emojiTextTrigger = (text5) => TRIGGER.test(text5);
     isEmojiSpan = (element) => /(?:^|\s)lolly-emoji(?:\s|$)/.test(element.getAttribute("class") ?? "");
     isUnsetSpan = (element) => /(?:^|\s)lolly-emoji--unset(?:\s|$)/.test(element.getAttribute("class") ?? "");
     meaningKey3 = (meaning) => meaning.kind === "unicode" ? meaning.key : meaning.id;
@@ -41284,17 +41284,17 @@ function readTextVs(bytes) {
     off += utf8Len(cp);
     i += width;
   }
-  const text4 = { nfc, wrappers, ...wrappers.length >= MAX_TEXT_WRAPPERS && i < nfc.length ? { truncated: true } : {} };
-  if (!wrappers.length) return { store: null, text: text4 };
+  const text5 = { nfc, wrappers, ...wrappers.length >= MAX_TEXT_WRAPPERS && i < nfc.length ? { truncated: true } : {} };
+  if (!wrappers.length) return { store: null, text: text5 };
   const valid2 = wrappers.filter((w) => w.store);
   if (!valid2.length) {
     const first = wrappers[0];
-    return { store: null, text: text4, status: first.status, fatal: `C2PA text wrapper found but unreadable: ${first.reason ?? "malformed"}` };
+    return { store: null, text: text5, status: first.status, fatal: `C2PA text wrapper found but unreadable: ${first.reason ?? "malformed"}` };
   }
   const chosen = valid2[0];
   return {
     store: chosen.store,
-    text: text4,
+    text: text5,
     // The U+FEFF-inclusive range - see C2paTextWrapper for why this is a choice
     // and not a reading. `selectorStart` is on the wrapper for the other one.
     exclusions: [{ start: chosen.start, length: chosen.end - chosen.start }],
@@ -41485,53 +41485,53 @@ function collectIngredientRecords(store) {
         } else if (RIGHTS_LABEL.test(ab.label)) {
           try {
             const map = decodeCbor(contentOf(store, ab));
-            if (map instanceof Map) for (const [label, record10] of rightsEntries(map)) rights.set(label, record10);
+            if (map instanceof Map) for (const [label, record13] of rightsEntries(map)) rights.set(label, record13);
           } catch {
           }
         }
       }
     }
-    for (const record10 of records) {
-      const bound = rights.get(record10.label);
-      if (bound) record10.rights = bound;
-      out.push(record10);
+    for (const record13 of records) {
+      const bound = rights.get(record13.label);
+      if (bound) record13.rights = bound;
+      out.push(record13);
     }
   }
   return out;
 }
 function ingredientRecord(manifest, label, map) {
   const active = map.get("activeManifest") ?? map.get("c2pa_manifest");
-  const record10 = { manifest, label, credentialed: active instanceof Map };
+  const record13 = { manifest, label, credentialed: active instanceof Map };
   const activeUrl = active instanceof Map ? asText(active.get("url")) : void 0;
-  if (activeUrl) record10.activeManifest = activeUrl;
+  if (activeUrl) record13.activeManifest = activeUrl;
   const relationship = asText(map.get("relationship"));
-  if (relationship) record10.relationship = relationship;
+  if (relationship) record13.relationship = relationship;
   const title = asText(map.get("dc:title"));
-  if (title) record10.title = title;
+  if (title) record13.title = title;
   const format = asText(map.get("dc:format"));
-  if (format) record10.format = format;
+  if (format) record13.format = format;
   const instanceId = asText(map.get("instanceID"));
-  if (instanceId) record10.instanceId = instanceId;
+  if (instanceId) record13.instanceId = instanceId;
   const description = asText(map.get("description"));
-  if (description) record10.description = description;
+  if (description) record13.description = description;
   const informationalUri = asText(map.get("informationalURI"));
-  if (informationalUri) record10.informationalUri = informationalUri;
+  if (informationalUri) record13.informationalUri = informationalUri;
   const digitalSourceType = asText(map.get("digitalSourceType"));
-  if (digitalSourceType) record10.digitalSourceType = digitalSourceType;
+  if (digitalSourceType) record13.digitalSourceType = digitalSourceType;
   const data = map.get("data");
   const dataUrl = data instanceof Map ? asText(data.get("url")) : void 0;
   if (data instanceof Map && dataUrl) {
-    record10.data = { url: dataUrl };
+    record13.data = { url: dataUrl };
     const alg = asText(data.get("alg"));
-    if (alg) record10.data.alg = alg;
+    if (alg) record13.data.alg = alg;
     const hash = data.get("hash");
-    if (hash instanceof Uint8Array) record10.data.hash = bytesToHex(hash);
+    if (hash instanceof Uint8Array) record13.data.hash = bytesToHex(hash);
     const dataFormat = asText(data.get("dc:format"));
-    if (dataFormat) record10.data.format = dataFormat;
+    if (dataFormat) record13.data.format = dataFormat;
     const size = data.get("size");
-    if (typeof size === "number" && Number.isInteger(size) && size >= 0) record10.data.size = size;
+    if (typeof size === "number" && Number.isInteger(size) && size >= 0) record13.data.size = size;
   }
-  return record10;
+  return record13;
 }
 function rightsEntries(map) {
   const sources = map.get("sources");
@@ -41543,7 +41543,7 @@ function rightsEntries(map) {
     const url = ingredient instanceof Map ? asText(ingredient.get("url")) : void 0;
     if (!url?.startsWith("self#jumbf=c2pa.assertions/")) continue;
     const modifications = source.get("modifications");
-    const record10 = {
+    const record13 = {
       creator: asText(source.get("creator")) ?? "",
       license: asText(source.get("license")) ?? "",
       licenseUrl: asText(source.get("licenseUrl")) ?? "",
@@ -41553,24 +41553,24 @@ function rightsEntries(map) {
       sourceHash: asText(source.get("sourceHash")) ?? ""
     };
     const revision = asText(source.get("revision"));
-    if (revision) record10.revision = revision;
+    if (revision) record13.revision = revision;
     const usedHash = asText(source.get("usedHash"));
-    if (usedHash) record10.usedHash = usedHash;
-    out.push([url.slice("self#jumbf=c2pa.assertions/".length), record10]);
+    if (usedHash) record13.usedHash = usedHash;
+    out.push([url.slice("self#jumbf=c2pa.assertions/".length), record13]);
   }
   return out;
 }
 function svgEmbeddedRasters(bytes) {
   const out = [];
-  let text4;
+  let text5;
   try {
-    text4 = bytesToBin(bytes);
+    text5 = bytesToBin(bytes);
   } catch {
     return out;
   }
   const re = /(?:xlink:)?href\s*=\s*(['"])\s*data:image\/[a-z0-9.+-]+;base64,\s*([A-Za-z0-9+/=\s]+?)\1/gi;
   let m2;
-  while ((m2 = re.exec(text4)) !== null) {
+  while ((m2 = re.exec(text5)) !== null) {
     try {
       const raster = base64ToBytes(m2[2].replace(/\s+/g, ""));
       if (raster.length) out.push(raster);
@@ -42916,7 +42916,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     if (!root || typeof root !== "object") return { present: true, replaced: 0, unresolved: 0, census: [] };
     const track = opts2.track !== false;
     const nothing = { replaced: 0, unresolved: 0, census: [] };
-    const record10 = (result2) => {
+    const record13 = (result2) => {
       if (!track) return;
       emojiReplaced = result2.replaced;
       emojiUnresolved = result2.unresolved;
@@ -42925,14 +42925,14 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
     };
     if (track) emojiNode = root;
     if (!EMOJI_MAYBE.test(root.textContent ?? "")) {
-      record10(nothing);
+      record13(nothing);
       return { present: true, ...nothing };
     }
     const style = emojiStyle;
     if (!style) {
       await loadEmojiSets();
       if (!emojiSets2?.length) {
-        record10(nothing);
+        record13(nothing);
         return { present: true, ...nothing };
       }
     }
@@ -42956,7 +42956,7 @@ async function createRuntime(tool, host, initialState = {}, opts = {}) {
       io,
       { cache: emojiArtwork, idScope: opts2.idScope }
     );
-    record10(result);
+    record13(result);
     if (!emojiSets2 && (style || result.replaced || result.unresolved)) void loadEmojiSets();
     return { present: true, ...result };
   }
@@ -45881,10 +45881,10 @@ function xmlValue(value) {
   }).slice(0, 2048).replace(new RegExp("\\p{Cc}", "gu"), " ").replace(/\s+/g, " ").trim();
 }
 function readXmpFields(input, specs) {
-  const text4 = input.slice(0, 1024 * 1024).replace(/<!--[\s\S]*?-->/g, "");
+  const text5 = input.slice(0, 1024 * 1024).replace(/<!--[\s\S]*?-->/g, "");
   const out = [];
   const namespaces = /* @__PURE__ */ new Map();
-  for (const m2 of text4.matchAll(/xmlns:([\w-]+)\s*=\s*["']([^"']+)["']/g)) namespaces.set(m2[1], m2[2]);
+  for (const m2 of text5.matchAll(/xmlns:([\w-]+)\s*=\s*["']([^"']+)["']/g)) namespaces.set(m2[1], m2[2]);
   for (const [fallback, namespace2, property2, group, label] of specs) {
     const prefixes = [...namespaces].filter(([, uri]) => uri === namespace2).map(([prefix]) => prefix);
     if (!namespaces.has(fallback)) prefixes.push(fallback);
@@ -45892,17 +45892,17 @@ function readXmpFields(input, specs) {
       const tag2 = `${prefix}:${property2}`;
       const re = new RegExp(`<${tag2}(?=[\\s/>])([^<>]*?)>|\\b${tag2}\\s*=\\s*["']([^"']*)["']`, "g");
       let missingClose = false;
-      for (let m2 = re.exec(text4); m2; m2 = re.exec(text4)) {
+      for (let m2 = re.exec(text5); m2; m2 = re.exec(text5)) {
         if (out.length >= 64) return out;
         let raw = m2[2];
         if (raw === void 0) {
           raw = /[\w-]+:resource\s*=\s*["']([^"']*)["']/.exec(m2[1] ?? "")?.[1];
           if (raw === void 0 && !missingClose && !/\/\s*$/.test(m2[1] ?? "")) {
             const start = m2.index + m2[0].length;
-            const end = text4.indexOf(`</${tag2}`, start);
+            const end = text5.indexOf(`</${tag2}`, start);
             if (end < 0) missingClose = true;
             else {
-              raw = text4.slice(start, end);
+              raw = text5.slice(start, end);
               re.lastIndex = end + tag2.length + 2;
             }
           }
@@ -46339,19 +46339,19 @@ function readExif(bytes, base, len2, out) {
     }
   }
 }
-function readXmp(text4, out) {
+function readXmp(text5, out) {
   const grab = (re) => {
-    const m2 = re.exec(text4);
+    const m2 = re.exec(text5);
     if (!m2) return null;
     const t = clip((m2[1] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
     return t || null;
   };
-  out.fields.push(...xmlProvenanceFields(text4));
+  out.fields.push(...xmlProvenanceFields(text5));
   const creator = grab(/<dc:creator>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/i) || grab(/<dc:creator>([\s\S]*?)<\/dc:creator>/i);
   if (creator && !out.fields.some((f) => f.label === "Creator")) out.fields.push({ label: "Creator", value: creator, group: "authorship", sensitive: true });
   const rights = grab(/<dc:rights>[\s\S]*?<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/i) || grab(/<dc:rights>([\s\S]*?)<\/dc:rights>/i);
   if (rights && !out.fields.some((f) => f.label === "Rights")) out.fields.push({ label: "Rights", value: rights, group: "authorship" });
-  const subject = /<dc:subject>([\s\S]*?)<\/dc:subject>/i.exec(text4)?.[1];
+  const subject = /<dc:subject>([\s\S]*?)<\/dc:subject>/i.exec(text5)?.[1];
   if (subject && !out.fields.some((f) => f.label === "Keywords")) {
     const items2 = [...subject.matchAll(/<rdf:li[^>]*>([\s\S]*?)<\/rdf:li>/gi)].map((m2) => clip((m2[1] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())).filter(Boolean).slice(0, 64);
     if (items2.length) out.fields.push({ label: "Keywords", value: clip(items2.join(", ")), group: "description" });
@@ -46449,8 +46449,8 @@ function primaryDeclaresGainMap(bytes, scan2) {
   for (const seg of scan2.segments) {
     if (seg.marker !== 225 || seg.appId !== JPEG_APP_IDS.XMP) continue;
     const body = bytes.subarray(seg.start + 4, Math.min(seg.end, seg.start + 4 + MAX_GAINMAP_SNIFF));
-    const text4 = new TextDecoder("latin1").decode(body);
-    if (text4.includes(HDRGM_NS) && text4.includes("GainMap")) return true;
+    const text5 = new TextDecoder("latin1").decode(body);
+    if (text5.includes(HDRGM_NS) && text5.includes("GainMap")) return true;
   }
   return false;
 }
@@ -46841,8 +46841,8 @@ function ilstText(bytes, entry2) {
     if (d.type !== "data" || d.end - d.payload < 8) continue;
     const kind = u323(bytes, d.payload) & 16777215;
     if (kind !== 1 && kind !== 0) continue;
-    const text4 = bmffString(bytes, d.payload + 8, d.end);
-    if (text4) return text4;
+    const text5 = bmffString(bytes, d.payload + 8, d.end);
+    if (text5) return text5;
   }
   return null;
 }
@@ -46879,11 +46879,11 @@ function readIlst(bytes, ilst, out) {
   for (const entry2 of bmffChildren(bytes, ilst.payload, ilst.end)) {
     const tag2 = ILST_TAGS[entry2.type];
     if (!tag2) continue;
-    const text4 = ilstText(bytes, entry2);
-    if (!text4) continue;
-    if (entry2.type === "\xA9too") encoder5 = text4;
+    const text5 = ilstText(bytes, entry2);
+    if (!text5) continue;
+    if (entry2.type === "\xA9too") encoder5 = text5;
     if (out.fields.length < MAX_FIELDS) {
-      out.fields.push({ label: tag2.label, value: text4, group: tag2.group, ...tag2.sensitive ? { sensitive: true } : {} });
+      out.fields.push({ label: tag2.label, value: text5, group: tag2.group, ...tag2.sensitive ? { sensitive: true } : {} });
     }
   }
   return encoder5;
@@ -46913,15 +46913,15 @@ function readMdtaMeta(bytes, kids, out) {
     const key = idx >= 1 && idx <= names.length ? names[idx - 1] : "";
     const known = MDTA_KEYS[key];
     if (!known) continue;
-    const text4 = ilstText(bytes, entry2);
-    if (!text4) continue;
+    const text5 = ilstText(bytes, entry2);
+    if (!text5) continue;
     if (key === "com.apple.quicktime.location.ISO6709") {
-      const fix = parseIso6709(text4);
+      const fix = parseIso6709(text5);
       if (fix) bmffGps(out, fix);
       continue;
     }
     if (out.fields.length < MAX_FIELDS) {
-      out.fields.push({ label: known.label, value: text4, group: known.group, ...known.sensitive ? { sensitive: true } : {} });
+      out.fields.push({ label: known.label, value: text5, group: known.group, ...known.sensitive ? { sensitive: true } : {} });
     }
   }
 }
@@ -47155,36 +47155,36 @@ function heifXmpPacket(bytes) {
   const item = store.items.find((i) => i.type === "mime" && i.contentType === "application/rdf+xml");
   const payload = item ? heifItemPayload(bytes, store, item) : null;
   if (!payload) return null;
-  const text4 = new TextDecoder("utf-8").decode(payload.subarray(0, MAX_TEXT_SCAN)).trim();
-  return text4 || null;
+  const text5 = new TextDecoder("utf-8").decode(payload.subarray(0, MAX_TEXT_SCAN)).trim();
+  return text5 || null;
 }
 function readSvg(bytes, out) {
-  const text4 = new TextDecoder("utf-8").decode(bytes.length > MAX_TEXT_SCAN ? bytes.subarray(0, MAX_TEXT_SCAN) : bytes);
+  const text5 = new TextDecoder("utf-8").decode(bytes.length > MAX_TEXT_SCAN ? bytes.subarray(0, MAX_TEXT_SCAN) : bytes);
   const clean2 = (s) => s ? clip(s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()) || null : null;
-  for (const comment of text4.matchAll(/<!--[\s\S]*?-->/g)) {
+  for (const comment of text5.matchAll(/<!--[\s\S]*?-->/g)) {
     if (out.fields.length >= MAX_FIELDS) break;
     const value = clean2(comment[0].slice(4, -3));
     if (!value) continue;
     const generator = /^\s*Generator:\s*(.+?)(?:[,;]?\s*SVG (?:Export|Version)|$)/i.exec(value);
     out.fields.push({ label: generator ? "Generator comment" : "Comment", value: generator?.[1] ?? value, group: generator ? "software" : "description", source: "SVG comment", signal: "hint" });
   }
-  const root = /<svg\b[^>]*>/i.exec(text4)?.[0] ?? "";
+  const root = /<svg\b[^>]*>/i.exec(text5)?.[0] ?? "";
   const ink = /\binkscape:version\s*=\s*["']([^"']+)["']/i.exec(root);
   if (ink) out.fields.push({ label: "Created with", value: `Inkscape ${ink[1]}`, group: "software", source: "SVG inkscape:version", signal: "hint" });
   for (const [name, marker] of [["Inkscape", "http://www.inkscape.org/namespaces/inkscape"], ["Sketch", "http://www.bohemiancoding.com/sketch/ns"], ["Figma", "http://www.figma.com/figma/ns"]]) {
     if (root.includes(marker) && !(name === "Inkscape" && ink)) out.fields.push({ label: "Software marker", value: name, group: "software", source: "SVG editor namespace", signal: "hint" });
   }
-  const doc = /sodipodi:docname=["']([^"']+)["']/i.exec(text4);
+  const doc = /sodipodi:docname=["']([^"']+)["']/i.exec(text5);
   if (doc) out.fields.push({ label: "Original filename", value: doc[1], group: "description", sensitive: true });
-  const title = clean2(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(text4)?.[1]);
+  const title = clean2(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(text5)?.[1]);
   if (title) out.fields.push({ label: "Title", value: title, group: "description" });
-  const desc = clean2(/<desc[^>]*>([\s\S]*?)<\/desc>/i.exec(text4)?.[1]);
+  const desc = clean2(/<desc[^>]*>([\s\S]*?)<\/desc>/i.exec(text5)?.[1]);
   if (desc) out.fields.push({ label: "Description", value: desc, group: "description" });
-  readXmp(text4, out);
-  if (/[A-Za-z]:\\|\/Users\/|\/home\//.test(text4)) {
+  readXmp(text5, out);
+  if (/[A-Za-z]:\\|\/Users\/|\/home\//.test(text5)) {
     out.fields.push({ label: "Local file path", value: "a path is embedded in a comment", group: "description", sensitive: true });
   }
-  const imgs = (text4.match(/(?:href|xlink:href)\s*=\s*["']data:image\//gi) || []).length;
+  const imgs = (text5.match(/(?:href|xlink:href)\s*=\s*["']data:image\//gi) || []).length;
   if (imgs) out.fields.push({ label: "Embedded images", value: `${imgs} image${imgs > 1 ? "s" : ""}`, group: "technical" });
 }
 function extractFileMetadata(bytes) {
@@ -47238,8 +47238,8 @@ function extractXmpPacket(bytes) {
           if (seg.marker !== 225 || seg.appId !== JPEG_APP_IDS.XMP) continue;
           const start = seg.start + 4 + JPEG_APP_IDS.XMP.length + 1;
           if (start >= seg.end) return null;
-          const text4 = dec.decode(bytes.subarray(start, Math.min(seg.end, start + MAX_TEXT_SCAN))).trim();
-          return text4 || null;
+          const text5 = dec.decode(bytes.subarray(start, Math.min(seg.end, start + MAX_TEXT_SCAN))).trim();
+          return text5 || null;
         }
         return null;
       }
@@ -47262,8 +47262,8 @@ function extractXmpPacket(bytes) {
               while (t < end && bytes[t] !== 0) t++;
               t++;
               if (t >= end) return null;
-              const text4 = dec.decode(bytes.subarray(t, Math.min(end, t + MAX_TEXT_SCAN))).trim();
-              return text4 || null;
+              const text5 = dec.decode(bytes.subarray(t, Math.min(end, t + MAX_TEXT_SCAN))).trim();
+              return text5 || null;
             }
           }
           if (type === "IEND") return null;
@@ -47279,8 +47279,8 @@ function extractXmpPacket(bytes) {
           const dataStart = p + 8;
           if (dataStart + size > bytes.length) return null;
           if (fourcc4 === "XMP ") {
-            const text4 = dec.decode(bytes.subarray(dataStart, Math.min(dataStart + size, dataStart + MAX_TEXT_SCAN))).trim();
-            return text4 || null;
+            const text5 = dec.decode(bytes.subarray(dataStart, Math.min(dataStart + size, dataStart + MAX_TEXT_SCAN))).trim();
+            return text5 || null;
           }
           p = dataStart + size + (size & 1);
         }
@@ -47299,8 +47299,8 @@ function extractXmpPacket(bytes) {
           if (e.tag !== 700 || e.type !== 1 && e.type !== 7 && e.type !== 2) continue;
           const end = Math.min(e.valueOffset + Math.min(e.count, MAX_TEXT_SCAN), dv.byteLength);
           if (e.valueOffset <= 0 || e.valueOffset >= end) return null;
-          const text4 = dec.decode(bytes.subarray(e.valueOffset, end)).replace(/\0+$/, "").trim();
-          return text4 || null;
+          const text5 = dec.decode(bytes.subarray(e.valueOffset, end)).replace(/\0+$/, "").trim();
+          return text5 || null;
         }
         return null;
       }
@@ -47661,8 +47661,8 @@ function cleanSvgTokens(toks) {
   return out.join("");
 }
 function stripSvg(bytes) {
-  const text4 = new TextDecoder("utf-8").decode(bytes);
-  return new TextEncoder().encode(cleanSvgTokens(tokenize2(text4)));
+  const text5 = new TextDecoder("utf-8").decode(bytes);
+  return new TextEncoder().encode(cleanSvgTokens(tokenize2(text5)));
 }
 function hasResidualMetadata(bytes, format) {
   if (format === "jpeg") {
@@ -47686,8 +47686,8 @@ function hasResidualMetadata(bytes, format) {
     }
     return null;
   }
-  const text4 = new TextDecoder("utf-8").decode(bytes);
-  for (const tk of tokenize2(text4)) {
+  const text5 = new TextDecoder("utf-8").decode(bytes);
+  for (const tk of tokenize2(text5)) {
     if (tk.t === "comment") return "an XML comment";
     if (tk.t === "doctype") return "a DOCTYPE declaration";
     if (tk.t === "pi" && !tk.isXmlDecl) return "a processing instruction";
@@ -47782,13 +47782,13 @@ function validateDocument(target) {
 }
 function documentSchema(tool) {
   const manifest = "manifest" in tool ? tool.manifest : tool;
-  const properties = {};
+  const properties2 = {};
   const required = [];
   for (const input of manifest.inputs ?? []) {
-    properties[input.id] = inputSchema(input);
+    properties2[input.id] = inputSchema(input);
     if (input.required) required.push(input.id);
   }
-  return { $schema: "https://json-schema.org/draft/2020-12/schema", title: manifest.name, type: "object", properties, additionalProperties: false, ...required.length ? { required } : {} };
+  return { $schema: "https://json-schema.org/draft/2020-12/schema", title: manifest.name, type: "object", properties: properties2, additionalProperties: false, ...required.length ? { required } : {} };
 }
 function inputSchema(input) {
   const base = { title: input.label ?? input.id, ...input.help ? { description: input.help } : {} };
@@ -47886,8 +47886,8 @@ function tokenValuesFromModel(model2) {
 function semanticJson(value) {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
   if (Array.isArray(value)) return `[${value.map(semanticJson).join(",")}]`;
-  const record10 = value;
-  return `{${Object.keys(record10).sort().filter((key) => record10[key] !== void 0).map((key) => `${JSON.stringify(key)}:${semanticJson(record10[key])}`).join(",")}}`;
+  const record13 = value;
+  return `{${Object.keys(record13).sort().filter((key) => record13[key] !== void 0).map((key) => `${JSON.stringify(key)}:${semanticJson(record13[key])}`).join(",")}}`;
 }
 function diffRecords(a, b) {
   const ak = new Set(Object.keys(a));
@@ -55472,8 +55472,8 @@ var init_frame_address = __esm({
 });
 
 // engine/src/table-text.ts
-function looksLikeTable(text4) {
-  const t = text4.trim();
+function looksLikeTable(text5) {
+  const t = text5.trim();
   if (!t) return false;
   if (t.includes("	")) return true;
   if (/^\s*\|.*\|\s*$/m.test(t)) return true;
@@ -55482,8 +55482,8 @@ function looksLikeTable(text4) {
   const n2 = splitCsvLine(lines[0]).length;
   return n2 > 1 && lines.every((l) => splitCsvLine(l).length === n2);
 }
-function parseTableText(text4) {
-  const t = text4.replace(/\r\n?/g, "\n").replace(/\n+$/, "");
+function parseTableText(text5) {
+  const t = text5.replace(/\r\n?/g, "\n").replace(/\n+$/, "");
   if (!t.trim()) return null;
   const lines = t.split("\n");
   let grid;
@@ -55776,13 +55776,13 @@ function csvCell(value) {
   const s = value == null ? "" : String(value);
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
-function parseDelimited(text4, delim = ",") {
+function parseDelimited(text5, delim = ",") {
   const rows2 = [];
   let row = [];
   let field2 = "";
   let inQuotes = false;
   let i = 0;
-  const n2 = text4.length;
+  const n2 = text5.length;
   const endField = () => {
     row.push(field2);
     field2 = "";
@@ -55793,10 +55793,10 @@ function parseDelimited(text4, delim = ",") {
     row = [];
   };
   while (i < n2) {
-    const ch = text4[i];
+    const ch = text5[i];
     if (inQuotes) {
       if (ch === '"') {
-        if (text4[i + 1] === '"') {
+        if (text5[i + 1] === '"') {
           field2 += '"';
           i += 2;
           continue;
@@ -55834,8 +55834,8 @@ function parseDelimited(text4, delim = ",") {
   if (field2 !== "" || row.length) endRow();
   return rows2.filter((r3) => !(r3.length === 1 && r3[0] === ""));
 }
-function detectDelimiter(text4) {
-  const firstLine2 = text4.slice(0, text4.indexOf("\n") >= 0 ? text4.indexOf("\n") : text4.length);
+function detectDelimiter(text5) {
+  const firstLine2 = text5.slice(0, text5.indexOf("\n") >= 0 ? text5.indexOf("\n") : text5.length);
   const tabs = (firstLine2.match(/\t/g) || []).length;
   const commas = (firstLine2.match(/,/g) || []).length;
   const semis = (firstLine2.match(/;/g) || []).length;
@@ -55843,8 +55843,8 @@ function detectDelimiter(text4) {
   if (semis > commas && semis > tabs) return ";";
   return ",";
 }
-function parseBatchCsv(text4) {
-  const grid = parseDelimited(text4, detectDelimiter(text4));
+function parseBatchCsv(text5) {
+  const grid = parseDelimited(text5, detectDelimiter(text5));
   if (grid.length < 2) return [];
   const header = grid[0].map((h) => h.trim());
   const out = [];
@@ -55985,10 +55985,10 @@ function insertPngCicp(png, cicp) {
   out.set(png.subarray(insertAt), insertAt + chunk6.length);
   return out;
 }
-function iTXtChunk(keyword, text4) {
+function iTXtChunk(keyword, text5) {
   const enc5 = new TextEncoder();
   const kw = enc5.encode(keyword);
-  const txt = enc5.encode(text4);
+  const txt = enc5.encode(text5);
   const data = new Uint8Array(kw.length + 5 + txt.length);
   let o = 0;
   data.set(kw, o);
@@ -56195,12 +56195,12 @@ function injectSvgMeta(xml, meta) {
   const at = m2.index + m2[0].length;
   return xml.slice(0, at) + "\n" + svgMetaBlock(meta) + xml.slice(at);
 }
-function withGifComment(bytes, text4) {
-  if (!text4 || bytes.length < 13) return bytes;
+function withGifComment(bytes, text5) {
+  if (!text5 || bytes.length < 13) return bytes;
   const packed = bytes[10];
   const gctSize = packed & 128 ? 3 * (1 << (packed & 7) + 1) : 0;
   const at = 13 + gctSize;
-  const txt = new TextEncoder().encode(text4);
+  const txt = new TextEncoder().encode(text5);
   const subs = [];
   for (let i = 0; i < txt.length; i += 255) {
     const chunk6 = txt.subarray(i, i + 255);
@@ -62098,10 +62098,10 @@ function groupWordsToCues(words, opts = {}) {
   const cues = [];
   let open2 = null;
   for (const w of words) {
-    const text4 = w.text.trim();
-    if (!text4) continue;
+    const text5 = w.text.trim();
+    if (!text5) continue;
     if (open2) {
-      const joined = `${open2.text} ${text4}`;
+      const joined = `${open2.text} ${text5}`;
       const overflow = joined.length > maxChars || w.end - open2.start > maxDurationS;
       const paused = w.start - open2.end >= gapS;
       if (overflow || paused) {
@@ -62112,8 +62112,8 @@ function groupWordsToCues(words, opts = {}) {
         open2.end = w.end;
       }
     }
-    if (!open2) open2 = { start: w.start, end: w.end, text: text4 };
-    if (SENTENCE_END.test(text4)) {
+    if (!open2) open2 = { start: w.start, end: w.end, text: text5 };
+    if (SENTENCE_END.test(text5)) {
       cues.push(open2);
       open2 = null;
     }
@@ -62489,40 +62489,40 @@ var init_claudisms = __esm({
 });
 
 // engine/src/text-signals.ts
-function collect2(re, text4) {
+function collect2(re, text5) {
   const out = [];
   re.lastIndex = 0;
-  for (let m2 = re.exec(text4); m2 !== null; m2 = re.exec(text4)) {
+  for (let m2 = re.exec(text5); m2 !== null; m2 = re.exec(text5)) {
     out.push({ index: m2.index, length: m2[0].length });
     if (m2[0].length === 0) re.lastIndex++;
   }
   return out;
 }
-function charAt(text4, i) {
-  if (i < 0 || i >= text4.length) return "";
-  return String.fromCodePoint(text4.codePointAt(i));
+function charAt(text5, i) {
+  if (i < 0 || i >= text5.length) return "";
+  return String.fromCodePoint(text5.codePointAt(i));
 }
-function suspiciousJoiners(text4) {
-  return collect2(ZW_JOINERS, text4).filter(({ index: index2 }) => {
-    const before = charAt(text4, index2 - 1);
-    const after = charAt(text4, index2 + 1);
+function suspiciousJoiners(text5) {
+  return collect2(ZW_JOINERS, text5).filter(({ index: index2 }) => {
+    const before = charAt(text5, index2 - 1);
+    const after = charAt(text5, index2 + 1);
     if (PICTOGRAPHIC.test(before) || PICTOGRAPHIC.test(after)) return false;
     const shaping = /[\p{Script=Arabic}\p{Script=Devanagari}\p{Script=Bengali}\p{Script=Tamil}]/u;
     if (shaping.test(before) && shaping.test(after)) return false;
     return true;
   });
 }
-function softHyphenSpans(text4) {
-  return collect2(/\u00ad/gu, text4).filter(({ index: index2 }) => {
-    const before = charAt(text4, index2 - 1);
-    const after = charAt(text4, index2 + 1);
+function softHyphenSpans(text5) {
+  return collect2(/\u00ad/gu, text5).filter(({ index: index2 }) => {
+    const before = charAt(text5, index2 - 1);
+    const after = charAt(text5, index2 + 1);
     return !(new RegExp("\\p{L}", "u").test(before) && new RegExp("\\p{L}", "u").test(after));
   });
 }
-function mixedScriptTokens(text4) {
+function mixedScriptTokens(text5) {
   const out = [];
   const tokenRe = new RegExp("\\p{L}[\\p{L}\\p{M}]*", "gu");
-  for (let m2 = tokenRe.exec(text4); m2 !== null; m2 = tokenRe.exec(text4)) {
+  for (let m2 = tokenRe.exec(text5); m2 !== null; m2 = tokenRe.exec(text5)) {
     const tok = m2[0];
     if (new RegExp("\\p{Script=Latin}", "u").test(tok) && CONFUSABLE_WITH_LATIN.test(tok)) {
       out.push({ index: m2.index, length: tok.length });
@@ -62530,29 +62530,29 @@ function mixedScriptTokens(text4) {
   }
   return out;
 }
-function anomalousNbsp(text4) {
+function anomalousNbsp(text5) {
   const out = [];
   const re = /[\u00a0\u202f]/gu;
-  for (let m2 = re.exec(text4); m2 !== null; m2 = re.exec(text4)) {
-    const after = charAt(text4, m2.index + 1);
+  for (let m2 = re.exec(text5); m2 !== null; m2 = re.exec(text5)) {
+    const after = charAt(text5, m2.index + 1);
     if (";:!?\xBB".includes(after)) continue;
-    const before = charAt(text4, m2.index - 1);
+    const before = charAt(text5, m2.index - 1);
     if (/\d/.test(before) && /\d/.test(after)) continue;
     out.push({ index: m2.index, length: 1 });
   }
   return out;
 }
-function mostlyMarkdownAdjacent(spans, text4) {
+function mostlyMarkdownAdjacent(spans, text5) {
   if (spans.length === 0) return false;
   const adjacent = spans.filter(({ index: index2, length }) => {
-    const before = charAt(text4, index2 - 1);
-    const after = charAt(text4, index2 + length);
+    const before = charAt(text5, index2 - 1);
+    const after = charAt(text5, index2 + length);
     return /[*#`_]/.test(before) || /[*#`_]/.test(after);
   }).length;
   return adjacent * 2 >= spans.length;
 }
-function detectDocKind(text4) {
-  const lines = text4.split("\n");
+function detectDocKind(text5) {
+  const lines = text5.split("\n");
   let inFence = false;
   const unfenced = [];
   let mdHits = 0;
@@ -62575,21 +62575,21 @@ function detectDocKind(text4) {
   }
   return mdHits >= 3 ? "markdown" : "prose";
 }
-function commentSpans(text4) {
+function commentSpans(text5) {
   const out = [];
-  const n2 = text4.length;
+  const n2 = text5.length;
   let i = 0;
   const lineEnd = (from) => {
-    const nl = text4.indexOf("\n", from);
+    const nl = text5.indexOf("\n", from);
     return nl === -1 ? n2 : nl;
   };
   const blockEnd = (from, close) => {
-    const idx = text4.indexOf(close, from);
+    const idx = text5.indexOf(close, from);
     return idx === -1 ? n2 : idx + close.length;
   };
   while (i < n2) {
-    const ch = text4[i];
-    const two = text4.slice(i, i + 2);
+    const ch = text5[i];
+    const two = text5.slice(i, i + 2);
     if (two === "//") {
       const end = lineEnd(i);
       out.push({ index: i, length: end - i });
@@ -62598,16 +62598,16 @@ function commentSpans(text4) {
       const end = blockEnd(i + 2, "*/");
       out.push({ index: i, length: end - i });
       i = end;
-    } else if (text4.startsWith("<!--", i)) {
+    } else if (text5.startsWith("<!--", i)) {
       const end = blockEnd(i + 4, "-->");
       out.push({ index: i, length: end - i });
       i = end;
-    } else if (text4.startsWith('"""', i) || text4.startsWith("'''", i)) {
-      const q = text4.slice(i, i + 3);
+    } else if (text5.startsWith('"""', i) || text5.startsWith("'''", i)) {
+      const q = text5.slice(i, i + 3);
       const end = blockEnd(i + 3, q);
       out.push({ index: i, length: end - i });
       i = end;
-    } else if (ch === "#" && (i === 0 || text4[i - 1] === " " || text4[i - 1] === "	" || text4[i - 1] === "\n")) {
+    } else if (ch === "#" && (i === 0 || text5[i - 1] === " " || text5[i - 1] === "	" || text5[i - 1] === "\n")) {
       const end = lineEnd(i);
       out.push({ index: i, length: end - i });
       i = end;
@@ -62617,19 +62617,19 @@ function commentSpans(text4) {
   }
   return out;
 }
-function quotedAt(text4, index2, length) {
-  const lineStart = text4.lastIndexOf("\n", index2 - 1) + 1;
-  let lineEnd = text4.indexOf("\n", index2 + length);
-  if (lineEnd < 0) lineEnd = text4.length;
-  return /["“”«»]/.test(text4.slice(lineStart, index2)) && /["“”«»]/.test(text4.slice(index2 + length, lineEnd));
+function quotedAt(text5, index2, length) {
+  const lineStart = text5.lastIndexOf("\n", index2 - 1) + 1;
+  let lineEnd = text5.indexOf("\n", index2 + length);
+  if (lineEnd < 0) lineEnd = text5.length;
+  return /["“”«»]/.test(text5.slice(lineStart, index2)) && /["“”«»]/.test(text5.slice(index2 + length, lineEnd));
 }
-function collectTells(tells, text4, keep) {
+function collectTells(tells, text5, keep) {
   const spans = [];
   const labels = [];
   let hits2 = 0;
   for (const tell of tells) {
     tell.re.lastIndex = 0;
-    for (let m2 = tell.re.exec(text4); m2 !== null; m2 = tell.re.exec(text4)) {
+    for (let m2 = tell.re.exec(text5); m2 !== null; m2 = tell.re.exec(text5)) {
       if (!keep || keep(m2.index, m2[0].length)) {
         hits2++;
         spans.push({ index: m2.index, length: m2[0].length });
@@ -62640,10 +62640,10 @@ function collectTells(tells, text4, keep) {
   }
   return { hits: hits2, spans, labels };
 }
-function letterStats(text4) {
+function letterStats(text5) {
   let total = 0;
   let latin = 0;
-  for (const ch of text4) {
+  for (const ch of text5) {
     if (new RegExp("\\p{L}", "u").test(ch)) {
       total++;
       if (new RegExp("\\p{Script=Latin}", "u").test(ch)) latin++;
@@ -62651,25 +62651,25 @@ function letterStats(text4) {
   }
   return { total, latin };
 }
-function wordCount(text4) {
-  const m2 = text4.match(WORD_RE);
+function wordCount(text5) {
+  const m2 = text5.match(WORD_RE);
   return m2 ? m2.length : 0;
 }
-function wordSpans(text4) {
-  return collect2(new RegExp(WORD_RE.source, WORD_RE.flags), text4);
+function wordSpans(text5) {
+  return collect2(new RegExp(WORD_RE.source, WORD_RE.flags), text5);
 }
-function sentenceWordLengths(text4) {
-  return text4.split(/[.!?]+[\s"')\]]+|\n+/u).map((s) => wordCount(s)).filter((n2) => n2 > 0);
+function sentenceWordLengths(text5) {
+  return text5.split(/[.!?]+[\s"')\]]+|\n+/u).map((s) => wordCount(s)).filter((n2) => n2 > 0);
 }
-function paragraphWordLengths(text4) {
-  return text4.split(/\n[ \t]*\n+/u).map((p) => wordCount(p)).filter((n2) => n2 > 0);
+function paragraphWordLengths(text5) {
+  return text5.split(/\n[ \t]*\n+/u).map((p) => wordCount(p)).filter((n2) => n2 > 0);
 }
 function coefficientOfVariation(lens) {
   const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
   const variance = lens.reduce((a, b) => a + (b - mean) ** 2, 0) / lens.length;
   return { mean, cv: mean > 0 ? Math.sqrt(variance) / mean : 0 };
 }
-function buildHeatmap(text4, findings, words) {
+function buildHeatmap(text5, findings, words) {
   if (words.length < HEAT_MIN_WORDS) return void 0;
   const marks = [];
   for (const f of findings) {
@@ -62774,28 +62774,28 @@ function styleGuessFrom(findings) {
   const ranked = [...famScores.entries()].sort((a, b) => b[1] - a[1]);
   const winner = ranked[0];
   const runnerUp = ranked[1]?.[1] ?? 0;
-  const family = winner && winner[1] >= 1.2 && winner[1] >= runnerUp + 0.5 ? winner[0] : "generic-LLM";
+  const family2 = winner && winner[1] >= 1.2 && winner[1] >= runnerUp + 0.5 ? winner[0] : "generic-LLM";
   const markers = heuristic.map((f) => f.label).slice(0, 6).join("; ");
   const candidates2 = ranked.map(([f, s]) => ({ family: f, strength: Math.round(s * 100) / 100 }));
   return {
-    family,
+    family: family2,
     confidence: "low",
-    rationale: `Writing-style markers only (${markers}). Consistent with ${family === "generic-LLM" ? "AI-assisted" : `${family}-authored`} text, but style cannot name a model with certainty.`,
+    rationale: `Writing-style markers only (${markers}). Consistent with ${family2 === "generic-LLM" ? "AI-assisted" : `${family2}-authored`} text, but style cannot name a model with certainty.`,
     ...candidates2.length > 0 ? { candidates: candidates2 } : {}
   };
 }
-function analyzeTextSignals(text4, opts) {
+function analyzeTextSignals(text5, opts) {
   const source = opts.source;
   const pixelSourced = source === "ocr";
-  const docKind = opts.docKind ?? (text4.length > 0 ? detectDocKind(text4) : "prose");
+  const docKind = opts.docKind ?? (text5.length > 0 ? detectDocKind(text5) : "prose");
   const findings = [];
-  if (text4.length > 0) {
+  if (text5.length > 0) {
     for (const fp of MODEL_FINGERPRINTS) {
-      if (fp.requires && !new RegExp(fp.requires.source, fp.requires.flags.replace("g", "")).test(text4)) continue;
+      if (fp.requires && !new RegExp(fp.requires.source, fp.requires.flags.replace("g", "")).test(text5)) continue;
       const spans = [];
       fp.re.lastIndex = 0;
-      for (let m2 = fp.re.exec(text4); m2 !== null; m2 = fp.re.exec(text4)) {
-        if (!quotedAt(text4, m2.index, m2[0].length)) spans.push({ index: m2.index, length: m2[0].length });
+      for (let m2 = fp.re.exec(text5); m2 !== null; m2 = fp.re.exec(text5)) {
+        if (!quotedAt(text5, m2.index, m2[0].length)) spans.push({ index: m2.index, length: m2[0].length });
         if (m2[0].length === 0) fp.re.lastIndex++;
       }
       if (spans.length > 0) {
@@ -62812,10 +62812,10 @@ function analyzeTextSignals(text4, opts) {
       }
     }
   }
-  if (!pixelSourced && text4.length > 0) {
-    const invisible = [...collect2(INVISIBLE_CORE, text4), ...suspiciousJoiners(text4), ...softHyphenSpans(text4)].filter((s) => !(s.index === 0 && text4.charCodeAt(0) === 65279));
+  if (!pixelSourced && text5.length > 0) {
+    const invisible = [...collect2(INVISIBLE_CORE, text5), ...suspiciousJoiners(text5), ...softHyphenSpans(text5)].filter((s) => !(s.index === 0 && text5.charCodeAt(0) === 65279));
     if (invisible.length > 0) {
-      const mdNote = mostlyMarkdownAdjacent(invisible, text4) ? " Most sit beside Markdown formatting characters - typical of AI chat output copied with its markup." : "";
+      const mdNote = mostlyMarkdownAdjacent(invisible, text5) ? " Most sit beside Markdown formatting characters - typical of AI chat output copied with its markup." : "";
       findings.push({
         tier: "artifact",
         kind: "invisible-char",
@@ -62826,7 +62826,7 @@ function analyzeTextSignals(text4, opts) {
         spans: invisible
       });
     }
-    const tags2 = collect2(TAG_CHARS, text4);
+    const tags2 = collect2(TAG_CHARS, text5);
     if (tags2.length > 0) {
       findings.push({
         tier: "artifact",
@@ -62838,7 +62838,7 @@ function analyzeTextSignals(text4, opts) {
         spans: tags2
       });
     }
-    const vs = [...collect2(VS_SUPPLEMENTARY, text4), ...collect2(VS_BMP_RUN, text4)];
+    const vs = [...collect2(VS_SUPPLEMENTARY, text5), ...collect2(VS_BMP_RUN, text5)];
     if (vs.length > 0) {
       findings.push({
         tier: "artifact",
@@ -62850,7 +62850,7 @@ function analyzeTextSignals(text4, opts) {
         spans: vs
       });
     }
-    const bidi = collect2(BIDI_OVERRIDE, text4);
+    const bidi = collect2(BIDI_OVERRIDE, text5);
     if (bidi.length > 0) {
       findings.push({
         tier: "artifact",
@@ -62862,7 +62862,7 @@ function analyzeTextSignals(text4, opts) {
         spans: bidi
       });
     }
-    const mixed = mixedScriptTokens(text4);
+    const mixed = mixedScriptTokens(text5);
     if (mixed.length > 0) {
       findings.push({
         tier: "artifact",
@@ -62874,7 +62874,7 @@ function analyzeTextSignals(text4, opts) {
         spans: mixed
       });
     }
-    const spaces = [...anomalousNbsp(text4), ...collect2(ANOMALOUS_SPACE, text4)];
+    const spaces = [...anomalousNbsp(text5), ...collect2(ANOMALOUS_SPACE, text5)];
     if (spaces.length >= 2) {
       findings.push({
         tier: "artifact",
@@ -62887,11 +62887,11 @@ function analyzeTextSignals(text4, opts) {
       });
     }
   }
-  if (text4.length > 0 && docKind !== "code") {
+  if (text5.length > 0 && docKind !== "code") {
     const placeholders = [
-      ...collect2(/\[(?:insert|paste|your)\b[^\]\n]{0,40}\]/gi, text4),
-      ...collect2(/\b(?:INSERT|PASTE)_[A-Z_]{2,30}\b/g, text4),
-      ...collect2(/\b20\d{2}-XX-XX\b/g, text4)
+      ...collect2(/\[(?:insert|paste|your)\b[^\]\n]{0,40}\]/gi, text5),
+      ...collect2(/\b(?:INSERT|PASTE)_[A-Z_]{2,30}\b/g, text5),
+      ...collect2(/\b20\d{2}-XX-XX\b/g, text5)
     ];
     if (placeholders.length > 0) {
       findings.push({
@@ -62905,13 +62905,13 @@ function analyzeTextSignals(text4, opts) {
       });
     }
   }
-  const comments = docKind === "code" ? commentSpans(text4) : void 0;
+  const comments = docKind === "code" ? commentSpans(text5) : void 0;
   const inProse = comments ? (i) => withinSpans(comments, i) : void 0;
   const boilerplateFindings = [];
-  if (text4.length > 0) {
-    const keepBp = (i, l) => (!inProse || inProse(i)) && !quotedAt(text4, i, l);
-    const hard = collectTells(CHATBOT_ARTIFACTS, text4, keepBp);
-    const soft = collectTells(CHATBOT_SOFT, text4, keepBp);
+  if (text5.length > 0) {
+    const keepBp = (i, l) => (!inProse || inProse(i)) && !quotedAt(text5, i, l);
+    const hard = collectTells(CHATBOT_ARTIFACTS, text5, keepBp);
+    const soft = collectTells(CHATBOT_SOFT, text5, keepBp);
     if (hard.hits + soft.hits > 0) {
       const hardW = hard.hits > 0 ? 0.4 + hard.hits * 0.9 + hard.labels.length * 0.4 : 0;
       const softW = Math.min(1.2, soft.hits * 0.35);
@@ -62929,7 +62929,7 @@ function analyzeTextSignals(text4, opts) {
     }
   }
   findings.push(...boilerplateFindings);
-  const proseText = comments ? comments.map((s) => text4.slice(s.index, s.index + s.length)).join("\n") : text4;
+  const proseText = comments ? comments.map((s) => text5.slice(s.index, s.index + s.length)).join("\n") : text5;
   const words = wordCount(proseText);
   const { total: letters, latin } = letterStats(proseText);
   const looksEnglish = letters === 0 ? false : latin / letters >= 0.6;
@@ -62940,7 +62940,7 @@ function analyzeTextSignals(text4, opts) {
     const vocabSpans = [];
     for (const w of AI_WORDS) {
       const re = new RegExp(`\\b${w}\\b`, "giu");
-      for (let m2 = re.exec(text4); m2 !== null; m2 = re.exec(text4)) {
+      for (let m2 = re.exec(text5); m2 !== null; m2 = re.exec(text5)) {
         if (inProse && !inProse(m2.index)) continue;
         vocabHits++;
         vocabSpans.push({ index: m2.index, length: m2[0].length });
@@ -62957,7 +62957,7 @@ function analyzeTextSignals(text4, opts) {
         spans: vocabSpans
       });
     }
-    const phr = collectTells(AI_PHRASES, text4, inProse);
+    const phr = collectTells(AI_PHRASES, text5, inProse);
     if (phr.hits > 0) {
       heuristicFindings.push({
         tier: "heuristic",
@@ -62969,7 +62969,7 @@ function analyzeTextSignals(text4, opts) {
         spans: phr.spans
       });
     }
-    const struct = collectTells(AI_STRUCTURE, text4, inProse);
+    const struct = collectTells(AI_STRUCTURE, text5, inProse);
     if (struct.hits > 0) {
       heuristicFindings.push({
         tier: "heuristic",
@@ -62982,7 +62982,7 @@ function analyzeTextSignals(text4, opts) {
       });
     }
     for (const fam of FAMILY_TELLS) {
-      const tells = collectTells(fam.tells, text4, inProse);
+      const tells = collectTells(fam.tells, text5, inProse);
       if (tells.hits > 0) {
         const isClaude = fam.family === "Claude";
         heuristicFindings.push({
@@ -62998,7 +62998,7 @@ function analyzeTextSignals(text4, opts) {
       }
     }
     if (docKind !== "code") {
-      const smart = collect2(/[‘’“”…]/gu, text4);
+      const smart = collect2(/[‘’“”…]/gu, text5);
       if (smart.length >= 6) {
         heuristicFindings.push({
           tier: "heuristic",
@@ -63010,7 +63010,7 @@ function analyzeTextSignals(text4, opts) {
           spans: smart
         });
       }
-      const emDashes = collect2(/\u2014/gu, text4);
+      const emDashes = collect2(/\u2014/gu, text5);
       if (emDashes.length >= 3 && emDashes.length / Math.max(1, words) * 1e3 >= 15) {
         heuristicFindings.push({
           tier: "heuristic",
@@ -63022,7 +63022,7 @@ function analyzeTextSignals(text4, opts) {
           spans: emDashes
         });
       }
-      const lines = text4.split("\n");
+      const lines = text5.split("\n");
       const bulletLines = lines.filter((l) => /^\s*([-*•]|\d+[.)])\s+/u.test(l)).length;
       if (lines.length >= 6 && bulletLines / lines.length >= 0.5) {
         heuristicFindings.push({
@@ -63034,7 +63034,7 @@ function analyzeTextSignals(text4, opts) {
           heat: heatOf("list-heavy")
         });
       }
-      const lens = sentenceWordLengths(text4);
+      const lens = sentenceWordLengths(text5);
       if (lens.length >= 5) {
         const { mean, cv } = coefficientOfVariation(lens);
         if (cv < 0.35 && mean >= 8) {
@@ -63048,7 +63048,7 @@ function analyzeTextSignals(text4, opts) {
           });
         }
       }
-      const masked = text4.replace(/```[\s\S]*?```|`[^`\n]*`/g, (m2) => " ".repeat(m2.length));
+      const masked = text5.replace(/```[\s\S]*?```|`[^`\n]*`/g, (m2) => " ".repeat(m2.length));
       const mixedPairs = [];
       const variantSpans = [];
       for (const pair of SPELLING_VARIANTS) {
@@ -63070,7 +63070,7 @@ function analyzeTextSignals(text4, opts) {
           spans: variantSpans.sort((a, b) => a.index - b.index)
         });
       }
-      const paras = paragraphWordLengths(text4);
+      const paras = paragraphWordLengths(text5);
       if (paras.length >= 4) {
         const { mean, cv } = coefficientOfVariation(paras);
         if (cv < 0.25 && mean >= 25) {
@@ -63087,8 +63087,8 @@ function analyzeTextSignals(text4, opts) {
     }
   }
   findings.push(...heuristicFindings);
-  const allWordSpans = wordSpans(text4);
-  const heatmap = buildHeatmap(text4, findings, allWordSpans);
+  const allWordSpans = wordSpans(text5);
+  const heatmap = buildHeatmap(text5, findings, allWordSpans);
   const sandwich = docKind === "code" ? void 0 : sandwichFinding(heatmap, allWordSpans.length);
   if (sandwich) {
     findings.push(sandwich);
@@ -63197,13 +63197,13 @@ function hiddenCharSeverity(name) {
   if (vs && Number(vs[1]) >= 17) return "severe";
   return "note";
 }
-function textFacts(text4) {
+function textFacts(text5) {
   const hiddenCounts = /* @__PURE__ */ new Map();
   const scriptCounts = /* @__PURE__ */ new Map();
   let letters = 0;
   let emDash = 0, curlyQuotes = 0, ellipsisChar = 0;
   let visible = "";
-  for (const ch of text4) {
+  for (const ch of text5) {
     const hidden2 = invisibleCharName(ch);
     if (hidden2) {
       hiddenCounts.set(hidden2, (hiddenCounts.get(hidden2) ?? 0) + 1);
@@ -63227,10 +63227,10 @@ function textFacts(text4) {
   const sentences = (visible.match(/[.!?](?=\s|$)/g) ?? []).length;
   const paragraphs = visible.split(/\n\s*\n/).filter((p) => p.trim().length > 0).length;
   const bulletLines = visible.split("\n").filter((l) => /^\s*([-*•]|\d+[.)])\s+/u.test(l)).length;
-  const crlf = (text4.match(/\r\n/g) ?? []).length;
-  const lf = (text4.match(/\n/g) ?? []).length - crlf;
+  const crlf = (text5.match(/\r\n/g) ?? []).length;
+  const lf = (text5.match(/\n/g) ?? []).length - crlf;
   const hostCounts = /* @__PURE__ */ new Map();
-  for (const m2 of text4.matchAll(/https?:\/\/([^\s/"'<>)\]]+)/gi)) {
+  for (const m2 of text5.matchAll(/https?:\/\/([^\s/"'<>)\]]+)/gi)) {
     const host = m2[1].replace(/^www\./i, "").toLowerCase().replace(/[:.,;!?]+$/, "");
     if (host) hostCounts.set(host, (hostCounts.get(host) ?? 0) + 1);
   }
@@ -63245,7 +63245,7 @@ function textFacts(text4) {
     punctuation: { emDash, curlyQuotes, ellipsisChar },
     linkHosts: byCount(hostCounts).map(([host, count2]) => ({ host, count: count2 })),
     lineEndings: { lf, crlf },
-    bom: text4.startsWith("\uFEFF")
+    bom: text5.startsWith("\uFEFF")
   };
 }
 var INVISIBLE_NAME, SEVERE_HIDDEN, SCRIPTS;
@@ -63307,12 +63307,12 @@ var init_text_facts = __esm({
 
 // engine/src/humanize.ts
 function humanizeText(input) {
-  let text4 = input;
+  let text5 = input;
   const changes = [];
   const apply4 = (re, repl, kind, label) => {
     const g2 = re.flags.includes("g") ? re : new RegExp(re.source, `${re.flags}g`);
     let n2 = 0;
-    text4 = text4.replace(g2, () => {
+    text5 = text5.replace(g2, () => {
       n2 += 1;
       return repl;
     });
@@ -63321,9 +63321,9 @@ function humanizeText(input) {
   let fpCount = 0;
   const fpModels = /* @__PURE__ */ new Set();
   for (const fp of MODEL_FINGERPRINTS) {
-    if (fp.requires && !new RegExp(fp.requires.source, fp.requires.flags.replace("g", "")).test(text4)) continue;
+    if (fp.requires && !new RegExp(fp.requires.source, fp.requires.flags.replace("g", "")).test(text5)) continue;
     const g2 = fp.re.flags.includes("g") ? fp.re : new RegExp(fp.re.source, `${fp.re.flags}g`);
-    text4 = text4.replace(g2, (m2) => {
+    text5 = text5.replace(g2, (m2) => {
       fpCount += 1;
       fpModels.add(fp.model);
       return m2.startsWith("\n") ? "\n" : "";
@@ -63342,7 +63342,7 @@ function humanizeText(input) {
   apply4(/\u00a0(?![;:!?\u00bb])/g, " ", "nbsp", "Non-breaking spaces to a space");
   apply4(/[ \t]{2,}/g, " ", "multi-space", "Collapsed repeated spaces");
   apply4(/[ \t]+$/gm, "", "trailing-space", "Removed trailing whitespace");
-  return { text: text4, changes };
+  return { text: text5, changes };
 }
 var init_humanize = __esm({
   "engine/src/humanize.ts"() {
@@ -63365,29 +63365,29 @@ function matchCase(matched, replacement) {
   }
   return replacement;
 }
-function atSentenceStart(text4, i) {
+function atSentenceStart(text5, i) {
   let p = i - 1;
-  while (p >= 0 && (text4[p] === " " || text4[p] === "	")) p--;
+  while (p >= 0 && (text5[p] === " " || text5[p] === "	")) p--;
   if (p < 0) return true;
-  const ch = text4[p];
+  const ch = text5[p];
   return ch === "\n" || ch === "." || ch === "!" || ch === "?";
 }
-function suggestRewrites(text4) {
+function suggestRewrites(text5) {
   const found = [];
   for (const e of SUGGEST_TABLE) {
     e.re.lastIndex = 0;
     let m2;
-    while (m2 = e.re.exec(text4)) {
+    while (m2 = e.re.exec(text5)) {
       if (m2[0].length === 0) {
         e.re.lastIndex++;
         continue;
       }
-      if (quotedAt(text4, m2.index, m2[0].length)) continue;
+      if (quotedAt(text5, m2.index, m2[0].length)) continue;
       let length = m2[0].length;
       let replacement = e.replace(m2);
       if (e.kind === "swap") replacement = matchCase(m2[0], replacement);
-      if (e.kind === "delete" && atSentenceStart(text4, m2.index)) {
-        const next = text4[m2.index + length];
+      if (e.kind === "delete" && atSentenceStart(text5, m2.index)) {
+        const next = text5[m2.index + length];
         if (next && /[a-z]/.test(next)) {
           length += 1;
           replacement = next.toUpperCase();
@@ -63407,38 +63407,38 @@ function suggestRewrites(text4) {
   }
   return kept;
 }
-function applySuggestion(text4, s) {
-  return text4.slice(0, s.index) + s.replacement + text4.slice(s.index + s.length);
+function applySuggestion(text5, s) {
+  return text5.slice(0, s.index) + s.replacement + text5.slice(s.index + s.length);
 }
-function sentenceBounds(text4, from, to) {
+function sentenceBounds(text5, from, to) {
   let start = from;
   while (start > 0) {
-    const prev = text4[start - 1];
+    const prev = text5[start - 1];
     if (prev === "\n") break;
-    if (/[.!?]/.test(prev) && /\s/.test(text4[start] ?? " ")) break;
+    if (/[.!?]/.test(prev) && /\s/.test(text5[start] ?? " ")) break;
     start--;
   }
-  while (start < from && /[\s"'“”‘’)\]]/.test(text4[start])) start++;
+  while (start < from && /[\s"'“”‘’)\]]/.test(text5[start])) start++;
   let end = Math.max(to, start);
-  while (end < text4.length) {
-    const ch = text4[end];
+  while (end < text5.length) {
+    const ch = text5[end];
     if (ch === "\n") break;
-    if (/[.!?]/.test(ch) && (end + 1 >= text4.length || /[\s"'“”‘’)\]]/.test(text4[end + 1]))) {
+    if (/[.!?]/.test(ch) && (end + 1 >= text5.length || /[\s"'“”‘’)\]]/.test(text5[end + 1]))) {
       end++;
-      while (end < text4.length && /["'“”‘’)\]]/.test(text4[end])) end++;
+      while (end < text5.length && /["'“”‘’)\]]/.test(text5[end])) end++;
       break;
     }
     end++;
   }
-  while (end > start && /\s/.test(text4[end - 1])) end--;
+  while (end > start && /\s/.test(text5[end - 1])) end--;
   return { start, end };
 }
-function rewordableSpans(text4, findings) {
+function rewordableSpans(text5, findings) {
   const raw = [];
   for (const f of findings) {
     if (f.tier !== "heuristic" || f.kind === "ai-span") continue;
     for (const s of f.spans ?? []) {
-      const b = sentenceBounds(text4, s.index, s.index + s.length);
+      const b = sentenceBounds(text5, s.index, s.index + s.length);
       const len2 = b.end - b.start;
       if (len2 < SPAN_MIN_CHARS || len2 > SPAN_MAX_CHARS) continue;
       raw.push({ index: b.start, length: len2, heat: f.heat });
@@ -63707,9 +63707,9 @@ var init_speech_model_bytes = __esm({
 });
 
 // engine/src/speech-text.ts
-function splitSentences(text4) {
+function splitSentences(text5) {
   const out = [];
-  for (const line of text4.split(/\n+/)) {
+  for (const line of text5.split(/\n+/)) {
     const re = /[^.!?…]+(?:[.!?…]+["”»)\]']*|$)/g;
     for (const m2 of line.match(re) ?? []) {
       const s = m2.trim();
@@ -63882,26 +63882,26 @@ function pointNum(match) {
   const [a = "", b = ""] = match.split(".");
   return `${a} point ${b.split("").join(" ")}`;
 }
-function normalizeText(text4) {
-  return text4.replace(/[‘’]/g, "'").replace(/«/g, "\u201C").replace(/»/g, "\u201D").replace(/[“”]/g, '"').replace(/\(/g, "\xAB").replace(/\)/g, "\xBB").replace(/、/g, ", ").replace(/。/g, ". ").replace(/！/g, "! ").replace(/，/g, ", ").replace(/：/g, ": ").replace(/；/g, "; ").replace(/？/g, "? ").replace(/[^\S \n]/g, " ").replace(/ {2,}/g, " ").replace(/(?<=\n) +(?=\n)/g, "").replace(/\bD[Rr]\.(?= [A-Z])/g, "Doctor").replace(/\b(?:Mr\.|MR\.(?= [A-Z]))/g, "Mister").replace(/\b(?:Ms\.|MS\.(?= [A-Z]))/g, "Miss").replace(/\b(?:Mrs\.|MRS\.(?= [A-Z]))/g, "Mrs").replace(/\betc\.(?! [A-Z])/gi, "etc").replace(/\b(y)eah?\b/gi, "$1e'a").replace(/\d*\.\d+|\b\d{4}s?\b|(?<!:)\b(?:[1-9]|1[0-2]):[0-5]\d\b(?!:)/g, splitNum).replace(/(?<=\d),(?=\d)/g, "").replace(/[$£]\d+(?:\.\d+)?(?: hundred| thousand| (?:[bm]|tr)illion)*\b|[$£]\d+\.\d\d?\b/gi, flipMoney).replace(/\d*\.\d+/g, pointNum).replace(/(?<=\d)-(?=\d)/g, " to ").replace(/(?<=\d)S/g, " S").replace(/(?<=[BCDFGHJ-NP-TV-Z])'?s\b/g, "'S").replace(/(?<=X')S\b/g, "s").replace(/(?:[A-Za-z]\.){2,} [a-z]/g, (m2) => m2.replace(/\./g, "-")).replace(/(?<=[A-Z])\.(?=[A-Z])/gi, "-").trim();
+function normalizeText(text5) {
+  return text5.replace(/[‘’]/g, "'").replace(/«/g, "\u201C").replace(/»/g, "\u201D").replace(/[“”]/g, '"').replace(/\(/g, "\xAB").replace(/\)/g, "\xBB").replace(/、/g, ", ").replace(/。/g, ". ").replace(/！/g, "! ").replace(/，/g, ", ").replace(/：/g, ": ").replace(/；/g, "; ").replace(/？/g, "? ").replace(/[^\S \n]/g, " ").replace(/ {2,}/g, " ").replace(/(?<=\n) +(?=\n)/g, "").replace(/\bD[Rr]\.(?= [A-Z])/g, "Doctor").replace(/\b(?:Mr\.|MR\.(?= [A-Z]))/g, "Mister").replace(/\b(?:Ms\.|MS\.(?= [A-Z]))/g, "Miss").replace(/\b(?:Mrs\.|MRS\.(?= [A-Z]))/g, "Mrs").replace(/\betc\.(?! [A-Z])/gi, "etc").replace(/\b(y)eah?\b/gi, "$1e'a").replace(/\d*\.\d+|\b\d{4}s?\b|(?<!:)\b(?:[1-9]|1[0-2]):[0-5]\d\b(?!:)/g, splitNum).replace(/(?<=\d),(?=\d)/g, "").replace(/[$£]\d+(?:\.\d+)?(?: hundred| thousand| (?:[bm]|tr)illion)*\b|[$£]\d+\.\d\d?\b/gi, flipMoney).replace(/\d*\.\d+/g, pointNum).replace(/(?<=\d)-(?=\d)/g, " to ").replace(/(?<=\d)S/g, " S").replace(/(?<=[BCDFGHJ-NP-TV-Z])'?s\b/g, "'S").replace(/(?<=X')S\b/g, "s").replace(/(?:[A-Za-z]\.){2,} [a-z]/g, (m2) => m2.replace(/\./g, "-")).replace(/(?<=[A-Z])\.(?=[A-Z])/gi, "-").trim();
 }
 function filterToVocab(phonemes) {
   let out = "";
   for (const ch of phonemes) if (VOCAB_SET.has(ch)) out += ch;
   return out;
 }
-function normalizeForSpeech(text4) {
-  return normalizeText(text4).replace(/«/g, "(").replace(/»/g, ")");
+function normalizeForSpeech(text5) {
+  return normalizeText(text5).replace(/«/g, "(").replace(/»/g, ")");
 }
-function splitPunctuation(text4) {
+function splitPunctuation(text5) {
   const result = [];
   let prev = 0;
-  for (const m2 of text4.matchAll(PUNCTUATION_PATTERN)) {
-    if (prev < m2.index) result.push({ match: false, text: text4.slice(prev, m2.index) });
+  for (const m2 of text5.matchAll(PUNCTUATION_PATTERN)) {
+    if (prev < m2.index) result.push({ match: false, text: text5.slice(prev, m2.index) });
     if (m2[0].length > 0) result.push({ match: true, text: m2[0] });
     prev = m2.index + m2[0].length;
   }
-  if (prev < text4.length) result.push({ match: false, text: text4.slice(prev) });
+  if (prev < text5.length) result.push({ match: false, text: text5.slice(prev) });
   return result;
 }
 function postProcessPhonemes(ps, language) {
@@ -63909,8 +63909,8 @@ function postProcessPhonemes(ps, language) {
   if (language === "a") processed = processed.replace(/(?<=nˈaɪn)ti(?!ː)/g, "di");
   return processed.trim();
 }
-async function phonemizeChunk(espeak, text4, language) {
-  const sections = splitPunctuation(text4);
+async function phonemizeChunk(espeak, text5, language) {
+  const sections = splitPunctuation(text5);
   const lang = language === "a" ? "en-us" : "en";
   const ps = (await Promise.all(
     sections.map(async ({ match, text: t }) => match ? t : (await espeak(t, lang)).join(" "))
@@ -63930,19 +63930,19 @@ function markSource(m2, word = "") {
   }
   return `[${word}](/${m2.ipa}/)`;
 }
-function parseScriptMarks(text4, opts = {}) {
+function parseScriptMarks(text5, opts = {}) {
   const marks = [];
   const words = [];
   const phrases = /* @__PURE__ */ new Set();
   let stripped = "";
   let seeded = "";
   let prev = 0;
-  for (const m2 of text4.matchAll(MARK_RE)) {
+  for (const m2 of text5.matchAll(MARK_RE)) {
     const literal = () => {
       stripped += m2[0];
       seeded += m2[0];
     };
-    const before = text4.slice(prev, m2.index);
+    const before = text5.slice(prev, m2.index);
     stripped += before;
     seeded += before;
     prev = m2.index + m2[0].length;
@@ -63966,8 +63966,8 @@ function parseScriptMarks(text4, opts = {}) {
     stripped += word;
     seeded += word.replace(/\s+/g, PHRASE_SPACE) + sentinel;
   }
-  stripped += text4.slice(prev);
-  seeded += text4.slice(prev);
+  stripped += text5.slice(prev);
+  seeded += text5.slice(prev);
   stripped = stripped.replace(/[^\S\n]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{2,}/g, "\n").trim();
   const body = opts.prenormalized ? seeded : normalizeForSpeech(seeded);
   const out = [];
@@ -64035,8 +64035,8 @@ function lineToken(token2, marks, words) {
   }
   return out + flush();
 }
-function scriptLinesOf(text4, opts = {}) {
-  return parseScriptMarks(text4, opts).sentences.map((s) => s.line);
+function scriptLinesOf(text5, opts = {}) {
+  return parseScriptMarks(text5, opts).sentences.map((s) => s.line);
 }
 function unknownVoice(id2) {
   return new Error(`unknown voice "${id2}" - one of: ${KOKORO_VOICES.map((v) => v.id).join(", ")}`);
@@ -64858,12 +64858,12 @@ function collectFontFamilies(doc) {
     if (leaf.$type !== "fontFamily") return;
     const list2 = Array.isArray(leaf.$value) ? leaf.$value : [leaf.$value];
     for (const raw of list2) {
-      const family = str3(raw)?.replace(/^['"]|['"]$/g, "").trim();
-      if (!family || family.startsWith("{")) continue;
-      const key = family.toLowerCase();
+      const family2 = str3(raw)?.replace(/^['"]|['"]$/g, "").trim();
+      if (!family2 || family2.startsWith("{")) continue;
+      const key = family2.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push(family);
+      out.push(family2);
     }
   });
   return out;
@@ -65524,9 +65524,9 @@ var init_css_paint = __esm({
 });
 
 // engine/src/dash-fit.ts
-function parseDashArray(text4) {
-  if (typeof text4 !== "string") return null;
-  const t = text4.trim().replace(/^[,\s]+/, "").replace(/[,\s]+$/, "");
+function parseDashArray(text5) {
+  if (typeof text5 !== "string") return null;
+  const t = text5.trim().replace(/^[,\s]+/, "").replace(/[,\s]+$/, "");
   if (!t || t.length > MAX_TEXT) return null;
   const parts = t.split(/[\s,]+/);
   if (parts.length > MAX_ENTRIES) return null;
@@ -68216,7 +68216,7 @@ function rewriteTagAttr(xml, qname, attr4, map) {
   let count2 = 0;
   const tagRe = new RegExp(`<${reEsc(qname)}(?=[\\s/>])[^>]*>`, "g");
   const attrRe = new RegExp(`(\\s${reEsc(attr4)}=")([^"]*)(")`);
-  const text4 = xml.replace(tagRe, (tag2) => {
+  const text5 = xml.replace(tagRe, (tag2) => {
     let changed = false;
     const out = tag2.replace(attrRe, (whole, pre, val, post) => {
       const nv = map(val);
@@ -68227,51 +68227,51 @@ function rewriteTagAttr(xml, qname, attr4, map) {
     if (changed) count2++;
     return out;
   });
-  return { text: text4, count: count2 };
+  return { text: text5, count: count2 };
 }
 function setThemeSlot(xml, slot, hex2) {
   const re = new RegExp(`<a:${reEsc(slot)}(?=[\\s>])[^>]*>[\\s\\S]*?</a:${reEsc(slot)}>`);
   const replacement = `<a:${slot}><a:srgbClr val="${hex2}"/></a:${slot}>`;
   let changed = false;
-  const text4 = xml.replace(re, (m2) => {
+  const text5 = xml.replace(re, (m2) => {
     if (m2 === replacement) return m2;
     changed = true;
     return replacement;
   });
-  return { text: text4, changed };
+  return { text: text5, changed };
 }
 function setSchemeFont(xml, which, face) {
   const enc5 = xmlEncode(face);
   const re = new RegExp(`(<a:${which}Font>\\s*<a:latin(?=[\\s/>])[^>]*?\\stypeface=")([^"]*)(")`);
   let changed = false;
-  const text4 = xml.replace(re, (whole, pre, val, post) => {
+  const text5 = xml.replace(re, (whole, pre, val, post) => {
     if (val === enc5) return whole;
     changed = true;
     return pre + enc5 + post;
   });
-  return { text: text4, changed };
+  return { text: text5, changed };
 }
 function patchTheme(xml, theme) {
-  let text4 = xml;
+  let text5 = xml;
   let changed = false;
   for (const slot of SLOT_ORDER) {
     const v = theme[slot];
     if (!v) continue;
-    const r3 = setThemeSlot(text4, slot, hexNorm2(v));
-    text4 = r3.text;
+    const r3 = setThemeSlot(text5, slot, hexNorm2(v));
+    text5 = r3.text;
     changed = changed || r3.changed;
   }
   if (theme.majorFont) {
-    const r3 = setSchemeFont(text4, "major", theme.majorFont);
-    text4 = r3.text;
+    const r3 = setSchemeFont(text5, "major", theme.majorFont);
+    text5 = r3.text;
     changed = changed || r3.changed;
   }
   if (theme.minorFont) {
-    const r3 = setSchemeFont(text4, "minor", theme.minorFont);
-    text4 = r3.text;
+    const r3 = setSchemeFont(text5, "minor", theme.minorFont);
+    text5 = r3.text;
     changed = changed || r3.changed;
   }
-  return { text: text4, changed };
+  return { text: text5, changed };
 }
 function remapColors(xml, colorMap) {
   const lookup3 = (raw) => {
@@ -68288,14 +68288,14 @@ function remapFonts(xml, fontMap) {
     const to = fontMap.get(xmlDecode(raw));
     return to === void 0 ? void 0 : xmlEncode(to);
   };
-  let text4 = xml;
+  let text5 = xml;
   let count2 = 0;
   for (const q of ["a:latin", "a:ea", "a:cs"]) {
-    const r3 = rewriteTagAttr(text4, q, "typeface", lookup3);
-    text4 = r3.text;
+    const r3 = rewriteTagAttr(text5, q, "typeface", lookup3);
+    text5 = r3.text;
     count2 += r3.count;
   }
-  return { text: text4, count: count2 };
+  return { text: text5, count: count2 };
 }
 function stripEmbeddedFontLst(xml) {
   return xml.replace(/<p:embeddedFontLst(?=[\s>])[^>]*>[\s\S]*?<\/p:embeddedFontLst>/g, "").replace(/<p:embeddedFontLst\s*\/>/g, "");
@@ -68338,31 +68338,31 @@ function rebrandPptxParts(parts, plan = {}) {
       out[path] = value;
       continue;
     }
-    let text4 = original;
+    let text5 = original;
     if (theme && isTheme(p)) {
-      const r3 = patchTheme(text4, theme);
-      text4 = r3.text;
+      const r3 = patchTheme(text5, theme);
+      text5 = r3.text;
       if (r3.changed) report.themesPatched++;
     }
     if (colorMap && isColorRemapPart(p)) {
-      const r3 = remapColors(text4, colorMap);
-      text4 = r3.text;
+      const r3 = remapColors(text5, colorMap);
+      text5 = r3.text;
       report.colorsRemapped += r3.count;
     }
     if (fontMap && isFontRemapPart(p)) {
-      const r3 = remapFonts(text4, fontMap);
-      text4 = r3.text;
+      const r3 = remapFonts(text5, fontMap);
+      text5 = r3.text;
       report.fontsRemapped += r3.count;
     }
-    if (drop && isPresentation(p)) text4 = stripEmbeddedFontLst(text4);
-    if (drop && isPresentationRels(p)) text4 = stripFontRels(text4);
-    if (drop && isContentTypes(p)) text4 = stripFntDataDefault(text4);
-    if (text4 === original) {
+    if (drop && isPresentation(p)) text5 = stripEmbeddedFontLst(text5);
+    if (drop && isPresentationRels(p)) text5 = stripFontRels(text5);
+    if (drop && isContentTypes(p)) text5 = stripFntDataDefault(text5);
+    if (text5 === original) {
       out[path] = value;
       continue;
     }
     if (isSlide(p)) report.slidesTouched.push(path);
-    out[path] = typeof value === "string" ? text4 : ENC.encode(text4);
+    out[path] = typeof value === "string" ? text5 : ENC.encode(text5);
   }
   return { parts: out, report };
 }
@@ -68757,17 +68757,17 @@ function txStyleFor(master, type) {
 }
 function readRun(r3, theme, inherit) {
   const t = firstChildByLocal(r3, "t");
-  const text4 = textOf(t);
+  const text5 = textOf(t);
   const props = readRunProps(firstChildByLocal(r3, "rPr"), theme);
   inheritInto(props, inherit);
-  const run = { text: text4 };
+  const run = { text: text5 };
   if (props.bold) run.bold = true;
   if (props.italic) run.italic = true;
   if (props.underline) run.underline = true;
   if (props.sizePt) run.sizePt = props.sizePt;
   if (props.font) run.font = props.font;
   if (props.color) run.color = props.color;
-  if (text4.length > 0 || run.bold || run.italic || run.underline || run.sizePt || run.color || run.font) return run;
+  if (text5.length > 0 || run.bold || run.italic || run.underline || run.sizePt || run.color || run.font) return run;
   return null;
 }
 function readTxBody(txBody, theme, inherit) {
@@ -68800,8 +68800,8 @@ function readTxBody(txBody, theme, inherit) {
       } else if (ln === "br") {
         runs.push({ text: "\n" });
       } else if (ln === "fld") {
-        const text4 = textOf(firstChildByLocal(child, "t"));
-        if (text4) runs.push({ text: text4 });
+        const text5 = textOf(firstChildByLocal(child, "t"));
+        if (text5) runs.push({ text: text5 });
       }
     }
     paras.push(para);
@@ -69056,9 +69056,9 @@ function readNotes(store, notesPath, parseXml) {
     const ph = nvPr ? firstChildByLocal(nvPr, "ph") : null;
     const phType2 = ph ? attrByLocal(ph, "type") : null;
     const paras = readTxBody(firstChildByLocal(sp, "txBody"), { colors: {} });
-    const text4 = paras.map((p) => p.runs.map((r3) => r3.text).join("")).join("\n").trim();
-    if (phType2 === "body" && bodyText == null) bodyText = text4;
-    else if (phType2 !== "sldNum" && phType2 !== "dt" && text4) allParts.push(text4);
+    const text5 = paras.map((p) => p.runs.map((r3) => r3.text).join("")).join("\n").trim();
+    if (phType2 === "body" && bodyText == null) bodyText = text5;
+    else if (phType2 !== "sldNum" && phType2 !== "dt" && text5) allParts.push(text5);
   }
   const result = (bodyText && bodyText.length ? bodyText : allParts.join("\n")).trim();
   return result.length ? result : void 0;
@@ -69545,10 +69545,10 @@ function scormLaunchHtml(opts) {
   };
   const fonts = [];
   for (const f of opts.fonts ?? []) {
-    const family = String(f?.family ?? "").trim();
+    const family2 = String(f?.family ?? "").trim();
     const src = relPath(f?.src);
-    if (!family || !src) continue;
-    fonts.push({ family, src, weight: String(f?.weight ?? "400"), style: String(f?.style ?? "normal") });
+    if (!family2 || !src) continue;
+    fonts.push({ family: family2, src, weight: String(f?.weight ?? "400"), style: String(f?.style ?? "normal") });
   }
   const faces = fonts.map(
     (f) => `@font-face{font-family:"${hesc(f.family)}";src:url("${hesc(f.src)}") format("woff2");font-weight:${hesc(f.weight)};font-style:${hesc(f.style)};font-display:swap}`
@@ -69687,11 +69687,11 @@ function flatten2(s) {
 function escapeInline(s) {
   return s.replace(/\\/g, "\\\\").replace(/\*/g, "\\*");
 }
-function emphasise(text4, bold, italic) {
-  if (!bold && !italic) return text4;
-  const m2 = /^(\s*)([\s\S]*?)(\s*)$/.exec(text4);
-  const core = m2 ? m2[2] ?? "" : text4;
-  if (!core) return text4;
+function emphasise(text5, bold, italic) {
+  if (!bold && !italic) return text5;
+  const m2 = /^(\s*)([\s\S]*?)(\s*)$/.exec(text5);
+  const core = m2 ? m2[2] ?? "" : text5;
+  if (!core) return text5;
   const mark = bold ? "**" : "*";
   return `${m2?.[1] ?? ""}${mark}${core}${mark}${m2?.[3] ?? ""}`;
 }
@@ -69727,9 +69727,9 @@ function bulletsOf(node) {
   const paras = Array.isArray(node.paras) ? node.paras : [];
   const lines = [];
   for (const para of paras) {
-    const text4 = paraToMd(para);
-    if (!text4) continue;
-    lines.push(`${"  ".repeat(levelOf(para))}- ${text4}`);
+    const text5 = paraToMd(para);
+    if (!text5) continue;
+    lines.push(`${"  ".repeat(levelOf(para))}- ${text5}`);
   }
   return lines.join("\n");
 }
@@ -69838,8 +69838,8 @@ function safeImageUrl(raw) {
   if (/^data:image\/[a-z0-9.+-]+[;,]/i.test(s)) return s;
   return safeUrl(s);
 }
-function mdCode(text4) {
-  const body = stripControl(text4 ?? "");
+function mdCode(text5) {
+  const body = stripControl(text5 ?? "");
   let fence = "`";
   while (body.includes(fence)) fence += "`";
   const pad = body.startsWith("`") || body.endsWith("`") ? " " : "";
@@ -69894,8 +69894,8 @@ function mdList(items2, ordered) {
   for (const item of Array.isArray(items2) ? items2 : []) {
     if (!item || typeof item !== "object") continue;
     const indent = "  ".repeat(clampListLevel(item.level));
-    const text4 = oneLine(mdInlines(item.inlines, { inTable: false }, 0));
-    lines.push(`${indent}${ordered ? "1. " : "- "}${text4}`);
+    const text5 = oneLine(mdInlines(item.inlines, { inTable: false }, 0));
+    lines.push(`${indent}${ordered ? "1. " : "- "}${text5}`);
   }
   return lines.join("\n");
 }
@@ -69958,8 +69958,8 @@ ${fence}`;
 function mdFromBlocks(blocks) {
   const out = [];
   for (const b of Array.isArray(blocks) ? blocks : []) {
-    const text4 = mdBlock(b);
-    if (text4.trim().length) out.push(text4);
+    const text5 = mdBlock(b);
+    if (text5.trim().length) out.push(text5);
   }
   return out.join("\n\n");
 }
@@ -70510,8 +70510,8 @@ function readParagraph(p, ctx, depth) {
   const styleId = valOf(firstChildByLocal2(pPr, "pStyle"));
   const level2 = headingLevel(styleId, pPr, ctx);
   const num8 = level2 > 0 ? null : readNumPr(pPr);
-  const text4 = hasText(inlines);
-  if (num8 && text4) {
+  const text5 = hasText(inlines);
+  if (num8 && text5) {
     const lvls = ctx.numbering.get(num8.numId);
     const ordered = lvls?.get(num8.ilvl) ?? lvls?.get(0) ?? false;
     if (ctx.openList && ctx.openList.ordered === ordered) {
@@ -70521,7 +70521,7 @@ function readParagraph(p, ctx, depth) {
       ctx.openList = { ordered, items: items2 };
       pushBlock(ctx, { type: "list", ordered, items: items2 });
     }
-  } else if (text4) {
+  } else if (text5) {
     closeList(ctx);
     if (level2 > 0) pushBlock(ctx, { type: "heading", level: level2, inlines });
     else if (styleId && ctx.styles.quotes.has(styleId.toLowerCase())) {
@@ -70961,26 +70961,26 @@ function creditFor(source) {
   }
   const sourceUrl = publicLocator(source.sourceUrl);
   if (sourceUrl) pieces.push(`source ${sourceUrl}`);
-  const changes = source.modifications.map((text4) => text4.trim().replace(/\.$/, "")).filter(Boolean);
+  const changes = source.modifications.map((text5) => text5.trim().replace(/\.$/, "")).filter(Boolean);
   pieces.push(changes.length ? `changes: ${changes.join(", ")}` : "unchanged");
   return `${pieces.join(", ")}.`;
 }
-function sourceFrom(record10) {
-  const rights = record10.rights;
+function sourceFrom(record13) {
+  const rights = record13.rights;
   const partial = {
-    title: record10.title,
+    title: record13.title,
     creator: rights?.creator,
     licence: rights?.license,
     licenceUrl: rights?.licenseUrl,
-    sourceUrl: rights?.sourceUrl ?? record10.data?.url,
+    sourceUrl: rights?.sourceUrl ?? record13.data?.url,
     modifications: rights?.modifications ? [...rights.modifications] : [],
     // A credentialed ingredient carries its own signed manifest, so the source
     // spoke for itself. A source ingredient was described by this exporter, and
     // saying so is the difference between a record and a signature.
-    assertedBy: record10.credentialed ? "source" : "exporter",
+    assertedBy: record13.credentialed ? "source" : "exporter",
     carried: {
       ingredient: true,
-      credentialed: record10.credentialed,
+      credentialed: record13.credentialed,
       // Nothing in a credential says whether a readable credit travels beside
       // the file, so this stays unknown rather than being assumed either way.
       readableCredit: "unknown"
@@ -71031,16 +71031,16 @@ function summaryFor2(report, recorded, credentialed) {
 function evaluateReuse(report, context, options2 = {}) {
   const works = [];
   const uses = [];
-  for (const [index2, record10] of (report.ingredients ?? []).entries()) {
-    const rights = record10.rights;
-    const id2 = record10.instanceId ?? rights?.sourceUrl ?? record10.data?.url ?? `ingredient-${index2 + 1}`;
+  for (const [index2, record13] of (report.ingredients ?? []).entries()) {
+    const rights = record13.rights;
+    const id2 = record13.instanceId ?? rights?.sourceUrl ?? record13.data?.url ?? `ingredient-${index2 + 1}`;
     const work = {
       id: id2,
       creators: rights?.creator ? [{ name: rights.creator, role: "creator" }] : [],
-      rights: rights?.license ? [{ declaration: rights.license, url: rights.licenseUrl, assertedBy: record10.credentialed ? "source" : "exporter", evidence: "native-metadata", status: "parsed" }] : [{ declaration: "", assertedBy: "exporter", evidence: "native-metadata", status: "missing" }]
+      rights: rights?.license ? [{ declaration: rights.license, url: rights.licenseUrl, assertedBy: record13.credentialed ? "source" : "exporter", evidence: "native-metadata", status: "parsed" }] : [{ declaration: "", assertedBy: "exporter", evidence: "native-metadata", status: "missing" }]
     };
-    if (record10.title) work.title = record10.title;
-    const sourceUrl = rights?.sourceUrl ?? record10.data?.url;
+    if (record13.title) work.title = record13.title;
+    const sourceUrl = rights?.sourceUrl ?? record13.data?.url;
     if (sourceUrl) work.sourceUrl = sourceUrl;
     if (rights?.revision) work.revision = rights.revision;
     if (rights?.sourceHash) work.sourceHash = rights.sourceHash;
@@ -74017,13 +74017,13 @@ function readSharedStrings(store) {
   return out;
 }
 function collectText(fragment) {
-  let text4 = "";
+  let text5 = "";
   const tRe = /<t\b[^>]*>([\s\S]*?)<\/t>|<t\b[^>]*\/>/g;
   let m2;
   while ((m2 = tRe.exec(fragment)) !== null) {
-    if (m2[1] !== void 0) text4 += m2[1];
+    if (m2[1] !== void 0) text5 += m2[1];
   }
-  return decodeXml(text4);
+  return decodeXml(text5);
 }
 function readSheet(xml, shared, limit) {
   const grid = /* @__PURE__ */ new Map();
@@ -74236,8 +74236,8 @@ function cellXml(ref, value, internString) {
   if (typeof value === "number" && Number.isFinite(value)) {
     return `<c r="${ref}"><v>${numText(value)}</v></c>`;
   }
-  const text4 = typeof value === "number" ? String(value) : value;
-  const idx = internString(sanitizeText(String(text4)));
+  const text5 = typeof value === "number" ? String(value) : value;
+  const idx = internString(sanitizeText(String(text5)));
   return `<c r="${ref}" t="s"><v>${idx}</v></c>`;
 }
 function numText(n2) {
@@ -74307,25 +74307,25 @@ function rowsToCsv(rows2) {
   const cell = (v) => /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
   return rows2.map((r3) => r3.map(cell).join(",")).join("\n");
 }
-function parseDataRows(text4, opts = {}) {
+function parseDataRows(text5, opts = {}) {
   const fields = (opts.fields || []).filter((f) => f && f.id);
   if (!fields.length) throw new Error("This input has no fields to import into.");
-  if (typeof text4 !== "string" || !text4.trim()) throw new Error("The file is empty.");
-  if (text4.length > MAX_IMPORT_CHARS) {
+  if (typeof text5 !== "string" || !text5.trim()) throw new Error("The file is empty.");
+  if (text5.length > MAX_IMPORT_CHARS) {
     throw new Error(`The file is too large to import (over ${Math.round(MAX_IMPORT_CHARS / 1024 / 1024)} MB of text).`);
   }
   const limit = Number.isFinite(opts.limit) && opts.limit > 0 ? Math.floor(opts.limit) : DEFAULT_ROW_LIMIT;
-  const format = (opts.format || detectFormat(text4)).toLowerCase();
+  const format = (opts.format || detectFormat(text5)).toLowerCase();
   let header = null;
   let records = [];
   let objectMode = false;
   if (format === "json") {
-    const arr = readJson(text4);
+    const arr = readJson(text5);
     records = arr;
     objectMode = records.length > 0 && records[0] != null && typeof records[0] === "object" && !Array.isArray(records[0]);
     header = objectMode ? unionKeys(records) : null;
   } else {
-    const table = readCsv(text4).filter((r3) => r3.some((c) => String(c).trim() !== ""));
+    const table = readCsv(text5).filter((r3) => r3.some((c) => String(c).trim() !== ""));
     if (!table.length) throw new Error("No rows found in the file.");
     header = table[0].map((h) => String(h).trim());
     records = table.slice(1);
@@ -74383,14 +74383,14 @@ function parseDataRows(text4, opts = {}) {
   if (!rows2.length) throw new Error("No usable rows - check the column names match the fields.");
   return { rows: rows2, truncated };
 }
-function detectFormat(text4) {
-  const t = text4.replace(/^/, "").trim();
+function detectFormat(text5) {
+  const t = text5.replace(/^/, "").trim();
   return t.startsWith("[") || t.startsWith("{") ? "json" : "csv";
 }
-function readJson(text4) {
+function readJson(text5) {
   let parsed;
   try {
-    parsed = JSON.parse(text4.replace(/^/, ""));
+    parsed = JSON.parse(text5.replace(/^/, ""));
   } catch {
     throw new Error("Could not read the JSON file - it isn\u2019t valid JSON.");
   }
@@ -74411,8 +74411,8 @@ function unionKeys(records) {
   }
   return seen;
 }
-function readCsv(text4) {
-  const s = text4.replace(/^/, "");
+function readCsv(text5) {
+  const s = text5.replace(/^/, "");
   const rows2 = [];
   let row = [], field2 = "", inQuotes = false, i = 0;
   while (i < s.length) {
@@ -74718,10 +74718,10 @@ function readEpub(bytes) {
     const href = attr2(tag2, "href");
     if (!id2 || !href) continue;
     const resolved2 = resolvePath(opfDir, href);
-    const properties = attr2(tag2, "properties");
+    const properties2 = attr2(tag2, "properties");
     if (manifest.has(id2)) throw new Error(`readEpub: duplicate manifest id "${id2}"`);
-    manifest.set(id2, { href: resolved2, mediaType: attr2(tag2, "media-type"), properties });
-    if (/\bnav\b/.test(properties)) navPath = resolved2;
+    manifest.set(id2, { href: resolved2, mediaType: attr2(tag2, "media-type"), properties: properties2 });
+    if (/\bnav\b/.test(properties2)) navPath = resolved2;
   }
   const navLabels = /* @__PURE__ */ new Map();
   if (navPath) {
@@ -74966,12 +74966,12 @@ function clampLevel(level2) {
   return n2 > 10 ? 10 : n2;
 }
 function bodyBlock(block) {
-  const text4 = escapeXml(block.text);
+  const text5 = escapeXml(block.text);
   if (block.type === "heading") {
     const level2 = clampLevel(block.level);
-    return `      <text:h text:style-name="Heading_20_${level2}" text:outline-level="${level2}">${text4}</text:h>`;
+    return `      <text:h text:style-name="Heading_20_${level2}" text:outline-level="${level2}">${text5}</text:h>`;
   }
-  return `      <text:p text:style-name="Standard">${text4}</text:p>`;
+  return `      <text:p text:style-name="Standard">${text5}</text:p>`;
 }
 function usedHeadingLevels(blocks) {
   const levels = /* @__PURE__ */ new Set();
@@ -75342,8 +75342,8 @@ function stylesXml2(ctx) {
 function abstractNum(id2, ordered) {
   let lvls = "";
   for (let i = 0; i <= MAX_ILVL; i++) {
-    const text4 = ordered ? `%${i + 1}.` : BULLET_GLYPHS[i % BULLET_GLYPHS.length];
-    lvls += `<w:lvl w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="${ordered ? "decimal" : "bullet"}"/><w:lvlText w:val="${xmlEsc4(text4)}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${720 * (i + 1)}" w:hanging="360"/></w:pPr></w:lvl>`;
+    const text5 = ordered ? `%${i + 1}.` : BULLET_GLYPHS[i % BULLET_GLYPHS.length];
+    lvls += `<w:lvl w:ilvl="${i}"><w:start w:val="1"/><w:numFmt w:val="${ordered ? "decimal" : "bullet"}"/><w:lvlText w:val="${xmlEsc4(text5)}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="${720 * (i + 1)}" w:hanging="360"/></w:pPr></w:lvl>`;
   }
   return `<w:abstractNum w:abstractNumId="${id2}"><w:multiLevelType w:val="${ordered ? "multilevel" : "hybridMultilevel"}"/>` + lvls + `</w:abstractNum>`;
 }
@@ -75434,7 +75434,7 @@ var init_docx = __esm({
     clampLevel2 = (n2) => Number.isFinite(n2) ? Math.min(6, Math.max(1, Math.trunc(n2))) : 1;
     clampSpan = (n2) => Number.isFinite(n2) ? Math.min(512, Math.max(1, Math.trunc(n2))) : 1;
     NO_MARKS = { b: false, i: false, u: false, s: false, code: false };
-    textRun = (text4, rPr) => `<w:r>${rPr}<w:t xml:space="preserve">${xmlEsc4(text4)}</w:t></w:r>`;
+    textRun = (text5, rPr) => `<w:r>${rPr}<w:t xml:space="preserve">${xmlEsc4(text5)}</w:t></w:r>`;
     paraXml2 = (pPrInner, runs) => `<w:p>${pPrInner ? `<w:pPr>${pPrInner}</w:pPr>` : ""}${runs}</w:p>`;
     EMU_PER_PX2 = 9525;
     MAX_IMAGE_EMU = 6.5 * 914400;
@@ -75527,12 +75527,12 @@ function mapWeight(weight, font, fonts) {
   if (String(font) === monoFamily && w > monoMax) w = monoMax;
   return String(w);
 }
-function mapFontFamily(family, fonts) {
-  const fam = String(family == null ? "" : family).trim();
+function mapFontFamily(family2, fonts) {
+  const fam = String(family2 == null ? "" : family2).trim();
   const hit = fonts?.knownFamilies?.find((k) => k.toLowerCase() === fam.toLowerCase());
   if (hit) return hit;
   if (fonts?.preserveSource && fam) return fam;
-  return /mono|consol|courier|menlo|code/i.test(String(family == null ? "" : family)) ? (fonts && fonts.monoFamily) ?? DEFAULT_FONTS.monoFamily : (fonts && fonts.defaultFamily) ?? DEFAULT_FONTS.defaultFamily;
+  return /mono|consol|courier|menlo|code/i.test(String(family2 == null ? "" : family2)) ? (fonts && fonts.monoFamily) ?? DEFAULT_FONTS.monoFamily : (fonts && fonts.defaultFamily) ?? DEFAULT_FONTS.defaultFamily;
 }
 function mapAlign(a) {
   const s = String(a == null ? "" : a).trim().toLowerCase();
@@ -76928,8 +76928,8 @@ function collectPenpotComponents(componentJsons, shapesByPage, opts = {}) {
 function slotFor(sh) {
   const label = str5(sh.name);
   if (str5(sh.type) === "text") {
-    const text4 = sh.content ? parsePenpotContent(sh.content).text : "";
-    return text4 ? { kind: "text", label, text: text4 } : { kind: "text", label };
+    const text5 = sh.content ? parsePenpotContent(sh.content).text : "";
+    return text5 ? { kind: "text", label, text: text5 } : { kind: "text", label };
   }
   const fills = Array.isArray(sh.fills) ? sh.fills : [];
   for (const f of fills) {
@@ -77020,8 +77020,8 @@ function designSceneAssetIds(query, manifest) {
     if (!Array.isArray(rows2)) continue;
     for (const row of rows2) {
       if (!row || typeof row !== "object" || Array.isArray(row)) continue;
-      const record10 = row;
-      for (const field2 of assetFields) add(idOf2(record10[field2.id]));
+      const record13 = row;
+      for (const field2 of assetFields) add(idOf2(record13[field2.id]));
     }
   }
   return out;
@@ -78828,17 +78828,17 @@ function outlinedTextEl(n2) {
   return parts.join("");
 }
 function textEl(n2) {
-  const text4 = String(n2.text ?? "");
-  if (!text4.trim()) return "";
+  const text5 = String(n2.text ?? "");
+  if (!text5.trim()) return "";
   const size = Math.max(1, +(n2.fontSize ?? 0) || 12);
   const lineH = leadOf(n2) * size;
   const baseline0 = n2.y + size * 0.8;
-  const family = String(n2.fontFamily || "").trim();
-  const familyAttr = family ? ` font-family="${escapeXml2(family)}, sans-serif"` : ` font-family="sans-serif"`;
+  const family2 = String(n2.fontFamily || "").trim();
+  const familyAttr = family2 ? ` font-family="${escapeXml2(family2)}, sans-serif"` : ` font-family="sans-serif"`;
   const weight = n2.fontWeight != null && n2.fontWeight !== "" ? ` font-weight="${escapeXml2(String(n2.fontWeight))}"` : "";
   const tracking = n2.tracking ? ` letter-spacing="${r(n2.tracking)}"` : "";
   const rot = n2.rot ? ` transform="rotate(${r(n2.rot)} ${r(n2.x)} ${r(baseline0)})"` : "";
-  const spans = text4.split("\n").map((line, i) => `<tspan x="${r(n2.x)}" y="${r(baseline0 + i * lineH)}">${escapeXml2(line)}</tspan>`).join("");
+  const spans = text5.split("\n").map((line, i) => `<tspan x="${r(n2.x)}" y="${r(baseline0 + i * lineH)}">${escapeXml2(line)}</tspan>`).join("");
   return `<text xml:space="preserve" fill="${safeAttrColor(n2.fg, "#000000")}" font-size="${r(size)}"${familyAttr}${weight}${tracking}${opacityAttr(n2)}${rot}>${spans}</text>`;
 }
 function gradientMarkup(g2, id2, images) {
@@ -79173,13 +79173,13 @@ function pdfNodeExtent(n2) {
     } else if (kind === "text") {
       const size = Math.max(1, +(n2.fontSize ?? 0) || 12);
       const baseline0 = n2.y + size * 0.8;
-      const text4 = String(n2.text ?? "");
-      if (!text4.trim()) {
+      const text5 = String(n2.text ?? "");
+      if (!text5.trim()) {
         box2 = EMPTY_EXTENT;
       } else if (rot) {
         box2 = planeBox();
       } else {
-        const lineCount = Math.max(text4.split("\n").length, 1);
+        const lineCount = Math.max(text5.split("\n").length, 1);
         if (!finite2(lineCount) || lineCount > 1e6) return null;
         const top = n2.y - size * 0.5;
         const bottom = baseline0 + (lineCount - 1) * leadOf(n2) * size + size * 0.5;
@@ -79620,17 +79620,17 @@ function toItems(nodes) {
     while (lineStart <= raw.length && items2.length < PDF_TEXT_MAX_ITEMS) {
       const newline = raw.indexOf("\n", lineStart);
       const lineEnd = newline < 0 ? raw.length : newline;
-      const text4 = raw.slice(lineStart, lineEnd);
-      if (text4.trim()) {
+      const text5 = raw.slice(lineStart, lineEnd);
+      if (text5.trim()) {
         items2.push({
-          text: text4,
+          text: text5,
           x: n2.x,
           // Undo pdf-map's box-top shift, then step down one line per split line
           // at the node's REAL leading when the interpreter measured one.
           baseline: n2.y + size * 0.8 + lineIndex * size * (typeof n2.lineHeight === "number" && isFinite(n2.lineHeight) && n2.lineHeight > 0 ? n2.lineHeight : 1.4),
           // 0.55em per character is pdf-map's own estimate; reused so the two
           // agree, and only ever consulted for gutter-width decisions.
-          right: n2.x + text4.length * size * 0.55,
+          right: n2.x + text5.length * size * 0.55,
           size,
           font,
           bold,
@@ -79657,10 +79657,10 @@ function toLines(items2) {
   const flush = () => {
     if (!bucket.length) return;
     const byX = [...bucket].sort((a, b) => a.x - b.x);
-    let text4 = "";
+    let text5 = "";
     let prevRight = -Infinity;
     for (const it of byX) {
-      text4 = joinFragments(text4, it, prevRight);
+      text5 = joinFragments(text5, it, prevRight);
       prevRight = it.right;
     }
     const weight = /* @__PURE__ */ new Map();
@@ -79673,10 +79673,10 @@ function toLines(items2) {
     }
     const boldChars = byX.reduce((a, it) => a + (it.bold ? it.text.length : 0), 0);
     const allChars = byX.reduce((a, it) => a + it.text.length, 0);
-    text4 = text4.replace(/\s+/g, " ").trim();
-    if (text4) {
+    text5 = text5.replace(/\s+/g, " ").trim();
+    if (text5) {
       lines.push({
-        text: text4,
+        text: text5,
         x: byX[0].x,
         right: Math.max(...byX.map((i) => i.right)),
         baseline: median3(byX.map((i) => i.baseline)),
@@ -79753,14 +79753,14 @@ function blocksFromColumn(lines, column) {
   const flush = () => {
     if (!buf.length) return;
     const marker = LIST_MARKER.exec(buf[0].text)?.[0]?.trim();
-    let text4 = "";
-    for (const l of buf) text4 = appendLine(text4, l.text);
-    if (marker) text4 = text4.replace(LIST_MARKER, "");
+    let text5 = "";
+    for (const l of buf) text5 = appendLine(text5, l.text);
+    if (marker) text5 = text5.replace(LIST_MARKER, "");
     const size = median3(buf.map((l) => l.size));
-    if (text4.trim()) {
+    if (text5.trim()) {
       out.push({
         kind: marker ? "list-item" : "paragraph",
-        text: text4.trim(),
+        text: text5.trim(),
         ...marker ? { marker } : {},
         size,
         bold: buf.every((l) => l.bold),
@@ -79808,17 +79808,17 @@ function taggedBlocks(items2, tagged) {
     for (const it of mine) used.add(it);
     const lines = toLines(mine);
     if (!lines.length) continue;
-    let text4 = "";
-    for (const l of lines) text4 = appendLine(text4, l.text);
-    const marker = LIST_MARKER.exec(text4)?.[0]?.trim();
+    let text5 = "";
+    for (const l of lines) text5 = appendLine(text5, l.text);
+    const marker = LIST_MARKER.exec(text5)?.[0]?.trim();
     const { kind, level: level2 } = kindFromType(el.type);
-    if (marker) text4 = text4.replace(LIST_MARKER, "");
-    text4 = text4.trim();
-    if (!text4) continue;
+    if (marker) text5 = text5.replace(LIST_MARKER, "");
+    text5 = text5.trim();
+    if (!text5) continue;
     blocks.push({
       kind,
       ...level2 ? { level: level2 } : {},
-      text: text4,
+      text: text5,
       ...marker ? { marker } : {},
       size: median3(lines.map((l) => l.size)),
       bold: lines.every((l) => l.bold),
@@ -81072,8 +81072,8 @@ function gradeMulberry32(seed) {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-function parseCubeLut(text4) {
-  const lines = String(text4).split(/\r?\n/);
+function parseCubeLut(text5) {
+  const lines = String(text5).split(/\r?\n/);
   let size = 0;
   let kind = null;
   let title = "";
@@ -81136,8 +81136,8 @@ function parseCubeLut(text4) {
     title
   };
 }
-function parse3dlLut(text4) {
-  const lines = String(text4).split(/\r?\n/);
+function parse3dlLut(text5) {
+  const lines = String(text5).split(/\r?\n/);
   let mesh = null;
   const rows2 = [];
   for (let i = 0; i < lines.length; i++) {
@@ -81175,13 +81175,13 @@ function parse3dlLut(text4) {
   }
   return { kind: "3d", size, data, domainMin: [0, 0, 0], domainMax: [1, 1, 1], title: "" };
 }
-function parseLutText(text4, name) {
+function parseLutText(text5, name) {
   const lower3 = String(name || "").toLowerCase();
-  if (lower3.slice(-4) === ".3dl") return parse3dlLut(text4);
+  if (lower3.slice(-4) === ".3dl") return parse3dlLut(text5);
   try {
-    return parseCubeLut(text4);
+    return parseCubeLut(text5);
   } catch {
-    return parse3dlLut(text4);
+    return parse3dlLut(text5);
   }
 }
 function sampleLut(lut, r3, g2, b) {
@@ -81774,8 +81774,8 @@ function mapPaletteToBrand(palette, swatches, opts = {}) {
   }
   return out;
 }
-function normFamilyKey(family) {
-  let s = family.trim();
+function normFamilyKey(family2) {
+  let s = family2.trim();
   const comma = s.indexOf(",");
   if (comma >= 0) s = s.slice(0, comma);
   s = s.trim().replace(/^['"]+|['"]+$/g, "").trim();
@@ -82683,10 +82683,10 @@ function roundedRectSubpath(x, y, w, h, rx, ry) {
     { op: "C", x1: x, y1: y + ry - ky, x2: x + rx - kx, y2: y, x: x + rx, y }
   ] };
 }
-function fontIdFor(family, google) {
-  const slug3 = family.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+function fontIdFor(family2, google) {
+  const slug3 = family2.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   if (!slug3) return TEXT_DEFAULTS.fontFamily;
-  return google.has(family.trim().toLowerCase()) ? `gfont-${slug3}` : slug3;
+  return google.has(family2.trim().toLowerCase()) ? `gfont-${slug3}` : slug3;
 }
 function fontVariantId(weight, italic) {
   const w = clamp(Math.round(weight / 100) * 100, 100, 900);
@@ -82802,14 +82802,14 @@ function textContentRecord(t, google, nextKey) {
     const runs = p.runs.filter((r3) => typeof r3.text === "string");
     if (!runs.length) return null;
     const spans = runs.map((r3) => {
-      const family = r3.fontFamily && r3.fontFamily.trim() || TEXT_DEFAULTS.fontFamily;
+      const family2 = r3.fontFamily && r3.fontFamily.trim() || TEXT_DEFAULTS.fontFamily;
       const weight = clamp(Math.round(fin2(r3.fontWeight, TEXT_DEFAULTS.fontWeight) / 100) * 100, 100, 900);
       const italic = r3.italic === true;
       const c = parsePenpotColor(r3.color ?? "#000000") ?? { hex: "#000000", alpha: 1 };
       const rec2 = {
         text: r3.text,
-        fontId: fontIdFor(family, google),
-        fontFamily: family,
+        fontId: fontIdFor(family2, google),
+        fontFamily: family2,
         fontVariantId: fontVariantId(weight, italic),
         fontSize: String(r4(Math.max(1, fin2(r3.fontSize, TEXT_DEFAULTS.fontSize)))),
         fontWeight: String(weight),
@@ -83254,8 +83254,8 @@ function gradSpecToPenpot(spec, w, h) {
 }
 function designTextRuns(line) {
   const out = [];
-  const push = (text4, style) => {
-    if (text4) out.push({ text: text4, ...style });
+  const push = (text5, style) => {
+    if (text5) out.push({ text: text5, ...style });
   };
   const unesc = (s) => s.replace(/\\\*/g, "*").replace(/\\_/g, "_");
   let rest2 = line;
@@ -83412,9 +83412,9 @@ function boxesToPenpotDoc(boxesIn, o) {
     let shape = null;
     let textHasRunColor = false;
     if (kind === "text") {
-      const text4 = str6(b.text);
-      if (!text4.trim()) return null;
-      const family = familyOf(b.font);
+      const text5 = str6(b.text);
+      if (!text5.trim()) return null;
+      const family2 = familyOf(b.font);
       const weight = weightOf(b);
       const fg = color2(b.fg) ?? "#000000";
       const size = Math.max(1, Math.round(fin2(b.fontSize, 48)));
@@ -83422,7 +83422,7 @@ function boxesToPenpotDoc(boxesIn, o) {
       const tracking = clamp(fin2(b.tracking), -100, 400);
       const align = H_ALIGN.has(str6(b.align)) ? str6(b.align) : "center";
       const valignRaw = str6(b.valign);
-      const paragraphs = text4.split("\n").map((line) => {
+      const paragraphs = text5.split("\n").map((line) => {
         let ln = line;
         const mb2 = /^(\s*)[-*•]\s+(.*)$/.exec(ln);
         const mo = /^(\s*)(\d{1,3})\.\s+(.*)$/.exec(ln);
@@ -83434,7 +83434,7 @@ function boxesToPenpotDoc(boxesIn, o) {
           const rp = parsePenpotColor(rc) ?? { hex: "#000000", alpha: 1 };
           return {
             text: r3.text,
-            fontFamily: r3.family ? familyOf(r3.family) : family,
+            fontFamily: r3.family ? familyOf(r3.family) : family2,
             fontWeight: r3.weight ?? weight,
             italic: r3.italic === true,
             fontSize: size,
@@ -83445,7 +83445,7 @@ function boxesToPenpotDoc(boxesIn, o) {
             decoration: r3.decoration
           };
         });
-        if (!runs.length) runs.push({ text: "", fontFamily: family, fontWeight: weight, fontSize: size, lineHeight: lh, letterSpacing: tracking, color: fg });
+        if (!runs.length) runs.push({ text: "", fontFamily: family2, fontWeight: weight, fontSize: size, lineHeight: lh, letterSpacing: tracking, color: fg });
         return { align, runs };
       });
       shape = { ...base, type: "text", paragraphs, valign: valignRaw === "top" ? "top" : valignRaw === "bottom" ? "bottom" : "center", growType: "fixed" };
@@ -84258,14 +84258,14 @@ function svgToPenpotDoc(svgText, o) {
             return false;
           }
           const bodyStart = tags2[i].end, bodyEnd = tags2[close].start;
-          const text4 = decodeEntities3(src.slice(bodyStart, bodyEnd).replace(/<[^>]*>/g, "")).replace(/\s+/g, " ").trim();
-          if (!text4) break;
+          const text5 = decodeEntities3(src.slice(bodyStart, bodyEnd).replace(/<[^>]*>/g, "")).replace(/\s+/g, " ").trim();
+          if (!text5) break;
           const scale = meanScale(f.m);
           const size = f.fontSize * scale;
           const rotDeg = Math.atan2(f.m.b, f.m.a) * 180 / Math.PI;
           const lx = parseLen((a.x ?? "0").split(/[\s,]+/)[0]), ly = parseLen((a.y ?? "0").split(/[\s,]+/)[0]);
           const [px, py] = apply2(f.m, lx, ly);
-          const estW = Math.max(size * 0.6, text4.length * size * 0.56 + Math.max(0, text4.length - 1) * f.letterSpacing * scale);
+          const estW = Math.max(size * 0.6, text5.length * size * 0.56 + Math.max(0, text5.length - 1) * f.letterSpacing * scale);
           const lineH = 1.2;
           const db = (parseStyle2(a.style)["dominant-baseline"] ?? a["dominant-baseline"] ?? a["alignment-baseline"] ?? "").toLowerCase();
           const ascent = db === "middle" || db === "central" ? size * 0.55 : db === "hanging" || db === "text-before-edge" ? size * 0.05 : size * 0.95;
@@ -84280,7 +84280,7 @@ function svgToPenpotDoc(svgText, o) {
           }
           if (!col) break;
           const run = {
-            text: text4,
+            text: text5,
             fontFamily: f.fontFamily || void 0,
             fontWeight: f.fontWeight,
             italic: /italic|oblique/.test(f.fontStyle),
@@ -84293,7 +84293,7 @@ function svgToPenpotDoc(svgText, o) {
           const strokes = strokesOf(f);
           const shape = {
             type: "text",
-            name: name || text4.slice(0, 40),
+            name: name || text5.slice(0, 40),
             x: ax,
             y: top,
             w: estW,
@@ -84376,11 +84376,11 @@ function imageToPenpotDoc(media, o) {
   };
   return { name: o.name, pages: [{ name: "Page 1", shapes: [board] }], media: [media], tokens: o.tokens, palette: o.palette, typographies: o.typographies, googleFamilies: o.googleFamilies, generatedBy: o.generatedBy };
 }
-function parsePenpotImportStream(text4) {
+function parsePenpotImportStream(text5) {
   const out = { fileIds: [], error: null, sections: [] };
   const strip = (v) => String(v ?? "").replace(/^~[:u]/, "");
   let event = "";
-  for (const raw of String(text4 ?? "").split(/\r?\n/)) {
+  for (const raw of String(text5 ?? "").split(/\r?\n/)) {
     const line = raw.trim();
     if (!line) {
       event = "";
@@ -86067,15 +86067,15 @@ var init_fs_token = __esm({
 function sessionVersionStamp() {
   return { formatVersion: SESSION_FORMAT_VERSION, engineVersion: ENGINE_VERSION };
 }
-function migrateSessionRecord(record10, log) {
-  if (!record10 || typeof record10 !== "object") return null;
-  const data = record10.data;
+function migrateSessionRecord(record13, log) {
+  if (!record13 || typeof record13 !== "object") return null;
+  const data = record13.data;
   if (data == null || typeof data !== "object") return null;
-  const raw = record10.formatVersion;
+  const raw = record13.formatVersion;
   const fromVersion = typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
   if (fromVersion > SESSION_READER_VERSION) {
     log?.("warn", "saved session was written by a newer version of the app - reading it as-is", {
-      slot: record10.slot,
+      slot: record13.slot,
       recordFormatVersion: fromVersion,
       readerFormatVersion: SESSION_READER_VERSION
     });
@@ -86125,8 +86125,8 @@ function piiPhoneOk(m2) {
   const d = piiDigits(m2);
   return d.length >= 7 && d.length <= 15;
 }
-function piiFindings(text4) {
-  const s = String(text4 == null ? "" : text4);
+function piiFindings(text5) {
+  const s = String(text5 == null ? "" : text5);
   if (!s) return [];
   const claimed = [];
   const out = [];
@@ -86321,8 +86321,8 @@ function validatePreparationRules(rules) {
     return { id: r3.id, kind: r3.kind, value: r3.value, label: r3.label };
   });
 }
-function inspectPrivateText(text4, rules = [], field2) {
-  if (text4.length > PREPARE_MAX_TEXT) throw new Error("Text inspection is limited to 1 MiB per value.");
+function inspectPrivateText(text5, rules = [], field2) {
+  if (text5.length > PREPARE_MAX_TEXT) throw new Error("Text inspection is limited to 1 MiB per value.");
   const spans = [];
   let truncated = false;
   const add = (start, end, category, label, rule, uncertain = false, encoding) => {
@@ -86331,7 +86331,7 @@ function inspectPrivateText(text4, rules = [], field2) {
       truncated = true;
       return;
     }
-    let value = text4.slice(start, end);
+    let value = text5.slice(start, end);
     if (encoding) {
       try {
         value = decodeURIComponent(value.replace(/\+/g, " "));
@@ -86340,13 +86340,13 @@ function inspectPrivateText(text4, rules = [], field2) {
     }
     spans.push({ start, end, value, category, label, rule, uncertain, ...encoding ? { encoding } : {} });
   };
-  if (field2 && sensitiveField(field2, rules) && text4.trim()) {
-    const prefix = /^(?:Bearer|Basic)\s+/i.exec(text4)?.[0].length ?? 0;
-    add(prefix, text4.length, "credential", "Sensitive field", "sensitive-field");
+  if (field2 && sensitiveField(field2, rules) && text5.trim()) {
+    const prefix = /^(?:Bearer|Basic)\s+/i.exec(text5)?.[0].length ?? 0;
+    add(prefix, text5.length, "credential", "Sensitive field", "sensitive-field");
     return { spans, truncated };
   }
   const match = (pattern, category, label, rule) => {
-    for (const m2 of text4.matchAll(pattern)) {
+    for (const m2 of text5.matchAll(pattern)) {
       add(m2.index, m2.index + m2[0].length, category, label, rule);
       if (truncated) break;
     }
@@ -86354,10 +86354,10 @@ function inspectPrivateText(text4, rules = [], field2) {
   match(/-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----[\s\S]*?(?:-----END (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----|$)/g, "credential", "Private key", "private-key");
   match(/\b(?:gh[pousr]_[A-Za-z0-9]{20,255}|github_pat_[A-Za-z0-9_]{20,255}|AKIA[A-Z0-9]{16}|sk-(?:proj-)?[A-Za-z0-9_-]{20,255}|xox[baprs]-[A-Za-z0-9-]{12,255})\b/g, "credential", "Credential-shaped value", "credential-shape");
   match(/\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "credential", "Signed token", "jwt");
-  for (const m2 of text4.matchAll(/\b(?:Bearer|Basic)\s+([A-Za-z0-9_+./=-]{4,})/gi)) add(m2.index + m2[0].length - m2[1].length, m2.index + m2[0].length, "credential", "Authorization value", "authorization");
+  for (const m2 of text5.matchAll(/\b(?:Bearer|Basic)\s+([A-Za-z0-9_+./=-]{4,})/gi)) add(m2.index + m2[0].length - m2[1].length, m2.index + m2[0].length, "credential", "Authorization value", "authorization");
   const assignments = /(?:^|[\s?&;,{])["']?([\w-]{1,80})["']?\s*[:=]\s*(?:"([^"\r\n]*)"|'([^'\r\n]*)'|([^\s&,;}\r\n]+))/g;
   for (; ; ) {
-    const m2 = assignments.exec(text4);
+    const m2 = assignments.exec(text5);
     if (!m2) break;
     if (!sensitiveField(m2[1], rules)) {
       assignments.lastIndex = m2.index + 1;
@@ -86368,7 +86368,7 @@ function inspectPrivateText(text4, rules = [], field2) {
     const offset = m2[0].lastIndexOf(v);
     add(m2.index + offset, m2.index + offset + v.length, "credential", "Sensitive assignment", "assignment", false, /[?&=]/.test(m2[0]) && /%[0-9a-f]{2}/i.test(v) ? "url" : void 0);
   }
-  for (const query of text4.matchAll(/[?&][^=&#\s]{1,80}=([^&#\s]+)/g)) {
+  for (const query of text5.matchAll(/[?&][^=&#\s]{1,80}=([^&#\s]+)/g)) {
     const raw = query[1];
     let decoded;
     try {
@@ -86383,19 +86383,19 @@ function inspectPrivateText(text4, rules = [], field2) {
     add(start, start + raw.length, personal?.kind ?? "custom", "Query parameter value", personal ? `pii-${personal.kind}` : custom.id, personal?.maybe ?? false, "url");
   }
   for (const rule of rules) if (rule.kind === "literal") {
-    for (let offset = text4.indexOf(rule.value); offset >= 0; offset = text4.indexOf(rule.value, offset + rule.value.length)) {
+    for (let offset = text5.indexOf(rule.value); offset >= 0; offset = text5.indexOf(rule.value, offset + rule.value.length)) {
       add(offset, offset + rule.value.length, "custom", rule.label || "Your value", rule.id);
       if (truncated) break;
     }
   }
-  for (const hit of piiFindings(text4)) {
+  for (const hit of piiFindings(text5)) {
     add(hit.start, hit.end, hit.kind, hit.label ?? hit.kind, `pii-${hit.kind}`, hit.maybe);
     if (truncated) break;
   }
   return { spans: spans.sort((a, b) => a.start - b.start), truncated };
 }
-function replacePrivateSpans(text4, edits) {
-  let result = text4;
+function replacePrivateSpans(text5, edits) {
+  let result = text5;
   for (const { span, replacement } of [...edits].sort((a, b) => b.span.start - a.span.start)) {
     result = result.slice(0, span.start) + (span.encoding === "url" ? encodeURIComponent(replacement) : replacement) + result.slice(span.end);
   }
@@ -86418,12 +86418,12 @@ import { isMap, isSeq, isScalar, isAlias as isAlias2, parseAllDocuments } from "
 function decodeText(bytes) {
   if (bytes.length > PREPARE_MAX_TEXT) return void 0;
   try {
-    const text4 = decoder5.decode(bytes);
-    for (const c of text4) {
+    const text5 = decoder5.decode(bytes);
+    for (const c of text5) {
       const code = c.charCodeAt(0);
       if (code < 32 && ![9, 10, 12, 13].includes(code)) return void 0;
     }
-    return text4;
+    return text5;
   } catch {
     return void 0;
   }
@@ -86443,9 +86443,9 @@ function encodeBase64(value) {
 function scalarText(value) {
   return ["string", "number", "bigint", "boolean"].includes(typeof value) ? String(value) : void 0;
 }
-function textDocument(doc, bytes, text4, structured, json, rules, budget3) {
+function textDocument(doc, bytes, text5, structured, json, rules, budget3) {
   const lineStarts = [0];
-  for (let i = 0; i < text4.length; i++) if (text4[i] === "\n") lineStarts.push(i + 1);
+  for (let i = 0; i < text5.length; i++) if (text5[i] === "\n") lineStarts.push(i + 1);
   const lineAt = (offset) => {
     let low = 0, high = lineStarts.length;
     while (low < high) {
@@ -86465,10 +86465,10 @@ function textDocument(doc, bytes, text4, structured, json, rules, budget3) {
     doc.units.push({ id: id2, scopeId: doc.scope.id, text: value, field: field2, location, line: lineAt(start) });
     edits.push({ id: id2, start, end, encode });
   };
-  if (!structured) add(text4, 0, text4.length, "Text", void 0, (s) => s);
+  if (!structured) add(text5, 0, text5.length, "Text", void 0, (s) => s);
   else {
-    if (json) JSON.parse(text4);
-    const documents = parseAllDocuments(text4, { prettyErrors: false, logLevel: "silent", strict: true, uniqueKeys: true, intAsBigInt: true, stringKeys: true });
+    if (json) JSON.parse(text5);
+    const documents = parseAllDocuments(text5, { prettyErrors: false, logLevel: "silent", strict: true, uniqueKeys: true, intAsBigInt: true, stringKeys: true });
     if (!documents.length || documents.some((d) => d.errors.length)) throw new Error("Could not parse structured text.");
     const ranges = [];
     const queue = documents.map((d, i) => ({ node: d.contents, path: documents.length > 1 ? `Document ${i + 1}` : "$", depth: 0 }));
@@ -86511,7 +86511,7 @@ function textDocument(doc, bytes, text4, structured, json, rules, budget3) {
         ranges.push([start, end]);
         const value = scalarText(node.value);
         if (value === void 0) continue;
-        const raw = text4.slice(start, end);
+        const raw = text5.slice(start, end);
         const suffix = /\r?\n$/.exec(raw)?.[0] ?? "";
         const encode = (v) => JSON.stringify(v) + suffix;
         if (base64) {
@@ -86526,20 +86526,20 @@ function textDocument(doc, bytes, text4, structured, json, rules, budget3) {
     if (!json) {
       ranges.sort((a, b) => a[0] - b[0]);
       let range = 0;
-      for (let offset = text4.indexOf("#"); offset >= 0; ) {
+      for (let offset = text5.indexOf("#"); offset >= 0; ) {
         while (range < ranges.length && ranges[range][1] <= offset) range++;
         if (range < ranges.length && ranges[range][0] <= offset) {
-          offset = text4.indexOf("#", ranges[range][1]);
+          offset = text5.indexOf("#", ranges[range][1]);
           continue;
         }
-        const newline = text4.indexOf("\n", offset), end = newline < 0 ? text4.length : newline;
-        add(text4.slice(offset, end), offset, end, "Comment", void 0, (s) => s);
-        offset = text4.indexOf("#", end);
+        const newline = text5.indexOf("\n", offset), end = newline < 0 ? text5.length : newline;
+        add(text5.slice(offset, end), offset, end, "Comment", void 0, (s) => s);
+        offset = text5.indexOf("#", end);
       }
     }
   }
   doc.write = (values) => {
-    let result = text4, changed = false;
+    let result = text5, changed = false;
     for (const edit of [...edits].sort((a, b) => b.start - a.start)) {
       const value = values.get(edit.id);
       if (value !== void 0) {
@@ -86630,8 +86630,8 @@ function openPreparationDocument(bytes, name, sourceId, id2, rules, budget3, dep
     scope.limitations.push(["pdf", "png", "jpg", "jpeg", "svg"].includes(ext) ? "Use Strip Hidden Data for metadata or Redact for visible content. This file is retained until you choose that operation." : "This binary format is not inspected here; its bytes are retained unchanged.");
     return doc;
   }
-  const text4 = decodeText(bytes);
-  if (text4 === void 0) {
+  const text5 = decodeText(bytes);
+  if (text5 === void 0) {
     scope.limitations.push("Binary, non-UTF-8 or larger than 1 MiB: retained without text inspection.");
     return doc;
   }
@@ -86645,7 +86645,7 @@ function openPreparationDocument(bytes, name, sourceId, id2, rules, budget3, dep
     return doc;
   }
   try {
-    textDocument(doc, bytes, text4, structured, json, rules, budget3);
+    textDocument(doc, bytes, text5, structured, json, rules, budget3);
   } catch {
     doc.units = [];
     doc.write = () => bytes;
@@ -86955,22 +86955,22 @@ function comparisonBudget(options2, signal) {
   return budget3;
 }
 function comparisonValue(value) {
-  let text4;
-  if (typeof value === "string") text4 = value;
-  else if (value === null || typeof value === "boolean" || typeof value === "number") text4 = String(value);
+  let text5;
+  if (typeof value === "string") text5 = value;
+  else if (value === null || typeof value === "boolean" || typeof value === "number") text5 = String(value);
   else if (value && typeof value === "object") return structuredExcerpt(value);
-  else text4 = `[${typeof value}]`;
-  return { text: text4.slice(0, 2e3), truncated: text4.length > 2e3 };
+  else text5 = `[${typeof value}]`;
+  return { text: text5.slice(0, 2e3), truncated: text5.length > 2e3 };
 }
 function structuredExcerpt(value) {
-  let text4 = "", truncated = false, nodes = 0;
+  let text5 = "", truncated = false, nodes = 0;
   const seen = /* @__PURE__ */ new WeakSet();
   const append = (part) => {
-    if (text4.length + part.length > 2e3) truncated = true;
-    text4 += part.slice(0, Math.max(0, 2e3 - text4.length));
+    if (text5.length + part.length > 2e3) truncated = true;
+    text5 += part.slice(0, Math.max(0, 2e3 - text5.length));
   };
   const visit = (value2, depth) => {
-    if (text4.length >= 2e3 || ++nodes > 100 || depth > 8) {
+    if (text5.length >= 2e3 || ++nodes > 100 || depth > 8) {
       truncated = true;
       return;
     }
@@ -86994,7 +86994,7 @@ function structuredExcerpt(value) {
     let count2 = 0;
     for (const key in value2) {
       if (!Object.hasOwn(value2, key)) continue;
-      if (count2 >= 20 || text4.length >= 2e3 || nodes >= 100) {
+      if (count2 >= 20 || text5.length >= 2e3 || nodes >= 100) {
         truncated = true;
         break;
       }
@@ -87005,7 +87005,7 @@ function structuredExcerpt(value) {
     append(array ? "]" : "}");
   };
   visit(value, 0);
-  return { text: text4, truncated };
+  return { text: text5, truncated };
 }
 var COMPARE_MAX_TEXT;
 var init_compare_budget = __esm({
@@ -87126,17 +87126,17 @@ var init_compare_structure = __esm({
 });
 
 // engine/src/compare-text.ts
-function tokens2(text4, options2) {
+function tokens2(text5, options2) {
   let line = 1, offset = 0;
   const out = [];
   const pattern = options2.granularity === "word" ? /\s+|[^\s]+/gu : /[^\n]*\n|[^\n]+$/g;
-  for (const match of text4.matchAll(pattern)) {
-    const text5 = match[0];
-    let key = options2.whitespace === "ignore" ? text5.replace(/\s+/g, " ").trim() : text5;
+  for (const match of text5.matchAll(pattern)) {
+    const text6 = match[0];
+    let key = options2.whitespace === "ignore" ? text6.replace(/\s+/g, " ").trim() : text6;
     if (options2.ignoreCase) key = key.toLowerCase();
-    const token2 = { text: text5, key, line, offset };
-    offset += text5.length;
-    line += (text5.match(/\n/g) ?? []).length;
+    const token2 = { text: text6, key, line, offset };
+    offset += text6.length;
+    line += (text6.match(/\n/g) ?? []).length;
     if (options2.whitespace !== "ignore" || token2.key !== "") out.push(token2);
     if (out.length > 2e4) return null;
   }
@@ -87393,12 +87393,12 @@ function escapeCode(value) {
 }
 function callout(raw, opts) {
   if (!opts.calloutMode || opts.calloutMode === "off") return null;
-  const text4 = raw.replace(/^(?:\/\/|#)\s*/, "");
+  const text5 = raw.replace(/^(?:\/\/|#)\s*/, "");
   const matches3 = opts.calloutMode === "all" || opts.calloutMode === "tags" && /^(TODO|FIXME|FIX|NOTE|HACK|XXX|BUG|WIP|WARNING|WARN|OPTIMIZE|REVIEW|DEPRECATED)\b/i.test(
-    text4
-  ) || opts.calloutMode === "custom" && opts.calloutPrefixes?.some((p) => text4.toLowerCase().startsWith(p.toLowerCase()));
+    text5
+  ) || opts.calloutMode === "custom" && opts.calloutPrefixes?.some((p) => text5.toLowerCase().startsWith(p.toLowerCase()));
   if (!matches3) return null;
-  const html = escapeCode(text4).replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^\w*])__([^_]+?)__(?![\w])/g, "$1<strong>$2</strong>").replace(/\*([^*]+?)\*/g, "<em>$1</em>").replace(/(^|[^\w*])_([^_]+?)_(?![\w])/g, "$1<em>$2</em>");
+  const html = escapeCode(text5).replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^\w*])__([^_]+?)__(?![\w])/g, "$1<strong>$2</strong>").replace(/\*([^*]+?)\*/g, "<em>$1</em>").replace(/(^|[^\w*])_([^_]+?)_(?![\w])/g, "$1<em>$2</em>");
   return `<span class="cc-callout"><span class="cc-callout-arrow">\u2190</span><span class="cc-callout-text">${html}</span></span>`;
 }
 function highlightCode(source, language = "auto", opts = {}) {
@@ -87766,13 +87766,13 @@ var init_text_operations = __esm({
 });
 
 // engine/src/text-ascii.ts
-function textAscii(text4, opts = {}) {
-  if (text4.length > 300) throw new Error("Use 300 characters or fewer for an ASCII banner.");
-  if (/[^\x20-\x7e\r\n]/.test(text4))
+function textAscii(text5, opts = {}) {
+  if (text5.length > 300) throw new Error("Use 300 characters or fewer for an ASCII banner.");
+  if (/[^\x20-\x7e\r\n]/.test(text5))
     throw new Error(
       "This banner alphabet supports ASCII letters, numbers, spaces, and basic punctuation."
     );
-  const source = text4.toUpperCase().replace(/\r\n?/g, "\n");
+  const source = text5.toUpperCase().replace(/\r\n?/g, "\n");
   const missing = [...new Set([...source].filter((c) => c !== "\n" && !GLYPHS[c]))];
   if (missing.length)
     throw new Error(`This banner alphabet has no lettering for: ${missing.join(" ")}`);
@@ -87871,12 +87871,12 @@ function stringField(fields, names) {
       return String(fields[name]);
   return "";
 }
-function parseTextLogs(text4) {
-  if (new TextEncoder().encode(text4).length > LOG_MAX_BYTES)
+function parseTextLogs(text5) {
+  if (new TextEncoder().encode(text5).length > LOG_MAX_BYTES)
     throw new Error("Open a log excerpt of 4 MiB or less.");
   const events = [];
   let at = 0, line = 0;
-  for (const match of text4.matchAll(/[^\n]*\n|[^\n]+$/g)) {
+  for (const match of text5.matchAll(/[^\n]*\n|[^\n]+$/g)) {
     const raw = match[0];
     line++;
     const body = raw.replace(/\r?\n$/, "");
@@ -87997,8 +87997,8 @@ var init_text_logs = __esm({
 
 // engine/src/text-formats.ts
 import { parseAllDocuments as parseAllDocuments2, stringify } from "yaml";
-function readYaml(text4) {
-  return parseAllDocuments2(text4).map((doc) => {
+function readYaml(text5) {
+  return parseAllDocuments2(text5).map((doc) => {
     if (doc.errors.length) throw new Error(doc.errors.map((e) => e.message).join("\n"));
     return doc.toJS({ maxAliasCount: 100 });
   });
@@ -88020,9 +88020,9 @@ function ensureConvertible(value, to, seen = /* @__PURE__ */ new Set()) {
     seen.delete(value);
   }
 }
-async function convertStructured(text4, from, to) {
+async function convertStructured(text5, from, to) {
   const toml = from === "toml" || to === "toml" ? await import("smol-toml") : null;
-  const values = from === "yaml" ? readYaml(text4) : [from === "toml" ? toml.parse(text4, { integersAsBigInt: "asNeeded" }) : JSON.parse(text4)];
+  const values = from === "yaml" ? readYaml(text5) : [from === "toml" ? toml.parse(text5, { integersAsBigInt: "asNeeded" }) : JSON.parse(text5)];
   for (const value of values) ensureConvertible(value, to);
   if (to === "yaml") return writeYaml(values);
   if (values.length !== 1)
@@ -88034,8 +88034,8 @@ async function convertStructured(text4, from, to) {
   }
   return JSON.stringify(values[0], null, 2);
 }
-async function formatCode(text4, language) {
-  if (language === "sql") return (await import("sql-formatter")).format(text4);
+async function formatCode(text5, language) {
+  if (language === "sql") return (await import("sql-formatter")).format(text5);
   const { format } = await import("prettier/standalone");
   const parser = {
     javascript: "babel",
@@ -88046,12 +88046,12 @@ async function formatCode(text4, language) {
   }[language];
   if (!parser) throw new Error("Choose a supported code language.");
   const plugins = parser.startsWith("babel") ? [await import("prettier/plugins/babel"), await import("prettier/plugins/estree")] : parser === "css" ? [await import("prettier/plugins/postcss")] : parser === "html" ? [await import("prettier/plugins/html")] : [await import("prettier/plugins/markdown")];
-  return format(text4, { parser, plugins });
+  return format(text5, { parser, plugins });
 }
-async function compactCode(text4, language) {
+async function compactCode(text5, language) {
   if (language === "javascript") {
     const { minify } = await import("terser");
-    const result = await minify(text4, {
+    const result = await minify(text5, {
       compress: false,
       mangle: false,
       format: { comments: "some" }
@@ -88062,7 +88062,7 @@ async function compactCode(text4, language) {
   if (language === "css") {
     const { parse, generate } = await import("css-tree");
     return generate(
-      parse(text4, {
+      parse(text5, {
         onParseError: (error) => {
           throw error;
         }
@@ -88078,8 +88078,8 @@ var init_text_formats = __esm({
 });
 
 // engine/src/text-tools.ts
-function encode64(text4) {
-  const bytes = new TextEncoder().encode(text4);
+function encode64(text5) {
+  const bytes = new TextEncoder().encode(text5);
   let out = "";
   for (let i = 0; i < bytes.length; i += 3) {
     const n2 = bytes[i] << 16 | (bytes[i + 1] ?? 0) << 8 | (bytes[i + 2] ?? 0);
@@ -88087,8 +88087,8 @@ function encode64(text4) {
   }
   return out;
 }
-function decode64(text4) {
-  const s = text4.replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/");
+function decode64(text5) {
+  const s = text5.replace(/\s/g, "").replace(/-/g, "+").replace(/_/g, "/");
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(s) || s.replace(/=+$/, "").length % 4 === 1 || s.includes("=") && s.length % 4 !== 0)
     throw new Error("This is not valid Base64.");
   const body = s.replace(/=+$/, "");
@@ -88113,8 +88113,8 @@ function bounded(value, fallback, min, max) {
 }
 function createTextToolsAPI(env) {
   return {
-    async highlight(text4, language, options2) {
-      return highlightCode(text4, language, options2);
+    async highlight(text5, language, options2) {
+      return highlightCode(text5, language, options2);
     },
     async operations() {
       return structuredClone(TEXT_OPERATIONS);
@@ -88125,30 +88125,30 @@ function createTextToolsAPI(env) {
   };
 }
 async function runTextTool(request, env) {
-  const { text: text4, operation } = request;
+  const { text: text5, operation } = request;
   const o = request.options ?? {};
-  if (typeof text4 !== "string" || new TextEncoder().encode(text4).length > 4 * 1024 * 1024)
+  if (typeof text5 !== "string" || new TextEncoder().encode(text5).length > 4 * 1024 * 1024)
     throw new Error("Use a text excerpt of 4 MiB or less.");
   const s = (key, fallback = "") => String(o[key] ?? fallback);
-  let out = text4, format = "txt";
+  let out = text5, format = "txt";
   const notes = [];
   let details;
-  const lines = () => text4.split(/\r\n|\r|\n/);
-  const words = () => text4.replace(/([\p{Ll}\d])([\p{Lu}])/gu, "$1 $2").match(/[\p{L}\p{N}]+/gu) ?? [];
+  const lines = () => text5.split(/\r\n|\r|\n/);
+  const words = () => text5.replace(/([\p{Ll}\d])([\p{Lu}])/gu, "$1 $2").match(/[\p{L}\p{N}]+/gu) ?? [];
   switch (operation) {
     case "identity":
       break;
     case "upper":
-      out = text4.toUpperCase();
+      out = text5.toUpperCase();
       break;
     case "lower":
-      out = text4.toLowerCase();
+      out = text5.toLowerCase();
       break;
     case "title":
-      out = text4.toLowerCase().replace(new RegExp("\\b\\p{L}", "gu"), (c) => c.toUpperCase());
+      out = text5.toLowerCase().replace(new RegExp("\\b\\p{L}", "gu"), (c) => c.toUpperCase());
       break;
     case "sentence":
-      out = text4.toLowerCase().replace(new RegExp("(^|[.!?]\\s+)(\\p{L})", "gu"), (_, a, b) => a + b.toUpperCase());
+      out = text5.toLowerCase().replace(new RegExp("(^|[.!?]\\s+)(\\p{L})", "gu"), (_, a, b) => a + b.toUpperCase());
       break;
     case "kebab":
     case "snake":
@@ -88177,7 +88177,7 @@ async function runTextTool(request, env) {
       out = lines().join(s("style") === "CRLF" ? "\r\n" : "\n");
       break;
     case "normalize":
-      out = text4.normalize(s("form", "NFC"));
+      out = text5.normalize(s("form", "NFC"));
       if (s("form").startsWith("NFK"))
         notes.push(
           "Compatibility normalization can change the appearance and meaning of characters."
@@ -88185,24 +88185,24 @@ async function runTextTool(request, env) {
       break;
     case "replace":
       if (!s("find")) throw new Error("Enter text to find.");
-      out = text4.split(s("find")).join(s("replacement"));
+      out = text5.split(s("find")).join(s("replacement"));
       break;
     case "clean": {
-      const r3 = humanizeText(text4);
+      const r3 = humanizeText(text5);
       out = r3.text;
       details = { changes: r3.changes };
       break;
     }
     case "reword-rules":
-      details = { suggestions: suggestRewrites(text4) };
+      details = { suggestions: suggestRewrites(text5) };
       out = JSON.stringify(details, null, 2);
       format = "json";
       break;
     case "inspect": {
-      const facts2 = textFacts(text4);
-      const signals = analyzeTextSignals(text4, { source: "digital" });
+      const facts2 = textFacts(text5);
+      const signals = analyzeTextSignals(text5, { source: "digital" });
       details = { facts: facts2, signals };
-      out = `${facts2.words} words \xB7 ${[...text4].length} code points \xB7 ${new TextEncoder().encode(text4).length} UTF-8 bytes
+      out = `${facts2.words} words \xB7 ${[...text5].length} code points \xB7 ${new TextEncoder().encode(text5).length} UTF-8 bytes
 ${facts2.sentences} sentences \xB7 ${facts2.paragraphs} paragraphs
 
 ${signals.summary}
@@ -88216,7 +88216,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
     case "redact": {
       const literals = s("literals").split("\n").filter(Boolean);
       const report = inspectPrivateText(
-        text4,
+        text5,
         literals.map((value, i) => ({
           id: `text-${i}`,
           kind: "literal",
@@ -88227,12 +88227,12 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       const map = {};
       const values = /* @__PURE__ */ new Map();
       out = replacePrivateSpans(
-        text4,
+        text5,
         report.spans.map((span) => {
           let alias = values.get(span.value);
           if (!alias) {
             alias = `[PRIVATE_${values.size + 1}]`;
-            while (text4.includes(alias)) alias = `[${alias}]`;
+            while (text5.includes(alias)) alias = `[${alias}]`;
             values.set(span.value, alias);
             map[alias] = span.value;
           }
@@ -88255,14 +88255,14 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
         throw new Error("Alias names and values must be text.");
       const keys2 = entries.map(([k]) => k).sort((a, b) => b.length - a.length);
       const pattern = keys2.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
-      out = pattern ? text4.replace(
+      out = pattern ? text5.replace(
         new RegExp(pattern, "g"),
         (key) => String(map[key])
-      ) : text4;
+      ) : text5;
       break;
     }
     case "logs": {
-      const report = parseTextLogs(text4);
+      const report = parseTextLogs(text5);
       const visible = filterTextLogs(report.events, {
         query: s("query"),
         exact: s("match") === "exact",
@@ -88286,7 +88286,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       const flags = s("flags", "gu");
       const re = new RegExp(s("pattern"), flags.includes("g") ? flags : flags + "g");
       const matches3 = [];
-      for (const m2 of text4.matchAll(re)) {
+      for (const m2 of text5.matchAll(re)) {
         matches3.push({ at: m2.index, text: m2[0], groups: m2.groups ?? m2.slice(1) });
         if (matches3.length >= 1e4) {
           notes.push("Showing the first 10,000 matches.");
@@ -88294,8 +88294,8 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
         }
       }
       const replacing = s("mode") === "replace" || !s("mode") && !!s("replacement");
-      details = { matches: matches3, source: text4, replacing };
-      out = replacing ? text4.replace(re, s("replacement")) : JSON.stringify(matches3, null, 2);
+      details = { matches: matches3, source: text5, replacing };
+      out = replacing ? text5.replace(re, s("replacement")) : JSON.stringify(matches3, null, 2);
       format = replacing ? "txt" : "json";
       break;
     }
@@ -88304,7 +88304,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
         version: 1,
         before: {
           identity: { id: "before", label: "Text", kind: "text" },
-          content: { kind: "text", text: text4 }
+          content: { kind: "text", text: text5 }
         },
         after: {
           identity: { id: "after", label: "Compared text", kind: "text" },
@@ -88322,7 +88322,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       const { default: Ajv4 } = await import("ajv");
       const ajv3 = new Ajv4({ allErrors: true, strict: true, validateFormats: false });
       const validate = ajv3.compile(JSON.parse(s("schema")));
-      const valid2 = validate(JSON.parse(text4));
+      const valid2 = validate(JSON.parse(text5));
       out = valid2 ? "Valid against this schema." : JSON.stringify(validate.errors, null, 2);
       notes.push(
         "JSON Schema draft-07. External references are not fetched. Format annotations are not validated."
@@ -88331,7 +88331,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       break;
     }
     case "jwt": {
-      const parts = text4.trim().split(".");
+      const parts = text5.trim().split(".");
       if (parts.length !== 3) throw new Error("A JWT has three dot-separated parts.");
       const header = JSON.parse(decode64(parts[0]));
       const payload = JSON.parse(decode64(parts[1]));
@@ -88341,7 +88341,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       break;
     }
     case "hash":
-      out = [...await env.digest(s("algorithm", "SHA-256"), new TextEncoder().encode(text4))].map((b) => b.toString(16).padStart(2, "0")).join("");
+      out = [...await env.digest(s("algorithm", "SHA-256"), new TextEncoder().encode(text5))].map((b) => b.toString(16).padStart(2, "0")).join("");
       if (s("expected")) {
         const matches3 = out.toLowerCase() === s("expected").trim().toLowerCase();
         notes.push(matches3 ? "Checksum matches." : "Checksum does not match.");
@@ -88349,11 +88349,11 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       }
       break;
     case "json":
-      out = JSON.stringify(JSON.parse(text4), null, s("style") === "compact" ? void 0 : 2);
+      out = JSON.stringify(JSON.parse(text5), null, s("style") === "compact" ? void 0 : 2);
       format = "json";
       break;
     case "yaml":
-      out = writeYaml(readYaml(text4));
+      out = writeYaml(readYaml(text5));
       format = "yaml";
       notes.push("Formatting keeps values; comments and anchors may be rewritten.");
       break;
@@ -88361,7 +88361,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       const directive = /\{\{-?[\s\S]*?-?\}\}/g;
       const paths = [
         ...new Set(
-          [...text4.matchAll(directive)].flatMap(
+          [...text5.matchAll(directive)].flatMap(
             (m2) => [
               ...m2[0].matchAll(
                 /\.(Values|Release|Chart|Capabilities|Files|Template)((?:\.[A-Za-z0-9_]+)*)/g
@@ -88371,7 +88371,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
         )
       ].sort();
       if (s("mode") === "lint") {
-        const neutral = text4.split(/\r\n|\r|\n/).map(
+        const neutral = text5.split(/\r\n|\r|\n/).map(
           (line) => line.replace(directive, "").trim() ? line.replace(directive, "__helmval__") : ""
         ).join("\n");
         readYaml(neutral);
@@ -88384,46 +88384,46 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       break;
     }
     case "structured":
-      out = await convertStructured(text4, s("from", "json"), s("to", "yaml"));
+      out = await convertStructured(text5, s("from", "json"), s("to", "yaml"));
       format = s("to", "yaml");
       notes.push(
         "Conversion preserves supported values; comments, anchors, and source formatting do not carry across formats."
       );
       break;
     case "format":
-      out = s("style") === "compact" ? await compactCode(text4, s("language", "javascript")) : await formatCode(text4, s("language", "javascript"));
+      out = s("style") === "compact" ? await compactCode(text5, s("language", "javascript")) : await formatCode(text5, s("language", "javascript"));
       if (s("style") === "compact")
         notes.push("Review before applying. Comments and source formatting may change.");
       format = { javascript: "js", typescript: "ts", markdown: "md" }[s("language")] ?? s("language", "js");
       break;
     case "xml":
       if (!env.xml) throw new Error("XML support is unavailable in this shell.");
-      out = await env.xml(text4, s("schema"), s("mode") === "format");
+      out = await env.xml(text5, s("schema"), s("mode") === "format");
       format = s("mode") === "format" ? "xml" : "txt";
       notes.push("Single-document XML and XSD 1.0. External resources are not loaded.");
       break;
     case "base64-encode":
-      out = encode64(text4);
+      out = encode64(text5);
       if (s("alphabet") === "url-safe")
         out = out.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
       break;
     case "base64-decode":
-      out = decode64(text4);
+      out = decode64(text5);
       break;
     case "url-encode":
-      out = encodeURIComponent(text4);
+      out = encodeURIComponent(text5);
       break;
     case "url-decode":
-      out = decodeURIComponent(text4);
+      out = decodeURIComponent(text5);
       break;
     case "html-escape":
-      out = text4.replace(
+      out = text5.replace(
         /[&<>"']/g,
         (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
       );
       break;
     case "html-unescape":
-      out = text4.replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (raw, v) => {
+      out = text5.replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi, (raw, v) => {
         const names = {
           amp: "&",
           lt: "<",
@@ -88440,7 +88440,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       notes.push("Decodes numeric and basic HTML entities. Other named entities are retained.");
       break;
     case "table": {
-      const value = parseTableText(text4);
+      const value = parseTableText(text5);
       if (!value) throw new Error("Paste CSV, TSV or a Markdown table.");
       const target = s("format", "markdown");
       out = target === "html" ? toHtmlTable(value) : target === "tsv" ? toTsv(value) : toMarkdown(value);
@@ -88448,7 +88448,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       break;
     }
     case "rot13":
-      out = text4.replace(
+      out = text5.replace(
         /[a-z]/gi,
         (c) => String.fromCharCode(c.charCodeAt(0) + (c.toLowerCase() <= "m" ? 13 : -13))
       );
@@ -88457,7 +88457,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       const q = "qwertyuiopasdfghjklzxcvbnm";
       const from = s("direction") === "decode" ? q : ALPHABET;
       const to = from === q ? ALPHABET : q;
-      out = text4.replace(/[a-z]/gi, (c) => {
+      out = text5.replace(/[a-z]/gi, (c) => {
         const v = to[from.indexOf(c.toLowerCase())];
         return c === c.toUpperCase() ? v.toUpperCase() : v;
       });
@@ -88465,12 +88465,12 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
     }
     case "emoji-cipher": {
       if (s("direction") === "decode") {
-        out = text4;
+        out = text5;
         EMOJI.forEach((e, i) => {
           out = out.split(e).join((ALPHABET + "0123456789")[i]);
         });
       } else
-        out = text4.replace(
+        out = text5.replace(
           /[a-z0-9]/gi,
           (c) => EMOJI[(ALPHABET + "0123456789").indexOf(c.toLowerCase())]
         );
@@ -88478,7 +88478,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       break;
     }
     case "ascii":
-      out = textAscii(text4, {
+      out = textAscii(text5, {
         style: s("style"),
         ink: s("ink", "#"),
         spacing: bounded(o.spacing, 1, 0, 8),
@@ -88519,7 +88519,7 @@ ${signals.findings.map((f) => f.label).join("\n")}`;
       break;
     }
     case "timestamp": {
-      const input = text4.trim();
+      const input = text5.trim();
       const date = /^-?\d+(?:\.\d+)?$/.test(input) ? new Date(Number(input) * (s("unit") === "milliseconds" ? 1 : 1e3)) : new Date(input);
       if (!Number.isFinite(date.getTime()))
         throw new Error("Enter an ISO date or a numeric timestamp.");
@@ -88599,11 +88599,11 @@ function learningLinkAllowed(href) {
 }
 function validLearningRichText(value) {
   let count2 = 0, size = 0;
-  const record10 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+  const record13 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
   const keys2 = (v, allowed) => Object.keys(v).every((k) => allowed.includes(k));
   const blocks = ["paragraph", "heading", "bulletList", "orderedList", "blockquote"];
   const visit = (v, parent, depth) => {
-    if (!record10(v) || ++count2 > 1e4 || depth > 12 || !keys2(v, ["type", "attrs", "content", "marks", "text"]))
+    if (!record13(v) || ++count2 > 1e4 || depth > 12 || !keys2(v, ["type", "attrs", "content", "marks", "text"]))
       return false;
     const type = String(v.type);
     const allowed = parent === "" ? ["doc"] : ["paragraph", "heading"].includes(parent) ? ["text", "hardBreak"] : ["bulletList", "orderedList"].includes(parent) ? ["listItem"] : blocks;
@@ -88615,7 +88615,7 @@ function validLearningRichText(value) {
       if (size > 1e5) return false;
     }
     if (v.attrs !== void 0) {
-      if (!record10(v.attrs)) return false;
+      if (!record13(v.attrs)) return false;
       if (type === "heading") {
         if (!keys2(v.attrs, ["level"]) || v.attrs.level !== 2 && v.attrs.level !== 3) return false;
       } else if (type === "orderedList") {
@@ -88628,16 +88628,16 @@ function validLearningRichText(value) {
         return false;
       const seen = /* @__PURE__ */ new Set();
       for (const mark of v.marks) {
-        if (!record10(mark) || !keys2(mark, ["type", "attrs"]) || !["bold", "italic", "underline", "code", "link"].includes(String(mark.type)) || seen.has(mark.type))
+        if (!record13(mark) || !keys2(mark, ["type", "attrs"]) || !["bold", "italic", "underline", "code", "link"].includes(String(mark.type)) || seen.has(mark.type))
           return false;
         seen.add(mark.type);
         if (mark.type === "link") {
-          if (!record10(mark.attrs) || !keys2(mark.attrs, ["href", "target", "rel", "class"]) || typeof mark.attrs.href !== "string" || !learningLinkAllowed(mark.attrs.href))
+          if (!record13(mark.attrs) || !keys2(mark.attrs, ["href", "target", "rel", "class"]) || typeof mark.attrs.href !== "string" || !learningLinkAllowed(mark.attrs.href))
             return false;
           for (const k of ["target", "rel", "class"])
             if (mark.attrs[k] !== void 0 && mark.attrs[k] !== null && typeof mark.attrs[k] !== "string")
               return false;
-        } else if (mark.attrs !== void 0 && (!record10(mark.attrs) || Object.keys(mark.attrs).length))
+        } else if (mark.attrs !== void 0 && (!record13(mark.attrs) || Object.keys(mark.attrs).length))
           return false;
       }
     }
@@ -88931,7 +88931,7 @@ var init_progress = __esm({
 
 // engine/src/learning/compile.ts
 function checkSignature(bytes, mime2) {
-  const at = (offset, text4) => [...text4].every((c, i) => bytes[offset + i] === c.charCodeAt(0));
+  const at = (offset, text5) => [...text5].every((c, i) => bytes[offset + i] === c.charCodeAt(0));
   const starts = (...signature) => signature.every((n2, i) => bytes[i] === n2);
   const valid2 = mime2 === "image/png" ? starts(137, 80, 78, 71, 13, 10, 26, 10) : mime2 === "image/jpeg" ? starts(255, 216, 255) : mime2 === "image/webp" ? at(0, "RIFF") && at(8, "WEBP") : mime2 === "video/mp4" || mime2 === "audio/mp4" ? at(4, "ftyp") : mime2 === "video/webm" || mime2 === "audio/webm" ? starts(26, 69, 223, 163) : mime2 === "audio/mpeg" ? at(0, "ID3") || bytes[0] === 255 && ((bytes[1] ?? 0) & 224) === 224 : mime2 === "audio/ogg" ? at(0, "OggS") : mime2 === "audio/wav" ? at(0, "RIFF") && at(8, "WAVE") : mime2 === "application/pdf" ? at(0, "%PDF-") : mime2 === "text/plain";
   if (!valid2)
@@ -89000,9 +89000,9 @@ async function compileLearningModule(input, releaseId, resolve5, hash, onProgres
           compiled.files = [];
           for (const part of parts) {
             const mime2 = part.mime.split(";")[0].toLowerCase();
-            const family = block.kind === "slides" ? "image" : block.kind;
+            const family2 = block.kind === "slides" ? "image" : block.kind;
             const extension = extensions[mime2];
-            if (!extension || family !== "resource" && !mime2.startsWith(`${family}/`) || family === "resource" && !["text/plain", "application/pdf"].includes(mime2))
+            if (!extension || family2 !== "resource" && !mime2.startsWith(`${family2}/`) || family2 === "resource" && !["text/plain", "application/pdf"].includes(mime2))
               throw new Error(
                 `${lesson.title}: unsupported ${block.kind} format ${mime2}. Export a supported media file first.`
               );
@@ -90129,10 +90129,10 @@ function studioFinish(finish2) {
   }
 }
 function textSettings(v) {
-  const family = String(v.wordFont || "sans").replace(/[^\w -]/g, "").trim();
+  const family2 = String(v.wordFont || "sans").replace(/[^\w -]/g, "").trim();
   return {
     text: "",
-    font: family || "sans",
+    font: family2 || "sans",
     weight: Math.round(number3(v.wordWeight, 700, 100, 900) / 100) * 100,
     tracking: number3(v.wordTracking, 0, -0.2, 1),
     lineHeight: number3(v.wordLineHeight, 1.1, 0.7, 2),
@@ -90143,14 +90143,14 @@ function sourceFrom2(kindValue, picked, modelFormatValue, primitiveValue, where,
   const kind = choice2(kindValue, ["artwork", "model", "primitive", "text"], "primitive");
   const modelFormat = choice2(modelFormatValue, ["auto", "glb", "stl"], "auto");
   if (kind === "text") {
-    const text4 = String(words?.text ?? "").replace(/\r/g, "").split("\n").map((line) => line.trim()).join("\n").trim().slice(0, 200);
-    if (!text4 && !allowEmpty) throw new Error(`${where}Type the words to set.`);
+    const text5 = String(words?.text ?? "").replace(/\r/g, "").split("\n").map((line) => line.trim()).join("\n").trim().slice(0, 200);
+    if (!text5 && !allowEmpty) throw new Error(`${where}Type the words to set.`);
     return {
       kind: "text",
       id: "",
       url: "",
       primitive: "badge",
-      text: { ...words?.settings ?? textSettings({}), text: text4 }
+      text: { ...words?.settings ?? textSettings({}), text: text5 }
     };
   }
   const source = {
@@ -90564,11 +90564,11 @@ function studioApplyLook(values, look2, overrides = []) {
   return next;
 }
 function studioParseRef(value) {
-  const text4 = String(value ?? "").trim();
-  const at = text4.lastIndexOf("@");
-  if (at <= 0 || at === text4.length - 1) return null;
-  const id2 = text4.slice(0, at);
-  const version = Number(text4.slice(at + 1));
+  const text5 = String(value ?? "").trim();
+  const at = text5.lastIndexOf("@");
+  if (at <= 0 || at === text5.length - 1) return null;
+  const id2 = text5.slice(0, at);
+  const version = Number(text5.slice(at + 1));
   if (!Number.isInteger(version) || version < 1) return null;
   return { id: id2, version };
 }
@@ -90578,10 +90578,10 @@ function studioFormatRef(ref) {
 function studioParseOverrides(value) {
   let parsed = value;
   if (typeof value === "string") {
-    const text4 = value.trim();
-    if (!text4) return [];
+    const text5 = value.trim();
+    if (!text5) return [];
     try {
-      parsed = JSON.parse(text4);
+      parsed = JSON.parse(text5);
     } catch {
       return [];
     }
@@ -90737,6 +90737,241 @@ var init_studio3d_look = __esm({
   }
 });
 
+// engine/src/brand-evidence.ts
+function summarizeBrandStyles(mode, rows2, sampled = 0, truncated = false) {
+  const entries = Array.isArray(rows2) ? rows2 : [];
+  const values = /* @__PURE__ */ new Map();
+  for (const row of entries.slice(0, 2400)) {
+    if (!record9(row) || typeof row.property !== "string" || !properties.has(row.property) || typeof row.value !== "string") continue;
+    const value = row.value.trim().replace(/\s+/g, " ");
+    if (!value || value.length > 160 || /[<>{};\\]|url\s*\(|var\s*\(/i.test(value)) continue;
+    const property2 = row.property;
+    if (property2 !== "font-family" && !/^(?:normal|bold|bolder|lighter|[-+.\d]+(?:px|rem|em|%|pt)?)$/i.test(value)) continue;
+    const count2 = typeof row.count === "number" && Number.isFinite(row.count) ? Math.min(2400, Math.max(1, Math.floor(row.count))) : 1;
+    const key = `${property2}:${value}`;
+    const previous = values.get(key);
+    if (previous) previous.count = Math.min(2400, previous.count + count2);
+    else values.set(key, { property: property2, value, count: count2 });
+  }
+  const kept = [...values.values()].sort((a, b) => a.property < b.property ? -1 : a.property > b.property ? 1 : b.count - a.count || (a.value < b.value ? -1 : a.value > b.value ? 1 : 0));
+  const limited2 = BRAND_STYLE_PROPERTIES.flatMap((property2) => kept.filter((v) => v.property === property2).slice(0, 12));
+  return {
+    version: 1,
+    mode,
+    sampled: Number.isFinite(sampled) ? Math.min(1e5, Math.max(0, Math.floor(sampled))) : 0,
+    truncated: truncated || entries.length > 2400 || limited2.length < kept.length,
+    values: limited2,
+    missing: BRAND_STYLE_PROPERTIES.filter((property2) => !limited2.some((v) => v.property === property2))
+  };
+}
+function readBrandStyleEvidence(value) {
+  if (!record9(value) || value.version !== 1 || value.mode !== "computed" && value.mode !== "declared") return null;
+  const evidence = summarizeBrandStyles(value.mode, value.values, typeof value.sampled === "number" ? value.sampled : 0, value.truncated === true);
+  const viewport = value.viewport;
+  if (record9(viewport) && typeof viewport.width === "number" && typeof viewport.height === "number" && Number.isFinite(viewport.width) && Number.isFinite(viewport.height) && viewport.width > 0 && viewport.width < 1e5 && viewport.height > 0 && viewport.height < 1e5 && (viewport.scheme === "light" || viewport.scheme === "dark")) evidence.viewport = { width: viewport.width, height: viewport.height, scheme: viewport.scheme };
+  return evidence;
+}
+var BRAND_STYLE_PROPERTIES, properties, record9;
+var init_brand_evidence = __esm({
+  "engine/src/brand-evidence.ts"() {
+    "use strict";
+    BRAND_STYLE_PROPERTIES = [
+      "font-family",
+      "font-size",
+      "font-weight",
+      "line-height",
+      "letter-spacing",
+      "gap",
+      "padding-top",
+      "padding-right",
+      "padding-bottom",
+      "padding-left",
+      "border-top-left-radius"
+    ];
+    properties = new Set(BRAND_STYLE_PROPERTIES);
+    record9 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+  }
+});
+
+// engine/src/brand-context.ts
+function brandContext(doc, opts = {}) {
+  const tokens3 = createTokenSet(doc, { theme: opts.theme });
+  const raw = record10(doc) ? doc : {};
+  const extensions2 = record10(raw.$extensions) ? raw.$extensions : {};
+  const vendor = record10(extensions2[TOKEN_EXT]) ? extensions2[TOKEN_EXT] : {};
+  const reference = record10(vendor.reference) ? vendor.reference : {};
+  const entries = tokens3.query();
+  const colors = tokens3.colors().map((c) => ({ path: c.path, value: c.value, name: c.name }));
+  const fonts = entries.filter((e) => e.type === "fontFamily").flatMap((e) => {
+    const value = Array.isArray(e.value) ? e.value.filter((v) => typeof v === "string").join(", ") : e.value;
+    return typeof value === "string" ? [{ path: e.path, value }] : [];
+  });
+  const assets = entries.filter((e) => e.path.startsWith("asset.") && typeof e.value === "string" && !e.value.startsWith("{")).map((e) => ({ path: e.path, id: e.value }));
+  const source = text4(reference.method) ? {
+    method: text4(reference.method),
+    label: text4(reference.label),
+    ...typeof reference.sha256 === "string" && /^[a-f0-9]{64}$/i.test(reference.sha256) ? { sha256: reference.sha256 } : {}
+  } : null;
+  const styles = readBrandStyleEvidence(reference.styles);
+  return {
+    format: "lolly-design-context",
+    version: 1,
+    name: opts.name ?? readDesignSystemIdentity(doc)?.label ?? text4(vendor.name) ?? "Design system",
+    theme: opts.theme ?? null,
+    source,
+    styles,
+    colors,
+    fonts,
+    assets,
+    rules: {
+      color: "Use an existing colour token where possible. A custom colour is a review item, not a forbidden value.",
+      type: "Use the declared font families. A font name does not prove the font file is installed.",
+      assets: "These asset IDs are references, not proof of ownership or permission.",
+      contrast: "Check rendered text against its actual background. Token pairs alone cannot verify a composition."
+    },
+    coverage: {
+      colors: colors.length ? "resolved tokens" : "unavailable",
+      fonts: fonts.length ? "declared families" : "unavailable",
+      assets: assets.length ? "declared asset IDs" : "unavailable",
+      styles: styles?.mode ?? "unavailable",
+      notAssessed: ["font availability", "layout", "motion", "rights", "subjective quality"]
+    },
+    tokens: doc
+  };
+}
+function contextTokens(value) {
+  if (!record10(value)) return value;
+  if (value.format === "lolly-design-context") return value.version === 1 ? value.tokens : null;
+  if (value.format === "lolly-reference") return value.version === 1 ? value.proposedTokens : null;
+  return value;
+}
+var record10, text4;
+var init_brand_context = __esm({
+  "engine/src/brand-context.ts"() {
+    "use strict";
+    init_tokens2();
+    init_design_system();
+    init_brand_evidence();
+    record10 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+    text4 = (v, limit = 180) => typeof v === "string" && v.trim() ? v.trim().slice(0, limit) : void 0;
+  }
+});
+
+// engine/src/brand-check.ts
+function checkBrandDesign(boxes, doc, opts = {}) {
+  const context = brandContext(doc, opts);
+  const tokens3 = createTokenSet(doc, opts);
+  const findings = [];
+  const checked = { colors: 0, fonts: 0, assets: 0 };
+  const palette = context.colors.filter((c) => parseColor(c.value));
+  const allowedFonts = new Set(context.fonts.map((f) => family(f.value)));
+  const allowedAssets = new Set(context.assets.map((a) => a.id));
+  const nearest2 = /* @__PURE__ */ new Map();
+  const rows2 = Array.isArray(boxes) ? boxes.filter(record11) : [];
+  if (!Array.isArray(boxes)) findings.push({ id: "brand.document", kind: "coverage", status: "unknown", label: "No readable composition." });
+  const counts = /* @__PURE__ */ new Map();
+  for (const row of rows2) if (typeof row.id === "string") counts.set(row.id, (counts.get(row.id) ?? 0) + 1);
+  for (const row of rows2.slice(0, 5e3)) {
+    if (row.hidden === true || row.hidden === "true") continue;
+    const id2 = typeof row.id === "string" ? row.id : "";
+    const label = String(row.name || (typeof row.text === "string" ? row.text.slice(0, 40) : "") || id2 || "Layer");
+    const add = (field2, kind, status, value, suggestion, after) => {
+      findings.push({
+        id: `brand.${kind}.${id2}.${field2}`,
+        layerId: id2,
+        label,
+        field: field2,
+        kind,
+        status,
+        value,
+        suggestion,
+        ...after && id2 && counts.get(id2) === 1 && row.locked !== true && row.locked !== "true" ? { fix: { layerId: id2, field: field2, before: row[field2], after } } : {}
+      });
+    };
+    for (const field2 of ["bg", "fg", "stroke"]) {
+      if (field2 === "fg" && !row.text) continue;
+      const raw = valueText(row[field2]);
+      if (!raw || raw === "transparent" || raw === "none") continue;
+      const path = aliasPath(raw) ?? (record11(row[field2]) ? valueText(row[field2]).replace(/^\{|\}$/g, "") : null);
+      if (path) {
+        if (!tokens3.has(path) || tokens3.get(path)?.type !== "color" || !parseColor(String(tokens3.resolve(path)))) add(field2, "reference", "unknown", raw);
+        else checked.colors++;
+        continue;
+      }
+      const parsed = parseColor(raw);
+      if (parsed?.alpha === 0) continue;
+      if (!parsed || parsed.alpha < 1) {
+        add(field2, "color", "unknown", raw);
+        continue;
+      }
+      if (!palette.length) {
+        add(field2, "color", "unknown", raw);
+        continue;
+      }
+      checked.colors++;
+      let closest = nearest2.get(raw);
+      if (!closest) {
+        for (const color2 of palette) {
+          const distance2 = deltaEOk(raw, color2.value);
+          if (!closest || distance2 < closest.distance || distance2 === closest.distance && color2.path < closest.path) closest = { path: color2.path, value: color2.value, distance: distance2 };
+        }
+        nearest2.set(raw, closest);
+      }
+      if (!closest) continue;
+      if (closest.distance < 1e-6) continue;
+      add(field2, "color", "review", raw, closest.value, `{${closest.path}}`);
+    }
+    if (row.text) {
+      const font = valueText(row.font) || "sans";
+      const role = { sans: "font.brand", display: "font.display", mono: "font.mono" }[font];
+      const path = aliasPath(font) ?? role;
+      const resolved2 = path ? tokens3.resolve(path) : font;
+      if (!allowedFonts.size || typeof resolved2 !== "string" || path && !tokens3.has(path)) add("font", "font", "unknown", font);
+      else {
+        checked.fonts++;
+        if (!allowedFonts.has(family(resolved2))) add("font", "font", "review", font, context.fonts[0]?.value, tokens3.has("font.brand") ? "sans" : void 0);
+      }
+    }
+    const image = valueText(row.image) || (record11(row.image) && typeof row.image.id === "string" ? row.image.id : "");
+    if (image) {
+      const assetId2 = aliasPath(image) ? tokens3.resolve(image) : image;
+      if (!allowedAssets.size || typeof assetId2 !== "string") add("image", "asset", "unknown", image);
+      else {
+        checked.assets++;
+        if (!allowedAssets.has(assetId2)) add("image", "asset", "review", image);
+      }
+    }
+  }
+  return {
+    findings,
+    checked,
+    coverage: { truncated: rows2.length > 5e3, colors: palette.length > 0, fonts: allowedFonts.size > 0, assets: allowedAssets.size > 0 },
+    requiresMount: ["computed contrast", "font availability", "text layout"],
+    notAssessed: ["gradients", "effects", "nested tool content", "motion", "rights", "subjective quality"]
+  };
+}
+function applyBrandFix(boxes, fix) {
+  if (!Array.isArray(boxes) || !["bg", "fg", "stroke", "font"].includes(fix.field)) return null;
+  const matches3 = boxes.filter((row) => record11(row) && row.id === fix.layerId);
+  if (matches3.length !== 1) return null;
+  const target = matches3[0];
+  if (target.locked === true || target.locked === "true" || JSON.stringify(target[fix.field]) !== JSON.stringify(fix.before)) return null;
+  return boxes.map((row) => row === target ? { ...row, [fix.field]: fix.after } : row);
+}
+var record11, valueText, family;
+var init_brand_check = __esm({
+  "engine/src/brand-check.ts"() {
+    "use strict";
+    init_tokens2();
+    init_color_tools();
+    init_css_color();
+    init_brand_context();
+    record11 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+    valueText = (v) => typeof v === "string" ? v : record11(v) && typeof v.ref === "string" ? v.ref : "";
+    family = (v) => v.split(",")[0].replace(/["']/g, "").trim().toLowerCase();
+  }
+});
+
 // engine/src/index.ts
 var src_exports = {};
 __export(src_exports, {
@@ -90753,6 +90988,7 @@ __export(src_exports, {
   BEYOND_TIER: () => BEYOND_TIER,
   BMP_MAX_DIM: () => BMP_MAX_DIM,
   BMP_MAX_PIXELS: () => BMP_MAX_PIXELS,
+  BRAND_STYLE_PROPERTIES: () => BRAND_STYLE_PROPERTIES,
   BUILTIN_GAMUT_SOURCES: () => BUILTIN_GAMUT_SOURCES,
   BmpUnsupportedError: () => BmpUnsupportedError,
   C2PA_CHECK: () => C2PA_CHECK,
@@ -91101,6 +91337,7 @@ __export(src_exports, {
   appSurfaceExportReport: () => appSurfaceExportReport,
   appSurfaceToPenpotDoc: () => appSurfaceToPenpotDoc,
   appendedIsExpected: () => appendedIsExpected,
+  applyBrandFix: () => applyBrandFix,
   applyGrainVignette: () => applyGrainVignette,
   applyIccToFrame: () => applyIccToFrame,
   applyIconTheme: () => applyIconTheme,
@@ -91134,6 +91371,7 @@ __export(src_exports, {
   boxGeomFromBBox: () => boxGeomFromBBox,
   boxesOverlap: () => boxesOverlap,
   boxesToPenpotDoc: () => boxesToPenpotDoc,
+  brandContext: () => brandContext,
   buildC2paManifest: () => buildC2paManifest,
   buildCarryExifTiff: () => buildCarryExifTiff,
   buildCmykPaletteMap: () => buildCmykPaletteMap,
@@ -91165,6 +91403,7 @@ __export(src_exports, {
   canonicalValue: () => canonicalValue,
   carryImageMetadata: () => carryImageMetadata,
   checkAttributionReadback: () => checkAttributionReadback,
+  checkBrandDesign: () => checkBrandDesign,
   checkLearningExportSize: () => checkLearningExportSize,
   checkLearningModule: () => checkLearningModule,
   chromaAxisMax: () => chromaAxisMax,
@@ -91212,6 +91451,7 @@ __export(src_exports, {
   connectorRoute: () => connectorRoute,
   constantMask: () => constantMask,
   contentSealConsensus: () => contentSealConsensus,
+  contextTokens: () => contextTokens,
   contourArea: () => contourArea,
   contourEnd: () => contourEnd,
   contourPoint: () => contourPoint,
@@ -91734,6 +91974,7 @@ __export(src_exports, {
   publicLocator: () => publicLocator,
   quadratureMoments: () => quadratureMoments,
   rampOklab: () => rampOklab,
+  readBrandStyleEvidence: () => readBrandStyleEvidence,
   readDesignSystemIdentity: () => readDesignSystemIdentity,
   readDocx: () => readDocx,
   readEpub: () => readEpub,
@@ -91894,6 +92135,7 @@ __export(src_exports, {
   suggestNextLabel: () => suggestNextLabel,
   suggestRebrandTheme: () => suggestRebrandTheme,
   suggestRewrites: () => suggestRewrites,
+  summarizeBrandStyles: () => summarizeBrandStyles,
   summarizeInputs: () => summarizeInputs,
   summarizeTokensDoc: () => summarizeTokensDoc,
   svgArcToBeziers: () => svgArcToBeziers,
@@ -92206,6 +92448,9 @@ var init_src2 = __esm({
     init_studio3d_arrangement();
     init_studio3d_look();
     init_studio3d_motion();
+    init_brand_context();
+    init_brand_check();
+    init_brand_evidence();
   }
 });
 
@@ -92712,14 +92957,14 @@ function schemaForInput(item) {
     case "asset":
       return withMeta({ type: "string" }, item, "An asset id (e.g. suse/logo/primary), a Lolly tool URL, or a data: URL.");
     case "vector": {
-      const properties = {};
-      for (const f of item.fields ?? []) properties[f.id] = numberField(f);
-      return withMeta({ type: "object", properties, additionalProperties: false }, item);
+      const properties2 = {};
+      for (const f of item.fields ?? []) properties2[f.id] = numberField(f);
+      return withMeta({ type: "object", properties: properties2, additionalProperties: false }, item);
     }
     case "blocks": {
-      const properties = {};
-      for (const f of item.fields ?? []) properties[f.id] = blockFieldSchema(f);
-      return withMeta({ type: "array", items: { type: "object", properties, additionalProperties: false } }, item);
+      const properties2 = {};
+      for (const f of item.fields ?? []) properties2[f.id] = blockFieldSchema(f);
+      return withMeta({ type: "array", items: { type: "object", properties: properties2, additionalProperties: false } }, item);
     }
     default:
       return withMeta({ type: "string" }, item);
@@ -92727,14 +92972,14 @@ function schemaForInput(item) {
 }
 function toolInputSchema(manifest) {
   const model2 = buildInputModel(manifest);
-  const properties = {};
+  const properties2 = {};
   const required = [];
   for (const item of model2) {
     if (item.type === "file") continue;
-    properties[item.id] = schemaForInput(item);
+    properties2[item.id] = schemaForInput(item);
     if (item.required && !item.bindToProfile) required.push(item.id);
   }
-  return { type: "object", properties, ...required.length ? { required } : {}, additionalProperties: false };
+  return { type: "object", properties: properties2, ...required.length ? { required } : {}, additionalProperties: false };
 }
 function fileInputId(manifest) {
   return (manifest.inputs ?? []).find((i) => i.type === "file")?.id ?? null;
@@ -94465,8 +94710,8 @@ function createNodeTextTools() {
     async operations() {
       return structuredClone(TEXT_OPERATIONS);
     },
-    async highlight(text4, language, options2) {
-      return highlightCode(text4, language, options2);
+    async highlight(text5, language, options2) {
+      return highlightCode(text5, language, options2);
     },
     run(request) {
       return new Promise((resolve5, reject) => {
@@ -94662,10 +94907,10 @@ __export(signing_identity_exports, {
 import { readFile as readFile12 } from "node:fs/promises";
 import { createPrivateKey, createPublicKey, webcrypto } from "node:crypto";
 function readCertChain(bytes, source) {
-  const text4 = bytes.toString("latin1");
+  const text5 = bytes.toString("latin1");
   const out = [];
   PEM_CERT.lastIndex = 0;
-  for (let m2 = PEM_CERT.exec(text4); m2; m2 = PEM_CERT.exec(text4)) {
+  for (let m2 = PEM_CERT.exec(text5); m2; m2 = PEM_CERT.exec(text5)) {
     const b64 = m2[1].replace(/\s+/g, "");
     try {
       out.push(new Uint8Array(Buffer.from(b64, "base64")));
@@ -94892,26 +95137,26 @@ __export(emoji_style_exports, {
   withEmojiStyle: () => withEmojiStyle
 });
 function readEmojiStyle(doc) {
-  if (!record9(doc)) return { status: "invalid", issue: { code: "invalid-style", message: "A design token document must be an object." } };
+  if (!record12(doc)) return { status: "invalid", issue: { code: "invalid-style", message: "A design token document must be an object." } };
   if (!Object.hasOwn(doc, "$extensions")) return { status: "unselected" };
-  if (!record9(doc.$extensions)) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token extensions." } };
+  if (!record12(doc.$extensions)) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token extensions." } };
   if (!Object.hasOwn(doc.$extensions, TOKEN_EXT)) return { status: "unselected" };
-  if (!record9(doc.$extensions[TOKEN_EXT])) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token vendor extension." } };
+  if (!record12(doc.$extensions[TOKEN_EXT])) return { status: "invalid", issue: { code: "invalid-style", message: "Invalid design token vendor extension." } };
   const vendor = doc.$extensions[TOKEN_EXT];
   if (!Object.hasOwn(vendor, "emoji")) return { status: "unselected" };
   const issue2 = validateEmojiStyle(vendor.emoji);
   return issue2 ? { status: "invalid", issue: issue2 } : { status: "selected", style: structuredClone(vendor.emoji) };
 }
 function withEmojiStyle(doc, style) {
-  if (!record9(doc)) throw new Error("A design token document must be an object.");
+  if (!record12(doc)) throw new Error("A design token document must be an object.");
   if (style !== null) {
     const issue2 = validateEmojiStyle(style);
     if (issue2) throw new Error(issue2.message);
   }
   const next = structuredClone(doc);
-  if (next.$extensions !== void 0 && !record9(next.$extensions)) throw new Error("Invalid design token extensions.");
+  if (next.$extensions !== void 0 && !record12(next.$extensions)) throw new Error("Invalid design token extensions.");
   const extensions2 = next.$extensions ?? {};
-  if (extensions2[TOKEN_EXT] !== void 0 && !record9(extensions2[TOKEN_EXT])) throw new Error("Invalid design token vendor extension.");
+  if (extensions2[TOKEN_EXT] !== void 0 && !record12(extensions2[TOKEN_EXT])) throw new Error("Invalid design token vendor extension.");
   const vendor = extensions2[TOKEN_EXT] ?? {};
   if (style === null) delete vendor.emoji;
   else vendor.emoji = structuredClone(style);
@@ -95015,14 +95260,14 @@ function emojiParams(style) {
   const unprotected = protect && !protect.skinTones && !protect.flags && !protect.custom;
   return { emoji: `${style.primary.id}@${style.primary.pin.version}`, emojifx: unprotected ? `${base},unprotected` : base };
 }
-var record9, ID_PATTERN, VERSION_PATTERN, NEUTRAL_CHROMA3, PALETTE_MAX, issue, lastTwo, chromaOf2, lightnessOf;
+var record12, ID_PATTERN, VERSION_PATTERN, NEUTRAL_CHROMA3, PALETTE_MAX, issue, lastTwo, chromaOf2, lightnessOf;
 var init_emoji_style = __esm({
   "engine/src/emoji-style.ts"() {
     "use strict";
     init_token_ext();
     init_emoji_pack();
     init_emoji_treatment();
-    record9 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
+    record12 = (value) => !!value && typeof value === "object" && !Array.isArray(value);
     ID_PATTERN = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)+$/;
     VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+-]*$/;
     NEUTRAL_CHROMA3 = 0.03;
@@ -95564,12 +95809,12 @@ async function inspectPptx(bytes, opts, parseXml) {
     };
     const fonts = [];
     const seenFont = /* @__PURE__ */ new Set();
-    const addFont = (family) => {
-      if (!family) return;
-      const key = family.toLowerCase();
+    const addFont = (family2) => {
+      if (!family2) return;
+      const key = family2.toLowerCase();
       if (seenFont.has(key) || fonts.length >= MAX_INSPECT_FONTS) return;
       seenFont.add(key);
-      fonts.push({ family });
+      fonts.push({ family: family2 });
     };
     const content2 = { pictures: 0, texts: 0, shapes: 0, tables: 0, unknown: 0 };
     for (const slide of deck.slides) {
@@ -96180,20 +96425,20 @@ async function svgDomToIr(svgEl, ctx = {}) {
     if (!rgb) return;
     rgb = flatten3(rgb, opacity, bg);
     const cs = getComputedStyle ? safeComputed(getComputedStyle, el) : null;
-    const family = prop(el, style, "font-family", null) ?? cs?.fontFamily ?? "";
+    const family2 = prop(el, style, "font-family", null) ?? cs?.fontFamily ?? "";
     const weight = String(prop(el, style, "font-weight", null) ?? cs?.fontWeight ?? "400");
     const italic = (prop(el, style, "font-style", null) ?? cs?.fontStyle) === "italic";
     const fontSize = parseFloat(prop(el, style, "font-size", null) ?? cs?.fontSize ?? "16");
     const letterSpacingCss = prop(el, style, "letter-spacing", null) ?? cs?.letterSpacing;
     if (liveText) {
-      const live = liveTextPrim(el, style, m2, { raw, rgb, family, weight, italic, fontSize, letterSpacingCss, cs });
+      const live = liveTextPrim(el, style, m2, { raw, rgb, family: family2, weight, italic, fontSize, letterSpacingCss, cs });
       if (live) {
         prims.push(live);
         return;
       }
     }
     const fontStyleObj = {
-      fontFamily: family,
+      fontFamily: family2,
       fontWeight: weight,
       fontStyle: italic ? "italic" : "normal",
       letterSpacing: letterSpacingCss
@@ -96202,7 +96447,7 @@ async function svgDomToIr(svgEl, ctx = {}) {
     const fontUrl = vf?.url ?? null;
     if (!canVectoriseText(fontStyleObj, fontUrl, Boolean(textApi))) {
       throw new Error(
-        `${LABEL} export requires outlined text, but the run "${raw.slice(0, 24)}" could not be vectorized (font-family "${family || "inherited"}"${textApi ? "" : "; no text-shaping in this shell"}). Add the font under Profile \u2192 Your brand, or export SVG/PDF.`
+        `${LABEL} export requires outlined text, but the run "${raw.slice(0, 24)}" could not be vectorized (font-family "${family2 || "inherited"}"${textApi ? "" : "; no text-shaping in this shell"}). Add the font under Profile \u2192 Your brand, or export SVG/PDF.`
       );
     }
     const letterSpacing = letterSpacingPx(letterSpacingCss);
@@ -96430,10 +96675,10 @@ async function readFont(fontUrl, repoRoot2, vars, key) {
   fontCache.set(key, entry2);
   return entry2;
 }
-function segmentByFace(text4, chain2) {
+function segmentByFace(text5, chain2) {
   const segs = [];
   let cur = 0;
-  for (const ch of text4) {
+  for (const ch of text5) {
     const cp = ch.codePointAt(0);
     if (!/\s/.test(ch) && !chain2[cur].unicodes.has(cp)) {
       const next = chain2.findIndex((f) => f.unicodes.has(cp));
@@ -96553,8 +96798,8 @@ function createNodeTextAPI({ repoRoot: repoRoot2 }) {
     async characters(fontUrl) {
       return [...(await loadFace(fontUrl, repoRoot2)).unicodes].sort((a, b) => a - b);
     },
-    async toPath({ text: text4, fontUrl, fontSize, features, letterSpacing = 0, variations, fallbackFonts, clusters: wantClusters, preserveWhitespaceAdvance = false }) {
-      if (!text4 || !preserveWhitespaceAdvance && !text4.trim()) {
+    async toPath({ text: text5, fontUrl, fontSize, features, letterSpacing = 0, variations, fallbackFonts, clusters: wantClusters, preserveWhitespaceAdvance = false }) {
+      if (!text5 || !preserveWhitespaceAdvance && !text5.trim()) {
         return { d: "", advanceWidth: 0, bbox: null, notdef: 0, ...wantClusters ? { clusters: [] } : {} };
       }
       const chain2 = [
@@ -96569,7 +96814,7 @@ function createNodeTextAPI({ repoRoot: repoRoot2 }) {
       let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
       const pieces = wantClusters ? /* @__PURE__ */ new Map() : null;
       let segStart = 0;
-      for (const seg of segmentByFace(text4, chain2)) {
+      for (const seg of segmentByFace(text5, chain2)) {
         const { font, upem } = chain2[seg.face];
         const scale = fontSize / upem;
         const lsUnits = Number.isFinite(letterSpacing) && letterSpacing ? letterSpacing / scale : 0;
@@ -96626,7 +96871,7 @@ function createNodeTextAPI({ repoRoot: repoRoot2 }) {
         advanceWidth: penPx,
         bbox: x1 !== Infinity ? { x1, y1, x2, y2 } : null,
         notdef,
-        ...pieces ? { clusters: clustersFrom(pieces, text4.length) } : {}
+        ...pieces ? { clusters: clustersFrom(pieces, text5.length) } : {}
       };
     },
     /** Warm the font cache without shaping. Call fire-and-forget. */
@@ -96651,9 +96896,9 @@ function createNodeTextAPI({ repoRoot: repoRoot2 }) {
      * text. So an italic request with no italic face resolves null, and the
      * caller keeps its fallback.
      */
-    async fontUrl(family, opts) {
-      if (typeof family !== "string" || !family.trim()) return null;
-      const want = normFamily(family);
+    async fontUrl(family2, opts) {
+      if (typeof family2 !== "string" || !family2.trim()) return null;
+      const want = normFamily(family2);
       const weight = Math.min(900, Math.max(100, Number(opts?.weight) || 400));
       const italic = Boolean(opts?.italic);
       const matches3 = (await scanDiskFaces(repoRoot2)).filter((f) => f.family === want && f.italic === italic);
@@ -97412,21 +97657,21 @@ function missingPinnedFiles(familyDir2, pins, only) {
 function resolveModelsDir2(env = process.env) {
   return resolveExistingModelsDir(env);
 }
-function familyDir(family, env = process.env) {
-  return join8(resolveModelsDir2(env), family);
+function familyDir(family2, env = process.env) {
+  return join8(resolveModelsDir2(env), family2);
 }
-function modelPath(family, file, env = process.env) {
-  return join8(familyDir(family, env), ...file.split("/"));
+function modelPath(family2, file, env = process.env) {
+  return join8(familyDir(family2, env), ...file.split("/"));
 }
-function modelFileExists(family, file, env = process.env) {
+function modelFileExists(family2, file, env = process.env) {
   try {
-    return statSync3(modelPath(family, file, env)).isFile();
+    return statSync3(modelPath(family2, file, env)).isFile();
   } catch {
     return false;
   }
 }
-function modelFilesExist(family, files, env = process.env) {
-  return files.length > 0 && files.every((f) => modelFileExists(family, f, env));
+function modelFilesExist(family2, files, env = process.env) {
+  return files.length > 0 && files.every((f) => modelFileExists(family2, f, env));
 }
 function formatBytes(bytes) {
   if (!(bytes > 0)) return "an unknown size";
@@ -97440,18 +97685,18 @@ var ModelNotInstalledError = class extends Error {
   family;
   model;
   approxBytes;
-  constructor(message, family, model2, approxBytes) {
+  constructor(message, family2, model2, approxBytes) {
     super(message);
     this.name = "ModelNotInstalledError";
-    this.family = family;
+    this.family = family2;
     this.model = model2;
     this.approxBytes = approxBytes;
   }
 };
-function refuseMissing(family, model2, approxBytes, env = process.env) {
+function refuseMissing(family2, model2, approxBytes, env = process.env) {
   throw new ModelNotInstalledError(
-    `The ${model2} model is not on this machine. Run \`lolly models fetch ${family}\` to download it (${formatBytes(approxBytes)}), or point LOLLY_MODELS_DIR at a directory that already has it. Looked in ${familyDir(family, env)}.`,
-    family,
+    `The ${model2} model is not on this machine. Run \`lolly models fetch ${family2}\` to download it (${formatBytes(approxBytes)}), or point LOLLY_MODELS_DIR at a directory that already has it. Looked in ${familyDir(family2, env)}.`,
+    family2,
     model2,
     approxBytes
   );
@@ -98318,8 +98563,8 @@ function createNodeOcrAPI() {
         const ro = firstOutput(recOut);
         const T = Number(ro.dims[1] ?? 0);
         const C = Number(ro.dims[2] ?? 0);
-        const { text: text4, confidence } = ctcGreedyDecode(tensorFloats(ro), T, C, charset);
-        if (text4.trim() && confidence >= min) lines.push({ text: text4.trim(), confidence, box: box2 });
+        const { text: text5, confidence } = ctcGreedyDecode(tensorFloats(ro), T, C, charset);
+        if (text5.trim() && confidence >= min) lines.push({ text: text5.trim(), confidence, box: box2 });
         opts.onProgress?.({ phase: "recognize", fraction: (i + 1) / boxes.length });
       }
       return {
@@ -98409,8 +98654,8 @@ function inflateForRadius(r3, radius, cw, ch) {
     ]
   };
 }
-function stampLayout(r3, text4, maxSize) {
-  const t = String(text4 || "").trim();
+function stampLayout(r3, text5, maxSize) {
+  const t = String(text5 || "").trim();
   if (!t) return null;
   const size = Math.floor(Math.min(maxSize, r3.h * 0.5));
   if (size < 7) return null;
@@ -99254,24 +99499,24 @@ var FAMILY_DIR = {
   kokoro: KOKORO_MODEL_ID,
   whisper: WHISPER_MODEL_ID
 };
-function modelFilePath(modelsDir, family, rel) {
-  return join9(modelsDir, FAMILY_DIR[family], rel);
+function modelFilePath(modelsDir, family2, rel) {
+  return join9(modelsDir, FAMILY_DIR[family2], rel);
 }
-function missingModelFiles(modelsDir, family, only) {
-  return missingPinnedFiles(join9(modelsDir, FAMILY_DIR[family]), SPEECH_MODEL_FILES[family], only);
+function missingModelFiles(modelsDir, family2, only) {
+  return missingPinnedFiles(join9(modelsDir, FAMILY_DIR[family2]), SPEECH_MODEL_FILES[family2], only);
 }
 function mb(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-function missingModelError(family, modelsDir, missing, consentBytes) {
-  const size = new Map(SPEECH_MODEL_FILES[family].map((p) => [p.path, p.bytes]));
+function missingModelError(family2, modelsDir, missing, consentBytes) {
+  const size = new Map(SPEECH_MODEL_FILES[family2].map((p) => [p.path, p.bytes]));
   const bySize = [...missing].sort((a, b) => (size.get(b) ?? 0) - (size.get(a) ?? 0));
   const head2 = bySize.slice(0, 3).join(", ");
   const more = bySize.length > 3 ? `, and ${bySize.length - 3} more` : "";
   const err = new Error(
-    `speech: the ${family} model is not on this machine - missing ${head2}${more} under ${join9(modelsDir, FAMILY_DIR[family])}. It is a one-time ${mb(consentBytes)} (${consentBytes} bytes) download: run  lolly models fetch ${family}`
+    `speech: the ${family2} model is not on this machine - missing ${head2}${more} under ${join9(modelsDir, FAMILY_DIR[family2])}. It is a one-time ${mb(consentBytes)} (${consentBytes} bytes) download: run  lolly models fetch ${family2}`
   );
-  return Object.assign(err, { modelMissing: family, kind: "MODEL_NOT_STAGED" });
+  return Object.assign(err, { modelMissing: family2, kind: "MODEL_NOT_STAGED" });
 }
 var kokoroRuntimes = /* @__PURE__ */ new Map();
 var whisperRuntimes = /* @__PURE__ */ new Map();
@@ -99578,16 +99823,16 @@ function createNodeSpeechAPI(opts = {}) {
     async voices() {
       return KOKORO_VOICES.map((v) => ({ ...v }));
     },
-    async synthesize(text4, synthOpts = {}) {
-      if (text4.length > MAX_INPUT_CHARS) {
+    async synthesize(text5, synthOpts = {}) {
+      if (text5.length > MAX_INPUT_CHARS) {
         throw new Error(
-          `speech input too long: ${text4.length} chars (max ${MAX_INPUT_CHARS}) - split the text and synthesize in parts`
+          `speech input too long: ${text5.length} chars (max ${MAX_INPUT_CHARS}) - split the text and synthesize in parts`
         );
       }
       const voiceId = synthOpts.voice ?? KOKORO_DEFAULT_VOICE;
       const speed = Math.min(MAX_SPEECH_SPEED, Math.max(MIN_SPEECH_SPEED, synthOpts.speed ?? 1));
       return withAbort(synthOpts.signal, "speech synthesis aborted", async (isAborted) => {
-        const { sentences } = parseScriptMarks(text4, { prenormalized: synthOpts.prenormalized === true });
+        const { sentences } = parseScriptMarks(text5, { prenormalized: synthOpts.prenormalized === true });
         const pieces = await synthesizePieces(
           sentences.map((sentence, line) => ({ sentence, line })),
           voiceId,
@@ -99647,8 +99892,8 @@ function createNodeSpeechAPI(opts = {}) {
             perChunk.push(cleanWordTimings(raw, chunkDuration));
           } else {
             allWordAligned = false;
-            const text4 = out.text.trim();
-            perChunk.push(text4 ? [{ text: text4, start: 0, end: chunkDuration }] : []);
+            const text5 = out.text.trim();
+            perChunk.push(text5 ? [{ text: text5, start: 0, end: chunkDuration }] : []);
           }
           txOpts.onProgress?.({ phase: "synthesis", fraction: (i + 1) / chunks.length });
         }
@@ -99695,8 +99940,8 @@ var BD_NAMES = Object.values(ZXING_TO_BD);
 function toBd(z) {
   return ZXING_TO_BD[z] ?? z.toLowerCase();
 }
-function utf8RoundTrips(text4, bytes) {
-  const enc5 = new TextEncoder().encode(text4);
+function utf8RoundTrips(text5, bytes) {
+  const enc5 = new TextEncoder().encode(text5);
   if (enc5.length !== bytes.length) return false;
   for (let i = 0; i < enc5.length; i++) if (enc5[i] !== bytes[i]) return false;
   return true;
@@ -99750,14 +99995,14 @@ function createNodeScanAPI() {
             [p.bottomRight.x, p.bottomRight.y],
             [p.bottomLeft.x, p.bottomLeft.y]
           ] : void 0;
-          const text4 = r3.text ?? "";
+          const text5 = r3.text ?? "";
           const bytes = r3.bytes instanceof Uint8Array ? r3.bytes : void 0;
           hits2.push({
             format: toBd(r3.format),
-            rawValue: text4,
+            rawValue: text5,
             // Carry raw bytes whenever the text is NOT a clean UTF-8 round-trip of
             // them (binary payloads), not on a fragile replacement-char guess.
-            rawBytes: bytes && !utf8RoundTrips(text4, bytes) ? bytes : void 0,
+            rawBytes: bytes && !utf8RoundTrips(text5, bytes) ? bytes : void 0,
             corners
           });
         }
@@ -99854,7 +100099,7 @@ async function writeSessionRecord(stateDir, write) {
   await mkdir(sessionsDir(stateDir), { recursive: true });
   const prior = await readSessionRecord(stateDir, write.slot);
   const now2 = (/* @__PURE__ */ new Date()).toISOString();
-  const record10 = {
+  const record13 = {
     slot: write.slot,
     toolId: write.toolId ?? write.data.__toolId,
     toolVersion: write.toolVersion ?? write.data.__toolVersion,
@@ -99865,8 +100110,8 @@ async function writeSessionRecord(stateDir, write) {
     createdAt: prior?.createdAt ?? now2,
     ...sessionVersionStamp()
   };
-  await writeFile(sessionFilePath(stateDir, write.slot), JSON.stringify(record10, null, 2));
-  return record10;
+  await writeFile(sessionFilePath(stateDir, write.slot), JSON.stringify(record13, null, 2));
+  return record13;
 }
 async function deleteSessionRecord(stateDir, slot) {
   try {
@@ -100011,9 +100256,9 @@ function unplaceableReason(el) {
 }
 async function outlineSvgText(svg, host, opts = {}) {
   const result = { outlined: 0, fallbacks: [] };
-  const text4 = host.text;
+  const text5 = host.text;
   const doc = svg.ownerDocument;
-  if (!text4 || !doc) {
+  if (!text5 || !doc) {
     return result;
   }
   const getComputed = opts.getComputedStyle ?? null;
@@ -100031,9 +100276,9 @@ async function outlineSvgText(svg, host, opts = {}) {
     const weight = numericWeight(prop2(el, "font-weight", getComputed));
     const italic = /italic|oblique/i.test(prop2(el, "font-style", getComputed) ?? "");
     let font = null;
-    for (const family of families) {
-      if (/^(sans-serif|serif|monospace|cursive|fantasy|system-ui)$/i.test(family)) continue;
-      font = await text4.fontUrl?.(family, { weight, italic }) ?? null;
+    for (const family2 of families) {
+      if (/^(sans-serif|serif|monospace|cursive|fantasy|system-ui)$/i.test(family2)) continue;
+      font = await text5.fontUrl?.(family2, { weight, italic }) ?? null;
       if (font) break;
     }
     if (!font) {
@@ -100042,7 +100287,7 @@ async function outlineSvgText(svg, host, opts = {}) {
     }
     let shaped = null;
     try {
-      shaped = await text4.toPath({
+      shaped = await text5.toPath({
         text: raw,
         fontUrl: font.url,
         fontSize,
@@ -100116,13 +100361,13 @@ var unavailableHere = (message, kind = "UNAVAILABLE_HERE") => new CliError(messa
 var REPO_ROOT2 = repoRoot();
 function cliResolveFont(host) {
   return async (style) => {
-    const text4 = host.text;
-    if (!text4?.fontUrl) return null;
+    const text5 = host.text;
+    if (!text5?.fontUrl) return null;
     const weight = numericWeight(style.fontWeight ?? null);
     const italic = /italic|oblique/i.test(style.fontStyle ?? "");
-    for (const family of familyStack(style.fontFamily ?? null)) {
-      if (/^(sans-serif|serif|monospace|cursive|fantasy|system-ui)$/i.test(family)) continue;
-      const font = await text4.fontUrl(family, { weight, italic });
+    for (const family2 of familyStack(style.fontFamily ?? null)) {
+      if (/^(sans-serif|serif|monospace|cursive|fantasy|system-ui)$/i.test(family2)) continue;
+      const font = await text5.fontUrl(family2, { weight, italic });
       if (font) return font;
     }
     return null;
@@ -100604,7 +100849,7 @@ async function createCliBridge({ profile = {}, dom, networkAllowlist, designVers
         const svg = rootSvgOf(node);
         if (!svg) throw new Error("EPS export requires an <svg> in the template (HTML-layout tools need a browser engine - use the desktop app)");
         const ir = await svgDomToIr(svg, { host, resolveFont: cliResolveFont(host), background: opts.background, label: "EPS" });
-        const text4 = emitEps(ir, {
+        const text5 = emitEps(ir, {
           width: opts.width,
           height: opts.height,
           unit: opts.unit,
@@ -100613,14 +100858,14 @@ async function createCliBridge({ profile = {}, dom, networkAllowlist, designVers
           ...format === "eps-cmyk" ? { cmykPalette: await brandCmykPalette(host) } : {},
           meta: opts.meta
         });
-        return new Blob([text4], { type: "application/postscript" });
+        return new Blob([text5], { type: "application/postscript" });
       }
       if (format === "dxf") {
         const svg = rootSvgOf(node);
         if (!svg) throw new Error("DXF export requires an <svg> in the template (HTML-layout tools need a browser engine - use the desktop app)");
         const ir = await svgDomToIr(svg, { host, resolveFont: cliResolveFont(host), background: opts.background, label: "DXF" });
-        const { text: text4 } = emitDxf(ir, { width: opts.width, height: opts.height, unit: opts.unit, dpi: opts.dpi });
-        return new Blob([text4], { type: "image/vnd.dxf" });
+        const { text: text5 } = emitDxf(ir, { width: opts.width, height: opts.height, unit: opts.unit, dpi: opts.dpi });
+        return new Blob([text5], { type: "image/vnd.dxf" });
       }
       if (format === "wmf") {
         const svg = rootSvgOf(node);
@@ -101040,8 +101285,8 @@ for (const [network, prefix] of [
   ["ff00::", 8]
 ]) blocked.addSubnet(network, prefix, "ipv6");
 function isPublicAddress(address) {
-  const family = isIP(address);
-  return family !== 0 && !blocked.check(address, family === 4 ? "ipv4" : "ipv6");
+  const family2 = isIP(address);
+  return family2 !== 0 && !blocked.check(address, family2 === 4 ? "ipv4" : "ipv6");
 }
 function checkedBase(raw) {
   let url;
@@ -102246,8 +102491,8 @@ var TOOL_DEFS = [
   }
 ];
 var TOOL_ID_RE = /^[a-z0-9-]+$/;
-function textOnly(text4) {
-  return { content: [{ type: "text", text: text4 }] };
+function textOnly(text5) {
+  return { content: [{ type: "text", text: text5 }] };
 }
 function errorResult(message) {
   return { content: [{ type: "text", text: message }], isError: true };
@@ -102292,9 +102537,9 @@ function rowAt(rows2, id2, path) {
     throw new Error(`${path}: layer "${id2}" ${matches3.length ? "is duplicated" : "does not exist"}.`);
   return matches3[0];
 }
-function anchorOf(record10, path) {
-  const before = record10.beforeId;
-  const after = record10.afterId;
+function anchorOf(record13, path) {
+  const before = record13.beforeId;
+  const after = record13.afterId;
   if (before !== void 0 && (typeof before !== "string" || !before.trim()))
     throw new Error(`${path}/beforeId: a stable layer id is required.`);
   if (after !== void 0 && (typeof after !== "string" || !after.trim()))
@@ -102303,9 +102548,9 @@ function anchorOf(record10, path) {
     throw new Error(`${path}: provide exactly one of beforeId or afterId.`);
   return before !== void 0 ? { side: "before", id: before } : { side: "after", id: after };
 }
-function optionalAnchorOf(record10, path) {
-  if (record10.beforeId === void 0 && record10.afterId === void 0) return null;
-  return anchorOf(record10, path);
+function optionalAnchorOf(record13, path) {
+  if (record13.beforeId === void 0 && record13.afterId === void 0) return null;
+  return anchorOf(record13, path);
 }
 function assertNewDesignId(rows2, value, path) {
   if (typeof value !== "string" || !value.trim())
@@ -102362,17 +102607,17 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
     const operation = value[index2];
     if (!operation || typeof operation !== "object" || Array.isArray(operation))
       throw new Error(`${path}: operation must be an object.`);
-    const record10 = operation;
-    const op = record10.op;
+    const record13 = operation;
+    const op = record13.op;
     if (op !== "add" && op !== "duplicate" && op !== "remove" && op !== "reparent" && op !== "reorder")
       throw new Error(`${path}/op: expected add, duplicate, remove, reparent or reorder.`);
     const allowed = new Set(
       op === "add" ? ["op", "layer", "beforeId", "afterId"] : op === "duplicate" ? ["op", "id", "newId", "childIds", "beforeId", "afterId"] : op === "remove" ? ["op", "id", "cascade"] : op === "reparent" ? ["op", "id", "artboardId", "beforeId", "afterId"] : ["op", "id", "beforeId", "afterId"]
     );
-    const extra = Object.keys(record10).find((key) => !allowed.has(key));
+    const extra = Object.keys(record13).find((key) => !allowed.has(key));
     if (extra) throw new Error(`${path}/${extra}: unknown ${op} field.`);
     if (op === "add") {
-      const valueLayer = record10.layer;
+      const valueLayer = record13.layer;
       if (!valueLayer || typeof valueLayer !== "object" || Array.isArray(valueLayer))
         throw new Error(`${path}/layer: a layer object is required.`);
       const supplied = valueLayer;
@@ -102388,10 +102633,10 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
         h: fieldDefault("h", 200),
         ...supplied
       };
-      const hasAnchor = record10.beforeId !== void 0 || record10.afterId !== void 0;
+      const hasAnchor = record13.beforeId !== void 0 || record13.afterId !== void 0;
       if (!hasAnchor) rows2.push(layer);
       else {
-        const anchor = anchorOf(record10, path);
+        const anchor = anchorOf(record13, path);
         const relative2 = rowAt(rows2, anchor.id, `${path}/${anchor.side}Id`);
         if (!sameReorderDomain(layer, relative2.row))
           throw new Error(`${path}: an added layer and its anchor must be siblings or two artboards.`);
@@ -102401,15 +102646,15 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "duplicate") {
-      const source = rowAt(rows2, record10.id, `${path}/id`);
-      const newId = assertNewDesignId(rows2, record10.newId, `${path}/newId`);
-      const anchor = optionalAnchorOf(record10, path) ?? {
+      const source = rowAt(rows2, record13.id, `${path}/id`);
+      const newId = assertNewDesignId(rows2, record13.newId, `${path}/newId`);
+      const anchor = optionalAnchorOf(record13, path) ?? {
         side: "after",
         id: String(source.row.id)
       };
       const isFrame = source.row.kind === "frame";
       const children = isFrame ? rows2.filter((row) => row && typeof row === "object" && !Array.isArray(row) && row.kind !== "frame" && row.frame === source.row.id) : [];
-      const childIdsValue = record10.childIds;
+      const childIdsValue = record13.childIds;
       if (!isFrame && childIdsValue !== void 0)
         throw new Error(`${path}/childIds: only an artboard duplicate may supply child ids.`);
       if (childIdsValue !== void 0 && (!childIdsValue || typeof childIdsValue !== "object" || Array.isArray(childIdsValue)))
@@ -102453,9 +102698,9 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "remove") {
-      const target = rowAt(rows2, record10.id, `${path}/id`);
+      const target = rowAt(rows2, record13.id, `${path}/id`);
       const children = target.row.kind === "frame" ? rows2.filter((row) => row && typeof row === "object" && !Array.isArray(row) && row.frame === target.row.id) : [];
-      if (children.length && record10.cascade !== true)
+      if (children.length && record13.cascade !== true)
         throw new Error(`${path}/cascade: artboard "${String(target.row.id)}" has ${children.length} child layer${children.length === 1 ? "" : "s"}; pass cascade:true to remove them.`);
       const removeIds = /* @__PURE__ */ new Set([target.row.id, ...children.map((row) => row.id)]);
       for (let rowIndex = rows2.length - 1; rowIndex >= 0; rowIndex--) {
@@ -102465,10 +102710,10 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       continue;
     }
     if (op === "reparent") {
-      const target = rowAt(rows2, record10.id, `${path}/id`);
+      const target = rowAt(rows2, record13.id, `${path}/id`);
       if (target.row.kind === "frame")
         throw new Error(`${path}/id: artboards cannot be reparented.`);
-      const artboardId = record10.artboardId;
+      const artboardId = record13.artboardId;
       if (artboardId !== null && (typeof artboardId !== "string" || !artboardId.trim()))
         throw new Error(`${path}/artboardId: expected an artboard stable id or null for the pasteboard.`);
       if (typeof artboardId === "string") {
@@ -102477,7 +102722,7 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
           throw new Error(`${path}/artboardId: layer "${artboardId}" is not an artboard.`);
       }
       target.row.frame = artboardId ?? "";
-      const anchor = optionalAnchorOf(record10, path);
+      const anchor = optionalAnchorOf(record13, path);
       if (anchor) {
         reorderDesignRow(rows2, String(target.row.id), anchor, path);
       } else {
@@ -102493,9 +102738,9 @@ function applyDesignLayerOperations(toolId, manifest, inputs, value) {
       }
       continue;
     }
-    const id2 = record10.id;
+    const id2 = record13.id;
     if (typeof id2 !== "string" || !id2.trim()) throw new Error(`${path}/id: a stable layer id is required.`);
-    reorderDesignRow(rows2, id2, anchorOf(record10, path), path);
+    reorderDesignRow(rows2, id2, anchorOf(record13, path), path);
   }
   return { ...inputs, boxes: rows2 };
 }
@@ -102508,12 +102753,12 @@ function applyDesignLayerPatches(toolId, manifest, inputs, value) {
     const patch = value[index2];
     if (!patch || typeof patch !== "object" || Array.isArray(patch))
       throw new Error(`/layerPatches/${index2}: patch must be an object.`);
-    const record10 = patch;
-    const extra = Object.keys(record10).find((key) => key !== "id" && key !== "set");
+    const record13 = patch;
+    const extra = Object.keys(record13).find((key) => key !== "id" && key !== "set");
     if (extra) throw new Error(`/layerPatches/${index2}/${extra}: unknown patch field.`);
-    const id2 = record10.id;
+    const id2 = record13.id;
     if (typeof id2 !== "string" || !id2) throw new Error(`/layerPatches/${index2}/id: a stable layer id is required.`);
-    const set = record10.set;
+    const set = record13.set;
     if (!set || typeof set !== "object" || Array.isArray(set)) throw new Error(`/layerPatches/${index2}/set: fields must be an object.`);
     if (Object.hasOwn(set, "id")) throw new Error(`/layerPatches/${index2}/set/id: a stable layer id cannot be changed.`);
     const match = rowAt(rows2, id2, `/layerPatches/${index2}/id`);
@@ -102914,7 +103159,7 @@ Rights: ${result.rights.status}` + result.rights.issues.map((issue2) => `
 }
 async function serverInstructions() {
   const { tools } = await loadIndex();
-  return `Lolly MCP server (engine ${ENGINE_VERSION}) - generate on-brand SUSE creative assets. ${tools.length} tools available. Workflow: lolly_list_tools \u2192 lolly_describe_tool \u2192 lolly_validate \u2192 lolly_render. Use lolly_build_url for a shareable/editable link without rendering, lolly_transform for on-device file utilities, lolly_redact to destroy regions of an image/SVG/PDF from one reusable instruction string, and lolly_verify to check a file's Content Credentials (C2PA). Brand assets, tokens, and tool docs are available as resources (lolly://catalog, lolly://assets, lolly://tool/{id}, lolly://tool/{id}/preview, lolly://asset/{id}, lolly://tokens).`;
+  return `Lolly MCP server (engine ${ENGINE_VERSION}) - generate on-brand SUSE creative assets. ${tools.length} tools available. Workflow: lolly_list_tools \u2192 lolly_describe_tool \u2192 lolly_validate \u2192 lolly_render. Use lolly_build_url for a shareable/editable link without rendering, lolly_transform for on-device file utilities, lolly_redact to destroy regions of an image/SVG/PDF from one reusable instruction string, and lolly_verify to check a file's Content Credentials (C2PA). Brand assets, tokens, and tool docs are available as resources (lolly://catalog, lolly://assets, lolly://tool/{id}, lolly://tool/{id}/preview, lolly://asset/{id}, lolly://tokens, lolly://design-context).`;
 }
 var GENERIC_PROMPT = "create-branded-asset";
 var GENERIC_PROMPT_DEF = {
@@ -102961,7 +103206,7 @@ async function getPrompt(name, args = {}) {
       args.brief ? `Brief: ${args.brief}` : "No brief was provided - ask the user what they need first.",
       ...args.format ? [`Preferred format: ${args.format}`] : []
     ].join("\n");
-    const text5 = `${head2}
+    const text6 = `${head2}
 
 Workflow:
 1. Pick the best-fitting tool from the catalog below (or call lolly_list_tools to search).
@@ -102972,7 +103217,7 @@ Workflow:
 
 Catalog:
 ${listing}`;
-    return { description: GENERIC_PROMPT_DEF.description, messages: [{ role: "user", content: { type: "text", text: text5 } }] };
+    return { description: GENERIC_PROMPT_DEF.description, messages: [{ role: "user", content: { type: "text", text: text6 } }] };
   }
   if (!TOOL_ID_RE.test(name)) return null;
   const tool = await loadToolCached(name).catch(() => null);
@@ -102980,7 +103225,7 @@ ${listing}`;
   const m2 = tool.manifest;
   const looks = exampleLooks(m2, 3);
   const given = Object.entries(args).filter(([, v]) => v !== void 0 && v !== "");
-  const text4 = [
+  const text5 = [
     `Create an on-brand asset with the Lolly tool "${m2.id}" (${m2.name}).`,
     ...m2.description ? [m2.description] : [],
     "",
@@ -102995,11 +103240,12 @@ ${listing}`;
   const featured = m2.featured;
   return {
     description: featured?.blurb || m2.description || m2.name,
-    messages: [{ role: "user", content: { type: "text", text: text4 } }]
+    messages: [{ role: "user", content: { type: "text", text: text5 } }]
   };
 }
 
 // services/mcp/src/resources.ts
+init_brand_context();
 init_src2();
 import { readFile as readFile16 } from "node:fs/promises";
 import { join as join14 } from "node:path";
@@ -103007,6 +103253,7 @@ init_schema();
 var RESOURCES = [
   { uri: "lolly://catalog", name: "Tool catalog", description: "The full generated Lolly tool index.", mimeType: "application/json" },
   { uri: "lolly://assets", name: "Brand asset listing", description: "Every catalog asset id with its type, name, tags and formats - the ids lolly://asset/{id} resolves.", mimeType: "application/json" },
+  { uri: "lolly://design-context", name: "Design context", description: "The effective design system with resolved tokens, recorded source observations, coverage and explicit brand rules. Read-only.", mimeType: "application/json" },
   { uri: "lolly://tokens", name: "Brand design tokens", description: "On-brand colour swatches (DTCG) with names and CMYK, from the design system's edit head - never one of its published versions.", mimeType: "application/json" }
 ];
 var RESOURCE_TEMPLATES = [
@@ -103049,8 +103296,8 @@ async function assetsListing(uri) {
 async function previewResource(uri, id2) {
   for (const file of [`${id2}.svg`, `${id2}.look0.svg`]) {
     try {
-      const text4 = await readFile16(join14(previewsDir(), file), "utf8");
-      return { uri, mimeType: "image/svg+xml", text: text4 };
+      const text5 = await readFile16(join14(previewsDir(), file), "utf8");
+      return { uri, mimeType: "image/svg+xml", text: text5 };
     } catch {
     }
   }
@@ -103074,6 +103321,11 @@ async function readResource(uri) {
   }
   if (uri === "lolly://assets") return assetsListing(uri);
   if (uri === "lolly://tokens") return tokensResource(uri);
+  if (uri === "lolly://design-context") return withHost({}, async (_dom, host) => {
+    const snapshot = await host.tokens?.snapshot?.();
+    const document2 = snapshot?.document ?? await host.tokens?.raw?.();
+    return { uri, mimeType: "application/json", text: JSON.stringify(brandContext(document2 ?? null, { name: snapshot?.system?.label, theme: snapshot?.selection.theme ?? void 0 }), null, 2) };
+  });
   const previewMatch = /^lolly:\/\/tool\/([a-z0-9-]+)\/preview$/.exec(uri);
   if (previewMatch) return previewResource(uri, previewMatch[1]);
   const toolMatch = /^lolly:\/\/tool\/([a-z0-9-]+)$/.exec(uri);
@@ -103238,9 +103490,9 @@ function sniffFormat2(bytes) {
   if (bytesAt(b, 0, [1, 0, 0, 0]) && ascii2(b, 40, " EMF")) return "emf";
   const iso = isoBrand(b);
   if (iso) return iso;
-  const text4 = head(b);
-  if (bytesAt(b, 0, [197, 208, 211, 198]) || /^%!PS/.test(text4)) return "eps";
-  if (/<svg[\s>]/i.test(text4)) return "svg";
+  const text5 = head(b);
+  if (bytesAt(b, 0, [197, 208, 211, 198]) || /^%!PS/.test(text5)) return "eps";
+  if (/<svg[\s>]/i.test(text5)) return "svg";
   return null;
 }
 var ACCEPTS = Object.assign(/* @__PURE__ */ Object.create(null), {
@@ -104084,13 +104336,13 @@ var subtle8 = globalThis.crypto.subtle;
 var bytesToB64u = (bytes) => Buffer.from(bytes).toString("base64url");
 var b64uToBytes = (str7) => new Uint8Array(Buffer.from(String(str7), "base64url"));
 var randomB64u = (n2 = 32) => bytesToB64u(globalThis.crypto.getRandomValues(new Uint8Array(n2)));
-async function hmac(secret, text4) {
+async function hmac(secret, text5) {
   if (!secret) throw new Error("signing secret is not set");
   const key = await subtle8.importKey("raw", te10.encode(String(secret)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  return new Uint8Array(await subtle8.sign("HMAC", key, te10.encode(text4)));
+  return new Uint8Array(await subtle8.sign("HMAC", key, te10.encode(text5)));
 }
-async function sha256B64u(text4) {
-  return bytesToB64u(new Uint8Array(await subtle8.digest("SHA-256", te10.encode(text4))));
+async function sha256B64u(text5) {
+  return bytesToB64u(new Uint8Array(await subtle8.digest("SHA-256", te10.encode(text5))));
 }
 async function signValue(payload, secret) {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");

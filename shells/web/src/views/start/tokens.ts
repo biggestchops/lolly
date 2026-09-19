@@ -55,7 +55,7 @@ export async function install(start: StartCtx,
   doc: Record<string, unknown>,
   label: string,
   btn: HTMLButtonElement,
-  opts?: { onError?: (message: string) => void; area?: 'overview'; requireCheckpoint?: boolean }
+  opts?: { onError?: (message: string) => void; area?: 'overview'; requireCheckpoint?: boolean; onInstalled?: () => void }
 ): Promise<void> {
   const { host, importResult, shell } = start;
   if (start.installing) return;
@@ -76,6 +76,7 @@ export async function install(start: StartCtx,
     await start.editor?.reload();
     await start.exporting.refreshHead(); // the head moved - the tokens export follows it
     markWelcomeDismissed();
+    opts?.onInstalled?.();
     start.installing = false;
     // The user may have navigated away while the install ran - the tokens
     // were saved either way, but only a still-mounted view touches its own DOM

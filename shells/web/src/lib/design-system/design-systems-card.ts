@@ -11,6 +11,7 @@
  * "From an instance" (section 3.6) is a later milestone and is not rendered
  * until it works - never a door that opens on nothing.
  */
+import { brandSpecimenHtml, type BrandPreview } from './brand-specimen.ts';
 import { t, tRaw } from '../../i18n.ts';
 import { escape } from '../../utils.ts';
 import { icon } from '../icons.ts';
@@ -86,20 +87,17 @@ function bytesLabel(n: number | undefined): string {
   return `${(n / (1024 * 1024)).toFixed(n < 10 * 1024 * 1024 ? 1 : 0)} MB`;
 }
 
-export interface BrandPreview { font: string; colors: string[]; colorCount?: number; logoUrl?: string }
+export type { BrandPreview } from './brand-specimen.ts';
 
 /** A tiny, safe specimen from a system's own head document. It deliberately
  * loads only JSON already on-device; font files remain owned by the registry
  * and the browser simply falls back if a face has not been registered yet. */
 export async function previewOf(host: CardHost, record: DesignSystemRecord): Promise<BrandPreview> {
   const fallback = "'SUSE', ui-sans-serif, system-ui, sans-serif";
-  // A shipped record has no user head to inspect. Still give it a tiny honest
-  // specimen of the app's neutral starting palette rather than leaving the
-  // preview as unexplained type alone.
-  if (!record.headId) return { font: fallback, colors: ['#0c322c', '#30ba78', '#f1f5f9'] };
   try {
-    const blob = await host.assets._getBlob(record.headId);
-    const doc = blob ? JSON.parse(await blob.text()) : null;
+    const blob = record.headId ? await host.assets._getBlob(record.headId) : null;
+    const current = !blob && (await host.designSystems.activeId()) === record.id;
+    const doc = blob && blob.size <= 2 * 1024 * 1024 ? JSON.parse(await blob.text()) : current ? await host.tokens?.raw?.() : null;
     const tokens = createTokenSet(doc);
     const colors = tokens.colors()
       .map(token => tokenValueToHex(token.value))
@@ -125,19 +123,10 @@ export function designSystemCardHtml(r: DesignSystemRecord, activeId: string, by
   const active = r.id === activeId;
   const removable = r.source.kind !== 'shipped';
   const size = bytesLabel(bytes);
-  const colors = preview.colors.length ? preview.colors : ['#172b29', '#a5edda', '#f5f8f7'];
-  const background = colors[0]!;
-  const foreground = contrastText(background);
-  const accent = colors[1] ?? foreground;
   return `
     <article class="ds-row${active ? ' is-active' : ' is-switchable'}" data-ds-row="${escape(r.id)}" aria-label="${escape(r.label)}">
       ${active ? '' : `<button type="button" class="ds-row-hit" data-ds-act="switch" aria-label="${escape(tRaw('Switch to {name}', { name: r.label }))}"></button>`}
-      <div class="ds-row-preview" style="--ds-preview-bg:${escape(background)};--ds-preview-fg:${escape(foreground)};--ds-preview-accent:${escape(accent)};font-family:${escape(preview.font)}" aria-label="${escape(tRaw('Preview of {name}', { name: r.label }))}">
-        <div class="ds-preview-top"><span>${escape(t('DESIGN SYSTEM'))}</span><span class="ds-row-active">${active ? `${icon('check', { size: 12 })} ${t('Active')}` : t('Use theme') + ' ↗'}</span></div>
-        <div class="ds-preview-composition"><span class="ds-row-preview-type">Aa<span>Bb</span></span><span class="ds-preview-mark" aria-hidden="true">${preview.logoUrl ? `<img src="${escape(preview.logoUrl)}" alt="" class="ds-preview-logo">` : ''}<i></i><i></i></span></div>
-        <span class="ds-preview-caption">${escape(r.label)}</span>
-        <div class="ds-row-preview-swatches" aria-hidden="true">${colors.map(color => `<i style="--ds-swatch:${escape(color)}"></i>`).join('')}</div>
-      </div>
+      ${brandSpecimenHtml(r.label, preview, active)}
       <div class="ds-row-main">
         <h3 class="ds-row-label">${escape(r.label)}${r.locked ? `<span class="ds-row-lock" title="${escape(t('Read-only'))}">${icon('lock', { size: 14 })}</span>` : ''}</h3>
         <span class="ds-row-source">${escape(sourceLine(r))}</span>
@@ -167,6 +156,7 @@ export async function renderDesignSystemsCard(body: HTMLElement, host: CardHost)
     <p class="profile-appearance-sub">${t('The design systems on this device. The active one is what every tool renders with.')}</p>
     <div class="ds-rows">${records.map((r, i) => designSystemCardHtml(r, activeId, sizes[r.id], previews[i]!)).join('')}</div>
     <div class="ds-add">
+      <button type="button" class="btn" data-ds-act="looks">${t('Find a look')}</button>
       <button type="button" class="btn" data-ds-act="new">${icon('plus', { size: 14 })} ${t('Make a new one')}</button>
       <button type="button" class="btn" data-ds-act="file">${icon('upload', { size: 14 })} ${t('Open or import a file')}</button>
       <button type="button" class="btn" data-ds-act="instance">${icon('globe', { size: 14 })} ${t('From an instance')}</button>
@@ -202,6 +192,7 @@ export function mountDesignSystemsCard(body: HTMLElement, host: CardHost): void 
     const loading = act === 'switch' || act === 'studio' ? t('Loading design system…') : t('Working…');
     announce(body, loading);
     try {
+      if (act === 'looks') { location.hash = '#/start?focus=looks'; return; }
       if (act === 'download' && id) {
         const { openBrandDownload } = await import('./brand-download.ts');
         await openBrandDownload(host as unknown as Parameters<typeof openBrandDownload>[0], id);

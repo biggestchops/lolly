@@ -67,3 +67,8 @@ cd lolly/shells/chrome-extension
 ```
 
 Commit changes to files in this directory directly, as part of the normal repo. See [`CONTRIBUTING.md`](../../CONTRIBUTING.md) section 3.
+
+
+### Style observations (0.3.0)
+
+A site read also samples computed typography, gaps, padding and corner radius from up to 200 visible elements, visiting at most 1,000 elements. The reply includes the viewport and appearance used for the sample. It contains no element text or selectors in its style observations and introduces no new permissions or network requests. Lolly keeps this separate from declared CSS evidence. Older extension replies remain compatible and yield declared coverage only.

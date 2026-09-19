@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Lolly URL Screenshot",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Screenshot any URL from the Lolly web app, and read a page's markup, styles and icons, on your command in your browser.",
   "icons": {
     "16": "icons/icon-16.png",

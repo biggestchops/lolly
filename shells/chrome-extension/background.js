@@ -271,6 +271,7 @@ async function readSite(rawUrl, options = {}) {
     return {
       html: collected.html || '',
       cssTexts: collected.cssTexts || [],
+      styles: collected.styles,
       assets: collected.assets || [],
       finalUrl: collected.finalUrl || url,
       screenshotBase64,
@@ -325,7 +326,27 @@ function withTimeout(promise, ms, message) {
  * asked, and the app parses them on-device.
  */
 async function collectSite(caps) {
-  const out = { html: '', cssTexts: [], assets: [], finalUrl: location.href };
+  const out = { html: '', cssTexts: [], assets: [], finalUrl: location.href, styles: null };
+
+  // Read a bounded sample of visible elements, with no text or selectors retained.
+  try {
+    const properties = ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'gap', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'border-top-left-radius'];
+    const values = [];
+    const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_ELEMENT);
+    let sampled = 0;
+    let visited = 0;
+    let element = walker.currentNode;
+    while (element && sampled < 200 && visited < 1000) {
+      visited++;
+      const style = getComputedStyle(element);
+      if (style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length) {
+        sampled++;
+        for (const property of properties) values.push({ property, value: style.getPropertyValue(property).slice(0, 160) });
+      }
+      element = walker.nextNode();
+    }
+    out.styles = { version: 1, mode: 'computed', sampled, truncated: !!element, values, viewport: { width: innerWidth, height: innerHeight, scheme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' } };
+  } catch { /* Older transports still provide declared styles. */ }
 
   const absolute = (u) => {
     if (!u || typeof u !== 'string') return null;

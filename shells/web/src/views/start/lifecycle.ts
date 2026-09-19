@@ -20,7 +20,7 @@ export const onKey = (start: StartCtx, e: KeyboardEvent): void => {
   // The import dialog owns the key while it's open: the native <dialog> handles
   // Escape itself (its `cancel` event), but the keydown still bubbles up here -
   // without this guard one press would close the dialog AND leave the studio.
-  if (start.importModal || start.recovery?.el.isConnected) return;
+  if (start.importModal || start.looksModal || start.recovery?.el.isConnected) return;
   // The Esc stack: floating popovers first (they close themselves and
   // stopImmediatePropagation before this handler - the query is a
   // belt-and-braces guard so the sheet never folds under a popover that
@@ -55,6 +55,7 @@ export function wireCleanup(start: StartCtx): void {
   const { viewEl } = start;
   document.addEventListener('keydown', start.lifecycle.onKey);
   (viewEl as ViewElement)._cleanup = () => {
+    start.looksModal?.close();
     document.removeEventListener('keydown', start.lifecycle.onKey);
     // A dialog outlives the view it was opened from (it's body-mounted), so leaving
     // the studio must take it with it.

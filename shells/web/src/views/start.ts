@@ -1,3 +1,4 @@
+import '../styles/parts/design-system-specimen.css';
 // SPDX-License-Identifier: MPL-2.0
 /**
  * #/start - the Design System studio (plan 97). This is THE place the design
@@ -68,6 +69,7 @@ import { candidatesOps } from './start/candidates.ts';
 import { imagesOps } from './start/images.ts';
 import { pdfOps } from './start/pdf.ts';
 import { siteOps } from './start/site.ts';
+import { looksOps } from './start/looks.ts';
 import { referenceOps } from './start/reference.ts';
 import { savedPageOps } from './start/saved-page.ts';
 import '../styles/parts/start-reference.css';
@@ -103,6 +105,7 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
   start.pdf = pdfOps(start);
   start.site = siteOps(start);
   start.reference = referenceOps(start);
+  start.looks = looksOps(start);
   start.savedPage = savedPageOps(start);
   start.referenceRevision = 0;
   start.sources = sourcesOps(start);

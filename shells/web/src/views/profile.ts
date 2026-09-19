@@ -1,3 +1,4 @@
+import '../styles/parts/design-system-specimen.css';
 // SPDX-License-Identifier: MPL-2.0
 import '../styles/parts/profile.css';   // async CSS chunk (lazy view - not on the landing)
 import '../styles/parts/tool.css';      // .help-tip-btn/-pop/-host styles - shared chunk with the

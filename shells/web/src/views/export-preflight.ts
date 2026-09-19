@@ -59,6 +59,7 @@ export interface PreflightRow {
   readonly tone: PreflightTone;
   readonly id: string;
   readonly text: string;
+  readonly action?: { label: string; run: () => Promise<void> };
 }
 
 /** One label/value line. Same anatomy as the /valid view's `fact()`. */
@@ -345,7 +346,7 @@ export function preflightBodyHtml(view: PreflightView): string {
         + icon(metaphorIcon(r.id), { className: 'preflight-finding-metaphor' })
         + `<span class="preflight-finding-badge">${icon(statusIcon(r.tone), { className: 'preflight-finding-badge-icon' })}</span>`
         + `</span>`
-        + `<span class="preflight-finding-text">${escape(r.text)}</span>`
+        + `<span class="preflight-finding-text">${escape(r.text)}${r.action ? `<button type="button" class="btn preflight-fix" data-preflight-fix="${escape(r.id)}">${escape(r.action.label)}</button>` : ''}</span>`
         + `</li>`).join('')}</ul>`
     : '';
   return facts + rows;
@@ -378,6 +379,19 @@ export function openPreflightModal(): void {
     onClose: () => { openModal = null; },
   });
   handle.el.querySelector('[data-preflight-close]')?.addEventListener('click', () => handle.close());
+  handle.el.addEventListener('click', async event => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('[data-preflight-fix]');
+    const action = currentView?.rows.find(row => row.id === button?.dataset.preflightFix)?.action;
+    if (!button || button.disabled || !action) return;
+    button.disabled = true;
+    try { await action.run(); }
+    catch (error) {
+      const note = document.createElement('p');
+      note.setAttribute('role', 'status');
+      note.textContent = error instanceof Error ? error.message : t('Could not apply this change. Please try again.');
+      button.after(note);
+    } finally { button.disabled = false; }
+  });
   openModal = handle;
 }
 
@@ -405,6 +419,14 @@ export function applyPreflight(panel: Element | null | undefined, view: Prefligh
   // job stopped having anything to say.
   if (openModal) {
     if (!view.show) { openModal.close(); }
-    else { openModal.el.innerHTML = preflightModalHtml(view); openModal.el.querySelector('[data-preflight-close]')?.addEventListener('click', () => openModal?.close()); }
+    else {
+      const focused = document.activeElement as HTMLElement | null;
+      const restore = focused && openModal.el.contains(focused);
+      const fixId = focused?.dataset.preflightFix;
+      openModal.el.innerHTML = preflightModalHtml(view);
+      openModal.el.querySelector('[data-preflight-close]')?.addEventListener('click', () => openModal?.close());
+      if (restore) ([...openModal.el.querySelectorAll<HTMLElement>('[data-preflight-fix]')].find(el => el.dataset.preflightFix === fixId)
+        ?? openModal.el.querySelector<HTMLElement>('[data-preflight-close]'))?.focus();
+    }
   }
 }

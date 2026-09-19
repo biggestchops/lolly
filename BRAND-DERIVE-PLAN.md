@@ -1,6 +1,6 @@
 # Brand derive: Lolly's local answer to Taste Labs
 
-Date: 19 September 2026. Status: first tester release implemented.
+Date: 19 September 2026. Status: both implementation releases complete and locally verified.
 
 ## Product decision
 
@@ -65,15 +65,27 @@ The extension reads a background page in the user's browser session. Native fetc
 - Browser tests: desktop and touch viewport; no write until Apply; apply and restore; alternate colour selection; local file and paste; cancel/stale results; empty/errors; keyboard focus; no remote reads from imported source; no overflow at large text.
 - Run type checks, the full repository test gate, ratcheting lint, wording, generated module inventories, parser inventory/assurance and production build budgets. Record any infrastructure limitation explicitly.
 - Work in the isolated `codex/brand-derive-reviewed-import` checkout so ongoing sequence-editor changes are not included.
-- Only after the exact tree is green: commit, integrate with the current remote main without discarding concurrent work, push, run the existing staged ship workflow for the `lolly-start` profile, then verify the promoted `lolly.tools` deployment.
+- Only after the exact tree is green: commit, stage the `lolly-start` build through the existing ship workflow and run its first-load checks. Then integrate and push to current remote main without discarding concurrent work. Main also starts an automatic production build: wait for CI and that build, then promote the measured staged deployment and verify its identity on `lolly.tools`.
 
-## Following milestones, with explicit boundaries
+## Remaining milestones: implemented
 
-These are subsequent releases, not claims of first-release parity.
+1. **Richer observations.** The existing browser extension now samples up to 200 visible elements, with a 1,000-element traversal bound. Typography, spacing and corner observations record measured values, occurrences, viewport and browser colour preference. Native and saved-page reads retain declared coverage. A shared normalizer bounds and revalidates every observation, lists missing fields and drops page text/selectors. Source details remain optional and never install fonts or geometry automatically.
+2. **Local inspiration.** **Find a look** opens from Overview or Profile. It searches saved systems and three original Lolly examples by name, explicit tags or declared font. Palette similarity uses existing colour maths; matching font families break equal-distance ties. Users compare up to two specimens, with a persistent review action on small screens. Examples use the existing checkpoint/install flow; saved systems use the existing switch flow. Tag changes persist through the registry. There is no remote inspiration corpus.
+3. **Explainable checks.** Export's existing check panel compares authored Design colours, aliases, font choices and asset IDs against the effective render snapshot, including a pinned version. Custom values are review items and absent evidence is unknown. Colour and font suggestions are individual, explicit changes through the tool's existing history wrapper. A fix rechecks the current system, layer ID, lock and original value before writing. It reads the composition after the asynchronous token lookup so a newer edit or lock is retained. Existing mounted contrast/layout checks remain in the same panel. No overall taste score is invented.
+4. **Portable context.** The JSON context carries tokens, resolved values, recorded source evidence, coverage and explicit rules. The CLI imports both context and reference reports; `lolly system context` and `lolly system check` read local files or the terminal system. The existing MCP resource list gains `lolly://design-context`, backed by the same resolved document as a render. No service, subscription or model dependency is added.
 
-1. **Richer observations:** computed typography/spacing/radius evidence from existing capture transports, with per-field coverage and cross-platform fixtures. Extend shared pure code only after the observation schema is proven. Do not add a privileged hidden browser by default.
-2. **Local inspiration:** browse and compare the user's saved design systems and bundled, reusable examples. Rank by palette, type and explicit tags. No imitation search over a remotely scraped brand corpus. Validate whether this improves first-use success before expanding it.
-3. **Explainable checks:** compare a composition's actual token references, colours, type, contrast and asset IDs with the selected design system; provide individual fixes. Keep missing evidence separate from a pass. No invented overall taste score.
-4. **Portable context:** make the reviewed tokens, source coverage and rules consumable through Lolly's existing local CLI/MCP facilities if wanted. This is not a new hosted API product.
+## Component and performance review
 
-Measure success in moderated tester sessions: can a first-time user reach a result they want to keep without help, understand what Apply changes, and correct one wrong suggestion? Record time to first applied look, corrections, abandons and restore success without adding background telemetry.
+- Profile, the local library and comparison now share one specimen renderer and stylesheet. The sheet loads with either view, so first-use previews do not depend on previously opening Profile.
+- Existing modal, fields, buttons, tokens, focus styles, back handling and touch sizes remain the UI foundation. Applying a look is separate from selecting one. Technical evidence and context downloads stay under disclosure.
+- Library reads run four at a time, at most 60 systems and 2 MiB per token document. Unavailable previews are counted and do not prevent usable systems loading.
+- Repeated colours reuse their nearest-token comparison during a check. Checks run when Export is open, and stale async reports cannot replace a newer report. A pending check keeps the details surface open after an edit.
+- Capture adds no permissions, renderer process or network transport. The extension update is optional; older extension replies still work with declared styles.
+
+## Validation and tester handoff
+
+Behavior tests cover evidence bounds and missing fields, actual extension collection, deterministic proposals, local discovery and tags, context import/CLI/MCP, guarded fixes, cancellation, and no writes on preview. Browser journeys cover local files, applied looks, tablet/phone with large text, context downloads, and a real Design fix followed by Undo. Existing swatch and import regression suites remain in the release gate.
+
+Local verification on Node 24: the full gate passed with 17,466 passing tests and 273 expected skips. The final timing guard also passed its regression and browser journeys (nine focused tests). All 26 affected documentation captures matched. The 2,000-case source fuzz run found no crashes, hangs or allocation failures. Type checking, lint and wording ratchets, parser assurance, dependency audits, secret scanning and production budgets passed. Boot JavaScript was 157.9 KB compressed against 158 KB; built docs were 157.2 MB against 178 MB. Native Tauri checks skip locally when their separate packages are absent; CI installs those packages and runs the strict checks.
+
+Moderated usability research still needs people: ask a new tester to choose or derive a look, apply it, make a composition, correct one wrong suggestion and restore the previous look. Record time, corrections, abandons and restore success manually. Shipping this implementation is not evidence that those user outcomes have been measured, and adds no background telemetry.

@@ -26,6 +26,7 @@
  * any shell module.
  */
 
+import type { BrandStyleEvidence } from '../../../../../engine/src/brand-evidence.ts';
 import { hexToOklch, oklchToHex, parseColorToSrgb8 } from '@lolly/engine';
 import type {
   ImageCloud, PenpotUsage, PenpotUsageColor, PenpotUsageGradient, PenpotFontUsage,
@@ -67,6 +68,7 @@ export interface DesignCensus {
   fonts: CensusFont[];
   name?: string;
   source: CensusSource;
+  styles?: BrandStyleEvidence;
 }
 
 /** Default face weight when a source reports none - CSS's own default. */
@@ -398,6 +400,7 @@ export function mergeCensus(list: DesignCensus[]): DesignCensus {
     gradients: [...gradients.values()],
     fonts: [...fonts.values()],
     source: list[0]?.source ?? { kind: 'css', label: '' },
+    ...(list[0]?.styles ? { styles: list[0].styles } : {}),
   };
   if (name) out.name = name;
   return out;

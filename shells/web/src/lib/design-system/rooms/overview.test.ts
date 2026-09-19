@@ -340,11 +340,13 @@ test('an unreadable tokens doc still yields the palette rather than throwing', a
 
 // ── overviewHtml ─────────────────────────────────────────────────────────────
 
-test('the empty state gives colour, file, face and logo equal doors, plus a way out', () => {
+test('the empty state gives four material doors, local discovery and a way out', () => {
   const html = overviewHtml({ furnished: false, colors: [], colorCount: 0, fonts: [], logoCount: 0, tokenCount: 0 });
   // Four material-shaped doors. A complete file is no longer buried in a line
   // below the partial-resource choices, and none of them gates another.
-  assert.equal([...html.matchAll(/data-ds-door="/g)].length, 4);
+  assert.equal([...html.matchAll(/data-ds-door="/g)].length, 5);
+  assert.match(html, /data-ds-door="looks"/);
+  assert.match(html, /Find a look/);
   assert.match(html, /data-ds-door="color-pick"/);
   assert.match(html, /data-ds-door="type-stage"/);
   assert.match(html, /data-ds-door="logos"/);

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 /** A reference proposes a look; only the studio's existing install path commits it. */
+import { brandContext } from '../../../../../engine/src/brand-context.ts';
+import { readBrandStyleEvidence } from '../../../../../engine/src/brand-evidence.ts';
 import { createTokenSet, ENGINE_VERSION, TOKEN_EXT, contrastRatio } from '@lolly/engine';
 import { buildBrandDocFromUsage } from '../brand-propose.ts';
 import { censusToUsage, type DesignCensus } from './census.ts';
@@ -16,7 +18,7 @@ export function referenceLook(census: DesignCensus, name: string, evidence: Refe
   const { doc, roles } = buildBrandDocFromUsage(censusToUsage(census), name, { primary, includeFonts: false });
   const extensions = (doc.$extensions ?? {}) as Record<string, unknown>;
   const vendor = (extensions[TOKEN_EXT] ?? {}) as Record<string, unknown>;
-  doc.$extensions = { ...extensions, [TOKEN_EXT]: { ...vendor, reference: { ...evidence, engineVersion: ENGINE_VERSION } } };
+  doc.$extensions = { ...extensions, [TOKEN_EXT]: { ...vendor, reference: { ...evidence, ...(census.styles ? { styles: readBrandStyleEvidence(census.styles) } : {}), engineVersion: ENGINE_VERSION } } };
   const tokens = createTokenSet(doc, { theme: roles.surfaceLook });
   const colors = new Map(tokens.colors().map(c => [c.path, c.value]));
   const color = (path: string): string => colors.get(`color.semantic.${path}`) ?? roles.primary;
@@ -34,9 +36,11 @@ export function referenceReport(census: DesignCensus, name: string, evidence: Re
     format: 'lolly-reference', version: 1, engineVersion: ENGINE_VERSION,
     source: evidence, observations: census,
     proposedTokens: look?.doc ?? null, checks: look?.contrast ?? null,
+    context: look ? brandContext(look.doc, { name }) : null,
     coverage: {
       colors: evidence.method === 'image' ? 'sampled pixels' : evidence.method === 'svg' ? 'vector paints' : 'declared styles',
       fonts: 'names only; no font files included or installed',
+      styles: census.styles?.mode ?? 'unavailable',
       preview: 'generated colour roles with the current Lolly font',
       notAssessed: ['layout', 'motion', 'logo identity', 'subjective quality'],
     },

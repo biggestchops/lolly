@@ -58,6 +58,7 @@ window.addEventListener('message', (event) => {
         ok: !err && !!resp?.ok,
         html: resp?.html,
         cssTexts: resp?.cssTexts,
+        styles: resp?.styles,
         assets: resp?.assets,
         finalUrl: resp?.finalUrl,
         screenshotBase64: resp?.screenshotBase64,

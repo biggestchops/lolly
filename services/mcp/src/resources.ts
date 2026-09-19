@@ -7,6 +7,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { brandContext } from '../../../engine/src/brand-context.ts';
 import { createTokenSet, pickHeadAssetId } from '@lolly/engine';
 import { assetIndex, contentUrl, previewsDir } from './paths.ts';
 import { loadIndex, loadToolCached } from './catalog.ts';
@@ -23,6 +24,7 @@ export interface ResourceContent {
 export const RESOURCES = [
   { uri: 'lolly://catalog', name: 'Tool catalog', description: 'The full generated Lolly tool index.', mimeType: 'application/json' },
   { uri: 'lolly://assets', name: 'Brand asset listing', description: 'Every catalog asset id with its type, name, tags and formats - the ids lolly://asset/{id} resolves.', mimeType: 'application/json' },
+  { uri: 'lolly://design-context', name: 'Design context', description: 'The effective design system with resolved tokens, recorded source observations, coverage and explicit brand rules. Read-only.', mimeType: 'application/json' },
   { uri: 'lolly://tokens', name: 'Brand design tokens', description: "On-brand colour swatches (DTCG) with names and CMYK, from the design system's edit head - never one of its published versions.", mimeType: 'application/json' },
 ];
 
@@ -118,6 +120,11 @@ export async function readResource(uri: string): Promise<ResourceContent> {
   }
   if (uri === 'lolly://assets') return assetsListing(uri);
   if (uri === 'lolly://tokens') return tokensResource(uri);
+  if (uri === 'lolly://design-context') return withHost({}, async (_dom, host) => {
+    const snapshot = await host.tokens?.snapshot?.();
+    const document = snapshot?.document ?? await (host.tokens as { raw?(): Promise<unknown> } | undefined)?.raw?.();
+    return { uri, mimeType: 'application/json', text: JSON.stringify(brandContext(document ?? null, { name: snapshot?.system?.label, theme: snapshot?.selection.theme ?? undefined }), null, 2) };
+  });
 
   const previewMatch = /^lolly:\/\/tool\/([a-z0-9-]+)\/preview$/.exec(uri);
   if (previewMatch) return previewResource(uri, previewMatch[1]!);

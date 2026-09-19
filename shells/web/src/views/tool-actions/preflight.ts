@@ -19,6 +19,7 @@ import { isVectorImageSrc, placedImageLabel } from '../../lib/placed-image.ts';
 import { getRateCardBlob, listCatalogRateCards, listRateCards } from '../../lib/rate-cards.ts';
 import { applyCostPanel, costView } from '../cost-panel.ts';
 import type { CostAuthoringContext } from '../cost-panel.ts';
+import { brandCheckRows } from '../brand-check-rows.ts';
 import { mountedDesignFindingMessage } from '../design-audit-copy.ts';
 import { auditMountedDesign } from '../design-mounted-audit.ts';
 import { applyPreflight, isPreflightEnabled, preflightView } from '../export-preflight.ts';
@@ -87,7 +88,7 @@ export async function refreshDesignAudit(ta: ActionsCtx): Promise<void> {
     tone: designTone(ta, finding.severity),
     text: finding.message,
   }));
-  ta.designAuditRows = structuralRows;
+  ta.designAuditRows = structuralRows.length ? structuralRows : [{ id: 'design.checking', tone: 'note', text: tRaw('Checking this design…') }];
   refreshPreflight(ta);
 
   try {
@@ -101,8 +102,14 @@ export async function refreshDesignAudit(ta: ActionsCtx): Promise<void> {
       return Boolean(await resolveVectorFont(style, text));
     },
   });
+  const brandRows = await brandCheckRows({
+    boxes: () => runtime.getModel().find(input => input.id === 'boxes')?.value,
+    snapshot: async () => ta.host.tokens?.snapshot?.(),
+    write: next => runtime.setInput('boxes', next as Parameters<typeof runtime.setInput>[1]),
+  });
   if (!ta.designAuditOpen || generation !== ta.designAuditGeneration) return;
   ta.designAuditRows = [
+    ...brandRows,
     ...structuralRows,
     ...mounted.findings.map(
       (finding): PreflightRow => ({

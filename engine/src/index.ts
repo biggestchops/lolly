@@ -888,3 +888,9 @@ export { studioLookOf, studioApplyLook, studioKeyInput, studioKeyField, studioPa
 export type { StudioLookValues, StudioRef } from './studio3d-look.ts';
 export { studioObjectPose, STUDIO_MOTION_KINDS, STUDIO_ONE_SHOT_KINDS, STUDIO_POSE_REST, STUDIO_POSE_MAX_LIFT } from './studio3d-motion.ts';
 export type { StudioPoseV1 } from './studio3d-motion.ts';
+
+export { brandContext, contextTokens } from './brand-context.ts';
+export { checkBrandDesign, applyBrandFix } from './brand-check.ts';
+export type { BrandFinding, BrandFix } from './brand-check.ts';
+export { BRAND_STYLE_PROPERTIES, summarizeBrandStyles, readBrandStyleEvidence } from './brand-evidence.ts';
+export type { BrandStyleProperty, BrandStyleValue, BrandStyleEvidence } from './brand-evidence.ts';

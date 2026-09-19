@@ -30,6 +30,7 @@
  * text is consulted, which is all the heading heuristic needs.
  */
 
+import { summarizeBrandStyles } from '../../../../../engine/src/brand-evidence.ts';
 import { colorToHexString, isNamedColor, parseColor } from '@lolly/engine';
 import type { CensusColor, CensusFont, CensusGradient, DesignCensus } from './census.ts';
 
@@ -285,6 +286,8 @@ export function extractSite(input: SiteInput): SiteExtract {
 
   const colorMap = new Map<string, { hex: string; weight: number; kind: CensusColor['kind']; order: number }>();
   const gradientMap = new Map<string, { stops: string[]; angle?: number; weight: number; order: number }>();
+  const styleRows: { property: string; value: string }[] = [];
+  let styleCount = 0;
   const fontMap = new Map<string, { family: string; total: number; usages: Map<Usage, number>; order: number }>();
   const logoSeen = new Set<string>();
   const logoCandidates: { url: string; rank: number; order: number }[] = [];
@@ -431,6 +434,13 @@ export function extractSite(input: SiteInput): SiteExtract {
     });
   };
 
+  const scanStyles = (css: string): void => {
+    scan(/(?<![-\w])(font-family|font-size|font-weight|line-height|letter-spacing|gap|padding-(?:top|right|bottom|left)|border-top-left-radius|border-radius)\s*:\s*([^;{}<>]+)/gi, css, budget, m => {
+      styleCount++;
+      if (styleRows.length < 2400) styleRows.push({ property: m[1]!.toLowerCase() === 'border-radius' ? 'border-top-left-radius' : m[1]!.toLowerCase(), value: m[2]!.replace(/\s*!important\s*$/i, '') });
+    });
+  };
+
   for (const css of cssTexts) scanFonts(css, '');
   for (const css of styleBlocks) scanFonts(css, '');
   for (const s of styleAttrs) scanFonts(s.css, s.tag);
@@ -438,6 +448,8 @@ export function extractSite(input: SiteInput): SiteExtract {
   for (const css of cssTexts) scanColors(css);
   for (const css of styleBlocks) scanColors(css);
   for (const s of styleAttrs) scanColors(s.css);
+
+  for (const css of [...cssTexts, ...styleBlocks, ...styleAttrs.map(s => s.css)]) scanStyles(css);
 
   // ── Assemble ────────────────────────────────────────────────────────────────
   const colors: CensusColor[] = [...colorMap.values()]
@@ -460,7 +472,7 @@ export function extractSite(input: SiteInput): SiteExtract {
   }
 
   const siteName = ogSiteName || ogTitle || titleText;
-  const census: DesignCensus = { colors, gradients, fonts, source: { kind: 'site', label } };
+  const census: DesignCensus = { colors, gradients, fonts, source: { kind: 'site', label }, ...(styleRows.length ? { styles: summarizeBrandStyles('declared', styleRows, styleCount, styleCount > 2400 || budget.left === 0) } : {}) };
   if (siteName.length > 0) census.name = siteName;
 
   const logoUrls = logoCandidates

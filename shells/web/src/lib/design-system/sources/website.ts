@@ -57,6 +57,7 @@
  * fakes and no test ever needs a browser, an extension or a network.
  */
 
+import { readBrandStyleEvidence, type BrandStyleEvidence } from '../../../../../../engine/src/brand-evidence.ts';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import { imageColorCloud } from '@lolly/engine';
 
@@ -83,6 +84,7 @@ export interface SiteAsset {
 export interface SiteFetchResult {
   html: string;
   cssTexts: string[];
+  styles?: BrandStyleEvidence;
   assets: SiteAsset[];
   finalUrl: string;
   /** The rendered page as an image, when the transport can paint one. Optional
@@ -510,6 +512,8 @@ export function coerceFetchResult(
     raw.screenshot ?? raw.screenshotPng ?? raw.screenshotDataUrl ?? raw.screenshotBase64,
   );
   const result: SiteFetchResult = { html, cssTexts, assets, finalUrl };
+  const styles = readBrandStyleEvidence(raw.styles);
+  if (styles) result.styles = styles;
   if (screenshot) result.screenshot = screenshot;
   // One truncation is one fact however many sheets it took to hit the ceiling.
   return { result, warnings: [...new Set(warnings)] };
@@ -939,6 +943,7 @@ export async function scanWebsite(
   for (const w of paired.warnings) warnings.add(w);
 
   let census = extract.census;
+  if (transport.kind === 'extension' && result.styles?.mode === 'computed' && result.styles.values.length) census.styles = result.styles;
   let usedScreenshot = false;
   if (result.screenshot) {
     progress('paint');

@@ -305,3 +305,38 @@ Some builds ship a **locked brand** - its colours, fonts and tokens are what eve
 - **[Using Lolly](/info/using.html)** - the canvas, saving, projects and the catalogue.
 - **[Design Tokens](/info/design-tokens.html)** - the token model your brand is expressed in.
 - **[Exporting & formats](/info/exporting.html)** - print units, CMYK and the formats your brand renders into.
+
+
+## Find and compare a look
+
+Open **Find a look** from Overview or the design-system list on Profile. Browse systems saved on this device and a few reusable Lolly examples. Search by name, colour tag or declared font. **Closest to my current palette** sorts by measured colour similarity, with matching font families breaking ties; it is not a quality score.
+
+Select one look to review it, or two to compare. The review button stays available on a small screen. Selecting a look changes nothing. **Use this saved system** switches through the existing design-system registry. **Use these colours** applies an example through the normal checkpoint and install flow, preserving the current fonts. **Restore brand settings** can recover the previous look.
+
+Under **Details and design context**, saved systems have editable **Search tags** and a context download. Examples use original Lolly colour recipes; there is no remotely scraped inspiration collection or required account.
+
+## Read source evidence
+
+The source review's optional details show typography, gaps, padding and corner values where observed. Saved HTML/CSS and native website reads report declarations, which may not be used by the rendered page. The browser extension can report measured styles from a bounded sample of visible elements, with its viewport and browser colour preference. Older extensions still work with declared styles. Missing fields say **Not observed**.
+
+These are observations, not automatic style settings. Font files are not fetched or installed by a reference scan, and source spacing does not silently replace your own. Counts describe occurrences in the sample, not confidence or quality.
+
+## Check a composition against the design system
+
+In Design, open **Export**, then **Before you export**. The check uses the same effective design-system version as the render. It compares authored colours, token aliases, font choices and image asset IDs. Custom values may be intentional; an image outside the declared brand assets is a review item, not a prohibited image.
+
+Where a concrete colour or font suggestion is available, its button changes that one layer. The normal **Undo** restores the original value. Locked or changed layers are not overwritten by an old suggestion. Missing source evidence stays separate from a match. Rendered contrast and text layout are checked by the existing mounted checks. Gradients, effects, nested tool content, rights and subjective quality are not assessed by the brand comparison. Checks do not block Download.
+
+## Use design context locally
+
+**Download design context** includes the token document, resolved colours, declared font families, asset IDs, source evidence where recorded, coverage and explicit rules. It does not include font files or proof of ownership. The reference review also includes its proposed tokens and observations.
+
+The CLI can read either download without a server:
+
+```bash
+lolly system import ./lolly-design-context.json
+lolly system context --output=design-context.json
+lolly system check ./design-inputs.json --file=design-context.json
+```
+
+`system check` accepts Design inputs with a `boxes` array or a compiled Design document. It reports proposed fixes without modifying the composition. It cannot measure browser layout or rendered contrast. The existing MCP resource **lolly://design-context** exposes the effective system's context through the configured local MCP process; no new hosted service or API key is needed.

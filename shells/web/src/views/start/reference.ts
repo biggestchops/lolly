@@ -3,6 +3,7 @@
 import { t, tRaw } from '../../i18n.ts';
 import type { DesignCensus } from '../../lib/design-system/census.ts';
 import { referenceLook, referenceReport, type ReferenceEvidence } from '../../lib/design-system/reference-look.ts';
+import { styleEvidenceHtml } from '../../lib/design-system/style-evidence-view.ts';
 import { saveBlob } from '../../pro/zip.ts';
 import { bindOp, type StartCtx } from './context.ts';
 
@@ -108,6 +109,11 @@ export function reviewReference(start: StartCtx, census: DesignCensus, evidence:
     : t('Colours and font names were read from declared styles. Layout and motion were not assessed.')));
   if (evidence.method === 'files' || evidence.method === 'paste') {
     details.append(node('p', 'ds-src-stage-note', t('Only the supplied HTML and CSS were read. Linked stylesheets, images and fonts were not fetched.')));
+  }
+  if (census.styles) {
+    const observations = node('div', '');
+    observations.innerHTML = styleEvidenceHtml(census.styles);
+    details.append(observations);
   }
   if (census.fonts.length) {
     details.append(node('p', 'ds-src-stage-note', t('Detected font names. Open Type to choose or install a font.')));

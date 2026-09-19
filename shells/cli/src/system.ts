@@ -14,6 +14,8 @@ import {
 } from '@lolly-tools/node-shell/design-systems';
 import type { NodeDesignSystem } from '@lolly-tools/node-shell/design-systems';
 import { resolveStateDir } from '@lolly-tools/node-shell/state-dir';
+import { brandContext, contextTokens } from '../../../engine/src/brand-context.ts';
+import { checkBrandDesign } from '../../../engine/src/brand-check.ts';
 import { emitResult } from './envelope.ts';
 import { writeOut } from './output.ts';
 import { usageError } from './exit-codes.ts';
@@ -183,7 +185,7 @@ export async function importSystemTokens(path: string): Promise<{ doc: Record<st
   let parsed: unknown;
   try { parsed = JSON.parse(Buffer.from(bytes).toString('utf8')); }
   catch { throw usageError('The import is neither a readable .lolly/archive, SVG, nor JSON token document.', 'BAD_SYSTEM_FILE'); }
-  const out = coerceTokensDoc(parsed);
+  const out = coerceTokensDoc(contextTokens(parsed));
   if (!out.doc) throw usageError(`This JSON has no readable token document${out.warnings[0] ? `: ${out.warnings[0]}` : '.'}`, 'NO_TOKENS');
   return { doc: out.doc, warnings: out.warnings, kind: out.source, bytes, resources: [] };
 }
@@ -197,6 +199,28 @@ export async function startCli(json = false): Promise<void> {
 
 export async function systemCli(positionals: string[], flags: Flags, json = false): Promise<void> {
   const action = positionals[0] ?? 'status';
+  if (action === 'context' || action === 'check') {
+    const { readActiveDesignSystemTokens } = await import('@lolly-tools/node-shell/design-systems');
+    if (flags.file === '1' || flags.output === '1') throw usageError('--file and --output need a path.', 'MISSING_FLAG_VALUE');
+    const doc = flags.file ? (await importSystemTokens(flags.file)).doc : await readActiveDesignSystemTokens();
+    if (!doc) throw usageError('No terminal design system is active. Import a system or pass --file=design-context.json.', 'NO_TOKENS');
+    let result: unknown = brandContext(doc, { theme: flags.theme });
+    if (action === 'check') {
+      const path = positionals[1];
+      if (!path) throw usageError('usage: lolly system check <design-inputs.json> [--file=design-context.json]', 'MISSING_ARGUMENT');
+      const raw: unknown = JSON.parse(Buffer.from(await readSource(path)).toString('utf8'));
+      const record = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+      const values = record.values && typeof record.values === 'object' ? record.values as Record<string, unknown> : record;
+      const boxes = Array.isArray(raw) ? raw : values.boxes;
+      if (!Array.isArray(boxes)) throw usageError('Supply Design input values with a boxes array, or a compiled Design document.', 'NO_COMPOSITION');
+      result = checkBrandDesign(boxes, doc, { theme: flags.theme });
+    }
+    const text = JSON.stringify(result, null, 2) + '\n';
+    if (flags.output) { await writeFile(flags.output, text); await emit({ output: flags.output }, `Saved ${flags.output}.\n`, json); }
+    else if (json) await emitResult(result);
+    else await writeOut(text);
+    return;
+  }
   if (action === 'status') {
     const result = await statusResult();
     await emit(result, humanStatus(result), json);
@@ -276,5 +300,5 @@ export async function systemCli(positionals: string[], flags: Flags, json = fals
     await emit(result, `Now using ${record.label}.\n${humanStatus(result)}`, json);
     return;
   }
-  throw usageError(`Unknown system command “${action}”. Use status, list, init, import, add, export, or use.`, 'UNKNOWN_COMMAND');
+  throw usageError(`Unknown system command “${action}”. Use status, list, init, import, add, export, context, check, or use.`, 'UNKNOWN_COMMAND');
 }
