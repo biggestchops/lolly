@@ -121,7 +121,8 @@ export async function mountEditor(start: StartCtx): Promise<void> {
         // (the source picker's image tile runs the same call), so the room asks
         // for it rather than carrying a second copy - plan 182 section 5.3.
         scanImage: (file) => {
-          void start.images.scanImageFile(file, start.exporting.showNote);
+          start.sources.openImport('image');
+          void start.images.scanImageFile(file, start.sources.srcNote);
         },
       }
     );

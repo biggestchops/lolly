@@ -35,8 +35,9 @@
  * `brand-studio`, the one shot of the six that still shows the problem (74 % in
  * one layer of 3, opened up into 8), and now asserts that its fixture still
  * exhibits it, so the next re-capture that takes the problem away fails instead
- * of passing for the wrong reason. `bs-palette-pane` is a 22-colour pane (was
- * 25). No shot was dropped: the file still grades the same six files.
+ * of passing for the wrong reason. The 2026-09-19 `bs-palette-pane` recipe adds
+ * five primary shades through the current UI. No shot was dropped: the file
+ * still grades the same six files.
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -269,11 +270,9 @@ describe('geometric peers share a depth, so grids stay grids', () => {
   // fail in BOTH directions: a coherence regression drops the group, and an
   // over-eager merge collapses the stack into one rung.
   const GRIDS: Record<string, { rungs: number; biggest: number }> = {
-    // Re-measured 2026-09-03: the plan-182 re-capture is a 22-colour pane (was
-    // 25), and the two families each still take exactly one rung of their own -
-    // 22 wells at 66 × 66 on one, 22 chips at 48 × 48 on the next - out of 11
-    // rungs for the pane's 53 layers.
-    'bs-palette-pane': { rungs: 11, biggest: 22 },    // 22 swatch wells + 22 chips
+    // The 2026-09-19 recipe adds five shades. Their wells and repeated controls
+    // form three groups of five across 27 layers and 15 depth rungs.
+    'bs-palette-pane': { rungs: 15, biggest: 5 },
     'cc-verify-mobile': { rungs: 6, biggest: 9 },     // the 3×3 card block
     // Re-measured 2026-08-17: the baseline re-captured against design's timeline
     // (sequence-studio consolidated into design; the recipe now opens design with

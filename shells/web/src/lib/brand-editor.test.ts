@@ -61,6 +61,23 @@ test('colour workspace creates empty groups, moves directly, saves on Enter, pre
     editor = await mountBrandEditor(root, host); await settle();
     assert.equal(root.querySelectorAll('.be-pal-group--starter [data-be-tile]').length, 2);
     assert.equal($('.be-pal-count').textContent, '2 starter colours');
+    const order = (): string[] => [...root.querySelectorAll<HTMLElement>('[data-reorder-row]')].map(el => el.dataset.reorderRow!);
+    const originalOrder = order();
+    const reorder = (): void => {
+      const handle = $('[data-reorder-handle]');
+      for (const key of [' ', 'ArrowRight', ' ']) handle.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true }));
+    };
+    reorder(); await settle();
+    assert.deepEqual(order(), [...originalOrder].reverse());
+    assert.equal(document.activeElement?.closest<HTMLElement>('[data-reorder-row]')?.dataset.reorderRow, originalOrder[0]);
+    assert.equal(createTokenSet(installed).resolve('color.semantic.primary'), '#142823');
+    click('[data-be-undo]'); await settle();
+    assert.deepEqual(order(), originalOrder);
+    reorder(); await settle();
+    editor.teardown(); root.replaceChildren();
+    editor = await mountBrandEditor(root, host); await settle();
+    assert.deepEqual(order(), [...originalOrder].reverse(), 'reordering survives a fresh editor');
+
     assert.doesNotMatch($('[data-be-previews]').innerHTML, /Arial|Helvetica/);
     assert.ok($('[data-be-replace-palette]').closest('details:not([open])'), 'whole-palette rebuilding is an explicit advanced action');
     const beforeDraft = structuredClone(installed);

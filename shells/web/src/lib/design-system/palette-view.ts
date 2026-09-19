@@ -3,11 +3,14 @@ import { contrastRatio } from '@lolly/engine';
 import { escape as esc } from '../../utils.ts';
 import { t, tRaw } from '../../i18n.ts';
 import { setSwatchGroup, type BrandSwatch } from '../brand-doc.ts';
+import { icon } from '../icons.ts';
+import { orderPalette } from './palette-order.ts';
 import { swatchTile } from '../swatches.ts';
 import { colorIdentity } from './ownership.ts';
 import { groupName, paletteGroups, addPaletteGroup, changePaletteGroup } from './palette-groups.ts';
 
 export interface PaletteViewOptions {
+  order?: string[];
   roles: ReadonlyMap<string, string>;
   groups: string[];
   hidden: number;
@@ -16,9 +19,10 @@ export interface PaletteViewOptions {
 
 /** Shared tile stays the edit target; the sibling checkbox makes selection discoverable. */
 export function paletteCard(s: BrandSwatch, idx: number, roleGlyph?: string): string {
-  return `<div class="be-pal-card">
+  return `<div class="be-pal-card" data-reorder-row="${esc(s.key)}">
     ${swatchTile({ label: s.name, hex: s.hex, locked: !!s.lock }, { idx, roleGlyph, roleOnLight: contrastRatio(s.hex, '#000000') > contrastRatio(s.hex, '#ffffff') })}
     <label class="be-pal-check"><input type="checkbox" data-be-select="${idx}" aria-label="${esc(tRaw('Select {name}', { name: s.name }))}"><span aria-hidden="true"></span></label>
+    <button type="button" class="be-pal-reorder" data-reorder-handle aria-pressed="false" aria-label="${esc(tRaw('Reorder {name}', { name: s.name }))}" title="${esc(tRaw('Drag to reorder within this group. Or press Space, use arrow keys, then Space to drop.'))}">${icon('grip', { size: 16, filled: true })}</button>
     <span class="be-pal-name">${esc(s.name)}</span><code class="be-pal-hex">${esc(s.hex || 'transparent')}</code>
   </div>`;
 }
@@ -35,7 +39,7 @@ export function paletteHtml(swatches: BrandSwatch[], starter: Set<string>, opts:
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name)!.push(s);
   }
-  const cards = (items: BrandSwatch[]): string => items.map(s => paletteCard(s, swatches.indexOf(s), opts.roles.get(s.key))).join('');
+  const cards = (items: BrandSwatch[]): string => orderPalette(items, opts.order ?? []).map(s => paletteCard(s, swatches.indexOf(s), opts.roles.get(s.key))).join('');
   const action = (attr: string, name: string, label: string): string => `<button type="button" class="be-pal-group-all" ${attr}="${esc(name)}">${esc(label)}</button>`;
   const body = [...groups].map(([name, items]) => `<details class="be-pal-group" data-be-group="${esc(name)}" open>
     <summary class="be-pal-group-head"><span class="be-pal-group-label">${esc(name)}<span class="be-pal-group-n">${items.length}</span></span>

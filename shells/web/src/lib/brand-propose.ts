@@ -82,12 +82,15 @@ export function proposeBrandRoles(usage: PenpotUsage): BrandRoleProposal | null 
   if (!colors.length) return null;
 
   // Surface: the highest-weight fill colour (colors are total-sorted, so ties
-  // on fills resolve toward overall weight). A file with no fills at all falls
+  // on fills favour a neutral, then overall weight). A file with no fills at all falls
   // back to the heaviest colour overall.
   let surfaceRow = colors[0]!;
   let bestFills = -1;
   for (const c of colors) {
-    if (c.fills > bestFills) { surfaceRow = c; bestFills = c.fills; }
+    const neutralTie = c.fills === bestFills
+      && (hexToOklch(c.hex)?.c ?? 1) < ACCENT_CHROMA_MIN
+      && (hexToOklch(surfaceRow.hex)?.c ?? 1) >= ACCENT_CHROMA_MIN;
+    if (c.fills > bestFills || neutralTie) { surfaceRow = c; bestFills = c.fills; }
   }
   const surface = surfaceRow.hex;
   const surfaceL = hexToOklch(surface)?.l ?? 1;
@@ -446,10 +449,11 @@ export function withRoleAliases(
  * custom swatches (the review card's checkboxes); omitted = keep them all.
  */
 export function buildBrandDocFromUsage(
-  usage: PenpotUsage, label: string, opts?: { keepExtras?: string[] },
+  usage: PenpotUsage, label: string, opts?: { keepExtras?: string[]; primary?: string; includeFonts?: boolean },
 ): { doc: Record<string, unknown>; roles: BrandRoleProposal; fonts: BrandUsageFonts; gradientCount: number } {
   const roles = proposeBrandRoles(usage);
   if (!roles) throw new Error('No colours found in the file.');
+  if (opts?.primary) roles.primary = opts.primary;
 
   let doc = deriveBrandTokens({
     primary: roles.primary,
@@ -496,8 +500,10 @@ export function buildBrandDocFromUsage(
   // Font roles from the tally - writing them here means carryUserFontTokens
   // keeps THESE on install instead of re-applying the previously chosen faces.
   const fonts = proposeFonts(usage);
-  if (fonts.brand) doc = withFontRoleToken(doc, 'brand', fonts.brand);
-  if (fonts.mono) doc = withFontRoleToken(doc, 'mono', fonts.mono);
+  if (opts?.includeFonts !== false) {
+    if (fonts.brand) doc = withFontRoleToken(doc, 'brand', fonts.brand);
+    if (fonts.mono) doc = withFontRoleToken(doc, 'mono', fonts.mono);
+  }
 
   return { doc, roles, fonts, gradientCount };
 }

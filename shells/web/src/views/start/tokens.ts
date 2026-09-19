@@ -54,7 +54,8 @@ export async function routeDroppedFile(start: StartCtx, file: File): Promise<voi
 export async function install(start: StartCtx, 
   doc: Record<string, unknown>,
   label: string,
-  btn: HTMLButtonElement
+  btn: HTMLButtonElement,
+  opts?: { onError?: (message: string) => void; area?: 'overview'; requireCheckpoint?: boolean }
 ): Promise<void> {
   const { host, importResult, shell } = start;
   if (start.installing) return;
@@ -63,7 +64,10 @@ export async function install(start: StartCtx,
   const prevLabel = btn.textContent;
   btn.textContent = t('Installing…');
   try {
-    await start.brand.checkpointBeforeInstall();
+    if (opts?.requireCheckpoint) {
+      await start.studio.load();
+      if (start.studio.doc()) await start.studio.checkpoint(t('Before import'));
+    } else await start.brand.checkpointBeforeInstall();
     // A doc with no font group inherits the fonts already installed here, so an
     // import never silently undoes a chosen face.
     const withFonts = await carryUserFontTokens(host as unknown as UserFontsHost, doc);
@@ -81,14 +85,14 @@ export async function install(start: StartCtx,
     importResult.hidden = true;
     btn.disabled = false;
     btn.textContent = prevLabel;
-    start.rooms.selectRoom('color');
+    start.rooms.selectRoom(opts?.area ?? 'color');
     announce(tRaw('{label} installed - the studio now shows it', { label }));
     playSfx('saveProfile');
   } catch (err) {
     start.installing = false;
     btn.disabled = false;
     btn.textContent = prevLabel;
-    start.feedback.showImportError(
+    (opts?.onError ?? start.feedback.showImportError)(
       tRaw('Couldn’t install the brand: {error}', {
         error: String((err as { message?: unknown })?.message ?? err),
       })

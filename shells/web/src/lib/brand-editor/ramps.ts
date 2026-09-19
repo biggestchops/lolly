@@ -9,6 +9,7 @@
  */
 import { colorToHex, createTokenSet } from '@lolly/engine';
 import { paletteHtml } from '../design-system/palette-view.ts';
+import { paletteOrder } from '../design-system/palette-order.ts';
 import { paletteGroups } from '../design-system/palette-groups.ts';
 import { RAMP_IDS, getExcludedSwatches, getSwatchPrintOverride, primaryAnchorPath, walkSwatches } from '../brand-doc.ts';
 import type { BrandSwatch, PrintLock } from '../brand-doc.ts';
@@ -105,7 +106,7 @@ export const repaintPalette = (bedit: BrandEditorCtx): void => {
     );
     palMount.innerHTML = paletteHtml(bedit.swatches, bedit.starterSwatches, {
       roles: roleGlyphsNow(bedit), starterGroup: bedit.revealedStarterGroup,
-      groups: paletteGroups(bedit.doc), hidden: excluded.size,
+      groups: paletteGroups(bedit.doc), order: paletteOrder(bedit.doc), hidden: excluded.size,
     });
     if (closed.size) {
       palMount.querySelectorAll<HTMLDetailsElement>('.be-pal-group').forEach(d => {

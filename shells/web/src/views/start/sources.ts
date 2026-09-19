@@ -42,11 +42,14 @@ export function showStage(start: StartCtx, src: StartSource | null): void {
   const { siteReady } = start;
   const el = start.importModal?.el;
   if (!el) return;
+  start.reference.cancelReference();
+  el.querySelectorAll('[data-reference-review]').forEach(card => { card.remove(); });
+  el.querySelectorAll('.has-reference-review').forEach(stage => { stage.classList.remove('has-reference-review'); });
   // `url` is a stage only where a transport answered: on a plain browser the
   // section was never rendered, so a `?source=url` link falls through to the
   // list rather than opening an empty panel (plan 97 section 9's degrade).
   const stage =
-    src === 'file' || src === 'image' || src === 'pdf'
+    src === 'file' || src === 'image' || src === 'pdf' || src === 'page'
       ? src
       : src === 'url' && siteReady
         ? 'url'
@@ -69,7 +72,9 @@ export function showStage(start: StartCtx, src: StartSource | null): void {
           ? '.ds-src-pdffile'
           : stage === 'url'
             ? '.ds-src-urlfield'
-            : '[data-ds-source]';
+            : stage === 'page'
+              ? '[data-page-files]'
+              : '[data-ds-source]';
   el.querySelector<HTMLElement>(focusSel)?.focus();
 }
 /** A tile press. Three of the four open a stage; the font tile is an ACTION -
@@ -136,7 +141,25 @@ export function openImport(start: StartCtx, source: StartSource | null = null): 
           <span class="be-btn start-import-btn" aria-hidden="true">${t('Choose an image…')}</span>
           <span class="start-import-drophint">${t('or drag & drop it here')}</span>
         </label>
-        <p class="ds-src-stage-note">${t('The colours it is actually painted with land in the tray. Add the ones you want.')}</p>
+        <p class="ds-src-stage-note">${t('Start with a logo, screenshot or photo. Preview a suggested palette before applying it.')}</p>
+      </section>
+      <section class="ds-src-stage" data-ds-stage="page" hidden>
+        <button type="button" class="be-btn be-btn--sm ds-src-back" data-ds-src-back>${t('All sources')}</button>
+        <h3>${t('Start from a saved web page')}</h3>
+        <p class="ds-src-stage-note">${t('Choose one HTML page with its CSS files, or CSS on its own. Up to 20 files, 2 MB in total.')}</p>
+        <label class="field-label">${t('HTML and CSS files')}
+          <input class="field-input" type="file" data-page-files multiple accept=".html,.htm,.css,text/html,text/css">
+        </label>
+        <details class="ds-reference-details">
+          <summary>${t('Paste HTML or CSS instead')}</summary>
+          <label class="field-label" for="ds-page-format">${t('Source format')}</label>
+          <select class="field-input" data-page-format id="ds-page-format"><option value="html">HTML</option><option value="css">CSS</option></select>
+          <label class="field-label">${t('Page source')}
+            <textarea class="field-input" data-page-text rows="6" spellcheck="false" autocapitalize="off"></textarea>
+          </label>
+        </details>
+        <p class="ds-src-stage-note">${t('Read on this device. Linked files are not fetched and page scripts do not run.')}</p>
+        <button type="button" class="be-cta is-active" data-page-read>${t('Find colours and fonts')}</button>
       </section>
       <section class="ds-src-stage" data-ds-stage="pdf" hidden>
         <button type="button" class="be-btn be-btn--sm ds-src-back" data-ds-src-back>${t('All sources')}</button>
@@ -175,7 +198,7 @@ export function openImport(start: StartCtx, source: StartSource | null = null): 
                field also takes aria-invalid; see siteFieldError. -->
           <p class="ds-src-note is-error" id="ds-src-url-error" data-ds-site-error hidden></p>
         </div>
-        <p class="ds-src-stage-note">${t('One page, and only the one you name. No link on it is followed. Colours and type land in the tray; marks wait until you send them to Logos.')}</p>
+        <p class="ds-src-stage-note">${t('Preview a suggested palette before applying it. Font names and marks remain yours to review.')}</p>
         <!-- tabindex="-1": same status-message-with-controls as the PDF card. -->
         <div class="ds-src-site-result" data-ds-site-result tabindex="-1" hidden></div>
       </section>`
@@ -187,6 +210,7 @@ export function openImport(start: StartCtx, source: StartSource | null = null): 
       ariaLabel: escapeText(t('Add from…')),
       onClose: () => {
       const { importBtn, importHome, importPanel } = start;
+        start.reference.cancelReference();
         start.importModal = null;
         importHome.appendChild(importPanel); // back to the holder, still wired
         importBtn?.classList.remove('is-open');
@@ -194,6 +218,7 @@ export function openImport(start: StartCtx, source: StartSource | null = null): 
     }
   );
   const modalEl = start.importModal.el;
+  start.savedPage.wireSavedPage();
   modalEl.querySelector<HTMLElement>('[data-import-mount]')!.appendChild(importPanel);
   modalEl.addEventListener('click', (e) => {
     const el = e.target as HTMLElement;

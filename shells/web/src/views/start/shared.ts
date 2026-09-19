@@ -72,12 +72,13 @@ export const ROOM_ICONS: Record<StartArea, IconName> = {
 // "coming soon" line would be advertising something nobody can press, so the
 // gate is presence, not state: with no transport the tile does not exist, and
 // `?source=url` opens this plain list exactly as it did before M6.
-export type PickerSource = Extract<StartSource, 'file' | 'pdf' | 'image' | 'font' | 'url'>;
+export type PickerSource = Extract<StartSource, 'file' | 'pdf' | 'image' | 'font' | 'url' | 'page'>;
 
 export const SOURCE_TILES: ReadonlyArray<{ id: PickerSource; icon: IconName }> = [
+  { id: 'image', icon: 'image' },
   { id: 'file', icon: 'upload' },
   { id: 'pdf', icon: 'document' },
-  { id: 'image', icon: 'image' },
+  { id: 'page', icon: 'globe' },
   { id: 'font', icon: 'font' },
 ];
 

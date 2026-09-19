@@ -51,3 +51,19 @@ test('a shade rebuild retains empty groups and the placement of surviving colour
   assert.deepEqual(paletteGroups(next), ['Summer', 'Next season']);
   assert.equal(walkSwatches(next, 'light').find(s => s.key === 'color.custom.coral')?.group, 'Summer');
 });
+
+test('display ordering survives rebuilds and JSON without changing token resolution', async () => {
+  const { paletteOrder, writePaletteOrder, orderPalette } = await import('./palette-order.ts');
+  const source = fresh(), next = fresh();
+  addSwatch(source, 'custom', 'Paper', '#fafafa');
+  const items = walkSwatches(source, 'light').filter(s => s.kind !== 'semantic');
+  const keys = items.map(s => s.key).reverse();
+  writePaletteOrder(source, keys);
+  const saved = JSON.parse(JSON.stringify(source));
+  assert.deepEqual(orderPalette(items, paletteOrder(saved)).map(s => s.key), keys);
+  assert.deepEqual(items.map(s => s.key), [...keys].reverse(), 'sorting does not mutate the caller');
+  assert.equal(createTokenSet(saved).resolve('color.semantic.primary'), '#ef775d');
+  carryPaletteGroups(saved, next);
+  assert.deepEqual(paletteOrder(next), keys);
+  assert.deepEqual(paletteOrder({ $extensions: { [TOKEN_EXT]: { paletteOrder: [1, null, 'x', 'x'] } } }), ['x']);
+});

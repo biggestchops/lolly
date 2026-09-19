@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 /** Empty palette groups are document data, not a side effect of moving a colour. */
 import { TOKEN_EXT } from '@lolly/engine';
+import { paletteOrder, writePaletteOrder } from './palette-order.ts';
 import { isRec, setSwatchGroup, walkSwatches } from '../brand-doc.ts';
 
 export const groupName = (name: string): string => name.replace(/\s*·.*$/, '').trim().slice(0, 60);
@@ -45,6 +46,8 @@ export function changePaletteGroup(doc: unknown, from: string, to: string | null
 
 /** Carry display organisation through a shade rebuild, including empty groups. */
 export function carryPaletteGroups(from: unknown, to: unknown): void {
+  const order = paletteOrder(from);
+  if (order.length) writePaletteOrder(to, order);
   const names = paletteGroups(from);
   for (const name of names) addPaletteGroup(to, name);
   for (const theme of ['light', 'dark']) {

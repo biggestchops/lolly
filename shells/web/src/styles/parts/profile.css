@@ -919,14 +919,14 @@
 .ds-row-lock { display: inline-flex; color: var(--ui-color-text-muted); }
 .ds-row-source { min-height: 2.8em; font-size: var(--ui-type-caption); line-height: 1.4; color: var(--ui-color-text-muted); overflow-wrap: anywhere; }
 .ds-row-facts { display: flex; gap: var(--sp-3); font-size: var(--ui-type-caption); color: var(--ui-color-text-muted); }
-.ds-row-actions { display: grid; grid-template-columns: 1fr 1fr 32px; align-items: center; gap: var(--sp-3); padding: 0 var(--ui-space-panel) var(--ui-space-panel); margin-top: auto; position: relative; z-index: 2; pointer-events: none; }
+.ds-row-actions { display: grid; grid-template-columns: 1fr 1fr max(44px, var(--ui-size-target)); align-items: center; gap: var(--sp-3); padding: 0 var(--ui-space-panel) var(--ui-space-panel); margin-top: auto; position: relative; z-index: 2; pointer-events: none; }
 .ds-row-actions .ds-row-btn { display: inline-flex; justify-content: center; align-items: center; gap: var(--sp-3); min-height: var(--ui-size-target); padding: var(--sp-3); font-size: var(--ui-type-body); pointer-events: auto; }
 .ds-row-more { position: relative; pointer-events: auto; }
 .ds-row-more summary { display: grid; place-items: center; min-height: var(--ui-size-target); cursor: pointer; list-style: none; border-radius: var(--ui-radius-control); }
 .ds-row-more summary::-webkit-details-marker { display: none; }
 .ds-row-more summary:focus-visible { outline: 2px solid var(--ui-color-action-primary); }
 .ds-row-menu { position: absolute; z-index: 5; right: 0; bottom: calc(100% + var(--sp-3)); min-width: 210px; padding: var(--sp-3); background: var(--ui-color-surface-raised); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); box-shadow: var(--ui-effect-focus-halo); }
-.ds-row-menu button { display: flex; align-items: center; gap: var(--sp-4); width: 100%; padding: var(--sp-5); text-align: start; background: none; border: 0; font: inherit; }
+.ds-row-menu button { min-height: max(44px, var(--ui-size-target)); display: flex; align-items: center; gap: var(--sp-4); width: 100%; padding: var(--sp-5); text-align: start; background: none; border: 0; font: inherit; }
 .ds-row-menu button:hover { background: var(--ui-color-surface-muted); }
 .ds-row-menu .ds-row-remove { color: hsl(var(--destructive)); }
 .profile-view .ds-add { display: flex; flex-wrap: wrap; gap: var(--sp-4); padding-top: var(--sp-4); }

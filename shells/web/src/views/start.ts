@@ -68,6 +68,9 @@ import { candidatesOps } from './start/candidates.ts';
 import { imagesOps } from './start/images.ts';
 import { pdfOps } from './start/pdf.ts';
 import { siteOps } from './start/site.ts';
+import { referenceOps } from './start/reference.ts';
+import { savedPageOps } from './start/saved-page.ts';
+import '../styles/parts/start-reference.css';
 import { sourcesOps } from './start/sources.ts';
 import { tokensOps } from './start/tokens.ts';
 import { lifecycleOps } from './start/lifecycle.ts';
@@ -99,6 +102,9 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
   start.images = imagesOps(start);
   start.pdf = pdfOps(start);
   start.site = siteOps(start);
+  start.reference = referenceOps(start);
+  start.savedPage = savedPageOps(start);
+  start.referenceRevision = 0;
   start.sources = sourcesOps(start);
   start.tokens = tokensOps(start);
   start.lifecycle = lifecycleOps(start);
@@ -475,9 +481,10 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
   const SOURCE_NAME: Record<PickerSource, () => string> = {
     file: () => t('Lolly pack or design file'),
     pdf: () => t('PDF'),
-    image: () => t('Image'),
+    image: () => t('Logo or screenshot'),
     font: () => t('Font file'),
     url: () => t('Website'),
+    page: () => t('Saved web page'),
   }; start.SOURCE_NAME = SOURCE_NAME;
   const SOURCE_NOTE: Record<PickerSource, () => string> = {
     // User-first, not format-first (plans/137 B3): the exact formats are one tap
@@ -489,6 +496,7 @@ export async function mountStart(viewEl: HTMLElement, host: StartHost, params = 
     image: () =>
       t('A screenshot or a photo. Colours are read on this device and nothing is uploaded.'),
     font: () => t('TTF, OTF or WOFF. Opens Type, where the face installs.'),
+    page: () => t('HTML and CSS files, or pasted source. Nothing is uploaded.'),
     // The tile names its reader AND whose session does the reading, because the
     // two are different things to do to somebody's device and the person is
     // about to consent to one of them.

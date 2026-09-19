@@ -351,8 +351,8 @@ test('the empty state gives colour, file, face and logo equal doors, plus a way 
   assert.match(html, /data-ds-door="file"/);
   assert.equal(/data-ds-door="scratch"/.test(html), false, 'the old route-shaped door is gone');
   assert.match(html, /Pick a colour/);
-  assert.match(html, /Bring a file/);
-  assert.match(html, /\.lolly/);
+  assert.match(html, /Start from a reference/);
+  assert.match(html, /Preview before applying/);
   assert.match(html, /Choose a face/);
   assert.match(html, /Add a logo/);
   assert.match(html, /href="#\/"/);
@@ -485,7 +485,7 @@ test('a furnished system with nothing chosen still gets the doors', () => {
     },
   } as unknown as NonNullable<Parameters<typeof overviewHtml>[0]>);
   assert.match(html, /ds-ov--empty/);
-  assert.match(html, /Nothing here yet/);
+  assert.match(html, /Make it yours/);
 });
 
 test('one own thing of any kind brings the cards back', () => {

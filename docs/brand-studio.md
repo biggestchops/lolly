@@ -36,7 +36,7 @@ Pinned to the **foot of the rail** are the actions that belong to the whole desi
 
 Overview is the first room, and it has two faces.
 
-With **nothing chosen yet** it says **Nothing here yet** and offers three doors, in the order they cost: **Pick a colour** (one press), **Choose a face** (a search) and **Add a logo** (a file). Each opens its room with the control that makes the decision already up, rather than changing the room and leaving you to find it - `#/start?area=color&focus=pick` opens the Colours room with the picker on the chip, `#/start?area=type&focus=stage` opens the Type room's stage for the primary face, and `#/start?area=logos` opens the Logos room. None of the three writes anything. Under the doors sits one quiet line: **Bring a file** for design tokens, a Penpot project, a PDF or an SVG, and **explore the tools**, because leaving is a legitimate answer too.
+With **nothing chosen yet** it says **Make it yours**. **Start from a reference** opens the source picker for a logo, screenshot, web page or design file. **Pick a colour**, **Choose a face** and **Add a logo** open their existing controls directly. Each route starts with a choice; opening one writes nothing. **Explore the tools** is available immediately.
 
 Once anything is your own, the same room shows **what you have**, with the counts you made leading. Colours reads the number of colours the design system carries, and adds a muted `· N starter` only where there are inherited colours on show; the strip beside it puts the colours you chose first, then a hairline and the faded starter ones. Type reads by role (*Inter for headings*, with *Starter for the rest · SUSE, SUSE Mono* under it). Logos reads how many slots are filled, or **Not set**. Tokens carries the corner radius, tagged *starter* until you move it. Files says **Nothing yet** while the library is empty. Every block is a door into its room. There are counts here, never a progress bar and never a finish card - nothing in this studio is owed.
 
@@ -84,11 +84,11 @@ The same word carries through every room: a role standing on a starter colour re
 
 ### As the palette grows
 
-One colour brings the room's two panes back. The left is where you work, the right is the live palette; drag the divider between them to resize (Enter on it collapses the palette out of the way). At one colour the left pane holds three things - the compact add row, a panel offering **Generate a palette from *Vivid Violet*** with one line about what that would do, and **Roles** - while the right pane holds the colours the design system carries, their count, and a line about what arrives later.
+Your colours stay beside an **In context** preview on a wide screen and stack above it on smaller screens. The preview can show a poster, chart or interface card using your palette. Starter colours stay in their own foldable group, separate from colours you add.
 
-Generate a set of shades, or add six colours by hand, and the rest of the room opens: the four expert wings, the colour chart, gradients, the download pill and selection across the whole pane.
+Add individual colours or a set of shades, assign their roles, and open the advanced sections when you need them. The colour chart, gradients and download controls stay with the palette.
 
-![The Colours room after one colour - the two panes back, the generate offer, roles reading in three registers and the pane at one colour](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dpick&width=1440&height=840&dpi=192&waitMs=1800&drive=click%3A%5Bdata-be-editor-add%5D%3Bwait%3A900&format=svg&walker=1&dark=1&filename=bs-colour-first)
+![The Colours room after adding one colour, with its palette and a live composition preview](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dpick&width=1440&height=840&dpi=192&waitMs=1800&drive=click%3A%5Bdata-be-editor-add%5D%3Bwait%3A900&format=svg&walker=1&dark=1&filename=bs-colour-first)
 
 ### Roles - what tools read
 
@@ -106,46 +106,46 @@ Once the palette has shades, the strip grows to all seven slots a tool can read:
 
 ### The expert wings
 
-Four folded sections sit under the add row and the roles, once the palette has shades. Open the one you want; each is deep-linkable as `#/start?area=color&focus=<wing>`, which opens it whatever the room is otherwise showing:
+Four folded sections sit below the composition preview and colour roles. Open the one you want; each is deep-linkable as `#/start?area=color&focus=<wing>`, which opens it whatever the room is otherwise showing:
 
-- **Generate a starter palette** (`focus=generate`) - one colour into a full set of shades. Described below.
+- **Explore shades & harmonies** (`focus=generate`) - one colour into a full set of shades. Described below.
 - **Shade curves** (`focus=curves`) - reshape a ramp point by point. Lightness, chroma and hue each get their own curve, switched with L / C / H, and the shades below rebake live as you drag.
 - **Contrast** (`focus=contrast`) - **Contrast-lock** retones a ramp to hit APCA targets against a background you pick, each step keeping its own hue and chroma; **Rotate hue** turns the whole ramp bodily around the wheel, every shade keeping its lightness and chroma.
 - **Print** (`focus=print`) - what the primary becomes on press: its automatic screen value, or a pinned CMYK build or a named spot ink instead.
 
 ### One colour, a whole palette
 
-Inside **Generate a starter palette**, pick a **Primary colour** and Lolly works out a complete palette - light and dark surfaces, text, accents and full tint/shade ramps - using the same perceptual colour maths (OKLCH) the engine uses everywhere. Tune the derivation:
+Inside **Explore shades & harmonies**, choose a **Starting colour**. Lolly suggests matching shades using the same perceptual colour maths (OKLCH) the engine uses elsewhere. Tune the suggestions:
 
 - **Scheme** - Mono, Complement, Analogous or Triad - sets how the secondary colour relates to the primary.
 - **Shades** - a slider from 3 to 20 (default 5) controls how many steps each ramp generates.
 - **Fine-tune** (folded) - **UI intensity** (Muted / Deep), **Contrast** (Comfort / High) and **Text on brand** (Auto / Light / Dark).
 
-Nothing in this wing writes anything to the design system. It is a preview, live across the app so you can judge it, right up until you press **Replace palette** (below).
+Changing the starting colour and controls only changes the suggestions. Click a shade to add that colour, or **Add 5 shades** to add a group (the count follows your Shades setting). Existing colours and roles stay in place. Undo removes the addition.
 
-Below the primary you'll see live **Primary / Neutral / Secondary / Blend** ramps and Light and Dark specimen cards, each carrying its own contrast readout - the WCAG ratio with the APCA `Lc` figure beside it. **Click a step in the Neutral or Secondary ramp** to anchor that shade instead of the derived default.
+The **Primary**, **Neutral** and **Secondary** rows show the suggested shades. Open **Theme preview** to inspect light and dark examples and their contrast readings. Choose a Neutral or Secondary step there to adjust the proposed theme anchors. Rebuilding the full palette remains a separate, reviewed action below.
 
-![The four ramps stacked above light and dark specimen cards, each card carrying its own WCAG contrast ratio](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dgenerate%26seed%3D%2523e0452b&width=1440&height=1400&dpi=192&waitMs=1800&css=.start-head%7Bdisplay%3Anone%7D&cropSelector=.be-preview&format=svg&walker=1&dark=1&filename=bs-colour-ramps)
+![Three suggested shade groups, with individual add controls and a separate Theme preview](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dgenerate%26seed%3D%2523e0452b&width=1440&height=1400&dpi=192&waitMs=1800&css=.start-head%7Bdisplay%3Anone%7D&cropSelector=.be-preview&format=svg&walker=1&dark=1&filename=bs-colour-ramps)
 
 ### Build the palette (harmony generator)
 
-Still in the same wing, **Build the palette** generates matching accent colours from the primary. Pick a **Harmony** - **Complementary**, **Adjacent**, **Triad**, **Tetrad** or **Analogous** (which brings its own **Accents** count, 2 to 5, and a hue **Angle** from 10° to 45°) - and each candidate arrives with an auto-generated human-readable name and a **+ Add** button. Adding one puts that colour in the palette immediately, one press to one token. *"The palette, applied"* previews the whole set on real graphics.
+In **Find matching colours**, the harmony generator suggests matching accent colours from the primary. Pick a **Harmony** - **Complementary**, **Adjacent**, **Triad**, **Tetrad** or **Analogous** (which brings its own **Accents** count, 2 to 5, and a hue **Angle** from 10° to 45°) - and each candidate arrives with an auto-generated human-readable name and a **+ Add** button. Adding one puts that colour in the palette immediately, one press to one token. **In context** previews your added colours on sample compositions.
 
-![Generated accents, each with a swatch, an auto-generated name, its hex and an Add button](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dgenerate%26seed%3D%2523e0452b&width=1440&height=900&dpi=192&waitMs=1800&css=.start-head%2C.be-colour%7Bdisplay%3Anone%7D&cropSelector=.be-candidates&walker=1&format=svg&dark=1&filename=bs-harmony-candidates)
+![Generated accents, each with a swatch, an auto-generated name, its hex and an Add button](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dgenerate%26seed%3D%2523e0452b&width=1440&height=900&dpi=192&waitMs=1800&css=.start-head%2C.be-colour%7Bdisplay%3Anone%7D&drive=click%3A.be-generate-detail%3Anot%28%5Bdata-be-rebuild%5D%29%20%3E%20summary%3Bwait%3A500&cropSelector=.be-candidates&walker=1&format=svg&dark=1&filename=bs-harmony-candidates)
 
 ### Committing a generated palette
 
-**Replace palette** is the one control in this wing that writes anything, and it never writes straight away. Press it and a review card opens first, headed **"Replace the palette?"**, itemising exactly what is about to happen: how many roles stay as you assigned them, how many colours you added yourself are kept, how many shade curves get re-anchored, how many print locks re-pinned, how many hidden shades stay hidden, how many gradient stops keep their colour.
+Adding a suggested colour or shade group keeps the rest of your palette. For a complete replacement, open **Rebuild the whole palette…** and press **Preview full rebuild**. The review explains the changes: how many roles stay as you assigned them, how many colours you added yourself are kept, how many shade curves get re-anchored, how many print locks re-pinned, how many hidden shades stay hidden, how many gradient stops keep their colour.
 
-**Replace palette** on that card commits it; **Cancel** walks away and changes nothing. Once it has run, the card becomes **"Palette replaced."** with a single **Undo** already focused - and a checkpoint of the whole design system is taken *before* the swap, so "put it back the way it was" is a restore rather than a lost afternoon.
+**Apply rebuilt palette** on that card commits it; **Cancel** walks away and changes nothing. Once it has run, the card offers **Undo** with focus already on it - and a checkpoint of the whole design system is taken *before* the swap, so "put it back the way it was" is a restore rather than a lost afternoon.
 
 ### The palette, the chart and each swatch
 
-The right pane lists every colour the design system carries, grouped (Primary, Neutral, Secondary, Spectrum, Custom), each group foldable with its own **+ Add**. A role never makes a second tile: one token is one tile, and a tile a role points at wears a small corner mark instead (**P**, **S**, **Su**, **T**). Below the tiles, **Colour chart** folds open on two views of the same swatches: the **Wheel** (the OKLCH wheel - drag a dot to recolour it, click a dot to edit it or click empty space to drop a new swatch) and the **Gamut** chart, which shows where the displayable range actually ends. `#/start?area=color&focus=chart` opens the card directly, as `?wheel` always has.
+The palette lists the design system’s colours in foldable groups, each with its own **+ Add** control. Create and rename groups to organise your work. A role never makes a second tile: one token is one tile, and a tile a role points at wears a small corner mark instead (**P**, **S**, **Su**, **T**). Below the tiles, **Colour chart** folds open on two views of the same swatches: the **Wheel** (the OKLCH wheel - drag a dot to recolour it, click a dot to edit it or click empty space to drop a new swatch) and the **Gamut** chart, which shows where the displayable range actually ends. `#/start?area=color&focus=chart` opens the card directly, as `?wheel` always has.
 
-![The palette pane, every group foldable, with the download pill parked at its bottom edge](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dpick&width=1440&height=1000&dpi=192&waitMs=1800&drive=click%3A%5Bdata-be-editor-add%5D%3Bwait%3A500%3Bclick%3A%5Bdata-be-generate-cta-go%5D%3Bwait%3A900%3Bclick%3A%5Bdata-be-replace-palette%5D%3Bwait%3A800%3Bclick%3A%5Bdata-be-review-go%5D%3Bwait%3A1400&cropSelector=.be-split-side&walker=1&format=svg&dark=1&filename=bs-palette-pane)
+![The palette pane, every group foldable, with the download pill parked at its bottom edge](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dgenerate%26seed%3D%2523e0452b&width=1440&height=1000&dpi=192&waitMs=1800&drive=click%3A%5Bdata-be-add-ramp%3D%22primary%22%5D%3Bwait%3A1200&cropSelector=.be-split-side&walker=1&format=svg&dark=1&filename=bs-palette-pane)
 
-![The OKLCH wheel - angle is hue, distance out is chroma and the greys ride a lightness rail down the side](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dpick&width=1440&height=900&dpi=192&waitMs=2400&css=.start-head%2C.be-pal%2C.be-gradients%7Bdisplay%3Anone%7D&drive=click%3A%5Bdata-be-editor-add%5D%3Bwait%3A500%3Bclick%3A%5Bdata-be-generate-cta-go%5D%3Bwait%3A900%3Bclick%3A%5Bdata-be-replace-palette%5D%3Bwait%3A800%3Bclick%3A%5Bdata-be-review-go%5D%3Bwait%3A1400%3Bclick%3A%5Bdata-be-chart%5D%20summary%3Bwait%3A900&cropSelector=.be-pal-wheel&walker=1&format=svg&dark=1&filename=bs-colour-wheel)
+![The OKLCH wheel - angle is hue, distance out is chroma and the greys ride a lightness rail down the side](/t/url-shot?url=%2F%23%2Fstart%3Farea%3Dcolor%26focus%3Dgenerate%26seed%3D%2523e0452b&width=1440&height=900&dpi=192&waitMs=2400&css=.start-head%2C.be-pal%2C.be-gradients%7Bdisplay%3Anone%7D&drive=click%3A%5Bdata-be-add-ramp%3D%22primary%22%5D%3Bwait%3A1200%3Bclick%3A%5Bdata-be-chart%5D%20summary%3Bwait%3A900&cropSelector=.be-pal-wheel&walker=1&format=svg&dark=1&filename=bs-colour-wheel)
 
 Click any swatch to open its editor:
 
@@ -163,6 +163,8 @@ These print locks are what a press uses when you export a CMYK PDF or TIFF - see
 **Deleting a swatch** is safe: derived ramp steps and theme roles are *hidden* (the underlying token keeps resolving, so nothing downstream breaks), while colours you added yourself are removed outright.
 
 ### Working with many swatches
+
+Each swatch has a separate drag handle. Drag it to reorder colours within its group, or focus it, press Space, use the arrow keys, and press Space again to drop. Escape cancels. Order survives reopening the studio and can be undone. To move colours between groups, use the swatch editor’s **Group** control or select several colours and use **Move**. Token names and role references stay intact.
 
 Selection in the palette pane is a gesture, not a mode. There is no button to press first, and the bar arrives with the first selected tile and leaves with the last.
 
@@ -245,7 +247,8 @@ Drop the files your brand keeps - logos aside - here: **vector**, **image**, **a
 
 - **Design tokens or a design file** - DTCG or Tokens Studio JSON, a Penpot project, a **zip of token sets**, a Lolly design system pack or an SVG.
 - **PDF** - a deck or a guidelines file, read on this device for its colours, its marks and its embedded typefaces.
-- **Image** - a screenshot or a photo; its colours are read on this device and nothing is uploaded.
+- **Logo or screenshot** - an image becomes a suggested palette, read on this device. Nothing is uploaded. This reads colours, not the typeface or layout in the picture.
+- **Saved web page** - choose one HTML file and its CSS files, or paste HTML or CSS. Up to 20 files and 2 MB in total. Only supplied text is read; linked resources are not fetched and scripts do not run. This path also works without the extension or desktop app.
 - **Font file** - TTF, OTF or WOFF. Opens the Type room, where the face installs.
 - **Website** - one page, read for its colours and type. This tile only appears on a device that can actually read a page, because a disabled tile advertising something nobody can press is worse than no tile at all. Where it does appear it names its reader plainly: fetched by the app on this device, or read through the browser extension in a background tab, signed in as you. Naming a URL only *prefills* the field - the fetch button is the consent, so a link somebody sends you can never start a read.
 
@@ -261,9 +264,13 @@ What each design file gives you:
 - a **Tokens Studio** file (`.json`) - Tokens Studio;
 - a **plain SVG** (`.svg`) - Lolly scans its colours and lets you pick which to keep, the first becoming your primary.
 
-A source install takes a **checkpoint first**, so "revert to before the import" is one restore. And what a scan finds doesn't go straight in: candidates land in the **Tray**, where each one is added by its own press, through the room that owns that kind of material.
+A logo/screenshot, website or saved page opens **Your suggested design system**. See an example using the proposed colours, choose a different **Main colour** if needed, and name the system. **Use this design system** applies the generated light and dark palettes and returns to Overview. Existing fonts stay in place. This replaces the active system's colours and other token settings. A checkpoint must succeed first; **Restore brand settings** recovers the previous settings.
 
-`#/start?source=<kind>` opens the picker on a given source (`file`, `pdf`, `image`, `font`, `url`), and `?import` opens it on the plain list.
+**Source details and individual choices** shows what was read, detected font names and the preview's text/action contrast. It also offers **Choose individual items in the tray** and **Download design context**. The JSON report carries observations, proposed tokens and source information; saved HTML/CSS includes a SHA-256 of the supplied text. It contains no raw page text and is not a signed Content Credential. Font names are suggestions: Type remains the place to choose and install fonts.
+
+PDF and other design-file imports keep their existing review controls. Items kept in the **Tray** change nothing until added through the room that owns that kind of material.
+
+`#/start?source=<kind>` opens the picker on a given source (`file`, `pdf`, `image`, `font`, `url`, `page`), and `?import` opens it on the plain list.
 
 ## Move a brand between devices
 

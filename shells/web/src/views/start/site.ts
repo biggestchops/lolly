@@ -162,6 +162,9 @@ export async function scanSite(start: StartCtx,
 ): Promise<void> {
   const { host, siteTransport } = start;
   if (!siteTransport || btn?.getAttribute('aria-disabled') === 'true') return;
+  start.reference.cancelReference();
+  const revision = start.referenceRevision;
+  start.importModal?.el.querySelector('[data-ds-stage="url"] [data-reference-review]')?.remove();
   const raw = field?.value ?? '';
   start.siteMarks = [];
   start.siteNameOffer = '';
@@ -187,7 +190,7 @@ export async function scanSite(start: StartCtx,
   const stageGone = (): boolean =>
     !!startedIn?.el.querySelector<HTMLElement>('[data-ds-stage="url"]')?.hidden;
   const cancelled = (): boolean =>
-    { const { shell } = start; return (!!startedIn && start.importModal !== startedIn) || !shell.isConnected || stageGone(); };
+    { const { shell } = start; return start.referenceRevision !== revision || field?.value !== raw || (!!startedIn && start.importModal !== startedIn) || !shell.isConnected || stageGone(); };
 
   // Only for the progress line and the words said about it; `scanWebsite`
   // validates the address itself and is the authority on refusing one.
@@ -231,8 +234,8 @@ export async function scanSite(start: StartCtx,
   // findings are dropped whole and nothing is said. A rail note reporting
   // colours somebody just cancelled out of is the confusing half of a
   // half-cancel - and the marks and the name were being discarded anyway.
-  if (cancelled()) return;
   restore();
+  if (cancelled()) return;
 
   if (result.kind === 'refused') {
     siteFieldError(start, siteRefusalText(start, result, raw));
@@ -240,10 +243,6 @@ export async function scanSite(start: StartCtx,
   }
 
   start.siteHostName = result.siteHost || start.siteHostName;
-  // The tray first: it is where every source's findings wait, and its own
-  // count is the answer to "what did that do", so it replaces the progress.
-  await start.candidates.keepInTray(result.census, start.sources.srcNote);
-
   // A mark travels only if the Logos room would take it (an .ico favicon is
   // common and it would not), and only with bytes - a URL alone is nothing
   // this device holds.
@@ -277,6 +276,7 @@ export async function scanSite(start: StartCtx,
     warnings: result.warnings,
     usedScreenshot: result.usedScreenshot,
   });
+  start.reference.reviewReference(result.census, { method: 'website', label: start.siteHostName });
 }
 /**
  * The website stage's result card: what one page turned out to hold, and the
@@ -359,7 +359,7 @@ export function renderSiteResult(start: StartCtx, o: {
       }
       ${
         !o.marks && !familyList && !start.siteNameOffer && !warnings.length
-          ? `<p class="start-import-stats">${t('No marks, no Google Fonts and no name came out of this page. Whatever colours it declares are in the tray.')}</p>`
+          ? `<p class="start-import-stats">${t('Review the suggested colours below before applying them.')}</p>`
           : ''
       }`;
   el.hidden = false;

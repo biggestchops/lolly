@@ -69,3 +69,28 @@ test('vertical reverse logo is read from each brand on dark surfaces, with prima
   doc.color.primary.$value = '#ffffff'; missing = false; requested.length = 0;
   assert.equal((await previewOf(h as never, record as never)).logoUrl, '/catalog/brand/primary.svg');
 });
+
+test('switching blocks overlapping actions and reports failure with controls and focus restored', async () => {
+  const { mountDesignSystemsCard } = await import('./design-systems-card.ts');
+  const body = document.createElement('div'); document.body.append(body);
+  let calls = 0, rejectSwitch: (error: Error) => void = () => {};
+  const h = { ...host(), designSystems: { ...host().designSystems,
+    active: async () => records[0],
+    setActive: () => { calls++; return new Promise<void>((_, reject) => { rejectSwitch = reject; }); },
+  } };
+  const settle = async (): Promise<void> => { for (let i = 0; i < 10; i++) await new Promise(resolve => setTimeout(resolve, 0)); };
+  mountDesignSystemsCard(body, h as never);
+  await settle();
+  const hit = body.querySelector<HTMLButtonElement>('[data-ds-act="switch"]')!;
+  hit.focus(); hit.click(); await settle();
+  assert.equal(body.getAttribute('aria-busy'), 'true');
+  assert.match(body.textContent ?? '', /Loading design system/);
+  hit.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); await settle();
+  assert.equal(calls, 1);
+  rejectSwitch(new Error('Storage unavailable')); await settle();
+  assert.equal(body.hasAttribute('aria-busy'), false);
+  assert.equal(body.querySelectorAll('button:disabled').length, 0);
+  assert.equal(body.querySelector('[role="status"]')?.textContent, 'Storage unavailable');
+  assert.equal(document.activeElement, body.querySelector('[data-ds-act="switch"]'));
+  body.remove();
+});

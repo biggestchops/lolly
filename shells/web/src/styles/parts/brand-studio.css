@@ -290,7 +290,7 @@ button.be-ramp-cell.is-selected { box-shadow: inset 0 0 0 2px hsl(var(--ring)), 
   cursor: pointer; list-style: none;
 }
 .be-pal-group-head::-webkit-details-marker { display: none; }
-.be-pal-group-head::after { content: '▸'; font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); transition: rotate var(--dur-1); }
+.be-pal-group-head::after { display: grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; content: '▸'; font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); transition: rotate var(--dur-1); }
 .be-pal-group[open] > .be-pal-group-head::after { rotate: 90deg; }
 @media (prefers-reduced-motion: reduce) { .be-pal-group-head::after { transition: none; } }
 .be-pal-group-head .be-add { margin-inline-start: 0; }
@@ -331,12 +331,12 @@ button.be-ramp-cell.is-selected { box-shadow: inset 0 0 0 2px hsl(var(--ring)), 
 }
 /* Dense grid of pure swatches; corner rounding rides the brand radius token -
    a full-radius brand rounds these into circles, and that's the intent. */
-.be-pal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: .9rem .6rem; }
-.be-pal-card { position: relative; display: grid; align-content: start; gap: .2rem; min-width: 0; }
-.be-pal-card .be-swatch { aspect-ratio: 1.12; border-radius: var(--radius-sm); box-shadow: inset 0 0 0 1px hsl(var(--foreground) / .07); }
-.be-pal-name { font-size: var(--fs-xs); font-weight: 550; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: .25rem; }
-.be-pal-hex { font-family: var(--font-mono); font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); }
-.be-pal-check { position: absolute; inset-block-start: .15rem; inset-inline-end: .15rem; width: 30px; height: 30px; display: grid; place-items: center; cursor: pointer; }
+.be-pal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: .9rem .6rem; }
+.be-pal-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-content: start; gap: .2rem; min-width: 0; }
+.be-pal-card .be-swatch { grid-column: 1 / -1; aspect-ratio: 1.12; border-radius: var(--radius-sm); box-shadow: inset 0 0 0 1px hsl(var(--foreground) / .07); }
+.be-pal-name { grid-column: 1 / -1; grid-row: 2; font-size: var(--fs-xs); font-weight: 550; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: .25rem; }
+.be-pal-hex { align-self: center; grid-column: 1; grid-row: 3; font-family: var(--font-mono); font-size: var(--fs-xs); color: hsl(var(--muted-foreground)); }
+.be-pal-check { position: absolute; inset-block-start: .15rem; inset-inline-end: .15rem; width: max(44px, var(--ui-size-target)); height: max(44px, var(--ui-size-target)); display: grid; place-items: center; cursor: pointer; }
 .be-pal-check input { width: 18px; height: 18px; margin: 0; accent-color: hsl(var(--foreground)); cursor: pointer; }
 .be-pal-card:has(.is-multi) .be-pal-name { font-weight: 750; }
 .be-pal-empty { display: block; width: 100%; min-height: 88px; border: 0; border-radius: var(--radius-sm); background: hsl(var(--muted) / .55); color: hsl(var(--muted-foreground)); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
@@ -778,7 +778,7 @@ background-image:
 
 @media (max-width: 560px) {
   .be-panel { padding: .9rem; }
-  .be-pal-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+  .be-pal-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
   .be-editor { width: min(300px, calc(100vw - 3rem)); }
 }
 
@@ -2341,4 +2341,18 @@ html[data-a11y-motion="reduce"] .be-ramp-curve { transition: none; }
   font-size: calc(9px * var(--a11y-fs, 1)); line-height: 1; font-weight: 700;
   background: hsl(var(--primary)); color: hsl(var(--background));
   pointer-events: none;
+}
+
+/* The same drag gesture as input ordering, with a separate tablet-sized handle. */
+.be-pal-reorder { grid-column: 2; grid-row: 3; justify-self: end; min-width: max(44px, var(--ui-size-target)); min-height: max(44px, var(--ui-size-target)); padding: var(--sp-3); border: 0; border-radius: var(--ui-radius-control); background: var(--ui-color-surface-muted); color: var(--ui-color-text-muted); display: grid; place-items: center; cursor: grab; touch-action: none; }
+.be-pal-reorder:hover, .be-pal-reorder[aria-pressed="true"] { background: var(--ui-color-selection-surface); color: var(--ui-color-text-default); }
+.be-pal-reorder[aria-pressed="true"] { cursor: grabbing; }
+.be-pal-reorder:focus-visible, .be-pal-card.is-reorder-target { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 3px; border-radius: var(--ui-radius-control); }
+
+.be-pal-group-head { position: relative; min-height: 44px; }
+.be-pal-group-all, .be-pal .be-add--sm { min-width: 44px; min-height: 44px; }
+@media (max-width: 600px) {
+  .be-pal-group-head { flex-wrap: wrap; gap: var(--sp-3); }
+  .be-pal-group-label { flex: 1 0 100%; padding-inline-end: var(--sp-6); box-sizing: border-box; }
+  .be-pal-group-head::after { position: absolute; inset-inline-end: 0; top: var(--sp-3); }
 }

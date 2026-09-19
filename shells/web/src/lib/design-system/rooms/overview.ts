@@ -435,13 +435,13 @@ export function overviewHtml(model: OverviewModel | null): string {
     // be mixed freely. Each opens with its deciding control already up.
     return `
       <div class="ds-ov ds-ov--empty">
-        <h2 class="ds-ov-title">${t('Nothing here yet')}</h2>
-        <p class="ds-ov-sub">${t('Add one thing, and keep going whenever you like. Everything stays on this device.')}</p>
+        <h2 class="ds-ov-title">${t('Make it yours')}</h2>
+        <p class="ds-ov-sub">${t('Start with a reference. Preview a suggested look, adjust it, then start creating.')}</p>
         <div class="ds-ov-doors">
+          ${doorHtml('file', icon('upload'), t('Start from a reference'),
+            t('A logo, screenshot, web page or design file. Preview before applying.'))}
           ${doorHtml('color-pick', icon('palette'), t('Pick a colour'),
             t('It becomes the primary. Shades and roles can follow from it.'))}
-          ${doorHtml('file', icon('upload'), t('Bring a file'),
-            '.lolly · JSON · Penpot · PDF · SVG')}
           ${doorHtml('type-stage', icon('font'), t('Choose a face'),
             t('Google Fonts or a font file. Stays on this device.'))}
           ${doorHtml('logos', icon('shapes'), t('Add a logo'),

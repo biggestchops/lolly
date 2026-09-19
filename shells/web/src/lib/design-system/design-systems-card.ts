@@ -186,13 +186,21 @@ function announce(body: HTMLElement, text: string): void {
 
 /** Mount the card body and wire its actions. Re-renders itself after every action. */
 export function mountDesignSystemsCard(body: HTMLElement, host: CardHost): void {
-  void renderDesignSystemsCard(body, host).catch(() => { body.innerHTML = `<p class="profile-appearance-sub">${t('Design systems are unavailable on this device.')}</p>`; });
+  let busy = true;
+  body.setAttribute('aria-busy', 'true');
+  announce(body, t('Loading design systems…'));
+  void renderDesignSystemsCard(body, host).catch(() => { body.innerHTML = `<p class="profile-appearance-sub">${t('Design systems are unavailable on this device.')}</p>`; }).finally(() => { busy = false; body.removeAttribute('aria-busy'); });
 
   body.addEventListener('click', async (e) => {
     const btn = (e.target as Element).closest<HTMLElement>('[data-ds-act]');
-    if (!btn) return;
+    if (!btn || busy) return;
     const act = btn.dataset.dsAct;
     const id = btn.closest<HTMLElement>('[data-ds-row]')?.dataset.dsRow;
+    busy = true;
+    body.setAttribute('aria-busy', 'true');
+    body.querySelectorAll<HTMLButtonElement>('button').forEach(button => { button.disabled = true; });
+    const loading = act === 'switch' || act === 'studio' ? t('Loading design system…') : t('Working…');
+    announce(body, loading);
     try {
       if (act === 'download' && id) {
         const { openBrandDownload } = await import('./brand-download.ts');
@@ -278,10 +286,25 @@ export function mountDesignSystemsCard(body: HTMLElement, host: CardHost): void 
         location.hash = '#/start?rename=1';
         return;
       }
+    } catch (error) {
+      announce(body, error instanceof Error ? error.message : t('Could not complete this action. Please try again.'));
     } finally {
       const note = body.querySelector<HTMLElement>('.ds-note')?.textContent ?? '';
-      await renderDesignSystemsCard(body, host).catch(() => { /* the row list is cosmetic */ });
-      if (note) announce(body, note);
+      if (body.isConnected) {
+        const restoreFocus = body.contains(document.activeElement) || document.activeElement === document.body;
+        await renderDesignSystemsCard(body, host).catch(() => { /* retain the last usable rows */ });
+        body.querySelectorAll<HTMLButtonElement>('button').forEach(button => { button.disabled = false; });
+        if (note && note !== loading) announce(body, note);
+        else body.querySelector('.ds-note')?.remove();
+        if (restoreFocus) {
+          const actions = [...body.querySelectorAll<HTMLElement>('[data-ds-act]')];
+          const target = actions.find(el => el.dataset.dsAct === act && el.closest<HTMLElement>('[data-ds-row]')?.dataset.dsRow === id)
+            ?? actions.find(el => el.dataset.dsAct === 'new');
+          target?.focus();
+        }
+      }
+      busy = false;
+      body.removeAttribute('aria-busy');
     }
   });
 }

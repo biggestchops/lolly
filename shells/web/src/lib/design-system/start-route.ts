@@ -68,7 +68,7 @@ const FOCUSES = new Set<string>(START_FOCUS);
  *  RECOGNISED but have no tile yet - they resolve, and the picker opens on its
  *  plain source list, so a link written today keeps working when M5/M6 give them
  *  one. An unknown value is not a source and opens nothing. */
-export const START_SOURCES = ['file', 'image', 'font', 'pdf', 'url'] as const;
+export const START_SOURCES = ['file', 'image', 'font', 'pdf', 'url', 'page'] as const;
 
 export type StartSource = (typeof START_SOURCES)[number];
 

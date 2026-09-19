@@ -64,6 +64,7 @@ import '../styles/parts/brand-studio.css';
 import '../styles/parts/tool.css';
 import './oklch-slice.css';
 import type { Unzipped } from 'fflate';
+import { mountPaletteReorder } from './design-system/palette-reorder.ts';
 import { mountPaletteGroupControls } from './design-system/palette-view.ts';
 import type { WebTokensAPI } from '../bridge/tokens.ts';
 import { primaryAnchorPath } from './brand-doc.ts';
@@ -447,6 +448,13 @@ export async function mountBrandEditor(root: HTMLElement, host: EditorHost, opts
     before: bedit.state.pushUndo, commit: () => { bedit.ramps.repaintPalette(); bedit.state.persist(true); },
     close: bedit.swatchEditor.closeEditor, open: path => bedit.swatchEditor.openSwatchAt(path),
   }); bedit.renderEditorGroup = renderEditorGroup;
+  const paletteReorder = mountPaletteReorder(bedit.palMount, {
+    doc: () => bedit.doc, before: bedit.state.pushUndo,
+    commit: () => { bedit.ramps.repaintPalette(); bedit.state.persist(true); },
+  });
+  paletteHooks.push(paletteReorder.render);
+  bedit.cleanups.push(paletteReorder.destroy);
+
 
   bedit.swatchEditor.wireEditorAdd();
 
