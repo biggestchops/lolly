@@ -69,7 +69,7 @@ const DESIGN_EXT_RE = /\.(fig|penpot|idml|indd|svg|zip)$/i;
 // .bmp/.ico usually arrive with an image/* MIME (already accepted); the ext entries are
 // the blank-MIME backstop. .svgz is media/library only (svgz-as-design would need a
 // gunzip step in parseDesignFile).
-const MEDIA_EXT_RE = /\.(png|apng|jpe?g|webp|gif|avif|heic|heif|svg|svgz|bmp|ico|cur|mp4|webm|mov|mp3|wav|ogg|oga|opus|m4a|aac|flac|mid|midi|mod|xm|it|s3m|stm|mtm|json|lottie)$/i;
+const MEDIA_EXT_RE = /\.(png|apng|jpe?g|webp|gif|avif|jxl|heic|heif|svg|svgz|bmp|ico|cur|mp4|webm|mov|mp3|wav|ogg|oga|opus|m4a|aac|flac|mid|midi|mod|xm|it|s3m|stm|mtm|json|lottie)$/i;
 // Plain archives the shell can explode into member assets. EXCLUDES the design
 // bundles (.penpot/.fig/.idml/.indd) and the OOXML/OCF packages (.xlsx/.docx/.pptx/
 // .epub/.odt) - those are zips too but route to their own readers. This is a cheap
@@ -107,7 +107,7 @@ export const TOKENS_SNIFF_MAX_BYTES = 4 * 1024 * 1024;
 
 // ── one-shot handoff stashes (the verify-handoff pattern) ──────────────────────
 
-let pendingDesign: { file: File; scenes: boolean; rules?: boolean } | null = null;
+let pendingDesign: { file: File; scenes: boolean; rules?: boolean; animation?: boolean } | null = null;
 
 /** Is a design file waiting for Design to consume it? A PEEK, not a take: the tool
  *  view asks this before opening its launch-time template chooser, because a file
@@ -122,7 +122,7 @@ export function hasPendingDesignImport(): boolean {
  *  cleared on read. free-canvas checks this on mount. `scenes` carries the
  *  "as timed scenes vs replace the board" choice the drop door offered
  *  (plans/104 section 337): the "Make a video from its frames" door sets it true. */
-export function takePendingDesignImport(): { file: File; scenes: boolean; rules?: boolean } | null {
+export function takePendingDesignImport(): { file: File; scenes: boolean; rules?: boolean; animation?: boolean } | null {
   const d = pendingDesign;
   pendingDesign = null;
   return d;
@@ -232,6 +232,7 @@ export function takePendingToolSeed(toolId: string): Record<string, unknown> | n
 // ── sniffing ───────────────────────────────────────────────────────────────────
 
 export interface Sniff {
+  animation?: boolean;
   design: boolean;
   pdf: boolean;
   pptx: boolean;
@@ -380,11 +381,18 @@ async function sniffFile(file: File, deep: boolean, picker: PickerModule): Promi
       || text.startsWith('gimp xcf '))
     : /\.(psd|psb|xcf)$/i.test(file.name);
   const data = !lolly && (DATA_DROP_RE.test(file.name) || DATA_MIME_RE.test(file.type));
-  const design = !lolly && !pdf && !pptx && !docx && !layers && !data && (DESIGN_EXT_RE.test(file.name) || zipMagic || svgText);
+  let animation = /\.lottie$/i.test(file.name) || file.type === 'application/zip+dotlottie';
+  if (!animation && deep && zipMagic && file.size <= 64 * 1024 * 1024) {
+    animation = (await import('./zip-classify.ts')).classifyZipBytes(new Uint8Array(await file.arrayBuffer())) === 'lottie';
+  }
+  if (!animation && deep && /\.json$/i.test(file.name) && file.size <= 32 * 1024 * 1024) {
+    try { const raw = JSON.parse(await file.text()); animation = Array.isArray(raw.layers) && typeof raw.fr === 'number' && typeof raw.op === 'number'; } catch { /* another JSON document */ }
+  }
+  const design = !animation && !lolly && !pdf && !pptx && !docx && !layers && !data && (DESIGN_EXT_RE.test(file.name) || zipMagic || svgText);
   // A plain archive: a zip/tar by name, or PK-magic bytes that aren't a design
   // bundle. Design bundles and office/OCF packages (zips too) are excluded so the
   // "unpack" route never competes for a .penpot or shreds a .xlsx.
-  const archive = !lolly && !layers && !PURE_DESIGN_EXT_RE.test(file.name) && !CONTAINER_DOC_EXT_RE.test(file.name)
+  const archive = !animation && !lolly && !layers && !PURE_DESIGN_EXT_RE.test(file.name) && !CONTAINER_DOC_EXT_RE.test(file.name)
     && (ARCHIVE_EXT_RE.test(file.name) || (zipMagic && !DESIGN_EXT_RE.test(file.name)));
   // Design-system material (plan 97 section 8), sniffed LAST and only on the deep
   // (single-file) path - the route is a single-file journey, and every flag
@@ -411,7 +419,7 @@ async function sniffFile(file: File, deep: boolean, picker: PickerModule): Promi
     && (TEXT_DROP_RE.test(file.name) || /^text\//i.test(file.type));
   // A PSD/XCF often carries an image/* MIME - the layered routes own it, not
   // the plain media ones (the library route still exists, as a flatten).
-  return { design, pdf, pptx, docx, media: isMediaFile(file) && !layers, c2pa, layers, archive, designSystem, lolly, textDoc, tool, data };
+  return { animation, design, pdf, pptx, docx, media: (isMediaFile(file) || !!head && (await import('../../../../engine/src/jxl.ts')).isJxl(head)) && !layers, c2pa, layers, archive, designSystem, lolly, textDoc, tool, data };
 }
 
 const toolExists = (id: string): boolean =>
@@ -447,6 +455,7 @@ export interface ChooserContext {
 export function dropChooserChoices(s: Sniff, ctx: ChooserContext): DialogChoice[] {
   const { single, allIngestable, has } = ctx;
   const choices: DialogChoice[] = [];
+  if (single && s.animation && has('design')) choices.push({ id: 'animation', label: t('Edit animation in Sequence'), primary: true });
   const packZip = single && s.archive && s.designSystem;
   // A zipped tool folder: installing it is the only route that treats the zip as
   // what it is. Unpacking one scatters a template and a hooks file into the asset
@@ -1258,7 +1267,7 @@ export async function openDropChooser(
   // `.lolly` is a container family, so it owns a manifest-first preflight of its
   // own: session, design system and instance pack have different consequences.
   if (s.lolly) { await importLollyDrop(first, host); return; }
-  const allIngestable = files.every(
+  const allIngestable = single && s.media || files.every(
     (f) => isMediaFile(f) || picker.isPdfUpload(f) || picker.isPptxUpload(f)
       || TEXT_DROP_RE.test(f.name) || /^text\//i.test(f.type),
   );
@@ -1307,6 +1316,10 @@ export async function openDropChooser(
       }
       break;
     }
+    case 'animation':
+      pendingDesign = { file: first, scenes: false, animation: true };
+      routeToConsumer('#/tool/design', onToolRoute('design'));
+      break;
     case 'design-rules':
       pendingDesign = { file: first, scenes: false, rules: true };
       routeToConsumer('#/tool/design', onToolRoute('design'));

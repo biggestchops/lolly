@@ -42,6 +42,9 @@ import { applyTimeToElements, createAuthoredStore, OFF_CLASS } from '../../shell
 // P1 review's HIGH-1 was about. `applyTimeToElements` above is hand-fed the planner's
 // list, which cannot see that difference.
 import { createSequenceTime } from '../../shells/web/src/bridge/sequence-dom.ts';
+// plans/268 SI-00: preview-versus-export golden frames and the performance probes. A
+// module of its own, handed what it needs, so this file does not grow again.
+import { goldenApi, perfApi, type GoldenDeps } from './sequence-golden-harness.ts';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Any = any;
@@ -332,7 +335,7 @@ export interface BoxSpec {
 }
 
 export interface StageSpec {
-  w?: number; h?: number; seqMs?: number; bg?: string;
+  w?: number; h?: number; seqMs?: number; bg?: string; projectFps?: number; sequenceMarks?: string;
   boxes: BoxSpec[];
   /** Omit the [data-sequence] marker entirely (the "not a sequence" case). */
   untimed?: boolean;
@@ -365,6 +368,8 @@ function buildStage(spec: StageSpec): HTMLElement {
   if (!spec.untimed) {
     art.setAttribute('data-sequence', '');
     art.setAttribute('data-seq-ms', String(spec.seqMs ?? 2000));
+    if (spec.projectFps) art.dataset.seqFps = String(spec.projectFps);
+    if (spec.sequenceMarks) art.dataset.seqMarks = spec.sequenceMarks;
   }
   for (const b of spec.boxes) {
     const el = document.createElement('div');
@@ -1657,7 +1662,10 @@ async function alphaWebmProbe(): Promise<Any> {
   };
 }
 
+const goldenDeps: GoldenDeps = { exportSeq, buildStage, blob: (key) => blobs.get(key), put, readCode };
+
 (globalThis as Any).SEQ = {
+  golden: goldenApi(goldenDeps), perf: perfApi(goldenDeps),
   probe, makeClip, truncate, makeBed, makeRampBed, waveformPeaks, exportSeq, buildStage, filmstripCodes,
   decodeCodes, frameHashes, blobSha, frameDelta, frameSelfDelta, audioRms, hasAudioTrack,
   driveProvider, stalledProvider, elementRotationProbe, alphaWebmProbe, stillAt, cutsAt, fidelity, resetCounters, firstFramePixels,

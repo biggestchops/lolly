@@ -212,5 +212,13 @@
   "Install and restart": "Kur ve yeniden başlat",
   "The on-device model that hides an invisible credential in exported pixels. Pull it down now (~{size}) and the first durable export starts straight away, with no wait.": "Dışa aktarılan piksellerde görünmez bir kimlik bilgisini saklayan cihaz içi model. Şimdi indirin (~{size}); ilk dayanıklı kimlik bilgisi dışa aktarımı beklemeden hemen başlasın.",
   "The on-device model that hides the durable credential in exported pixels. Removing it frees the space; it downloads again with your consent when next used.": "Dışa aktarılan piksellerde dayanıklı kimlik bilgisini saklayan cihaz içi model. Kaldırmak alan açar; sonraki kullanımda onayınızla yeniden indirilir.",
-  "Removed the durable-credential model": "Dayanıklı kimlik bilgisi modeli kaldırıldı"
+  "Removed the durable-credential model": "Dayanıklı kimlik bilgisi modeli kaldırıldı",
+  "No emoji artwork is used in this document yet.": "Bu belgede henüz emoji görseli kullanılmıyor.",
+  "Emoji pack exceeds the 64 MiB limit.": "Emoji paketi 64 MiB sınırını aşıyor.",
+  "No emoji sets are available.": "Kullanılabilir emoji seti yok.",
+  "This emoji set is incomplete.": "Bu emoji seti eksik.",
+  "This emoji set is unavailable.": "Bu emoji seti kullanılamıyor.",
+  "The artwork exceeds the emoji import limit.": "Görseller emoji içe aktarma sınırını aşıyor.",
+  "That set could not be saved. Your emoji preference is unchanged.": "Set kaydedilemedi. Emoji tercihiniz değişmedi.",
+  "JPEG XL original kept. Choose HDR editing to retain its full precision; previews use SDR.": "JPEG XL orijinali korundu. Tam hassasiyeti korumak için HDR düzenlemeyi seçin; önizlemeler SDR kullanır."
 }

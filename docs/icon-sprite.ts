@@ -11,7 +11,8 @@ export function createIconSprite(icons: Record<string, string>) {
     if (!match || !/^[\w-]+$/.test(key) || /\bid\s*=/.test(svg)) continue;
     const attrs = match[1]!.replace(/\s+xmlns="[^"]*"/g, '');
     symbols.push(`<symbol id="${key}"${attrs}>${match[2]}</symbol>`);
-    references.set(key, `<svg${attrs}><use href="__SPRITE__#${key}"/></svg>`);
+    const referenceAttrs = attrs.replace(/\s+(?:fill|stroke|stroke-width|stroke-linecap|stroke-linejoin)="[^"]*"/g, '');
+    references.set(key, `<svg${referenceAttrs}><use href="__SPRITE__#${key}"/></svg>`);
   }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg">${symbols.join('')}</svg>`;
   const hash = createHash('sha256').update(svg).digest('hex').slice(0, 16);

@@ -30,6 +30,10 @@ import { licenceProfile, normaliseLicence } from '../../../../engine/src/rights-
 import { escape as escapeText } from '../utils.ts';
 import { t, tRaw } from '../i18n.ts';
 import './emoji-style-control.css';
+import { mountEmojiCredits } from './emoji-credits.ts';
+import { mountEmojiPackCreate } from './emoji-pack-create.ts';
+import { mountEmojiPackImport, mountEmojiPackExport } from './emoji-pack-import.ts';
+import { mountEmojiFallbacks } from './emoji-fallbacks.ts';
 
 /** The five characters the specimen row shows. Kept as escapes so this file carries no literal emoji. */
 export const EMOJI_SPECIMEN = '\u{1F600}\u{1F60D}\u{1F914}\u{1F60E}\u2764\uFE0F';
@@ -73,6 +77,7 @@ export type EmojiControlMode = 'document' | 'preference';
 export type EmojiControlValue = EmojiStyleV1 | EmojiPreferenceV1 | null;
 
 export interface EmojiStyleControlOpts {
+  credits?(): string;
   host: HostV1;
   mode: EmojiControlMode;
   value: EmojiControlValue;
@@ -89,6 +94,7 @@ export interface EmojiStyleControlOpts {
   /** The tighter density the design inspector column uses: an inline label beside
    *  a small select, rather than an eyebrow stacked over a full-size one. */
   compact?: boolean;
+  compactManagement?: boolean;
 }
 
 export interface EmojiStyleControl {
@@ -204,7 +210,8 @@ export function mountEmojiStyleControl(container: HTMLElement, opts: EmojiStyleC
     // mode and the strength come straight off the row the person clicked, which is
     // also what a document mode's parsed treatment would have echoed back.
     const wanted = opts.mode === 'document' ? emojifx : '';
-    const parsed = parseEmojiParams({ emoji: setKey, emojifx: wanted }, sets, palette);
+    const pinnedPalette = isStyle(value) && fxIdOf(value) === fxId && 'palette' in value.treatment ? value.treatment.palette : palette;
+    const parsed = parseEmojiParams({ emoji: setKey, emojifx: wanted }, sets, pinnedPalette);
     if (!parsed.pin) {
       value = null;
       opts.onChange(null);
@@ -213,12 +220,13 @@ export function mountEmojiStyleControl(container: HTMLElement, opts: EmojiStyleC
     }
     const treatment = parsed.treatment ?? { mode: 'original' as const, strengthBps: 0 as const };
     value = opts.mode === 'document'
-      ? { schemaVersion: 1, primary: parsed.pin, fallbacks: [], metricsPolicy: 'inline-em-v1', treatment }
+      ? { schemaVersion: 1, primary: parsed.pin, fallbacks: isStyle(value) ? value.fallbacks.filter(pin => pin.id !== parsed.pin!.id) : [], metricsPolicy: 'inline-em-v1', treatment }
       : { pin: parsed.pin, mode: choice.mode, strengthBps: choice.strengthBps };
     opts.onChange(value);
     render(focus);
   }
 
+  let managementOpen = false;
   function render(focus?: string): void {
     if (destroyed) return;
     const mine = ++gen;
@@ -226,7 +234,9 @@ export function mountEmojiStyleControl(container: HTMLElement, opts: EmojiStyleC
     const setKey = setKeyOf(value);
     const fxId = fxIdOf(value);
     const protect = protectOf(value);
+    const absent = setKey && !sets.some(info => `${info.pin.id}@${info.pin.pin.version}` === setKey);
     const options = [
+      ...(absent ? [`<option value="${escapeText(setKey)}" selected>${escapeText(setKey)} (${t('Unavailable')})</option>`] : []),
       `<option value=""${setKey ? '' : ' selected'}>${escapeText(t('Choose an emoji set'))}</option>`,
       ...sets.map(info => {
         const key = `${info.pin.id}@${info.pin.pin.version}`;
@@ -283,6 +293,37 @@ export function mountEmojiStyleControl(container: HTMLElement, opts: EmojiStyleC
       <p class="emoji-style-note">${t('Emoji are drawn from the set you choose, so every device shows the same artwork. The set\'s licence is recorded with exports that can carry it.')}</p>
       ` : `<p class="emoji-style-note">${t('Until you choose a set, emoji in your text are drawn as a plain placeholder rather than this machine\'s own emoji font.')}</p>`}
     `;
+    if (opts.mode === 'document' && isStyle(value)) {
+      mountEmojiFallbacks(el, value, sets, next => { value = next; opts.onChange(next); render(); });
+    }
+    if (opts.host.emoji) mountEmojiPackImport(el, opts.host.emoji, info => {
+      sets = [...sets.filter(set => JSON.stringify(set.pin) !== JSON.stringify(info.pin)), info];
+      emit(`${info.pin.id}@${info.pin.pin.version}`, fxIdOf(value), protectOf(value));
+    });
+    if (opts.host.emoji) mountEmojiPackCreate(el, opts.host.emoji, info => {
+      sets = [...sets, info]; emit(`${info.pin.id}@${info.pin.pin.version}`, fxIdOf(value), protectOf(value));
+    });
+    mountEmojiPackExport(el, opts.host, isStyle(value) ? value : null);
+    if (opts.credits) mountEmojiCredits(el,opts.host,opts.credits);
+    if (opts.compactManagement) {
+      const details = document.createElement('details');
+      details.open = managementOpen;
+      details.dataset.emojiManage = '';
+      details.addEventListener('toggle', () => { managementOpen = details.open; });
+      const summary = document.createElement('summary');
+      summary.textContent = t('Manage emoji sets');
+      details.append(summary);
+      const specimen = el.querySelector('[data-emoji-specimen]');
+      specimen?.remove();
+      while (el.firstChild) details.append(el.firstChild);
+      const label = document.createElement('p');
+      label.className = 'emoji-style-summary';
+      const selected = sets.find(info => `${info.pin.id}@${info.pin.pin.version}` === setKey);
+      label.textContent = `${selected ? selected.label : t('No emoji set')} · ${treatment?.mode === 'original' ? t('Original') : treatment?.label() ?? t('Original')}`;
+      el.append(label);
+      if (specimen) el.append(specimen);
+      el.append(details);
+    }
     restoreFocus(keyboard);
     if (opts.mode === 'document' && opts.specimen && isStyle(value)) {
       const target = el.querySelector('[data-emoji-specimen]');

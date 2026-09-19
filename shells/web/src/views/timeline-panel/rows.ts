@@ -11,7 +11,7 @@ import { t } from '../../i18n.ts';
 import { icon } from '../../lib/icons.ts';
 import { announce } from '../../a11y.ts';
 import { isTransitionKind } from '../../lib/transitions.ts';
-import { DEFAULT_CLIP_S, MIN_DUR, MIN_TRIM_BAR_PX, boxTiming, deriveDuration, fmtTime, indexOfId, isThroughEdit, isTimed, kfBoxTrack, kfLocalSec, kfTimelineSec, moveOverlay, packSeq, rippleOverlays, seqBoxes, setDuration } from '../timeline-math.ts';
+import { DEFAULT_CLIP_S, MIN_DUR, MIN_TRIM_BAR_PX, boxTiming, deriveDuration, fmtTime, indexOfId, isThroughEdit, isTimed, kfBoxTrack, kfLocalSec, kfTimelineSec, moveOverlay, packSeq, revealTimeSec, rippleOverlays, seqBoxes, setDuration } from '../timeline-math.ts';
 import type { Box } from '../timeline-math.ts';
 import { isCaptionGroup } from '../timeline-captions.ts';
 import { editedToOriginal, originalToEdited, removedSpansTimeline } from '../transcript-edit.ts';
@@ -130,7 +130,9 @@ export function selectAndReveal(tp: TpCtx, ids: string[], opts?: { reveal?: bool
   const { start, dur } = span(tp, rows[i]!, durationSec(tp));
   const at = toAuthoredMs(tp, clock.t()) / 1000;
   if (at >= start && at < start + dur) return;
-  seekAuthored(tp, start * 1000);
+  // To where the clip has ARRIVED, not to its first instant, where an entering clip is
+  // still transparent or off the frame and the canvas would show handles round nothing.
+  seekAuthored(tp, revealTimeSec(rows[i]!, cfg, durationSec(tp)) * 1000);
   announce(t('Moved the playhead to this clip'));
 }
 export function applyBarGeometry(tp: TpCtx, el: HTMLElement, start: number, dur: number): void {
@@ -464,6 +466,7 @@ export function restyle(tp: TpCtx, boxes: Box[], total = durationSec(tp), seqIds
     // query, and this loop runs per bar per restyle.
     const mediaKind = tp.helpers.mediaOf(id).kind;
     el.dataset.kind = mediaKind || (seqSet.has(id) ? 'clip' : 'overlay');
+    tp.lottie.rowButton(id, el, mediaKind);
     // Too narrow to carry two trim zones (see MIN_TRIM_BAR_PX): hide the grips and
     // say where the precise route is, rather than offering a target that would eat
     // the whole bar. Read off the width we just WROTE - asking the DOM for
@@ -516,11 +519,15 @@ export function restyle(tp: TpCtx, boxes: Box[], total = durationSec(tp), seqIds
       isThroughEdit(boxes, cfg, chip.dataset.a || '', bId, tp.clips.sameSource)
     );
   }
+  // The crossfade bands ride the same cuts (plans/268 SI-07). After the seams, because
+  // it also stamps each seam chip with the kind of junction it really is.
+  tp.crossfade.paint(boxes);
   inner.style.width = `${Math.max(tracks.clientWidth, timeToPx(total, tp.pxPerSec) + 24)}px`;
   // A rebuild mints fresh bars, so the keyboard's armed edge has to be re-painted or
   // it silently disarms visually while still being armed in state.
   tp.edit.paintFocusedEdge();
   updateRuler(tp, total);
+  tp.marks.sync();
   updateRovingTabindex(tp);
   tp.inspectorPane.renderInspector(boxes);
   // AFTER the row is built (it may have just been rebuilt from scratch, taking the

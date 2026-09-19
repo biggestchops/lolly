@@ -38,6 +38,7 @@ import { MATTE_MODEL_FILES, matteModelsFor } from '../src/ml/matte-models.ts';
 import { OCR_MODEL_FILES, ocrModelsFor } from '../src/ml/ocr-models.ts';
 import { REWORD_MODEL_FILES } from '../src/ml/reword-models.ts';
 import { aiDetectModel } from '../src/ml/ai-detect-models.ts';
+import { mulberry32 } from '../../../tests/fuzz/prng.ts';
 
 // One thread per session in this file: under a full-suite run, onnxruntime-node
 // 1.29 on macOS can abort at process exit (`recursive_mutex lock failed`) when a
@@ -385,7 +386,10 @@ const rewordStaged = modelFilesExist('reword', REWORD_MODEL_FILES.map((f) => `sm
 test('reword: the real SmolLM2 graph samples a watermarked rewrite that the engine gate judges', {
   skip: !rewordStaged && 'the reword model family is not on this machine',
   timeout: 60_000,
-}, async () => {
+}, async (t) => {
+  // Pin the sampler, not the model output: a one-sentence random draw can lack
+  // enough green tokens even when the watermark processor is working.
+  t.mock.method(Math, 'random', mulberry32(0x5eed).next);
   const api = createNodeRewordAPI();
   assert.ok(api, 'transformers.js resolves');
   const sentence = 'It is important to note that our solution leverages cutting-edge technology in order to deliver outstanding results for customers.';

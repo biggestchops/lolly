@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:5f329bf3-960b-46aa-8067-60ba94ce28ab",
+  "serialNumber": "urn:uuid:2c18a02d-703c-4f37-8a61-eb8198bbfd9c",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-19T00:40:07.453Z",
+    "timestamp": "2026-09-19T22:38:16.650Z",
     "tools": [
       {
         "vendor": "lolly",
@@ -21301,6 +21301,33 @@
         {
           "alg": "SHA-512",
           "content": "cf3351f9275048327373c8e869e3fc410a0242bf0db98c76748232b65d507811191c9f6e5ba85e6ecad881bcfc849c1441aa374d608cb667d5f0dbb5b7038b03"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40lottiefiles/dotlottie-web@0.80.0",
+      "name": "@lottiefiles/dotlottie-web",
+      "version": "0.80.0",
+      "purl": "pkg:npm/%40lottiefiles/dotlottie-web@0.80.0",
+      "scope": "excluded",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "334d003e03897cfeb13d9de403364050d013c65b8588c534c03ddab29e874125c35fca8bcd20e1fc99aa6e8d07efe59ca9fa5090df16601bb768ece6db2fdbe2"
+        }
+      ],
+      "properties": [
+        {
+          "name": "cdx:npm:package:development",
+          "value": "true"
         }
       ]
     },

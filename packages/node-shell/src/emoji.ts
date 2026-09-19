@@ -2,7 +2,10 @@
 /** The Node host's pinned emoji packs: catalog bundle files on disk in, exact manifest and artwork bytes out. */
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
+import { gunzip } from 'node:zlib';
+import { promisify } from 'node:util';
 import type { EmojiAPI } from '@lolly-tools/core/host-v1';
+import { EMOJI_BUNDLE_MAX_BYTES } from '@lolly-tools/core/emoji-v1';
 import type { EmojiGlyphV1, EmojiPackBundleV1, EmojiPackPinV1, EmojiSetInfoV1 } from '@lolly-tools/core/emoji-v1';
 import { contentUrlFile, readAssetIndex } from './content-roots.ts';
 
@@ -10,7 +13,24 @@ import { contentUrlFile, readAssetIndex } from './content-roots.ts';
 export const EMOJI_PACK_TAG = 'emoji-pack';
 
 /** A bundle is a manifest plus every glyph's artwork, so it carries its own ceiling. */
-const BUNDLE_MAX_BYTES = 32 * 1024 * 1024;
+const BUNDLE_MAX_BYTES = EMOJI_BUNDLE_MAX_BYTES;
+const inflateBundle = promisify(gunzip);
+
+/** Server packages may hold the same bundle compressed, with both reads bounded. */
+async function bundleText(file: string): Promise<string | null> {
+  try {
+    if ((await stat(file)).size > BUNDLE_MAX_BYTES) return null;
+    return await readFile(file, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') return null;
+  }
+  try {
+    const compressed = `${file}.gz`;
+    if ((await stat(compressed)).size > BUNDLE_MAX_BYTES) return null;
+    const bytes = await inflateBundle(await readFile(compressed), { maxOutputLength: BUNDLE_MAX_BYTES });
+    return bytes.toString('utf8');
+  } catch { return null; }
+}
 
 /** What an asset index entry states about a pack before anything reads its bytes. */
 interface EmojiEntryMeta {
@@ -135,11 +155,14 @@ export async function createNodeEmojiAPI(options: NodeEmojiOptions = {}): Promis
     if (!url) return null;
     const file = options.catalogDir
       ? insideCatalog(options.catalogDir, url.replace(/^\/catalog\//, ''))
-      : contentUrlFile(url);
+      : contentUrlFile(url) ?? contentUrlFile(`${url}.gz`)?.slice(0, -3);
     if (!file) return null;
-    if ((await stat(file)).size > BUNDLE_MAX_BYTES) return null;
     let parsed: unknown;
-    try { parsed = JSON.parse(await readFile(file, 'utf8')); }
+    try {
+      const text = await bundleText(file);
+      if (text === null) return null;
+      parsed = JSON.parse(text);
+    }
     catch { return null; }
     const bundle = parsed as EmojiPackBundleV1;
     if (bundle?.schemaVersion !== 1 || bundle.kind !== 'emoji-pack-bundle') return null;

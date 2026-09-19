@@ -8,6 +8,7 @@
  * from initFreeCanvas() by scripts/split-closure.ts.
  */
 import { t } from '../../i18n.ts';
+import { announce } from '../../a11y.ts';
 import type { AssetRef } from '@lolly-tools/core/host-v1';
 import type { PickerHost } from '../picker.ts';
 import { num, seedBox } from '../free-canvas-math.ts';
@@ -97,12 +98,20 @@ export async function ensureTimeline(fc: FcCtx, open: boolean): Promise<void> {
         // hand-set slide transition was still fair game for the next "Place in order".
         cfg: { ...timeCfg, frameTransitionField: frameCfg?.transitionField || '' },
         getBoxes: fc.select.getBoxes,
+        ...(runtime.getModel().some(input => input.id === 'sequenceMarks') ? {
+          projectTime: {
+            rate: () => runtime.getModel().find(input => input.id === 'projectFps')?.value,
+            marks: () => String(runtime.getModel().find(input => input.id === 'sequenceMarks')?.value ?? ''),
+            writeMarks: (wire: string) => { onDirty?.('sequenceMarks'); void runtime.setInput('sequenceMarks', wire); },
+          },
+        } : {}),
         commit: fc.select.commit,
         onDirty,
         // The box sub-field carrying rendered text, so the panel's generated
         // caption boxes write cue text where the tool's template reads it.
         textField: cv.textField,
         assetField: cfg.imageField,
+        internalAnimationEdits: ['animationId', 'animationEdits'].every(id => fc.input.fields?.some(field => field.id === id)),
         ...(cfg.imageField && host.assets?.pick && addKinds.some(k => ['clip', 'video', 'image', 'audio', 'lottie'].includes(k.id))
           ? { addMedia: fc.timeline.openMedia } : {}),
         // The tool's OWN add-kinds, so the panel's plus offers exactly what the rail's
@@ -164,12 +173,43 @@ export async function openMedia(fc: FcCtx): Promise<void> {
       folderName: t('timeline'),
       guided: { hint: t('Choose clips in playback order. Audio starts at the playhead. Select Done when you are ready to edit.') },
       tools: [],
-      onAsset: async (ref) => addMediaRef(fc, ref, at),
+      onAsset: async (ref) => {
+        const selected = ref.type === 'lottie' ? await (await import('../lottie-import.ts')).chooseLottieAsset(ref) : ref;
+        return selected ? addMediaRef(fc, selected, at) : false;
+      },
       onSession: async () => false,
       onOpenTool: () => {},
       onQuickAddTool: async () => false,
     },
   });
+}
+
+/** Front-door animation import creates one source-sized sequence artboard. */
+export async function importAnimation(fc: FcCtx, file: File): Promise<void> {
+  const { storeUserUpload } = await import('../picker.ts');
+  const { chooseLottieAsset } = await import('../lottie-import.ts');
+  const source = await storeUserUpload(fc.host as PickerHost, file, { batch: true });
+  const ref = await chooseLottieAsset(source);
+  if (!ref || fc.disposed) return;
+  const frameId = fc.select.freshId([]), clipId = fc.select.freshId([{ id: frameId }]);
+  const width = ref.width!, height = ref.height!;
+  const fps = Number(ref.meta?.fps);
+  const boxes = [
+    { id: frameId, kind: 'frame', x: 0, y: 0, w: width, h: height, bg: 'transparent', name: String(ref.meta?.name ?? 'Animation') },
+    { id: clipId, kind: 'image', image: ref, animationId: String(ref.meta?.lottieAnimationId ?? ''), frame: frameId,
+      x: 0, y: 0, w: width, h: height, fit: 'contain', start: 0, dur: Number(ref.meta?.durationMs) / 1000, clipIn: 0, speed: 1 },
+  ];
+  const rate = String([24, 25, 30, 50, 60].includes(fps) ? fps : 30);
+  if (fc.runtime.applyPatch) {
+    fc.onDirty?.(fc.blockId);
+    await fc.runtime.applyPatch({ projectFps: rate, [fc.blockId]: boxes });
+  } else {
+    fc.runtime.setInput('projectFps', rate);
+    fc.select.commit(boxes);
+  }
+  await ensureTimeline(fc, true);
+  fc.timelinePanel?.selectAndReveal([clipId]);
+  announce(t('Imported 1 object.'));
 }
 
 /** One media item, one normal canvas commit. Keep asset refs and manifest seeds intact. */
@@ -181,7 +221,7 @@ export function addMediaRef(fc: FcCtx, ref: AssetRef, at: number): boolean {
   if (!kind || !['audio', 'video', 'raster', 'vector', 'lottie'].includes(ref.type)) return false;
   const ms = ref.meta?.durationMs;
   const duration = typeof ms === 'number' && Number.isFinite(ms) && ms > 0 ? ms / 1000 : null;
-  addRecordedClip(fc, kind, ref as Box[string], duration, audio ? at : undefined);
+  addRecordedClip(fc, kind, ref as Box[string], duration, audio || ref.type === 'lottie' ? at : undefined);
   return true;
 }
 
@@ -280,6 +320,10 @@ export function addRecordedClip(fc: FcCtx, kind: AddKind, asset: Box[string], du
     [cfg.hField]: rect.h,
     ...(cfg.imageField ? { [cfg.imageField]: asset } : {}),
     ...(cfg.fitField ? { [cfg.fitField]: 'cover' } : {}),
+    ...(asset && typeof asset === 'object' && 'type' in asset && asset.type === 'lottie' ? {
+      animationId: String((asset as AssetRef).meta?.lottieAnimationId ?? ''),
+      ...(cfg.fitField ? { [cfg.fitField]: 'contain' } : {}), clipIn: 0, speed: 1,
+    } : {}),
     [tc.laneField]: overlayAt === undefined ? 'seq' : '',
     [tc.startField]: overlayAt === undefined ? at : Math.max(0, overlayAt),
     ...(durSec != null ? { [tc.durField]: durSec } : {}),
@@ -461,6 +505,7 @@ export function timelineOps(fc: FcCtx) {
     addRecordedClip: bindOp(fc, addRecordedClip),
     openMedia: bindOp(fc, openMedia),
     addMediaRef: bindOp(fc, addMediaRef),
+    importAnimation: bindOp(fc, importAnimation),
     onTlTime: bindOp(fc, onTlTime),
     onionOff: bindOp(fc, onionOff),
     onionFrom: bindOp(fc, onionFrom),

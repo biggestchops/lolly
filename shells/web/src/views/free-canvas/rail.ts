@@ -46,7 +46,7 @@ export function syncStageReserves(fc: FcCtx): void {
   // The rail gets a band of its own ONLY while the timeline made it a column. With the
   // navigator open the buttons sit inside that column, so the navigator's width is the
   // whole left band and a rail allowance on top of it would double-count the same px.
-  const railBand = fc.railMode === 'timeline' ? fc.railDockW + 12 : 0;
+  const railBand = stageEl.dataset.designLayout !== 'compact' && fc.railMode === 'timeline' ? fc.railDockW + 12 : 0;
   const left = Math.max(0, Math.round(fc.navReserveLeft + railBand));
   // Equality-guarded, like reserveBottom: the stage has a ResizeObserver, and an
   // unconditional write plus an unconditional `canvas-resize` is a loop.
@@ -85,6 +85,7 @@ export function syncStageReserves(fc: FcCtx): void {
  */
 export function navRailSlot(fc: FcCtx): HTMLElement | null {
   const { stageEl } = fc;
+  if (stageEl.dataset.designLayout === 'compact') return null;
   const slot = stageEl.querySelector<HTMLElement>('[data-nav-rail-slot]');
   return slot && !slot.hidden ? slot : null;
 }
@@ -98,7 +99,7 @@ export function setColumnWidths(fc: FcCtx, left: number, right: number): void {
   const l = Number.isFinite(left) ? Math.max(0, left) : 0;
   const r = Number.isFinite(right) ? Math.max(0, right) : 0;
   const wantNav = !!navRailSlot(fc);
-  if (l === fc.navReserveLeft && r === fc.inspectorReserveRight && wantNav === fc.navWantsRail) return;
+  if (l === fc.navReserveLeft && r === fc.inspectorReserveRight && wantNav === fc.navWantsRail) { syncStageReserves(fc); return; }
   fc.navReserveLeft = l;
   fc.inspectorReserveRight = r;
   fc.navWantsRail = wantNav;

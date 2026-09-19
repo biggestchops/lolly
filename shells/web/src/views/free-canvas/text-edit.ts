@@ -14,6 +14,7 @@ import { t } from '../../i18n.ts';
 import { colorFieldHtml, wireColorField } from '../../components/color-field.ts';
 import { allBulleted, allNumbered, charsFromDom, clearFormatting, htmlFromChars, markdownFromChars, rangeHasFlag, rangeWeight, setColor, setFlag, setWeight, toggleBullets, toggleNumbers, wordRangeAt } from '../rich-text.ts';
 import { SVG, icon } from '../free-canvas-icons.ts';
+import { mountEditableEmojiDisplay } from '../../components/editable-emoji-display.ts';
 import { mountEmoji, revertEmojiIn } from '../emoji-mount.ts';
 import type { EmojiRuntime } from '../emoji-mount.ts';
 import { FC_CLIP_PREFIX, H_JUSTIFY, V_ALIGN, boolOf, featureSettings } from './shared.ts';
@@ -195,8 +196,8 @@ export function startTextEdit(fc: FcCtx, id: string, opts: { selectAll?: boolean
   // sit inside an <svg>. Put the characters back FIRST - before prevHtml is captured and
   // before the element becomes editable - so the caret, the selection, the char model and
   // the cancel restore all work on plain text. The artwork is drawn again when the edit
-  // ends. Typing an emoji mid-edit shows the machine's own glyph until then, which is the
-  // one moment composition is out of Lolly's hands.
+  // ends. A separate artwork mirror follows edits while the native element keeps the
+  // caret, selection and input composition.
   revertEmojiIn(el);
   // WYSIWYG: edit the RENDERED rich text in place (the element already holds
   // hooks.js richText output - <strong>/<em> runs, \n line breaks, "•  "
@@ -224,6 +225,8 @@ export function startTextEdit(fc: FcCtx, id: string, opts: { selectAll?: boolean
   el.setAttribute('role', 'textbox');
   el.setAttribute('aria-label', t('Edit text'));
   el.classList.add('fc-editing');
+  const emoji = emojiRuntime(fc);
+  if (emoji) fc.editing.disposeEmojiDisplay = mountEditableEmojiDisplay(el, node => emoji.applyEmojiToDom(node, { track: false, idScope: 'edit' }));
   el.focus();
   // Select-all when replacing a create-seed ("Text") so the first keystroke wins;
   // otherwise drop the caret at the end for a natural continue-typing feel.
@@ -334,6 +337,7 @@ export function finishEdit(fc: FcCtx): EditingState | null {
   const { stageEl } = fc;
   if (!fc.editing) return null;
   const done = fc.editing;
+  done.disposeEmojiDisplay?.();
   fc.editing = null;
   hideFmtBar(fc);
   done.el.removeEventListener('keydown', fc.textEdit.onEditKey);
@@ -780,7 +784,7 @@ export function showFmtBar(fc: FcCtx): void {
     // trigger's pointerdown; later swatch clicks find no selection and keep the stash).
     cw.addEventListener('pointerdown', () => stashRunColorRange(fc), true);
     typeGroup.appendChild(cw);
-    wireColorField(cw, { onChange: (_id, val) => applyRunColor(fc, fc.helpers.unwrapColor(val)) });
+    wireColorField(cw, { onChange: (_id, val, detail) => applyRunColor(fc, fc.helpers.unwrapColor(val, detail)) });
   }
   // Type section - the connected font·weight·colour pill plus the "reset
   // formatting" button (T-with-a-slash: strips bold/italic/weight/colour from the

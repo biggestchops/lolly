@@ -219,5 +219,13 @@
   "Install and restart": "التثبيت وإعادة التشغيل",
   "The on-device model that hides an invisible credential in exported pixels. Pull it down now (~{size}) and the first durable export starts straight away, with no wait.": "النموذج الموجود على الجهاز الذي يخفي بيانات اعتماد غير مرئية في وحدات البكسل المصدّرة. نزّله الآن (حوالي {size}) ليبدأ أول تصدير ببيانات اعتماد دائمة فورًا من دون انتظار.",
   "The on-device model that hides the durable credential in exported pixels. Removing it frees the space; it downloads again with your consent when next used.": "النموذج الموجود على الجهاز الذي يخفي بيانات الاعتماد الدائمة في وحدات البكسل المصدّرة. تؤدي إزالته إلى إخلاء مساحة؛ وسيُنزّل مجددًا بموافقتك عند استخدامه لاحقًا.",
-  "Removed the durable-credential model": "تمت إزالة نموذج بيانات الاعتماد الدائمة"
+  "Removed the durable-credential model": "تمت إزالة نموذج بيانات الاعتماد الدائمة",
+  "No emoji artwork is used in this document yet.": "لم تُستخدم رسومات إيموجي في هذا المستند بعد.",
+  "Emoji pack exceeds the 64 MiB limit.": "تتجاوز حزمة الإيموجي الحد البالغ 64 MiB.",
+  "No emoji sets are available.": "لا تتوفر مجموعات إيموجي.",
+  "This emoji set is incomplete.": "مجموعة الإيموجي هذه غير مكتملة.",
+  "This emoji set is unavailable.": "مجموعة الإيموجي هذه غير متاحة.",
+  "The artwork exceeds the emoji import limit.": "تتجاوز الرسومات حد استيراد الإيموجي.",
+  "That set could not be saved. Your emoji preference is unchanged.": "تعذر حفظ المجموعة. لم يتغير تفضيل الإيموجي لديك.",
+  "JPEG XL original kept. Choose HDR editing to retain its full precision; previews use SDR.": "تم الاحتفاظ بأصل JPEG XL. اختر التحرير بتقنية HDR للحفاظ على دقته الكاملة؛ تستخدم المعاينات SDR."
 }

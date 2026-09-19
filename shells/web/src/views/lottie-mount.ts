@@ -29,6 +29,9 @@
  */
 
 import type { AnimationItem, LottiePlayer } from 'lottie-web';
+import { readLottie, selectLottie, type LottiePackage } from '../../../../engine/src/dotlottie.ts';
+import { LOTTIE_LIMITS, type LottieAnimation } from '../../../../engine/src/lottie-model.ts';
+import { applyLottieEdits } from '../../../../engine/src/lottie-edit.ts';
 
 interface Entry {
   el: Element;
@@ -41,7 +44,9 @@ interface Entry {
 const registry = new Set<Entry>();
 
 // Parsed-JSON promise per URL - one fetch per asset across paints and players.
-const jsonCache = new Map<string, Promise<any>>();
+const jsonCache = new Map<string, Promise<LottiePackage>>();
+const cacheSizes = new Map<string, number>();
+function forgetPackage(url: string): void { jsonCache.delete(url); cacheSizes.delete(url); }
 
 let lottiePromise: Promise<LottiePlayer> | null = null; // memoized dynamic import (heavy lib, load on demand)
 
@@ -58,22 +63,51 @@ function getLottie(): Promise<LottiePlayer> {
 }
 
 /** Fetch + parse a Lottie JSON, cached by URL (shared with the picker path). */
-export async function fetchLottieJson(url: string): Promise<any> {
+export async function fetchLottiePackage(url: string): Promise<LottiePackage> {
   let p = jsonCache.get(url);
   if (!p) {
-    p = fetch(url).then((res) => {
+    p = fetch(url).then(async (res) => {
       if (!res.ok) throw new Error(`lottie fetch ${res.status}: ${url}`);
-      return res.json();
+      if (Number(res.headers.get('content-length')) > LOTTIE_LIMITS.inputBytes) throw new Error('Lottie source exceeds 64 MiB.');
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('Lottie source has no body.');
+      const chunks: Uint8Array[] = []; let size = 0;
+      try {
+        for (;;) {
+          const next = await reader.read(); if (next.done) break;
+          size += next.value.length;
+          if (size > LOTTIE_LIMITS.inputBytes) throw new Error('Lottie source exceeds 64 MiB.');
+          chunks.push(next.value);
+        }
+      } finally { await reader.cancel(); }
+      const bytes = new Uint8Array(size); let offset = 0;
+      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+      const pkg = readLottie(bytes);
+      if (jsonCache.get(url) === p) {
+        cacheSizes.set(url, pkg.expandedBytes);
+        let total = [...cacheSizes.values()].reduce((sum, size) => sum + size, 0);
+        for (const key of jsonCache.keys()) {
+          if (total <= LOTTIE_LIMITS.expandedBytes) break;
+          if (key === url) continue;
+          total -= cacheSizes.get(key) ?? 0; forgetPackage(key);
+        }
+      }
+      return pkg;
     });
     // Drop failures from the cache - a transient network error must not poison
     // the URL for every later mount. (The catch branch also keeps the rejection
     // "handled"; callers still see it on the returned promise.)
     p.catch(() => {
-      if (jsonCache.get(url) === p) jsonCache.delete(url);
+      if (jsonCache.get(url) === p) forgetPackage(url);
     });
+    if (jsonCache.size >= 16) forgetPackage(jsonCache.keys().next().value!);
     jsonCache.set(url, p);
   }
   return p;
+}
+
+export async function fetchLottieJson(url: string, animationId?: string): Promise<LottieAnimation> {
+  return selectLottie(await fetchLottiePackage(url), animationId).animation;
 }
 
 function entryFor(el: Element): Entry | null {
@@ -126,20 +160,23 @@ async function mountOne(el: Element, lottie: LottiePlayer, isCurrent: () => bool
   if (!src) return;
 
   const prior = entryFor(el);
-  if (prior && prior.src === src) return; // live player for the same asset - keep it
+  const animationId = el.getAttribute('data-lottie-animation') || undefined;
+  const edits = el.getAttribute('data-lottie-edits') || '';
+  const key = `${src}\n${animationId ?? ''}\n${edits}`;
+  if (prior && prior.src === key) return; // live player for the same asset - keep it
   if (prior) destroyEntry(prior); // same node, new asset - remount
 
   if (!isCurrent()) return;
-  const data = await fetchLottieJson(src);
+  const data = await applyLottieEdits(await fetchLottieJson(src, animationId), edits);
   // Re-guard after the await: the paint may have moved on, the node may be
   // orphaned, or a concurrent pass may have mounted this el while we fetched.
-  if (!isCurrent() || !el.isConnected || entryFor(el)) return;
+  if (!isCurrent() || !el.isConnected || entryFor(el) || (el.getAttribute('data-lottie-animation') || undefined) !== animationId || (el.getAttribute('data-lottie-edits') || '') !== edits) return;
 
   const anim = lottie.loadAnimation({
     container: el,
     renderer: 'svg',
-    loop: el.getAttribute('data-lottie-loop') !== 'false',
-    autoplay: el.getAttribute('data-lottie-autoplay') !== 'false',
+    loop: !['false', '0'].includes(el.getAttribute('data-lottie-loop') ?? ''),
+    autoplay: !el.closest('[data-sequence]') && !['false', '0'].includes(el.getAttribute('data-lottie-autoplay') ?? ''),
     animationData: structuredClone(data), // lottie-web mutates it - never hand it the cache
     rendererSettings: {
       preserveAspectRatio:
@@ -160,8 +197,11 @@ async function mountOne(el: Element, lottie: LottiePlayer, isCurrent: () => bool
   if (anim.isLoaded) markLive();
   else anim.addEventListener('DOMLoaded', markLive);
 
-  registry.add({ el, anim, src });
+  registry.add({ el, anim, src: key });
   await whenLoaded(anim);
+  if (!isCurrent() || !el.isConnected) { const entry = entryFor(el); if (entry) destroyEntry(entry); return; }
+  if (!anim.isLoaded) { const entry = entryFor(el); if (entry) destroyEntry(entry); throw new Error("The animation could not finish loading."); }
+  el.dispatchEvent(new CustomEvent("lolly:lottie-ready", { bubbles: true }));
 }
 
 /**

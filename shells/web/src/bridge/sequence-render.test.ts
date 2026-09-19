@@ -271,7 +271,7 @@ test('contract: every PLANNED layer is photographed clean, and the stage backgro
     'and that is what it does - the INLINE declaration only, which is the one the planner read');
   assert.ok(!/el\.style\.filter = 'none'/.test(src),
     'never `filter: none`, which would out-specify (and lose) a stylesheet-authored filter');
-  assert.match(src, /const plateOpts: RasterOpts = \{\s*opaque: true,\s*neutralFilter: neutralOf\(L\.idx\),\s*neutralClipPath: clipNeutralOf\(L\.idx\),\s*pad: padOf\(L\.idx\),\s*\};/,
+  assert.match(src, /const plateOpts: RasterOpts = \{\s*opaque: true,\s*wideColor: deepEditing,\s*neutralFilter: neutralOf\(L\.idx\),\s*neutralClipPath: clipNeutralOf\(L\.idx\),\s*pad: padOf\(L\.idx\),\s*\};/,
     'one plate recipe, shared by every planned layer; all three of its numbers are per-layer (section 5.5)');
   // P1 obligation 5b: the plate must NOT carry the clip-path when the compositor owns
   // the fx, or the shadow casts from the clipped silhouette instead of the real one.
@@ -289,12 +289,12 @@ test('contract: every PLANNED layer is photographed clean, and the stage backgro
   // layer's plates are shot with the `<video>` hidden because the decoded frame is
   // composited between them, so a live re-shot that kept it would paint a stale poster
   // under the frame it is about to draw.
-  assert.match(src, /const hide = slideHide\.length \? \[\.\.\.entry\.hide, \.\.\.slideHide\] : entry\.hide;\s*const shot = await rasterBox\(entry\.box, scaleOf\(layerIdx\), hide, \{[\s\S]{0,420}opaque: true,\s*neutralFilter: neutralOf\(layerIdx\),\s*neutralClipPath: clipNeutralOf\(layerIdx\),\s*pad: padOf\(layerIdx\),/,
+  assert.match(src, /const hide = slideHide\.length \? \[\.\.\.entry\.hide, \.\.\.slideHide\] : entry\.hide;\s*const shot = await rasterBox\(entry\.box, scaleOf\(layerIdx\), hide, \{[\s\S]{0,420}wideColor, opaque: true,\s*neutralFilter: neutralOf\(layerIdx\),\s*neutralClipPath: clipNeutralOf\(layerIdx\),\s*pad: padOf\(layerIdx\),/,
     'the per-frame live plate matches the static one it replaces - the static hide list, plus a posed slide’s off-screen boxes (plans/184 R1)');
   // The `over` slot is the transparent half of that pair, framed identically.
   assert.match(src, /slot === 'over' \? \{ transparentBg: true \} : \{\}/,
     'a video layer\'s second live plate is the transparent one, as its static twin is');
-  assert.match(src, /makeLiveRaster\(\s*liveBoxes, plateScaleOf, padOf, neutralOf, clipNeutralOf, sizeAt, splitShotAt, stage\.totalMs, slideShotAt,\s*\)/,
+  assert.match(src, /makeLiveRaster\(\s*liveBoxes, plateScaleOf, padOf, neutralOf, clipNeutralOf, sizeAt, splitShotAt, stage\.totalMs, slideShotAt, deepEditing,\s*\)/,
     'and is handed the same per-layer pad, scale and ownership the static plates were shot at'
     + ' (plus the split-text window predicate, plans/175 WP-A, and the posed-slide predicate, plans/184 R1)');
   // section 5.4: a camera is a pose over time. `drawItem` already refuses to draw one; the

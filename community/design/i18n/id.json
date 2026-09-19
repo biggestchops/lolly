@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Kiri bawah",
   "inputs.boxes.fields.imgpos.options.center bottom": "Bawah",
   "inputs.boxes.fields.imgpos.options.right bottom": "Kanan bawah",
-  "description": "Kanvas terbuka untuk penataan bebas - teks, gambar, bentuk dan render langsung dari alat Lolly Anda yang lain, semuanya berpegang pada sistem desain Anda."
+  "description": "Kanvas terbuka untuk penataan bebas - teks, gambar, bentuk dan render langsung dari alat Lolly Anda yang lain, semuanya berpegang pada sistem desain Anda.",
+  "inputs.projectFps.label": "Laju bingkai proyek",
+  "inputs.sequenceMarks.label": "Penanda lini masa",
+  "inputs.boxes.fields.animationId.label": "Animasi dalam sumber",
+  "inputs.boxes.fields.animationEdits.label": "Edit internal animasi"
 }

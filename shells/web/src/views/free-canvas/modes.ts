@@ -384,7 +384,15 @@ export function onCut(fc: FcCtx, e: ClipboardEvent): void {
  * `copyRows` collected with it, keeping their frame-local position.
  */
 export function pasteObjects(fc: FcCtx, picked: any): void {
-  const { FRAME_DUP_GAP, cfg, frameCfg } = fc;
+  const { FRAME_DUP_GAP, cfg, frameCfg, timeCfg } = fc;
+  // A TIMED row is pasted in time, not nudged in space (plans/268 SI-11). Asked here with
+  // two field reads, so the timeline's arithmetic stays out of this module's eager graph.
+  const isTimedRow = (s: Box): boolean => {
+    if (!timeCfg) return false;
+    if (s[timeCfg.laneField] === 'seq') return true;
+    const st = s[timeCfg.startField];
+    return st !== '' && st != null && Number.isFinite(Number(st));
+  };
   if (!Array.isArray(picked) || !picked.length) return;
   const rows = (picked as unknown[]).filter((s): s is Box => !!s && typeof s === 'object');
   if (!rows.length) return;
@@ -434,13 +442,17 @@ export function pasteObjects(fc: FcCtx, picked: any): void {
     const r = boxRect(src, cfg);
     const owner = ff ? String(src[ff.frameField] ?? '') : '';
     const dx = owner ? pageShift.get(owner) : undefined;
+    // The +24 nudge exists so a copy does not hide its source. A timed copy is moved to
+    // another TIME, where it hides nothing, and a full-frame clip shifted 24px is a
+    // picture with a gap down two sides.
+    const nudge = isTimedRow(src) ? 0 : 24;
     const clone: Box =
       dx == null
         ? fc.document.clampToWorkArea({
             ...src,
             [cfg.idField]: id,
-            [cfg.xField]: Math.round(r.x + 24),
-            [cfg.yField]: Math.round(r.y + 24),
+            [cfg.xField]: Math.round(r.x + nudge),
+            [cfg.yField]: Math.round(r.y + nudge),
           })
         : {
             ...src,
@@ -456,8 +468,27 @@ export function pasteObjects(fc: FcCtx, picked: any): void {
   // With a whole page pasted the selection is that PAGE, not its contents - the same
   // answer Cmd+D gives, so the next gesture moves the slide.
   fc.selection = pageIds.size ? new Set(pageIds.values()) : nextSel;
-  fc.select.commit([...boxes, ...clones]);
-  fc.chromeSync.renderChrome();
+  const appended = [...boxes, ...clones];
+  if (!timeCfg || !clones.some(isTimedRow)) {
+    fc.select.commit(appended);
+    fc.chromeSync.renderChrome();
+    return;
+  }
+  // The clones still carry their sources' start. Left like that, a copied main-row clip
+  // sat at the SAME time as its original: two clips stacked on a row that must never
+  // overlap, one hidden under the other. `placePasted` puts the block after the clip
+  // under the playhead and repacks the row. With the timeline closed there is no
+  // playhead to aim at, so the copy goes in right after its own source.
+  const panel = fc.timelinePanel;
+  const firstStart = Math.min(...clones.filter(isTimedRow).map((c) => Number(c[timeCfg.startField]) || 0));
+  const at = panel?.isOpen() ? panel.time() : firstStart;
+  const ids = clones.map((c) => String(c[cfg.idField] ?? ''));
+  void import('../timeline-math.ts').then(({ placePasted }) => {
+    if (fc.disposed) return;
+    fc.select.commit(placePasted(appended, timeCfg, ids, at));
+    fc.chromeSync.renderChrome();
+    panel?.selectAndReveal([...fc.selection]);
+  });
 }
 // ── paste-to-create ──────────────────────────────────────────────────────────
 // Pasting (⌘/Ctrl+V, or a mobile long-press paste) while nothing is being edited

@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
+/** A lazy bundle includes source SVGs as well as its smaller manifest. */
+export const EMOJI_BUNDLE_MAX_BYTES = 64 * 1024 * 1024;
+
 /** Portable emoji pack and explicit artwork-selection records. No renderer or host defaults. */
 import type { AssetRef } from './host-v1/asset-ref.ts';
 

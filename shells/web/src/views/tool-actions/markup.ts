@@ -514,12 +514,13 @@ export function buildPrintAndRows(ta: ActionsCtx): void {
   const timingRow = hasAnimated
     ? `
         <div class="video-params" data-anim-params style="display:${ta.formatRules.isAnimatedFmt(initialFmt) ? 'flex' : 'none'}">
-          <span class="vp-field help-tip-host"><span>${escapeText(t('Start after'))}</span>
+          <span class="vp-field help-tip-host" data-seq-wait><span>${escapeText(t('Start after'))}</span>
             <input type="number" class="field-input field-input--sm" data-action="video-wait" value="${defaultWait}" min="0" max="30" step="0.5"
                    aria-label="${escapeText(t('Start recording after (seconds)'))}"><span>s</span>${timingTip!.button}${timingTip!.pop}</span>
-          <span class="vp-field"><span>${escapeText(t('Duration'))}</span>
+          <span class="vp-field" data-seq-duration><span>${escapeText(t('Duration'))}</span>
             <input type="number" class="field-input field-input--sm" data-action="video-duration" value="${defaultDuration}" min="1" max="${durationMax}" step="0.5"
                    aria-label="${escapeText(t('Recording duration (seconds)'))}"><span>s</span></span>
+          <span class="vp-field" data-seq-range hidden></span>
           <label class="gif-dither-toggle" data-gif-only
                  style="display:${initialFmt === 'gif' ? 'flex' : 'none'}">
             <input type="checkbox" class="field-check" data-action="gif-dither">

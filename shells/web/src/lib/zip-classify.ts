@@ -27,6 +27,7 @@ export type ZipKind = 'pptx' | 'xlsx' | 'docx' | 'epub' | 'odt' | 'lottie' | 'ar
 
 /** OCF `mimetype` values we recognise (the first, stored entry of an OCF package). */
 const OCF_MIMETYPE: Record<string, ZipKind> = {
+  'application/zip+dotlottie': 'lottie',
   'application/epub+zip': 'epub',
   'application/vnd.oasis.opendocument.text': 'odt',
 };
@@ -36,6 +37,7 @@ const CONTAINER_MIME: Record<string, Exclude<ZipKind, 'archive'>> = {
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/zip+dotlottie': 'lottie',
   'application/epub+zip': 'epub',
   'application/vnd.oasis.opendocument.text': 'odt',
 };
@@ -101,7 +103,7 @@ export function classifyZipEntries(entries: readonly ZipEntry[]): ZipKind | null
   }
 
   // dotLottie: a manifest.json beside an animations/ directory.
-  if (byName.has('manifest.json') && entries.some((e) => e.name.startsWith('animations/'))) {
+  if (byName.has('manifest.json') && entries.some((e) => /^(?:animations|a)\/.+\.json$/.test(e.name))) {
     return 'lottie';
   }
 

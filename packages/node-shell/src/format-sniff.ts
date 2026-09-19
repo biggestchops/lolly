@@ -22,9 +22,11 @@
  * never quietly become some other file.
  */
 
+import { isJxl } from '../../../engine/src/jxl.ts';
+
 /** A container identity this module can recognise from bytes alone. */
 export type SniffedFormat =
-  | 'png' | 'apng' | 'jpg' | 'gif' | 'webp' | 'avif' | 'heic' | 'tiff' | 'bmp' | 'ico'
+  | 'jxl' | 'png' | 'apng' | 'jpg' | 'gif' | 'webp' | 'avif' | 'heic' | 'tiff' | 'bmp' | 'ico'
   | 'pdf' | 'zip' | 'mp4' | 'webm' | 'exr' | 'hdr' | 'emf' | 'svg' | 'eps' | 'gzip';
 
 const ascii = (b: Uint8Array, at: number, s: string): boolean => {
@@ -79,6 +81,7 @@ function head(b: Uint8Array, n = 1024): string {
  */
 export function sniffFormat(bytes: Uint8Array): SniffedFormat | null {
   const b = bytes;
+  if (isJxl(b)) return 'jxl';
   if (b.length < 4) return null;
 
   if (bytesAt(b, 0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return isAnimatedPng(b) ? 'apng' : 'png';
@@ -124,6 +127,7 @@ export function sniffFormat(bytes: Uint8Array): SniffedFormat | null {
  * inherited key is not a format row.
  */
 const ACCEPTS: Record<string, readonly SniffedFormat[]> = Object.assign(Object.create(null) as Record<string, readonly SniffedFormat[]>, {
+  jxl: ['jxl'], 'jxl-lossless': ['jxl'],
   png: ['png', 'apng'],          // an APNG is a valid PNG; asking for png and getting one is fine
   apng: ['apng'],                // …but asking for APNG and getting a still is NOT
   jpg: ['jpg'],
@@ -166,7 +170,7 @@ export class FormatMismatchError extends Error {
 
 /** Human name for a sniffed identity, for the refusal sentence. */
 const LABEL: Record<SniffedFormat, string> = {
-  png: 'PNG', apng: 'animated PNG', jpg: 'JPEG', gif: 'GIF', webp: 'WebP', avif: 'AVIF',
+  jxl: 'JPEG XL', png: 'PNG', apng: 'animated PNG', jpg: 'JPEG', gif: 'GIF', webp: 'WebP', avif: 'AVIF',
   heic: 'HEIC', tiff: 'TIFF', bmp: 'BMP', ico: 'ICO', pdf: 'PDF', zip: 'ZIP', mp4: 'MP4',
   webm: 'WebM', exr: 'OpenEXR', hdr: 'Radiance HDR', emf: 'EMF', svg: 'SVG',
   eps: 'EPS', gzip: 'gzip',

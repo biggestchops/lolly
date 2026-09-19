@@ -212,5 +212,13 @@
   "Install and restart": "Zainstaluj i uruchom ponownie",
   "The on-device model that hides an invisible credential in exported pixels. Pull it down now (~{size}) and the first durable export starts straight away, with no wait.": "Model na urządzeniu, który ukrywa niewidoczne poświadczenie w eksportowanych pikselach. Pobierz go teraz (~{size}), a pierwszy eksport z trwałym poświadczeniem rozpocznie się od razu, bez czekania.",
   "The on-device model that hides the durable credential in exported pixels. Removing it frees the space; it downloads again with your consent when next used.": "Model na urządzeniu, który ukrywa trwałe poświadczenie w eksportowanych pikselach. Usunięcie go zwalnia miejsce; przy następnym użyciu zostanie pobrany ponownie za Twoją zgodą.",
-  "Removed the durable-credential model": "Usunięto model trwałego poświadczenia"
+  "Removed the durable-credential model": "Usunięto model trwałego poświadczenia",
+  "No emoji artwork is used in this document yet.": "W tym dokumencie nie użyto jeszcze grafiki emoji.",
+  "Emoji pack exceeds the 64 MiB limit.": "Pakiet emoji przekracza limit 64 MiB.",
+  "No emoji sets are available.": "Brak dostępnych zestawów emoji.",
+  "This emoji set is incomplete.": "Ten zestaw emoji jest niekompletny.",
+  "This emoji set is unavailable.": "Ten zestaw emoji jest niedostępny.",
+  "The artwork exceeds the emoji import limit.": "Grafika przekracza limit importu emoji.",
+  "That set could not be saved. Your emoji preference is unchanged.": "Nie udało się zapisać zestawu. Preferencja emoji nie została zmieniona.",
+  "JPEG XL original kept. Choose HDR editing to retain its full precision; previews use SDR.": "Zachowano oryginał JPEG XL. Wybierz edycję HDR, aby zachować pełną precyzję; podglądy używają SDR."
 }

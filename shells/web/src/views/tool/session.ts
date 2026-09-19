@@ -33,7 +33,7 @@ import { fmtBytes, openEmbedEditor } from '../tool-inputs.ts';
 import { isCmykFmt, isPrintFmt, marksToCsv } from '../tool-actions.ts';
 import { collectExportParams, isTextEditing, shareDialogOptions, showShareDialog, showUnsavedDialog, shrinkUrl, toolEmojiParams, wireUpCopyUrl } from './shared.ts';
 import { writeEmojiParams } from '../../lib/emoji-prefs.ts';
-import { emojiDocumentStyle, onEmojiDocumentChange, setEmojiDocumentStyle } from './emoji-doc.ts';
+import { emojiDocumentCredits, emojiDocumentStyle, onEmojiDocumentChange, setEmojiDocumentStyle } from './emoji-doc.ts';
 import type { EmojiControlMount, InspectorEmojiPort } from '../design-inspector.ts';
 
 /**
@@ -48,7 +48,7 @@ const lazyEmojiControl: EmojiControlMount = (container, opts) => {
   void import('../../components/emoji-style-control.ts')
     .then(({ mountEmojiStyleControl }) => {
       if (dropped) return;
-      inner = mountEmojiStyleControl(container, opts);
+      inner = mountEmojiStyleControl(container, { ...opts, credits: emojiDocumentCredits });
     })
     .catch((e: unknown) => console.error('[design] emoji control failed to load:', e));
   return {
@@ -70,6 +70,7 @@ export function markSessionDirty(tview: ToolViewCtx): void {
   tview.exportedSinceEdit = false; // a fresh edit re-arms the leave guard
   if (tview.userHasMadeChanges) return; // already dirty - keep the resting amber
   tview.userHasMadeChanges = true;
+  tview.canvasEl?.dispatchEvent(new Event('lolly-session-status'));
   if (tview.renderSaveBtn) {
     tview.renderSaveBtn.classList.remove('is-unsaved');
     void tview.renderSaveBtn.offsetWidth; // force reflow so the flash animation restarts
@@ -78,6 +79,7 @@ export function markSessionDirty(tview: ToolViewCtx): void {
 }
 export function markSessionSaved(tview: ToolViewCtx): void {
   tview.userHasMadeChanges = false;
+  tview.canvasEl?.dispatchEvent(new Event('lolly-session-status'));
   tview.renderSaveBtn?.classList.remove('is-unsaved');
 }
 export function syncUrl(tview: ToolViewCtx, dirtyId?: string): void {
@@ -288,7 +290,7 @@ export function syncUrl(tview: ToolViewCtx, dirtyId?: string): void {
     const on = actionsEl?.querySelector<HTMLInputElement>('[data-action="full-page"]')?.checked;
     if (fmt === 'html' && on) params.set('nostage', '');
   }
-  if (dirtyParams.has('emoji') || dirtyParams.has('emojifx')) {
+  if (dirtyParams.has('emoji') || dirtyParams.has('emojifx') || dirtyParams.has('emojistyle')) {
     // The chosen emoji set and its brand treatment (plans/252). Document state,
     // not an export setting: a refresh, a copied link and `lolly --emoji=` must
     // all draw the same artwork, so both params go in whenever a set is chosen
@@ -1486,10 +1488,12 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
           import('../design-navigator.ts'),
           import('../design-inspector.ts'),
           import('../design-inspector-float.ts'),
+          import('../design-panels.ts'),
         ])
-          .then(([{ mountDesignTopbar }, { initDesignNavigator }, { initDesignInspector }, { wireDesignInspectorFloat }]) => {
+          .then(([{ mountDesignTopbar }, { initDesignNavigator }, { initDesignInspector }, { wireDesignInspectorFloat }, { mountDesignPanels }]) => {
             if (!viewEl.isConnected) return;
             const design = fc.design;
+            let workspace: ReturnType<typeof mountDesignPanels> | null = null;
 
             // The navigator is the only writer of a stage side reserve, and it writes through
             // the overlay's arbiter - which also owns the docked rail's share of the left
@@ -1501,7 +1505,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             // well would take the same space twice.
             let navW = 0;
             const pushWidths = (): void => {
-              design.setColumnWidths(navW, 0);
+              if (workspace) workspace.sync(); else design.setColumnWidths(navW, 0);
             };
 
             // ── One right-hand panel (Andy, 2026-09-02: "a single left sidebar and a single
@@ -1527,6 +1531,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             // (a) The top bar. Every port is a live read off the overlay or this view; the
             // bar holds no state of its own beyond its own open menu.
             designTopbar = mountDesignTopbar({
+              unsaved: () => tview.userHasMadeChanges,
               stageEl,
               canvasEl,
               // The Home pill moved out of the view's corner and into the bar's left slot
@@ -1713,11 +1718,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             designNav = initDesignNavigator({
               stageEl,
               canvasEl,
-              skin: window.matchMedia?.(
-                '(pointer: coarse) and (max-width: 640px), (pointer: coarse) and (max-height: 430px)'
-              ).matches
-                ? 'strip'
-                : 'column',
+              skin: 'column',
               model: design.model,
               selection: design.selection,
               artboard: design.artboard,
@@ -1728,7 +1729,9 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
               narration: design.narrationActions,
               initiallyOpen: readColumnPref(NAV_KEY),
               onOpenChange: (open) => {
-                writeColumnPref(NAV_KEY, open);
+                if (!workspace?.adjusting) writeColumnPref(NAV_KEY, open);
+                if (open) workspace?.activate('navigator');
+                workspace?.sync();
                 designTopbar?.sync();
               },
               onWidthChange: (px) => {
@@ -1755,6 +1758,12 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             const emojiPort: InspectorEmojiPort | undefined = tview.host.emoji ? {
               host: tview.host,
               mount: lazyEmojiControl,
+              specimen: async () => {
+                const scratch = document.createElement('div');
+                scratch.textContent = '\u{1f600}\u{1f60d}\u{1f914}\u{1f60e}\u2764\ufe0f';
+                await runtime.applyEmojiToDom(scratch, { track: false, idScope: 'inspector-specimen' });
+                return scratch.innerHTML;
+              },
               // Live reads, both of them: the sidebar section registers the holder
               // AFTER this dock is built (it seeds last, once the link and the
               // session are settled), and a choice made in either surface has to be
@@ -1806,9 +1815,17 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
               head: designInspector.el.querySelector<HTMLElement>('.fc-insp-headbar')!,
               onOpenChange: (open, reason) => {
                 inspectorOpen = open;
-                if (reason === 'user') writeColumnPref(INSP_KEY, open);
+                if (reason === 'user' && !workspace?.adjusting) writeColumnPref(INSP_KEY, open);
+                if (open) workspace?.activate('inspector');
+                workspace?.sync();
                 designTopbar?.sync();
               },
+              onSheetHeight: height => workspace?.sheetHeight(height),
+            });
+            workspace = mountDesignPanels({
+              stage: stageEl, canvas: canvasEl, design, navigator: designNav,
+              inspector: designInspectorFloat,
+              more: anchor => design.openLollyMenu(anchor),
             });
             // The object bar's Text / More / Dims / Stroke buttons reveal a section, and that
             // can arrive while the column is out of the dock - so the handle the overlay gets
@@ -1834,6 +1851,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
 
             const prevChromeCleanup = viewEl._cleanup;
             viewEl._cleanup = () => {
+              workspace?.destroy();
               actionsEl?.removeEventListener('lolly:export-open', onExportOpen);
               actionsEl?.removeEventListener('lolly:export-close', onExportOpen);
               actionsEl?.removeEventListener('input', onFilenameInput);

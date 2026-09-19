@@ -1,0 +1,184 @@
+{
+  "family": "Noto Emoji",
+  "style": "Color",
+  "slug": "noto-color",
+  "packId": "community/emoji/noto/color",
+  "version": "2.051",
+  "unicodeVersion": "17.0",
+  "upstream": {
+    "repo": "https://github.com/googlefonts/noto-emoji",
+    "commit": "8998f5dd683424a73e2314a8c1f1e359c19e8742",
+    "svgDir": "svg"
+  },
+  "files": {
+    "total": 3731,
+    "mapped": 3691,
+    "oversizeSkipped": [],
+    "unparsable": [],
+    "unmapped": [
+      "emoji_u0023.svg",
+      "emoji_u002a.svg",
+      "emoji_u0030.svg",
+      "emoji_u0031.svg",
+      "emoji_u0032.svg",
+      "emoji_u0033.svg",
+      "emoji_u0034.svg",
+      "emoji_u0035.svg",
+      "emoji_u0036.svg",
+      "emoji_u0037.svg",
+      "emoji_u0038.svg",
+      "emoji_u0039.svg",
+      "emoji_u1f1e6.svg",
+      "emoji_u1f1e7.svg",
+      "emoji_u1f1e8.svg",
+      "emoji_u1f1e9.svg",
+      "emoji_u1f1ea.svg",
+      "emoji_u1f1eb.svg",
+      "emoji_u1f1ec.svg",
+      "emoji_u1f1ed.svg",
+      "emoji_u1f1ee.svg",
+      "emoji_u1f1ef.svg",
+      "emoji_u1f1f0.svg",
+      "emoji_u1f1f1.svg",
+      "emoji_u1f1f2.svg",
+      "emoji_u1f1f3.svg",
+      "emoji_u1f1f4.svg",
+      "emoji_u1f1f5.svg",
+      "emoji_u1f1f6.svg",
+      "emoji_u1f1f7.svg",
+      "emoji_u1f1f8.svg",
+      "emoji_u1f1f9.svg",
+      "emoji_u1f1fa.svg",
+      "emoji_u1f1fb.svg",
+      "emoji_u1f1fc.svg",
+      "emoji_u1f1fd.svg",
+      "emoji_u1f1fe.svg",
+      "emoji_u1f1ff.svg",
+      "emoji_u20e3.svg",
+      "emoji_ufe82b.svg"
+    ]
+  },
+  "licence": {
+    "license": "Apache-2.0",
+    "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0",
+    "notices": [
+      {
+        "name": "svg/LICENSE",
+        "bytes": 574,
+        "checksum": "sha256:611ceab36dae96644ca84e8ace6873821790192bf6f73b0d0624a21b24b4b332"
+      }
+    ]
+  },
+  "bytes": {
+    "source": 32128362,
+    "manifest": 4494194
+  },
+  "duplicates": [],
+  "viewBox": {
+    "default": {
+      "unitsPerEm": 128,
+      "advance": 128,
+      "baseline": 108.8
+    },
+    "variants": [
+      {
+        "viewBox": "0 0 128 128",
+        "count": 3691
+      }
+    ],
+    "perGlyphMetrics": 0
+  },
+  "metricsNote": "Baseline is provisional at 0.85 of the em box, the value the one-glyph fixtures carry. It is not measured from the artwork.",
+  "coverage": {
+    "repertoire": 3953,
+    "supported": 3691,
+    "missing": 262,
+    "viaAlias": 1180,
+    "custom": 0,
+    "unmapped": 40,
+    "skinTone": {
+      "supported": 2035,
+      "total": 2035
+    },
+    "regionalFlag": {
+      "supported": 0,
+      "total": 259
+    },
+    "tagFlag": {
+      "supported": 0,
+      "total": 3
+    },
+    "keycap": {
+      "supported": 12,
+      "total": 12
+    },
+    "zwj": {
+      "supported": 1614,
+      "total": 1614
+    }
+  },
+  "admission": {
+    "admitted": 3680,
+    "rejected": 11,
+    "reasons": [
+      {
+        "message": "Unsupported SVG attribute characters.",
+        "count": 11,
+        "examples": [
+          "emoji_u1f31f.svg",
+          "emoji_u1f3ad.svg",
+          "emoji_u1f441_200d_1f5e8.svg",
+          "emoji_u1f48e.svg",
+          "emoji_u1f4a4.svg"
+        ]
+      }
+    ]
+  },
+  "ink": {
+    "renderPx": 64,
+    "alphaFloor": 8,
+    "rendered": 3678,
+    "empty": 0,
+    "blank": [],
+    "renderFailed": 0,
+    "widthEm": {
+      "p10": 0.6563,
+      "median": 0.9219,
+      "p90": 0.9688
+    },
+    "heightEm": {
+      "p10": 0.8125,
+      "median": 0.9375,
+      "p90": 0.9531
+    },
+    "centreX": {
+      "p10": 0.4922,
+      "median": 0.5,
+      "p90": 0.5078
+    },
+    "centreY": {
+      "p10": 0.4922,
+      "median": 0.5,
+      "p90": 0.5078
+    }
+  },
+  "fidelity": {
+    "renderPx": 64,
+    "equal": 3678,
+    "different": 0,
+    "differing": [],
+    "renderFailed": 0
+  },
+  "raster": {
+    "isolated": true,
+    "crashes": 2,
+    "crashed": [
+      "emoji_u1f3f3_200d_1f308.svg",
+      "emoji_u1f4e6.svg"
+    ]
+  },
+  "manifest": {
+    "checksum": "sha256:ba1a9296008d5e0d09f7de5180977a6c418af14e7ecc58f3c083c49300dd6947",
+    "admitted": true
+  }
+}

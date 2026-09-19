@@ -163,6 +163,14 @@ export interface HistoryModel {
    * straight after an undo can coalesce into the entry that undo left on top.
    */
   endGesture(): void;
+  /**
+   * A pointer went DOWN: whatever it edits until it comes up is one gesture, however
+   * long it takes (plans/268 SI-13). It also ends the gesture before it, so a drag
+   * begun within the window of the last edit does not merge into that edit.
+   */
+  beginHold(): void;
+  /** The pointer came UP: the gesture is over, and the next edit is a new step. */
+  endHold(): void;
   canUndo(): boolean;
   canRedo(): boolean;
   /** Depths, for tests and diagnostics. */
@@ -180,6 +188,18 @@ export function createHistory(opts: { limit?: number; coalesceMs?: number } = {}
   // the entry would let the next edit merge into it and lose a state.
   let lastRecordId: string | null = null;
   let lastRecordTime = 0;
+  // WHAT ONE GESTURE IS (plans/268 SI-13). The window alone got it wrong both ways in
+  // an editor where every edit writes the SAME input (Design's `boxes`):
+  //   • two different edits made inside half a second (delete a clip, move another)
+  //     merged into one undo step, and Cmd+Z took back both;
+  //   • one slow drag of a slider, with a pause in it longer than the window, split
+  //     into several steps.
+  // So the window now only covers edits made with NO pointer down - typing, key repeat
+  // on an arrow nudge - which is where "fast enough to be one thought" is all there is
+  // to go on. A held pointer is one gesture by definition, whatever the clock says.
+  // And rows arriving or leaving is never part of a gesture: an add, a delete, a paste
+  // and a split are each a decision, and each undoes on its own.
+  let holding = false;
 
   return {
     record({ id, label, before, after, collabStamp }, now) {
@@ -187,8 +207,9 @@ export function createHistory(opts: { limit?: number; coalesceMs?: number } = {}
       if (carriesBytes(after) || carriesBytes(before)) return 'ignored';
 
       const last = undoStack[undoStack.length - 1];
+      const structural = Array.isArray(before) && Array.isArray(after) && before.length !== after.length;
       let outcome: RecordOutcome;
-      if (last && lastRecordId === id && now - lastRecordTime < coalesceMs) {
+      if (!structural && last && lastRecordId === id && (holding || now - lastRecordTime < coalesceMs)) {
         last.after = cloneValue(after);   // extend the gesture, keep its original `before`
         outcome = 'coalesced';
       } else {
@@ -196,7 +217,9 @@ export function createHistory(opts: { limit?: number; coalesceMs?: number } = {}
         if (undoStack.length > limit) undoStack.shift();
         outcome = 'pushed';
       }
-      lastRecordId = id;
+      // Nothing merges INTO a structural step either: a move made straight after a paste
+      // is its own step, so one undo takes back the move and the next takes back the paste.
+      lastRecordId = structural ? null : id;
       lastRecordTime = now;
       redoStack.length = 0;   // a fresh edit breaks the redo chain
       return outcome;
@@ -217,6 +240,8 @@ export function createHistory(opts: { limit?: number; coalesceMs?: number } = {}
     },
 
     endGesture() { lastRecordId = null; },
+    beginHold() { holding = true; lastRecordId = null; },
+    endHold() { holding = false; lastRecordId = null; },
     canUndo() { return undoStack.length > 0; },
     canRedo() { return redoStack.length > 0; },
     sizes() { return { undo: undoStack.length, redo: redoStack.length }; },

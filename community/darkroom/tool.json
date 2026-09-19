@@ -3,8 +3,8 @@
   "name": "Darkroom",
   "description": "A pro photo-grading darkroom: film looks, third-party .cube LUTs, design system colour treatments and finishing texture - then bake your look as a LUT any editor can use. Opens a Photoshop or GIMP file as layers too: position, blend and hide each one, grade the composite, and export flat images or a layered PSD.",
   "a11yLabel": "Graded photo preview - {{default preset \"custom\"}} look",
-  "version": "2.2.1",
-  "engineVersion": "^1.12.0",
+  "version": "2.3.0",
+  "engineVersion": "^1.214.0",
   "status": "community",
   "category": "designer",
   "tags": [
@@ -44,6 +44,11 @@
     "exportFile": true
   },
   "inputs": [
+    {
+      "id": "editingRange", "label": "Editing range", "type": "select", "default": "sdr",
+      "options": [{ "value": "sdr", "label": "Standard" }, { "value": "hdr", "label": "HDR" }],
+      "help": "HDR keeps original precision and highlights while grading. The preview is tone mapped for SDR. Choose HDR separately when exporting. Up to 8 megapixels."
+    },
     {
       "id": "image",
       "label": "Image",

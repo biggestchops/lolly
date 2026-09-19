@@ -75,7 +75,7 @@ let emojiStampSource: SessionEmojiStamp | null = null;
 
 /** Record the set the current document is drawn with, or clear it with null. */
 export function setSessionEmojiStamp(stamp: SessionEmojiStamp | null): void {
-  emojiStampSource = stamp?.emoji ? { emoji: stamp.emoji, emojifx: stamp.emojifx ?? '' } : null;
+  emojiStampSource = stamp?.emoji ? { ...stamp, emojifx: stamp.emojifx ?? '' } : null;
 }
 
 /** The licence decisions the next save writes, registered the same way and for

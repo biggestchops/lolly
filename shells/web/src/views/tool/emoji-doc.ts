@@ -17,6 +17,7 @@
 import type { EmojiStyleV1 } from '@lolly-tools/core/emoji-v1';
 
 export interface EmojiDocumentPort {
+  credits?(): string;
   /** The style in force, or null while no set is chosen. */
   value(): EmojiStyleV1 | null;
   /** A new choice, from whichever surface made it. */
@@ -55,3 +56,5 @@ export function notifyEmojiDocument(): void {
     try { fn(); } catch (e) { console.error(e); }
   }
 }
+
+export function emojiDocumentCredits(): string { return port?.credits?.() ?? ''; }

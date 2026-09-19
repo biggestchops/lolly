@@ -148,8 +148,8 @@ test('describe --json carries the input schema and the real flag spelling', asyn
   assertEnvelopeShape(env, 'describe');
   assert.equal(env.result.tool.id, 'vec-tool');
   // Derived export formats are expanded into the loaded manifest (loader.ts →
-  // expandDerivedFormats): svg→svgz, png→bmp. describe truthfully advertises them.
-  assert.deepEqual(env.result.tool.formats, ['svg', 'png', 'svgz', 'bmp']);
+  // expandDerivedFormats): svg→svgz, png→bmp/jxl/jxl-lossless. describe truthfully advertises them.
+  assert.deepEqual(env.result.tool.formats, ['svg', 'png', 'svgz', 'bmp', 'jxl', 'jxl-lossless']);
   const label = env.result.inputs.find((i: any) => i.id === 'label');
   assert.equal(label.flag, '--label=');
   assert.equal(label.type, 'text');

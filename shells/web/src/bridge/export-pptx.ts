@@ -13,6 +13,10 @@ import { buildPptxParts, EMU_PER_PX, parseGradientAngle, parseGradientStop, spli
 import type { PptxSlide, PptxShape, PptxFill, PptxMedia, PptxLayout, PptxAudio } from "../../../../engine/src/pptx.ts";
 import { parseCssColorFull, objectPositionFractions } from "./export-css.ts";
 import { asStr, deckAnim, deckAudioExt, deckBox, deckFill, deckNarrationMark, deckNotes, deckPlaceholder, deckSrcRect, deckSlideTransitions, deckSyncShape, deckTheme, emuOf, parseDeckModel, type DeckBox, type DeckColorResolver, type DeckNotes, type DeckNoteSink } from "./pptx-deck.ts";
+import { presentationOf } from './presentation.ts';
+import { beginFrameClock, renderFrameAt, endFrameClock } from './frame-clock.ts';
+import { renderVideo } from './export.ts';
+import { pickWebCodecsVideo } from './video-shared.ts';
 import { narrationDwellMs } from "../lib/motion-model.ts";
 import { pureRotationDeg, detectUnsupportedCss, inlineBlobUrlsInEl, rasterizeNodeToDataUrl, imprintEmbedCanvas, stripCommentNodes, _host, type ExportOpts, type ImprintState } from "./export.ts";
 
@@ -704,7 +708,40 @@ async function renderPptxFromDeck(deck: Record<string, unknown>, opts: ExportOpt
   return zipPptxParts(parts);
 }
 
+async function renderPresentationPptx(node: Element, opts: ExportOpts): Promise<Blob> {
+  const presentation = presentationOf(node)!;
+  const target = (node.matches('[data-presentation]') ? node : node.querySelector('[data-presentation]')) as HTMLElement;
+  const width = Number(opts.width) || target.clientWidth, height = Number(opts.height) || target.clientHeight;
+  const codec = await pickWebCodecsVideo('mp4', width, height, opts.fps || 24, 8_000_000, 'avc1.640028', false);
+  if (!codec?.codec.startsWith('avc')) throw new Error('Animated PowerPoint needs H.264 encoding. Use a browser with H.264 export support or choose editable PowerPoint.');
+  const movie = await renderVideo(node, { ...opts, videoCodec: codec.codec, hdr: false }, 'mp4');
+  const MB = await import('mediabunny');
+  const probe = new MB.Input({ formats: [MB.MP4], source: new MB.BlobSource(movie) });
+  try { if ((await probe.getPrimaryVideoTrack())?.codec !== 'avc') throw new Error('PowerPoint requires an H.264 MP4. The browser returned another codec.'); }
+  finally { probe.dispose(); }
+  if (!movie.type.includes('mp4')) throw new Error('Animated PowerPoint requires MP4 encoding. Use an MP4-capable browser or export WebM separately.');
+  const root = (node.matches('[data-presentation]') ? node : node.querySelector('[data-presentation]')) as HTMLElement;
+  const w = root.clientWidth, h = root.clientHeight;
+  const clock = beginFrameClock(root);
+  let poster: string | null;
+  try { renderFrameAt(clock, 1 / Math.max(1, presentation.duration), presentation.duration); poster = await rasterizeNodeToDataUrl(root, w, h); }
+  finally { endFrameClock(clock); }
+  if (!poster) throw new Error('The video poster could not be rendered.');
+  const slides: PptxSlide[] = [{ shapes: [], media: [], notes: presentation.notes,
+    video: { bytes: new Uint8Array(await movie.arrayBuffer()), ext: 'mp4', poster: dataUrlToBytes(poster), autoplay: true, loop: true, durationMs: (opts.duration || presentation.duration) * 1000 } }];
+  const restore = presentation.readable(opts);
+  try {
+    for (const page of root.querySelectorAll('[data-pdf-page]')) {
+      const slide = await pptxSlideFromPage(page, opts);
+      slide.notes = 'Readable companion to the recorded programme. Text and shapes can be edited.';
+      slides.push(slide);
+    }
+  } finally { restore(); }
+  return zipPptxParts(buildPptxParts(slides, { emuW: w * EMU_PER_PX, emuH: h * EMU_PER_PX, now: new Date().toISOString() }));
+}
+
 export async function renderPptx(node: Element, opts: ExportOpts): Promise<Blob> {
+  if (presentationOf(node)?.mode === 'animated') return renderPresentationPptx(node, opts);
   const srcAuthor = sourceAuthorOf(node);
   // Fast path: a tool that authored its own native deck model (tables, precise text,
   // brand theme) drives the OOXML directly; the DOM walk below is the general fallback.
@@ -760,6 +797,19 @@ export async function renderPptx(node: Element, opts: ExportOpts): Promise<Blob>
     // detachExportHidden can't have pulled it out from under us.
     const note = (el.querySelector?.('[data-slide-notes]')?.textContent ?? '').trim();
     if (note) slide.notes = note;
+    const presentation = presentationOf(node);
+    if (presentation) {
+      slide.notes = [presentation.notes, el.textContent?.trim()].filter(Boolean).join('\n\n');
+      if (presentation.animate) {
+        slide.transition = { kind: 'fade', ms: 500 };
+        slide.advanceAfterMs = Math.max(12_000, Math.round((el.textContent?.trim().split(/\s+/).length || 0) / 3 * 1000));
+        let delay = 0;
+        for (const shape of slide.shapes) if (shape.kind === 'text') {
+          shape.anim = { enter: { preset: 'fade', ms: 350, delayMs: Math.min(1200, delay) } };
+          delay += 60;
+        }
+      }
+    }
     slides.push(slide);
     opts.onProgress?.(slides.length, pageEls.length);
   }

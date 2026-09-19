@@ -1,0 +1,144 @@
+{
+  "family": "Fluent Emoji",
+  "style": "Flat",
+  "slug": "fluent-flat",
+  "packId": "community/emoji/fluent/flat",
+  "version": "2026.08.24-1ffb34c",
+  "unicodeVersion": "17.0",
+  "upstream": {
+    "repo": "https://github.com/microsoft/fluentui-emoji",
+    "commit": "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+    "svgDir": "assets"
+  },
+  "files": {
+    "total": 3145,
+    "mapped": 3145,
+    "oversizeSkipped": [],
+    "unparsable": [],
+    "unmapped": []
+  },
+  "licence": {
+    "license": "MIT",
+    "licenseUrl": "https://opensource.org/license/mit",
+    "notices": [
+      {
+        "name": "LICENSE",
+        "bytes": 1141,
+        "checksum": "sha256:c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+      }
+    ]
+  },
+  "bytes": {
+    "source": 17244387,
+    "manifest": 3990522
+  },
+  "duplicates": [],
+  "viewBox": {
+    "default": {
+      "unitsPerEm": 32,
+      "advance": 32,
+      "baseline": 27.2
+    },
+    "variants": [
+      {
+        "viewBox": "0 0 32 32",
+        "count": 3143
+      },
+      {
+        "viewBox": "0 0 32 33",
+        "count": 2
+      }
+    ],
+    "perGlyphMetrics": 2
+  },
+  "metricsNote": "Baseline is provisional at 0.85 of the em box, the value the one-glyph fixtures carry. It is not measured from the artwork.",
+  "coverage": {
+    "repertoire": 3953,
+    "supported": 3145,
+    "missing": 808,
+    "viaAlias": 0,
+    "custom": 0,
+    "unmapped": 0,
+    "skinTone": {
+      "supported": 1550,
+      "total": 2035
+    },
+    "regionalFlag": {
+      "supported": 0,
+      "total": 259
+    },
+    "tagFlag": {
+      "supported": 0,
+      "total": 3
+    },
+    "keycap": {
+      "supported": 12,
+      "total": 12
+    },
+    "zwj": {
+      "supported": 1137,
+      "total": 1614
+    }
+  },
+  "admission": {
+    "admitted": 3139,
+    "rejected": 6,
+    "reasons": [
+      {
+        "message": "Unsupported SVG attribute filter.",
+        "count": 6,
+        "examples": [
+          "Teacher/Dark/Flat/teacher_flat_dark.svg",
+          "Teacher/Default/Flat/teacher_flat_default.svg",
+          "Teacher/Light/Flat/teacher_flat_light.svg",
+          "Teacher/Medium-Dark/Flat/teacher_flat_medium-dark.svg",
+          "Teacher/Medium-Light/Flat/teacher_flat_medium-light.svg"
+        ]
+      }
+    ]
+  },
+  "ink": {
+    "renderPx": 64,
+    "alphaFloor": 8,
+    "rendered": 3139,
+    "empty": 0,
+    "blank": [],
+    "renderFailed": 0,
+    "widthEm": {
+      "p10": 0.6406,
+      "median": 0.8281,
+      "p90": 0.875
+    },
+    "heightEm": {
+      "p10": 0.7813,
+      "median": 0.875,
+      "p90": 0.875
+    },
+    "centreX": {
+      "p10": 0.4922,
+      "median": 0.5,
+      "p90": 0.5156
+    },
+    "centreY": {
+      "p10": 0.5,
+      "median": 0.5,
+      "p90": 0.5313
+    }
+  },
+  "fidelity": {
+    "renderPx": 64,
+    "equal": 3139,
+    "different": 0,
+    "differing": [],
+    "renderFailed": 0
+  },
+  "raster": {
+    "isolated": true,
+    "crashes": 0,
+    "crashed": []
+  },
+  "manifest": {
+    "checksum": "sha256:6032be9e2d476067826107a7b53d2a269f5ca6ecedf6b3bf3446ae2d67710e93",
+    "admitted": true
+  }
+}

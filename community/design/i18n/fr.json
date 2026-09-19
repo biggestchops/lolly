@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Bas gauche",
   "inputs.boxes.fields.imgpos.options.center bottom": "Bas",
   "inputs.boxes.fields.imgpos.options.right bottom": "Bas droite",
-  "description": "Un canevas ouvert pour une disposition libre - texte, images, formes et rendus en direct de tes autres outils Lolly, le tout aligné sur ton système de design."
+  "description": "Un canevas ouvert pour une disposition libre - texte, images, formes et rendus en direct de tes autres outils Lolly, le tout aligné sur ton système de design.",
+  "inputs.projectFps.label": "Cadence du projet",
+  "inputs.sequenceMarks.label": "Repères de la timeline",
+  "inputs.boxes.fields.animationId.label": "Animation dans la source",
+  "inputs.boxes.fields.animationEdits.label": "Modifications internes de l’animation"
 }

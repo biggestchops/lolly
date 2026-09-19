@@ -87,6 +87,10 @@ async function compute(host, args) {
     if (!host || !host.text || !host.text.fontUrl || !host.text.toPath) {
       throw new Error('this host cannot resolve fonts (host.text.fontUrl unavailable)');
     }
+    if (/[\u200d\u20e3\u2190-\u2bff\u3030\u303d\u3297\u3299\ud800-\udfff\ufe0f]/.test(text)) {
+      result = { svgContent: textSvg(text, family, weight, size, tracking, color), wmWarning: '' };
+      _memoKey = key; _memoResult = result; return result;
+    }
     var f = await host.text.fontUrl(family, { weight: weight });
     if (!f || !f.url) throw new Error('no font file found for "' + family + '"');
     var run = await host.text.toPath({

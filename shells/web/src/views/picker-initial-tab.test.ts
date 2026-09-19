@@ -388,8 +388,8 @@ test('the real upload path refuses an oversized ZIP directory before storing an 
 
 test('dotLottie ingestion bounds image-reference expansion through the real upload path', async () => {
   const { storeZip } = await import('@lolly/engine');
-  const animation = { layers: [], assets: Array.from({ length: 1001 }, () => ({ p: 'a.png', u: 'images/', e: 0 })) };
-  const bytes = storeZip([{ name: 'animations/a.json', bytes: new TextEncoder().encode(JSON.stringify(animation)) }, { name: 'images/a.png', bytes: new Uint8Array([1]) }]);
+  const animation = { w: 64, h: 64, fr: 30, ip: 0, op: 60, layers: [], assets: Array.from({ length: 1001 }, (_, i) => ({ id: `image-${i}`, p: 'a.png', u: 'images/', e: 0 })) };
+  const bytes = storeZip([{ name: 'manifest.json', bytes: new TextEncoder().encode(JSON.stringify({ version: '1.0', animations: [{ id: 'a' }] })) }, { name: 'animations/a.json', bytes: new TextEncoder().encode(JSON.stringify(animation)) }, { name: 'images/a.png', bytes: new Uint8Array([1]) }]);
   const { host, stored } = makeUploadHost();
   await assert.rejects(storeUserUpload(host as never, new File([bytes as BlobPart], 'many.lottie'), { skipDupCheck: true }), /too many image references/);
   assert.equal(stored.length, 0);

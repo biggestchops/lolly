@@ -131,6 +131,10 @@ export async function profileHint(file: Blob): Promise<ProfileHint> {
     // 64 KB reaches past a JPEG's APP segments and a PNG's header chunks without
     // reading a 40 MB file to answer a three-way question.
     const head = new Uint8Array(await file.slice(0, 65536).arrayBuffer());
+    if ((await import('../../../../engine/src/jxl.ts')).isJxl(head)) {
+      const { info } = await (await import('../bridge/jxl.ts')).runJxl({ operation: 'probe', bytes: new Uint8Array(await file.arrayBuffer()) });
+      return info && !info.icc && info.primaries === 1 && info.transferFunction === 13 ? 'srgb' : 'other';
+    }
     const text = new TextDecoder('latin1').decode(head);
     if (/ICC_PROFILE|iCCP|cICP|ICCP/.test(text)) return 'other';
     if (/sRGB/.test(text)) return 'srgb';
@@ -150,7 +154,7 @@ export interface DepthHint {
    */
   bitsPerChannel: number | null;
   /** Which container answered, or null when none was recognised. */
-  source: 'png' | 'tiff' | 'heic' | 'jpeg' | 'webp' | 'avif' | null;
+  source: 'jxl' | 'png' | 'tiff' | 'heic' | 'jpeg' | 'webp' | 'avif' | null;
 }
 
 // ── depthHint hardening caps (parser discipline - see docs/parser-inventory.md) ──
@@ -213,6 +217,11 @@ export async function depthHint(file: Blob | Uint8Array): Promise<DepthHint> {
     // longer signatures below index past that safely - an out-of-range
     // Uint8Array read is `undefined`, which fails every byte comparison.
     if (!head || head.length < 8) return none;
+    if ((await import('../../../../engine/src/jxl.ts')).isJxl(head)) {
+      const bytes = file instanceof Uint8Array ? file : new Uint8Array(await file.arrayBuffer());
+      const { info } = await (await import('../bridge/jxl.ts')).runJxl({ operation: 'probe', bytes });
+      return { bitsPerChannel: info?.bitsPerSample ?? null, source: 'jxl' };
+    }
 
     // PNG - signature, then IHDR's bit-depth byte at datastream offset 24.
     if (head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47

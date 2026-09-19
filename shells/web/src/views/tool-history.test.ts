@@ -266,3 +266,55 @@ test('describeRowChange refuses to name what it cannot: a rewrite, a no-op, a sc
   // Not a blocks input at all.
   assert.equal(describeRowChange('a' as unknown as InputValue, 'b' as unknown as InputValue, CANVAS), null);
 });
+
+// ── what one gesture is (plans/268 SI-13) ────────────────────────────────────────
+
+test('a held pointer is ONE step however long it takes, and the next edit is a new one', () => {
+  const h = createHistory();
+  h.beginHold();
+  assert.equal(h.record({ id: 'size', label: 'Size', before: 10, after: 11 }, 0), 'pushed');
+  // A pause far longer than the window, in the middle of the same drag.
+  assert.equal(h.record({ id: 'size', label: 'Size', before: 11, after: 30 }, 5_000), 'coalesced');
+  h.endHold();
+  assert.deepEqual(h.sizes(), { undo: 1, redo: 0 });
+  // Straight away, well inside the window: a different gesture, so a different step.
+  assert.equal(h.record({ id: 'size', label: 'Size', before: 30, after: 31 }, 5_010), 'pushed');
+  const back = h.undo()!;
+  assert.deepEqual([back.before, back.after], [30, 31]);
+  assert.deepEqual([h.undo()!.before, h.sizes().undo], [10, 0]);
+});
+
+test('a drag begun inside the window of the last edit does not merge into that edit', () => {
+  const h = createHistory();
+  h.record({ id: 'boxes', label: 'Colour', before: [{ c: 1 }], after: [{ c: 2 }] }, 0);
+  h.beginHold();
+  assert.equal(h.record({ id: 'boxes', label: 'Move', before: [{ c: 2 }], after: [{ c: 2, x: 5 }] }, 100), 'pushed');
+  h.endHold();
+  assert.equal(h.sizes().undo, 2);
+});
+
+test('rows arriving or leaving are never merged, in either direction', () => {
+  const h = createHistory();
+  const one = [{ id: 'a' }];
+  const two = [{ id: 'a' }, { id: 'b' }];
+  const three = [...two, { id: 'c' }];
+  // Two pastes 50ms apart are two steps: Cmd+Z takes back one paste, not both.
+  assert.equal(h.record({ id: 'boxes', label: 'Add', before: one, after: two }, 0), 'pushed');
+  assert.equal(h.record({ id: 'boxes', label: 'Add', before: two, after: three }, 50), 'pushed');
+  // And a move made straight after a paste does not melt into the paste.
+  const moved = three.map((b, i) => (i === 2 ? { ...b, x: 9 } : b));
+  assert.equal(h.record({ id: 'boxes', label: 'Move', before: three, after: moved }, 80), 'pushed');
+  assert.equal(h.sizes().undo, 3);
+  // Even with the pointer held: a delete during a drag is still its own decision.
+  h.beginHold();
+  h.record({ id: 'boxes', label: 'Move', before: moved, after: moved.map((b) => ({ ...b, y: 1 })) }, 100);
+  assert.equal(h.record({ id: 'boxes', label: 'Delete', before: moved.map((b) => ({ ...b, y: 1 })), after: [] }, 110), 'pushed');
+  h.endHold();
+});
+
+test('with no pointer down the window still makes one step of fast typing and key repeat', () => {
+  const h = createHistory();
+  h.record({ id: 'title', label: 'Title', before: 'a', after: 'ab' }, 0);
+  assert.equal(h.record({ id: 'title', label: 'Title', before: 'ab', after: 'abc' }, 200), 'coalesced');
+  assert.equal(h.record({ id: 'title', label: 'Title', before: 'abc', after: 'abcd' }, 2_000), 'pushed');
+});

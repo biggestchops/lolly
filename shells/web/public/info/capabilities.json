@@ -225,6 +225,31 @@
       }
     },
     {
+      "token": "JXL",
+      "name": "JPEG XL",
+      "category": "Image",
+      "dir": "both",
+      "reads": true,
+      "writes": true,
+      "roundTrips": true,
+      "features": [
+        "raster",
+        "alpha",
+        "lossless",
+        "lossy"
+      ],
+      "metadata": {
+        "reads": [
+          "xmp"
+        ],
+        "writes": [
+          "xmp"
+        ],
+        "preserves": "none",
+        "note": "Uncompressed XML metadata boxes are read and generated descriptive XMP is written. Ordinary conversion drops source metadata. Original imports retain all bytes; reversible JPEG compression/restoration preserves and verifies the complete original JPEG. Compressed metadata and JXL C2PA are not interpreted."
+      }
+    },
+    {
       "token": "PSD",
       "name": "PSD",
       "category": "Layered",
@@ -585,10 +610,10 @@
       "token": "Lottie",
       "name": "Lottie",
       "category": "Motion",
-      "dir": "in",
+      "dir": "both",
       "reads": true,
-      "writes": false,
-      "roundTrips": false,
+      "writes": true,
+      "roundTrips": true,
       "features": [
         "vector",
         "animation"
@@ -596,7 +621,8 @@
       "metadata": {
         "reads": [],
         "writes": [],
-        "preserves": "n/a"
+        "preserves": "none",
+        "note": "The original package stays intact as an asset. Edited exports create a new composition with readable credits and a metadata JSON companion; they do not carry signed Content Credentials."
       }
     },
     {

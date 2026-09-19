@@ -1162,7 +1162,8 @@ test('contract: there is exactly ONE compositor, so the two paths cannot drift',
   // did the compositing there, which is the whole point of that tier (a homography has
   // no affine spelling, so `drawItem` could not have drawn it).
   const paints = render.match(/ctx\.drawImage\(/g) ?? [];
-  assert.equal(paints.length, 2, 'sequence-render.ts composites nothing; the executor draws');
+  assert.equal(paints.length, 3, 'sequence-render.ts composites nothing; the executor draws');
+  assert.match(render, /ctx\.drawImage\(image,0,0\)/, 'the wide-colour shot places a complete SVG image');
   assert.match(render, /drawImage\(bitmaps\[i\+\+\]/, 'and the first is the recorder replay');
   assert.match(render, /drawImage\(shot as unknown as CanvasImageSource, 0, 0\)/,
     'and the second is one whole captured frame, placed at the origin - not a layer');

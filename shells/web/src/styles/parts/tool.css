@@ -4089,3 +4089,6 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
   cursor: pointer;
 }
 .tool-notice-link:hover { text-decoration: none; }
+
+.table-cell[data-grid-selected] { background: hsl(var(--ring) / 0.1); }
+.table-cell:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: -2px; }

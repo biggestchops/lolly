@@ -57,7 +57,7 @@ test('imprintDefaultOn is the same gate as c2paDefaultOn (the two marks are comp
 test('IMPRINT_FORMATS lists exactly the raster formats plus the three container formats', () => {
   assert.deepEqual(
     [...IMPRINT_FORMATS].sort(),
-    ['png', 'jpg', 'jpeg', 'webp', 'avif', 'tiff', 'bmp', 'pdf', 'pdf-cmyk', 'pptx'].sort(),
+    ['png', 'jpg', 'jpeg', 'webp', 'avif', 'jxl', 'jxl-lossless', 'tiff', 'bmp', 'pdf', 'pdf-cmyk', 'pptx'].sort(),
   );
 });
 

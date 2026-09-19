@@ -1623,7 +1623,79 @@ export const emojiTextTarget: FuzzTarget = {
   },
 };
 
+export const lottieTarget: FuzzTarget = {
+  name: 'lottie',
+  async seeds() {
+    const { movingLottie, lottiePackage } = await import('../helpers/lottie-fixtures.ts');
+    return [new TextEncoder().encode(JSON.stringify(movingLottie())), lottiePackage('1'), lottiePackage('2')];
+  },
+  async invoke(bytes) {
+    const { readLottie } = await import('../../engine/src/dotlottie.ts');
+    readLottie(bytes);
+  },
+};
+
+export const lottieEditsTarget: FuzzTarget = {
+  name: 'lottie-edits',
+  async seeds() {
+    const { movingLottie } = await import('../helpers/lottie-fixtures.ts');
+    const { appendLottieEdit } = await import('../../engine/src/lottie-edit.ts');
+    const source = movingLottie(), target = { asset: '', index: 0 };
+    const first = await appendLottieEdit(source, '', { target, kind: 'layer', patch: { nm: 'Edited' } });
+    const second = await appendLottieEdit(source, first, { target, kind: 'key', track: 'p', frame: 30, value: [32, 32, 0] });
+    return [first, second].map(text => new TextEncoder().encode(text));
+  },
+  async invoke(bytes) {
+    const { movingLottie } = await import('../helpers/lottie-fixtures.ts');
+    const { applyLottieEdits } = await import('../../engine/src/lottie-edit.ts');
+    await applyLottieEdits(movingLottie(), new TextDecoder().decode(bytes));
+  },
+};
+
+export const jxlTarget: FuzzTarget = {
+  name: 'jxl',
+  async seeds() {
+    const { readFile } = await import('node:fs/promises');
+    return Promise.all(['gray', 'p3', 'animation', 'auxiliary', 'pq-gradient'].map(name => readFile(new URL(`../fixtures/jxl/${name}.jxl`, import.meta.url))));
+  },
+  async invoke(bytes) {
+    const { jxlXmp } = await import('../../engine/src/jxl-container.ts');
+    jxlXmp(bytes);
+    const { runJxl } = await import('../../packages/node-shell/src/jxl.ts');
+    await runJxl({ operation: 'decode', bytes });
+  },
+};
+
+export const deepImageTarget: FuzzTarget = {
+  name: 'deep-image',
+  async seeds() {
+    const {packPng}=await import('../../engine/src/png.ts');
+    const {packExr}=await import('../../engine/src/exr.ts');
+    const {packTiff}=await import('../../engine/src/tiff.ts');
+    const frame={width:2,height:1,space:'srgb-linear' as const,data:Float32Array.of(.1,.2,4,1,2,3,4,.5)};
+    return [packPng(Uint16Array.of(100,101,65535,65535),{width:1,height:1,depth:16}),packExr(frame,{compression:'zip'}),packTiff(Float32Array.of(4,2,-.1),{width:1,height:1,depth:'float32'})];
+  },
+  async invoke(bytes) {
+    const {readDeepPng}=await import('../../engine/src/deep-png.ts');
+    const {readDeepExr}=await import('../../engine/src/deep-exr.ts');
+    const {readDeepTiff}=await import('../../engine/src/deep-tiff.ts');
+    const frame=readDeepPng(bytes)??readDeepExr(bytes)??readDeepTiff(bytes);
+    if(frame)(await import('../../engine/src/deep-image.ts')).validateDeepFrame(frame);
+  },
+};
+export const emojiBundleTarget: FuzzTarget = {
+  name: 'emoji-bundle',
+  async seeds() {
+    const {fixture}=await import('../helpers/emoji-fixtures.ts'); const f=await fixture();
+    return [new TextEncoder().encode(JSON.stringify({schemaVersion:1,kind:'emoji-pack-bundle',manifest:new TextDecoder().decode(f.bytes),artwork:{'1f600.svg':new TextDecoder().decode(f.artwork)}}))];
+  },
+  async invoke(bytes) {await (await import('../../engine/src/emoji-bundle.ts')).admitEmojiBundle(bytes,parseXml);},
+};
+
 export const ALL_TARGETS: FuzzTarget[] = [
+  deepImageTarget, emojiBundleTarget, jxlTarget,
+  lottieEditsTarget,
+  lottieTarget,
   emojiPackTarget, emojiSvgTarget, emojiTextTarget,
   prepareTarget, c2paVerifyTarget, cborTarget, mediaSniffTarget, pdfMapTarget, pdfDerivedTarget, x509Target,
   fileMetadataTarget, stripMetadataTarget, videoMetaTarget, dataImportTarget, brandImportTarget, brandReferenceTarget, tarReadTarget,

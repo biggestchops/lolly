@@ -116,16 +116,16 @@ Emoji in a render are drawn from a set somebody chose, never from the machine th
 | Argument | Takes |
 |---|---|
 | `emoji` | The set: `<id>@<version>` (`community/emoji/twemoji/color@17.0.3`), its last two segments (`twemoji/color@17.0.3`), or a bare id when exactly one version is registered. |
-| `emojifx` | The brand treatment for that artwork: `original`, `snap`, `mono`, `duotone` or `influence:<1-9999>` basis points, with an optional `,unprotected` to treat skin tones, flags and custom symbols too. Colours come from the brand in force, so they are never written into the link. |
+| `emojifx` | The brand treatment for that artwork: `original`, `snap`, `mono`, `duotone` or `influence:<1-9999>` basis points, with an optional `,unprotected` to treat skin tones, flags and custom symbols too. The convenience form reads the current brand; generated links also pin the exact palette in `emojistyle`. |
 
-Both are the reserved URL params of the same name, so the identical two strings work in a share link, as `lolly --emoji=… --emojifx=…` on the CLI and here. They travel in the link either call returns, which means a person who opens it sees the artwork the agent rendered.
+`emojistyle` adds the exact style snapshot, including checksums, ordered fallbacks and palette. All three use the reserved URL params of the same name, so the identical strings work in a share link, as `lolly --emoji=… --emojifx=…` on the CLI and here. They travel in the link either call returns, which means a person who opens it sees the artwork the agent rendered.
 
 Call `lolly_describe_tool` first and read **`emojiSets`** - one row per registered set with its `id@version`, label, glyph count and licence. Choosing a set is choosing a licence, which is why the licence is in the list. A set nobody registers comes back as a usage error naming the ones that are, rather than a picture that quietly arrives without the artwork you asked for.
 
 Three things follow from how the drawing works:
 
 - **With no `emoji` argument, every emoji draws as a neutral placeholder.** Nothing falls back to the operating system's emoji font, on any surface.
-- **A tool whose template root is an `<svg>` keeps the machine's glyph**, because SVG cannot place a picture inside a text run. `emojifx` with no `emoji` names a treatment with no artwork to treat, and is reported as a warning.
+- **Simple SVG text uses shaped outlines and pack artwork.** Unsupported positioning, bidi or missing fonts produces a neutral placeholder with a layout diagnostic. `emojifx` with no `emoji` names a treatment with no artwork to treat, and is reported as a warning.
 - **The sources are recorded.** A render that placed pack artwork reports the pack's credit and licence in its `Rights:` line, and writes one Content Credential source per distinct glyph where the format can carry one. A browser-tier render establishes the same census server-side, so a PDF or an MP4 records its sources too.
 
 ## Resources - brand context without a render

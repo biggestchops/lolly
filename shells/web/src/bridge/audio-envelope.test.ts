@@ -188,6 +188,51 @@ test('clipGainValueAt IS clipGainEvents + envelopeGainAt - the closed form canno
   }
 });
 
+// ── equal power at a crossfade junction (plans/268 SI-02) ────────────────────
+
+test('an equal-power pair keeps its POWER across the whole handover; a straight pair sags 3 dB', () => {
+  // A plays 1.4s and fades out over its last 0.4s; B fades in over its first 0.4s.
+  // The handover is A's [1.0, 1.4] against B's [0, 0.4].
+  const power = (pow: boolean, p: number): number => {
+    const a = clipGainValueAt({ spanSec: 1.4, fadeOutSec: 0.4, fadeOutPower: pow, tSec: 1.0 + p * 0.4 });
+    const b = clipGainValueAt({ spanSec: 1.0, fadeInSec: 0.4, fadeInPower: pow, tSec: p * 0.4 });
+    return a * a + b * b;
+  };
+  for (const p of [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
+    assert.ok(Math.abs(power(true, p) - 1) < 1e-9, `equal power at ${p}: ${power(true, p)}`);
+  }
+  // The same pair as straight ramps is at half power in the middle: 10*log10(0.5) = -3.01 dB.
+  assert.ok(Math.abs(power(false, 0.5) - 0.5) < 1e-9);
+  // Each side is at 0.707, not 0.5, in the middle, and the ends are exact.
+  assert.ok(Math.abs(clipGainValueAt({ spanSec: 1, fadeInSec: 0.4, fadeInPower: true, tSec: 0.2 }) - Math.SQRT1_2) < 1e-9);
+  assert.equal(clipGainValueAt({ spanSec: 1, fadeInSec: 0.4, fadeInPower: true, tSec: 0 }), 0);
+  assert.equal(clipGainValueAt({ spanSec: 1, fadeInSec: 0.4, fadeInPower: true, tSec: 0.4 }), 1);
+});
+
+test('the equal-power event list follows the closed form within 0.5%, with and without keys', () => {
+  const shapes = [
+    { spanSec: 1.4, gain: 1, fadeOutSec: 0.4, fadeOutPower: true },
+    { spanSec: 3, gain: 0.8, fadeInSec: 1.2, fadeInPower: true, fadeOutSec: 0.6, fadeOutPower: true },
+    { spanSec: 2, gain: 1, fadeInSec: 0.5, fadeInPower: true, fadeOutSec: 0.5 },           // one curved, one straight
+    { spanSec: 4, gain: 1.2, fadeInSec: 1, fadeInPower: true, volumeKeys: [{ tSec: 0, value: 1 }, { tSec: 2, value: 0.4 }] },
+  ];
+  for (const o of shapes) {
+    const ev = clipGainEvents(o);
+    assert.ok(ev.length > 4, `${JSON.stringify(o)}: a curve needs more than the two events of a straight ramp, got ${ev.length}`);
+    for (let t = 0; t <= o.spanSec + 0.001; t += o.spanSec / 200) {
+      const a = envelopeGainAt(ev, Math.min(t, o.spanSec));
+      const b = clipGainValueAt({ ...o, tSec: t });
+      assert.ok(Math.abs(a - b) < 0.005 * Math.max(1, o.gain), `${JSON.stringify(o)} @${t.toFixed(3)}: events=${a} closed=${b}`);
+    }
+  }
+});
+
+test('without the flag nothing changes: a straight fade is still two exact events', () => {
+  const plain = clipGainEvents({ spanSec: 8, gain: 0.9, fadeInSec: 2, fadeOutSec: 2 });
+  assert.deepEqual(plain, clipGainEvents({ spanSec: 8, gain: 0.9, fadeInSec: 2, fadeOutSec: 2, fadeInPower: false, fadeOutPower: false }));
+  assert.equal(plain.length, 4);
+});
+
 test('clipGainEvents: volume keys ramp linearly, hold past the ends, and compose with gain', () => {
   // Keys at 1s (0.4) and 3s (1.6) inside a 5s clip at gain 0.5.
   const ev = clipGainEvents({

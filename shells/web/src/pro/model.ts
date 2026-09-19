@@ -103,7 +103,7 @@ const RESERVED_KEYS = new Set<string>([
   'present', 's',
   // the emoji set and its brand treatment - shell-owned state, edited in the Emoji
   // section, never a batch column.
-  'emoji', 'emojifx',
+  'emoji', 'emojifx', 'emojistyle',
 ]);
 
 /**

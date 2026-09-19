@@ -1,0 +1,168 @@
+{
+  "family": "Fluent Emoji",
+  "style": "Color",
+  "slug": "fluent-color",
+  "packId": "community/emoji/fluent/color",
+  "version": "2026.08.24-1ffb34c",
+  "unicodeVersion": "17.0",
+  "upstream": {
+    "repo": "https://github.com/microsoft/fluentui-emoji",
+    "commit": "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+    "svgDir": "assets"
+  },
+  "files": {
+    "total": 3145,
+    "mapped": 3145,
+    "oversizeSkipped": [],
+    "unparsable": [],
+    "unmapped": []
+  },
+  "licence": {
+    "license": "MIT",
+    "licenseUrl": "https://opensource.org/license/mit",
+    "notices": [
+      {
+        "name": "LICENSE",
+        "bytes": 1141,
+        "checksum": "sha256:c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+      }
+    ]
+  },
+  "bytes": {
+    "source": 131916041,
+    "manifest": 4007174
+  },
+  "duplicates": [],
+  "viewBox": {
+    "default": {
+      "unitsPerEm": 32,
+      "advance": 32,
+      "baseline": 27.2
+    },
+    "variants": [
+      {
+        "viewBox": "0 0 32 32",
+        "count": 3134
+      },
+      {
+        "viewBox": "0 0 32 33",
+        "count": 9
+      },
+      {
+        "viewBox": "0 0 33 32",
+        "count": 2
+      }
+    ],
+    "perGlyphMetrics": 11
+  },
+  "metricsNote": "Baseline is provisional at 0.85 of the em box, the value the one-glyph fixtures carry. It is not measured from the artwork.",
+  "coverage": {
+    "repertoire": 3953,
+    "supported": 3145,
+    "missing": 808,
+    "viaAlias": 0,
+    "custom": 0,
+    "unmapped": 0,
+    "skinTone": {
+      "supported": 1550,
+      "total": 2035
+    },
+    "regionalFlag": {
+      "supported": 0,
+      "total": 259
+    },
+    "tagFlag": {
+      "supported": 0,
+      "total": 3
+    },
+    "keycap": {
+      "supported": 12,
+      "total": 12
+    },
+    "zwj": {
+      "supported": 1137,
+      "total": 1614
+    }
+  },
+  "admission": {
+    "admitted": 183,
+    "rejected": 2962,
+    "reasons": [
+      {
+        "message": "Unsupported SVG attribute filter.",
+        "count": 2953,
+        "examples": [
+          "1st place medal/Color/1st_place_medal_color.svg",
+          "2nd place medal/Color/2nd_place_medal_color.svg",
+          "3rd place medal/Color/3rd_place_medal_color.svg",
+          "A button blood type/Color/a_button_blood_type_color.svg",
+          "Ab button blood type/Color/ab_button_blood_type_color.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG element mask.",
+        "count": 6,
+        "examples": [
+          "Blackbird/Color/blackbird_color.svg",
+          "Kissing face with smiling eyes/Color/kissing_face_with_smiling_eyes_color.svg",
+          "Kissing face/Color/kissing_face_color.svg",
+          "Lollipop/Color/lollipop_color.svg",
+          "Melon/Color/melon_color.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG style mix-blend-mode.",
+        "count": 3,
+        "examples": [
+          "Dashing away/Color/dashing_away_color.svg",
+          "Face with head-bandage/Color/face_with_head-bandage_color.svg",
+          "Ghost/Color/ghost_color.svg"
+        ]
+      }
+    ]
+  },
+  "ink": {
+    "renderPx": 64,
+    "alphaFloor": 8,
+    "rendered": 183,
+    "empty": 0,
+    "blank": [],
+    "renderFailed": 0,
+    "widthEm": {
+      "p10": 0.7031,
+      "median": 0.875,
+      "p90": 0.8906
+    },
+    "heightEm": {
+      "p10": 0.7656,
+      "median": 0.875,
+      "p90": 0.8906
+    },
+    "centreX": {
+      "p10": 0.4922,
+      "median": 0.5,
+      "p90": 0.5078
+    },
+    "centreY": {
+      "p10": 0.5,
+      "median": 0.5,
+      "p90": 0.5313
+    }
+  },
+  "fidelity": {
+    "renderPx": 64,
+    "equal": 183,
+    "different": 0,
+    "differing": [],
+    "renderFailed": 0
+  },
+  "raster": {
+    "isolated": true,
+    "crashes": 0,
+    "crashed": []
+  },
+  "manifest": {
+    "checksum": "sha256:6fb245b0137a7426ef5f031dce807c88adf3952dd8051d211e5a6e80115d61f7",
+    "admitted": true
+  }
+}

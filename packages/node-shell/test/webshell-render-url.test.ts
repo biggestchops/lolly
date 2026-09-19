@@ -37,3 +37,10 @@ test('reserved names in the tool query are dropped before the controls are writt
   assert.equal(p.has('hdr'), false, 'a stray hdr= in the query does not turn HDR on');
   assert.equal(p.get('width'), '1200');
 });
+
+test('a resolved language override reaches the browser without changing source inputs', () => {
+  const p = params(exportUrl(BASE, 'agenda', 'lang=fr&title=Conférence', 'html', { lang: 'es' }));
+  assert.equal(p.get('lang'), 'es');
+  assert.equal(p.get('title'), 'Conférence');
+  assert.equal(params(exportUrl(BASE, 'agenda', 'lang=ar', 'html', {})).get('lang'), 'ar');
+});

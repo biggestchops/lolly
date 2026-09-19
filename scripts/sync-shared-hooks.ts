@@ -158,6 +158,8 @@ export function listConsumerHookFiles(): string[] {
       // consumers too - the markers behave identically inside HTML.
       const template = join(dir, 'template.html');
       if (existsSync(template)) files.push(template);
+      const presentation = join(dir, 'presentation.js');
+      if (existsSync(presentation)) files.push(presentation);
     }
   }
   return files;

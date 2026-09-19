@@ -17,6 +17,7 @@
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import type { EmojiSetInfoV1, EmojiStyleV1 } from '@lolly-tools/core/emoji-v1';
 import { emojiParams } from '../../../../../engine/src/emoji-style.ts';
+import { isDefaultEmojiStyle } from '../../../../../engine/src/emoji-default.ts';
 import type { EmojiPaletteEntry } from '../../../../../engine/src/emoji-style.ts';
 import type { EmojiParamPair } from '../../lib/emoji-prefs.ts';
 import { currentEmojiPreference, emojiSeedParams } from '../../lib/emoji-prefs.ts';
@@ -35,6 +36,7 @@ export interface EmojiSectionState {
 
 /** The slice of the runtime this section drives. Structural, so a test needs no mount. */
 export interface EmojiSectionRuntime {
+  emojiCredits?(): string;
   readonly emoji: EmojiSectionState;
   onEmojiChange(fn: (state: EmojiSectionState) => void): () => void;
   setEmojiStyle(style: EmojiStyleV1 | null): Promise<void>;
@@ -79,7 +81,7 @@ export interface EmojiSection {
  */
 export function showEmojiSection(state: EmojiSectionState, setCount: number): boolean {
   if (!state.present || setCount < 1) return false;
-  return state.replaced + state.unresolved > 0 || Boolean(state.style);
+  return state.replaced + state.unresolved > 0 || Boolean(state.style && !isDefaultEmojiStyle(state.style));
 }
 
 export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSection> {
@@ -94,15 +96,15 @@ export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSe
   const swatches = host.tokens ? await host.tokens.colors().catch(() => []) : [];
   const palette: EmojiPaletteEntry[] = swatches.map(swatch => ({ id: swatch.ref, hex: swatch.value }));
 
-  // Link, then saved session, then the person's own preference. A link names a
-  // document, so it beats a device preference; a preference is a seed for new work
-  // and never restyles work that already chose.
+  // Link, saved session, brand, personal preference, then the runtime default.
+  // An explicit document choice always wins over a seed for new work.
+  const brand = (await import('../../../../../engine/src/emoji-style.ts')).readEmojiStyle((await host.tokens?.snapshot?.())?.document ?? {});
   const seed = emojiSeedParams({
     url: opts.url ?? null,
-    session: opts.session ?? null,
+    session: opts.session ?? (brand.status === 'selected' ? emojiParams(brand.style) : null),
     preference: await currentEmojiPreference(host),
   });
-  const announce = (next: EmojiStyleV1 | null): void => opts.onStyle(next, next ? emojiParams(next) : null);
+  const announce = (next: EmojiStyleV1 | null): void => opts.onStyle(next, next ? emojiParams(next) : { emoji: 'none', emojifx: '' });
 
   let control: { update(next: EmojiStyleV1 | null): void; destroy(): void } | null = null;
   // The runtime also receives choices from generic text fields and table cells.
@@ -115,18 +117,21 @@ export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSe
     notifyEmojiDocument();
   };
   const commit = (next: EmojiStyleV1 | null): void => {
-    void runtime.setEmojiStyle(next).then(() => sync(runtime.emoji.style));
+    void runtime.setEmojiStyle(next).then(() => sync(runtime.emoji.style)).catch(error => {
+      host.log('error', String(error instanceof Error ? error.message : error));
+      control?.update(style);
+    });
   };
 
   // Registered before the sidebar check below, because the surfaces that need it
   // most are the ones with NO sidebar: the design tool and Doc Studio render no
   // aside at all, so the Document dock is the only control they have.
-  setEmojiDocumentPort({ value: () => style, set: (next) => commit(next) });
+  setEmojiDocumentPort({ value: () => style, set: (next) => commit(next), credits: () => runtime.emojiCredits?.() ?? '' });
   const release = (): void => setEmojiDocumentPort(null);
 
   style = JSON.stringify(runtime.emoji.style) !== initialStyle
-    ? runtime.emoji.style : emojiStyleFrom(seed, sets, palette);
-  if (style) {
+    ? runtime.emoji.style : seed ? emojiStyleFrom(seed, sets, palette) : runtime.emoji.style;
+  if (style || seed) {
     await runtime.setEmojiStyle(style);
     announce(style);
     notifyEmojiDocument();
@@ -161,6 +166,7 @@ export async function mountEmojiSection(opts: EmojiSectionOpts): Promise<EmojiSe
   control = mountEmojiStyleControl(body, {
     host,
     mode: 'document',
+    credits: () => runtime.emojiCredits?.() ?? '',
     value: style,
     // The seed above already read both, so the control is handed them rather
     // than asking the catalog a second time.

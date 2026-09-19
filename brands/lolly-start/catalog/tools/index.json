@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generatedAt": "2026-09-18T00:06:02.607Z",
+  "generatedAt": "2026-09-19T23:13:57.102Z",
   "tools": [
     {
       "id": "compress-pdf",
@@ -2470,7 +2470,7 @@
       "id": "wordmark",
       "name": "Wordmark",
       "description": "Type a word, get a pure-path vector wordmark in the design system font - recipients never need the font installed.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "status": "community",
       "category": "everyone",
       "tags": [
@@ -2677,7 +2677,7 @@
       "id": "audiogram",
       "name": "Audiogram",
       "description": "Turn a voice clip or song into a video in your design system's colours that actually moves with the sound - bars, spectrum, ring, ridgeline or scope, ready for social.",
-      "version": "2.7.3",
+      "version": "2.7.4",
       "status": "community",
       "category": "everyone",
       "tags": [
@@ -2898,7 +2898,7 @@
       "id": "redact",
       "name": "Redact",
       "description": "Black out sensitive content by rebuilding the file, then verify the output before it downloads, all on your device.",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "status": "official",
       "category": "utility",
       "privacy": "on-device",
@@ -3815,7 +3815,7 @@
       "id": "design",
       "name": "Design",
       "description": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system.",
-      "version": "1.30.0",
+      "version": "1.34.0",
       "status": "community",
       "category": "designer",
       "tags": [
@@ -3860,7 +3860,8 @@
         "avif",
         "tiff",
         "emf",
-        "webp-anim"
+        "webp-anim",
+        "lottie"
       ],
       "width": 1920,
       "height": 1080,
@@ -5390,7 +5391,7 @@
       "id": "darkroom",
       "name": "Darkroom",
       "description": "A pro photo-grading darkroom: film looks, third-party .cube LUTs, design system colour treatments and finishing texture - then bake your look as a LUT any editor can use. Opens a Photoshop or GIMP file as layers too: position, blend and hide each one, grade the composite, and export flat images or a layered PSD.",
-      "version": "2.2.1",
+      "version": "2.3.0",
       "status": "community",
       "category": "designer",
       "tags": [
@@ -7106,7 +7107,7 @@
       "id": "annotate",
       "name": "Annotate",
       "description": "Mark up your own screenshot on your device - arrows, boxes, numbered steps, callouts, highlighter and a spotlight dim.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "status": "community",
       "category": "utility",
       "privacy": "on-device",
@@ -7778,7 +7779,7 @@
       "id": "growth",
       "name": "Growth",
       "description": "Differential growth: a line that repels itself until it folds into coral. Seed it from a ring, a burst, headline letterforms or a logo, and export the result as real, plotter-ready SVG paths.",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "status": "community",
       "category": "designer",
       "tags": [
@@ -7991,7 +7992,7 @@
       "id": "synth",
       "name": "Synth",
       "description": "A visual instrument you play. Four scenes run live on the GPU: fluid ink, a particle swarm that flies at your headline or your logo, a feedback field, and your own camera. Every colour comes out of the design system palette, and the picture moves to your pointer, to a music track, and to a MIDI controller. Export a still or a join-free loop.",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "status": "experimental",
       "category": "designer",
       "tags": [
@@ -11677,7 +11678,7 @@
       "id": "work-avatar",
       "name": "Work Avatar",
       "description": "A round profile photo with a treatment and a ring of text - the campaign badge for LinkedIn and every other place your face goes, in your design system's colours and type.",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "status": "community",
       "category": "everyone",
       "tags": [
@@ -11864,8 +11865,8 @@
     {
       "id": "agenda",
       "name": "Agenda",
-      "description": "A conference programme from one table - a chronological list, a multi-track timetable, or a now-and-next screen for the door - and a real .ics of every session.",
-      "version": "1.1.1",
+      "description": "Turn one programme into branded screens, interactive web pages, animated overviews, PowerPoint slides and calendars.",
+      "version": "1.3.0",
       "status": "community",
       "category": "event",
       "tags": [
@@ -11887,10 +11888,15 @@
         "png",
         "jpg",
         "webp",
-        "ics"
+        "ics",
+        "html",
+        "mp4",
+        "webm",
+        "pptx",
+        "zip"
       ],
-      "width": 794,
-      "height": 1123,
+      "width": 1920,
+      "height": 1080,
       "exportable": true,
       "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 5h4\" /><path d=\"M3 12h4\" /><path d=\"M3 19h4\" /><rect x=\"10\" y=\"3\" width=\"5\" height=\"7.5\" rx=\"1\" /><rect x=\"17\" y=\"3\" width=\"4\" height=\"4.5\" rx=\"1\" /><rect x=\"10\" y=\"13.5\" width=\"5\" height=\"4.5\" rx=\"1\" /><rect x=\"17\" y=\"10.5\" width=\"4\" height=\"7.5\" rx=\"1\" /></svg>",
       "preview": "/catalog/previews/agenda.svg",
@@ -11911,6 +11917,12 @@
       ],
       "templates": [
         {
+          "id": "animated-overview",
+          "name": "Animated overview",
+          "category": "Present and share",
+          "description": "Animated overview from the same programme."
+        },
+        {
           "id": "conference-day",
           "name": "Conference day",
           "category": "Conference",
@@ -11929,6 +11941,36 @@
           ]
         },
         {
+          "id": "event-close",
+          "name": "Event close",
+          "category": "Present and share",
+          "description": "Event close using the shared event programme."
+        },
+        {
+          "id": "foyer-screen",
+          "name": "Foyer screen",
+          "category": "Present and share",
+          "description": "Foyer screen from the same programme."
+        },
+        {
+          "id": "interactive-programme",
+          "name": "Interactive programme",
+          "category": "Present and share",
+          "description": "Interactive programme from the same programme."
+        },
+        {
+          "id": "intermission",
+          "name": "Intermission",
+          "category": "Present and share",
+          "description": "Intermission using the shared event programme."
+        },
+        {
+          "id": "keynote-spotlight",
+          "name": "Keynote spotlight",
+          "category": "Present and share",
+          "description": "Keynote spotlight from the same programme."
+        },
+        {
           "id": "meetup",
           "name": "Evening meetup",
           "category": "Meetup",
@@ -11942,6 +11984,24 @@
           ]
         },
         {
+          "id": "multi-day",
+          "name": "Two-day conference",
+          "category": "Present and share",
+          "description": "Long titles, parallel tracks and an explicit overnight session."
+        },
+        {
+          "id": "room-screen",
+          "name": "Room screen",
+          "category": "Present and share",
+          "description": "Room screen from the same programme."
+        },
+        {
+          "id": "starting-soon",
+          "name": "Starting soon",
+          "category": "Present and share",
+          "description": "Starting soon using the shared event programme."
+        },
+        {
           "id": "summit",
           "name": "Two-day summit",
           "category": "Conference",
@@ -11953,112 +12013,118 @@
               "description": "Both days as a list, rows sized by their words."
             }
           ]
+        },
+        {
+          "id": "wide-ribbon",
+          "name": "Wide ribbon",
+          "category": "Present and share",
+          "description": "Wide ribbon from the same programme."
         }
       ],
       "i18n": {
         "ar": {
           "name": "جدول الأعمال",
-          "description": "برنامج مؤتمر من جدول واحد - قائمة زمنية، أو جدول بعدة مسارات، أو شاشة الآن والتالي عند الباب - وملف .ics حقيقي لكل جلسة."
+          "description": "قم بتحويل برنامج واحد إلى شاشات ذات علامات تجارية وصفحات ويب تفاعلية ونظرات عامة متحركة وشرائح وتقويمات PowerPoint."
         },
         "bg": {
-          "name": "Програма",
-          "description": "Програма за конференция от една таблица - хронологичен списък, разписание с няколко потока или екран „сега и следващо“ на вратата, плюс истински .ics файл за всяка сесия."
+          "name": "Дневен ред",
+          "description": "Превърнете една програма в брандирани екрани, интерактивни уеб страници, анимирани прегледи, PowerPoint слайдове и календари."
         },
         "bn": {
-          "name": "সূচি",
-          "description": "এক টেবিল থেকে একটি কনফারেন্স প্রোগ্রাম - কালানুক্রমিক তালিকা, মাল্টি-ট্র্যাক সময়সূচি, অথবা দরজার জন্য এখন-ও-পরবর্তী স্ক্রিন - এবং প্রতিটি সেশনের জন্য একটি প্রকৃত .ics ফাইল।"
+          "name": "এজেন্ডা",
+          "description": "একটি প্রোগ্রামকে ব্র্যান্ডেড স্ক্রিন, ইন্টারেক্টিভ ওয়েব পেজ, অ্যানিমেটেড ওভারভিউ, PowerPoint স্লাইড এবং ক্যালেন্ডারে পরিণত করুন৷"
         },
         "cs": {
           "name": "Agenda",
-          "description": "Konferenční program z jedné tabulky - chronologický seznam, vícedráhový rozvrh, nebo obrazovka aktuálního a příštího programu pro vchod - a skutečný soubor .ics pro každé vystoupení."
+          "description": "Proměňte jeden program na značkové obrazovky, interaktivní webové stránky, animované přehledy, PowerPoint snímků a kalendáře."
         },
         "de": {
-          "name": "Agenda",
-          "description": "Ein Konferenzprogramm aus einer Tabelle - eine chronologische Liste, ein mehrspuriger Zeitplan oder ein Jetzt-und-Danach-Bildschirm für den Eingang - und eine echte .ics-Datei zu jeder Session."
+          "name": "Tagesordnung",
+          "description": "Verwandeln Sie ein Programm in Markenbildschirme, interaktive Webseiten, animierte Übersichten, PowerPoint Folien und Kalender."
         },
         "es": {
           "name": "Agenda",
-          "description": "Un programa de conferencia a partir de una sola tabla - una lista cronológica, un horario multipista, o una pantalla de ahora y después para la puerta - y un .ics real de cada sesión."
+          "description": "Convierta un programa en pantallas personalizadas, páginas web interactivas, resúmenes animados, PowerPoint diapositivas y calendarios."
         },
         "fr": {
-          "name": "Agenda",
-          "description": "Un programme de conférence à partir d'un seul tableau - liste chronologique, planning multi-pistes, ou écran « maintenant et ensuite » pour l'entrée - et un vrai fichier .ics de chaque session."
+          "name": "Ordre du jour",
+          "description": "Transformez un programme en écrans de marque, pages Web interactives, aperçus animés, diapositives PowerPoint et calendriers."
         },
         "hi": {
-          "name": "Agenda",
-          "description": "एक टेबल से पूरा कॉन्फ़्रेंस कार्यक्रम - कालानुक्रमिक सूची, मल्टी-ट्रैक टाइमटेबल, या दरवाज़े के लिए 'अभी और आगे' स्क्रीन - और हर सेशन की असली .ics फ़ाइल।"
+          "name": "एजेंडा",
+          "description": "एक प्रोग्राम को ब्रांडेड स्क्रीन, इंटरैक्टिव वेब पेज, एनिमेटेड ओवरव्यू, PowerPoint स्लाइड और कैलेंडर में बदलें।"
         },
         "id": {
           "name": "Agenda",
-          "description": "Program konferensi dari satu tabel - daftar kronologis, jadwal multi-jalur atau layar sekarang-dan-berikutnya untuk pintu masuk - dan file .ics asli untuk setiap sesi."
+          "description": "Ubah satu program menjadi layar bermerek, halaman web interaktif, ikhtisar animasi, slide PowerPoint, dan kalender."
         },
         "it": {
-          "name": "Agenda",
-          "description": "Un programma di conferenza da un'unica tabella - un elenco cronologico, un calendario multi-traccia o uno schermo ora-e-prossimo per l'ingresso - e un vero file .ics per ogni sessione."
+          "name": "ordine del giorno",
+          "description": "Trasforma un programma in schermate brandizzate, pagine web interattive, panoramiche animate, diapositive PowerPoint e calendari."
         },
         "ja": {
-          "name": "アジェンダ",
-          "description": "1つの表から作るカンファレンスプログラムです - 時系列のリスト、マルチトラックのタイムテーブル、入り口用の「現在・次」画面のいずれかで表示でき、全セッションの本物の.icsファイルも書き出せます。"
+          "name": "議題",
+          "description": "1 つのプログラムをブランド画面、インタラクティブな Web ページ、アニメーション概要、PowerPoint スライド、カレンダーに変えます。"
         },
         "ko": {
-          "name": "일정",
-          "description": "하나의 표에서 만드는 컨퍼런스 프로그램이에요 - 시간순 목록, 멀티트랙 시간표, 입구용 지금·다음 화면 중에서 고를 수 있고, 모든 세션의 진짜 .ics 파일도 함께 만들어져요."
+          "name": "의제",
+          "description": "하나의 프로그램을 브랜드 화면, 대화형 웹 페이지, 애니메이션 개요, PowerPoint 슬라이드 및 달력으로 바꿔보세요."
         },
         "ms": {
           "name": "Agenda",
-          "description": "Program persidangan daripada satu jadual - senarai kronologi, jadual waktu berbilang trek, atau skrin sekarang-dan-seterusnya untuk di pintu - berserta fail .ics sebenar bagi setiap sesi."
+          "description": "Tukar satu program kepada skrin berjenama, halaman web interaktif, gambaran keseluruhan animasi, PowerPoint slaid dan kalendar."
         },
         "nl": {
           "name": "Agenda",
-          "description": "Een conferentieprogramma vanuit één tabel - een chronologische lijst, een schema met meerdere tracks, of een nu-en-straks-scherm voor bij de deur - met een echt .ics-bestand van elke sessie."
+          "description": "Verander één programma in merkschermen, interactieve webpagina's, geanimeerde overzichten, PowerPoint slides en kalenders."
         },
         "no": {
           "name": "Agenda",
-          "description": "Et konferanseprogram fra én tabell - en kronologisk liste, en timeplan med flere spor, eller en nå-og-neste-skjerm ved døren - og en ekte .ics-fil for hver økt."
+          "description": "Gjør ett program om til merkede skjermer, interaktive nettsider, animerte oversikter, PowerPoint lysbilder og kalendere."
         },
         "pl": {
-          "name": "Agenda",
-          "description": "Program konferencji z jednej tabeli - chronologiczna lista, harmonogram z wieloma ścieżkami albo ekran teraz-i-potem przy wejściu - oraz prawdziwy plik .ics każdej sesji."
+          "name": "Porządek obrad",
+          "description": "Zamień jeden program w markowe ekrany, interaktywne strony internetowe, animowane przeglądy, PowerPoint slajdy i kalendarze."
         },
         "pt": {
           "name": "Agenda",
-          "description": "Um programa de conferência a partir de uma única tabela - uma lista cronológica, uma grade com várias trilhas, ou uma tela de agora-e-a-seguir para a entrada - e um .ics real de cada sessão."
+          "description": "Transforme um programa em telas de marca, páginas da web interativas, visões gerais animadas, PowerPoint slides e calendários."
         },
         "ro": {
           "name": "Agenda",
-          "description": "Un program de conferință dintr-un singur tabel - o listă cronologică, un orar cu mai multe secțiuni, sau un ecran cu ce e acum și ce urmează pentru intrare - și un fișier .ics real pentru fiecare sesiune."
+          "description": "Transformați un program în ecrane de marcă, pagini web interactive, prezentări de ansamblu animate, diapozitive PowerPoint și calendare."
         },
         "sv": {
           "name": "Agenda",
-          "description": "Ett konferensprogram från en enda tabell - en kronologisk lista, ett flerspårigt schema eller en nu-och-nästa-skärm vid dörren - och en riktig .ics-fil för varje pass."
+          "description": "Förvandla ett program till märkesskärmar, interaktiva webbsidor, animerade översikter, PowerPoint bilder och kalendrar."
         },
         "tl": {
           "name": "Agenda",
-          "description": "Isang conference programme mula sa iisang table - isang chronological na listahan, isang multi-track na iskedyul, o isang now-and-next na screen para sa pinto - at tunay na .ics ng bawat session."
+          "description": "Gawing mga branded na screen ang isang programa, interactive na web page, animated na pangkalahatang-ideya, PowerPoint slide at kalendaryo."
         },
         "tr": {
-          "name": "Ajanda",
-          "description": "Tek bir tablodan bir konferans programı: kronolojik liste, çok kollu bir zaman çizelgesi ya da kapıda şimdi ve sıradaki oturumu gösteren bir ekran - ve her oturum için gerçek bir .ics dosyası."
+          "name": "Gündem",
+          "description": "Bir programı markalı ekranlara, etkileşimli web sayfalarına, animasyonlu genel bakışlara, PowerPoint slaytlara ve takvimlere dönüştürün."
         },
         "uk": {
-          "name": "Програма",
-          "description": "Програма конференції з однієї таблиці - хронологічний список, багатопотоковий розклад або екран «зараз і далі» для дверей - та справжній файл .ics для кожної сесії."
+          "name": "Порядок денний",
+          "description": "Перетворіть одну програму на фірмові екрани, інтерактивні веб-сторінки, анімовані огляди, PowerPoint слайди та календарі."
         },
         "ur": {
           "name": "ایجنڈا",
-          "description": "ایک ہی ٹیبل سے کانفرنس پروگرام - تاریخ وار فہرست، ملٹی ٹریک ٹائم ٹیبل، یا دروازے کے لیے ابھی اور اگلا اسکرین - اور ہر سیشن کی ایک حقیقی .ics فائل۔"
+          "description": "ایک پروگرام کو برانڈڈ اسکرینز، انٹرایکٹو ویب پیجز، اینیمیٹڈ اوور ویوز، PowerPoint سلائیڈز اور کیلنڈرز میں تبدیل کریں۔"
         },
         "vi": {
-          "name": "Chương trình",
-          "description": "Một chương trình hội nghị chỉ từ một bảng duy nhất - danh sách theo trình tự thời gian, thời khóa biểu nhiều luồng, hoặc màn hình đang diễn ra và tiếp theo đặt ở cửa ra vào - cùng một file .ics thật cho mọi phiên."
+          "name": "chương trình nghị sự",
+          "description": "Biến một chương trình thành màn hình có thương hiệu, trang web tương tác, tổng quan sinh động, trang trình bày PowerPoint và lịch."
         },
         "zh-hant": {
           "name": "議程",
-          "description": "把一張表格變成會議議程 - 依時間排列的列表、多軌道時間表，或門口用的「現在/接下來」提示螢幕 - 並為每個場次產生真正的 .ics 檔案。"
+          "description": "將一個程式變成品牌螢幕、互動式網頁、動畫概述、PowerPoint 投影片和日曆。"
         },
         "zh": {
           "name": "议程",
-          "description": "把一张表格变成会议日程 - 按时间排列的列表、多轨道时间表，或门口用的“现在/接下来”提示屏 - 并为每个环节生成真实的 .ics 文件。"
+          "description": "将一个程序变成品牌屏幕、交互式网页、动画概述、PowerPoint 幻灯片和日历。"
         }
       }
     },
@@ -13992,7 +14058,7 @@
       "id": "3d-studio",
       "name": "3D Studio",
       "description": "Turn SVG artwork and 3D models into coordinated images, alone or arranged together in one scene. Shape materials, lighting, focus and transparent shadows with guided or expert controls.",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "status": "official",
       "category": "designer",
       "tags": [

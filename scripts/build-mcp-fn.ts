@@ -25,7 +25,8 @@
  * `api/mcp/[...path].js.map` is git-ignored.
  */
 import { build } from 'esbuild';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertNoBareWorkspaceImports, workspaceAliases } from './lib/workspace-aliases.ts';
@@ -36,6 +37,21 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outfile = path.join(root, 'api/mcp/[...path].js');
 const ABSENT_RUNTIMES = ['onnxruntime-node', '@huggingface/transformers', '@napi-rs/canvas', 'phonemizer'];
 const ABSENT_STUB = path.join(root, 'scripts/mcp-fn-absent-runtime.ts');
+
+// Keep every emoji set in the function without spending its 250 MiB limit on
+// expanded SVG strings. The web build still serves the original JSON bundles.
+const packs = path.join(root, 'community/emoji-packs');
+let rawBytes = 0, packedBytes = 0;
+for (const name of await readdir(packs)) {
+  if (!name.endsWith('.json') || name === 'index.json') continue;
+  if (!name.includes('-')) throw new Error(`Emoji bundle ${name} does not match the function's exclusion pattern`);
+  const source = await readFile(path.join(packs, name));
+  const compressed = gzipSync(source, { level: 9 });
+  await writeFile(path.join(packs, `${name}.gz`), compressed);
+  rawBytes += source.byteLength;
+  packedBytes += compressed.byteLength;
+}
+console.log(`Emoji function content: ${(rawBytes / 1024 ** 2).toFixed(1)} -> ${(packedBytes / 1024 ** 2).toFixed(1)} MiB`);
 
 await mkdir(path.dirname(outfile), { recursive: true });
 

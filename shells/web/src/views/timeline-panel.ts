@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import '../styles/parts/timeline.css';
+import '../styles/parts/lottie-editor.css';
 /**
  * timeline-panel.ts - the docked timeline editor for a `boxes` block that carries the
  * phase-1 time model (plans/53-fable-timeline-phase-2.md section 2).
@@ -74,6 +75,10 @@ import { subtitlesOps } from './timeline-panel/subtitles.ts';
 import { toolbarOps } from './timeline-panel/toolbar.ts';
 import { selectionActionsOps } from './timeline-panel/selection-actions.ts';
 import { layoutOps } from './timeline-panel/layout.ts';
+import { marksOps } from './timeline-panel/marks.ts';
+import { rangePreviewOps } from './timeline-panel/range-preview.ts';
+import { lottieOps } from './timeline-panel/lottie.ts';
+import { crossfadeOps } from './timeline-panel/crossfade.ts';
 import { panelOps } from './timeline-panel/panel.ts';
 export { canPlayOnce, playOnce, timeToPx, pxToTime, clientToTime, clampPxPerSec, fitPxPerSec, zoomAbout, tracksKey, snapCandidates, isTextControl, panelKeysActive, clampPanelH, tickStep, frameCountFor, isCoarsePointer, edgeBase, MAX_NODE_RASTERS_PER_PASS, MAX_THUMB_PASSES, isPaintedColor, thumbMode, canRasterBox, appearanceSig } from './timeline-panel/shared.ts';
 export type { TimelineRuntime, TimelineHost, TimelineSelection, TimelineAddKind, TimelineAddDetail, TimelinePanelOpts, ThumbMode } from './timeline-panel/shared.ts';
@@ -341,6 +346,10 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   tp.toolbar = toolbarOps(tp);
   tp.selectionActions = selectionActionsOps(tp);
   tp.layout = layoutOps(tp);
+  tp.crossfade = crossfadeOps(tp);
+  tp.marks = marksOps(tp);
+  tp.rangePreview = rangePreviewOps(tp);
+  tp.lottie = lottieOps(tp);
   tp.opts = opts;
 
   const {
@@ -424,6 +433,12 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   handle.setAttribute('aria-orientation', 'horizontal');
   handle.setAttribute('aria-label', t('Resize timeline'));
   handle.tabIndex = 0;
+  handle.addEventListener('keydown', event => {
+    if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault(); event.stopPropagation();
+    const step = event.shiftKey ? 48 : 16;
+    tp.gestures.resizePanel(event.key === 'Home' ? 0 : event.key === 'End' ? 10000 : tp.panelH + (event.key === 'ArrowUp' ? step : -step));
+  });
 
   const bar = document.createElement('div'); tp.bar = bar;
   bar.className = 'tl-bar';
@@ -1394,6 +1409,8 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
    * as seen. Reset by endGesture; null means "nothing is snapped right now".
    */
   tp.snappedAt = null;
+  tp.xfadeDrag = null;
+  tp.rampDrag = null;
 
   /**
    * The three edge states, armed. Every class added here comes off in endGesture - the
@@ -1567,7 +1584,9 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
   });
   scriptBtn.hidden = !tp.recording.canScriptVoiceover();
   tp.toolbar.wire();
+  tp.marks.wire();
   tp.layout.wire();
+  tp.crossfade.wire();
   transcriptBtn.addEventListener('click', () => {
     void tp.subtitles.openTranscript();
   });
@@ -1666,6 +1685,7 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
     if (tp.disposed || !tp.open) return;
     tp.rows.restyle(getBoxes());
     tp.toolbar.sync();
+    tp.lottie.sync();
   }); tp.unsubSelection = unsubSelection;
   /**
    * `tl-time` - the panel→canvas half of the one rule's seam (free-canvas.ts's header).
@@ -1701,6 +1721,7 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
     // clips are playing, so that gate would swallow every latch there is.
     tp.kfDock.syncKfLatch();
     tp.kfDock.syncKfCam();
+    tp.lottie.tick();
   }); tp.unsubTick = unsubTick;
   stageEl.addEventListener('fc-seek', tp.panel.onFcSeek);
   /**
@@ -1742,14 +1763,11 @@ export function initTimelinePanel(opts: TimelinePanelOpts): TimelinePanel {
 
   const ro =
     typeof ResizeObserver === 'function'
-      ? new ResizeObserver(() => {
-          if (tp.open && !tp.gesture) {
-            tp.rows.restyle(getBoxes());
-            tp.rows.updatePlayhead(clock.t());
-          }
-        })
+      ? new ResizeObserver(tp.panel.onViewportResize)
       : null; tp.ro = ro;
   ro?.observe(stageEl);
+  canvasEl.addEventListener('canvas-resize', tp.panel.onViewportResize);
+  window.visualViewport?.addEventListener('resize', tp.panel.onViewportResize);
 
   return {
     destroy: tp.panel.destroy,

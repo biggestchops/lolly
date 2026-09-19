@@ -10,7 +10,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 // The DOM-free/raster format split + the resvg fast path + the export C2PA payload,
 // shared with the CLI (one implementation, no drift).
-import { NODE_FORMATS, pxDims, eligibleForResvgPng, rasterizeTierAPng, canCarryPrintPrep, printPrepRefusal } from '@lolly-tools/node-shell/raster';
+import { NODE_FORMATS, needsFloatScene, pxDims, eligibleForResvgPng, rasterizeTierAPng, canCarryPrintPrep, printPrepRefusal } from '@lolly-tools/node-shell/raster';
 import { buildExportC2paOpts } from '@lolly-tools/node-shell/c2pa-opts';
 import { assertRenderOk } from '@lolly-tools/node-shell/render-integrity';
 import type { RenderDims } from '@lolly-tools/node-shell/webshell-render';
@@ -61,12 +61,14 @@ export async function mountTool(
   const reserved = parseUrlState(expanded, tool.manifest);
   const initial = values ? { ...reserved.values, ...values } : reserved.values;
   const runtime = await createRuntime(tool, host, initial as Parameters<typeof createRuntime>[2]);
+  await (await import('./document-emoji.ts')).seedEmoji(runtime,host,reserved,values);
   return { runtime, manifest: tool.manifest, reserved };
 }
 
 /** The current state as a URL query - what a saved session stores + reopens from. */
 export function currentQuery(runtime: Runtime): string {
-  return serializeUrlState(runtime.getModel());
+  const style = runtime.emoji.style;
+  return serializeUrlState(runtime.getModel(), {emojiStyle:style ? JSON.stringify(style) : undefined});
 }
 
 /** The current input values by id - the other half of what a saved session stores, and
@@ -203,7 +205,8 @@ export async function exportToFile(
   }
 
   // 3. Engine-native formats (svg/emf/eps + text/data): the DOM-free path.
-  if (NODE_FORMATS.includes(fmt)) {
+  const floatScene = needsFloatScene(manifest.id, modelValues(runtime).editingRange, fmt, dims.hdrParam);
+  if (NODE_FORMATS.includes(fmt) && !floatScene) {
     const canvas = canvasOf(dom);
     canvas.innerHTML = runtime.getHydrated();
     // Qualify a physical unit onto the value (e.g. 210 + mm → "210mm"); px passes as a
@@ -228,7 +231,7 @@ export async function exportToFile(
   //     the pixels, so imprint-by-default never drags a PNG into the browser tier (the
   //     same fix shells/cli/src/raster.ts made). Only the DURABLE (neural TrustMark)
   //     mark still needs the web shell's export path, so that alone falls through.
-  if (eligibleForResvgPng(fmt, dims)) {
+  if (!floatScene && modelValues(runtime).editingRange !== 'hdr' && eligibleForResvgPng(fmt, dims)) {
     const svg = await renderSvg(runtime, dom);
     if (svg) {
       // Shared Tier-A rasteriser (node-shell), identical to the CLI: imprint when asked

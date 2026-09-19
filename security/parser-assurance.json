@@ -8,10 +8,10 @@
       ],
       "details": {
         "inputSource": "Source SVG bytes from a verified emoji pack, with injected XML parsing after digest admission",
-        "bounds": "2 MiB source, no DTD/entity declarations or processing instructions, 4,096 elements, depth 32, 48 attributes per element, 1 M attribute characters; strict element/attribute/paint subset with local gradient, clipPath and use-in-clipPath references only",
+        "bounds": "2 MiB source, only the exact standard SVG 1.1 doctype, no entity declarations or processing instructions, 4,096 elements, depth 32, 48 attributes per element, 1 M attribute characters; strict element/attribute/paint subset with local gradient, clipPath and local shape-use references only",
         "directTests": "`tests/emoji-svg.test.ts`, `tests/emoji-line.test.ts`, `tests/emoji-line.browser.test.ts`",
         "fuzzCoverage": "`emoji-svg` recomputes pack/artwork digests before mutating static SVG, local gradients and clip paths",
-        "notes": "Unsupported visual features fail rather than being removed; inert declarations (enable-background, class, color, overflow, display other than none) are omitted and recorded, and a display:none element is dropped with its paint servers kept referenceable. Canonical source pixel equality is measured for four fixtures in the suite and for every admitted glyph of four full families by `scripts/import-emoji-pack.ts --verify` (a local run, not CI). No text, images, masks, filters, animation or use outside clipPath."
+        "notes": "Unsupported visual features fail rather than being removed; inert declarations (enable-background, class, color, overflow, display other than none) are omitted and recorded, and a display:none element is dropped with its paint servers kept referenceable. Canonical source pixel equality is measured for four fixtures in the suite and for every admitted glyph of four full families by `scripts/import-emoji-pack.ts --verify` (a local run, not CI). No text, images, masks, filters, animation or cyclic/group use targets."
       }
     },
     "engine/src/emoji-svg-syntax.ts": {
@@ -653,6 +653,102 @@
         "directTests": "`tests/geom-api.test.ts`, `tests/geom-boolean.test.ts`, `tests/geom-offset.test.ts`, `tests/geom-stroke.test.ts`, `tests/geom-fit.test.ts`, `tests/geom-spline.test.ts`, `tests/geom-bezier.test.ts`, `tests/geom-intersect.test.ts`, `tests/spiro.test.ts`",
         "fuzzCoverage": "`geom` (parse, bounds, area, winding, nearest, simplify, selfUnion, union, difference, offset, stroke, decodeAuthored)",
         "notes": "Results, never throws: bad input comes back as `{ok:false, code}` and the kernel's `GeomLimitError` becomes code `limit`, so a caller can check `limits()` before offering an operation rather than after failing one. A non-finite coordinate produced by the kernel itself is reported as code `internal` rather than written into a template as `M NaN NaN`. The superlinear passes (boolean, offset, stroke) are the reason the char and curve ceilings sit where they do: sized above any real authored path and below where those passes stop being interactive."
+      }
+    },
+    "engine/src/dotlottie.ts": {
+      "fuzzTargets": [
+        "lottie"
+      ],
+      "details": {
+        "inputSource": "Raw Lottie JSON and dotLottie v1/v2 archives from uploads and catalog assets",
+        "bounds": "64 MiB source, 128 MiB expanded, 32 MiB per member, 2,048 members; JSON depth 64 and 500,000 values; 2,000 layers, 100,000 keys, dependency depth 32, 1,000 images and 32 million pixels per image",
+        "directTests": "`tests/lottie.test.ts`, `tests/design-lottie.test.ts`, `tests/lottie.browser.test.ts`, `tests/lottie-import.browser.test.ts`",
+        "fuzzCoverage": "`lottie` mutates raw JSON and both package versions; the shared ZIP reader supplies container bounds",
+        "notes": "Only embedded raster images; no external fetch, expressions, fonts, themed slots or state-machine execution. Missing/cyclic references and unsupported rendering features fail explicitly; original source bytes remain unchanged."
+      }
+    },
+    "engine/src/lottie-edit.ts": {
+      "fuzzTargets": [
+        "lottie-edits"
+      ],
+      "details": {
+        "inputSource": "Instance-local animationEdits revisions from Design documents and compact URLs",
+        "bounds": "256 KiB UTF-8 revision, 512 edits, JSON depth 64; source SHA-256 binding; allowlisted layer fields and property tracks; finite values, dimensions and ordered keys checked before mutation",
+        "directTests": "`tests/lottie-edit.test.ts`, `tests/design-lottie.test.ts`, `tests/lottie-internal.browser.test.ts`, `tests/lottie.browser.test.ts`",
+        "fuzzCoverage": "`lottie-edits` mutates layer and property revisions against a pinned synthetic source",
+        "notes": "Edits apply to a clone of the admitted source. No arbitrary property paths, asset replacement or dependency mutations. Spatial path subdivision, duplicate key times and animated fill/stroke edits fail explicitly."
+      }
+    },
+    "engine/src/jxl-container.ts": {
+      "fuzzTargets": [
+        "jxl"
+      ],
+      "details": {
+        "inputSource": "Uploaded, remote or local JPEG XL bytes and generated XML metadata boxes",
+        "bounds": "128 MiB encoded input/output; 16 MP decode, 8 MP encode, 16384 per edge; 384 MiB codec allocation budget and 768 MiB WASM ceiling; one worker, 120-second deadline; XML limited to 1 MiB and 4096 boxes",
+        "directTests": "`tests/jxl.test.ts`, `tests/jxl.browser.test.ts`",
+        "fuzzCoverage": "`jxl` mutates real grayscale, P3, PQ, animation and auxiliary-channel fixtures through the disposable worker and bounded XML reader",
+        "notes": "Pinned libjxl 0.12.0 parses compressed images. Animation and extra channels are refused for still decode; compressed metadata is not inflated by the XML reader. Cancellation terminates the worker. Native browser support is not required."
+      }
+    },
+    "packages/node-shell/src/jxl-codec.ts": {
+      "fuzzTargets": [
+        "jxl"
+      ],
+      "details": {
+        "inputSource": "Uploaded, remote or local JPEG XL bytes and generated XML metadata boxes",
+        "bounds": "128 MiB encoded input/output; 16 MP decode, 8 MP encode, 16384 per edge; 384 MiB codec allocation budget and 768 MiB WASM ceiling; one worker, 120-second deadline; XML limited to 1 MiB and 4096 boxes",
+        "directTests": "`tests/jxl.test.ts`, `tests/jxl.browser.test.ts`",
+        "fuzzCoverage": "`jxl` mutates real grayscale, P3, PQ, animation and auxiliary-channel fixtures through the disposable worker and bounded XML reader",
+        "notes": "Pinned libjxl 0.12.0 parses compressed images. Animation and extra channels are refused for still decode; compressed metadata is not inflated by the XML reader. Cancellation terminates the worker. Native browser support is not required."
+      }
+    },
+    "engine/src/deep-png.ts": {
+      "fuzzTargets": [
+        "deep-image"
+      ],
+      "details": {
+        "inputSource": "Original image bytes from files, assets and remote images",
+        "bounds": "128 MiB encoded input; 8,388,608 pixels; 16384 per edge; exact decompression size; finite bounded samples; supported colour transforms only",
+        "directTests": "`tests/deep-editing.test.ts`, `tests/deep-editing.browser.test.ts`",
+        "fuzzCoverage": "`deep-image` mutates real generated PNG16, float TIFF and compressed EXR seeds",
+        "notes": "Parsers return straight linear float samples. Unsupported profiles, pixel layouts and format variants fail explicitly. PNG verifies CRC and Adler checksums; EXR and TIFF validate every block/strip before reading."
+      }
+    },
+    "engine/src/deep-tiff.ts": {
+      "fuzzTargets": [
+        "deep-image"
+      ],
+      "details": {
+        "inputSource": "Original image bytes from files, assets and remote images",
+        "bounds": "128 MiB encoded input; 8,388,608 pixels; 16384 per edge; exact decompression size; finite bounded samples; supported colour transforms only",
+        "directTests": "`tests/deep-editing.test.ts`, `tests/deep-editing.browser.test.ts`",
+        "fuzzCoverage": "`deep-image` mutates real generated PNG16, float TIFF and compressed EXR seeds",
+        "notes": "Parsers return straight linear float samples. Unsupported profiles, pixel layouts and format variants fail explicitly. PNG verifies CRC and Adler checksums; EXR and TIFF validate every block/strip before reading."
+      }
+    },
+    "engine/src/deep-exr.ts": {
+      "fuzzTargets": [
+        "deep-image"
+      ],
+      "details": {
+        "inputSource": "Original image bytes from files, assets and remote images",
+        "bounds": "128 MiB encoded input; 8,388,608 pixels; 16384 per edge; exact decompression size; finite bounded samples; supported colour transforms only",
+        "directTests": "`tests/deep-editing.test.ts`, `tests/deep-editing.browser.test.ts`",
+        "fuzzCoverage": "`deep-image` mutates real generated PNG16, float TIFF and compressed EXR seeds",
+        "notes": "Parsers return straight linear float samples. Unsupported profiles, pixel layouts and format variants fail explicitly. PNG verifies CRC and Adler checksums; EXR and TIFF validate every block/strip before reading."
+      }
+    },
+    "engine/src/emoji-bundle.ts": {
+      "fuzzTargets": [
+        "emoji-bundle"
+      ],
+      "details": {
+        "inputSource": "Imported or portable custom emoji JSON bundles",
+        "bounds": "64 MiB bundle, 32 MiB manifest, exact per-artwork digest and bounded static SVG subset; unreferenced artwork refused",
+        "directTests": "`tests/emoji-author.test.ts`, `shells/web/src/bridge/emoji-portable.test.ts`, `tests/emoji-workflow.browser.test.ts`",
+        "fuzzCoverage": "`emoji-bundle` mutates a complete bundle with real manifest and SVG hashes",
+        "notes": "Full admission precedes installation. Authoring uses the same admission path. Redistribution permissions are checked by the storage layer."
       }
     },
     "shells/web/src/lib/design-system/extract-site.ts": {

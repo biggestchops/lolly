@@ -38,7 +38,7 @@ let emojiParams: EmojiParamPair | null = null;
 
 /** Set the params the next URL write carries, or clear them with null. */
 export function setToolEmojiParams(next: EmojiParamPair | null): void {
-  emojiParams = next?.emoji ? { emoji: next.emoji, emojifx: next.emojifx ?? '' } : null;
+  emojiParams = next?.emoji ? { ...next, emojifx: next.emojifx ?? '' } : null;
 }
 
 /** The chosen set as the two reserved params, or null while none is chosen. */
@@ -624,6 +624,7 @@ export function collectExportParams(exportScope: HTMLElement | null): string[] {
   if (emoji) {
     parts.push(`emoji=${encodeURIComponent(emoji.emoji)}`);
     if (emoji.emojifx) parts.push(`emojifx=${encodeURIComponent(emoji.emojifx)}`);
+    if (emoji.emojistyle) parts.push(`emojistyle=${encodeURIComponent(emoji.emojistyle)}`);
   }
   const fmtEl = exportScope?.querySelector<HTMLSelectElement>('[data-action="format"]');
   if (fmtEl?.value) parts.push(`format=${encodeURIComponent(fmtEl.value)}`);

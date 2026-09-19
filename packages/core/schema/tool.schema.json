@@ -37,7 +37,10 @@
     },
     "galleryArt": {
       "type": "string",
-      "enum": ["render", "icon"],
+      "enum": [
+        "render",
+        "icon"
+      ],
       "description": "Gallery first impression. Default render uses editable templates or tool defaults. Use icon when a tool needs personal media or an explicit capture before it has a useful output."
     },
     "a11yLabel": {
@@ -158,6 +161,10 @@
       "additionalProperties": false,
       "description": "Defines the template render area and supported export formats.",
       "properties": {
+        "portable": {
+          "type": "boolean",
+          "description": "Load the signed presentation.js browser runtime and include it in interactive HTML exports."
+        },
         "width": {
           "type": "integer",
           "minimum": 1
@@ -209,6 +216,8 @@
               "webp",
               "webp-anim",
               "avif",
+              "jxl",
+              "jxl-lossless",
               "webm",
               "mp4",
               "gif",
@@ -219,7 +228,8 @@
               "opus",
               "ttf",
               "otf",
-              "woff"
+              "woff",
+              "lottie"
             ]
           },
           "minItems": 1,
@@ -1355,6 +1365,99 @@
             "accept": {
               "type": "string",
               "description": "Override the file-input accept filter (default covers csv/json/txt/md/xlsx)."
+            }
+          }
+        },
+        "tableEditor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title",
+            "fields"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "diagnostics": {
+              "type": "string"
+            },
+            "preview": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "date",
+                "time",
+                "input"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "time": {
+                  "type": "string"
+                },
+                "input": {
+                  "type": "string"
+                }
+              }
+            },
+            "fields": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key",
+                  "label"
+                ],
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "aliases": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "editor": {
+                    "enum": [
+                      "text",
+                      "date",
+                      "time",
+                      "choice",
+                      "url"
+                    ]
+                  },
+                  "choices": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "primary": {
+                    "type": "boolean"
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "identity": {
+                    "type": "boolean"
+                  },
+                  "dateField": {
+                    "type": "string"
+                  },
+                  "column": {
+                    "type": "string"
+                  }
+                }
+              }
             }
           }
         }
@@ -2575,7 +2678,10 @@
       "properties": {
         "galleryTheme": {
           "type": "string",
-          "enum": ["light", "dark"],
+          "enum": [
+            "light",
+            "dark"
+          ],
           "description": "Gallery theme this transparent artwork suits; dark also serves the brand theme. Omit for artwork that suits either theme."
         },
         "galleryCover": {

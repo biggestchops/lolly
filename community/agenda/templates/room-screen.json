@@ -1,0 +1,182 @@
+{
+  "id": "room-screen",
+  "name": "Room screen",
+  "category": "Present and share",
+  "description": "Room screen from the same programme.",
+  "values": {
+    "title": "Northwind Summit 2026",
+    "subtitle": "Riverside Conference Centre",
+    "layout": "rooms",
+    "now": "2026-10-14T10:05",
+    "tz": "Europe/London",
+    "showSpeakers": true,
+    "showRooms": true,
+    "compact": false,
+    "plenaryLabel": "",
+    "nowLabel": "",
+    "nextLabel": "",
+    "sessions": {
+      "columns": [
+        "Date",
+        "Start",
+        "End",
+        "Title",
+        "Speaker",
+        "Track",
+        "Room",
+        "Kind",
+        "Note",
+        "Session ID"
+      ],
+      "rows": [
+        [
+          "2026-10-14",
+          "09:00",
+          "09:45",
+          "Opening keynote: building in the open",
+          "Maya Lindqvist",
+          "",
+          "Auditorium",
+          "keynote",
+          "Doors open at 08:30",
+          "agenda-conference-day-1"
+        ],
+        [
+          "2026-10-14",
+          "10:00",
+          "10:45",
+          "Design tokens that survive a rebrand",
+          "Ana Kovač",
+          "Design",
+          "Hall A",
+          "session",
+          "",
+          "agenda-conference-day-2"
+        ],
+        [
+          "2026-10-14",
+          "10:00",
+          "10:45",
+          "Shipping containers without the drama",
+          "Tomás Herrera",
+          "Platform",
+          "Hall B",
+          "session",
+          "",
+          "agenda-conference-day-3"
+        ],
+        [
+          "2026-10-14",
+          "10:00",
+          "11:30",
+          "Workshop: your first accessible component",
+          "Priya Nair",
+          "Practice",
+          "Studio 1",
+          "workshop",
+          "Bring a laptop",
+          "agenda-conference-day-4"
+        ],
+        [
+          "2026-10-14",
+          "10:45",
+          "11:15",
+          "Coffee",
+          "",
+          "",
+          "Foyer",
+          "break",
+          "",
+          "agenda-conference-day-5"
+        ],
+        [
+          "2026-10-14",
+          "11:15",
+          "12:00",
+          "Type on screen, type in print",
+          "Lena Fischer",
+          "Design",
+          "Hall A",
+          "session",
+          "",
+          "agenda-conference-day-6"
+        ],
+        [
+          "2026-10-14",
+          "11:15",
+          "12:00",
+          "Observability on a small budget",
+          "Jonas Weber",
+          "Platform",
+          "Hall B",
+          "session",
+          "",
+          "agenda-conference-day-7"
+        ],
+        [
+          "2026-10-14",
+          "12:00",
+          "13:00",
+          "Lunch",
+          "",
+          "",
+          "Foyer",
+          "break",
+          "",
+          "agenda-conference-day-8"
+        ],
+        [
+          "2026-10-14",
+          "13:00",
+          "13:45",
+          "Colour, contrast and the people who need it",
+          "Ingrid Sorensen",
+          "Design",
+          "Hall A",
+          "session",
+          "",
+          "agenda-conference-day-9"
+        ],
+        [
+          "2026-10-14",
+          "13:00",
+          "13:45",
+          "Rolling back without the panic",
+          "Sam Oyelaran",
+          "Platform",
+          "Hall B",
+          "session",
+          "",
+          "agenda-conference-day-10"
+        ],
+        [
+          "2026-10-14",
+          "14:00",
+          "14:45",
+          "Closing panel: what we ship next",
+          "",
+          "",
+          "Auditorium",
+          "keynote",
+          "",
+          "agenda-conference-day-11"
+        ],
+        [
+          "2026-10-14",
+          "17:00",
+          "19:00",
+          "Drinks at the riverside bar",
+          "",
+          "",
+          "Foyer",
+          "social",
+          "Everyone welcome",
+          "agenda-conference-day-12"
+        ]
+      ]
+    },
+    "style": "swiss",
+    "backdrop": "planes",
+    "eventId": "northwind-2026"
+  }
+}

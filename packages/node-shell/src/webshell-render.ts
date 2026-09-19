@@ -100,6 +100,7 @@ const EXPORT_URL_RESERVED = ['format', 'export', 'copy', 'width', 'w', 'height',
 
 export function exportUrl(base: string, toolId: string, query: string, fmt: string, dims: RenderDims): string {
   const p = new URLSearchParams(query);
+  if (dims.lang) p.set('lang', dims.lang);
   for (const k of EXPORT_URL_RESERVED) p.delete(k);
   p.set('format', fmt);
   const unit = dims.unit || 'px';
@@ -133,6 +134,7 @@ export function exportUrl(base: string, toolId: string, query: string, fmt: stri
   // ?hdr= and writes Rec.2100 PQ; before this the CLI's --hdr=1 reached only the Node
   // still writers, so an HDR AVIF or TIFF came back SDR and said nothing.
   if (dims.hdrParam) p.set('hdr', dims.hdrParam);
+  if (dims.depth && dims.depth !== 'auto') p.set('depth', String(dims.depth));
   if (dims.video) {
     const v = dims.video;
     if (v.fps != null) p.set('fps', String(v.fps));
@@ -291,6 +293,8 @@ function noFileError(toolId: string, format: string, debug: DebugRecorder): Brow
 }
 
 export interface RenderDims {
+  /** Effective UI/content language forwarded to the browser runtime. */
+  lang?: string;
   width?: number; height?: number; unit?: string; dpi?: number;
   /** Standard PDF open-password (basic RC4 lock). */
   password?: string;
@@ -313,6 +317,7 @@ export interface RenderDims {
    *  for the formats whose HDR encode lives in the browser - AVIF, TIFF and the 10-bit
    *  mp4/webm containers. PNG/JPEG HDR stills are encoded in Node and never set this. */
   hdrParam?: string | null;
+  depth?: 8 | 16 | 'float' | 'auto';
   /** CMYK press condition (e.g. "fogra39") for pdf-cmyk / cmyk-tiff. Named distinctly
    *  from the CLI's --profile (the user-profile FILE) to avoid the url-mode collision. */
   pressProfile?: string;

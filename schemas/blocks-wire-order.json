@@ -136,7 +136,9 @@
       "locked",
       "slideTransition",
       "plainText",
-      "scene"
+      "scene",
+      "animationId",
+      "animationEdits"
     ],
     "diagram-builder:nodes": [
       "shape",

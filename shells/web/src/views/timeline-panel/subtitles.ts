@@ -150,6 +150,7 @@ export function showTranscript(tp: TpCtx, clipId: string, words: SpeechWordTimin
   openTranscriptPanel({
     cfg,
     words,
+    markers: tp.marks.read().markers,
     assetId,
     sourceId: clipId,
     assetField: tp.recording.assetFieldName(),

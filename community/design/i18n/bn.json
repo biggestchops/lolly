@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "নিচে বামে",
   "inputs.boxes.fields.imgpos.options.center bottom": "নিচে",
   "inputs.boxes.fields.imgpos.options.right bottom": "নিচে ডানে",
-  "description": "মুক্ত বিন্যাসের জন্য একটি খোলা ক্যানভাস - টেক্সট, ছবি, শেপ এবং আপনার অন্যান্য Lolly টুল থেকে লাইভ রেন্ডার, সবই আপনার ডিজাইন সিস্টেম অনুযায়ী।"
+  "description": "মুক্ত বিন্যাসের জন্য একটি খোলা ক্যানভাস - টেক্সট, ছবি, শেপ এবং আপনার অন্যান্য Lolly টুল থেকে লাইভ রেন্ডার, সবই আপনার ডিজাইন সিস্টেম অনুযায়ী।",
+  "inputs.projectFps.label": "প্রকল্পের ফ্রেম রেট",
+  "inputs.sequenceMarks.label": "টাইমলাইনের মার্কার",
+  "inputs.boxes.fields.animationId.label": "উৎসের অ্যানিমেশন",
+  "inputs.boxes.fields.animationEdits.label": "অ্যানিমেশনের অভ্যন্তরীণ পরিবর্তন"
 }

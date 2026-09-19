@@ -410,6 +410,36 @@ describe('sequence export (browser tier)', { skip: gate ?? false, concurrency: 1
     measured.push(`[measured] audio rms: head=${head.toFixed(4)} clipA=${silent.toFixed(4)} clipB=${tone.toFixed(4)}`);
   });
 
+  test('a crossfade keeps its loudness across the handover (equal power, plans/268 SI-02)', async () => {
+    const r = await page().evaluate(async () => {
+      const S = (window as never as { SEQ: SeqApi }).SEQ;
+      // Two unrelated tones at the same level. A has two seconds of source under a one
+      // second clip, so it has sound to hand over with.
+      const a = await S.makeClip({ frames: 60, fps: 30, w: 320, h: 240, tone: { hz: 440, gain: 0.5, fromSec: 0, toSec: 2 } });
+      const b = await S.makeClip({ frames: 60, fps: 30, w: 320, h: 240, tint: '#aa3333', tone: { hz: 1130, gain: 0.5, fromSec: 0, toSec: 2 } });
+      const run = await S.exportSeq({
+        w: 320, h: 240, seqMs: 2000, boxes: [
+          { clip: a.key, start: 0, dur: 1000, lane: 'seq' as const, exit: 'fade', exitMs: 600 },
+          { clip: b.key, start: 1000, dur: 1000, lane: 'seq' as const, enter: 'fade', enterMs: 600 },
+        ],
+      }, 'webm', { fps: 30, width: 320 });
+      return {
+        err: run.error,
+        // A alone, the middle fifth of the handover (1.0 to 1.6s), B alone.
+        rms: run.key ? await S.audioRms(run.key, [[0.3, 0.8], [1.24, 1.36], [1.7, 1.95]]) : [],
+      };
+    });
+    assert.equal(r.err, null, `export failed: ${JSON.stringify(r.err)}`);
+    const [alone, middle, after] = r.rms as [number, number, number];
+    assert.ok(alone > 0.25 && after > 0.25, `the tones are missing (rms ${alone.toFixed(4)} / ${after.toFixed(4)})`);
+    // Two straight ramps put the middle at 0.707 of either clip alone, the 3 dB sag this
+    // replaces. Equal power holds it level. 0.88 is well clear of 0.707 and leaves room
+    // for the codec.
+    const ratio = middle / ((alone + after) / 2);
+    measured.push(`[measured] crossfade loudness: alone=${alone.toFixed(4)} middle=${middle.toFixed(4)} after=${after.toFixed(4)} ratio=${ratio.toFixed(3)}`);
+    assert.ok(ratio > 0.88 && ratio < 1.12, `the handover is at ${ratio.toFixed(3)} of the clips' own level (a straight crossfade gives 0.707)`);
+  });
+
   test('the music bed ducks under an unmuted clip and comes back after it', async () => {
     const r = await page().evaluate(async () => {
       const S = (window as never as { SEQ: SeqApi }).SEQ;

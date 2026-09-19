@@ -287,7 +287,7 @@ test('the audio-only path and the video path share ONE mixer', async () => {
   assert.equal(calls.length, 2, 'both the compositor and the audio-only export call it, with the same layers');
   assert.match(src, /export async function sequenceAudioPcm\(/, 'and the audio-only entry point is exported');
   // Both derive their length from the frame grid rather than from totalMs directly.
-  assert.equal((src.match(/frameTimestamps\(stage\.totalMs, fps\)/g) ?? []).length, 2,
+  assert.equal((src.match(/frameTimestamps\(range\.toMs - range\.fromMs, fps\)/g) ?? []).length, 2,
     'one length derivation, used by both');
 });
 

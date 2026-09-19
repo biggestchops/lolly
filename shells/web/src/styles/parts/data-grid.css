@@ -122,3 +122,7 @@
 .data-grid[aria-readonly="true"] .dg-cell.dg-ro { color: var(--ui-color-text-default); font-style: normal; }
 .data-grid .dg-row[aria-selected="true"] { background: var(--ui-color-selection-surface); }
 .data-grid .dg-row[aria-selected] .dg-cell { cursor: pointer; }
+
+.dg-cell[data-grid-selected] { background: hsl(var(--ring) / 0.1); }
+.dg-cell:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: -2px; }
+textarea.dg-editor { resize: none; white-space: pre-wrap; }

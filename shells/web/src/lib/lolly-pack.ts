@@ -1158,7 +1158,7 @@ export function applyLollyRekey<T>(data: T, rekey: ReadonlyMap<string, string>):
     if (typeof id === 'string' && id && rec.source !== undefined && !baked) {
       const dep = assetDependency(rec as { id: string });
       const next = rekey.get(dep.key);
-      if (next !== undefined) return { ...rec, id: next + dep.modifier, ...(dep.pin ? { pin: dep.pin } : {}), source: 'user', url: '' };
+      if (next !== undefined) return { ...rec, id: next + dep.modifier, ...(dep.pin ? { pin: dep.pin } : {}), source: 'user', url: '', original: undefined };
     }
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(rec)) out[k] = walk(v, depth + 1);

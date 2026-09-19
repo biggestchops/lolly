@@ -31,7 +31,7 @@ import {
 import type { PixelRect, RedactedPageImage } from './pdf-redact-core.ts';
 import { openPdfForRender } from './pdf-pages.ts';
 import { isCanvasAvailable, nodeCanvas } from './canvas.ts';
-import { paintBars } from './image-redact.ts';
+import { paintBars, labelArtworkCanvas } from './image-redact.ts';
 import { rasterizeSvgToRgba } from './raster.ts';
 
 /** JPEG quality for the rebuilt page images - the web half's exact number. */
@@ -126,6 +126,7 @@ export async function redactPdf(bytes: Uint8Array, opts: PdfRedactOpts): Promise
       labelColor: opts?.labelColor,
       radius: Math.max(0, Math.round(((Number(opts?.radius) || 0) * dpi) / 72)),
       label: String(opts?.label || '').trim(),
+      labelCanvas: await labelArtworkCanvas(opts?.labelImage),
       labelMaxSize: Math.round((14 * dpi) / 72),
     }, cw, ch);
     const jpeg = canvas.toBuffer('image/jpeg', PAGE_JPEG_QUALITY);

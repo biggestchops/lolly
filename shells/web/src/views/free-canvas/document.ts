@@ -13,7 +13,7 @@ import type { CanvasRect } from '../design-ports.ts';
 import { frameThumb, iconRow, opt, posGridHtml, segHtml, segRow, tiltRow, wireSegs } from '../free-canvas-fields.ts';
 import { toCssPx } from '@lolly/engine';
 import { escape as escapeText } from '../../utils.ts';
-import { t } from '../../i18n.ts';
+import { t, tRaw } from '../../i18n.ts';
 import { colorFieldHtml, wireColorField } from '../../components/color-field.ts';
 import { SVG, icon } from '../free-canvas-icons.ts';
 import { FC_TILT, boolOf } from './shared.ts';
@@ -272,6 +272,16 @@ export function openSizeMenu(fc: FcCtx, anchor: HTMLElement): void {
     `<label class="fc-row"><span>${t('Width')}</span><input type="number" min="1" max="30000" step="any" data-sz="w" value="${dispW}"><b data-sz-unit>${fc.sizeUnit}</b></label>` +
     `<label class="fc-row"><span>${t('Height')}</span><input type="number" min="1" max="30000" step="any" data-sz="h" value="${dispH}"><b data-sz-unit>${fc.sizeUnit}</b></label>` +
     `<label class="fc-row"><span>${t('DPI')}</span><input type="number" min="36" max="2400" step="1" data-sz="dpi" value="${dpi}"><b>${t('dpi')}</b></label>`;
+  if (runtime.getModel().some(input => input.id === 'editingRange')) {
+    const label = document.createElement('label'); label.className = 'fc-row';
+    const caption = document.createElement('span'); caption.textContent = tRaw('Editing range');
+    const select = document.createElement('select'); select.className = 'field-select field-select--sm';
+    for (const [value,text] of [['sdr',tRaw('Standard')],['hdr',tRaw('Wide colour / HDR')]]) select.add(new Option(text,value));
+    label.append(caption,select);
+    select.value = String(runtime.getModel().find(input => input.id === 'editingRange')?.value ?? 'sdr');
+    select.addEventListener('change', () => { onDirty?.('editingRange'); void runtime.setInput('editingRange',select.value); });
+    p.append(label);
+  }
   p.addEventListener('pointerdown', (e) => e.stopPropagation());
   const wIn = () => p.querySelector<HTMLInputElement>('[data-sz="w"]')!;
   const hIn = () => p.querySelector<HTMLInputElement>('[data-sz="h"]')!;
@@ -501,8 +511,8 @@ export function openMorePanel(fc: FcCtx, anchor: HTMLElement): void {
   );
   if (cfg.shadowColorField)
     wireColorField(p, {
-      onChange: (id, val) => {
-        if (id === 'fc-shadow') fc.fieldPanels.setField(cfg.shadowColorField, fc.helpers.unwrapColor(val));
+      onChange: (id, val, detail) => {
+        if (id === 'fc-shadow') fc.fieldPanels.setField(cfg.shadowColorField, fc.helpers.unwrapColor(val, detail));
       },
     });
   if (showClip)

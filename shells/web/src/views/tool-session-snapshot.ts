@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 /** The saved document envelope shared by Save, automatic history and .lolly. */
+import { emojiParams } from '../../../../engine/src/emoji-style.ts';
 import type { ToolManifest } from '../../../../engine/src/loader.ts';
 import type { InputValue } from '../../../../engine/src/inputs.ts';
 import type { ToolRuntime, ActionsExperience } from './tool.ts';
@@ -18,6 +19,7 @@ export function snapshotSession(el: HTMLElement | null, manifest: ToolManifest, 
       el?.querySelector<HTMLInputElement>('[data-action="filename"]')?.value.trim() ?? '';
     return {
       ...values,
+      ...(runtime.emoji?.style ? { __emoji: emojiParams(runtime.emoji.style), __emojiAssets: runtime.emoji.assets ?? [] } : { __emoji: { emoji: 'none', emojifx: '' }, __emojiAssets: [] }),
       ...(experience.sessionMeta?.() ?? {}),
       __toolId: manifest.id,
       __toolVersion: manifest.version,

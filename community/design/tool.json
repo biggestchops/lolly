@@ -2,8 +2,8 @@
   "id": "design",
   "name": "Design",
   "description": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system.",
-  "version": "1.30.0",
-  "engineVersion": "^1.199.0",
+  "version": "1.34.0",
+  "engineVersion": "^1.214.0",
   "status": "community",
   "category": "designer",
   "tags": [
@@ -54,7 +54,8 @@
       "avif",
       "tiff",
       "emf",
-      "webp-anim"
+      "webp-anim",
+      "lottie"
     ],
     "actions": [
       "copy",
@@ -173,7 +174,7 @@
             "h": 420,
             "rot": 0,
             "shape": "rect",
-            "text": "\u201cThe best way to predict the future is to design it.\u201d",
+            "text": "“The best way to predict the future is to design it.”",
             "fg": "var(--brand-on-primary, #ffffff)",
             "fontSize": 96,
             "align": "left",
@@ -205,6 +206,11 @@
     }
   ],
   "inputs": [
+    {
+      "id": "editingRange", "label": "Editing range", "type": "select", "default": "sdr",
+      "options": [{ "value": "sdr", "label": "Standard" }, { "value": "hdr", "label": "Wide colour / HDR" }],
+      "help": "Use wider brand colour variants and retain HDR source pixels. HDR video export needs a supported 10-bit encoder."
+    },
     {
       "id": "background",
       "type": "color",
@@ -267,7 +273,7 @@
       "label": "Custom CSS",
       "rows": 8,
       "default": "",
-      "help": "Advanced (plan 112): CSS applied to the whole document - editor, export, and presentation. Scoped to the canvas, so @keyframes work at the top level. `@import` and `</style` are stripped for safety. Target `.lolly-box`, a frame with `[data-frame-id=\"\u2026\"]`, or a present-mode state such as `.pr-active`."
+      "help": "Advanced (plan 112): CSS applied to the whole document - editor, export, and presentation. Scoped to the canvas, so @keyframes work at the top level. `@import` and `</style` are stripped for safety. Target `.lolly-box`, a frame with `[data-frame-id=\"…\"]`, or a present-mode state such as `.pr-active`."
     },
     {
       "id": "transition",
@@ -502,7 +508,7 @@
             "seed": {
               "kind": "image",
               "bg": "",
-              "shape": "rounded",
+              "shape": "rect",
               "fit": "contain",
               "text": ""
             }
@@ -840,7 +846,7 @@
             "image"
           ],
           "rows": 3,
-          "help": "Rich text: **bold**, *italic* / _italic_, and lines starting with - or \u2022 become bullets."
+          "help": "Rich text: **bold**, *italic* / _italic_, and lines starting with - or • become bullets."
         },
         {
           "id": "fg",
@@ -985,7 +991,7 @@
           "type": "boolean",
           "label": "Ligatures",
           "default": true,
-          "help": "Standard ligatures (fi, fl, \u2026). Applies on screen and in the outlined SVG/PDF/EMF export."
+          "help": "Standard ligatures (fi, fl, …). Applies on screen and in the outlined SVG/PDF/EMF export."
         },
         {
           "id": "alternates",
@@ -1797,7 +1803,7 @@
           "type": "text",
           "label": "Frame state",
           "default": "",
-          "help": "Presentation state tokens (plan 112 M4): space-separated names (a\u2013z, 0\u20139, -) stamped as data-frame-state on this frame's page and, while it is the active slide, as classes on the presenter root. Target with Custom CSS, e.g. [data-frame-state~=\"dark\"] .lolly-box { \u2026 }. Set from the right-click menu on a frame; showFor:[] keeps it out of the sidebar."
+          "help": "Presentation state tokens (plan 112 M4): space-separated names (a–z, 0–9, -) stamped as data-frame-state on this frame's page and, while it is the active slide, as classes on the presenter root. Target with Custom CSS, e.g. [data-frame-state~=\"dark\"] .lolly-box { … }. Set from the right-click menu on a frame; showFor:[] keeps it out of the sidebar."
         },
         {
           "id": "matchOf",
@@ -1837,7 +1843,7 @@
           "type": "text",
           "label": "CSS class",
           "default": "",
-          "help": "Your own class names for this box (space-separated, a-z 0-9 - _), so Custom CSS can say .callout { \u2026 } instead of addressing an id. Added to the box's class list on the canvas, in every export and in presentation - one document, one truth. Names in the app's own namespaces (lolly- pr- seq- fc-) are dropped. Set from the right-click menu; showFor:[] keeps it out of the sidebar. APPENDED after flipV - the compact-blocks URL wire format is append-only."
+          "help": "Your own class names for this box (space-separated, a-z 0-9 - _), so Custom CSS can say .callout { … } instead of addressing an id. Added to the box's class list on the canvas, in every export and in presentation - one document, one truth. Names in the app's own namespaces (lolly- pr- seq- fc-) are dropped. Set from the right-click menu; showFor:[] keeps it out of the sidebar. APPENDED after flipV - the compact-blocks URL wire format is append-only."
         },
         {
           "id": "gain",
@@ -2115,6 +2121,20 @@
           "default": "",
           "showFor": [],
           "help": "For a 3D SCENE box: the 3D Studio's own settings as its link query, with everything left at the studio's default omitted (source=primitive&primitive=badge&studio=dramatic). It is the same string a 3D Studio share link carries after the '?', so the Edit in 3D Studio door is a plain round trip. Machine-written by the Edit in 3D Studio door, never typed, so showFor:[] keeps it out of the sidebar - `text` for the same reason `path` and `kf` are, since a blocks field has no longtext control and the value never reaches one. APPENDED after plainText - the compact-blocks URL wire format is append-only."
+        },
+        {
+          "id": "animationId",
+          "type": "text",
+          "label": "Animation in source",
+          "default": "",
+          "showFor": []
+        },
+        {
+          "id": "animationEdits",
+          "type": "text",
+          "label": "Internal animation edits",
+          "default": "",
+          "showFor": []
         }
       ],
       "default": [
@@ -2210,6 +2230,40 @@
           "order": 0
         }
       ]
+    },
+    {
+      "id": "projectFps",
+      "type": "select",
+      "label": "Project frame rate",
+      "default": "30",
+      "options": [
+        {
+          "value": "24",
+          "label": "24 fps"
+        },
+        {
+          "value": "25",
+          "label": "25 fps"
+        },
+        {
+          "value": "30",
+          "label": "30 fps"
+        },
+        {
+          "value": "50",
+          "label": "50 fps"
+        },
+        {
+          "value": "60",
+          "label": "60 fps"
+        }
+      ]
+    },
+    {
+      "id": "sequenceMarks",
+      "type": "longtext",
+      "label": "Timeline markers",
+      "default": ""
     }
   ]
 }

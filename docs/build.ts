@@ -226,8 +226,10 @@ const pages: Page[] = [
   // drops it from that guard's count.
   { slug: 'design-import',    title: 'Import a design (Figma, Penpot, Illustrator, InDesign)', src: 'design-import.md', pathway: 'creators', description: "Bring a finished design out of Figma, Penpot, Illustrator or InDesign and into Lolly as an editable, re-renderable tool rather than a flat picture.", render: renderDesignImportPage },
   { slug: 'formats',          title: 'Every format Lolly can open and make', src: 'formats.md', pathway: 'creators', description: "Every file format Lolly reads, every format it writes, and the ones it does both ways - grouped by what each one is, with a plain-language card behind every chip.", render: renderFormatsPage },
+  { slug: 'hdr-editing', title: 'Wide Colour and HDR', src: 'hdr-editing.md', pathway: 'creators', description: 'Keep original image and video precision, use authored P3 brand swatches, and choose HDR or SDR output.' },
   { slug: 'sequence-editor',  title: 'The sequence editor', src: 'sequence-editor.md', pathway: 'creators' },
   { slug: 'presenting', title: 'Presenting with camera', src: 'presenting.md', pathway: 'creators', description: 'Prepare camera framing, a logo and captions over slides or Countdown, with private controls, saved scenes and local recording.' },
+  { slug: 'agenda', title: 'Agenda screens and programmes', src: 'agenda.md', pathway: 'creators', description: 'Turn an event programme into branded screens, an interactive page, video, calendars and PowerPoint slides.' },
   { slug: 'animating',        title: 'Animating: keyframes, depth and a camera', src: 'animating.md', pathway: 'creators', description: "Pose a box at one moment, lift it off the page, and fly a camera over the result - keyframes, depth, the scene camera and Lift layers, all on your device." },
   // Collab is a CREATORS page, not a Builders or Trust one: it is a thing two people
   // do with a tool session, and the reader arrives at it from "I want to work on this
@@ -508,6 +510,7 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'extension',       label: 'Browser Extension' } ] },
       { label: 'Animate', items: [
         { slug: 'sequence-editor', label: 'The sequence editor' },
+        { slug: 'hdr-editing', label: 'Wide colour and HDR' },
         { slug: 'animating',       label: 'Animating' } ] },
       // Search, favourites and the profile are the three pages about getting back to
       // your own things - finding them, keeping them to hand, and the on-device record
@@ -520,6 +523,7 @@ const SIDEBARS: Record<Pathway, { title: string; groups: SideGroup[] }> = {
         { slug: 'profile',     label: 'Your profile' },
         { slug: 'sync',        label: 'Sync your devices' } ] },
       { label: 'Present', items: [
+        { slug: 'agenda', label: 'Agenda screens and programmes' },
         { slug: 'presenting', label: 'Presenting with camera' } ] },
       { label: 'Collaborate', items: [
         { slug: 'collaborate', label: 'Working together' } ] },
@@ -4815,7 +4819,7 @@ const FOOTER_SECTIONS: SitemapSection[] = [
   // kind of thing - who-you-are doors - so they read as one group, with each pathway's
   // sub-columns following after the trio. Membership is unchanged, order only.
   { hub: 'creators', label: 'For Creators', slugs: [
-    'using', 'training-creators', 'templates', 'create-a-tool', 'brand-studio', '3d-studio', 'design-import', 'sequence-editor', 'animating', 'utilities', 'extension'] },
+    'using', 'training-creators', 'templates', 'create-a-tool', 'brand-studio', '3d-studio', 'design-import', 'sequence-editor', 'hdr-editing', 'animating', 'utilities', 'extension'] },
   { hub: 'builders', label: 'For Builders', slugs: [
     'overview', 'design-tokens', 'glossary', 'authoring-tools', 'authoring-assets', 'host-api', 'url-mode'] },
   { hub: 'operators', label: 'For Operators', slugs: [
@@ -4824,7 +4828,7 @@ const FOOTER_SECTIONS: SitemapSection[] = [
   { hub: 'creators', label: 'Find your way', slugs: [
     'search', 'ask', 'dashboard', 'favourites', 'profile', 'sync'] },
   { hub: 'creators', label: 'Share & collaborate', slugs: [
-    'presenting', 'collaborate', 'formats', 'exporting'] },
+    'agenda', 'presenting', 'collaborate', 'formats', 'exporting'] },
   { hub: 'builders', label: 'Concepts', slugs: [
     'constraints', 'determinism', 'reproducibility'] },
   { hub: 'builders', label: 'Run & integrate', slugs: [
@@ -4938,7 +4942,7 @@ const SIDEBAR_ICON: Record<string, string> = {
   'status-quo': 'convert', 'input-not-impersonation': 'usercheck',
   // Creators
   'design-tool-contract': 'convert', 'create-a-tool': 'pentool', 'learning-integration': 'convert', 'training-creators': 'folder', using: 'pentool', templates: 'folder', 'brand-studio': 'palette', profile: 'usercheck', 'design-import': 'upload',
-  presenting: 'monitor', 'sequence-editor': 'clock', animating: 'layers', exporting: 'download', formats: 'convert', positioning: 'sliders', compare: 'checklist',
+  agenda: 'checklist', presenting: 'monitor', 'sequence-editor': 'clock', 'hdr-editing': 'sliders', animating: 'layers', exporting: 'download', formats: 'convert', positioning: 'sliders', compare: 'checklist',
   'compare-canva': 'checklist', 'compare-adobe': 'checklist', 'compare-figma': 'checklist', 'compare-render-apis': 'checklist', 'compare-converters': 'checklist',
   'compare-penpot': 'checklist', 'compare-brand-portals': 'checklist',
   'make-something': 'pentool', install: 'download', faq: 'document',
@@ -5248,7 +5252,7 @@ function assertAudioCues(page: Page, content: string, md: string): void {
 function listenButtonHtml(page: Page, a?: AudioEntry): string {
   const mins = a && a.duration > 0 ? `${Math.max(1, Math.round(a.duration / 60))} min` : '';
   const producedAttr = a ? ' data-listen-produced' : '';
-  return `${LISTEN_STYLE}<div class="listen-bar${page.isLanding ? ' listen-bar-float' : ''}"><button type="button" class="docs-listen"${producedAttr} data-listen-slug="${esc(page.slug)}" data-listen-title="${esc(page.title)}" aria-label="${esc(`Listen to ${page.title}`)}">${LISTEN_ICON}<span>Listen</span>${mins ? `<span class="listen-mins">${esc(mins)}</span>` : ''}</button></div>`;
+  return `<div class="listen-bar${page.isLanding ? ' listen-bar-float' : ''}"><button type="button" class="docs-listen"${producedAttr} data-listen-slug="${esc(page.slug)}" data-listen-title="${esc(page.title)}" aria-label="${esc(`Listen to ${page.title}`)}">${LISTEN_ICON}<span>Listen</span>${mins ? `<span class="listen-mins">${esc(mins)}</span>` : ''}</button></div>`;
 }
 
 // ── "On this page" jump nav ──────────────────────────────────────────────────
@@ -5369,7 +5373,7 @@ function mastheadArt(slug: string, heading: string): string {
 // `.btn-primary`, which exists on the landing page alone today, so on every other
 // page its querySelectorAll is an empty-set no-op. THEME_INIT_SCRIPT and
 // SHOT_MOTION_INIT stay inline in <head> (FOUC-critical, must run before paint);
-// LISTEN_STYLE stays in body (injected by listenButtonHtml). CSP allows both 'self'
+// Listen-button styles share the stylesheet. CSP allows both 'self'
 // and 'unsafe-inline' for script/style, so external same-origin + the head inits both
 // load. The seals (sealPages, run tail) re-hash whole-document bytes, so every English
 // page re-signs once when this first rebuilds - the intended self-healing churn.
@@ -5384,7 +5388,8 @@ const DOCS_JS = [
 ].map(stripScriptTags).join('\n;\n');
 const fingerprint = (s: string): string =>
   createHash('sha256').update(s).digest('base64url').slice(0, 16);
-const DOCS_CSS_FILE = `docs.${fingerprint(CSS)}.css`;
+const DOCS_CSS = CSS + '\n' + LISTEN_STYLE.replace(/^<style>\s*|\s*<\/style>$/g, '');
+const DOCS_CSS_FILE = `docs.${fingerprint(DOCS_CSS)}.css`;
 const DOCS_JS_FILE = `docs.${fingerprint(DOCS_JS)}.js`;
 const DOCS_CSS_LINK = `<link rel="stylesheet" href="/info/${DOCS_CSS_FILE}">`;
 const DOCS_JS_TAG = `<script src="/info/${DOCS_JS_FILE}" defer></script>`;
@@ -5605,7 +5610,7 @@ async function build() {
   }
   writeFileSync(resolve(outDir, DOC_ICON_SPRITE.filename), DOC_ICON_SPRITE.svg, 'utf-8');
   writeFileSync(resolve(outDir, NAV_ICON_SPRITE.filename), NAV_ICON_SPRITE.svg, 'utf-8');
-  writeFileSync(resolve(outDir, DOCS_CSS_FILE), CSS, 'utf-8');
+  writeFileSync(resolve(outDir, DOCS_CSS_FILE), DOCS_CSS, 'utf-8');
   writeFileSync(resolve(outDir, DOCS_JS_FILE), DOCS_JS, 'utf-8');
   console.log(`✓  /info/${DOCS_CSS_FILE} + /info/${DOCS_JS_FILE} (shared chrome, linked per page)`);
   // icon.svg is THE site mark (hero logo; the README + overview doc use it too) - the

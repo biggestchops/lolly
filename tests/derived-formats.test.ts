@@ -6,18 +6,18 @@ import { expandDerivedFormats } from '../engine/src/derived-formats.ts';
 test('derived-formats: each parent yields its child', () => {
   assert.deepEqual(expandDerivedFormats(['svg']), ['svg', 'svgz']);
   assert.deepEqual(expandDerivedFormats(['emf']), ['emf', 'wmf']);
-  assert.deepEqual(expandDerivedFormats(['png']), ['png', 'bmp']);
+  assert.deepEqual(expandDerivedFormats(['png']), ['png', 'bmp', 'jxl', 'jxl-lossless']);
   assert.deepEqual(expandDerivedFormats(['tiff']), ['tiff', 'bmp']);
 });
 
 test('derived-formats: a tool with several parents gains every child, in order', () => {
   // qr-code's real list: svg + emf + png are all parents; svgz, wmf, bmp appended.
   const got = expandDerivedFormats(['svg', 'emf', 'eps', 'dxf', 'pdf', 'tiff', 'png', 'jpeg']);
-  assert.deepEqual(got, ['svg', 'emf', 'eps', 'dxf', 'pdf', 'tiff', 'png', 'jpeg', 'svgz', 'wmf', 'bmp']);
+  assert.deepEqual(got, ['svg', 'emf', 'eps', 'dxf', 'pdf', 'tiff', 'png', 'jpeg', 'svgz', 'wmf', 'bmp', 'jxl', 'jxl-lossless']);
 });
 
 test('derived-formats: png OR tiff is enough for bmp, and it is added only once', () => {
-  assert.deepEqual(expandDerivedFormats(['png', 'tiff']), ['png', 'tiff', 'bmp']);
+  assert.deepEqual(expandDerivedFormats(['png', 'tiff']), ['png', 'tiff', 'bmp', 'jxl', 'jxl-lossless']);
 });
 
 test('derived-formats: no parent → no child', () => {
@@ -27,7 +27,7 @@ test('derived-formats: no parent → no child', () => {
 
 test('derived-formats: an already-declared child is not duplicated', () => {
   assert.deepEqual(expandDerivedFormats(['svg', 'svgz']), ['svg', 'svgz']);
-  assert.deepEqual(expandDerivedFormats(['png', 'bmp', 'tiff']), ['png', 'bmp', 'tiff']);
+  assert.deepEqual(expandDerivedFormats(['png', 'bmp', 'tiff']), ['png', 'bmp', 'tiff', 'jxl', 'jxl-lossless']);
 });
 
 test('derived-formats: idempotent - expanding twice is a no-op', () => {

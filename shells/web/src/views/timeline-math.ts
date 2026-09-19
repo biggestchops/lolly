@@ -1224,13 +1224,14 @@ function fitToMedia(
   // Clamping `dur` alone cannot express "clipIn is past the end".
   if (media != null) c = Math.min(c, Math.max(0, media - MIN_DUR * speed));
   s = r3(s);
-  c = Math.floor(c * 1000) / 1000;
+  // Absorb floating-point noise at an exact millisecond, without rounding up a source trim.
+  c = Math.floor(c * 1000 + 1e-7) / 1000;
   d = r3(d);
   if (media != null) {
     // Room left in the file, floored to the grid. The MIN_DUR floor wins when the media
     // is shorter than one minimum-length clip at this speed (a 0.15 s file at 4x cannot
     // fill 0.1 s of timeline) - the clip stays legal and the player simply runs out.
-    const room = Math.floor(((media - c) / speed) * 1000) / 1000;
+    const room = Math.floor(((media - c) / speed) * 1000 + 1e-7) / 1000;
     if (d > room) d = clamp(room, MIN_DUR, MAX_TIME_S);
   }
   return { start: s, dur: d, clipIn: c };
@@ -1284,9 +1285,10 @@ export function packSeq(boxes: Box[], cfg: TimeCfg, mediaDur?: MediaDurFn): Box[
  * in `before` moves by that clip's start delta in `after`. HALF-OPEN - an overlay
  * sitting exactly on a clip's old END belongs to the NEXT clip, not this one.
  *
- * Applied inside moveSeqClip / removeAndRipple / trimClip; callers never call it
- * directly (calling it with a `before` that is not the pre-mutation array would
- * double-apply the shift).
+ * The panel applies this at commit. Pure writer callers retain the same behavior;
+ * passing the original before array makes that second pass idempotent. Explicit
+ * overlay moves win. A deleted anchor moves its overlays to the vacated start;
+ * joining clips preserves the absorbed span instead of treating it as deleted.
  */
 export function rippleOverlays(before: Box[], after: Box[], cfg: TimeCfg): Box[] {
   const prev = Array.isArray(before) ? before : [];
@@ -1312,9 +1314,12 @@ export function rippleOverlays(before: Box[], after: Box[], cfg: TimeCfg): Box[]
     if (id == null || id === '') continue;
     moved.set(String(id), boxTiming(b, cfg).start ?? 0);
   }
+  const oldById = new Map(prev.map(b => [String(b?.[cfg.idField] ?? ""), b]));
   return next.map((b) => {
     if (!b) return b;
-    const t = boxTiming(b, cfg);
+    const old = oldById.get(String(b[cfg.idField] ?? ""));
+    if (!old) return b;
+    const t = boxTiming(old, cfg);
     if (t.lane === 'seq' || t.start === null) return b;   // seq clips and scenery are not overlays
     let span: (typeof spans)[number] | undefined;
     if (disjoint) {
@@ -1332,9 +1337,23 @@ export function rippleOverlays(before: Box[], after: Box[], cfg: TimeCfg): Box[]
     }
     if (!span) return b;
     const now = moved.get(span.id);
-    if (now == null) return b;                             // its anchor clip is gone - stay put
-    const delta = now - span.start;
+    const removedBefore = spans.filter(s => s.start < span!.start && !moved.has(s.id))
+      .reduce((n, s) => n + s.end - s.start, 0);
+    // A join absorbs an id without vacating its time. Preserve that footprint.
+    const joined = now == null ? seqIndices(next, cfg).map(i => next[i]!).find(row => {
+      const prior = spans.find(s => s.id === String(row[cfg.idField]));
+      const duration = boxTiming(row, cfg).dur ?? 0;
+      return prior && duration > prior.end - prior.start && prior.start <= span!.start && prior.start + duration >= span!.end;
+    }) : undefined;
+    const priorJoin = joined ? spans.find(s => s.id === String(joined[cfg.idField])) : undefined;
+    const target = joined && priorJoin ? t.start + (boxTiming(joined, cfg).start ?? 0) - priorJoin.start
+      : now == null ? Math.max(0, span.start - removedBefore) : t.start + now - span.start;
+    const delta = target - t.start;
     if (!Number.isFinite(delta) || delta === 0) return b;
+    const current = boxTiming(b, cfg).start;
+    const resolved = clamp(r3(target), 0, MAX_TIME_S);
+    // Preserve an explicit overlay move and accept an already-applied ripple.
+    if (current !== t.start || current === resolved) return b;
     return withFields(b, { [cfg.startField]: clamp(r3(t.start + delta), 0, MAX_TIME_S) });
   });
 }
@@ -2202,6 +2221,228 @@ export function reattachAudio(
     .map((b, k) => (keep.has(k) ? withFields(b!, { [cfg.muteField]: '', [link]: '' }) : b))
     .filter((_, k) => !drop.has(k));
   return wasSeq ? rippleOverlays(rows, packSeq(culled, cfg, mediaDur), cfg) : culled;
+}
+
+// ── reveal: where the playhead goes to SHOW a clip ──────────────────────────────
+
+/**
+ * The time to put the playhead at so a clip can be seen and edited, seconds.
+ *
+ * Selecting a clip the playhead is not on moves the playhead into it. It used to go to
+ * the clip's first instant, which is the one moment an entering clip is NOT there: a
+ * fade is at zero, a rise is transparent and low, a slide is off the frame. The canvas
+ * showed selection handles around nothing. So the playhead goes to where the clip has
+ * finished arriving: its start plus its enter length, and never past the middle of a
+ * clip too short for that. A clip with no enter still gets its first frame.
+ */
+export function revealTimeSec(box: Box | undefined, cfg: TimeCfg, totalSec: number): number {
+  const t = boxTiming(box, cfg);
+  const start = t.start ?? 0;
+  const dur = t.dur ?? Math.max(MIN_DUR, num(totalSec, 0) - start);
+  const kind = box?.[cfg.enterField];
+  if (typeof kind !== 'string' || kind === '' || kind === 'none') return start;
+  const enterSec = clamp(num(box?.[cfg.enterMsField], 400), MIN_JUNCTION_MS, MAX_JUNCTION_MS) / 1000;
+  return r3(start + Math.min(enterSec, Math.max(0, dur) / 2));
+}
+
+// ── paste: where a copied clip goes in TIME (plans/268 SI-11) ───────────────────
+//
+// A pasted box is a clone of its source, and a clone carries its source's start. On the
+// canvas that is harmless. On the timeline it put a copy of a main-row clip at the SAME
+// time as the original: two clips stacked on a row whose whole contract is that clips
+// never overlap, one of them hidden under the other. So a paste of timed rows is placed:
+//
+//   main row   the copies go in as one block, right after the clip under the playhead
+//              (at the end when the playhead is past the last clip), in the order the
+//              originals PLAY in. The row is repacked and the overlays riding the clips that
+//              moved ripple with them, exactly as a drag onto the row does.
+//   overlays   keep their spacing from each other, and the earliest one starts at the
+//              playhead, which is where an editor pastes.
+//   scenery    (untimed) is left alone.
+//
+// `pastedIds` are the clones ALREADY appended to `boxes` by the paste. Returns the same
+// array when nothing in the paste is timed.
+
+/** Does any of these rows carry timing? The paste asks before it changes anything. */
+export function anyTimed(rows: readonly Box[], cfg: TimeCfg): boolean {
+  return rows.some((b) => isTimed(b, cfg));
+}
+
+export function placePasted(
+  boxes: Box[], cfg: TimeCfg, pastedIds: readonly string[], playheadSec: number, mediaDur?: MediaDurFn,
+): Box[] {
+  const rows = Array.isArray(boxes) ? boxes : [];
+  const pasted = new Set(pastedIds.map(String));
+  const isPasted = (b: Box | undefined): boolean => !!b && pasted.has(String(b[cfg.idField] ?? ''));
+  const at = Math.max(0, num(playheadSec, 0));
+  if (!rows.some((b) => isPasted(b) && isTimed(b, cfg))) return rows;
+
+  // Overlays first: a shift in time, nothing else moves.
+  const overlayStarts = rows
+    .filter((b) => isPasted(b) && boxTiming(b, cfg).lane !== 'seq' && boxTiming(b, cfg).start !== null)
+    .map((b) => boxTiming(b, cfg).start as number);
+  const shift = overlayStarts.length ? at - Math.min(...overlayStarts) : 0;
+  let next = rows.map((b) => {
+    if (!isPasted(b)) return b;
+    const t = boxTiming(b, cfg);
+    if (t.lane === 'seq' || t.start === null) return b;
+    return withFields(b, { [cfg.startField]: clamp(r3(t.start + shift), 0, MAX_TIME_S) });
+  });
+
+  // Main row: order is expressed through `start`, so give the block starts that sort it
+  // into place, then let the ordinary pack make the row gapless again.
+  const pastedSeq = seqIndices(next, cfg).filter((i) => isPasted(next[i]));
+  if (!pastedSeq.length) return next;
+  const others = seqIndices(next, cfg)
+    .filter((i) => !isPasted(next[i]))
+    .map((i) => ({ i, t: boxTiming(next[i], cfg) }))
+    .sort((x, y) => (x.t.start ?? 0) - (y.t.start ?? 0) || x.i - y.i);
+  // After the clip under the playhead; before everything when the playhead is at 0 on
+  // an empty head; at the end when it is past the last clip.
+  let after = -1;
+  for (let k = 0; k < others.length; k++) {
+    if ((others[k]!.t.start ?? 0) <= at) after = k;
+  }
+  const order = [
+    ...others.slice(0, after + 1).map((x) => x.i),
+    ...pastedSeq,
+    ...others.slice(after + 1).map((x) => x.i),
+  ];
+  const before = next;
+  next = packOrder(next, cfg, order, mediaDur);
+  return rippleOverlays(withoutIds(before, pasted, cfg), next, cfg);
+}
+
+/** `boxes` with the given ids' timing blanked, so the ripple reads only what was there before. */
+function withoutIds(boxes: Box[], ids: Set<string>, cfg: TimeCfg): Box[] {
+  return boxes.filter((b) => !(b && ids.has(String(b[cfg.idField] ?? ''))));
+}
+
+// ── junctions: the cut between two main-row clips (plans/268 SI-07) ──────────────
+//
+// A crossfade stores nothing at the cut: A.exit = 'fade' and B.enter = 'fade' on two
+// gapless main-row neighbours, and the handover is derived from the pair. The rule that
+// derives it for the PICTURE is `crossfadeJunctions` in bridge/sequence-plan.ts. This is
+// the same rule over the MODEL, for the panel: where to draw the handover, how long it
+// may be, and the one writer the seam dialog and the seam drag both commit through.
+// tests/timeline-math pins the two rules against each other.
+
+/** The shortest and longest a transition may be, ms. The hook's own attribute clamps. */
+export const MIN_JUNCTION_MS = 100;
+export const MAX_JUNCTION_MS = 3000;
+/** A dragged length settles on this grid, ms. Hold Alt for the fine one. */
+export const JUNCTION_STEP_MS = 50;
+export const JUNCTION_STEP_FINE_MS = 10;
+
+export interface SeqJunction {
+  aId: string;
+  bId: string;
+  /** Where the cut is, timeline seconds (B's start). */
+  cutSec: number;
+  kind: 'cut' | 'xfade';
+  /** The handover length, ms: 0 at a cut, else min(A.exitMs, B.enterMs, B's length). */
+  ms: number;
+  /** The longest handover this junction can take: B's own length, capped. */
+  maxMs: number;
+  /**
+   * How much of the handover A spends on a HELD last frame, ms, because its source has
+   * run out past the cut. 0 for a clip with no media (a card, an image, a tool) and for
+   * one with enough source left. The export holds the frame; it never invents picture.
+   */
+  heldMs: number;
+}
+
+const isFade = (v: unknown): boolean => v === 'fade';
+const junctionMsOf = (v: Box[string]): number => clamp(num(v, 400), MIN_JUNCTION_MS, MAX_JUNCTION_MS);
+
+/** Every cut between two gapless main-row neighbours, in play order. */
+export function seqJunctions(boxes: Box[], cfg: TimeCfg, mediaDur?: MediaDurFn): SeqJunction[] {
+  const rows = Array.isArray(boxes) ? boxes : [];
+  const order = seqIndices(rows, cfg)
+    .map((i) => ({ i, t: boxTiming(rows[i], cfg) }))
+    .filter((x) => x.t.dur !== null && x.t.dur > 0)
+    .sort((x, y) => (x.t.start ?? 0) - (y.t.start ?? 0) || x.i - y.i);
+  const out: SeqJunction[] = [];
+  for (let k = 0; k < order.length - 1; k++) {
+    const A = order[k]!;
+    const B = order[k + 1]!;
+    const a = rows[A.i]!;
+    const b = rows[B.i]!;
+    const aId = a[cfg.idField];
+    const bId = b[cfg.idField];
+    if (aId == null || aId === '' || bId == null || bId === '') continue;
+    const aEnd = (A.t.start ?? 0) + (A.t.dur as number);
+    const cutSec = B.t.start ?? 0;
+    // Adjacent within a millisecond, the planner's own tolerance.
+    if (Math.abs(aEnd - cutSec) > 0.001) continue;
+    const maxMs = Math.max(0, Math.min(MAX_JUNCTION_MS, Math.round((B.t.dur as number) * 1000)));
+    const xfade = isFade(a[cfg.exitField]) && isFade(b[cfg.enterField]);
+    const ms = xfade ? Math.min(junctionMsOf(a[cfg.exitMsField]), junctionMsOf(b[cfg.enterMsField]), maxMs) : 0;
+    let heldMs = 0;
+    if (ms > 0 && mediaDur) {
+      const media = mediaDur(a, A.i);
+      if (typeof media === 'number' && Number.isFinite(media) && media > 0) {
+        const leftSec = Math.max(0, (media - (A.t.clipIn + (A.t.dur as number) * A.t.speed)) / A.t.speed);
+        heldMs = Math.max(0, Math.round(ms - leftSec * 1000));
+      }
+    }
+    out.push({ aId: String(aId), bId: String(bId), cutSec, kind: ms > 0 ? 'xfade' : 'cut', ms, maxMs, heldMs });
+  }
+  return out;
+}
+
+/** A requested handover length put on the grid and inside what this junction can take. */
+export function clampJunctionMs(ms: number, maxMs: number, stepMs: number = JUNCTION_STEP_MS): number {
+  const top = Math.max(MIN_JUNCTION_MS, Math.min(MAX_JUNCTION_MS, num(maxMs, MAX_JUNCTION_MS)));
+  const step = stepMs > 0 ? stepMs : 1;
+  return clamp(Math.round(num(ms, 0) / step) * step, MIN_JUNCTION_MS, top);
+}
+
+/**
+ * Author the junction between `aId` and `bId`: a crossfade of `ms`, or a cut when `ms`
+ * is null. THE writer - the seam dialog and the seam drag both commit through it, so a
+ * length set either way is the same two fields. Returns the same array when nothing
+ * would change, which the panel reads as "no commit".
+ */
+export function setJunction(boxes: Box[], cfg: TimeCfg, aId: string, bId: string, ms: number | null): Box[] {
+  const rows = Array.isArray(boxes) ? boxes : [];
+  const ai = rows.findIndex((b) => b && String(b[cfg.idField]) === String(aId));
+  const bi = rows.findIndex((b) => b && String(b[cfg.idField]) === String(bId));
+  if (ai < 0 || bi < 0) return rows;
+  const aPatch: Record<string, Box[string]> = ms === null
+    ? { [cfg.exitField]: 'none' }
+    : { [cfg.exitField]: 'fade', [cfg.exitMsField]: clamp(Math.round(ms), MIN_JUNCTION_MS, MAX_JUNCTION_MS) };
+  const bPatch: Record<string, Box[string]> = ms === null
+    ? { [cfg.enterField]: 'none' }
+    : { [cfg.enterField]: 'fade', [cfg.enterMsField]: clamp(Math.round(ms), MIN_JUNCTION_MS, MAX_JUNCTION_MS) };
+  const same = (box: Box, patch: Record<string, Box[string]>): boolean =>
+    Object.keys(patch).every((k) => String(box[k] ?? '') === String(patch[k]));
+  if (same(rows[ai]!, aPatch) && same(rows[bi]!, bPatch)) return rows;
+  return rows.map((b, i) => (i === ai ? withFields(b, aPatch) : i === bi ? withFields(b, bPatch) : b));
+}
+
+/**
+ * Set how long one clip's own enter or exit runs, ms. The ramp drag's writer (the wedge
+ * on a clip bar). Never longer than HALF the clip, which is also the most the wedge is
+ * ever drawn, so an in and an out cannot cross. Writes nothing on a side that has no
+ * transition: a drag resizes an animation, it does not invent one. Returns the same
+ * array when nothing would change.
+ */
+export function setTransitionMs(
+  boxes: Box[], cfg: TimeCfg, id: string, side: 'enter' | 'exit', ms: number, stepMs: number = JUNCTION_STEP_MS,
+): Box[] {
+  const rows = Array.isArray(boxes) ? boxes : [];
+  const i = rows.findIndex((b) => b && String(b[cfg.idField]) === String(id));
+  if (i < 0) return rows;
+  const b = rows[i]!;
+  const kind = b[side === 'enter' ? cfg.enterField : cfg.exitField];
+  if (typeof kind !== 'string' || kind === '' || kind === 'none') return rows;
+  const dur = boxTiming(b, cfg).dur;
+  const halfMs = dur === null ? MAX_JUNCTION_MS : Math.floor((dur * 1000) / 2);
+  const next = clampJunctionMs(ms, Math.max(MIN_JUNCTION_MS, halfMs), stepMs);
+  const field = side === 'enter' ? cfg.enterMsField : cfg.exitMsField;
+  if (Number(b[field]) === next) return rows;
+  return rows.map((row, k) => (k === i ? withFields(row, { [field]: next }) : row));
 }
 
 // ── snapping + formatting ─────────────────────────────────────────────────────

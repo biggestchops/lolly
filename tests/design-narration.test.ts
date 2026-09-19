@@ -59,14 +59,14 @@ const DECK = [
 
 // ── the manifest ──────────────────────────────────────────────────────────────
 
-test('the four narration settings are appended after autoAdvance, boxes still last', () => {
+test('the four narration settings precede boxes and the appended project timing settings', () => {
   const ids = inputs().map((i) => i.id);
   const at = ids.indexOf('autoAdvance');
   assert.ok(at > 0, 'autoAdvance is still the presentation setting they sit behind');
   assert.deepEqual(ids.slice(at + 1, at + 5),
     ['narrationVoice', 'narrationSpeed', 'narrationLeadInMs', 'narrationTailMs'],
     'the four arrive together, directly after the other presentation settings');
-  assert.equal(ids[ids.length - 1], 'boxes', 'the deck is the tail input');
+  assert.deepEqual(ids.slice(ids.indexOf('boxes')), ['boxes', 'projectFps', 'sequenceMarks'], 'project timing appends after the existing deck input');
   assert.equal(new Set(ids).size, ids.length, 'no id is declared twice');
 });
 

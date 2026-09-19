@@ -111,7 +111,10 @@ export async function prepareSpecimen(
     if (segment.kind !== 'emoji') continue;
     out[segment.key] = segment.markup;
   }
-  const wanted = prepared.segments.filter((segment) => segment.kind !== 'text').length;
+  const unavailable = prepared.segments.filter(segment => segment.kind === 'unresolved' && segment.reason !== 'glyph-unavailable');
+  if (unavailable.length) throw new Error(`${pin.id}: a specimen glyph could not be prepared.`);
+  const wanted = prepared.segments.filter((segment) => segment.kind === 'emoji').length;
+  if (!wanted) throw new Error(`${pin.id}: no specimen artwork is available.`);
   if (Object.keys(out).length !== wanted) throw new Error(`${pin.id}: a specimen glyph could not be prepared.`);
   return out;
 }

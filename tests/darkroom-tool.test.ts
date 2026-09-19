@@ -111,11 +111,11 @@ function parseBaked(text: string) {
   return { size, rows };
 }
 
-test('manifest: a designer-grade raster tool on the ^1.12 engine', () => {
+test('manifest: HDR editing declares the float-capable engine', () => {
   const m = tool.manifest;
   assert.equal(m.id, 'darkroom');
-  // ^1.12 floor inherited from the folded-in Layers tool (host.layers.writePsd).
-  assert.equal(m.engineVersion, '^1.12.0');
+  // Float editing requires the shared decoder and true-source export contract.
+  assert.equal(m.engineVersion, '^1.214.0');
   assert.equal(m.render.liveMaxEdge, 1280);
   const lut = m.inputs.find((i: any) => i.id === 'lutFile');
   assert.equal(lut.type, 'file');

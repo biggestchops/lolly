@@ -1,0 +1,122 @@
+.table-workbench {
+  width: min(1200px, 96vw);
+  max-width: 96vw;
+  height: min(850px, 94dvh);
+  max-height: 94dvh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.table-workbench header,
+.tw-actions,
+.tw-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.table-workbench header h2 {
+  flex: 1;
+  margin: 0;
+}
+.table-workbench button,
+.table-workbench input,
+.table-workbench select {
+  min-height: 44px;
+}
+.table-workbench input,
+.table-workbench textarea,
+.table-workbench select {
+  color: var(--ui-color-text-primary);
+  background: var(--ui-color-surface-raised);
+  border: 1px solid var(--ui-color-border-default);
+  border-radius: var(--ui-radius-control);
+  padding: 8px;
+  font: inherit;
+}
+.table-workbench button:focus-visible,
+.table-workbench input:focus-visible,
+.table-workbench textarea:focus-visible,
+.table-workbench select:focus-visible {
+  outline: 2px solid var(--ui-color-focus-ring);
+  outline-offset: 2px;
+}
+.table-workbench .btn {
+  border-radius: var(--ui-radius-control);
+}
+.tw-status {
+  margin: 0;
+  min-height: 1.5em;
+}
+.tw-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+}
+.tw-grid {
+  min-height: 200px;
+  min-width: 0;
+}
+.tw-grid .dg-viewport {
+  height: 100%;
+  max-height: none;
+}
+.tw-form {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 8px;
+}
+.tw-form label,
+.tw-import label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tw-form input,
+.tw-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+.tw-error {
+  color: var(--ui-color-status-error);
+  font-size: 0.85em;
+}
+.tw-import:not([hidden]) {
+  max-height: 50%;
+  overflow: auto;
+  border: 1px solid var(--ui-color-border-default);
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 12px;
+}
+.tw-import textarea {
+  width: 100%;
+}
+.tw-import pre {
+  overflow: auto;
+  max-width: 100%;
+}
+@media (max-width: 700px) {
+  .table-workbench {
+    padding: 12px;
+  }
+  .tw-body {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .tw-grid {
+    height: 220px;
+    flex: none;
+  }
+  .tw-form {
+    overflow: visible;
+  }
+}

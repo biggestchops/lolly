@@ -64,7 +64,7 @@ export async function pickImage(fc: FcCtx, pickOpts?: {
     }
   }
   try {
-    const ref = await host.assets!.pick({
+    let ref = await host.assets!.pick({
       title:
         pickType === 'video'
           ? t('Choose a video')
@@ -96,11 +96,19 @@ export async function pickImage(fc: FcCtx, pickOpts?: {
       editTool,
     });
     if (!ref) return;
+    if (ref.type === 'lottie') ref = await (await import('../lottie-import.ts')).chooseLottieAsset(ref);
+    if (!ref || fc.disposed) return;
     const boxes = fc.select.getBoxes();
     const sel = new Set(fc.select.selIndices(boxes));
-    fc.select.commit(boxes.map((b, i) => (sel.has(i) ? { ...b, [cfg.imageField]: ref } : b)));
-  } catch {
-    /* user cancelled */
+    const animation = ref.type === 'lottie' ? {
+      animationId: String(ref.meta?.lottieAnimationId ?? ''),
+      start: first.start ?? fc.timelinePanel?.time() ?? 0,
+      dur: Number(ref.meta?.durationMs) / 1000, clipIn: 0, speed: 1, fit: 'contain',
+    } : {};
+    fc.select.commit(boxes.map((b, i) => (sel.has(i) ? { ...b, [cfg.imageField]: ref, animationEdits: '', ...animation } : b)));
+    if (ref.type === 'lottie') fc.timeline.openTimeline();
+  } catch (error) {
+    if (error instanceof Error && error.name !== 'AbortError') announce(error.message);
   }
 }
 

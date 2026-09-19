@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "左下",
   "inputs.boxes.fields.imgpos.options.center bottom": "下",
   "inputs.boxes.fields.imgpos.options.right bottom": "右下",
-  "description": "自由排版的開放畫布 - 文字、圖片、形狀，以及來自你其他 Lolly 工具的即時渲染成果，全部遵循你的設計系統。"
+  "description": "自由排版的開放畫布 - 文字、圖片、形狀，以及來自你其他 Lolly 工具的即時渲染成果，全部遵循你的設計系統。",
+  "inputs.projectFps.label": "專案影格率",
+  "inputs.sequenceMarks.label": "時間軸標記",
+  "inputs.boxes.fields.animationId.label": "來源中的動畫",
+  "inputs.boxes.fields.animationEdits.label": "動畫內部編輯"
 }

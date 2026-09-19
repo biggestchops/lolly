@@ -383,13 +383,8 @@ let unsubscribe: (() => void) | null = null;
 async function showConflictNotice(): Promise<void> {
   if (conflictNoticeShown || typeof document === 'undefined') return;
   conflictNoticeShown = true;
-  const [{ showUndoToast }, { navigateTo }] = await Promise.all([import('./undo-toast.ts'), import('../nav.ts')]);
-  showUndoToast({
-    message: t('Your synced data changed on another device.'),
-    actionLabel: t('Choose what to keep'),
-    undo: () => { navigateTo('#/profile?focus=connections-section'); },
-    duration: 15_000,
-  });
+  const { showSyncConflictNotice } = await import('./sync-apply-prompt.ts');
+  showSyncConflictNotice();
 }
 
 /** One automatic push, with every outcome recorded for the status line. */
@@ -525,23 +520,8 @@ export async function maybeApplyNewerAtBoot(deps: BackupDeps): Promise<void> {
     await showConflictNotice();
     return;
   }
-  const { confirmDialog } = await import('../components/confirm-dialog.ts');
-  const ok = await confirmDialog({
-    title: t('Apply the newer version from your sync home?'),
-    message: t('Another device synced newer changes. Applying them updates this device to match, including items deleted there. A copy of this device is saved first, so you can undo this in Sync settings.'),
-    confirmLabel: t('Apply and reload'),
-    danger: false,
-  });
-  if (!ok) return;
-  try {
-    await applyNewer(deps);
-    if (typeof location !== 'undefined') location.reload();
-  } catch {
-    // Most likely an encrypted snapshot needing its passphrase - send them to set it.
-    const { navigateTo } = await import('../nav.ts');
-    // Sync lives inside Connected services now; the old alias still resolves there.
-    navigateTo('#/profile?focus=connections-section');
-  }
+  const { promptSyncApply } = await import('./sync-apply-prompt.ts');
+  await promptSyncApply(() => applyNewer(deps));
 }
 
 /** Test seam: drop the scheduler so initSyncAutoPush can be re-armed. */

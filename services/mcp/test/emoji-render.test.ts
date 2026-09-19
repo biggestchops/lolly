@@ -59,10 +59,14 @@ const heading = (text: string): string => `heading=${encodeURIComponent(text)}`;
 /** A literal to match inside a URL, with the regex metacharacters taken out. */
 const escaped = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-test('a chosen set draws the pack artwork; without one the render draws the placeholder', { skip: SKIP_NO_PACK }, async () => {
+test('a chosen set overrides Fluent High Contrast, and explicit none clears the default', { skip: SKIP_NO_PACK }, async () => {
   const drawn = await html(`${heading(GRINNING)}&emoji=${PIN}`);
-  const bare = await html(heading(GRINNING));
+  const implicit = await html(heading(GRINNING));
+  const bare = await html(`${heading(GRINNING)}&emoji=none`);
 
+  assert.notEqual(drawn, implicit);
+  assert.match(implicit, /fill="currentColor"/);
+  assert.doesNotMatch(implicit, /lolly-emoji--unset/);
   assert.notEqual(drawn, bare, 'choosing a set has to change the bytes');
   assert.match(drawn, /<span class="lolly-emoji[\s"]/, 'the cluster is placed');
   assert.match(drawn, /<(?:path|circle|ellipse|rect|polygon)/, 'the placement carries real geometry');

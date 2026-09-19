@@ -7,10 +7,12 @@ import { executeFileOperationV1, type FileOperationRequestV1 } from '@lolly-tool
 import { safeFileName, type FileFactsV1 } from '@lolly-tools/core/file-v1';
 import { DEFAULT_IMAGE_OPTIONS, MAX_CONVERT_FILE_BYTES, MAX_CONVERT_PIXELS, conversionFindings, encodeToTargetBytes, resizedDimensions, validateConvertFiles, validateImageOptions } from '@lolly-tools/core/image-operation-v1';
 import { imageDimensions, sfntKind, fontConversionTargets, convertFontContainer, sniffAnimatedRaster, sourceToGrid, gridToTarget } from '@lolly/engine';
+import { isJxl } from '../../../engine/src/jxl.ts';
+import { runJxl } from './jxl.ts';
 import { sniffFormat } from './format-sniff.ts';
 
-const mime: Record<string, string> = { png: 'image/png', jpeg: 'image/jpeg', jpg: 'image/jpeg', webp: 'image/webp', avif: 'image/avif', svg: 'image/svg+xml', ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', csv: 'text/csv', tsv: 'text/tab-separated-values', json: 'application/json', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
-export const NODE_FILE_TARGETS = { image: ['png', 'jpeg', 'webp', 'avif'], font: ['ttf', 'otf', 'woff'], data: ['csv', 'tsv', 'json', 'xlsx'], pdf: ['pdf-clean', 'pdf-optimize'] } as const;
+const mime: Record<string, string> = { jxl: 'image/jxl', 'jxl-lossless': 'image/jxl', 'jxl-recompress': 'image/jxl', 'jpeg-original': 'image/jpeg', png: 'image/png', jpeg: 'image/jpeg', jpg: 'image/jpeg', webp: 'image/webp', avif: 'image/avif', svg: 'image/svg+xml', ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', csv: 'text/csv', tsv: 'text/tab-separated-values', json: 'application/json', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
+export const NODE_FILE_TARGETS = { image: ['png', 'jpeg', 'webp', 'avif', 'jxl', 'jxl-lossless', 'jxl-recompress', 'jpeg-original'], font: ['ttf', 'otf', 'woff'], data: ['csv', 'tsv', 'json', 'xlsx'], pdf: ['pdf-clean', 'pdf-optimize'] } as const;
 
 /** Bounded even if a file grows after stat; never follows directories or devices. */
 export async function readOperationFile(path: string): Promise<File> {
@@ -38,7 +40,8 @@ export async function describeOperationFile(file: File, signal?: AbortSignal): P
   const bytes = new Uint8Array(await file.arrayBuffer()); signal?.throwIfAborted();
   const detected = sfntKind(bytes) ?? sniffFormat(bytes);
   const format = detected === 'jpg' ? 'jpeg' : detected ?? file.name.split('.').pop()?.toLowerCase() ?? 'unknown';
-  const dimensions = imageDimensions(bytes, file.type);
+  const jxl = isJxl(bytes) ? (await runJxl({ operation: 'probe', bytes }, signal)).info : undefined;
+  const dimensions = jxl ? { w: jxl.width, h: jxl.height } : imageDimensions(bytes, file.type);
   return { name: file.name, format, formatSource: detected ? 'detected' : 'declared', mime: mime[format] ?? (file.type || 'application/octet-stream'), size: file.size, sha256: createHash('sha256').update(bytes).digest('hex'), ...(dimensions ? { width: dimensions.w, height: dimensions.h } : {}) };
 }
 
@@ -46,8 +49,9 @@ export async function runNodeFileOperation(file: File, request: FileOperationReq
   return executeFileOperationV1(file, request, {
     describe: describeOperationFile,
     effects(input) {
-      const raster = ['png', 'jpeg', 'jpg', 'webp', 'avif', 'tiff', 'bmp', 'gif', 'apng'].includes(input.format);
-      return { metadata: request.target === 'pdf-clean' ? 'changed' : raster ? 'removed' : 'not-checked', findings: conversionFindings(raster ? 'raster' : input.format, request.target) };
+      if (['jxl-recompress', 'jpeg-original'].includes(request.target)) return { metadata: 'preserved', findings: conversionFindings('raster', request.target) };
+      const raster = ['jxl', 'png', 'jpeg', 'jpg', 'webp', 'avif', 'tiff', 'bmp', 'gif', 'apng'].includes(input.format);
+      return { metadata: request.target === 'pdf-clean' ? 'changed' : raster ? 'removed' : 'not-checked', findings: conversionFindings(input.format === 'jxl' ? 'jxl' : raster ? 'raster' : input.format, request.target) };
     },
     async execute(source, operation) {
       if (operation.operation !== 'convert') throw new Error('Supported operation: convert.');
@@ -56,7 +60,10 @@ export async function runNodeFileOperation(file: File, request: FileOperationReq
       const facts = await describeOperationFile(source, signal);
       let result: Uint8Array | string;
       const font = sfntKind(bytes);
-      if (facts.format === 'pdf' && ['pdf-clean', 'pdf-optimize'].includes(operation.target)) {
+      if (['jxl-recompress', 'jpeg-original'].includes(operation.target)) {
+        if (options.maxEdge || options.targetBytes) throw new Error('Original JPEG preservation does not support resizing or a target file size.');
+        result = (await runJxl({ operation: operation.target === 'jxl-recompress' ? 'recompress' : 'restore', bytes }, signal)).bytes;
+      } else if (facts.format === 'pdf' && ['pdf-clean', 'pdf-optimize'].includes(operation.target)) {
         const { runPdfFileOperation } = await import('./pdf-file-operation.ts');
         result = await runPdfFileOperation(bytes, operation.target as 'pdf-clean' | 'pdf-optimize', signal);
       } else if (font) {
@@ -65,26 +72,37 @@ export async function runNodeFileOperation(file: File, request: FileOperationReq
       } else if (['csv', 'tsv', 'json', 'xlsx'].includes(facts.format) || facts.format === 'zip' && /\.xlsx$/i.test(source.name)) {
         result = gridToTarget(sourceToGrid(/\.xlsx$/i.test(source.name) ? 'xlsx' : facts.format, bytes), operation.target);
       } else {
-        if (!(NODE_FILE_TARGETS.image as readonly string[]).includes(operation.target)) throw new Error('Image output must be PNG, JPEG, WebP or AVIF.');
+        if (!(NODE_FILE_TARGETS.image as readonly string[]).includes(operation.target)) throw new Error('Unsupported image output format.');
         // SVG is deliberately not handed to a native decoder: external-resource and
         // stylesheet semantics differ. The web adapter owns that render path.
-        if (!['png', 'jpeg', 'webp', 'avif', 'tiff', 'bmp', 'gif', 'apng'].includes(facts.format)) throw new Error('This Node adapter accepts still raster images, supported fonts and tabular data.');
+        if (!['jxl', 'png', 'jpeg', 'webp', 'avif', 'tiff', 'bmp', 'gif', 'apng'].includes(facts.format)) throw new Error('This Node adapter accepts still raster images, supported fonts and tabular data.');
         if (sniffAnimatedRaster(bytes, { name: source.name, mime: source.type })) throw new Error('Animated images are refused: still conversion would lose animation.');
         const { default: sharp } = await import('sharp');
-        const metadata = await sharp(bytes, { limitInputPixels: MAX_CONVERT_PIXELS }).metadata();
+        const decoded = isJxl(bytes) ? await runJxl({ operation: 'decode', bytes }, signal) : null;
+        const imageSource = () => decoded
+          ? sharp(decoded.bytes, { raw: { width: decoded.info!.width, height: decoded.info!.height, channels: 4 } })
+          : sharp(bytes, { limitInputPixels: MAX_CONVERT_PIXELS });
+        const metadata = await imageSource().metadata();
         if ((metadata.pages ?? 1) > 1) throw new Error('Multi-page or animated images need an explicit page/frame operation.');
         const rotated = [5, 6, 7, 8].includes(metadata.orientation ?? 0);
         const dimensions = resizedDimensions(rotated ? metadata.height! : metadata.width!, rotated ? metadata.width! : metadata.height!, options.maxEdge);
-        const output = await encodeToTargetBytes(async quality => {
+        const encode = async (quality: number) => {
           signal?.throwIfAborted();
-          let image = sharp(bytes, { limitInputPixels: MAX_CONVERT_PIXELS }).autoOrient().resize(dimensions.width, dimensions.height, { fit: 'inside', withoutEnlargement: true }).toColourspace('srgb');
+          let image = imageSource().autoOrient().resize(dimensions.width, dimensions.height, { fit: 'inside', withoutEnlargement: true }).toColourspace('srgb');
           if (operation.target === 'jpeg') image = image.flatten({ background: options.background });
-          const encoded = await image.toFormat(operation.target as 'png' | 'jpeg' | 'webp' | 'avif', { quality: Math.round(quality * 100) }).toBuffer();
+          if (['jxl', 'jxl-lossless'].includes(operation.target)) {
+            const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+            const encoded = await runJxl({ operation: 'encode', bytes: new Uint8Array(data), width: info.width, height: info.height, options: { quality, lossless: operation.target === 'jxl-lossless' } }, signal);
+            return { size: encoded.bytes.length, bytes: encoded.bytes };
+          }
+          const encoded = await image.toFormat(operation.target as 'png' | 'jpeg' | 'webp' | 'avif', operation.target === 'png' ? {} : { quality: Math.round(quality * 100) }).toBuffer();
           signal?.throwIfAborted(); return { size: encoded.length, bytes: encoded };
-        }, options, signal);
+        };
+        const output = operation.target === 'jxl-lossless' ? await encode(options.quality) : await encodeToTargetBytes(encode, options, signal);
+        if (options.targetBytes && output.size > options.targetBytes) throw new Error('Lossless output exceeds the target size. Increase the target or reduce the dimensions.');
         result = output.bytes;
       }
-      const extension = operation.target.startsWith('pdf-') ? 'pdf' : operation.target === 'jpeg' ? 'jpg' : operation.target;
+      const extension = operation.target.startsWith('jxl') ? 'jxl' : operation.target === 'jpeg-original' ? 'jpg' : operation.target.startsWith('pdf-') ? 'pdf' : operation.target === 'jpeg' ? 'jpg' : operation.target;
       const output = new File([result as BlobPart], safeFileName(`${source.name.replace(/\.[^.]+$/, '')}.${extension}`), { type: extension === 'pdf' ? 'application/pdf' : mime[operation.target] ?? 'application/octet-stream' });
       validateConvertFiles([output]); return output;
     },

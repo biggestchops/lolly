@@ -24,7 +24,7 @@ export function canonicalRevisionData(data: SavedStateData): SavedStateData {
       const record = value as Record<string, unknown>;
       const baked = !!record.meta && typeof record.meta === 'object' && (record.meta as Record<string, unknown>).baked === true;
       const durable = !baked && (record.source === 'library' || record.source === 'user') && typeof record.id === 'string';
-      result = Object.fromEntries(Object.keys(record).sort().filter(key => !(durable && key === 'url'))
+      result = Object.fromEntries(Object.keys(record).sort().filter(key => !(durable && (key === 'url' || key === 'original')))
         .map(key => [key, normalise(record[key])]).filter(([, item]) => item !== undefined));
     }
     seen.delete(value);

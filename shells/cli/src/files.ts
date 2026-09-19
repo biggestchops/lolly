@@ -16,7 +16,7 @@ export async function filesCli(args: string[], flags: Record<string, string>, js
   if (verb === 'inspect') { await emit(await describeOperationFile(file)); return; }
   if (!flags.to || !flags.output) throw usageError('Conversion needs --to=<format> and --output=<new-file>. Existing files are never overwritten.');
   const extension = extname(flags.output).slice(1).toLowerCase();
-  if (extension && extension !== flags.to && !(flags.to === 'jpeg' && extension === 'jpg') && !(flags.to.startsWith('pdf-') && extension === 'pdf')) throw usageError('The output extension must match --to (JPEG also accepts .jpg; PDF utilities write .pdf).');
+  if (extension && extension !== flags.to && !(flags.to === 'jpeg' && extension === 'jpg') && !(flags.to.startsWith('pdf-') && extension === 'pdf') && !(flags.to.startsWith('jxl') && extension === 'jxl') && !(flags.to === 'jpeg-original' && ['jpg', 'jpeg'].includes(extension))) throw usageError('The output extension must match --to (JPEG also accepts .jpg; PDF utilities write .pdf; JPEG XL modes write .jxl; original JPEG restoration writes .jpg).');
   const controller = new AbortController(); const cancel = (): void => controller.abort(); process.once('SIGINT', cancel);
   try {
     const outcome = await runNodeFileOperation(file, { version: 1, operation: 'convert', target: flags.to, options: { maxEdge: Number(flags['max-edge'] ?? 0), quality: Number(flags.quality ?? .92), background: flags.background ?? '#ffffff', targetBytes: Number(flags['target-bytes'] ?? 0) } }, controller.signal);

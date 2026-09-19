@@ -188,6 +188,9 @@ interface ClipGainShape {
   g: number;
   fi: number;
   fo: number;
+  /** The fade in / fade out follows the equal-power curve (a crossfade junction side). */
+  fiPower: boolean;
+  foPower: boolean;
   keys: VolumeKey[] | null;
   /** Duck-to level 0..1 while a duck span plays (1 = no duck). */
   dl: number;
@@ -197,6 +200,7 @@ interface ClipGainShape {
 
 function clipGainShape(o: {
   spanSec: number; gain?: number; fadeInSec?: number; fadeOutSec?: number;
+  fadeInPower?: boolean; fadeOutPower?: boolean;
   volumeKeys?: readonly VolumeKey[]; duck?: ClipDuck;
 }): ClipGainShape {
   const span = Math.max(0, o.spanSec);
@@ -232,15 +236,36 @@ function clipGainShape(o: {
       .map((s) => ({ from: s.from, to: s.to, r: Math.min(MIX_RAMP_SEC, (s.to - s.from) / 2) }));
     if (rs.length) { dl = duckLevel; dspans = rs; }
   }
-  return { span, g, fi, fo, keys: cleanVolumeKeys(o.volumeKeys), dl, dspans };
+  return { span, g, fi, fo, fiPower: !!o.fadeInPower, foPower: !!o.fadeOutPower, keys: cleanVolumeKeys(o.volumeKeys), dl, dspans };
 }
+
+/**
+ * EQUAL POWER (plans/268 SI-02). Two clips that hand over are unrelated sounds, and
+ * unrelated sounds add as POWER. Two straight ramps that each stand at 0.5 in the middle
+ * of the handover add up to half the power, a dip of 3 dB that is heard as the sound
+ * sagging at every crossfade. The sine of the same travel stands at 0.707 there, and the
+ * outgoing side is the cosine of it, so the two powers add to one all the way across.
+ * A fade to or from SILENCE has no partner and stays a straight ramp.
+ */
+const equalPower = (p: number): number => Math.sin(Math.min(1, Math.max(0, p)) * (Math.PI / 2));
 
 /** The 0..1 fade factor at t for a resolved shape. */
 function fadeFactorAt(sh: ClipGainShape, t: number): number {
   let f = 1;
-  if (sh.fi > 0.001 && t < sh.fi) f = Math.min(f, t / sh.fi);
-  if (sh.fo > 0.001 && sh.span > 0 && t > sh.span - sh.fo) f = Math.min(f, (sh.span - t) / sh.fo);
+  if (sh.fi > 0.001 && t < sh.fi) {
+    const p = t / sh.fi;
+    f = Math.min(f, sh.fiPower ? equalPower(p) : p);
+  }
+  if (sh.fo > 0.001 && sh.span > 0 && t > sh.span - sh.fo) {
+    const p = (sh.span - t) / sh.fo;
+    f = Math.min(f, sh.foPower ? equalPower(p) : p);
+  }
   return Math.min(1, Math.max(0, f));
+}
+
+/** Does an equal-power fade run anywhere inside (a, b)? A curve, so it is subdivided. */
+function powerFadeIn(sh: ClipGainShape, a: number, b: number): boolean {
+  return (sh.fiPower && sh.fi > 0.001 && a < sh.fi) || (sh.foPower && sh.fo > 0.001 && b > sh.span - sh.fo);
 }
 
 /** The 0..1 duck factor at t: 1 outside every span, `dl` inside, linear edge ramps. */
@@ -295,6 +320,9 @@ export function clipGainEvents(o: {
   gain?: number;
   fadeInSec?: number;
   fadeOutSec?: number;
+  /** This fade is one side of a crossfade junction: follow the equal-power curve. */
+  fadeInPower?: boolean;
+  fadeOutPower?: boolean;
   /** Volume keyframes (the kf grammar's `v` channel), clip-local. Linear between
    *  keys, held beyond the ends - the DAW convention; ease tokens on a key move
    *  the POSE and deliberately not the volume. */
@@ -306,7 +334,7 @@ export function clipGainEvents(o: {
   const sh = clipGainShape(o);
   // The classic shapes stay EXACT and small: no keys and no duck means every
   // segment is a pure linear ramp of a single factor.
-  if (!sh.keys && !sh.dspans) {
+  if (!sh.keys && !sh.dspans && !sh.fiPower && !sh.foPower) {
     const events: GainEvent[] = [];
     if (sh.fi > 0.001) events.push({ t: 0, v: 0, ramp: false }, { t: sh.fi, v: sh.g, ramp: true });
     else events.push({ t: 0, v: sh.g, ramp: false });
@@ -329,7 +357,7 @@ export function clipGainEvents(o: {
     const a = sorted[i - 1]!;
     const b = sorted[i]!;
     const ramping = (fadeRampsIn(sh, a, b) ? 1 : 0) + (keysRampIn(sh, a, b) ? 1 : 0) + (duckRampsIn(sh, a, b) ? 1 : 0);
-    if (ramping >= 2) {
+    if (ramping >= 2 || powerFadeIn(sh, a, b)) {
       const steps = Math.max(1, Math.ceil((b - a) / GAIN_SUBDIVIDE_SEC));
       for (let n = 1; n <= steps; n++) {
         const t = a + ((b - a) * n) / steps;
@@ -355,6 +383,7 @@ export const MAX_CLIP_FADE_SEC = 15;
  */
 export function clipGainValueAt(o: {
   spanSec: number; gain?: number; fadeInSec?: number; fadeOutSec?: number;
+  fadeInPower?: boolean; fadeOutPower?: boolean;
   volumeKeys?: readonly VolumeKey[]; duck?: ClipDuck; tSec: number;
 }): number {
   const sh = clipGainShape(o);

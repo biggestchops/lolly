@@ -100,7 +100,7 @@ import {
   isModuleUrl,
   sniffTrackerModule,
   urlExtension,
-} from '../views/sequence-clock.ts';
+} from '../lib/media-source.ts';
 // The error vocabulary is the plan module's, not a second one invented here.
 // The renderer switches on `SeqErrorCode`, and a provider that minted its own
 // codes would be invisible to it. `toCodedError` is the single normaliser for
@@ -284,6 +284,10 @@ export interface InstrumentedProvider extends FrameProvider {
 // types.
 
 interface MbSample {
+  toVideoFrame?(): VideoFrame;
+  readonly rotation?: number;
+  readonly displayWidth?: number;
+  readonly displayHeight?: number;
   readonly timestamp: number;
   readonly duration: number;
   draw(
@@ -1043,7 +1047,11 @@ async function openMediabunnyProvider(src: Blob | string, opts: ProviderOpts): P
 
       if (!sample) { ledger.raw.missed++; return false; }
       try {
-        sample.draw(ctx, dest.dx, dest.dy, dest.dw, dest.dh);
+        const float = ctx as typeof ctx & { drawDeepSample?: (sample: import('./deep-video.ts').DeepVideoSample, x: number, y: number, w: number, h: number) => Promise<void> };
+        if (float.drawDeepSample) {
+          if (!sample.toVideoFrame) throw new Error('The decoder did not expose original video pixels for HDR.');
+          await float.drawDeepSample(sample as import('./deep-video.ts').DeepVideoSample, dest.dx, dest.dy, dest.dw, dest.dh);
+        } else sample.draw(ctx, dest.dx, dest.dy, dest.dw, dest.dh);
         ledger.raw.decoded++;
         ledger.raw.lastSourceSec = sample.timestamp;
         // The source's own frame interval, straight off the sample. The
@@ -1229,6 +1237,7 @@ export async function createElementProvider(url: string, opts: ProviderOpts = {}
         // Chrome on a 90°-tagged MP4 (plan 153 QW4; guarded by the "OBSERVE: element-seek
         // fallback vs a 90°-tagged MP4" browser golden). WebM never reaches this concern:
         // it cannot carry rotation metadata at all (MkvOutputFormat forbids it).
+        if ('drawDeepSample' in ctx) throw new Error('HDR export requires a decoder with original pixel access; browser video-element fallback cannot preserve HDR.');
         ctx.drawImage(v as unknown as CanvasImageSource, dest.dx, dest.dy, dest.dw, dest.dh);
         ledger.raw.decoded++;
         ledger.raw.lastSourceSec = landed ?? target;

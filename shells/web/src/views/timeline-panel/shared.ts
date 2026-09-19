@@ -11,7 +11,7 @@ import { KF_EASE_TOKENS, KF_HOLD_EASE, kfEaseCss, kfEaseName } from '../../../..
 import type { KfChannel } from '../../../../../engine/src/keyframes.ts';
 import type { EasingEditorHandle } from '../../components/easing-editor.ts';
 import { DRIVE_FPS, beginAuthoredDom, createSequenceTime } from '../../bridge/sequence-dom.ts';
-import { boxTiming, isTimed } from '../timeline-math.ts';
+import { seqJunctions, boxTiming, isTimed } from '../timeline-math.ts';
 import type { Box, LaneDrop, TimeCfg } from '../timeline-math.ts';
 import type { AssetRef, HostV1, RecorderAPI, SpeechAPI } from '@lolly-tools/core/host-v1';
 import { isTypingTarget } from '../../lib/typing-target.ts';
@@ -151,6 +151,7 @@ export interface TimelinePanelOpts {
    */
   cfg: TimeCfg & { frameTransitionField?: string };
   getBoxes(): Box[];
+  projectTime?: { rate(): unknown; marks(): string; writeMarks(wire: string): void };
   /** The free-canvas single write path - the ONLY way this module touches the model. */
   commit(next: Box[]): void;
   selection: TimelineSelection;
@@ -172,6 +173,8 @@ export interface TimelinePanelOpts {
    * then to the conventional `image`. Passing it explicitly is always better.
    */
   assetField?: string;
+  /** The input model declares both persisted internal-animation fields. */
+  internalAnimationEdits?: boolean;
   /**
    * The box sub-field carrying rendered text (free-canvas's `cv.textField`).
    * Only Generate subtitles writes it - each cue becomes a text box - so a tool
@@ -478,30 +481,37 @@ export function tracksKey(boxes: Box[], cfg: TimeCfg): string {
  * NEAR the pointer. Bounded on purpose - emitting every whole second up to MAX_TIME_S
  * would hand snapTime a 3,600-entry array on every pointermove.
  */
-export function snapCandidates(
-  boxes: Box[],
-  cfg: TimeCfg,
-  playheadSec: number,
-  aroundSec: number,
-  excludeId?: string
-): number[] {
-  const rows = Array.isArray(boxes) ? boxes : [];
-  const out: number[] = [0];
-  for (const b of rows) {
-    if (!b) continue;
-    const id = b[cfg.idField];
-    if (excludeId != null && id != null && String(id) === String(excludeId)) continue;
+export interface SnapTarget { t: number; kind: 'edge' | 'playhead' | 'second' | 'transition' | 'marker' | 'range' | 'keyframe' }
+export interface SnapContext { boxes: Box[]; cfg: TimeCfg; playhead: number; around: number; excludeId?: string }
+export type SnapProvider = (context: SnapContext) => SnapTarget[];
+const edgeTargets: SnapProvider = ({ boxes, cfg, excludeId }) => {
+  const transitions = seqJunctions(boxes, cfg).filter(j => j.kind === 'xfade');
+  const out: SnapTarget[] = [{ t: 0, kind: 'edge' }];
+  for (const b of boxes) {
+    if (!b || (excludeId != null && String(b[cfg.idField]) === excludeId)) continue;
     const timing = boxTiming(b, cfg);
     if (timing.lane !== 'seq' && timing.start === null) continue;
-    const s = timing.start ?? 0;
-    out.push(s);
-    if (timing.dur !== null) out.push(s + timing.dur);
+    const start = timing.start ?? 0;
+    for (const t of timing.dur === null ? [start] : [start, start + timing.dur]) {
+      if (!transitions.some(j => t >= j.cutSec && t < j.cutSec + j.ms / 1000)) out.push({ t, kind: 'edge' });
+    }
   }
-  const ph = finite(playheadSec, 0);
-  if (ph >= 0) out.push(ph);
-  const centre = Math.round(finite(aroundSec, 0));
-  for (let s = centre - 2; s <= centre + 2; s++) if (s >= 0) out.push(s);
   return out;
+};
+const playheadTargets: SnapProvider = ({ playhead }) => Number.isFinite(playhead) && playhead >= 0 ? [{ t: playhead, kind: 'playhead' }] : [];
+const secondTargets: SnapProvider = ({ around }) => {
+  const centre = Math.round(finite(around, 0));
+  return Array.from({ length: 5 }, (_, n) => ({ t: centre + n - 2, kind: 'second' as const })).filter(p => p.t >= 0);
+};
+const transitionTargets: SnapProvider = ({ boxes, cfg, excludeId }) => seqJunctions(boxes, cfg)
+  .filter(j => j.kind === 'xfade' && j.aId !== excludeId && j.bId !== excludeId)
+  .map(j => ({ t: j.cutSec + j.ms / 2000, kind: 'transition' }));
+export const SNAP_PROVIDERS: readonly SnapProvider[] = [edgeTargets, playheadTargets, secondTargets, transitionTargets];
+export function snapTargets(context: SnapContext, extra: readonly SnapTarget[] = []): SnapTarget[] {
+  return [...SNAP_PROVIDERS.flatMap(provider => provider(context)), ...extra];
+}
+export function snapCandidates(boxes: Box[], cfg: TimeCfg, playheadSec: number, aroundSec: number, excludeId?: string): number[] {
+  return snapTargets({ boxes: Array.isArray(boxes) ? boxes : [], cfg, playhead: playheadSec, around: aroundSec, excludeId }).map(point => point.t);
 }
 
 /** Is `el` something the user types into? Typing must never trigger a shortcut. */
@@ -537,9 +547,9 @@ export function panelKeysActive(
  * panel became 100% chrome showing no timeline. Callers that can measure their live
  * chrome pass it; the two-argument form keeps the original behaviour exactly.
  */
-export function clampPanelH(h: number, stageH: number, chromeH = 0): number {
+export function clampPanelH(h: number, stageH: number, chromeH = 0, maxFraction = 0.5): number {
   const floor = Math.max(MIN_PANEL_H, Math.round(finite(chromeH, 0)) + ONE_LANE_H);
-  const hi = Math.max(floor, Math.floor(finite(stageH, 0) * 0.5));
+  const hi = Math.max(floor, Math.floor(finite(stageH, 0) * maxFraction));
   return clamp(Math.round(finite(h, floor)), floor, hi);
 }
 
@@ -1035,4 +1045,3 @@ export type TakePhase = 'idle' | 'countin' | 'recording' | 'saving';
 export type TakeKind = 'audio' | 'video' | 'screen';
 /** groupBodySeq is an ES module binding now: importers read it live and write it through here. */
 export function setGroupBodySeq(value: number): void { groupBodySeq = value; }
-

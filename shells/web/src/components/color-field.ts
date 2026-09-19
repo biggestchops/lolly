@@ -72,6 +72,7 @@ export type { ColorMode, ColorModeFamily, ChannelSpec, SpaceSpec } from './color
 
 /** One swatch as the picker renders it (see SWATCHES below). */
 export interface ColorSwatchOption {
+  wide?: string;
   value: string;
   label?: string | null;
   group?: string | null;
@@ -1040,11 +1041,11 @@ function swatchButtonsHtml(id: string): string {
     // tooltip a neutral chip. No native `title` - the graphical tip replaces it.
     // safeCssColor: this is a CSS context, so attribute-escaping alone isn't
     // enough - an unvalidated token value could smuggle extra declarations.
-    const val = safeCssColor(s.value);
+    const val = safeCssColor(s.wide ?? s.value);
     const tip = isTrans ? '--sw-c:#c9ccd1;--sw-fg:#1d1d1d' : `--sw-c:${escape(val || '#c9ccd1')};--sw-fg:${contrastText(val)};background:${escape(val)}`;
     return `<button type="button"
       class="color-swatch${isTrans ? ' color-swatch--transparent' : ''}"
-      data-swatch-for="${eid}" data-swatch-value="${escape(s.value)}"${refAttr}
+      data-swatch-for="${eid}" data-swatch-value="${escape(s.wide ?? s.value)}"${refAttr}
       data-name="${escape(name)}" style="${tip}"
       aria-label="${escape(aria)}"></button>`;
   }).join('');
@@ -1562,7 +1563,7 @@ export function wireColorField(scope: HTMLElement, { onChange = () => {}, onInte
     btn.setAttribute('aria-expanded', 'true');
     // Close on Escape or a click outside the menu (not on the toggle, which handles
     // its own toggle). Deferred so THIS opening click doesn't immediately close it.
-    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') { closeSwatchMenu(field); e.stopPropagation(); } };
+    const onKey = (e: KeyboardEvent): void => { if (e.key === 'Escape') { closeSwatchMenu(field); e.preventDefault(); e.stopPropagation(); } };
     const onDown = (e: PointerEvent): void => {
       const tgt = e.target as Node;
       if (!menu.contains(tgt) && !btn.contains(tgt)) closeSwatchMenu(field);
@@ -1665,6 +1666,7 @@ export function wireColorField(scope: HTMLElement, { onChange = () => {}, onInte
       popover.hidden = true; popover.style.cssText = ''; disarmOutside();
       trigger.setAttribute('aria-expanded', 'false');
       trigger.focus();
+      e.preventDefault();
       e.stopPropagation();
     });
   });
@@ -1746,7 +1748,13 @@ export function wireColorField(scope: HTMLElement, { onChange = () => {}, onInte
     // the field-level Escape handler above cannot see the key. Bubble phase, so
     // the field handler (which also restores focus to the trigger) wins when
     // focus IS inside and stops propagation before this one runs.
-    onDocKey = (e) => { if (e.key === 'Escape') close(); };
+    onDocKey = (e) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      close();
+      field.querySelector<HTMLElement>('.color-trigger')?.focus();
+      e.preventDefault();
+      e.stopPropagation();
+    };
     setTimeout(() => {
       // CAPTURE, not bubble: canvas control-point layers stop pointerdown
       // propagation for their own drag handling, which starved a bubble-phase

@@ -1,4 +1,5 @@
 <div class="synth-wrap" data-lolly-anno="{{scene}} {{color1}} {{color2}} {{color3}} {{rampRotate}} {{intensity}} {{speed}} {{seed}} {{live}} {{text}} {{particles}} {{symmetry}}">
+  {{#if (eq scene "swarm")}}{{#unless logo}}<span hidden data-emoji-tool-source="{{text}}"></span>{{/unless}}{{/if}}
   <!-- Deliberately NOT data-capture-stream: that opts video into the real-time
        MediaRecorder path, which returns before the frame source is built and so
        never calls the frame clock below. The picture would be recorded at

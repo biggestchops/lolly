@@ -28,8 +28,9 @@
 import { readFile, realpath, stat } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { EMOJI_BUNDLE_MAX_BYTES } from '../packages/core/src/emoji-v1.ts';
 import type { EmojiPackBundleV1, EmojiPackPinV1 } from '../packages/core/src/emoji-v1.ts';
-import { EMOJI_PACK_MAX_BYTES, readEmojiPack, inspectEmojiPack, verifyEmojiArtwork } from '../engine/src/emoji-pack.ts';
+import { readEmojiPack, inspectEmojiPack, verifyEmojiArtwork } from '../engine/src/emoji-pack.ts';
 import { sha256Hex } from '../engine/src/bytes.ts';
 import data from '../engine/src/emoji-data/17.0.json' with { type: 'json' };
 
@@ -38,7 +39,7 @@ async function localBytes(root: string, name: string): Promise<Uint8Array> {
   const target = await realpath(resolve(root, name));
   const inside = relative(root, target);
   if (inside === '..' || inside.startsWith('../') || inside.startsWith('..\\') || isAbsolute(inside)) throw new Error('Pack path escapes its local snapshot.');
-  if ((await stat(target)).size > EMOJI_PACK_MAX_BYTES) throw new Error('Pack file exceeds the audit byte limit.');
+  if ((await stat(target)).size > EMOJI_BUNDLE_MAX_BYTES) throw new Error('Pack file exceeds the audit byte limit.');
   return readFile(target);
 }
 
@@ -92,7 +93,7 @@ async function indexEntry(indexPath: string, file: string): Promise<EmojiEntryMe
  *  thing that does not hold; returns the summary the CLI prints and validate-catalog
  *  keeps. */
 export async function auditBundle(bundlePath: string, entryPath: string | null): Promise<Record<string, unknown>> {
-  if ((await stat(bundlePath)).size > EMOJI_PACK_MAX_BYTES) throw new Error('Bundle exceeds the audit byte limit.');
+  if ((await stat(bundlePath)).size > EMOJI_BUNDLE_MAX_BYTES) throw new Error('Bundle exceeds the audit byte limit.');
   const file = await readFile(bundlePath);
   let parsed: unknown;
   try { parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(file)); }
@@ -221,7 +222,7 @@ export function checkEmojiPackSpecimen(meta: Record<string, unknown> | null | un
 
 /** Read one bundle and say what it really holds, for the specimen check. Same byte limit as the audit. */
 export async function readPackFacts(bundlePath: string): Promise<EmojiPackFacts> {
-  if ((await stat(bundlePath)).size > EMOJI_PACK_MAX_BYTES) throw new Error('Bundle exceeds the audit byte limit.');
+  if ((await stat(bundlePath)).size > EMOJI_BUNDLE_MAX_BYTES) throw new Error('Bundle exceeds the audit byte limit.');
   const bundle = JSON.parse(await readFile(bundlePath, 'utf8')) as { manifest?: string };
   if (typeof bundle.manifest !== 'string') throw new Error(`${basename(bundlePath)} carries no manifest.`);
   const manifest = JSON.parse(bundle.manifest) as { glyphs?: unknown[] };

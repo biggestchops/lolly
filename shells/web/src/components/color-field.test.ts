@@ -1214,3 +1214,17 @@ test('screen eyedropper preserves alpha and treats cancellation as no edit', asy
     assert.equal(seen.length, 1, 'a cancelled pick is no edit');
   } finally { delete win.EyeDropper; }
 });
+
+test('Escape cancels the picker before its parent even when focus is outside', async () => {
+  const { field } = mount('#123456');
+  const trigger = field.querySelector<HTMLButtonElement>('.color-trigger')!;
+  for (const target of [field, document]) {
+    trigger.click();
+    await wait(1);
+    const event = new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    assert.equal(event.defaultPrevented, true, 'native dialog cancel must not run');
+    assert.equal(field.querySelector<HTMLElement>('.color-popover')!.hidden, true);
+    assert.equal(document.activeElement, trigger);
+  }
+});

@@ -101,7 +101,7 @@ interface Glossary {
   termNotes?: Record<string, string>;
 }
 
-function loadGlossary(): Glossary {
+export function loadGlossary(): Glossary {
   return JSON.parse(readFileSync(GLOSSARY_PATH, 'utf8')) as Glossary;
 }
 
@@ -1070,7 +1070,7 @@ const OUTPUT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-async function translateBatch(
+export async function translateBatch(
   client: Anthropic,
   lang: Lang,
   items: BatchItem[],

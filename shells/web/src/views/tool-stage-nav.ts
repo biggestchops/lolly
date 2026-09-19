@@ -18,6 +18,7 @@
  * the difference.
  */
 import { mountZoomHud } from '../components/zoom-hud.ts';
+import { stageBottomReserve } from '../lib/design-panel-layout.ts';
 import type { ZoomHud } from '../components/zoom-hud.ts';
 import { isTypingTarget } from '../lib/typing-target.ts';
 import { icon } from '../lib/icons.ts';
@@ -223,7 +224,7 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
     const left = sr.left + reserveOf('--stage-reserve-left');
     const right = sr.right - reserveOf('--stage-reserve-right');
     const top = sr.top + reserveOf('--stage-reserve-top');
-    let bottom = sr.bottom - reserveOf('--stage-reserve-bottom');
+    let bottom = sr.bottom - stageBottomReserve(stageEl.style);
     // The compact tool rail becomes a horizontal palette at the foot of a touch
     // screen. It intentionally remains draggable chrome rather than claiming the
     // timeline's reserve property, so account for its actual visible rectangle here.

@@ -214,5 +214,13 @@
   "Install and restart": "Инсталиране и рестартиране",
   "The on-device model that hides an invisible credential in exported pixels. Pull it down now (~{size}) and the first durable export starts straight away, with no wait.": "Моделът на устройството, който скрива невидимо удостоверение в експортираните пиксели. Изтеглете го сега (~{size}), за да започне първото експортиране с трайно удостоверение веднага, без изчакване.",
   "The on-device model that hides the durable credential in exported pixels. Removing it frees the space; it downloads again with your consent when next used.": "Моделът на устройството, който скрива трайното удостоверение в експортираните пиксели. Премахването му освобождава място; при следваща употреба ще бъде изтеглен отново с ваше съгласие.",
-  "Removed the durable-credential model": "Моделът за трайно удостоверение е премахнат"
+  "Removed the durable-credential model": "Моделът за трайно удостоверение е премахнат",
+  "No emoji artwork is used in this document yet.": "В този документ все още не се използват изображения на емоджи.",
+  "Emoji pack exceeds the 64 MiB limit.": "Пакетът с емоджи надвишава ограничението от 64 MiB.",
+  "No emoji sets are available.": "Няма налични набори с емоджи.",
+  "This emoji set is incomplete.": "Този набор с емоджи е непълен.",
+  "This emoji set is unavailable.": "Този набор с емоджи не е наличен.",
+  "The artwork exceeds the emoji import limit.": "Изображенията надвишават ограничението за импортиране на емоджи.",
+  "That set could not be saved. Your emoji preference is unchanged.": "Наборът не можа да бъде запазен. Предпочитанието ви за емоджи не е променено.",
+  "JPEG XL original kept. Choose HDR editing to retain its full precision; previews use SDR.": "Оригиналът JPEG XL е запазен. Изберете редактиране в HDR, за да запазите пълната му прецизност; визуализациите използват SDR."
 }

@@ -31,8 +31,17 @@ import type { panelOps } from './panel.ts';
 import type { toolbarOps } from './toolbar.ts';
 import type { selectionActionsOps } from './selection-actions.ts';
 import type { layoutOps } from './layout.ts';
+import type { crossfadeOps, RampDrag, XfadeDrag } from './crossfade.ts';
 
+import type { marksOps } from './marks.ts';
+import type { rangePreviewOps } from './range-preview.ts';
+import type { lottieOps, TimelineLottieState } from './lottie.ts';
 export interface TpCtx {
+  lottie: ReturnType<typeof lottieOps>;
+  lottieState?: TimelineLottieState;
+  markerMenu?: BodyPopoverHandle;
+  marks: ReturnType<typeof marksOps>;
+  rangePreview: ReturnType<typeof rangePreviewOps>;
   // ---- state (was: closure variables of initTimelinePanel) ----
   captionsBtn: HTMLButtonElement;
   recordMenu: BodyPopoverHandle;
@@ -42,6 +51,7 @@ export interface TpCtx {
   selectionActions: ReturnType<typeof selectionActionsOps>;
   toolbar: ReturnType<typeof toolbarOps>;
   layout: ReturnType<typeof layoutOps>;
+  crossfade: ReturnType<typeof crossfadeOps>;
   trackHeight: number;
   trackThumbTimer: ReturnType<typeof setTimeout> | null;
   previousTimed: Set<string> | null;
@@ -180,6 +190,10 @@ export interface TpCtx {
   groupPoint: PointAnchor;
   groupPop: BodyPopoverHandle;
   snappedAt: number | null;
+  /** The crossfade length drag in flight, or null (plans/268 SI-07, crossfade.ts). */
+  xfadeDrag: XfadeDrag | null;
+  /** A clip's own enter or exit being resized by its wedge, or null (crossfade.ts). */
+  rampDrag: RampDrag | null;
   LANE_DRAG_PX: 14;
   LANE_EDGE_PX: 6;
   playBtnPlaying: boolean | null;

@@ -297,6 +297,7 @@ export interface InputSpec {
    *  it - the stored TableValue is the same strings whichever editor wrote them, so
    *  URL mode and the CLI are unaffected. See schema `columnEditors`. */
   columnEditors?: TableColumnEditor[];
+  tableEditor?: import('@lolly-tools/core').TableEditorSpec;
   /** On flat scalar `blocks`: edit rows in the shared table, in this field order.
    * Unlisted fields follow in declaration order. Stored objects and URL field order
    * stay unchanged; shells without the presentation can keep their block editor. */

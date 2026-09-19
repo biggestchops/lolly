@@ -32,7 +32,7 @@
 import { collectOk, collectLabel, flashCard, renderTabCounts, guidedCollection, mountGuidedCollection } from './picker-feedback.ts';
 import '../styles/picker.css';   // async CSS chunk (lazy view - not on the landing)
 import { isHiddenSlot } from '../lib/batch-slots.ts';
-import { archiveBudgetFor, archiveMemberFile, readArchiveMembers, readUploadZip, readUploadArchiveBytes } from '../lib/archive-ingest.ts';
+import { archiveBudgetFor, archiveMemberFile, readArchiveMembers, readUploadArchiveBytes } from '../lib/archive-ingest.ts';
 import DOMPurify from 'dompurify';
 import { serializeUrlState, buildEmbedUrl, parseThemedAssetId, buildThemedAssetId, restyleIconTheme, sniffAnimatedRaster, sniffVideoContainer, parseTreatedAssetId, buildTreatedAssetId, treatmentFilterSvg, stripAssetModifiers, extractC2paStore, prepareC2paIngredientFromStore, stripMetadata, midiToZzfxm, bakeAssetRef, decodeBmp, isBmp, decodeIco, isIco, gunzip, packPng, analyzeTextSignals, LEXICON_VERSION, extractFileMetadata } from '@lolly/engine';
 import { createToolRuntime as createRuntime } from '../lib/mount-runtime.ts';
@@ -44,7 +44,7 @@ import { fmtBytes, svgDataUrl } from '../lib/format.ts';
 import { fold, tokenize, scoreHaystack, SEARCH_DEBOUNCE_MS } from '../lib/search/match.ts';
 import { getTool } from '../bridge/tool-loader.ts';
 import { wireTabs } from '../lib/tabs.ts';
-import { downscaleRaster, computeResize, MAX_LONGEST_EDGE, readVideoDimensions } from '../bridge/image-resize.ts';
+import { downscaleRaster, computeResize, MAX_LONGEST_EDGE, readVideoDimensions, readDimensions } from '../bridge/image-resize.ts';
 import { depthHint } from '../lib/image-sample.ts';
 import { createFolderStore, childFolders, folderPath } from '../folders.ts';
 import { announce } from '../a11y.ts';
@@ -1399,7 +1399,7 @@ async function render(
         // one the input handed over (offerTrim's doc comment says why the order matters).
         const answered = await offerTrim(file);
         if (!answered) return;   // backed out of the card: nothing stored, dialog stays open
-        const ref = await storeUserUpload(host, answered);
+        const ref = await storeUserUpload(host, answered, { image: isAcceptable('raster') && !isAcceptable('data') });
         if (collect) { collectToast(await collect.onAsset(ref)); return; }
         close(ref);
       } catch (e) {
@@ -3011,72 +3011,6 @@ async function sanitizeSvgFile(file: Blob): Promise<{ blob: Blob; width?: number
   return { blob: file }; // genuinely not an SVG - hand back the bytes untouched
 }
 
-// A .lottie is a ZIP (dotLottie): manifest.json + animations/<id>.json (+ optional
-// images/). lottie-web only understands raw Bodymovin JSON, so unzip, pull the first
-// animation out, and inline any zip-embedded images as data URIs so the stored JSON is
-// self-contained. fflate (the shell's zip lib) is dynamic-imported - only paid for when
-// someone actually uploads a .lottie. Returns the animation JSON as text.
-async function dotLottieToJson(file: File): Promise<string> {
-  const strFromU8 = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
-  const budget = archiveBudgetFor(file);
-  let entries: Record<string, Uint8Array>;
-  try {
-    entries = Object.fromEntries(readUploadZip(await readUploadArchiveBytes(file), budget).map(e => [e.name, e.bytes]));
-  } catch {
-    throw new Error(t('That .lottie file couldn’t be opened (not a valid dotLottie archive).'));
-  }
-  const names = Object.keys(entries);
-  let animPath: string | undefined;
-  if (entries['manifest.json']) {
-    try {
-      const manifest = JSON.parse(strFromU8(entries['manifest.json'])) as { animations?: Array<{ id?: string }> };
-      const id = manifest.animations?.[0]?.id;
-      if (id) animPath = names.find(n => n === `animations/${id}.json`) ?? names.find(n => n.endsWith(`/${id}.json`));
-    } catch { /* fall through to a filename scan */ }
-  }
-  animPath ??= names.find(n => /^animations\/.+\.json$/i.test(n)) ?? names.find(n => /\.json$/i.test(n) && n !== 'manifest.json');
-  if (!animPath) throw new Error(t('That .lottie file has no animation inside.'));
-  const MAX_JSON_BYTES = 64 * 1024 * 1024;
-  if (entries[animPath]!.length > MAX_JSON_BYTES) throw new Error(t('That animation exceeds the 64 MB JSON limit.'));
-  const data = JSON.parse(strFromU8(entries[animPath]!)) as { assets?: Array<Record<string, unknown>> };
-  let expandedSize = entries[animPath]!.length;
-  // Inline embedded images (assets with e:0 that reference a file inside the zip) so
-  // the animation renders once stored - otherwise those image refs would 404.
-  if (Array.isArray(data.assets)) {
-    if (data.assets.length > 1000) throw new Error(t('That animation has too many image references.'));
-    for (const a of data.assets) {
-      if (!a || typeof a.p !== 'string' || a.e === 1) continue;
-      const dir = typeof a.u === 'string' ? a.u.replace(/^\//, '') : '';
-      const bytes = entries[dir + a.p] ?? entries['images/' + a.p] ?? entries[a.p];
-      if (!bytes) continue;
-      const added = Math.ceil(bytes.length / 3) * 4 + 128;
-      expandedSize += added;
-      if (expandedSize > MAX_JSON_BYTES) throw new Error(t('That animation exceeds the 64 MB expanded JSON limit.'));
-      if (added > budget.bytes) throw new Error(t('That animation has exhausted the archive expansion limit.'));
-      budget.bytes -= added;
-      const ext = a.p.toLowerCase();
-      const mime = ext.endsWith('.png') ? 'image/png'
-        : ext.endsWith('.svg') ? 'image/svg+xml'
-        : /\.jpe?g$/.test(ext) ? 'image/jpeg'
-        : ext.endsWith('.webp') ? 'image/webp'
-        : ext.endsWith('.gif') ? 'image/gif' : 'application/octet-stream';
-      a.u = '';
-      a.p = `data:${mime};base64,${u8ToBase64(bytes)}`;
-      a.e = 1;
-    }
-  }
-  return JSON.stringify(data);
-}
-
-// Base64 a byte array in chunks - String.fromCharCode(...bigArray) overflows the call
-// stack on large images, so feed it fixed-size slices.
-function u8ToBase64(u8: Uint8Array): string {
-  let bin = '';
-  const CHUNK = 0x8000;
-  for (let i = 0; i < u8.length; i += CHUNK) bin += String.fromCharCode(...u8.subarray(i, i + CHUNK));
-  return btoa(bin);
-}
-
 // Verbatim uploads - animated rasters (gif/apng/animated-webp) and video - bypass
 // downscaleRaster's implicit shrink (re-encoding would flatten the animation), so
 // they need an EXPLICIT byte ceiling here or one large clip/gif could blow the
@@ -3209,6 +3143,7 @@ export async function storeUserUpload(
   host: PickerHost,
   file: File,
   o: {
+    image?: boolean;
     skipDupCheck?: boolean;
     sourceHint?: string;
     /**
@@ -3226,6 +3161,9 @@ export async function storeUserUpload(
     batch?: boolean;
   } = {},
 ): Promise<AssetRef> {
+  const precision = await (await import('../lib/deep-upload.ts')).preparePrecisionUpload(host,file,o.image);
+  if (precision.ref) return precision.ref;
+  file = precision.file;
   const model = (await tryStoreModelUpload(host, file)) ?? (await tryStoreRadianceUpload(host, file));
   if (model) return model;
   // Read the file as a blob, stash it in the user-assets IDB store, return
@@ -3234,8 +3172,8 @@ export async function storeUserUpload(
   const id = `user/upload/${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, '_')}`;
   // A Lottie is JSON, not an image - accepted for motion, stored verbatim (no
   // raster resize, which would choke on non-image bytes). Both the raw Bodymovin
-  // JSON and dotLottie (.lottie, a zip) land here; the latter is unwrapped to JSON.
-  const isDotLottie = /\.lottie$/i.test(file.name);
+  // JSON and dotLottie (.lottie, a zip) keep their complete original bytes.
+  const isDotLottie = /\.lottie$/i.test(file.name) || file.type === 'application/zip+dotlottie';
   const isLottie = isDotLottie || /\.json$/i.test(file.name) || file.type.includes('json');
   // Detect SVG by extension too, not just MIME: a dragged-in .svg (or one the OS gives a
   // blank/wrong type) would otherwise fall through to the raster path and get rasterized
@@ -3291,7 +3229,7 @@ export async function storeUserUpload(
   if (/\.zip$/i.test(file.name) && head4[0] === 0x50 && head4[1] === 0x4b) {
     const budget = archiveBudgetFor(file);
     const entries = readArchiveMembers(await readUploadArchiveBytes(file), file.name, budget);
-    const MEDIA_RE = /\.(png|jpe?g|webp|apng|gif|avif|heic|heif|bmp|ico|svg|svgz|mp4|m4v|webm|mov|mp3|wav|ogg|oga|opus|m4a|aac|flac|mid|midi|json|lottie|pdf|txt|md|markdown|csv|tsv|xlsx)$/i;
+    const MEDIA_RE = /\.(png|jpe?g|webp|apng|gif|avif|jxl|heic|heif|bmp|ico|svg|svgz|mp4|m4v|webm|mov|mp3|wav|ogg|oga|opus|m4a|aac|flac|mid|midi|json|lottie|pdf|txt|md|markdown|csv|tsv|xlsx)$/i;
     const CAP = 200;
     let last: AssetRef | null = null;
     let n = 0;
@@ -3455,35 +3393,17 @@ export async function storeUserUpload(
   // badge never has to re-probe a stored blob. `fps` accompanies a lottie's duration
   // (its own frame rate, not a video/audio concept). Absent (not 0) on failure.
   let durationMs: number | undefined, fps: number | undefined;
+  let lottieMeta: Record<string, unknown> | undefined;
+  let jxlInfo: import('../../../../engine/src/jxl.ts').JxlInfo | undefined;
   // A text asset's AI-writing note (meta.aiSignals - the conventional shape in
   // host-v1.ts), computed in the isText branch while the bytes are in hand so the
   // asset carries it from birth. Absent on any other type, and on analyser failure.
   let aiSignals: Record<string, unknown> | undefined;
 
   if (isLottie) {
-    const text = isDotLottie ? await dotLottieToJson(file) : await file.text();
-    let raw: unknown;
-    try {
-      raw = JSON.parse(text);
-    } catch {
-      throw new Error(t('That file isn’t valid JSON, so it can’t be a Lottie animation.'));
-    }
-    // A Lottie/Bodymovin document has a `layers` array, or the version + timing
-    // fields (`v` plus `op`/`fr`). Guard so a random .json can't masquerade as one.
-    const data = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : null;
-    const looksLottie = !!data && (Array.isArray(data.layers) || ('v' in data && ('op' in data || 'fr' in data)));
-    if (!looksLottie) throw new Error(t('That JSON doesn’t look like a Lottie animation.'));
-    blob = new Blob([text], { type: 'application/json' });
-    format = 'json';
-    if (typeof data!.w === 'number') width = data!.w;
-    if (typeof data!.h === 'number') height = data!.h;
-    // op/ip are frame numbers, fr is frames-per-second - a Bodymovin/Lottie standard.
-    const op = data!.op, ip = data!.ip, fr = data!.fr;
-    if (typeof op === 'number' && typeof ip === 'number' && typeof fr === 'number'
-        && Number.isFinite(op) && Number.isFinite(ip) && Number.isFinite(fr) && fr > 0) {
-      const ms = Math.round((op - ip) / fr * 1000);
-      if (ms > 0) { durationMs = ms; fps = fr; }
-    }
+    const prepared = await (await import('./lottie-import.ts')).prepareLottieUpload(file);
+    ({ blob, format, width, height, durationMs, fps } = prepared);
+    lottieMeta = prepared.meta;
   } else if (isVector) {
     // Vectors are resolution-independent - no raster resize. But an uploaded SVG
     // can carry <script>, on*= handlers or external refs, so sanitize on ingest
@@ -3608,8 +3528,16 @@ export async function storeUserUpload(
     const ex = extractC2paStore(raw);
     // Opt-in privacy flag (default OFF - we keep uploads as they arrive unless asked).
     const stripMeta = isFlagOn(await host.profile.get(), STRIP_UPLOAD_META_FLAG);
+    if (file.type === 'image/jxl') {
+      if (stripMeta) throw new Error(t('JPEG XL metadata removal is unavailable. Turn off metadata removal to keep the original, or convert a copy to PNG first.'));
+      const { runJxl } = await import('../bridge/jxl.ts');
+      jxlInfo = (await runJxl({ operation: 'probe', bytes: raw })).info!;
+      await runJxl({ operation: 'decode', bytes: raw });
+      format = 'jxl';
+      if (jxlInfo.bitsPerSample > 8 || jxlInfo.hdr) announce(t('JPEG XL original kept. Choose HDR editing to retain its full precision; previews use SDR.'));
+    }
     if (ex) format = ex.format;
-    const dims = await readDimensions(file).catch(() => ({}) as { width?: number; height?: number });
+    const dims = jxlInfo ?? await readDimensions(file).catch(() => ({}) as { width?: number; height?: number });
     const longest = Math.max(dims.width ?? 0, dims.height ?? 0);
     const isHuge = file.size > HUGE_UPLOAD_BYTES || longest > MAX_LONGEST_EDGE * 2;
     // Keep the exact bytes - but honour the privacy flag: strip-on png/jpeg drops EXIF/XMP/GPS
@@ -3721,6 +3649,7 @@ export async function storeUserUpload(
   if (!isLottie && !isAudio && !isMidi && !isVector && !isVideo) {
     try { storedDepth = (await depthHint(blob)).bitsPerChannel; } catch { storedDepth = null; }
   }
+  if (jxlInfo && format === 'jxl') storedDepth = jxlInfo.bitsPerSample;
 
   // Bare-metadata provenance for the STORED image/video bytes, read at ingest
   // so an uncredentialed generator output still tells its story from birth
@@ -3816,6 +3745,8 @@ export async function storeUserUpload(
     // keep grouping/search consistent with catalog audio.)
     meta: {
       name: renameExt(file.name, format),
+      ...lottieMeta,
+      ...(jxlInfo ? { jxl: jxlInfo, displayDepth: 8, displayColorSpace: 'srgb' } : {}),
       ...(animated ? { animated: true } : {}),
       ...(isAudio || isMidi || isModule ? { tags: ['audio', 'neurospicy'] } : {}),
       // Playback length - video (probed, incl. the MediaRecorder-webm force-seek
@@ -4000,31 +3931,6 @@ export async function storeRecordingAsset(
   }
   return host.assets.get(id);
 }
-
-function readDimensions(file: Blob): Promise<{ width?: number; height?: number }> {
-  return new Promise((resolve, reject) => {
-    if (!file.type.startsWith('image/')) return resolve({});
-    let settled = false;
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    // A cap mirrors readVideoDimensions: <img> normally fires load or error, but a
-    // valid-container-yet-undecodable file could fire neither and wedge the awaiting
-    // upload forever (and leak the object URL). Resolve empty dims after the cap.
-    const cap = setTimeout(() => { if (!settled) { settled = true; URL.revokeObjectURL(url); resolve({}); } }, 5000);
-    img.onload = () => {
-      if (settled) return;
-      settled = true; clearTimeout(cap); URL.revokeObjectURL(url);
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-    img.onerror = (e) => {
-      if (settled) return;
-      settled = true; clearTimeout(cap); URL.revokeObjectURL(url);
-      reject(e);
-    };
-    img.src = url;
-  });
-}
-
 
 // Swap a filename's extension for `ext` (e.g. "photo.jpg" -> "photo.webp").
 // Appends if there was no extension; collapses an already-matching one.

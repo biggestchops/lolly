@@ -9,7 +9,8 @@
  */
 import { brandFontFamilies } from '../../lib/register-user-fonts.ts';
 import { t } from '../../i18n.ts';
-import type { ColorFieldValue } from '../../components/color-field.ts';
+import { designColorValue } from '../../lib/design-color.ts';
+import type { ColorFieldValue, ColorChangeDetail } from '../../components/color-field.ts';
 import { FONT_STACK, WEIGHT_CHOICES } from './shared.ts';
 import type { Canvas, ImportMode } from './shared.ts';
 import { bindOp, type FcCtx } from './context.ts';
@@ -20,8 +21,9 @@ export const canvasWH = (fc: FcCtx): Canvas => { const { canvasEl, nativeH, nati
   w: parseInt(canvasEl.style.width, 10) || nativeW,
   h: parseInt(canvasEl.style.height, 10) || nativeH,
 }); };
-export const unwrapColor = (_fc: FcCtx, v: ColorFieldValue) =>
-  v && typeof v === 'object' && 'value' in v ? v.value : v;
+export const unwrapColor = (fc: FcCtx, v: ColorFieldValue, detail?: ColorChangeDetail): string => {
+  return designColorValue(v, fc.runtime.getModel().find(input => input.id === 'editingRange')?.value, detail);
+};
 // Mono detection mirrors hooks.js weightOf (/mono/i on the wire value; the label
 // covers manifests whose values don't self-describe). Mono cuts rarely ship a
 // Black, so the weight menu and the font-change clamp cap mono at 800.

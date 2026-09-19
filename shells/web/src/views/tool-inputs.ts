@@ -28,8 +28,9 @@ import {
 import type { TableValue } from '@lolly/engine';
 import { matchesShowIf } from '@lolly/engine';
 import { mountInputEmoji, wireEmojiCells } from '../components/input-emoji.ts';
+import { wireTableWorkbench } from './table-workbench-launcher.ts';
 import { tableInputHtml, tableGhostCells } from './table-input-html.ts';
-import { readTableCells, wireTableEnter, wireTableRowMoves } from './table-input-dom.ts';
+import { readTableCells, tablePasteHandler, wireTableNavigation, wireTableRowMoves } from './table-input-dom.ts';
 import { inputTableValue, inheritTableSources, tableInputValue, parseInputTable } from './block-table.ts';
 import { createToolRuntime as createRuntime } from '../lib/mount-runtime.ts';
 import { escape } from '../utils.ts';
@@ -45,7 +46,7 @@ import {
 } from '../components/custom-slider.ts';
 import { canSkipInputsRebuild, staticInputControl } from './inputs-sync.ts';
 import { jellyActive, jellyEnabled } from '../lib/jelly.ts';
-import { installTablePaste, htmlTableToTsv } from '../lib/table-paste.ts';
+import { installTablePaste } from '../lib/table-paste.ts';
 import { splitMarkdownIntoBlocks } from '../lib/markdown.ts';
 import { playSliderTick, playScrubTick } from '../lib/sfx.ts';
 import { prefersReducedMotion } from '../lib/a11y-prefs.ts';
@@ -1522,6 +1523,7 @@ export function renderInputs(
   // lag behind edits made since the last repaint.
   el.querySelectorAll<HTMLElement>('.table-input').forEach((wrap) => {
     const tid = wrap.dataset.tableId!;
+    if (wireTableWorkbench(wrap, tid, runtime, onDirty)) return;
     // The virtualized data-grid mount (present only past TABLE_VIRTUALIZE_ROWS). When
     // it's used, `read()` sources from the grid's live value instead of the DOM cells;
     // the whole toolbar (add-row/col/paste/copy/pop) then works for BOTH paths through
@@ -1551,6 +1553,7 @@ export function renderInputs(
         gridHandle = mountDataGrid(vgrid, {
           value: modelValue(),
           editable: true,
+          onError: announce,
           fixedColumns: fixed,
           onChange: (next, change) => {
             const previous = modelValue();
@@ -1628,7 +1631,6 @@ export function renderInputs(
       };
       const wireCells = (root: ParentNode): void => {
         root.querySelectorAll<HTMLInputElement>('.table-cell').forEach((cell) => {
-          if (fixed) wireTableEnter(cell, wrap, tid);
           cell.addEventListener('input', () => {
             maybePromote(cell);
             commit(read());
@@ -1644,6 +1646,7 @@ export function renderInputs(
         });
       };
       wireCells(wrap);
+      wireTableNavigation(wrap, read, commit);
       drawEmojiCells();
     }
 
@@ -1690,23 +1693,8 @@ export function renderInputs(
       })
     );
 
-    // Paste anywhere in the grid: a multi-cell clipboard replaces the WHOLE
-    // table - the spreadsheet is the batch editor, a paste is "here's the new
-    // data". A spreadsheet's text/html <table> flavour is preferred (explicit
-    // grid, no delimiter guessing); a single plain value falls through to the
-    // focused cell like any text input.
-    const onTablePaste = (e: ClipboardEvent): void => {
-      const tsvFromHtml = htmlTableToTsv(e.clipboardData?.getData('text/html') ?? '');
-      const text = tsvFromHtml || e.clipboardData?.getData('text/plain') || '';
-      const parsed = parseInputTable(text, tableInput());
-      if (!parsed) return;
-      e.preventDefault();
-      // Pasting replaces the grid's shape. End cell editing so the panel can
-      // rebuild now; otherwise the next row action reads the old visible cells.
-      wrap.querySelector<HTMLElement>(':focus')?.blur();
-      commit(parsed);
-      announce(`Table replaced: ${parsed.rows.length} rows, ${parsed.columns.length} columns`);
-    };
+    // A selected cell is a paste origin. Replacement is the explicit toolbar action.
+    const onTablePaste = tablePasteHandler(wrap, read, commit, text => parseInputTable(text, tableInput()));
     wrap.addEventListener('paste', onTablePaste);
     // Register with the document-level router (module scope above) so a paste with
     // focus on the canvas/body still reaches this input. Last table input wired wins;
@@ -3610,7 +3598,7 @@ async function openEmbedEditor(
     const state = parseUrlState(parsed.query, tool.manifest);
     child = await createRuntime(tool, host, state.values);
     emojiStyle = await import('../lib/emoji-runtime-style.ts');
-    await emojiStyle.seedEmojiRuntime(child, host, state.emoji ? { emoji: state.emoji, emojifx: state.emojiFx ?? '' } : null);
+    await emojiStyle.seedEmojiRuntime(child, host, state.emoji ? { emoji: state.emoji, emojifx: state.emojiFx ?? '', emojistyle: state.emojiStyle ?? '' } : null);
   } catch {
     return null; // unknown tool / bad link → silently no-op (button shouldn't have shown)
   }

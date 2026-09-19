@@ -7,21 +7,19 @@
  * a value (an event listener), goes through `tp.<module>.<fn>`. Extracted verbatim
  * from initTimelinePanel() by scripts/split-closure.ts.
  */
+import { compactDesignViewport } from '../../lib/design-panel-layout.ts';
 import { t } from '../../i18n.ts';
 import { icon } from '../../lib/icons.ts';
 import type { IconName } from '../../lib/icons.ts';
-import { indexOfId } from '../timeline-math.ts';
+import { frameAt, frameSeconds, projectRate, timeOfFrame } from '../../../../../engine/src/timebase.ts';
+import { indexOfId, rippleOverlays } from '../timeline-math.ts';
 import type { Box, MediaDurFn } from '../timeline-math.ts';
 import { isNarrationGroup } from '../../lib/narration.ts';
 import { cssEscape } from './shared.ts';
 import type { BoxMedia } from './shared.ts';
 import { bindOp, type TpCtx } from './context.ts';
 
-export const compactPanel = (_tp: TpCtx): boolean =>
-  typeof matchMedia === 'function' &&
-  matchMedia(
-    '(pointer: coarse) and (max-width: 640px), (pointer: coarse) and (max-height: 430px)'
-  ).matches;
+export const compactPanel = (_tp: TpCtx): boolean => compactDesignViewport();
 export const btn = (_tp: TpCtx, cls: string, label: string, glyph: string): HTMLButtonElement => {
   const b = document.createElement('button');
   b.type = 'button';
@@ -59,8 +57,14 @@ export const actionBtn = (tp: TpCtx, cls: string, label: string, glyph: IconName
 export function write(tp: TpCtx, next: Box[]): void {
   const { blockId, commit, onDirty } = tp;
   onDirty?.(blockId);
-  commit(next);
+  commit(rippleOverlays(tp.getBoxes(), next, tp.cfg));
 }
+export function frameStep(tp: TpCtx): number { return timeOfFrame(1, projectRate(tp.opts.projectTime?.rate())); }
+export function stepTime(tp: TpCtx, seconds: number, frames: number): number {
+  const rate = projectRate(tp.opts.projectTime?.rate());
+  return timeOfFrame(frameAt(seconds, rate) + frames, rate);
+}
+export function quantiseTime(tp: TpCtx, seconds: number): number { return frameSeconds(seconds, projectRate(tp.opts.projectTime?.rate())); }
 /** Set fields on one box. A VALUE write - no arithmetic, by design (see header). */
 export function patchBox(tp: TpCtx, boxes: Box[], id: string, patch: Record<string, Box[string]>): Box[] {
   const { cfg } = tp;
@@ -266,6 +270,9 @@ export function labelFor(tp: TpCtx, id: string): string {
 }
 export function helpersOps(tp: TpCtx) {
   return {
+    frameStep: bindOp(tp, frameStep),
+    stepTime: bindOp(tp, stepTime),
+    quantiseTime: bindOp(tp, quantiseTime),
     compactPanel: bindOp(tp, compactPanel),
     btn: bindOp(tp, btn),
     actionBtn: bindOp(tp, actionBtn),

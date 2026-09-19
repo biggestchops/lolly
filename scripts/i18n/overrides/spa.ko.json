@@ -214,5 +214,13 @@
   "Install and restart": "설치 후 다시 시작",
   "The on-device model that hides an invisible credential in exported pixels. Pull it down now (~{size}) and the first durable export starts straight away, with no wait.": "내보낸 픽셀에 보이지 않는 자격 증명을 숨기는 기기 내 모델입니다. 지금 다운로드하면(약 {size}) 첫 번째 지속 자격 증명 내보내기를 기다리지 않고 바로 시작할 수 있습니다.",
   "The on-device model that hides the durable credential in exported pixels. Removing it frees the space; it downloads again with your consent when next used.": "내보낸 픽셀에 지속 자격 증명을 숨기는 기기 내 모델입니다. 제거하면 공간이 확보되며 다음 사용 시 동의를 받은 후 다시 다운로드됩니다.",
-  "Removed the durable-credential model": "지속 자격 증명 모델을 제거했습니다"
+  "Removed the durable-credential model": "지속 자격 증명 모델을 제거했습니다",
+  "No emoji artwork is used in this document yet.": "이 문서에는 아직 이모지 이미지가 사용되지 않았습니다.",
+  "Emoji pack exceeds the 64 MiB limit.": "이모지 팩이 64 MiB 제한을 초과합니다.",
+  "No emoji sets are available.": "사용할 수 있는 이모지 세트가 없습니다.",
+  "This emoji set is incomplete.": "이 이모지 세트는 불완전합니다.",
+  "This emoji set is unavailable.": "이 이모지 세트를 사용할 수 없습니다.",
+  "The artwork exceeds the emoji import limit.": "이미지가 이모지 가져오기 제한을 초과합니다.",
+  "That set could not be saved. Your emoji preference is unchanged.": "세트를 저장할 수 없습니다. 이모지 설정은 변경되지 않았습니다.",
+  "JPEG XL original kept. Choose HDR editing to retain its full precision; previews use SDR.": "JPEG XL 원본을 보존했습니다. 전체 정밀도를 유지하려면 HDR 편집을 선택하세요. 미리보기에는 SDR이 사용됩니다."
 }

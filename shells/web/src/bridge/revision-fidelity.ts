@@ -90,7 +90,7 @@ export function createRevisionFidelity(db: IDBPDatabase): RevisionFidelityAPI {
           ref.pin = { version: candidate.version, format: candidate.format };
           ref.version = candidate.version; ref.format = candidate.format;
           // Old resolved metadata and URLs are not evidence about the replacement.
-          delete ref.url; delete ref.checksum; delete ref.width; delete ref.height;
+          delete ref.url; delete ref.original; delete ref.checksum; delete ref.width; delete ref.height;
         }
       }
       return data;

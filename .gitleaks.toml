@@ -10,7 +10,7 @@ useDefault = true
 description = "Generated emoji sequence identifiers are not API credentials"
 condition = "AND"
 targetRules = ["generic-api-key"]
-paths = ['''^engine/src/emoji-data/17\.0\.json$''', '''^api/mcp/\[\.\.\.path\]\.js$''']
+paths = ['''^engine/src/emoji-data/17\.0\.json$''', '''^community/emoji-packs/index\.json$''', '''^api/mcp/\[\.\.\.path\]\.js$''']
 regexTarget = "secret"
 regexes = ['''^[0-9a-f]{4,6}(?:-[0-9a-f]{4,6}){3,}$''']
 

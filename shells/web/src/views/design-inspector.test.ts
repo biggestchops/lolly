@@ -122,6 +122,7 @@ const BOXES: Box[] = [
 
 interface Harness {
   handle: DesignInspectorHandle;
+  model: ModelPort;
   el: HTMLElement;
   boxes(): Box[];
   select(ids: string[]): void;
@@ -146,7 +147,7 @@ function mount(initial: Box[] = BOXES, extra: Partial<Parameters<typeof initDesi
   canvasEl.style.height = '900px';
 
   let rows: Box[] = initial.map((b) => ({ ...b }));
-  let background: unknown = '#0b1220';
+  const documentInputs: Record<string, unknown> = { background: '#0b1220' };
   const subs: Array<() => void> = [];
   const emit = (): void => { subs.slice().forEach((f) => f()); };
 
@@ -168,8 +169,8 @@ function mount(initial: Box[] = BOXES, extra: Partial<Parameters<typeof initDesi
       emit();
     },
     subscribe: (cb) => { subs.push(cb); return () => { const i = subs.indexOf(cb); if (i >= 0) subs.splice(i, 1); }; },
-    getInput: (id) => (id === 'background' ? background : undefined),
-    setInput: (id, value) => { setInputs.push([id, value]); if (id === 'background') background = value; emit(); },
+    getInput: (id) => documentInputs[id],
+    setInput: (id, value) => { setInputs.push([id, value]); documentInputs[id] = value; emit(); },
     // Not on ModelPort - present only so the suite can prove nothing reaches it.
     setInputNoHistory: () => { noHistory += 1; },
   };
@@ -213,7 +214,7 @@ function mount(initial: Box[] = BOXES, extra: Partial<Parameters<typeof initDesi
   slot.appendChild(handle.el);
 
   const h = {
-    handle, el: handle.el,
+    handle, model, el: handle.el,
     boxes: () => rows,
     select: (ids: string[]) => selection.set(ids),
     poke: (fn: (r: Box[]) => Box[]) => { rows = fn(rows.map((b) => ({ ...b }))); emit(); },
@@ -248,7 +249,7 @@ test('empty selection shows only Document: canvas size, background, and why noth
   assert.match(check?.textContent ?? '', /1 Artboard · 3 Layers/);
   assert.match(h.el.textContent!, /1600 x 900 px/);
   assert.ok(h.el.querySelector('[data-color-field]'), 'the background swatch is a real colour field');
-  assert.match(h.el.textContent!, /Select something to edit its properties\./);
+  assert.deepEqual([...h.el.querySelectorAll('.fc-insp-tabs button')].map(b => b.textContent), ['Selection', 'Document']);
   h.handle.destroy();
 });
 
@@ -338,7 +339,7 @@ test('a multi-selection shows the paint groups only, and the column head carries
   assert.equal(h.el.querySelector('input[data-nf="f:x"]'), null);
   assert.ok(h.el.querySelector('[data-fld="bg"], #fc-insp-fill, [data-color-field]'), 'fill still offered');
   h.select(['b1']);
-  assert.match(h.el.querySelector('.fc-insp-coltitle')!.textContent!, /Inspector/, 'and it goes back');
+  assert.match(h.el.querySelector('.fc-insp-coltitle')!.textContent!, /box/, 'the header identifies the selected kind');
   h.handle.destroy();
 });
 
@@ -480,7 +481,8 @@ test('the A- / A+ steppers step the size of the whole selection in one commit', 
   const h = mount();
   h.select(['t1']);
   click(h.el.querySelector('[data-act="bigger"]')!);
-  assert.deepEqual(h.commits.map((c) => [c.field, c.value]), [['fontSize', 54]]);
+  assert.equal(h.arrays.length, 1);
+  assert.equal(h.boxes().find(b => b.id === 't1')?.fontSize, 54);
   h.handle.destroy();
 });
 
@@ -1529,4 +1531,67 @@ test('video properties lead with content and preserve explicit precision prefere
     assert.equal(h.handle.el.querySelector('[data-sec]')?.getAttribute('data-sec'), 'text');
     assert.equal(h.handle.el.querySelector('[data-head="object"]')?.getAttribute('aria-expanded'), 'true');
   } finally { h.handle.destroy(); }
+});
+
+test('compatible text selections show mixed typography and commit one shared field atomically', () => {
+  const h = mount([
+    { id: 'a', kind: 'text', text: 'One', font: 'sans', fontSize: 24, fg: '#ff0000', align: 'left' },
+    { id: 'b', kind: 'text', text: 'Two', font: 'mono', fontSize: 48, fg: '#00ff00', align: 'right' },
+  ]);
+  try {
+    h.select(['a', 'b']);
+    assert.equal(secs(h)[0], 'text');
+    assert.equal(num(h, 'fontSize').placeholder, 'Mixed');
+    assert.equal(h.el.querySelector<HTMLSelectElement>('[data-fld="font"]')!.selectedOptions[0]!.text, 'Mixed');
+    const before = h.boxes().map(b => ({ ...b }));
+    typeNum(h, 'fontSize', '36');
+    assert.equal(h.commits.length, 1);
+    assert.deepEqual(h.commits[0]!.ids, ['a', 'b']);
+    assert.deepEqual(h.boxes(), before.map(b => ({ ...b, fontSize: 36 })));
+    click(h.el.querySelector('[data-act="bigger"]')!);
+    assert.equal(h.arrays.length, 1);
+    assert.deepEqual(h.boxes(), before.map(b => ({ ...b, fontSize: 42 })));
+    h.poke(rows => rows.map((b, i) => i ? { ...b, kind: 'image' } : b));
+    assert.equal(secs(h).includes('text'), false);
+  } finally { h.handle.destroy(); }
+});
+
+test('Document remains reachable while selected and editing range leaves selection properties intact', () => {
+  const h = mount();
+  try {
+    h.model.setInput('editingRange', 'sdr');
+    h.select(['t1']);
+    click(h.el.querySelectorAll('.fc-insp-tabs button')[1]!);
+    const range = h.el.querySelector<HTMLSelectElement>('[data-doc="editingRange"]')!;
+    range.value = 'hdr'; fire(range, 'change');
+    assert.equal(h.model.getInput('editingRange'), 'hdr');
+    assert.equal(h.commits.length, 0);
+    click(h.el.querySelectorAll('.fc-insp-tabs button')[0]!);
+    assert.equal(num(h, 'fontSize').value, '48');
+    typeNum(h, 'fontSize', '64');
+    assert.deepEqual(h.commits[0]?.ids, ['t1']);
+  } finally { h.handle.destroy(); }
+});
+
+test('every inspector paint preserves P3 in HDR editing and maps it in SDR editing', () => {
+  const authored = 'color(display-p3 1 0 0)';
+  for (const editingRange of ['sdr', 'hdr']) {
+    const h = mount();
+    try {
+      h.model.setInput('editingRange', editingRange);
+      h.poke(rows => rows.map(row => ({ ...row, shadowColor: '#000000' })));
+      h.select(['t1']);
+      for (const [id, field] of [['fg', 'fg'], ['fill', 'bg'], ['stroke', 'stroke'], ['shadow', 'shadowColor']] as const) {
+        const input = h.el.querySelector<HTMLInputElement>(`[data-color-field="fc-insp-${id}"] .color-input`)!;
+        input.value = authored; fire(input, 'input');
+        const saved = h.boxes().find(b => b.id === 't1')![field!];
+        if (editingRange === 'hdr') assert.equal(saved, authored, field); else assert.match(String(saved), /^#[a-f\d]{6}$/i, field);
+      }
+      click(h.el.querySelectorAll('.fc-insp-tabs button')[1]!);
+      const input = h.el.querySelector<HTMLInputElement>('[data-color-field="fc-insp-bg"] .color-input')!;
+      input.value = authored; fire(input, 'input');
+      if (editingRange === 'hdr') assert.equal(h.model.getInput('background'), authored);
+      else assert.match(String(h.model.getInput('background')), /^#[a-f\d]{6}$/i);
+    } finally { h.handle.destroy(); }
+  }
 });

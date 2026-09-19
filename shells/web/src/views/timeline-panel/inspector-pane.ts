@@ -7,6 +7,7 @@
  * a value (an event listener), goes through `tp.<module>.<fn>`. Extracted verbatim
  * from initTimelinePanel() by scripts/split-closure.ts.
  */
+import { clipFrameRate } from '../../lib/clip-frame-rate.ts';
 import { t } from '../../i18n.ts';
 import { icon } from '../../lib/icons.ts';
 import type { IconName } from '../../lib/icons.ts';
@@ -222,7 +223,7 @@ export function renderInspector(tp: TpCtx, boxes: Box[]): void {
   // the three ways a box can appear that was not already in this list, and a row that
   // does not repaint after it is written keeps the wrong segment pressed.
   const key = box
-    ? `${id}|${JSON.stringify([box[cfg.startField], box[cfg.durField], box[cfg.clipInField], box[cfg.speedField], box[cfg.enterField], box[cfg.exitField], box[cfg.enterMsField], box[cfg.exitMsField], box[cfg.muteField], cfg.enterEaseField ? box[cfg.enterEaseField] : '', cfg.exitEaseField ? box[cfg.exitEaseField] : '', cfg.kfField ? box[cfg.kfField] : '', cfg.zField ? box[cfg.zField] : '', cfg.linkField ? box[cfg.linkField] : '', box.kind, cfg.gainField ? box[cfg.gainField] : '', cfg.splitField ? box[cfg.splitField] : '', cfg.staggerField ? box[cfg.staggerField] : '', cfg.splitOrderField ? box[cfg.splitOrderField] : '', cfg.holdField ? box[cfg.holdField] : '', cfg.holdRateField ? box[cfg.holdRateField] : '', cfg.panField ? box[cfg.panField] : '', cfg.duckField ? box[cfg.duckField] : '', cfg.pitchField ? box[cfg.pitchField] : '', cfg.varispeedField ? box[cfg.varispeedField] : '', cfg.fxField ? box[cfg.fxField] : '', box.build])}`
+    ? `${id}|${tp.helpers.mediaOf(id).kind}|${JSON.stringify([box[cfg.startField], box[cfg.durField], box[cfg.clipInField], box[cfg.speedField], box[cfg.enterField], box[cfg.exitField], box[cfg.enterMsField], box[cfg.exitMsField], box[cfg.muteField], cfg.enterEaseField ? box[cfg.enterEaseField] : '', cfg.exitEaseField ? box[cfg.exitEaseField] : '', cfg.kfField ? box[cfg.kfField] : '', cfg.zField ? box[cfg.zField] : '', cfg.linkField ? box[cfg.linkField] : '', box.kind, cfg.gainField ? box[cfg.gainField] : '', cfg.splitField ? box[cfg.splitField] : '', cfg.staggerField ? box[cfg.staggerField] : '', cfg.splitOrderField ? box[cfg.splitOrderField] : '', cfg.holdField ? box[cfg.holdField] : '', cfg.holdRateField ? box[cfg.holdRateField] : '', cfg.panField ? box[cfg.panField] : '', cfg.duckField ? box[cfg.duckField] : '', cfg.pitchField ? box[cfg.pitchField] : '', cfg.varispeedField ? box[cfg.varispeedField] : '', cfg.fxField ? box[cfg.fxField] : '', box.build])}`
     : '';
   if (key === tp.inspectorKey) return;
   tp.inspectorKey = key;
@@ -274,6 +275,7 @@ export function renderInspector(tp: TpCtx, boxes: Box[]): void {
     }, 32);
   }
   const timing = boxTiming(box, cfg);
+  tp.lottie.appendButton(id);
 
   const row = (labelText: string, control: HTMLElement): HTMLElement => {
     const wrap = document.createElement('label');
@@ -498,6 +500,17 @@ export function renderInspector(tp: TpCtx, boxes: Box[]): void {
     // so a summary can never disagree with the readout beside it. Trim-in stays behind
     // the disclosure: it is a property of the SOURCE, not of the clip's place in time.
     timeG.setSummary([fmtTime(timing.start ?? 0), fmtDur(shown.dur), `×${timing.speed}`]);
+    const media = tp.helpers.mediaOf(id);
+    if (media.kind === 'video' && media.url) {
+      const value = document.createElement('span');
+      timeG.head.addEventListener('click', () => {
+        void clipFrameRate(media.url).then(info => {
+          if (!info || tp.disposed || !timeG.root.isConnected) return;
+          value.textContent = `${Number(info.fps.toFixed(3))} fps${info.variable ? ' · VFR' : ''}`;
+          if (!value.isConnected) timeG.body.append(row(t('Source'), value));
+        });
+      }, { once: true });
+    }
   }
 
   // ── Motion ────────────────────────────────────────────────────────────────

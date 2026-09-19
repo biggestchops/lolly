@@ -234,3 +234,13 @@ test('host.raster reports the truth about this realm and round-trips pixels', as
   assert.equal(out.width, W);
   assert.equal(sniffImageMime(out.bytes), 'image/png');
 });
+
+test('redactImage: supplied emoji artwork paints over the opaque bar and stays inside it',async()=>{
+  const data=new Uint8ClampedArray(16*4);
+  for(let i=0;i<16;i++)data.set([0,0,255,255],i*4);
+  const res=await redactImage(await fixture('image/png'),{bars:[{x:20,y:20,w:60,h:40}],label:'😀',labelImage:{width:16,height:1,data}});
+  const px=await pixels(res.bytes);
+  assert.ok(close(px.at(50,40),[0,0,255],5),'selected artwork is painted');
+  assert.ok(close(px.at(21,21),NEAR_BLACK,4),'the underlying bar stays opaque');
+  assert.ok(close(px.at(19,40),[0xdc,0x1e,0x1e],4),'artwork stays inside the bar');
+});

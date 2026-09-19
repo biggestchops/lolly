@@ -67,5 +67,5 @@ export function tableBodyCellHtml(
   const urlAttrs = editor === 'url'
     ? ' inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false"'
     : '';
-  return `<td><textarea class="table-cell" rows="1" ${attrs}${urlAttrs} aria-label="${label}">${escape(value)}</textarea></td>`;
+  return `<td><textarea class="table-cell" rows="1" readonly tabindex="${row === 0 && col === 0 ? 0 : -1}" ${attrs}${urlAttrs} aria-label="${label}" title="Arrow keys move between cells. Enter edits. Alt+Enter adds a line.">${escape(value)}</textarea></td>`;
 }

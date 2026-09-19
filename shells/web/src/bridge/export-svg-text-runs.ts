@@ -94,6 +94,7 @@ export async function outlineSvgTextRuns(liveSvg: Element, clone: Element, outli
 
   for (let i = 0; i < liveTexts.length; i++) {
     const live = liveTexts[i] as SVGTextElement;
+    if (live.hasAttribute('data-lolly-emoji-source') || live.closest('defs')) continue;
     const cl = cloneTexts[i] as SVGElement;
     const cs = window.getComputedStyle(live);
     if (cs.display === 'none') continue;                         // hidden - leave as-is

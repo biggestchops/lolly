@@ -44,6 +44,9 @@ export const FMT_LABEL: Record<string, string> = {
   dxf: 'DXF (cut file)',
   pptx: 'PowerPoint',
   penpot: 'Penpot',
+  lottie: 'dotLottie',
+  jxl: 'JPEG XL',
+  'jxl-lossless': 'JPEG XL lossless',
   docx: 'Word',
   odt: 'OpenDocument',
   ics: 'Calendar',
@@ -78,6 +81,7 @@ export const FMT_LABEL: Record<string, string> = {
 // `scorm` IS a zip and wants the .zip extension (an LMS import takes one); the branch
 // below names the file itself, so this entry only covers any other path that asks.
 export const FMT_EXT: Record<string, string> = {
+  'jxl-lossless': 'jxl',
   'pdf-cmyk': 'pdf',
   'cmyk-tiff': 'tiff',
   jpeg: 'jpg',
@@ -107,7 +111,7 @@ export const isC2paFmt = (f: string | undefined): boolean =>
 // Zip carries the flag through to its bundled raster + container members.
 export const isImprintFmt = (f: string | undefined): boolean =>
   !!f &&
-  ['png', 'jpg', 'jpeg', 'webp', 'avif', 'tiff', 'bmp', 'pdf', 'pdf-cmyk', 'pptx'].includes(f);
+  ['jxl', 'jxl-lossless', 'png', 'jpg', 'jpeg', 'webp', 'avif', 'tiff', 'bmp', 'pdf', 'pdf-cmyk', 'pptx'].includes(f);
 // HDR (Rec.2100 PQ) export. Raster: PNG (cICP) + JPEG (PQ ICC) + AVIF (native nclx
 // colr) + TIFF (PQ ICC tag, archival). Video: mp4/webm carry a 10-bit PQ track with a
 // colr/nclx (Colour on WebM) box (plan 154 WP-2). WebP is excluded on purpose - it has
@@ -237,7 +241,7 @@ export function extFor(fmt: string, blob: Blob | null | undefined): string {
   if (isAudioFmt(fmt)) return fmt === 'opus' ? 'webm' : fmt;
   // Packages: a .tar.gz blob is 'application/gzip', which contains "zip" - so it must
   // return before the zip sniff below or it would download as ".zip".
-  if (fmt === 'rpm' || fmt === 'tar.gz') return FMT_EXT[fmt] ?? fmt;
+  if (fmt === 'rpm' || fmt === 'tar.gz' || fmt === 'lottie') return FMT_EXT[fmt] ?? fmt;
   if (t.includes('mp4')) return 'mp4';
   if (t.includes('webm')) return 'webm';
   // A contact sheet (cuts > 1) of a still format comes back as a ZIP of N members,

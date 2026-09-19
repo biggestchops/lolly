@@ -66,7 +66,7 @@ export const VALUE_FLAGS = new Set([
   // The emoji pair. `--emoji` names a set as `id@version` and `--emojifx` a treatment;
   // a bare form parsing to "1" names neither, so the render would quietly draw a
   // placeholder for every emoji and say only that a param was ignored.
-  'emoji', 'emojifx',
+  'emoji', 'emojifx', 'emojistyle',
   // The signing identity. Both take a PATH, and a bare form must never parse to the
   // string "1" and then be reported as an unreadable file called "1". There is
   // deliberately no flag that takes the KEY or its passphrase: argv is visible in `ps`

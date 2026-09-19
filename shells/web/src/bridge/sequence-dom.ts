@@ -80,7 +80,8 @@ import {
   MIN_SPEED, MAX_SPEED, MIN_TRANSITION_MS, MAX_TRANSITION_MS,
   REST_TRANSITION, composeFilter, foldKfPose, isProjectable, kfTrackOf,
   planCameraView, readDepthZ, readTiltDeg, splitFilterBlur, viewMoves,
-  type SeqPlanEnv,
+  crossfadeJunctions, layerKind, phaseAt,
+  type JunctionLayer, type SeqPlanEnv,
 } from './sequence-plan.ts';
 import {
   evaluateKf, kfMatrix3dCss,
@@ -257,7 +258,7 @@ export function endOf(timing: Timing, seqMs: number): number {
  * exactly `start + dur` belongs to whatever comes next, which is what makes a
  * gapless seq row cut cleanly instead of flashing both clips for one frame.
  */
-export function isActiveAt(timing: Timing, tMs: number, seqMs: number): boolean {
+export function isActiveAt(timing: Timing, tMs: number, seqMs: number, extendMs = 0): boolean {
   // An ignored (struck-through) box is never on screen - plans/174. It is the one gate
   // for the visual side; the audio scheduler and the export planner carry their own.
   if (timing.ignored) return false;
@@ -270,7 +271,9 @@ export function isActiveAt(timing: Timing, tMs: number, seqMs: number): boolean 
   const end = endOf(timing, seqMs);
   // A zero-length box is never on screen (its half-open span is empty), except the
   // degenerate open-ended-at-the-very-end case, which `end > start` already excludes.
-  return tMs >= timing.start && tMs < end;
+  // `extendMs` is a crossfade tail (see `junctionsOf`): the outgoing clip stays on
+  // screen that long past its cut, fading, while the next one fades in under it.
+  return tMs >= timing.start && tMs < end + extendMs;
 }
 
 /** Which transition is mid-flight at `tMs`, and how far through it is (1 = at rest). */
@@ -296,24 +299,77 @@ export interface TransitionAt {
  * takes with `min(headP, 1 - exitP)` in bridge/export.ts, resolved to a single kind
  * because a DOM box can only carry one transform.
  */
-export function transitionAt(timing: Timing, tMs: number, seqMs: number): TransitionAt | null {
-  const local = tMs - timing.start;
-  const end = endOf(timing, seqMs);
-  let enterP = 1;
-  if (timing.enter && timing.enter !== 'none' && local < timing.enterMs) {
-    enterP = clamp(local / timing.enterMs, 0, 1);
+export function transitionAt(
+  timing: Timing, tMs: number, seqMs: number, extendMs = 0, xfadeEnterMs: number | null = null,
+): TransitionAt | null {
+  // The arithmetic is the planner's own `phaseAt`, called and not copied. An open-ended
+  // box has no tail to exit into (its end is the sequence's, which moves as the
+  // composition is edited), so exits only apply to a bounded box. The last two
+  // arguments are a crossfade junction's, from `junctionsOf`.
+  return phaseAt({
+    startMs: timing.start, endMs: endOf(timing, seqMs),
+    enter: timing.enter, enterMs: timing.enterMs, enterEase: timing.enterEase,
+    exit: timing.exit, exitMs: timing.exitMs, exitEase: timing.exitEase,
+    openEnded: timing.dur == null,
+  }, tMs, extendMs, xfadeEnterMs);
+}
+
+/** A crossfade junction as the applier uses it, keyed by element index. */
+interface DomJunctions {
+  /** Outgoing clip: ms it stays alive past its cut. */
+  ext: Map<number, number>;
+  /** Incoming clip: the handover length its enter is shortened to. */
+  enter: Map<number, number>;
+}
+
+/**
+ * The crossfade junctions among the boxes the applier was handed (plans/268 SI-01).
+ *
+ * The rule is `crossfadeJunctions` in bridge/sequence-plan.ts and only that: this
+ * function describes each DOM box in the planner's terms and asks it. Before this
+ * existed the preview ran A's fade out BEFORE the cut and B's fade in after it, while
+ * the export held A at rest up to the cut and crossed the two across the handover, so
+ * a crossfade looked like two fades in the editor and a true dissolve in the file.
+ *
+ * Null when no box could be the outgoing side, which is every document without a
+ * crossfade: they pay one boolean per box and nothing else.
+ */
+function junctionsOf(els: HTMLElement[], timings: Timing[], seqMs: number): DomJunctions | null {
+  const layers: JunctionLayer[] = [];
+  let anyOut = false;
+  let anyIn = false;
+  for (let i = 0; i < timings.length; i++) {
+    const t = timings[i] as Timing;
+    if (t.lane !== 'seq' && !t.frame) continue;
+    if (t.exit === 'fade' && t.dur != null) anyOut = true;
+    if (t.enter === 'fade') anyIn = true;
   }
-  let exitP = 1;
-  // An open-ended box has no tail to exit into (its end is the sequence's, which
-  // moves as the composition is edited), so exits only apply to a bounded box.
-  if (timing.exit && timing.exit !== 'none' && timing.dur != null) {
-    const remain = end - tMs;
-    if (remain < timing.exitMs) exitP = clamp(remain / timing.exitMs, 0, 1);
+  if (!anyOut || !anyIn) return null;
+  for (let i = 0; i < timings.length; i++) {
+    const t = timings[i] as Timing;
+    if (t.lane !== 'seq' && !t.frame) continue;
+    const el = els[i] as HTMLElement;
+    layers.push({
+      idx: i,
+      lane: t.lane,
+      frameScene: t.frame,
+      startMs: t.start,
+      durMs: Math.max(0, endOf(t, seqMs) - t.start),
+      enter: t.enter, exit: t.exit, enterMs: t.enterMs, exitMs: t.exitMs,
+      openEnded: t.dur == null,
+      // Only a split box needs its unit count and kind (`splitActive`), and both are
+      // DOM reads, so an ordinary box is described without touching the tree.
+      split: t.split,
+      splitUnits: t.split ? (el.querySelectorAll?.('.lly-u')?.length ?? 0) : 0,
+      kind: t.split ? layerKind(el) : 'static',
+    });
   }
-  if (enterP >= 1 && exitP >= 1) return null;
-  return enterP <= exitP
-    ? { kind: timing.enter as TransitionKind, p: enterP, ease: timing.enterEase }
-    : { kind: timing.exit as TransitionKind, p: exitP, ease: timing.exitEase };
+  const found = crossfadeJunctions(layers);
+  if (found.length === 0) return null;
+  return {
+    ext: new Map(found.map((j) => [j.aIdx, j.ms])),
+    enter: new Map(found.map((j) => [j.bIdx, j.ms])),
+  };
 }
 
 // ── split text units (plans/175 WP-A) ───────────────────────────────────────
@@ -552,6 +608,8 @@ interface Authored {
   lastZIndex: string | null;
   lastWidth: string | null;
   lastHeight: string | null;
+  /** True while this box has an entry in LIVE_HANDOVER, so a box that never had one costs no map call. */
+  handover: boolean;
   /** Audio boxes render nothing visible - never worth a transform. */
   audio: boolean;
   /**
@@ -659,6 +717,28 @@ function measure(el: HTMLElement): { w: number; h: number } {
 // comes off (see `put` and the apply loop's else branch), so "no entry" and "not posed"
 // are the same answer and a stale pose can never outlive the write that made it.
 const LIVE_POSE = new WeakMap<Element, SequencePose>();
+
+/** Which side of a crossfade junction a box is on right now, and for how long. */
+export interface SequenceHandover {
+  /** ms this box stays alive past its cut (it is the outgoing clip). 0 when it is not. */
+  tailMs: number;
+  /** The handover length its fade-in is shortened to (it is the incoming clip). 0 when not. */
+  headMs: number;
+}
+
+// Published by the apply loop for the one caller that cannot derive it alone: the
+// clock's SOUND. A clip's gain needs the same handover its picture got, and the media
+// callback is handed one box at a time while a junction is a fact about two.
+const LIVE_HANDOVER = new WeakMap<Element, SequenceHandover>();
+
+/**
+ * The crossfade handover the applier last resolved for `el`, or null when it is on
+ * neither side of one. Same lifetime rule as `sequencePoseOf`: the entry goes the
+ * moment the junction does.
+ */
+export function sequenceHandoverOf(el: Element | null | undefined): SequenceHandover | null {
+  return (el && LIVE_HANDOVER.get(el)) || null;
+}
 
 /**
  * The pose the applier currently has one element in - {@link KfFold}'s displacement
@@ -772,6 +852,7 @@ export function createAuthoredStore(): AuthoredStore {
           lastZIndex: null,
           lastWidth: null,
           lastHeight: null,
+          handover: false,
           audio: !!el.querySelector('.lolly-box-audio'),
           camera: !!(el.matches?.('[data-cam]') || el.querySelector?.('[data-cam]')),
           plane: isBackgroundPlane(el),
@@ -1186,6 +1267,8 @@ export function applyTimeToElements(els: HTMLElement[], tMs: number, ctx: ApplyC
     }
     if (timing.frame) framesDoc = true;
   }
+  // Crossfade junctions, from the SAME timings and the planner's own rule.
+  const xfade = junctionsOf(els, timings, ctx.seqMs);
   const cameras = ctx.cameras ?? (derived.length > 0 ? derived : null);
   // The gate, and it is the byte-identity floor: with no box carrying depth or a tilt
   // and no camera on the stage, `view` stays null, the stage is never measured,
@@ -1223,7 +1306,12 @@ export function applyTimeToElements(els: HTMLElement[], tMs: number, ctx: ApplyC
     // the bg plate on every frame unconditionally. Reading a window off it would blank
     // the connector artwork - and stop projecting it - at exactly t = seqMs, where an
     // open-ended box's half-open span has just closed.
-    const active = rec.plane || isActiveAt(timing, tMs, ctx.seqMs);
+    const extendMs = xfade?.ext.get(i) ?? 0;
+    const headMs = xfade?.enter.get(i) ?? 0;
+    if (extendMs > 0 || headMs > 0) LIVE_HANDOVER.set(el, { tailMs: extendMs, headMs });
+    else if (rec.handover) LIVE_HANDOVER.delete(el);
+    rec.handover = extendMs > 0 || headMs > 0;
+    const active = rec.plane || isActiveAt(timing, tMs, ctx.seqMs, extendMs);
     // Class-only visibility. We deliberately do NOT also write `style.visibility`:
     // it is a property the tool's own boxCss is free to author, and a belt-and-braces
     // write there would be indistinguishable from the author's on restore. The class
@@ -1249,7 +1337,9 @@ export function applyTimeToElements(els: HTMLElement[], tMs: number, ctx: ApplyC
       if (active) splitState = applySplitUnits(el, timing, tMs, ctx.seqMs);
       else clearSplitUnits(el);
     }
-    const tr = active && !silent && splitState === null ? transitionAt(timing, tMs, ctx.seqMs) : null;
+    const tr = active && !silent && splitState === null
+      ? transitionAt(timing, tMs, ctx.seqMs, extendMs, headMs > 0 ? headMs : null)
+      : null;
     // Hold effect (plans/175 WP-B): a looping pose of box-local time, composed with
     // the transition offset below. Whole-box always - a split box's units carry the
     // enter/exit while the box itself pulses, on both evaluators identically.
@@ -1752,7 +1842,7 @@ export function driveSequenceTime(
     const h = setTimeout(fn, ms) as unknown as number;
     return () => clearTimeout(h as unknown as ReturnType<typeof setTimeout>);
   });
-  const step = 1000 / Math.max(1, o.fps ?? DRIVE_FPS);
+  const step = 1000 / Math.max(1, o.fps ?? Number(sequenceStageOf(root)?.dataset.seqFps || DRIVE_FPS));
   const total = Math.max(0, o.durationMs);
   let cancel: (() => void) | null = null;
   let running = false;

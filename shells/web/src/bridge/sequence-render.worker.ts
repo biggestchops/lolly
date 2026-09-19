@@ -380,6 +380,8 @@ export function hydrateJobLayer(w: SeqJobLayer): SeqLayer {
  * `drawImage` cannot tell the two apart, which is what keeps the output identical.
  */
 export interface SeqJobPlate {
+  /** Original float plate for HDR editing, consumed only by the in-thread compositor. */
+  deep?: import('../../../../engine/src/pixels.ts').DeepFrame;
   idx: number;
   /** Statics: the whole box. Media: the box with its media element hidden. */
   under: CanvasImageSource | null;
@@ -890,6 +892,7 @@ export async function drawItem(
     // expression below is the one that shipped.
     const k = Math.max(1, res?.plateEff ?? 1);
     const fx = itemFx(item, S * k, cameraMoves);
+    if (fx && 'drawDeepSample' in ctx) throw new Error('This transition or camera produces a filter that is not supported by HDR compositing.');
 
     if (!fx) {
       if (!clipLayer(ctx, L, ox, oy, w, h, S, bw, bh)) return;

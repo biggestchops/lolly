@@ -250,14 +250,12 @@
 /* A phone gets a transport strip first, with the editing tools behind one
    explicit expansion. This keeps the timeline useful without consuming half
    the canvas or squeezing finger targets down to desktop sizes. */
-@media (pointer: coarse) and (max-width: 640px),
-       (pointer: coarse) and (max-height: 430px) {
+@media (max-width: 640px), (any-pointer: coarse) and (max-width: 900px),
+       (any-pointer: coarse) and (max-height: 500px) {
   .tl-panel {
-    height: 112px !important;
     min-height: 112px;
-    max-height: 112px !important;
   }
-  .tl-handle { display: none; }
+  .tl-handle { height: 44px; }
   .tl-bar {
     min-height: 48px;
     padding: 2px 6px;
@@ -1277,6 +1275,129 @@
 .tl-seam:hover { color: var(--ui-color-text-default); border-color: var(--ui-color-text-muted); }
 .tl-seam:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: 2px; }
 
+/* CROSSFADE BAND (plans/268 SI-07) - the handover, drawn where it happens: from the cut,
+   over the head of the incoming clip, as wide as the crossfade is long. The preview and
+   the file both hold the first clip at rest up to the cut and cross the two pictures
+   over exactly this span. Positioned like `.tl-seam` (inline `left`, and an inline
+   `width`). The band itself takes no pointer, so the clip under it still selects and
+   drags; only the grip at its right end does. */
+.tl-xfade {
+  position: absolute;
+  top: 3px; bottom: 3px;
+  z-index: 3;
+  min-width: 0;
+  pointer-events: none;
+  border-radius: var(--ui-radius-control);
+  color: var(--ui-color-action-primary);
+  /* The crossfade mark every editor draws: the incoming picture rising along the
+     diagonal, over a lighter plate so the band reads as a thing of its own on the clip. */
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 0.75px), currentColor calc(50% - 0.75px) calc(50% + 0.75px), transparent calc(50% + 0.75px)),
+    color-mix(in srgb, var(--ui-color-surface-raised) 62%, transparent);
+  /* A border, not an inset shadow: shadows in the chrome come from the elevation roles. */
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+}
+.tl-xfade[hidden] { display: none; }
+.tl-xfade.is-dragging {
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 0.75px), currentColor calc(50% - 0.75px) calc(50% + 0.75px), transparent calc(50% + 0.75px)),
+    color-mix(in srgb, var(--ui-color-surface-raised) 82%, transparent);
+}
+/* The part of the handover where the first clip has no footage left and holds its last
+   frame. A hatched FILL, never a dashed border: dashed borders in this shell mean a
+   drop area. It hangs off the band's right end, which is the end of the handover. */
+.tl-xfade-held {
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  pointer-events: auto;
+  border-radius: 0 var(--ui-radius-control) var(--ui-radius-control) 0;
+  color: var(--ui-color-text-default);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, currentColor 38%, transparent) 0 2px, transparent 2px 6px);
+}
+.tl-xfade-held[hidden] { display: none; }
+.tl-xfade-grip {
+  position: absolute;
+  top: 0; bottom: 0;
+  right: calc(var(--tl-xfade-grip, 10px) / -2);
+  width: var(--tl-xfade-grip, 10px);
+  pointer-events: auto;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.tl-xfade-grip::before {
+  content: "";
+  position: absolute;
+  top: 25%; bottom: 25%;
+  left: 50%;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: var(--radius-xs);
+  background: var(--ui-color-action-primary);
+  opacity: 0.55;
+}
+.tl-xfade-grip:hover::before,
+.tl-xfade.is-dragging .tl-xfade-grip::before { opacity: 1; top: 12%; bottom: 12%; }
+@media (pointer: coarse) {
+  .tl-xfade-grip {
+    right: calc(var(--tl-xfade-grip-coarse, 24px) / -2);
+    width: var(--tl-xfade-grip-coarse, 24px);
+  }
+}
+/* RAMPS - a wedge at the head of a clip that animates in, and at the tail of one that
+   animates out, as wide as the transition is long. Drawn inside the bar (which clips
+   them to its rounded corners), under the label, and never in the way of a pointer. */
+.tl-ramp {
+  position: absolute;
+  top: 0; bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ui-color-text-default) 22%, transparent);
+}
+.tl-ramp-in { left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.tl-ramp-out { right: 0; clip-path: polygon(100% 0, 100% 100%, 0 0); }
+
+/* The grip on a wedge's inner end: drag it to make the enter or the exit longer or
+   shorter. Centred on the end of the wedge (inline `left` for an enter, `right` for an
+   exit). Quiet until the bar is hovered, so a row of clips is not a row of handles. */
+.tl-ramp-grip {
+  position: absolute;
+  top: 0; bottom: 0;
+  z-index: 2;
+  width: var(--tl-xfade-grip, 10px);
+  margin: 0 calc(var(--tl-xfade-grip, 10px) / -2);
+  cursor: ew-resize;
+  touch-action: none;
+}
+.tl-ramp-grip::before {
+  content: "";
+  position: absolute;
+  top: 28%; bottom: 28%;
+  left: 50%;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: var(--radius-xs);
+  background: var(--ui-color-text-default);
+  opacity: 0;
+  transition: opacity var(--ui-motion-feedback) var(--ui-motion-standard);
+}
+.tl-clip:hover > .tl-ramp-grip::before,
+.tl-clip.is-selected > .tl-ramp-grip::before { opacity: 0.45; }
+.tl-ramp-grip:hover::before,
+.tl-clip.is-ramping > .tl-ramp-grip::before { opacity: 0.9; }
+.tl-clip.is-ramping > .tl-ramp { background: color-mix(in srgb, var(--ui-color-text-default) 34%, transparent); }
+@media (pointer: coarse) {
+  .tl-ramp-grip {
+    width: var(--tl-xfade-grip-coarse, 24px);
+    margin: 0 calc(var(--tl-xfade-grip-coarse, 24px) / -2);
+  }
+  .tl-ramp-grip::before { opacity: 0.45; }
+}
+
+/* The seam chip can be pulled sideways to make a crossfade out of a cut. */
+.tl-seam { touch-action: none; }
+.tl-seam.is-xfade { cursor: ew-resize; }
+
 /* ─── Playhead + snap line ───────────────────────────────────────────────────*/
 .tl-playhead {
   position: absolute;
@@ -1445,6 +1566,14 @@
 .tl-junction-title { margin: 0; font-size: calc(1rem * var(--a11y-fs)); font-weight: 600; }
 .tl-junction-kinds { display: flex; gap: 8px; }
 .tl-junction-kind { flex: 1 1 0; justify-content: center; }
+/* Shown when neither kind describes the junction: each clip has its own transition. */
+.tl-junction-note {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--ui-color-text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+}
 /* Selected kind: the brand fill lives in buttons.css (.btn--primary); this is the
    lighter "chosen of two" state, so it tints rather than fills. */
 .tl-junction-kind.is-active {
@@ -1557,7 +1686,7 @@
   .tl-track-size-field input, .tl-track-size-field .custom-slider { min-height: var(--ui-size-target); }
   .tl-track-size-field .custom-slider { --cs-pad-top: calc((var(--ui-size-target) - var(--cs-track-h)) / 2); }
   .tl-timing { padding: 8px 12px; }
-  .tl-handle { height: 20px; }
+  .tl-handle { height: 44px; }
   /* EDGE_PX_COARSE - WCAG 2.5.8's 24px target-size floor. The panel picks the same
      number per EVENT from e.pointerType; this is the cursor/paint half of it. */
   .tl-edge { width: min(24px, 33%); }
@@ -1602,3 +1731,13 @@ html[data-a11y-motion="reduce"] .tl-always-on { transition: none; }
   font-size: var(--fs-xs);
 }
 .tl-stagger-label .tl-num { width: 9ch; }
+
+@layer views {
+/* Project markers occupy the ruler; the range band never catches a scrub. */
+.tl-marks { position: absolute; inset: 0; pointer-events: none; }
+.tl-marker { position: absolute; top: 0; width: 22px; height: 18px; padding: 0; font-size: 14px; line-height: 18px; transform: translateX(-50%); border: 0; background: transparent; cursor: pointer; pointer-events: auto; z-index: 2; }
+.tl-marked-range { position: absolute; bottom: 0; height: 3px; background: var(--ui-color-action-primary); }
+.tl-marks-menu { position: relative; }
+.tl-mix-preview { width: min(96vw, 1000px); max-width: min(96vw, 1000px); }
+.tl-mix-preview video { display: block; max-width: 100%; max-height: 70vh; }
+}

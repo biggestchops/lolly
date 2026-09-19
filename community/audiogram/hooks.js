@@ -651,6 +651,7 @@ async function build(ctx) {
     // it for. Empty (and the template's caption markup absent) for any clip
     // without word timings.
     agCues: cues.length ? JSON.stringify(cues) : '',
+    agCaptionRuns: cues,
     // The .srt / .vtt sidecars (template.srt / template.vtt): exactly the cues on
     // screen, so the subtitle file and the exported video agree by construction -
     // both are window-relative, both start at the in-point.
@@ -760,6 +761,7 @@ function safeColor(v, fallback) {
   if (!s) return fallback;
   if (/^#[0-9a-fA-F]{3,8}$/.test(s)) return s;
   if (/^(rgb|rgba|hsl|hsla)\([0-9.,%\s/]+\)$/i.test(s)) return s;
+  if (s.length <= 256 && /^(?:(?:ok)?(?:lab|lch)\([-+0-9.eE%\s/]+\)|color\((?:srgb|srgb-linear|display-p3|rec2020)\s+[-+0-9.eE%\s/]+\))$/i.test(s)) return s;
   if (/^[a-zA-Z]+$/.test(s)) return s; // named colour (e.g. "transparent", "tomato")
   // A brand-token CSS var with an OPTIONAL literal-colour fallback - the documented
   // brand-inheritance path (brand-vars.ts injects --brand-primary/… onto the canvas root,

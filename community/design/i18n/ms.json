@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Bawah kiri",
   "inputs.boxes.fields.imgpos.options.center bottom": "Bawah",
   "inputs.boxes.fields.imgpos.options.right bottom": "Bawah kanan",
-  "description": "Kanvas terbuka untuk susunan bebas - teks, imej, bentuk dan hasil langsung daripada alat Lolly anda yang lain, semuanya dikekalkan mengikut sistem reka bentuk anda."
+  "description": "Kanvas terbuka untuk susunan bebas - teks, imej, bentuk dan hasil langsung daripada alat Lolly anda yang lain, semuanya dikekalkan mengikut sistem reka bentuk anda.",
+  "inputs.projectFps.label": "Kadar bingkai projek",
+  "inputs.sequenceMarks.label": "Penanda garis masa",
+  "inputs.boxes.fields.animationId.label": "Animasi dalam sumber",
+  "inputs.boxes.fields.animationEdits.label": "Suntingan dalaman animasi"
 }

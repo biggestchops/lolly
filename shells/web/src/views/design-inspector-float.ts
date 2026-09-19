@@ -2,7 +2,7 @@
 /** Dock/float ownership for Design's live Inspector panel. */
 
 import { t } from '../i18n.ts';
-import { mountModal, type ModalHandle } from '../components/modal.ts';
+import { compactActionsHeight, compactDesignViewport } from '../lib/design-panel-layout.ts';
 import {
   type DockReleaseReason,
   edgeDockHitTest,
@@ -32,6 +32,7 @@ export interface DesignInspectorFloatOptions {
   head: HTMLElement;
   isMobile?(): boolean;
   onOpenChange?(open: boolean, reason: OpenReason): void;
+  onSheetHeight?(height: number): void;
 }
 
 export interface DesignInspectorFloatHandle {
@@ -63,7 +64,7 @@ export function wireDesignInspectorFloat(
 ): DesignInspectorFloatHandle {
   const { inspector, head } = opts;
   const panel = inspector.el;
-  const isMobile = opts.isMobile ?? (() => window.innerWidth <= 640);
+  const isMobile = opts.isMobile ?? compactDesignViewport;
   const saved = load();
   let mode: Mode = saved.mode === 'floating' || saved.mode === 'maximized' ? saved.mode : 'edge';
   let box: GripBox | null =
@@ -73,7 +74,9 @@ export function wireDesignInspectorFloat(
   let restoreBox: GripBox | null = null;
   let open = false;
   let destroyed = false;
-  let sheet: ModalHandle<void> | null = null;
+  let sheet = false;
+  let sheetExpanded = false;
+  let sheetInvoker: HTMLElement | null = null;
   let releaseAction: 'float' | 'close' | 'destroy' | null = null;
 
   const save = (): void => {
@@ -130,6 +133,31 @@ export function wireDesignInspectorFloat(
   };
   const clearBox = (): void => {
     panel.style.left = panel.style.top = panel.style.width = panel.style.height = '';
+  };
+  const sizeSheet = (): void => {
+    if (!sheet) return;
+    const viewport = window.visualViewport;
+    const height = viewport?.height ?? vh();
+    const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--design-topbar-h')) || 60;
+    const actionsHeight = compactActionsHeight();
+    const available = Math.max(120, height - top - actionsHeight);
+    const wanted = Math.min(available, sheetExpanded ? available * 0.9 : Math.max(160, available * 0.52));
+    panel.style.left = `${viewport?.offsetLeft ?? 0}px`;
+    panel.style.top = `${(viewport?.offsetTop ?? 0) + height - actionsHeight - wanted}px`;
+    panel.style.width = `${viewport?.width ?? vw()}px`;
+    panel.style.height = `${Math.round(wanted)}px`;
+    maxBtn.setAttribute('aria-expanded', String(sheetExpanded));
+    maxBtn.setAttribute('aria-label', sheetExpanded ? t('Collapse inspector') : t('Expand inspector'));
+    maxBtn.title = maxBtn.getAttribute('aria-label')!;
+    opts.onSheetHeight?.(Math.round(wanted));
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && panel.contains(focused)) focused.scrollIntoView?.({ block: 'nearest' });
+  };
+  const leaveSheet = (): void => {
+    sheet = false;
+    panel.classList.remove('is-compact-sheet');
+    opts.onSheetHeight?.(0);
+    clearBox();
   };
 
   const tools = document.createElement('span');
@@ -189,6 +217,11 @@ export function wireDesignInspectorFloat(
       save();
       return;
     }
+    if (!destroyed && !action && isMobile() && open) {
+      sheet = true; panel.classList.add('is-compact-sheet');
+      panel.classList.remove('is-floating', 'is-maximized');
+      document.body.append(panel); sizeSheet(); inspector.setOpen(true); return;
+    }
     panel.remove();
     notify(false, action === 'close' && reason === 'user' ? 'user' : 'host');
   };
@@ -235,20 +268,22 @@ export function wireDesignInspectorFloat(
 
   const setOpen = (next: boolean, reason: OpenReason = 'user'): boolean => {
     if (destroyed) return false;
-    if (!next && sheet) { sheet.close(); return false; }
+    if (!next && sheet) {
+      leaveSheet(); panel.remove(); notify(false, reason);
+      if (reason === 'user' && sheetInvoker?.isConnected) sheetInvoker.focus({ preventScroll: true });
+      return false;
+    }
     if (next && isMobile()) {
       if (sheet) return true;
       if (isDocked('inspector')) releaseDock('inspector', 'host');
       clearBox();
       panel.classList.remove('is-floating', 'is-maximized');
-      tools.hidden = true;
-      sheet = mountModal('', {
-        className: 'modal fc-insp-sheet', ariaLabel: t('Inspector'),
-        onClose: () => { sheet = null; panel.remove(); tools.hidden = false; notify(false, 'user'); },
-      });
-      sheet.el.append(panel);
+      sheetInvoker = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      sheet = true;
+      panel.classList.add('is-compact-sheet');
+      document.body.append(panel);
+      sizeSheet();
       notify(true, reason);
-      closeBtn?.focus();
       return true;
     }
     if (next) {
@@ -282,6 +317,7 @@ export function wireDesignInspectorFloat(
   };
 
   const toggleMax = (): void => {
+    if (sheet) { sheetExpanded = !sheetExpanded; sizeSheet(); return; }
     if (isMobile()) return;
     if (mode === 'edge') enterFloating();
     if (mode === 'maximized') {
@@ -375,12 +411,22 @@ export function wireDesignInspectorFloat(
   });
 
   const onResize = (): void => {
-    if (sheet && !isMobile()) { sheet.close(); setOpen(true, 'host'); return; }
+    if (sheet && !isMobile()) { leaveSheet(); panel.remove(); notify(false, 'host'); setOpen(true, 'host'); return; }
+    if (sheet) { sizeSheet(); return; }
+    if (open && isMobile()) { setOpen(true, 'host'); return; }
     if (!open || mode === 'edge' || !box) return;
     box = clamp(box);
     render();
   };
   window.addEventListener('resize', onResize);
+  window.visualViewport?.addEventListener('resize', onResize);
+  window.visualViewport?.addEventListener('scroll', onResize);
+  const onSheetKey = (event: KeyboardEvent): void => {
+    if (!sheet || event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return;
+    if (document.querySelector('.color-popover:not([hidden]), .fc-popover, .dtb-menu')) return;
+    event.preventDefault(); event.stopPropagation(); setOpen(false);
+  };
+  document.addEventListener('keydown', onSheetKey);
   const offDock = onDockChange(() => {
     if (!open || mode === 'edge' || !box || drag) return;
     box = clamp(box);
@@ -397,9 +443,12 @@ export function wireDesignInspectorFloat(
     destroy(): void {
       if (destroyed) return;
       destroyed = true;
-      sheet?.close();
+      if (sheet) leaveSheet();
       offDock();
       window.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('scroll', onResize);
+      document.removeEventListener('keydown', onSheetKey);
       head.removeEventListener('pointerdown', onHeadDown);
       head.removeEventListener('pointermove', onHeadMove);
       head.removeEventListener('pointerup', onHeadUp);

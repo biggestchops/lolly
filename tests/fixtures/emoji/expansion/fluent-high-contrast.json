@@ -1,0 +1,144 @@
+{
+  "family": "Fluent Emoji",
+  "style": "High Contrast",
+  "slug": "fluent-high-contrast",
+  "packId": "community/emoji/fluent/high-contrast",
+  "version": "2026.08.24-1ffb34c",
+  "unicodeVersion": "17.0",
+  "upstream": {
+    "repo": "https://github.com/microsoft/fluentui-emoji",
+    "commit": "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+    "svgDir": "assets"
+  },
+  "files": {
+    "total": 1595,
+    "mapped": 1595,
+    "oversizeSkipped": [],
+    "unparsable": [],
+    "unmapped": []
+  },
+  "licence": {
+    "license": "MIT",
+    "licenseUrl": "https://opensource.org/license/mit",
+    "notices": [
+      {
+        "name": "LICENSE",
+        "bytes": 1141,
+        "checksum": "sha256:c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+      }
+    ]
+  },
+  "bytes": {
+    "source": 6391750,
+    "manifest": 2030130
+  },
+  "duplicates": [],
+  "viewBox": {
+    "default": {
+      "unitsPerEm": 32,
+      "advance": 32,
+      "baseline": 27.2
+    },
+    "variants": [
+      {
+        "viewBox": "0 0 32 32",
+        "count": 1593
+      },
+      {
+        "viewBox": "0 0 32 33",
+        "count": 2
+      }
+    ],
+    "perGlyphMetrics": 2
+  },
+  "metricsNote": "Baseline is provisional at 0.85 of the em box, the value the one-glyph fixtures carry. It is not measured from the artwork.",
+  "coverage": {
+    "repertoire": 3953,
+    "supported": 1595,
+    "missing": 2358,
+    "viaAlias": 0,
+    "custom": 0,
+    "unmapped": 0,
+    "skinTone": {
+      "supported": 0,
+      "total": 2035
+    },
+    "regionalFlag": {
+      "supported": 0,
+      "total": 259
+    },
+    "tagFlag": {
+      "supported": 0,
+      "total": 3
+    },
+    "keycap": {
+      "supported": 12,
+      "total": 12
+    },
+    "zwj": {
+      "supported": 212,
+      "total": 1614
+    }
+  },
+  "admission": {
+    "admitted": 1586,
+    "rejected": 9,
+    "reasons": [
+      {
+        "message": "Unsupported SVG element mask.",
+        "count": 9,
+        "examples": [
+          "Blue heart/High Contrast/blue_heart_high_contrast.svg",
+          "Brown heart/High Contrast/brown_heart_high_contrast.svg",
+          "Deer/High Contrast/deer_high_contrast.svg",
+          "Green heart/High Contrast/green_heart_high_contrast.svg",
+          "Green square/High Contrast/green_square_high_contrast.svg"
+        ]
+      }
+    ]
+  },
+  "ink": {
+    "renderPx": 64,
+    "alphaFloor": 8,
+    "rendered": 1586,
+    "empty": 0,
+    "blank": [],
+    "renderFailed": 0,
+    "widthEm": {
+      "p10": 0.7188,
+      "median": 0.875,
+      "p90": 0.9375
+    },
+    "heightEm": {
+      "p10": 0.7813,
+      "median": 0.9063,
+      "p90": 0.9375
+    },
+    "centreX": {
+      "p10": 0.4922,
+      "median": 0.5,
+      "p90": 0.5078
+    },
+    "centreY": {
+      "p10": 0.4922,
+      "median": 0.5,
+      "p90": 0.5469
+    }
+  },
+  "fidelity": {
+    "renderPx": 64,
+    "equal": 1586,
+    "different": 0,
+    "differing": [],
+    "renderFailed": 0
+  },
+  "raster": {
+    "isolated": true,
+    "crashes": 0,
+    "crashed": []
+  },
+  "manifest": {
+    "checksum": "sha256:965b0fbd69f4a6a947157e081feacbcf309319d621ea849dd81b0cf3f49b102c",
+    "admitted": true
+  }
+}

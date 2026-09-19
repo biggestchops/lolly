@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { createProjectScenePreviews, projectRecentExports } from './projects-scene-previews.ts';
 import { handleProjectTextAction, projectAssetMenu } from './projects-asset-actions.ts';
 import { moveSessionSlot } from './tool-revision-history.ts';
 /**
@@ -259,6 +260,7 @@ export async function mountProjects(
   let imageRefs = new Map<string, AssetRef>();
   let profile: Profile | null = null;
   let headshotUrl = '';
+  const scenePreviews = createProjectScenePreviews(viewEl, host, () => render());
   let mounted = true;        // false after the view is swapped out (guards async renders)
   let overlayModal: ModalHandle<any> | null = null;      // the move-picker / new-folder-name dialog, if open
   let releaseSearch: (() => void) | null = null;         // the shell search-bar claim (set in boot, below)
@@ -312,14 +314,7 @@ export async function mountProjects(
   let recentExports: Array<{ href: string; thumb: string; caption: string; at: number }> = [];
   const RECENTS_COLLAPSED_KEY = 'lolly-projects-recents-collapsed';
   let recentsCollapsed = ((): boolean => { try { return localStorage.getItem(RECENTS_COLLAPSED_KEY) === '1'; } catch { return false; } })();
-  async function loadRecentExports(): Promise<void> {
-    try {
-      const { listExports, exportReopenHref } = await import('../lib/export-history.ts');
-      recentExports = (await listExports(12))
-        .filter(x => x.thumb)
-        .map(x => ({ href: exportReopenHref(x), thumb: x.thumb!, caption: x.filename || x.label, at: x.at }));
-    } catch { recentExports = []; }
-  }
+
   try {
     if (localStorage.getItem('lolly:projectsView') === 'list') viewMode = 'list';
     const s = localStorage.getItem('lolly:projectsSort');
@@ -346,7 +341,7 @@ export async function mountProjects(
   if (new URLSearchParams(opts.params || '').has('rev')) sortRev = true;
 
   async function reload(): Promise<void> {
-    await loadRecentExports();
+    recentExports = await projectRecentExports();
     [folders, entries, sizes, profile] = await Promise.all([
       store.list(),
       (host as ProjectsHost).state.list().catch(() => []),
@@ -594,6 +589,7 @@ export async function mountProjects(
     pruneSelection();     // forget refs that vanished since the last render
     viewEl.innerHTML = folderId == null ? rootHtml() : folderId === TEMPLATES ? shell(t('Templates'), 'projects', tpl.html(query), { inFolder: true }) : folderHtml(folderId);
     wire();
+    scenePreviews.refresh(entries);
   }
 
   function rootHtml(): string {
@@ -3108,7 +3104,7 @@ export async function mountProjects(
   try { sessionStorage.removeItem(FILE_INTO_KEY); sessionStorage.removeItem(RETURN_KEY); } catch { /* ignore */ }
   // NB tileSelect.destroy() is not optional: its mousedown is bound to viewEl (#view), which
   // the router REUSES for every route - leave it bound and the next mount stacks another.
-  (viewEl as HTMLElement & { _cleanup?: () => void })._cleanup = () => { mounted = false; flushUndoToasts(); cancelArrivalAah(); tileSelect.destroy(); tileMenu.destroy(); unwireEscape(); featuredHandle?.destroy(); featuredHandle = null; tpl.destroy(); closeMenu(); closeConfirmDialogs(); overlayModal?.close(); releaseSearch?.(); };
+  (viewEl as HTMLElement & { _cleanup?: () => void })._cleanup = () => { mounted = false; scenePreviews.destroy(); flushUndoToasts(); cancelArrivalAah(); tileSelect.destroy(); tileMenu.destroy(); unwireEscape(); featuredHandle?.destroy(); featuredHandle = null; tpl.destroy(); closeMenu(); closeConfirmDialogs(); overlayModal?.close(); releaseSearch?.(); };
   await reload();
   void sweepTrash();   // age out trash entries past the 30-day retention (silent)
   // A stale /p/<id> deep link to a deleted folder falls back to root.

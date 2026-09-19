@@ -1213,20 +1213,30 @@ const IDENTITY = { dx: 0, dy: 0, sc: 1, alpha: 1, rot: 0 } as const;
 export const REST_TRANSITION = IDENTITY;
 
 /** A layer's nominal end, ms - before any crossfade extension. */
-export function endOf(layer: SeqLayer): number {
+export function endOf(layer: Pick<SeqLayer, 'startMs' | 'durMs'>): number {
   return layer.startMs + layer.durMs;
 }
+
+/**
+ * What `crossfadeJunctions` needs to know about a layer, and nothing else - so the
+ * preview can describe a DOM box with these fields alone, without building a whole `SeqLayer`.
+ */
+export type JunctionLayer = Pick<
+  SeqLayer,
+  'idx' | 'lane' | 'frameScene' | 'startMs' | 'durMs' | 'enter' | 'exit' | 'enterMs' | 'exitMs' | 'openEnded' | 'split' | 'splitUnits' | 'kind'
+>;
 
 /**
  * The junction crossfades a set of layers IMPLIES, as `layer.idx → extra ms`.
  *
  * Phase 2 stores no overlap in the model: a crossfade is authored as
  * `A.exit = 'fade'`, `B.enter = 'fade'` on two GAPLESS neighbours in the seq lane,
- * and its length is `min(A.exitMs, B.enterMs)` "straddling the cut". The preview
- * cannot show that (a DOM box that has left its window is `display:none`), so the
- * export derives it here: A stays alive for that long past the cut, fading out,
- * while B fades in over the same window - so at the midpoint the two alphas are
- * equal and neither clip is ever fully absent.
+ * and its length is `min(A.exitMs, B.enterMs)` "straddling the cut". It is derived
+ * here, once, for BOTH evaluators: A stays alive for that long past the cut, fading
+ * out, while B fades in over the same window - so at the midpoint the two alphas are
+ * equal and neither clip is ever fully absent. The export planner below and the
+ * preview's DOM applier (bridge/sequence-dom.ts) both call this function, which is
+ * why it asks for no more of a layer than `JunctionLayer` (plans/268 SI-01).
  *
  * Both sides use the SAME derived length, which is what makes the alphas cross;
  * B's own longer `enterMs`, if it has one, does not stretch the handover.
@@ -1242,14 +1252,14 @@ export function endOf(layer: SeqLayer): number {
  * Adjacency is `A.end === B.start` within a 1 ms tolerance, because the authored
  * times are rounded to milliseconds by the tool hook.
  */
-export function crossfadeJunctions(layers: SeqLayer[]): { aIdx: number; bIdx: number; ms: number }[] {
+export function crossfadeJunctions(layers: readonly JunctionLayer[]): { aIdx: number; bIdx: number; ms: number }[] {
   const out: { aIdx: number; bIdx: number; ms: number }[] = [];
   // A timed frame page is a sequence clip whatever lane attribute it carries: exactly
   // one shows at the playhead, so two adjacent pages can hand over like two clips.
   const seq = layers.filter((l) => (l.lane === 'seq' || l.frameScene) && l.durMs > 0).sort((a, b) => a.startMs - b.startMs || a.idx - b.idx);
   for (let i = 0; i < seq.length - 1; i++) {
-    const a = seq[i] as SeqLayer;
-    const b = seq[i + 1] as SeqLayer;
+    const a = seq[i] as JunctionLayer;
+    const b = seq[i + 1] as JunctionLayer;
     if (a.exit !== 'fade' || b.enter !== 'fade') continue;
     if (a.openEnded) continue;                      // no stable tail to hand over from
     // A split layer never forms a junction crossfade (plans/175): its fade runs per
@@ -1315,15 +1325,60 @@ function liveEndOf(layer: SeqLayer, extendMs: number): number {
   return endOf(layer) + extendMs;
 }
 
+/** One box's enter and exit, as the fields that both evaluators can supply. */
+export interface PhaseInput {
+  startMs: number;
+  /** The nominal end, before any crossfade tail. */
+  endMs: number;
+  enter: TransitionKind | null;
+  enterMs: number;
+  enterEase: string;
+  exit: TransitionKind | null;
+  exitMs: number;
+  exitEase: string;
+  /** No authored duration: the box runs to the end of the sequence and has no exit. */
+  openEnded: boolean;
+}
+
 /**
- * The animation state of an ACTIVE layer at `tMs`, or null when it is at rest.
+ * The animation state of an ACTIVE box at `tMs`, or null when it is at rest. THE one
+ * copy: the export planner (`transitionOf` below) and the preview's DOM applier
+ * (`transitionAt` in bridge/sequence-dom.ts) both call it, so they cannot disagree
+ * about a phase (plans/268 SI-01; there used to be a copy on each side).
  *
- * Identical in every respect to sequence-clock's `transitionAt` - enter forward from
- * the head, exit backward into the tail, whichever is further from rest wins, exits
- * suppressed on an open-ended box - except for the crossfade case, where A's exit is
- * DEFERRED into the extension window past the cut instead of running before it, and
- * B's enter is shortened to the handover length so the two alphas cross.
+ * Enter runs forward from the head, exit backward into the tail, whichever is further
+ * from rest wins, and an open-ended box has no exit. At a crossfade junction the two
+ * extra arguments apply: `extendMs` DEFERS A's exit into the window past the cut
+ * instead of running it before the cut, and `xfadeEnterMs` shortens B's enter to the
+ * handover length so the two alphas cross.
  */
+export function phaseAt(
+  box: PhaseInput, tMs: number, extendMs = 0, xfadeEnterMs: number | null = null,
+): { kind: TransitionKind; p: number; ease: string } | null {
+  const local = tMs - box.startMs;
+  const enterMs = xfadeEnterMs ?? box.enterMs;
+  let enterP = 1;
+  if (box.enter && box.enter !== 'none' && enterMs > 0 && local < enterMs) {
+    enterP = clamp(local / enterMs, 0, 1);
+  }
+  let exitP = 1;
+  if (extendMs > 0) {
+    // Crossfade tail: at rest right up to the cut, then out across the handover.
+    const past = tMs - box.endMs;
+    if (past >= 0) exitP = clamp(1 - past / extendMs, 0, 1);
+  } else if (box.exit && box.exit !== 'none' && !box.openEnded && box.exitMs > 0) {
+    const remain = box.endMs - tMs;
+    if (remain < box.exitMs) exitP = clamp(remain / box.exitMs, 0, 1);
+  }
+  if (enterP >= 1 && exitP >= 1) return null;
+  // Each phase carries its OWN authored curve. A crossfade tail is the one case where
+  // the kind is not either field's ('fade', derived from the junction) - but the curve
+  // still belongs to the exit the author wrote, which is the side that is leaving.
+  return enterP <= exitP
+    ? { kind: box.enter as TransitionKind, p: enterP, ease: box.enterEase }
+    : { kind: (extendMs > 0 ? 'fade' : box.exit) as TransitionKind, p: exitP, ease: box.exitEase };
+}
+
 function transitionOf(layer: SeqLayer, tMs: number, extendMs: number, xfadeEnterMs: number | null): { kind: TransitionKind; p: number; ease: string } | null {
   // Split text (plans/175 WP-A): the UNITS carry the transition - the live-raster
   // tier photographs them mid-animation off the DOM - so the whole box is at rest
@@ -1331,28 +1386,12 @@ function transitionOf(layer: SeqLayer, tMs: number, extendMs: number, xfadeEnter
   // whole-box transition is derived, so every executor (in-thread, worker, GL)
   // agrees without carrying its own rule.
   if (splitActive(layer)) return null;
-  const local = tMs - layer.startMs;
-  const enterMs = xfadeEnterMs ?? layer.enterMs;
-  let enterP = 1;
-  if (layer.enter && layer.enter !== 'none' && enterMs > 0 && local < enterMs) {
-    enterP = clamp(local / enterMs, 0, 1);
-  }
-  let exitP = 1;
-  if (extendMs > 0) {
-    // Crossfade tail: at rest right up to the cut, then out across the handover.
-    const past = tMs - endOf(layer);
-    if (past >= 0) exitP = clamp(1 - past / extendMs, 0, 1);
-  } else if (layer.exit && layer.exit !== 'none' && !layer.openEnded && layer.exitMs > 0) {
-    const remain = endOf(layer) - tMs;
-    if (remain < layer.exitMs) exitP = clamp(remain / layer.exitMs, 0, 1);
-  }
-  if (enterP >= 1 && exitP >= 1) return null;
-  // Each phase carries its OWN authored curve. A crossfade tail is the one case where
-  // the kind is not either field's ('fade', derived from the junction) - but the curve
-  // still belongs to the exit the author wrote, which is the side that is leaving.
-  return enterP <= exitP
-    ? { kind: layer.enter as TransitionKind, p: enterP, ease: layer.enterEase }
-    : { kind: (extendMs > 0 ? 'fade' : layer.exit) as TransitionKind, p: exitP, ease: layer.exitEase };
+  return phaseAt({
+    startMs: layer.startMs, endMs: endOf(layer),
+    enter: layer.enter, enterMs: layer.enterMs, enterEase: layer.enterEase,
+    exit: layer.exit, exitMs: layer.exitMs, exitEase: layer.exitEase,
+    openEnded: layer.openEnded,
+  }, tMs, extendMs, xfadeEnterMs);
 }
 
 /**

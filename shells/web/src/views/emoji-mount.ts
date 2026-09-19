@@ -22,7 +22,7 @@
 /** The slice of the runtime this module drives. Kept structural so a caller can
  *  pass a test double without building a whole mount. */
 export interface EmojiRuntime {
-  applyEmojiToDom(node: unknown): Promise<{ present: boolean; replaced: number; unresolved: number }>;
+  applyEmojiToDom(node: unknown, opts?: { track?: boolean; idScope?: string }): Promise<{ present: boolean; replaced: number; unresolved: number }>;
 }
 
 /** Set once a pass has reported placements, so an edit can revert without waiting. */

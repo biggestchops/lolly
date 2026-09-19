@@ -35,6 +35,7 @@ import { sniffAnimatedRaster } from '@lolly/engine';
 const SVG_DECODE_SCALE = 12;
 
 const MIME_OF: Record<ImageEncodeFormat, string> = {
+  jxl: 'image/jxl', 'jxl-lossless': 'image/jxl',
   webp: 'image/webp',
   jpeg: 'image/jpeg',
   png: 'image/png',
@@ -147,6 +148,7 @@ async function decodeViaImg(blob: Blob): Promise<ImageBitmap> {
  *  measure/decode must agree on the dimensions they report. */
 async function decodeAny(blob: Blob, mime: string | null): Promise<ImageBitmap> {
   if (mime === 'image/svg+xml') return decodeViaImg(blob);
+  if (mime === 'image/jxl') return decodeImageBitmap(blob);
   try { return await decodeImageBitmap(blob as Blob & { name?: string }); }
   catch { return decodeViaImg(blob); }
 }
@@ -225,7 +227,9 @@ export function createRasterAPI(): RasterAPI {
         cx.imageSmoothingQuality = 'high';
         cx.drawImage(source, 0, 0, width, height);
       }
-      const blob = await canvasToBlob(canvas, type, clampQuality(opts.quality));
+      const blob = opts.format === 'jxl' || opts.format === 'jxl-lossless'
+        ? await (await import('./jxl.ts')).encodeJxlCanvas(canvas, { quality: clampQuality(opts.quality), lossless: opts.format === 'jxl-lossless' })
+        : await canvasToBlob(canvas, type, clampQuality(opts.quality));
       if (!blob) throw new Error('host.raster: image encoding failed.');
       // Report the ACTUAL type back - a canvas encoder falls back to PNG where
       // the requested type is unsupported.

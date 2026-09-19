@@ -16,6 +16,7 @@ function fixture() {
     addKinds: [
       { id: 'clip', seed: { kind: 'image', bg: 'var(--brand-primary)', fit: 'cover' } },
       { id: 'audio', seed: { kind: 'audio', volume: 0.7 } },
+      { id: 'lottie', seed: { kind: 'image', shape: 'rect', bg: '', fit: 'contain' } },
     ],
     select: {
       getBoxes: () => boxes,
@@ -67,4 +68,14 @@ test('late intake and unsupported media cannot mutate a disposed editor', () => 
   f.fc.disposed = true;
   assert.equal(addMediaRef(f.fc, { id: 'video', type: 'video' } as AssetRef, 0), false);
   assert.equal(f.commits.length, 0);
+});
+
+test('animation inserts at the playhead with its selected source and finite duration', () => {
+  const f = fixture();
+  const ref: AssetRef = { source: 'user', id: 'user/package', type: 'lottie', format: 'lottie', url: 'blob:package', meta: { lottieAnimationId: 'second', durationMs: 1250 } };
+  assert.equal(addMediaRef(f.fc, ref, 2), true);
+  const animation = f.boxes().at(-1)!;
+  assert.deepEqual([animation.start, animation.dur, animation.lane, animation.animationId, animation.fit, animation.clipIn, animation.speed], [2, 1.25, '', 'second', 'contain', 0, 1]);
+  assert.equal(f.boxes()[0]!.start, 0);
+  assert.equal(f.commits.length, 1);
 });

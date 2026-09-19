@@ -122,6 +122,7 @@
  * falls back to hashing in place. The API is async either way, so no caller can tell.
  */
 
+import { isJxl } from '../../../../engine/src/jxl.ts';
 import { extractC2paStore, sniffFormat } from '../../../../engine/src/c2pa-extract.ts';
 import { sniffContainer } from '../../../../engine/src/media-sniff.ts';
 import { assetDependency } from '../../../../engine/src/asset-version.ts';
@@ -407,6 +408,7 @@ export interface BeamAssetKind {
  *  reader's (`sniffFormat`: the credential-bearing image/av/pdf family, plus SVG) and
  *  the ingest backstop's (`sniffContainer`: bmp/archives/fonts). */
 const KIND_BY_FORMAT: Readonly<Record<string, { type: string; format: string; mime: string; markup?: boolean }>> = {
+  jxl: { type: 'raster', format: 'jxl', mime: 'image/jxl' },
   png:  { type: 'raster', format: 'png',  mime: 'image/png' },
   jpeg: { type: 'raster', format: 'jpg',  mime: 'image/jpeg' },
   gif:  { type: 'raster', format: 'gif',  mime: 'image/gif' },
@@ -453,7 +455,7 @@ const OPAQUE_MIME = 'application/octet-stream';
  * decides whether its object URL can execute in this origin.
  */
 export function sniffBeamAsset(bytes: Uint8Array, declared?: { type?: unknown; format?: unknown }): BeamAssetKind {
-  const format = sniffFormat(bytes) ?? sniffContainer(bytes);
+  const format = isJxl(bytes) ? 'jxl' : sniffFormat(bytes) ?? sniffContainer(bytes);
   const known = format ? KIND_BY_FORMAT[format] : undefined;
   if (known) return { type: known.type, format: known.format, mime: known.mime, markup: known.markup === true, sniffed: true };
   const label = safeText(declared?.type, 32, '');
@@ -663,7 +665,7 @@ export function rewriteSessionAssetRefs<T>(data: T, rekey: ReadonlyMap<string, s
         return record;
       }
       rewritten++;
-      return { ...record, id: next + dep.modifier, ...(dep.pin ? { pin: dep.pin } : {}), source: 'user', url: '' };
+      return { ...record, id: next + dep.modifier, ...(dep.pin ? { pin: dep.pin } : {}), source: 'user', url: '', original: undefined };
     }
     const out: Record<string, unknown> = {};
     for (const [key, v] of Object.entries(record)) out[key] = walk(v, depth + 1);
@@ -1516,6 +1518,13 @@ export async function ingestBeamItem(
     // assets bridge computes it from this store with the real verifier at write time.
     // That is the only reading of it that counts as evidence.
     const provenance = provenanceOf(storedBytes);
+    let emojiMeta: Record<string, unknown> | undefined;
+    if (entry.meta?.emoji && kind.format === 'json') {
+      const { readEmojiBundle } = await import('../../../../engine/src/emoji-bundle.ts');
+      const { info } = await readEmojiBundle(storedBytes);
+      const { pin, ...labels } = info;
+      emojiMeta = { ...labels, id: pin.id, version: pin.pin.version, checksum: pin.checksum };
+    }
     const record: BeamAssetRecord = {
       id,
       type: kind.type,
@@ -1528,6 +1537,7 @@ export async function ingestBeamItem(
       ...(provenance ?? {}),
       meta: {
         ...(safeMeta(entry.meta) ?? {}),
+        ...(emojiMeta ? { emoji: emojiMeta } : {}),
         name: label,
         // Attribution (section 6.4: received items land attributed). `meta` is the record's
         // free-form field; there is no dedicated provenance column. So the source

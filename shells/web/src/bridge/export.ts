@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { wantsDeepExport, hdrTune } from './export-deep-choice.ts';
 /**
  * ExportAPI - converts a rendered DOM node to a file format.
  *
@@ -13,8 +14,8 @@
 
 import { embedResolvedFont, loadFontBase64 } from './export-font-data.ts';
 import { canEmbedPdfSubset } from './pdf-font-policy.ts';
-import { LOSSLESS_STRENGTH, C2PA_FORMATS, embedWavInfo, writeDocx, writeOdt, hdrBoostToPQ, pqBt2020IccProfile, iccProfileBytes, HDR_PQ_CICP, packTiff, CSS_DPI, encodeBmp, rgbToCmyk, cmykCondition, toPixels, parseDimension, toCssLength, gzip, emitEmf, emitWmf, emitEps, emitDxf, toPoints, computePrintGeometry, buildEncryptDictValues, preparePassword, encryptObjectBytes, exportActionSteps, embedC2pa, ENGINE_VERSION, buildExportMeta, SCREEN_SOURCE_TYPE, CAPTURE_SOURCE_TYPE, extractC2paStore, roundedRectPath, splitCssArgs, insetCorners, uniformRadius, parseCssMatrix, isAxisAlignedMat, isNonAffineTransform, parseClipShape, parseBoxShadow, gaussianShadowBands, parseTextShadow, videoProvenanceTags, embedMp4Meta, embedWebmMeta, crc32, buildEncryptedZip, hdrViewTransform, fromU8Srgb, pqToI420P10, pqEncodeFrame, packApng, packWebpAnim } from '@lolly/engine';
-import type { HdrBoostOptions, Mat2D } from '@lolly/engine';
+import { LOSSLESS_STRENGTH, C2PA_FORMATS, embedWavInfo, writeDocx, writeOdt, hdrBoostToPQ, pqBt2020IccProfile, iccProfileBytes, HDR_PQ_CICP, packTiff, CSS_DPI, encodeBmp, rgbToCmyk, cmykCondition, toPixels, parseDimension, toCssLength, gzip, emitEmf, emitWmf, emitEps, emitDxf, toPoints, computePrintGeometry, buildEncryptDictValues, preparePassword, encryptObjectBytes, exportActionSteps, embedC2pa, ENGINE_VERSION, buildExportMeta, SCREEN_SOURCE_TYPE, CAPTURE_SOURCE_TYPE, extractC2paStore, roundedRectPath, splitCssArgs, insetCorners, uniformRadius, parseCssMatrix, isAxisAlignedMat, isNonAffineTransform, parseClipShape, parseBoxShadow, gaussianShadowBands, parseTextShadow, videoProvenanceTags, embedMp4Meta, embedWebmMeta, hdrViewTransform, fromU8Srgb, pqToI420P10, pqEncodeFrame, packApng, packWebpAnim } from '@lolly/engine';
+import type { Mat2D } from '@lolly/engine';
 import { letterSpacingPx, featureSettingsToHb, canVectoriseText, textBaselineY, textStrokeAttrs, suseFontFile, SUSE_FONT_DIR } from './text-svg.ts';
 import { resolveVectorFont } from './font-registry.ts';
 import type { VectorFont } from './font-registry.ts';
@@ -60,8 +61,9 @@ import { applyPdfX } from './export-pdfx.ts';
 import { createPdfDoc } from './export-pdf-doc.ts';
 import { isOwnProfile, resolveEmbeddedProfile } from '../lib/press-profile-embed.ts';
 import type { EmbedResolution } from '../lib/press-profile-embed.ts';
-import { _host, imprintCanvas, exportDims, getDomToImage, swapBlobUrls, fontMetricsPx, blobToDataUrl, MAX_RASTER_PX, makeRoundedFill, setExportHost } from './export-shared.ts';
+import { _host, canvasToBlob, imprintCanvas, exportDims, getDomToImage, swapBlobUrls, fontMetricsPx, blobToDataUrl, MAX_RASTER_PX, makeRoundedFill, setExportHost } from './export-shared.ts';
 import { beginFrameClock, renderFrameAt, endFrameClock } from './frame-clock.ts';
+import { isTopTailStage, isRecordStage } from './export-shared.ts';
 import type { WebHost, ExportOpts, ExportDims, DtoRenderOpts, ImprintState, Rgba } from './export-shared.ts';
 import { renderSvgFromHtml, stripCommentNodes, inlineBlobUrlsInEl, inlineSvgFromImg, imprintEmbedCanvas, isPaintSkipped, rotationPivot, rasterizePosedNodeToDataUrl, effectSpillCss, detectUnsupportedCss, rasterizeNodeToDataUrl, firstCssUrl, cssUrlToHref, bakeImageFilter, visualLines, mergeDeco, decoFlags, pseudoDescriptor } from './export-svg-walker.ts';
 import type { Deco } from './export-svg-walker.ts';
@@ -339,9 +341,18 @@ async function imprintRasterBytes(bytes: Uint8Array, format: string, opts: { dur
 // Video is the one exception to string keying: MediaRecorder may legitimately
 // fall back to the other container (a requested mp4 can come out as webm bytes
 // on Firefox), so the stamp keys on the container the recorder actually chose.
+import { packZip } from './export-zip.ts';
 const C2PA_STAMPABLE = new Set<string>(C2PA_FORMATS);
 
 async function renderFormat(node: Element, format: string, opts: ExportOpts = {}): Promise<Blob> {
+  const { presentationOf } = await import('./presentation.ts');
+  const presentation = presentationOf(node);
+  const restore = await presentation?.prepare(format, opts);
+  try { return await renderPreparedFormat(node, format, opts); }
+  finally { restore?.(); }
+}
+
+async function renderPreparedFormat(node: Element, format: string, opts: ExportOpts = {}): Promise<Blob> {
   // Fresh imprint sink per format render (so each zip member - which re-enters
   // here - starts with applied=false; a marked earlier member can't make a later
   // pure-vector one over-claim). Created BEFORE dispatch so the container render
@@ -378,7 +389,7 @@ async function renderFormat(node: Element, format: string, opts: ExportOpts = {}
   }
   // A route with no credential still owes an honest answer: the readback below
   // finds nothing and the receipt says so, rather than the promise being dropped.
-  await reportRightsReceipt(blob, opts);
+  if (format !== 'lottie') await reportRightsReceipt(blob, opts);
   return blob;
 }
 
@@ -421,19 +432,6 @@ async function reportRightsReceipt(blob: Blob, opts: ExportOpts): Promise<void> 
   }
 }
 
-// A top-&-tail recorder's render target carries [data-toptail] (on the node or a
-// descendant), routing webm/mp4 export through the real-time card+footage compositor.
-function isTopTailStage(node: Element): boolean {
-  return Boolean((node as HTMLElement).matches?.('[data-toptail]') || node.querySelector?.('[data-toptail]'));
-}
-
-// The Record tool's editor strip carries [data-record-stage] (on the node or a
-// descendant): an intro card + live-camera clip + outro card, each object animated
-// in with its own transition. Routes webm/mp4 through renderRecord.
-function isRecordStage(node: Element): boolean {
-  return Boolean((node as HTMLElement).matches?.('[data-record-stage]') || node.querySelector?.('[data-record-stage]'));
-}
-
 // A timed composition's artboard carries [data-sequence] (on the node or a
 // descendant) - the all-or-nothing marker a tool stamps when anything on it has a
 // start/duration. Motion export then goes through the deterministic sequence
@@ -460,6 +458,7 @@ async function renderSequenceStage(node: Element, format: 'mp4' | 'webm' | 'gif'
     log: (l: string, m: string) => { h.log?.(l as 'debug' | 'info' | 'warn' | 'error', m); },
     notice: (m: string) => { _exportNoticeSink?.(m); },
     assets: h.assets,
+    codec: h.codec,
   } : null;
   return renderSequence(node, format, opts, seqHost);
 }
@@ -564,7 +563,14 @@ async function renderFormatDispatch(node: Element, format: string, opts: ExportO
     const { wantsCuts } = await import('./sequence-cuts.ts');
     if (wantsCuts(format, opts.cuts, true)) return await renderSequenceCutSheet(node, format, opts);
   }
+  if (wantsDeepExport(format,opts)) return (await import('./export-deep.ts')).renderDesignOrFrame(node,format,opts,_host);
   switch (format) {
+    case 'lottie': {
+      if (!_host) throw new Error('dotLottie export needs the asset host.');
+      return (await import('../../../../engine/src/design-lottie.ts')).exportDesignLottie(opts, _host);
+    }
+    case 'jxl': case 'jxl-lossless':
+      return (await import('./jxl.ts')).renderJxlExport(() => renderBitmap(node, 'image/jxl', opts, format === 'jxl-lossless'), opts);
     case 'png':
       return await renderRaster(node, 'png', opts);
     case 'jpg':
@@ -620,6 +626,7 @@ async function renderFormatDispatch(node: Element, format: string, opts: ExportO
     case 'pdf-cmyk':
       return await renderCmykPdf(node, opts);
     case 'html':
+      if (opts.portableDocument) return (await import('./export-portable.ts')).renderPortableHtml(node, opts.portableDocument);
       return renderStaticHtml(node, opts);
     case 'md':
       // A tool with a template.md gives model-derived markdown (opts.dataText, set by
@@ -873,19 +880,7 @@ async function gainMapJpeg(canvas: HTMLCanvasElement, opts: ExportOpts, d: { dpi
 // = the glow reaches further down into mid/dark tones); `lift` is the dark-colour
 // boost floor; `richness` is the re-saturation. Any dial left undefined falls
 // through to the engine default (so a plain `hdr=1` looks exactly as before).
-function hdrTune(opts: ExportOpts): Partial<HdrBoostOptions> {
-  const t: Partial<HdrBoostOptions> = {};
-  if (opts.hdrPeakNits != null) t.peakNits = opts.hdrPeakNits;
-  if (opts.hdrReach != null) {
-    const r = Math.min(1, Math.max(0, opts.hdrReach / 100));
-    const center = 0.65 - 0.45 * r;               // r=0 → 0.65 (brights only); r=1 → 0.20 (almost all)
-    t.kneeLo = Math.max(0, center - 0.12);
-    t.kneeHi = Math.min(1, center + 0.12);
-  }
-  if (opts.hdrLift != null) t.boostFloor = Math.min(1, Math.max(0, opts.hdrLift / 100));
-  if (opts.hdrRichness != null) t.richness = Math.min(1, Math.max(0, opts.hdrRichness / 100));
-  return t;
-}
+
 
 // Neural DURABLE embed for a standalone raster canvas - the async, opt-in
 // counterpart to the sync imprintCanvas. Lazy-imports the encoder runner so ORT
@@ -1009,21 +1004,11 @@ async function renderRaster(node: Element, format: string, opts: ExportOpts): Pr
   }
 }
 
-// Promisified canvas.toBlob - quality is passed through only for lossy encoders.
-function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality?: number): Promise<Blob> {
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => blob ? resolve(blob) : reject(new Error(`Encoding failed for ${mimeType}`)),
-      mimeType,
-      quality,
-    );
-  });
-}
-
-async function renderBitmap(node: Element, mimeType: string, opts: ExportOpts): Promise<Blob> {
+async function renderBitmap(node: Element, mimeType: string, opts: ExportOpts, lossless = false): Promise<Blob> {
   const lib = await getDomToImage();
   const d = exportDims(node, opts);
   const dtoOpts = rasterStyle(d, opts);
+  if (mimeType === 'image/jxl' && (dtoOpts.width * dtoOpts.height > 8_000_000 || dtoOpts.width > 16384 || dtoOpts.height > 16384)) throw new Error('JPEG XL encoding is limited to 8 megapixels.');
   const restore = await swapBlobUrls(node);
   const fc = beginFrameClock(node); renderFrameAt(fc, 0, undefined, { width: dtoOpts.width, height: dtoOpts.height });
   let raw: HTMLCanvasElement;
@@ -1039,9 +1024,11 @@ async function renderBitmap(node: Element, mimeType: string, opts: ExportOpts): 
   // rewrite the encoded AVIF's colr box to Rec.2100 PQ.
   const hdrOn = !!opts.hdr && mimeType === 'image/avif';
   if (hdrOn) hdrCanvas(canvas, opts);
-  if (opts.imprint) imprintCanvas(canvas);
+  if (opts.imprint) imprintCanvas(canvas, lossless ? LOSSLESS_STRENGTH : undefined);
   await durableEmbedCanvas(canvas, opts);
-  const blob = await canvasToBlob(canvas, mimeType, opts.quality ?? 0.9);
+  const blob = mimeType === 'image/jxl'
+    ? await (await import('./jxl.ts')).encodeJxlCanvas(canvas, { lossless, quality: opts.quality ?? 0.9 })
+    : await canvasToBlob(canvas, mimeType, opts.quality ?? 0.9);
   if (hdrOn) {
     // canvasToBlob may fall back to PNG where the browser can't encode AVIF;
     // setAvifCicp no-ops on non-AVIF bytes, so this is safe either way.
@@ -5575,45 +5562,16 @@ async function renderZip(node: Element, opts: ExportOpts): Promise<Blob> {
     ? { ...opts, rights: undefined, password: undefined, strongPassword: password }
     : { ...opts, rights: undefined, password: undefined, strongPassword: undefined };
   const members: Array<{ name: string; bytes: Uint8Array }> = [];
+  if (opts.portableDocument) {
+    const { renderPresentationKit } = await import('./export-presentation-kit.ts');
+    const kit = await renderPresentationKit(node, memberOpts, renderFormat, renderPreparedFormat);
+    if (kit) return packZip(kit, opts);
+  }
   for (const f of (opts.bundleFormats ?? []).filter(x => x !== 'zip')) {
     const blob = await renderFormat(node, f, memberOpts);
     members.push({ name: zipMemberName(base, f), bytes: new Uint8Array(await blob.arrayBuffer()) });
   }
   return packZip(members, opts);
-}
-
-// Pack already-rendered members into the archive. Split out of renderZip so the
-// contact sheet (bridge/sequence-cuts.ts) gets the identical container - including
-// both password tiers - without a second zip implementation.
-async function packZip(members: Array<{ name: string; bytes: Uint8Array }>, opts: ExportOpts): Promise<Blob> {
-  const password = opts.strongPassword || opts.password;
-
-  // Encrypted bundle: standard = PKWARE ZipCrypto (opens anywhere, incl. Windows
-  // Explorer; weak); strong = WinZip AES-256 (7-Zip / Keka / macOS; strong). Mirrors
-  // the two-tier PDF lock. The shell compresses each member with fflate + hands the
-  // engine bytes + CRC; buildEncryptedZip does the crypto + framing.
-  if (password) {
-    const { deflateSync } = await import('fflate');
-    const entries = members.map(({ name, bytes }) => {
-      const deflated = deflateSync(bytes);
-      // Store (method 0) when deflate doesn't help (already-compressed png/jpg/webp).
-      const stored = deflated.length >= bytes.length;
-      return {
-        name,
-        compressed: stored ? bytes : deflated,
-        method: (stored ? 0 : 8) as 0 | 8,
-        crc32: crc32(bytes),
-        uncompressedSize: bytes.length,
-      };
-    });
-    const out = await buildEncryptedZip(entries, { tier: opts.strongPassword ? 'strong' : 'standard', password });
-    return new Blob([out as BlobPart], { type: 'application/zip' });
-  }
-
-  const { zipSync } = await import('fflate');
-  const files: Record<string, Uint8Array> = {};
-  for (const { name, bytes } of members) files[name] = bytes;
-  return new Blob([zipSync(files)], { type: 'application/zip' });
 }
 
 // ── PPTX (PowerPoint) ─────────────────────────────────────────────────────────
@@ -5730,7 +5688,7 @@ async function encodeVideoWithWebCodecs(
   return withVideoMeta(new Blob([buffer], { type }), type, o.meta ?? null);
 }
 
-async function renderVideo(node: Element, opts: ExportOpts, preferred: string): Promise<Blob> {
+export async function renderVideo(node: Element, opts: ExportOpts, preferred: string): Promise<Blob> {
   // Audio (opts.audio = { id?, url }) is resolved up front so a bad track fails
   // fast - before the slow Phase 1 capture - and degrades to silent + warning.
   // Pass the clip length so any fade-out lands at the end of the replay.

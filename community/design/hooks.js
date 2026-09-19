@@ -48,6 +48,7 @@ function safeColor(v, fallback) {
   if (!s) return fallback;
   if (/^#[0-9a-fA-F]{3,8}$/.test(s)) return s;
   if (/^(rgb|rgba|hsl|hsla)\([0-9.,%\s/]+\)$/i.test(s)) return s;
+  if (s.length <= 256 && /^(?:(?:ok)?(?:lab|lch)\([-+0-9.eE%\s/]+\)|color\((?:srgb|srgb-linear|display-p3|rec2020)\s+[-+0-9.eE%\s/]+\))$/i.test(s)) return s;
   if (/^[a-zA-Z]+$/.test(s)) return s; // named colour (e.g. "transparent", "tomato")
   // A brand-token CSS var with an OPTIONAL literal-colour fallback - the documented
   // brand-inheritance path (brand-vars.ts injects --brand-primary/… onto the canvas root,
@@ -494,7 +495,7 @@ function mediaHtmlFor(b) {
   if (isLottie) {
     var fit = String(b.fit) === 'cover' ? 'cover' : 'contain';
     return '<div class="lolly-box-img lolly-box-lottie" data-lottie-src="' + esc(url) +
-      '" data-lottie-loop="1" data-lottie-autoplay="1" data-lottie-fit="' + fit +
+      '" data-lottie-animation="' + esc(b.animationId || '') + '" data-lottie-edits="' + esc(b.animationEdits || '') + '" data-lottie-loop="0" data-lottie-autoplay="0" data-lottie-fit="' + fit +
       '" style="' + style + '"></div>';
   }
   // A video box: a muted, looping, autoplaying <video> (muted + playsinline are
@@ -535,7 +536,7 @@ function mediaHtmlFor(b) {
     return '<div class="lolly-box-img lolly-box-anim" data-anim-src="' + esc(url) +
       '" data-anim-fit="' + afit + '" style="' + style + '"></div>';
   }
-  return '<img class="lolly-box-img" src="' + esc(url) + '" style="' + style + '" alt="" draggable="false">';
+  return '<img class="lolly-box-img" data-deep-source="' + esc(JSON.stringify(img)) + '" src="' + esc(url) + '" style="' + style + '" alt="" draggable="false">';
 }
 
 // ── vector path boxes ────────────────────────────────────────────────────────
@@ -2620,7 +2621,8 @@ function compute(model) {
   // gate the clock, hold a lane open or lengthen the sequence.
   var timeAttrs = boxes.map(function (b) { return isHiddenBox(b) ? '' : timeAttrsFor(b || {}, seqSpans); });
   var seqMs = seqDurationMs(boxes.filter(function (b) { return !isHiddenBox(b); }));
-  var seqAttrs = [seqMs > 0 ? ' data-sequence data-seq-ms="' + seqMs + '"' : ''];
+  var projectFps = [24, 25, 30, 50, 60].indexOf(Number(inp.projectFps)) >= 0 ? Number(inp.projectFps) : 30;
+  var seqAttrs = [seqMs > 0 ? ' data-sequence data-seq-ms="' + seqMs + '" data-seq-fps="' + projectFps + '" data-seq-marks="' + esc(String(inp.sequenceMarks || '')) + '"' : ''];
   // Auto-advance is EXPLICIT (plan 179 T3). A frame's `dur` also stamps data-frame-dur, and
   // "Place in order" writes `dur` on every frame to lay them out on the timeline - which
   // silently turned a click-advanced deck into a 3-second kiosk. The dwell attribute keeps

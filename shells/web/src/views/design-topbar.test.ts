@@ -163,7 +163,7 @@ test('renders every documented control, in order, with the export/live contracts
     'undo', 'redo', 'fit-all', 'fit-artboard', 'zoom-level', 'zoom-out', 'zoom-in', 'timeline', 'navigator', 'inspector',
     // The hamburger (hidden at full width) sits ahead of Share: it is where the centre
     // cluster, then Share and the Present rows, fold as the bar narrows (syncDensity).
-    'more',
+    'compact-undo', 'more',
     'share', 'present', 'present-menu', 'export',
   ]);
   assert.equal(f.bar.el.className, 'design-topbar');
@@ -1086,7 +1086,7 @@ test('...and at compact density it is the hamburger, which carries the Inspector
   // one step at a time as the clusters fold, so the ladder can actually descend.
   const widths: Record<string, number> = { full: 1200, icons: 900, compact: 600, min: 420 };
   bar.getBoundingClientRect = () => rect(700);
-  right.getBoundingClientRect = () => rect(widths[bar.getAttribute('data-density') || 'full']!);
+  right.getBoundingClientRect = () => ({ ...rect(widths[bar.getAttribute('data-density') || 'full']!), left: 20 });
   lastRo!();
   assert.equal(bar.getAttribute('data-density'), 'compact', 'precondition: the centre cluster is folded away');
   f.bar.focusInspectorToggle();
@@ -1108,7 +1108,7 @@ test('density folds by the bar\x27s own width: labels, then icons, then the hamb
   const widths: Record<string, number> = { full: 1200, icons: 900, compact: 600, min: 420 };
   const rect = (r: number): DOMRect => ({ left: 0, right: r, width: r, top: 0, bottom: 44, height: 44, x: 0, y: 0, toJSON() {} } as DOMRect);
   bar.getBoundingClientRect = () => rect(barW);
-  right.getBoundingClientRect = () => rect(widths[bar.getAttribute('data-density') || 'full']!);
+  right.getBoundingClientRect = () => ({ ...rect(widths[bar.getAttribute('data-density') || 'full']!), left: 20 });
   const ro = lastRo;
   assert.ok(ro, 'the bar observes its own size');
   ro!();
@@ -1123,7 +1123,7 @@ test('density folds by the bar\x27s own width: labels, then icons, then the hamb
   assert.equal(more.hidden, false);
   assert.equal(share.hidden, false);
   barW = 500; ro!();
-  assert.equal(bar.getAttribute('data-density'), 'min');
+  assert.equal(bar.getAttribute('data-density'), 'phone');
   assert.equal(share.hidden, true, 'Share folds too');
   // Room returns: the ladder climbs back up.
   barW = 1400; ro!();

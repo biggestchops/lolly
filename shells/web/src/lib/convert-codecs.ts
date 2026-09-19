@@ -3,6 +3,8 @@
 import { sfntKind, convertFontContainer, imageDimensions, sniffAnimatedRaster, parseDimension, toCssPx, gzip, gunzip, sniffContainer, encodeBmp, packTiff, joinPageText } from '@lolly/engine';
 import { DEFAULT_IMAGE_OPTIONS, resizedDimensions, type ImageConversionOptions } from './file-conversion.ts';
 import { sourceToGrid, gridToTarget } from '@lolly/engine';
+import { isJxl } from '../../../../engine/src/jxl.ts';
+import { encodeToTargetBytes } from '@lolly-tools/core/image-operation-v1';
 import { convertImageInWorker } from './image-convert-worker.ts';
 export interface Target { id: string; label: string; ext: string; mime: string; render?: boolean; }
 
@@ -14,6 +16,8 @@ export interface Target { id: string; label: string; ext: string; mime: string; 
 // wrappers. `render:true` routes through the bounded canvas encoder below.
 const R = (id: string, label: string, ext: string, mime: string): Target => ({ id, label, ext, mime, render: true });
 const RASTER_OUT: Target[] = [
+  R('jxl', 'JPEG XL (.jxl)', 'jxl', 'image/jxl'),
+  R('jxl-lossless', 'JPEG XL lossless (.jxl)', 'jxl', 'image/jxl'),
   R('png', 'PNG (.png)', 'png', 'image/png'),
   R('jpeg', 'JPEG (.jpg)', 'jpg', 'image/jpeg'),
   R('webp', 'WebP (.webp)', 'webp', 'image/webp'),
@@ -62,6 +66,22 @@ export function targetsFor(kind: string): Target[] {
   }
 }
 
+/** Source-dependent operations are offered only after reconstruction validates. */
+export async function targetsForSource(kind: string, bytes: Uint8Array, signal?: AbortSignal): Promise<Target[]> {
+  const targets = [...targetsFor(kind)];
+  if (kind !== 'raster') return targets;
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) targets.push({ id: 'jxl-recompress', label: 'JPEG XL with original JPEG (.jxl)', ext: 'jxl', mime: 'image/jxl' });
+  if (isJxl(bytes)) {
+    const { runJxl } = await import('../bridge/jxl.ts');
+    const { info } = await runJxl({ operation: 'probe', bytes }, signal);
+    if (info?.reconstruction) {
+      await runJxl({ operation: 'restore', bytes }, signal);
+      targets.push({ id: 'jpeg-original', label: 'Restore original JPEG (.jpg)', ext: 'jpg', mime: 'image/jpeg' });
+    }
+  }
+  return targets;
+}
+
 /** Markdown out. A deck/document carrying images downloads as a zip instead (the
  *  markdown at the root plus its `media/` files) - see markdownDownload. */
 const MD_OUT: Target = { id: 'md', label: 'Markdown (.md)', ext: 'md', mime: 'text/markdown' };
@@ -79,6 +99,7 @@ const DATA_OUT: Target[] = [
 ];
 
 export function detectKind(bytes: Uint8Array, file: File): string {
+  if (isJxl(bytes)) return 'raster';
   const k = sfntKind(bytes);
   if (k) return k;                                          // ttf/otf/woff/woff2
   // Tabular data - an .xlsx is a zip (workbook inside), csv/tsv/json are text. Checked
@@ -120,6 +141,12 @@ export async function sniffOfficeZip(bytes: Uint8Array): Promise<string> {
 
 export async function convert(bytes: Uint8Array, kind: string, target: Target, file: File, options = DEFAULT_IMAGE_OPTIONS, signal?: AbortSignal): Promise<Blob> {
   signal?.throwIfAborted();
+  if (['jxl-recompress', 'jpeg-original'].includes(target.id)) {
+    if (options.maxEdge || options.targetBytes) throw new Error('Original JPEG preservation does not support resizing or a target file size.');
+    const { runJxl } = await import('../bridge/jxl.ts');
+    const result = await runJxl({ operation: target.id === 'jxl-recompress' ? 'recompress' : 'restore', bytes }, signal);
+    return new Blob([result.bytes as BlobPart], { type: target.mime });
+  }
   // Fonts - a pure container swap (engine codecs), never a render.
   if (kind === 'ttf' || kind === 'otf' || kind === 'woff') {
     return new Blob([convertFontContainer(bytes, target.id) as BlobPart], { type: target.mime });
@@ -164,14 +191,21 @@ export async function convert(bytes: Uint8Array, kind: string, target: Target, f
   // stalls on a detached node anyway) - this is faster and never hangs.
   if (target.render) {
     if (sniffAnimatedRaster(bytes, { name: file.name, mime: file.type })) throw new Error('This is an animated image. Still-image conversion would lose its animation, so it has not been converted.');
-    if (kind === 'raster' && ['png', 'jpeg', 'webp', 'avif'].includes(target.id) && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') {
+    if (kind === 'raster' && !isJxl(bytes) && ['png', 'jpeg', 'webp', 'avif'].includes(target.id) && typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined') {
       const dimensions = imageDimensions(bytes, file.type);
       if (dimensions) resizedDimensions(dimensions.w, dimensions.h, options.maxEdge);
       return convertImageInWorker(file, target.mime, options, signal);
     }
-    if (options.targetBytes) throw new Error('Target-size optimization requires a still JPEG, PNG, WebP or AVIF input and an available background image encoder.');
-    const canvas = await sourceToCanvas(kind, bytes, file, options, target.id === 'jpeg');
-    try { return await encodeFromCanvas(canvas, target, options.quality); }
+    if (options.targetBytes && !['jxl', 'jxl-lossless'].includes(target.id)) throw new Error('Target-size optimization requires a still JPEG, PNG, WebP or AVIF input and an available background image encoder.');
+    const canvas = await sourceToCanvas(kind, bytes, file, options, target.id === 'jpeg', signal);
+    try {
+      if (target.id === 'jxl-lossless') {
+        const blob = await encodeFromCanvas(canvas, target, options.quality, signal);
+        if (options.targetBytes && blob.size > options.targetBytes) throw new Error('Lossless output exceeds the target size. Increase the target or reduce the dimensions.');
+        return blob;
+      }
+      return await encodeToTargetBytes(quality => encodeFromCanvas(canvas, target, quality, signal), options, signal);
+    }
     finally { canvas.width = canvas.height = 1; }
   }
   throw new Error('That conversion is not supported.');
@@ -188,7 +222,7 @@ export { sourceToGrid, gridToTarget } from '@lolly/engine';
 /** Decode the source (SVG markup or a raster file) into a <canvas> at its intrinsic
  *  size. A canvas is a node the export bridge rasterises reliably - passing a bare
  *  <svg>/<img> root to dom-to-image can hang on its foreignObject image load. */
-async function sourceToCanvas(kind: string, bytes: Uint8Array, file: File, options: ImageConversionOptions, flatten: boolean): Promise<HTMLCanvasElement> {
+async function sourceToCanvas(kind: string, bytes: Uint8Array, file: File, options: ImageConversionOptions, flatten: boolean, signal?: AbortSignal): Promise<HTMLCanvasElement> {
   const isSvg = kind === 'svg' || kind === 'svgz';
   const raw = kind === 'svgz' ? gunzip(bytes) : bytes;
   const mime = isSvg ? 'image/svg+xml' : (file.type || 'image/png');
@@ -206,7 +240,9 @@ async function sourceToCanvas(kind: string, bytes: Uint8Array, file: File, optio
     height = physicalHeight ? toCssPx(physicalHeight) : (vb.length === 4 ? vb[3]! : 0) || 512;
     resizedDimensions(width, height);
   }
-  const objUrl = URL.createObjectURL(new Blob([raw as BlobPart], { type: mime }));
+  let display = new Blob([raw as BlobPart], { type: mime });
+  if (isJxl(raw)) display = (await (await import('../bridge/jxl.ts')).jxlDisplay(display, signal)).blob;
+  const objUrl = URL.createObjectURL(display);
   try {
     const img = await new Promise<HTMLImageElement>((res, rej) => {
       const im = new Image();
@@ -233,8 +269,9 @@ async function sourceToCanvas(kind: string, bytes: Uint8Array, file: File, optio
 /** Encode a rasterised canvas straight to the target format. png/jpeg/webp/avif ride
  *  the browser's own `canvas.toBlob`; bmp/tiff use the engine writers on the raw RGBA;
  *  pdf wraps the image; ico wraps a ≤256px PNG. */
-async function encodeFromCanvas(canvas: HTMLCanvasElement, target: Target, quality = 0.92): Promise<Blob> {
+async function encodeFromCanvas(canvas: HTMLCanvasElement, target: Target, quality = 0.92, signal?: AbortSignal): Promise<Blob> {
   switch (target.id) {
+    case 'jxl': case 'jxl-lossless': return (await import('../bridge/jxl.ts')).encodeJxlCanvas(canvas, { quality, lossless: target.id === 'jxl-lossless' }, signal);
     case 'png':  return canvasBlob(canvas, 'image/png');
     case 'jpeg': return canvasBlob(canvas, 'image/jpeg', quality);
     case 'webp': return canvasBlob(canvas, 'image/webp', quality);

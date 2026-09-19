@@ -1,3 +1,4 @@
+import { pqToI420P10, pqEncodeFrame } from '../../../../engine/src/hdr.ts';
 // SPDX-License-Identifier: MPL-2.0
 /**
  * sequence-render.ts - the EXECUTOR + ORCHESTRATOR for deterministic sequence
@@ -124,7 +125,6 @@ import {
 // WP-3 (plan 154): the deep float HDR encode source + its flag/capability gates. Pure,
 // node-testable; nothing here runs unless hdrDeep (hdrActive && flag && probe) is true.
 import {
-  deepHdrCompositorEnabled,
   supportsI420P10Frame,
   hdrDeepI420P10,
 } from './hdr-deep-frame.ts';
@@ -215,6 +215,8 @@ import { lottiePlayerFor } from '../views/lottie-mount.ts';
 // cue maths that mints those boxes, so the collector below cannot drift from them.
 import { CAPTION_BOX_CLASS, MIN_CUE_KEEP_S } from '../views/timeline-captions.ts';
 import { suspendNodeRasters, drainNodeRasters } from '../lib/clip-thumbs.ts';
+import { sequenceExportSize } from './sequence-preflight.ts';
+import { sequenceSettings, offsetMix } from './sequence-range.ts';
 import type { ExportOpts } from './export.ts';
 // Type only - the encoders themselves stay out of this module's graph.
 import type { AudioPcm } from '../lib/audio-encode.ts';
@@ -234,6 +236,7 @@ import { assetIdForUrl, MAX_CREDENTIAL_SCAN_BYTES } from './assets.ts';
  * fallback rather than the export.
  */
 export interface SeqHost {
+  codec?: import('@lolly-tools/core/host-v1').CodecAPI;
   log?(level: string, msg: string): void;
   /** Surface a user-visible EXPORT QUALITY notice (not an error) - e.g. a sped-up
    *  clip whose audio had to be dropped. host.log() is console-only, so a
@@ -669,7 +672,8 @@ function buildBed(buffer: AudioBuffer, fade: BedFade, log: (l: string, m: string
  * `hide` is temporarily display:none'd for the shot - that is how a video box's
  * background/chrome is captured without the (blank-serialising) <video> in it.
  */
-interface RasterOpts {
+export interface RasterOpts {
+  wideColor?: boolean;
   /** Shoot the element with no background of its own (the video "over" plate). */
   transparentBg?: boolean;
   /**
@@ -896,7 +900,7 @@ export function bgOverscanPad(
   return pad > 0 ? pad : 0;
 }
 
-async function rasterBox(
+export async function rasterBox(
   el: HTMLElement, S: number, hide: Element[] = [], ropts: RasterOpts = {},
 ): Promise<HTMLCanvasElement | null> {
   const lib = await getDomToImage();
@@ -973,14 +977,21 @@ async function rasterBox(
     restore.push(() => { if (prev) el.style.clipPath = prev; else el.style.removeProperty('clip-path'); });
   }
   try {
-    return await lib.toCanvas(el, {
+    const shot = {
       width: frame.width,
       height: frame.height,
       style: {
         transform: frame.transform, transformOrigin: 'top left',
         width: `${bw}px`, height: `${bh}px`, left: '0', top: '0', margin: '0',
       },
-    });
+    };
+    if (!ropts.wideColor) return await lib.toCanvas(el, shot);
+    const url = await lib.toSvg(el, shot), image = new Image();
+    image.src = url; await image.decode();
+    const canvas = document.createElement('canvas'); canvas.width = frame.width; canvas.height = frame.height;
+    const ctx = canvas.getContext('2d', { colorSpace: 'display-p3' });
+    if (!ctx) throw new Error('Wide colour rasterisation is unavailable.');
+    ctx.drawImage(image,0,0); return canvas;
   } catch {
     return null;
   } finally {
@@ -1085,7 +1096,7 @@ async function mixSequenceAudio(
   const clips: MixClip[] = [];
   const spans: { from: number; to: number }[] = [];
   const xfade = audioCrossfades(layers);
-  const pushed: { L: SeqLayer; mixClip: MixClip; placedSec: number; fadeInSec: number; fadeOutSec: number }[] = [];
+  const pushed: { L: SeqLayer; mixClip: MixClip; placedSec: number; fadeInSec: number; fadeOutSec: number; fadeInPower: boolean; fadeOutPower: boolean }[] = [];
 
   for (const L of layers) {
     if (L.kind !== 'video' && L.kind !== 'audio') continue;
@@ -1200,8 +1211,12 @@ async function mixSequenceAudio(
       // end, so the two gains cross at the cut's midpoint like the two alphas do.
       const fadeInSec = shape?.headSec ?? (((audioBox && L.enter) || L.enter === 'fade') ? L.enterMs / 1000 : 0);
       const fadeOutSec = shape?.tailSec ?? (((audioBox && L.exit) || L.exit === 'fade') ? L.exitMs / 1000 : 0);
+      // A junction side crosses with its neighbour, so it follows the equal-power curve
+      // and the pair keeps its loudness across the handover (plans/268 SI-02). A fade of
+      // the clip's own, to or from silence, stays a straight ramp.
       const events = clipGainEvents({
         spanSec: placedSec, gain: L.gain, fadeInSec, fadeOutSec,
+        fadeInPower: shape?.headSec != null, fadeOutPower: shape?.tailSec != null,
         volumeKeys: volumeKeysOf(L.kf) ?? undefined,
       });
       const pan = Math.max(-1, Math.min(1, L.pan ?? 0));
@@ -1214,7 +1229,7 @@ async function mixSequenceAudio(
       // Retained for the post-loop duck pass (plans/165 WP-6 v2): ducking needs to
       // know where every OTHER clip actually makes sound, which is only knowable
       // once all of them are decoded.
-      pushed.push({ L, mixClip, placedSec, fadeInSec, fadeOutSec });
+      pushed.push({ L, mixClip, placedSec, fadeInSec, fadeOutSec, fadeInPower: shape?.headSec != null, fadeOutPower: shape?.tailSec != null });
       spans.push({ from: L.startMs / 1000, to: L.startMs / 1000 + frames / MIX_RATE });
     } catch (err) {
       log('warn', `sequence audio: ${toCodedError(err).message} - clip will be silent`);
@@ -1242,6 +1257,7 @@ async function mixSequenceAudio(
     }
     const events = clipGainEvents({
       spanSec: p.placedSec, gain: p.L.gain, fadeInSec: p.fadeInSec, fadeOutSec: p.fadeOutSec,
+      fadeInPower: p.fadeInPower, fadeOutPower: p.fadeOutPower,
       volumeKeys: volumeKeysOf(p.L.kf) ?? undefined,
       duck: duckSpans.length ? { level: p.L.duck, spans: duckSpans } : undefined,
     });
@@ -1502,11 +1518,15 @@ export async function sequenceAudioPcm(
   // Length is derived through the frame grid rather than from totalMs directly,
   // so it is the identical number renderSequence hands the mix for mp4/webm (the
   // streaming path never caps the grid). Same fps default, same rounding.
-  const fps = Math.max(1, Math.round(opts.fps ?? 30));
-  const grid = frameTimestamps(stage.totalMs, fps);
+  const authoredTotalSec = stage.totalMs / 1000;
+  const range = sequenceSettings(node, stage.totalMs);
+  const fps = Math.max(1, Math.round(opts.fps ?? range.fps));
+  const grid = frameTimestamps(range.toMs - range.fromMs, fps).map(ms => ms + range.fromMs);
   if (!grid.length) throw sequenceError('SEQ_DECODE_FAILED', 'sequence has no frames');
 
-  const mix = await mixSequenceAudio(stage.layers, grid.length / fps, opts, host);
+  const mix = await mixSequenceAudio(stage.layers, authoredTotalSec, opts, host);
+  mix.spec = offsetMix(mix.spec, range.fromMs);
+  mix.totalSamples = Math.ceil(grid.length / fps * MIX_RATE);
   if (!mix.spec || (!mix.hasClipAudio && !mix.hasBed)) return null;
   // The WHOLE buffer, produced by the SAME mixWindow the streaming path feeds in 0.1 s
   // windows (plans/156 B2) - one range call over the full length, through the SAME
@@ -1518,6 +1538,50 @@ export async function sequenceAudioPcm(
 }
 
 // ── the orchestrator ────────────────────────────────────────────────────────
+
+function sequenceDimensions(
+  stage: NonNullable<ReturnType<typeof parseSequenceStage>>, stageEl: HTMLElement,
+  format: string, opts: ExportOpts, host: SeqHost | null,
+): { nativeW: number; nativeH: number; outW: number; S: number; targetH: number } {
+  const log = (level: string, message: string): void => host?.log?.(level, message);
+  // A frames-as-scenes slideshow ("Design", plan 92) sizes to a SLIDE, not the stage:
+  // the [data-sequence] element spans the whole side-by-side pasteboard of every frame,
+  // so its offsetWidth is the strip, not one slide. Size the output to the first timed
+  // frame's own box; combined with normalizeFrameScene (which re-anchors each slide's
+  // draw rect to (0,0,nativeW,nativeH)) every slide then fills this slide-sized canvas
+  // at the origin. Object-clip Video / Sequence Studio docs carry no frameScene layer,
+  // so they keep the stageEl.offsetWidth path byte-for-byte.
+  const frameScene0 = stage.layers.find((l) => l.frameScene && l.rect.w > 0 && l.rect.h > 0);
+  const wantW = Number(opts.width);
+  const wantH = Number(opts.height);
+  // Frames mode: the output frame is the CALLER'S requested size when given - the
+  // export bar mirrors the artboard under the playhead (plans/141 WP-B/C) - falling
+  // back to the first timed frame's own box. Every slide then contain-fits into it
+  // via normalizeFrameScene: a different-sized artboard letterboxes, never stretches.
+  const nativeW = frameScene0
+    ? (Number.isFinite(wantW) && wantW > 0 ? Math.round(wantW) : frameScene0.rect.w)
+    : Math.max(1, stageEl.offsetWidth || 1920);
+  const nativeH = frameScene0
+    ? (Number.isFinite(wantH) && wantH > 0 ? Math.round(wantH) : frameScene0.rect.h)
+    : Math.max(1, stageEl.offsetHeight || 1080);
+  // Even dimensions: H.264 chroma subsampling refuses an odd width or height. The
+  // rounding happens BEFORE the scale is derived, so an odd requested width is
+  // resampled to fit rather than losing its last pixel column of content.
+  const desiredW = Number.isFinite(wantW) && wantW > 0 ? wantW : nativeW;
+  const size = sequenceExportSize(desiredW, nativeH * desiredW / nativeW, stage.totalMs / 1000, opts.videoCodec ?? (format === 'webm' ? 'vp9' : 'avc'));
+  const outW = size.width;
+  const S = outW / nativeW;
+  const targetH = size.height;
+  if (size.reduced) {
+    const message = `sequence: export size reduced to ${outW} by ${targetH} for this duration and codec`;
+    log('warn', message); host?.notice?.(message);
+  }
+  if (Number.isFinite(wantH) && wantH > 0 && Math.abs(wantH - targetH) > 2) {
+    log('warn', `sequence: exporting ${outW}x${targetH} - a sequence keeps the stage's aspect ratio, so the requested height (${Math.round(wantH)}) is derived from the width.`);
+  }
+
+  return { nativeW, nativeH, outW, S, targetH };
+}
 
 /**
  * Render a `[data-sequence]` stage to a motion file.
@@ -1584,38 +1648,12 @@ async function renderSequenceAuthored(
   await gatherStageIngredients(stage.layers, opts, host);
 
   const stageEl = ((node as HTMLElement).matches?.('[data-sequence]') ? node : node.querySelector('[data-sequence]')) as HTMLElement;
-  // A frames-as-scenes slideshow ("Design", plan 92) sizes to a SLIDE, not the stage:
-  // the [data-sequence] element spans the whole side-by-side pasteboard of every frame,
-  // so its offsetWidth is the strip, not one slide. Size the output to the first timed
-  // frame's own box; combined with normalizeFrameScene (which re-anchors each slide's
-  // draw rect to (0,0,nativeW,nativeH)) every slide then fills this slide-sized canvas
-  // at the origin. Object-clip Video / Sequence Studio docs carry no frameScene layer,
-  // so they keep the stageEl.offsetWidth path byte-for-byte.
-  const frameScene0 = stage.layers.find((l) => l.frameScene && l.rect.w > 0 && l.rect.h > 0);
-  const wantW = Number(opts.width);
-  const wantH = Number(opts.height);
-  // Frames mode: the output frame is the CALLER'S requested size when given - the
-  // export bar mirrors the artboard under the playhead (plans/141 WP-B/C) - falling
-  // back to the first timed frame's own box. Every slide then contain-fits into it
-  // via normalizeFrameScene: a different-sized artboard letterboxes, never stretches.
-  const nativeW = frameScene0
-    ? (Number.isFinite(wantW) && wantW > 0 ? Math.round(wantW) : frameScene0.rect.w)
-    : Math.max(1, stageEl.offsetWidth || 1920);
-  const nativeH = frameScene0
-    ? (Number.isFinite(wantH) && wantH > 0 ? Math.round(wantH) : frameScene0.rect.h)
-    : Math.max(1, stageEl.offsetHeight || 1080);
-  // Even dimensions: H.264 chroma subsampling refuses an odd width or height. The
-  // rounding happens BEFORE the scale is derived, so an odd requested width is
-  // resampled to fit rather than losing its last pixel column of content.
-  const outW = Math.max(2, Math.round(Number.isFinite(wantW) && wantW > 0 ? wantW : nativeW)) & ~1;
-  const S = outW / nativeW;
-  const targetH = Math.max(2, Math.round(nativeH * S) & ~1);
-  if (Number.isFinite(wantH) && wantH > 0 && Math.abs(wantH - targetH) > 2) {
-    log('warn', `sequence: exporting ${outW}x${targetH} - a sequence keeps the stage's aspect ratio, so the requested height (${Math.round(wantH)}) is derived from the width.`);
-  }
+  const { nativeW, nativeH, outW, S, targetH } = sequenceDimensions(stage, stageEl, format, opts, host);
 
-  const fps = format === 'gif' ? GIF_FPS : Math.max(1, Math.round(opts.fps ?? 30));
-  const grid = frameTimestamps(stage.totalMs, fps);
+  const authoredTotalSec = stage.totalMs / 1000;
+  const range = sequenceSettings(node, stage.totalMs);
+  const fps = format === 'gif' ? GIF_FPS : Math.max(1, Math.round(opts.fps ?? range.fps));
+  const grid = frameTimestamps(range.toMs - range.fromMs, fps).map(ms => ms + range.fromMs);
   if (!grid.length) throw sequenceError('SEQ_DECODE_FAILED', 'sequence has no frames');
 
   const streaming = format === 'mp4' || format === 'webm';
@@ -1627,21 +1665,13 @@ async function renderSequenceAuthored(
   // (pro-settings) is honoured where supported; then trim `bitrate` to the picked codec's
   // efficiency, so every downstream mux/worker call inherits the AV1/HEVC saving.
   const baseBitrate = videoBitrate(outW, targetH, fps, bppForQuality(opts.videoQuality ?? 'balanced'));
-  // Plan 154 WP-2, extended to the streaming path. DEVICE-INDEPENDENT: hdrDesired is the
-  // explicit opts.hdr toggle ONLY, never displaySupportsHdr() - the display governs
-  // preview, never the encoded bytes, so a credentialed HDR viz/audiogram is byte-repro-
-  // ducible across machines. hdrActive additionally requires the ladder to have landed a
-  // real 10-bit HDR codec (pickWebCodecsVideo's hdr arm), so a browser that cannot encode
-  // one SILENTLY gets today's SDR bytes. When hdrActive is false, everything below is
-  // byte-for-byte the pre-WP-2 streaming path (the goldens set no opts.hdr).
-  const hdrDesired = opts.hdr === true;
+  // HDR output requires a working 10-bit encoder; display capability only governs preview.
+  const hdrDesired = !!opts.hdr;
+  const deepEditing = hdrDesired || opts.sourceDocument?.values.editingRange === 'hdr';
   const pick = streaming ? await pickWebCodecsVideo(format, outW, targetH, fps, baseBitrate, opts.videoCodec, hdrDesired) : null;
   const hdrActive = hdrDesired && !!pick && is10bitHdrCodec(pick.codec);
-  // WP-3 (plan 154): the DEEP float HDR encode. Opt-in (perf-sensitive) AND capability-
-  // gated - the deep path only runs where the runtime can build the 10-bit I420P10 frame
-  // it emits; anywhere else (WebKit today, flag off, or SDR) it DEGRADES to the 8-bit
-  // path above, byte-for-byte. So `hdrDeep` false ⇒ the WP-2 streaming path unchanged.
-  const hdrDeep = hdrActive && deepHdrCompositorEnabled() && supportsI420P10Frame();
+  if (hdrDesired && (!hdrActive || !supportsI420P10Frame())) throw new Error('This browser cannot encode 10-bit HDR video. Choose an SDR export or use a browser with a supported 10-bit encoder.');
+  const hdrDeep = hdrActive;
   // The buffer layout the mux tags each HDR VideoFrame with: 10-bit YUV on the deep path,
   // 8-bit RGBA otherwise. Only consulted when hdrActive (the ...spread below is empty when not).
   const hdrFrameFormat: 'RGBA' | 'I420P10' = hdrDeep ? 'I420P10' : 'RGBA';
@@ -1767,6 +1797,7 @@ async function renderSequenceAuthored(
   // the affine approximation with nothing said. `??` rather than `||` because the
   // answer is the logged TRIGGER, and the camera's is the one to name when both tilt.
   const tilt = camerasTilt(cameras) ?? boxesTilt(stage.layers);
+  if (deepEditing) (await import('./deep-plate.ts')).assertDeepSequence(stage.layers,tilt);
   // P2b (plans/104 section 6.4, plan 98 section 9.1 Phase C): with the opt-in GPU compositor flag on
   // AND WebGL2 present, a tilted export takes the GL quad-compositor path - ONE clean
   // plate texture per layer, resampled coherently through each per-quad homography,
@@ -1937,7 +1968,7 @@ async function renderSequenceAuthored(
         bgRaster = await rasterBox(stageEl, S, [
           ...stageEl.querySelectorAll('.lolly-box'),
           ...stageEl.querySelectorAll('[data-pdf-page][data-t-start]'),
-        ], bgPad > 0 ? { pad: bgPad } : {});
+        ], { ...(bgPad > 0 ? { pad: bgPad } : {}), wideColor: deepEditing });
       }
       // A frames-as-scenes slide poses its boxes the way the podium does (plans/184 R1,
       // `poseSlideBoxes` - the one rule both read): a with-the-slide box enters when the
@@ -1973,11 +2004,13 @@ async function renderSequenceAuthored(
         // pre-104 `shadow: content` / `blur` document has always exported.
         const plateOpts: RasterOpts = {
           opaque: true,
+          wideColor: deepEditing,
           neutralFilter: neutralOf(L.idx),
           neutralClipPath: clipNeutralOf(L.idx),
           pad: padOf(L.idx),
         };
         const PS = plateScaleOf(L.idx);
+        let deep: import('../../../../engine/src/pixels.ts').DeepFrame | undefined;
         let under: HTMLCanvasElement | null = null;
         let over: HTMLCanvasElement | null = null;
         let media: HTMLElement | null = null;
@@ -2002,6 +2035,8 @@ async function renderSequenceAuthored(
             plateHide = hide;
             under = await rasterBox(el, PS, hide, plateOpts);
             over = await rasterBox(el, PS, hide, { ...plateOpts, transparentBg: true });
+          } else if (deepEditing && el.querySelector('img.lolly-box-img[data-deep-source]')) {
+            ({under,over,deep} = await (await import('./deep-plate.ts')).prepareDeepImage(el,PS,plateOpts,host,rasterBox));
           } else if (L.kind === 'lottie') {
             const marker = el.matches?.('[data-lottie-src]') ? el : el.querySelector('[data-lottie-src]');
             under = await rasterBox(el, PS, [], plateOpts); // the still fallback if no player mounted
@@ -2009,10 +2044,9 @@ async function renderSequenceAuthored(
             // actually mounted; without one the static plate IS the picture, and
             // the sequence still runs fully worker-side.
             const player = marker ? (lottiePlayerFor(marker) as LottieScrubber | null) : null;
-            if (marker && player?.goToAndStop) {
-              liveBoxes.set(L.idx, { marker, box: el, hide: [] });
-              needsLiveRaster = true;
-            }
+            if (!marker || !player?.goToAndStop) throw new Error(`Layer ${L.idx + 1}: animation is not ready. Wait for it to load before exporting video.`);
+            liveBoxes.set(L.idx, { marker, box: el, hide: [] });
+            needsLiveRaster = true;
           } else {
             if (slidePose) plateHide = slideHiddenAt(slidePose, slideRestMs(slidePose, L));
             under = await rasterBox(el, PS, plateHide, plateOpts);
@@ -2037,7 +2071,7 @@ async function renderSequenceAuthored(
             needsLiveRaster = true;
           }
         }
-        plates.push({ idx: L.idx, under, over });
+        plates.push({ idx: L.idx, under, over, ...(deep ? { deep } : {}) });
         // Re-anchor a timed frame-page scene to the output viewport so a side-by-side
         // slideshow stacks each slide into the frame (ISSUE 1). No-op for a `.lolly-box`
         // (frameScene=false → returned verbatim), so object-clip export is unchanged.
@@ -2070,7 +2104,9 @@ async function renderSequenceAuthored(
     // Length is the ACTUAL clip length (frameCount/fps), not the authored one, so a
     // capped gif/apng and a full-length mp4 both get a bed that ends where they do.
     // OfflineAudioContext is main-thread only; the worker receives the rendered PCM.
-    const mix = streaming ? await mixSequenceAudio(stage.layers, (frameCount / fps), opts, host) : EMPTY_MIX;
+    const mix = streaming ? await mixSequenceAudio(stage.layers, authoredTotalSec, opts, host) : { ...EMPTY_MIX };
+    mix.spec = offsetMix(mix.spec, range.fromMs);
+    mix.totalSamples = Math.ceil(frameCount / fps * MIX_RATE);
     const audioPick = pick && mix.spec ? await pickWebCodecsAudio(pick.container) : null;
 
     const job: SeqJob = {
@@ -2139,7 +2175,7 @@ async function renderSequenceAuthored(
       return { t, animating, restKey: Math.abs(restKey) + 1, hide };
     };
     const liveRaster = makeLiveRaster(
-      liveBoxes, plateScaleOf, padOf, neutralOf, clipNeutralOf, sizeAt, splitShotAt, stage.totalMs, slideShotAt,
+      liveBoxes, plateScaleOf, padOf, neutralOf, clipNeutralOf, sizeAt, splitShotAt, stage.totalMs, slideShotAt, deepEditing,
     );
     const hybrid = liveBoxes.size > 0;
 
@@ -2157,7 +2193,7 @@ async function renderSequenceAuthored(
     // builds its own mux WITHOUT threading a colorSpace, so an HDR sequence takes the
     // in-thread path below (whose frames are RGBA buffers), exactly as the buffered
     // renderVideo path skips its worker for HDR.
-    if (pick && !hdrActive && supportsWorkerSequenceRender()) {
+    if (pick && !deepEditing && supportsWorkerSequenceRender()) {
       log('info', `sequence: worker offload - ${hybrid
         ? `HYBRID (${liveBoxes.size} live layer(s) drawn on the main thread, one request in flight)`
         : 'fully worker-side (decode, composite, encode and mux all off the main thread)'}`);
@@ -2226,8 +2262,10 @@ async function renderSequenceAuthored(
     const canvas: AnyCanvas = streaming && typeof OffscreenCanvas !== 'undefined'
       ? new OffscreenCanvas(outW, targetH)
       : Object.assign(document.createElement('canvas'), { width: outW, height: targetH });
-    const ctx = (canvas as unknown as { getContext(id: string, o?: unknown): unknown }).getContext('2d', { alpha: true }) as AnyCtx | null;
+    let ctx = (canvas as unknown as { getContext(id: string, o?: unknown): unknown }).getContext('2d', { alpha: true }) as AnyCtx | null;
     if (!ctx) throw sequenceError('SEQ_DECODE_FAILED', 'no 2D context for the sequence canvas');
+    const float = deepEditing ? await (await import('./deep-plate.ts')).sequenceFloatCanvas(outW,targetH,job.plates) : null;
+    if (float) ctx = float.context;
 
     let mux: StreamingMux | null = null;
     const bitmaps: ImageBitmap[] = [];             // MediaRecorder fallback only
@@ -2262,12 +2300,13 @@ async function renderSequenceAuthored(
         // with SEQ_ABORTED - the same seam the worker's abort message trips.
         aborted: () => opts.signal?.aborted === true,
         frame: async (c, cx, _i, tsUs) => {
+          if (float && !hdrActive) await (await import('./deep-canvas.ts')).displayFloatFrame(float.frame,canvas);
           if (feeder) await feeder.upTo(tsUs);        // audio windows due by this frame
-          if (mux) await mux.addFrame(hdrActive ? hdrFrameData(cx, outW, targetH, opts, hdrDeep, hdrPerf) : c as CanvasImageSource, tsUs);
+          if (mux) await mux.addFrame(float && hdrActive ? { data: pqToI420P10(pqEncodeFrame(float.frame)).data.slice().buffer } : c as CanvasImageSource, tsUs);
           else if (streaming) bitmaps.push(await createImageBitmap(c as ImageBitmapSource));
           else if (format === 'apng') apngFrames.push(new Uint8Array(await (await canvasBlob(c, 'image/png')).arrayBuffer()));
           else if (format === 'webp-anim') webpFrames.push(await webpFrame(c, opts.quality ?? 0.9));
-          else gifPixels.push((cx as CanvasRenderingContext2D).getImageData(0, 0, outW, targetH).data);
+          else gifPixels.push((float ? canvas.getContext('2d')! : cx as CanvasRenderingContext2D).getImageData(0, 0, outW, targetH).data);
         },
       });
 
@@ -2551,8 +2590,10 @@ async function renderSequenceAuthored(
       const gifPixels: Uint8ClampedArray[] = [];
       try {
         const mix = streaming
-          ? await mixSequenceAudio(layers, frameCount / fps, opts, host)
-          : EMPTY_MIX;
+          ? await mixSequenceAudio(layers, authoredTotalSec, opts, host)
+          : { ...EMPTY_MIX };
+        mix.spec = offsetMix(mix.spec, range.fromMs);
+        mix.totalSamples = Math.ceil(frameCount / fps * MIX_RATE);
         const audioPick = pick && mix.spec ? await pickWebCodecsAudio(pick.container) : null;
         if (pick) {
           mux = await createStreamingMux(pick, {
@@ -2705,6 +2746,7 @@ function makeLiveRaster(
   seqMs = 0,
   /** A posed slide at that frame (plans/184 R1): drives its boxes and names the hidden ones. */
   slideAt?: (idx: number, frameIndex: number) => { t: number; animating: boolean; restKey: number; hide: Element[] } | null,
+  wideColor = false,
 ): SeqJobIO['lottieAt'] {
   if (!boxes.size) return undefined;
   // Keyed by layer AND slot: a video layer's two plates are two different pictures of
@@ -2776,7 +2818,7 @@ function makeLiveRaster(
     // it is framed is a jump in the picture.
     const hide = slideHide.length ? [...entry.hide, ...slideHide] : entry.hide;
     const shot = await rasterBox(entry.box, scaleOf(layerIdx), hide, {
-      opaque: true,
+      wideColor, opaque: true,
       neutralFilter: neutralOf(layerIdx),
       neutralClipPath: clipNeutralOf(layerIdx),
       pad: padOf(layerIdx),

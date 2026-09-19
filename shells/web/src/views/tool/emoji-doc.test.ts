@@ -71,7 +71,7 @@ test('the section registers the holder even where there is no sidebar to show', 
   // The seed reached the runtime and the holder, with no section in the document.
   assert.equal(emojiDocumentStyle()?.primary.id, SET.pin.id, 'the dock can read the set the link named');
   assert.equal(emojiDocumentStyle()?.treatment.mode, 'mono');
-  assert.deepEqual(written.at(-1), { emoji: SET_KEY, emojifx: 'mono' });
+  assert.deepEqual(written.at(-1), { emoji: SET_KEY, emojifx: 'mono', emojistyle: JSON.stringify(runtime.emoji.style) });
 
   mounted.destroy();
   assert.equal(emojiDocumentStyle(), null, 'a retired tool leaves nothing for the next one');
@@ -96,13 +96,13 @@ test('a choice made in the dock drives the runtime and every writer', async () =
 
   assert.equal(emojiDocumentStyle()?.treatment.mode, 'snap');
   assert.equal(runtime.styles.at(-1)?.treatment.mode, 'snap', 'the canvas is redrawn with it');
-  assert.deepEqual(written.at(-1), { emoji: SET_KEY, emojifx: 'snap' }, 'and the link, the session and the CLI all get it');
+  assert.deepEqual(written.at(-1), { emoji: SET_KEY, emojifx: 'snap', emojistyle: JSON.stringify(runtime.emoji.style) }, 'and the link, the session and the CLI all get it');
   assert.ok(told > before, 'the other surface is told to redraw its row');
 
   setEmojiDocumentStyle(null);
   await new Promise((r) => setTimeout(r, 0));
   assert.equal(emojiDocumentStyle(), null);
-  assert.equal(written.at(-1), null, 'clearing is a change like any other');
+  assert.deepEqual(written.at(-1), { emoji: 'none', emojifx: '' }, 'clearing is a change like any other');
 
   off();
   mounted.destroy();

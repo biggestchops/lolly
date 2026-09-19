@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Unten links",
   "inputs.boxes.fields.imgpos.options.center bottom": "Unten",
   "inputs.boxes.fields.imgpos.options.right bottom": "Unten rechts",
-  "description": "Eine offene Fläche für freie Anordnung - Text, Bilder, Formen und Live-Renderings aus Ihren anderen Lolly-Tools, alles im Einklang mit Ihrem Designsystem."
+  "description": "Eine offene Fläche für freie Anordnung - Text, Bilder, Formen und Live-Renderings aus Ihren anderen Lolly-Tools, alles im Einklang mit Ihrem Designsystem.",
+  "inputs.projectFps.label": "Projektbildrate",
+  "inputs.sequenceMarks.label": "Zeitleistenmarkierungen",
+  "inputs.boxes.fields.animationId.label": "Animation in der Quelle",
+  "inputs.boxes.fields.animationEdits.label": "Interne Animationsänderungen"
 }

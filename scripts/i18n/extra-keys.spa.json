@@ -265,5 +265,13 @@
   "Pulse",
   "Bob",
   "Sway",
-  "Flicker"
+  "Flicker",
+  "Position",
+  "Position X",
+  "Position Y",
+  "Anchor",
+  "Scale",
+  "JPEG XL lossless (.jxl)",
+  "JPEG XL with original JPEG (.jxl)",
+  "Restore original JPEG (.jpg)"
 ]

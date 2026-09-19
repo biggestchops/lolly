@@ -203,6 +203,14 @@ export async function redactPdf(bytes: Uint8Array, opts: PdfRedactOpts, host?: R
     const labelInk = core.normaliseInk(opts?.labelColor) ?? '#ffffff';
     const radiusPx = Math.max(0, Math.round(((Number(opts?.radius) || 0) * dpi) / 72));
     const label = String(opts?.label || '').trim();
+    let labelCanvas: HTMLCanvasElement | undefined;
+    if (opts?.labelImage) {
+      const frame = opts.labelImage;
+      (await import('../../../../engine/src/label-artwork.ts')).validateLabelArtwork(frame);
+      labelCanvas = document.createElement('canvas'); labelCanvas.width = frame.width; labelCanvas.height = frame.height;
+      const pixels = labelCanvas.getContext('2d')!.createImageData(frame.width,frame.height);
+      pixels.data.set(frame.data); labelCanvas.getContext('2d')!.putImageData(pixels,0,0);
+    }
     for (const bar of bars) {
       if (Math.floor(Number(bar?.page)) !== i + 1) continue;
       const r = core.barToPixels(bar, dpi, cw, ch);
@@ -217,7 +225,10 @@ export async function redactPdf(bytes: Uint8Array, opts: PdfRedactOpts, host?: R
         cx.textAlign = 'center';
         cx.textBaseline = 'middle';
         cx.font = `600 ${lay.size}px SUSE, system-ui, sans-serif`;
-        cx.fillText(label, lay.cx, lay.cy);
+        if (labelCanvas) {
+          const ah = Math.max(0, Math.min(lay.size * 1.3, shape.h - 2, (shape.w - 2) * labelCanvas.height / labelCanvas.width)), aw = ah * labelCanvas.width / labelCanvas.height;
+          cx.drawImage(labelCanvas,lay.cx-aw/2,lay.cy-ah/2,aw,ah);
+        } else cx.fillText(label, lay.cx, lay.cy);
       }
     }
     const blob = await canvasToJpeg(canvas, 0.92);

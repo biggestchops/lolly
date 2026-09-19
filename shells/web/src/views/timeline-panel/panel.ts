@@ -14,10 +14,10 @@ import { isTransitionKind } from '../../lib/transitions.ts';
 import type { KfPose } from '../../../../../engine/src/keyframes.ts';
 import { MAX_TRANSITION_MS, MIN_TRANSITION_MS } from '../sequence-clock.ts';
 import { releaseSequenceDom } from '../../bridge/sequence-dom.ts';
-import { indexOfId, isThroughEdit, kfDiamondAt, onionNeighbours, writeKfPose } from '../timeline-math.ts';
+import { indexOfId, isThroughEdit, kfDiamondAt, onionNeighbours, seqJunctions, setJunction, writeKfPose } from '../timeline-math.ts';
 import type { Box } from '../timeline-math.ts';
-import { FRAME_S, MIN_PANEL_H, PANEL_SHORTCUTS, RESERVE_PAD, TRIM_SHIFT_FRAMES, ZOOM_STEP, clamp, finite } from '../timeline-config.ts';
-import { clampPanelH, panelKeysActive } from './shared.ts';
+import { PANEL_SHORTCUTS, TRIM_SHIFT_FRAMES, ZOOM_STEP, clamp, finite } from '../timeline-config.ts';
+import { panelKeysActive } from './shared.ts';
 import { bindOp, type TpCtx } from './context.ts';
 
 // ── junction (seam) transitions ─────────────────────────────────────────────
@@ -28,11 +28,22 @@ export function openJunction(tp: TpCtx, aId: string, bId: string): void {
   const ai = indexOfId(boxes, cfg, aId);
   const bi = indexOfId(boxes, cfg, bId);
   if (ai < 0 || bi < 0) return;
+  // What this junction IS comes from the rule the export and the preview use (the PAIR
+  // of fades, timeline-math's seqJunctions), never from one side. The dialog used to read
+  // the incoming clip alone, so a first clip that fades out into a second that RISES in
+  // was shown as "Crossfade" although no handover exists there at all.
+  const junction = seqJunctions(boxes, cfg).find((j) => j.aId === aId && j.bId === bId);
   const curMs = Math.round(
-    clamp(finite(boxes[bi]![cfg.enterMsField], 400), MIN_TRANSITION_MS, MAX_TRANSITION_MS)
+    junction?.kind === 'xfade'
+      ? junction.ms
+      : clamp(finite(boxes[bi]![cfg.enterMsField], 400), MIN_TRANSITION_MS, MAX_TRANSITION_MS)
   );
-  const isCut =
-    !isTransitionKind(boxes[bi]![cfg.enterField]) || boxes[bi]![cfg.enterField] === 'none';
+  const isPlain = (v: unknown): boolean => !isTransitionKind(v) || v === 'none';
+  const isXfade = junction?.kind === 'xfade';
+  const isCut = !isXfade && isPlain(boxes[ai]![cfg.exitField]) && isPlain(boxes[bi]![cfg.enterField]);
+  // Neither: each clip has a transition of its own here (set in the inspector's Enter
+  // and Exit). Both choices below replace them, so the dialog says so first.
+  const isOwn = !isXfade && !isCut;
   // A through edit gets its own way out: this cut has changed nothing, so the useful
   // action here is not "which transition" but "put it back". Offered only where it is
   // real - the same predicate that draws the seam's hairline.
@@ -41,8 +52,9 @@ export function openJunction(tp: TpCtx, aId: string, bId: string): void {
       <h2 class="tl-junction-title">${t('Transition between clips')}</h2>
       <div class="tl-junction-kinds">
         <button type="button" class="btn tl-junction-kind${isCut ? ' is-active' : ''}" data-act="cut">${t('Cut')}</button>
-        <button type="button" class="btn tl-junction-kind${isCut ? '' : ' is-active'}" data-act="xfade">${t('Crossfade')}</button>
+        <button type="button" class="btn tl-junction-kind${isXfade ? ' is-active' : ''}" data-act="xfade">${t('Crossfade')}</button>
       </div>
+      ${isOwn ? `<p class="tl-junction-note">${t('These clips have their own transitions here. Cut or Crossfade replaces them.')}</p>` : ''}
       <label class="field-row field-row--inline tl-junction-dial">
         <span class="field-label">${t('Length (ms)')}</span>
         <input class="field-input tl-num" type="number" min="${MIN_TRANSITION_MS}" max="${MAX_TRANSITION_MS}" step="50" value="${curMs}" data-act="ms">
@@ -58,27 +70,16 @@ export function openJunction(tp: TpCtx, aId: string, bId: string): void {
   /** Live kind, read off the buttons, so Done commits what the dialog is showing. */
   const isCutNow = (): boolean =>
     !!modal.el.querySelector('[data-act="cut"]')?.classList.contains('is-active');
+  const isXfadeNow = (): boolean =>
+    !!modal.el.querySelector('[data-act="xfade"]')?.classList.contains('is-active');
   const apply = (kind: 'cut' | 'xfade'): void => {
     const ms = Math.round(
       clamp(finite(msInput?.value, curMs), MIN_TRANSITION_MS, MAX_TRANSITION_MS)
     );
-    const rows = getBoxes();
     // Crossfade v1 is MODEL-FREE: no overlap is stored. A.exit + B.enter both fade for
-    // `ms`, straddling the cut; the compositor reads the pair. Cut clears both.
-    const patched = tp.helpers.patchBox(
-      tp.helpers.patchBox(
-        rows,
-        aId,
-        kind === 'cut'
-          ? { [cfg.exitField]: 'none' }
-          : { [cfg.exitField]: 'fade', [cfg.exitMsField]: ms }
-      ),
-      bId,
-      kind === 'cut'
-        ? { [cfg.enterField]: 'none' }
-        : { [cfg.enterField]: 'fade', [cfg.enterMsField]: ms }
-    );
-    tp.helpers.write(patched);
+    // `ms`, straddling the cut; the compositor reads the pair. Cut clears both. The
+    // writer is timeline-math's, shared with the drag on the seam (crossfade.ts).
+    tp.helpers.write(setJunction(getBoxes(), cfg, aId, bId, kind === 'cut' ? null : tp.opts.projectTime ? tp.helpers.quantiseTime(ms / 1000) * 1000 : ms));
   };
   modal.el.addEventListener('click', (ev) => {
     const act = (ev.target as HTMLElement | null)?.closest<HTMLElement>('[data-act]')?.dataset
@@ -95,7 +96,10 @@ export function openJunction(tp: TpCtx, aId: string, bId: string): void {
     } else if (act === 'done') {
       // Done must COMMIT the dialog's state, not discard it: editing only the length
       // of an existing crossfade and pressing Done wrote nothing at all.
-      apply(isCutNow() ? 'cut' : 'xfade');
+      // With neither kind chosen (the clips keep their own transitions) Done changes
+      // nothing: it must never turn a rise into a crossfade because a length was shown.
+      if (isCutNow()) apply('cut');
+      else if (isXfadeNow()) apply('xfade');
       modal.close();
     }
   });
@@ -163,7 +167,7 @@ export function onKey(tp: TpCtx, e: KeyboardEvent): void {
     e.stopPropagation();
     return;
   }
-  const { bars, clock, onionMenu, root, selection } = tp;
+  const { bars, clock, root, selection } = tp;
   if (!tp.open) return;
   if (!panelKeysActive(root, document.activeElement, tp.hovered)) return;
   if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'a'
@@ -192,9 +196,14 @@ export function onKey(tp: TpCtx, e: KeyboardEvent): void {
     tp.keyframes.seekDiamond(e.key === 'ArrowRight' ? 1 : -1);
     return;
   }
+  if (e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault(); e.stopPropagation(); tp.marks.seek(e.key === 'ArrowRight' ? 1 : -1); return;
+  }
+  if (e.altKey && e.shiftKey && !e.metaKey && !e.ctrlKey && e.key.toLowerCase() === 'o') {
+    e.preventDefault(); e.stopPropagation(); tp.onionMenu.open(); return;
+  }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const total = tp.rows.durationSec();
-  const stepS = e.shiftKey ? 1 : FRAME_S;
   switch (e.key) {
     case ' ':
     case 'Spacebar': {
@@ -209,12 +218,12 @@ export function onKey(tp: TpCtx, e: KeyboardEvent): void {
     case 'ArrowLeft':
       e.preventDefault();
       e.stopPropagation();
-      clock.seek(Math.max(0, clock.t() - stepS * 1000));
+      clock.seek(Math.max(0, (e.shiftKey ? clock.t() - 1000 : tp.helpers.stepTime(clock.t() / 1000, -1) * 1000)));
       return;
     case 'ArrowRight':
       e.preventDefault();
       e.stopPropagation();
-      clock.seek(Math.min(total * 1000, clock.t() + stepS * 1000));
+      clock.seek(Math.min(total * 1000, (e.shiftKey ? clock.t() + 1000 : tp.helpers.stepTime(clock.t() / 1000, 1) * 1000)));
       return;
     case 'ArrowUp':
     case 'ArrowDown': {
@@ -284,13 +293,13 @@ export function onKey(tp: TpCtx, e: KeyboardEvent): void {
     case '<':
       e.preventDefault();
       e.stopPropagation();
-      tp.edit.trimBy(-(e.shiftKey ? TRIM_SHIFT_FRAMES : 1) * FRAME_S);
+      tp.edit.trimBy(-(e.shiftKey ? TRIM_SHIFT_FRAMES : 1) * tp.helpers.frameStep());
       return;
     case '.':
     case '>':
       e.preventDefault();
       e.stopPropagation();
-      tp.edit.trimBy((e.shiftKey ? TRIM_SHIFT_FRAMES : 1) * FRAME_S);
+      tp.edit.trimBy((e.shiftKey ? TRIM_SHIFT_FRAMES : 1) * tp.helpers.frameStep());
       return;
     case 'e':
     case 'E':
@@ -306,25 +315,32 @@ export function onKey(tp: TpCtx, e: KeyboardEvent): void {
     // not be given the smaller half of a feature. Always preventDefault, including
     // on a selection with nothing to key: a shortcut that sometimes falls through to
     // the page is a shortcut nobody can trust.
+    case 'm':
+    case 'M':
+      e.preventDefault(); e.stopPropagation(); tp.marks.add(e.shiftKey); return;
+    case 'i':
+    case 'I':
+      e.preventDefault(); e.stopPropagation(); tp.marks.setMark('inMs'); return;
+    case 'j':
+    case 'J':
+    case 'l':
+    case 'L':
+      e.preventDefault(); e.stopPropagation(); tp.rangePreview.shuttle(e.key.toLowerCase() === 'j' ? -1 : 1); return;
     case 'k':
     case 'K': {
       e.preventDefault();
       e.stopPropagation();
-      tp.keyframes.addKeyframeAction({ speak: true });
+      if (e.shiftKey) tp.keyframes.addKeyframeAction({ speak: true });
+      else { tp.rangePreview.stopShuttle(); tp.clock.pause(); }
       return;
     }
-    // Onion skin: `o` toggles it, Shift+O opens its options - the same bare-letter /
-    // Shift-letter split `s`/`S` and `d`/`D` already use, and the only key space left
-    // that no browser binding fights for. Both cases fold into ONE branch and the
-    // modifier is read off the EVENT, exactly like `s`/`S`: KeyboardEvent.key reports
-    // the produced character, so with Caps Lock on a bare `o` arrives as 'O' and
-    // Shift+o as 'o' - branching on the letter's case inverts the pair.
+    // Shift+O toggles ghosts; the unmodified O sets the out point.
     case 'o':
     case 'O':
       e.preventDefault();
       e.stopPropagation();
-      if (e.shiftKey) onionMenu.open();
-      else tp.menus.toggleOnion();
+      if (e.shiftKey) tp.menus.toggleOnion();
+      else tp.marks.setMark('outMs');
       return;
     case '+':
     case '=':
@@ -472,9 +488,10 @@ export function onFcSeek(tp: TpCtx, e: Event): void {
 // ── open / close / destroy ──────────────────────────────────────────────────
 
 export function setOpen(tp: TpCtx, next: boolean): void {
-  const { addMenu, canvasEl, clock, ctxMenu, easeMenu, onionMenu, reserve, root, stageEl } = tp;
+  const { addMenu, canvasEl, clock, ctxMenu, easeMenu, onionMenu, reserve, root } = tp;
   if (tp.disposed || next === tp.open) return;
   tp.open = next;
+  if (!next) tp.lottie.close();
   root.hidden = !tp.open;
   if (tp.open) {
     // FIRST: lift the hold the last close took, so the clock may write again. The
@@ -482,13 +499,7 @@ export function setOpen(tp: TpCtx, next: boolean): void {
     // resume at the same playhead rather than at zero (plans/179 T2).
     tp.seqHold?.();
     tp.seqHold = null;
-    const stageH = stageEl.getBoundingClientRect().height || 0;
-    // CSS makes this a fixed compact transport on a phone/short landscape.
-    // Reserve the height it ACTUALLY paints, not the remembered 190px desktop
-    // height; the stale reserve was shrinking a 16:9 artboard to a few pixels.
-    tp.panelH = tp.helpers.compactPanel() ? MIN_PANEL_H : clampPanelH(tp.panelH, stageH, tp.gestures.chromeH());
-    root.style.height = `${tp.panelH}px`;
-    reserve(tp.panelH + RESERVE_PAD);
+    tp.gestures.resizePanel(tp.panelH);
     tp.lastKey = '\u0000';
     tp.fitPending = true;
     tp.syncing.sync();
@@ -557,6 +568,7 @@ export function destroy(tp: TpCtx): void {
   // the clock, and a take that outlived the panel is a microphone nobody can stop.
   tp.recording.cancelTake();
   tp.disposed = true;
+  tp.lottie.destroy();
   if (tp.noteTimer) {
     clearTimeout(tp.noteTimer);
     tp.noteTimer = 0;
@@ -568,6 +580,9 @@ export function destroy(tp: TpCtx): void {
   if (typeof document !== 'undefined')
     document.removeEventListener('visibilitychange', tp.subtitles.onVisibility);
   tp.gestures.endGesture(tp.gesture);
+  tp.crossfade.destroy();
+  tp.rangePreview.destroy();
+  tp.markerMenu?.close();
   // Body-mounted: these outlive root.remove() unless they are closed explicitly.
   try {
     tp.recordMenu.close();
@@ -684,6 +699,8 @@ export function destroy(tp: TpCtx): void {
   }
   try {
     stageEl.removeEventListener('fc-seek', tp.panel.onFcSeek);
+    tp.canvasEl.removeEventListener('canvas-resize', tp.panel.onViewportResize);
+    window.visualViewport?.removeEventListener('resize', tp.panel.onViewportResize);
   } catch {
     /* stage detached */
   }
@@ -754,8 +771,16 @@ export function kfPoseWrite(tp: TpCtx,
   for (const id of ids) next = writeKfPose(next, cfg, id, at, delta, mode);
   return next;
 }
+export function onViewportResize(tp: TpCtx): void {
+  if (tp.disposed || !tp.open || tp.gesture) return;
+  tp.gestures.resizePanel(tp.panelH);
+  tp.rows.restyle(tp.getBoxes());
+  tp.rows.updatePlayhead(tp.clock.t());
+}
+
 export function panelOps(tp: TpCtx) {
   return {
+    onViewportResize: bindOp(tp, onViewportResize),
     openJunction: bindOp(tp, openJunction),
     openShortcuts: bindOp(tp, openShortcuts),
     onKey: bindOp(tp, onKey),

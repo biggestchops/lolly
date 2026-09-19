@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: MPL-2.0
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import { fixture } from './helpers/emoji-fixtures.ts';
+import { getBrowser, closeBrowser } from '../packages/node-shell/src/browsers.ts';
+const origin=process.env.LOLLY_EXPORT_TEST_URL;
+test('custom emoji controls, credits, SVG text and rich-text composition use admitted artwork',{skip:origin?false:'set LOLLY_EXPORT_TEST_URL',timeout:60000},async()=>{
+  const f=await fixture(),browser=await getBrowser(),context=await browser.newContext();
+  try {
+    const page=await context.newPage();
+    await page.route('**/emoji-workflow-test',route=>route.fulfill({contentType:'text/html;charset=utf-8',body:'<!doctype html><body><div id="control"></div><div style="position:relative"><div id="edit" contenteditable="true" style="font:32px sans-serif">A😀</div></div></body>'}));
+    await page.goto(`${origin}/emoji-workflow-test`);
+    const initial=await page.evaluate(async({root,bundle})=>{
+      const web='/src/';
+      const {createEmojiAPI}=await import(web+'bridge/emoji.ts');
+      const {mountEmojiStyleControl}=await import(web+'components/emoji-style-control.ts');
+      const {mountEditableEmojiDisplay}=await import(web+'components/editable-emoji-display.ts');
+      const {applyEmojiToDom}=await import(root+'engine/src/emoji-dom.ts');
+      const {applyEmojiToSvgText}=await import(root+'engine/src/emoji-svg-text.ts');
+      const {readEmojiPack}=await import(root+'engine/src/emoji-pack.ts');
+      const {emojiCreditsText}=await import(root+'engine/src/emoji-rights.ts');
+      const records=new Map(),downloads: {filename:string;text:string}[]=[];
+      const assets={query:async()=>[],get:async(id:string)=>({...records.get(id),source:'user'}),bytes:async(ref:{id:string}|string)=>new Uint8Array(await records.get(typeof ref==='string'?ref:ref.id).blob.arrayBuffer()),_exportUserAssets:async()=>[...records.values()],_getUserRecord:async(id:string)=>records.get(id)??null,_uploadUserAsset:async(record:{id:string})=>{records.set(record.id,record);}};
+      const emoji=createEmojiAPI(assets),info=await emoji.install(new TextEncoder().encode(JSON.stringify(bundle)));
+      const chosen={schemaVersion:1,primary:info.pin,fallbacks:[],metricsPolicy:'inline-em-v1',treatment:{mode:'original',strengthBps:0}};
+      const admitted=await readEmojiPack(await emoji.manifest(info.pin),info.pin);if(!admitted.ok)throw new Error(admitted.issue.message);
+      const io={parseXml:emoji.parseXml,loadArtwork:async(pin:unknown,asset:unknown)=>emoji.artwork(pin,asset)};
+      const sample=document.createElement('div');sample.textContent='😀';const painted=await applyEmojiToDom(sample,chosen,[admitted.pack],io);
+      const host={emoji,assets,export:{download:async(blob:Blob,filename:string)=>{downloads.push({filename,text:await blob.text()});}}};
+      mountEmojiStyleControl(document.getElementById('control'),{host,mode:'document',value:chosen,sets:await emoji.sets(),palette:[],credits:()=>emojiCreditsText(painted.census),onChange(next:unknown){(window as unknown as {choice:unknown}).choice=next;}});
+      const dispose=mountEditableEmojiDisplay(document.getElementById('edit'),(node:HTMLElement)=>applyEmojiToDom(node,chosen,[admitted.pack],io));
+      Object.assign(window,{downloads,dispose});
+      const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.innerHTML='<text x="2" y="30" font-size="30">😀</text>';document.body.append(svg);
+      const result=await applyEmojiToSvgText(svg,chosen,[admitted.pack],io,{fontUrl:async()=>null});
+      return {svg:result.replaced,retained:svg.querySelector('defs text')?.textContent};
+    },{root:'/@fs'+fileURLToPath(new URL('../',import.meta.url)),bundle:{schemaVersion:1,kind:'emoji-pack-bundle',manifest:new TextDecoder().decode(f.bytes),artwork:{'1f600.svg':new TextDecoder().decode(f.artwork)}}});
+    assert.equal(initial.svg,1);assert.equal(initial.retained,'😀');
+    await page.waitForSelector('[data-emoji-editing-display] .lolly-emoji',{timeout:5000}).catch(async()=>{throw new Error(await page.locator('#edit').evaluate(el=>el.parentElement!.outerHTML));});
+    await page.locator('#edit').evaluate(field=>field.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true})));
+    assert.equal(await page.locator('[data-emoji-editing-display]').count(),0);
+    assert.equal(await page.locator('#edit').textContent(),'A😀');
+    await page.locator('#edit').evaluate(field=>field.dispatchEvent(new CompositionEvent('compositionend',{bubbles:true})));
+    await page.waitForSelector('[data-emoji-editing-display] .lolly-emoji');
+    await page.getByRole('button',{name:'Download emoji credits'}).click();
+    await page.waitForFunction(()=>(window as unknown as {downloads:unknown[]}).downloads.length===1);
+    await page.getByRole('button',{name:'Create emoji set',exact:true}).click();
+    await page.locator('[name=family]').fill('Workshop');await page.locator('[name=id]').fill('user/emoji/workshop');
+    await page.locator('[name=creator]').fill('Test artist');await page.locator('[name=source]').fill('https://example.com/emoji');
+    await page.locator('[name=notices]').fill('Test artist, CC BY 4.0.');await page.locator('[name=license]').selectOption('CC-BY-4.0');
+    await page.locator('[name=art]').setInputFiles({name:'1f600.svg',mimeType:'image/svg+xml',buffer:Buffer.from(f.artwork)});
+    await page.getByRole('button',{name:'Create set',exact:true}).click();
+    await page.waitForFunction(()=>(window as unknown as {choice?:{primary:{id:string}}}).choice?.primary.id==='user/emoji/workshop');
+    await page.getByRole('button',{name:'Export emoji set',exact:true}).click();
+    await page.waitForFunction(()=>(window as unknown as {downloads:unknown[]}).downloads.length===2);
+    const output=await page.evaluate(()=>(window as unknown as {downloads:{filename:string;text:string}[]}).downloads);
+    assert.match(output[0]!.text,/CC BY|CC-BY/);assert.equal(JSON.parse(JSON.parse(output[1]!.text).manifest).id,'user/emoji/workshop');
+    await page.evaluate(()=>(window as unknown as {dispose:()=>void}).dispose());
+    assert.equal(await page.locator('[data-emoji-editing-display]').count(),0);assert.equal(await page.locator('#edit').textContent(),'A😀');
+  } finally {await context.close();await closeBrowser();}
+});

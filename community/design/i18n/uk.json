@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Знизу зліва",
   "inputs.boxes.fields.imgpos.options.center bottom": "Знизу",
   "inputs.boxes.fields.imgpos.options.right bottom": "Знизу справа",
-  "description": "Відкрите полотно для вільного розташування - текст, зображення, фігури й живі рендери з інших ваших інструментів Lolly, усе узгоджене з вашою дизайн-системою."
+  "description": "Відкрите полотно для вільного розташування - текст, зображення, фігури й живі рендери з інших ваших інструментів Lolly, усе узгоджене з вашою дизайн-системою.",
+  "inputs.projectFps.label": "Частота кадрів проєкту",
+  "inputs.sequenceMarks.label": "Маркери часової шкали",
+  "inputs.boxes.fields.animationId.label": "Анімація в джерелі",
+  "inputs.boxes.fields.animationEdits.label": "Внутрішні зміни анімації"
 }

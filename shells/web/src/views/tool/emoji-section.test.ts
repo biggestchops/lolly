@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import type { EmojiSetInfoV1, EmojiStyleV1 } from '@lolly-tools/core/emoji-v1';
+import { DEFAULT_EMOJI_PIN, defaultEmojiStyle } from '../../../../../engine/src/emoji-default.ts';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'https://lolly.tools/' });
 for (const k of ['window', 'document', 'HTMLElement', 'HTMLInputElement', 'HTMLSelectElement', 'Element', 'Node', 'Event', 'MouseEvent', 'localStorage']) {
@@ -130,18 +131,18 @@ test('a link beats the saved session, which beats the profile preference', async
     session: { emoji: SET_KEY, emojifx: 'snap' },
     onStyle: (_s, params) => seen.push(params),
   });
-  assert.deepEqual(seen.at(-1), { emoji: 'community/emoji/openmoji/color@17.0.0', emojifx: 'mono' });
+  assert.deepEqual(seen.at(-1), { emoji: 'community/emoji/openmoji/color@17.0.0', emojifx: 'mono', emojistyle: JSON.stringify(runtime.emoji.style) });
 
   const fromSession: (EmojiParamPair | null)[] = [];
   await mountEmojiSection({
     root: sidebar(), host, runtime, session: { emoji: SET_KEY, emojifx: 'snap' },
     onStyle: (_s, params) => fromSession.push(params),
   });
-  assert.deepEqual(fromSession.at(-1), { emoji: SET_KEY, emojifx: 'snap' });
+  assert.deepEqual(fromSession.at(-1), { emoji: SET_KEY, emojifx: 'snap', emojistyle: JSON.stringify(runtime.emoji.style) });
 
   const fromProfile: (EmojiParamPair | null)[] = [];
   await mountEmojiSection({ root: sidebar(), host, runtime, onStyle: (_s, params) => fromProfile.push(params) });
-  assert.deepEqual(fromProfile.at(-1), { emoji: SET_KEY, emojifx: 'snap' });
+  assert.deepEqual(fromProfile.at(-1), { emoji: SET_KEY, emojifx: 'snap', emojistyle: JSON.stringify(runtime.emoji.style) });
 });
 
 test('a seed with no set chosen anywhere sets no style and writes no params', async () => {
@@ -154,6 +155,30 @@ test('a seed with no set chosen anywhere sets no style and writes no params', as
   mounted.destroy();
 });
 
+test('the runtime default reaches the document and share link, while explicit overrides win', async () => {
+  const initial = defaultEmojiStyle([{ pin: DEFAULT_EMOJI_PIN }])!;
+  const host = fakeHost({ sets: [SET, { ...SET, pin: DEFAULT_EMOJI_PIN, label: 'Fluent High Contrast' }] });
+  const runtime = fakeRuntime(true, { style: initial, replaced: 0 });
+  const written: (EmojiParamPair | null)[] = [];
+  const mounted = await mountEmojiSection({ root: sidebar(), host, runtime, onStyle: (_s, p) => written.push(p) });
+  assert.deepEqual(mounted.style, initial);
+  assert.equal(written.at(-1)?.emojistyle, JSON.stringify(initial));
+  assert.equal(showEmojiSection(runtime.emoji, 2), false, 'an unused default stays out of the sidebar');
+  runtime.announce({ replaced: 1 });
+  assert.equal(showEmojiSection(runtime.emoji, 2), true);
+  mounted.destroy();
+
+  for (const emoji of ['none', 'not/installed@1.0.0', SET_KEY]) {
+    const current = fakeRuntime(true, { style: initial });
+    const section = await mountEmojiSection({
+      root: sidebar(), host, runtime: current,
+      url: { emoji, emojifx: 'original' }, onStyle: () => {},
+    });
+    assert.equal(current.emoji.style?.primary.id ?? null, emoji === SET_KEY ? SET.pin.id : null);
+    section.destroy();
+  }
+});
+
 test('changing the set drives the runtime and hands the view the URL params', async () => {
   const root = sidebar();
   const runtime = fakeRuntime();
@@ -163,12 +188,12 @@ test('changing the set drives the runtime and hands the view the URL params', as
   select.value = SET_KEY;
   select.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 0));
-  assert.deepEqual(seen.at(-1), { emoji: SET_KEY, emojifx: 'original' });
+  assert.deepEqual(seen.at(-1), { emoji: SET_KEY, emojifx: 'original', emojistyle: JSON.stringify(runtime.emoji.style) });
   assert.equal(runtime.styles.at(-1)!.primary.id, SET.pin.id);
 
   root.querySelector<HTMLElement>('[data-emoji-fx="mono"]')!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 0));
-  assert.deepEqual(seen.at(-1), { emoji: SET_KEY, emojifx: 'mono' });
+  assert.deepEqual(seen.at(-1), { emoji: SET_KEY, emojifx: 'mono', emojistyle: JSON.stringify(runtime.emoji.style) });
   const style = runtime.styles.at(-1)!;
   assert.equal(style.treatment.mode, 'mono');
   assert.deepEqual('palette' in style.treatment ? style.treatment.palette : [], [{ id: '{color.brand.primary}', hex: '#0c322c' }]);
@@ -179,7 +204,7 @@ test('changing the set drives the runtime and hands the view the URL params', as
   live.value = '';
   live.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   await new Promise((r) => setTimeout(r, 0));
-  assert.equal(seen.at(-1), null);
+  assert.deepEqual(seen.at(-1), { emoji: 'none', emojifx: '' });
   assert.equal(runtime.styles.at(-1), null);
   mounted.destroy();
 });
@@ -235,10 +260,10 @@ test('picker choices update the sidebar, document writer and chromeless dock exa
     runtime.announce({ style });
     runtime.announce({ replaced: 3 });
     assert.equal(mounted.style?.primary.id, SET.pin.id);
-    assert.deepEqual(written, [{ emoji: SET_KEY, emojifx: 'original' }]);
+    assert.deepEqual(written, [{ emoji: SET_KEY, emojifx: 'original', emojistyle: JSON.stringify(style) }]);
     if (!chromeless) assert.equal(root.querySelector<HTMLSelectElement>('[data-emoji-set]')!.value, SET_KEY);
     runtime.announce({ style: null });
-    assert.equal(written.at(-1), null);
+    assert.deepEqual(written.at(-1), { emoji: 'none', emojifx: '' });
     mounted.destroy();
     runtime.announce({ style });
     assert.equal(written.length, 2);

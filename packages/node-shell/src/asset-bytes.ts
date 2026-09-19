@@ -22,8 +22,8 @@ export function decodeDataUrl(url: string): Uint8Array {
   return new Uint8Array(Buffer.from(decodeURIComponent(payload), 'utf8'));
 }
 
-export async function assetBytes(target: { url: string } | string, opts: AssetBytesOpts = {}): Promise<Uint8Array> {
-  const url = typeof target === 'string' ? target : target.url;
+export async function assetBytes(target: { url: string; original?: { url: string } } | string, opts: AssetBytesOpts = {}): Promise<Uint8Array> {
+  const url = typeof target === 'string' ? target : target.original?.url ?? target.url;
   if (!url) throw new Error('asset has no url');
   if (url.startsWith('data:')) return decodeDataUrl(url);
   if (url.startsWith('file:')) return new Uint8Array(await readFile(fileURLToPath(url)));

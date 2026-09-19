@@ -257,6 +257,10 @@ async function _familyFor(h) {
 async function _textUv(h, text, aspect) {
   if (!h || !h.text || !h.text.fontUrl || !h.text.toPath) throw new Error('this host cannot resolve fonts');
   var family = await _familyFor(h);
+  if (h.emoji && h.emoji.renderText && /[\u200d\u20e3\u2190-\u2bff\u3030\u303d\u3297\u3299\ud800-\udfff\ufe0f]/.test(text)) {
+    var art = await h.emoji.renderText({ text: text, fontFamily: family, fontSize: 200, fontWeight: 700 });
+    return _logoUv('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(art.svg), aspect);
+  }
   var f = await h.text.fontUrl(family, { weight: 700 });
   if (!f || !f.url) throw new Error('no font file found for "' + family + '"');
   var run = await h.text.toPath({ text: text, fontUrl: f.url, fontSize: 200, variations: f.variations });
@@ -640,7 +644,7 @@ function _host(ctx) {
 }
 
 function onInit(ctx) { return _compute(ctx.model, _host(ctx)); }
-function onInput(ctx) { return _compute(ctx.model, _host(ctx)); }
+function onInput(ctx) { if (ctx.id === '__emoji') { _targets = null; _tpending = null; } return _compute(ctx.model, _host(ctx)); }
 
 /**
  * Make the loop as long as the audio it is playing.

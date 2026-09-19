@@ -5,7 +5,7 @@ import type { PickerHost } from '../views/picker.ts';
  *  picker's UPLOAD_ACCEPT (that list deliberately excludes design formats). */
 const UNIVERSAL_ACCEPT =
   '.fig,.penpot,.zip,.tar,.tgz,.gz,.svg,.idml,.indd,.pdf,.ai,.pptx,.docx,.xlsx,.csv,.tsv,.psd,.psb,.xcf,image/*,video/*,audio/*,' +
-  '.mov,.json,.lottie,.mp3,.wav,.ogg,.m4a,.flac,.bmp,.ico,.cur,.svgz,.lolly';
+  '.mov,.json,.lottie,.mp3,.wav,.ogg,.m4a,.flac,.jxl,.bmp,.ico,.cur,.svgz,.lolly';
 
 /**
  * No-drag fallback (the welcome dialog's "Bring your design" tile): a native

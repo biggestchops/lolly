@@ -285,7 +285,7 @@ export interface FcCtx {
   mo: MutationObserver;
   timelineAutoOpened: boolean;
   unsub: undefined | (() => void);
-  pendingImport: { file: File; scenes: boolean; rules?: boolean; } | null;
+  pendingImport: { file: File; scenes: boolean; rules?: boolean; animation?: boolean; } | null;
   portCfg: BoxFieldConfig;
   modelPort: ModelPort;
   artboardPort: ArtboardPort;

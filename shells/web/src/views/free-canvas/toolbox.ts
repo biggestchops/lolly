@@ -629,9 +629,9 @@ export function paintBgField(fc: FcCtx): void {
   wrap.addEventListener('pointerdown', (e) => e.stopPropagation());
   fc.bgSlot.replaceChildren(wrap);
   wireColorField(wrap, {
-    onChange: (_id, val) => {
+    onChange: (_id, val, detail) => {
     const { bgInputId } = fc;
-      const col = fc.helpers.unwrapColor(val);
+      const col = fc.helpers.unwrapColor(val, detail);
       // Read the target FRESH: the selection may have moved since the field was built.
       const now = bgTarget(fc);
       if (now.frameId && cfg.fillField) {

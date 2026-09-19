@@ -1103,7 +1103,10 @@ function svgWithBars(svgText, shapes, mark, scale) {
     // nothing: what was under it is gone from the file, not hidden by it.
     const lay = label ? stampFit(s, label, 14 / (scale || 1)) : null;
     if (lay) {
-      parts.push(
+      if (mark.labelArtwork) {
+        const art = mark.labelArtwork, ah = Math.max(0, Math.min(lay.size * 1.3, s.y1 - s.y0 - 2, (s.x1 - s.x0 - 2) * art.height / art.width)), aw = ah * art.width / art.height;
+        parts.push(`<image x="${num2(lay.cx-aw/2)}" y="${num2(lay.cy-ah/2)}" width="${num2(aw)}" height="${num2(ah)}" href="data:image/svg+xml,${encodeURIComponent(art.svg)}"/>`);
+      } else parts.push(
         `<text x="${num2(lay.cx)}" y="${num2(lay.cy)}" fill="${labelInk}" font-family="sans-serif"`
         + ` font-size="${num2(lay.size)}" font-weight="600" text-anchor="middle"`
         + ` dominant-baseline="central">${xmlEscape(label)}</text>`
@@ -2802,7 +2805,8 @@ function fillShape(ctx, s, color) {
 // pass, then the marks at 100% opacity in the resolved ink. Returns the canvas.
 // Grayscale runs BEFORE the marks: the scanned-page mode is about the source's
 // colour (the yellow channel tracking dots live in), and the mark is ours.
-function drawRedacted(img, W, H, rects, grayscale, mark) {
+async function drawRedacted(img, W, H, rects, grayscale, mark) {
+  const labelArt = mark && mark.labelArtwork ? await loadImageFromBytes(new TextEncoder().encode(mark.labelArtwork.svg), 'image/svg+xml') : null;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -2835,7 +2839,10 @@ function drawRedacted(img, W, H, rects, grayscale, mark) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.font = `600 ${lay.size}px SUSE, system-ui, sans-serif`;
-      ctx.fillText(label, lay.cx, lay.cy);
+      if (labelArt) {
+        const ah = Math.max(0, Math.min(lay.size * 1.3, s.y1 - s.y0 - 2, (s.x1 - s.x0 - 2) * labelArt.height / labelArt.width)), aw = ah * labelArt.width / labelArt.height;
+        ctx.drawImage(labelArt,lay.cx-aw/2,lay.cy-ah/2,aw,ah);
+      } else ctx.fillText(label, lay.cx, lay.cy);
     }
   }
   return canvas;
@@ -3018,6 +3025,12 @@ async function exportFile({ model, host }) {
   // mark must never fall back to the neutral ink just because the brand tokens
   // were slow, or the export would not match the preview the user approved.
   const mark = await resolveMark(host, inputs, true);
+  if (mark.label && host.emoji && host.emoji.renderText && /[\u200d\u20e3\u2190-\u2bff\u3030\u303d\u3297\u3299\ud800-\udfff\ufe0f]/.test(mark.label)) {
+    mark.labelArtwork = await host.emoji.renderText({text:mark.label,fontFamily:'SUSE',fontSize:64,fontWeight:600,fill:mark.labelInk});
+    if (host.codec && host.codec.decode && host.codec.preview) {
+      mark.labelImage = await host.codec.preview(await host.codec.decode(new TextEncoder().encode(mark.labelArtwork.svg)));
+    }
+  }
 
   // ── PDF: rasterise-and-rebuild in the shell ──
   if (info.kind === 'PDF') {
@@ -3051,6 +3064,7 @@ async function exportFile({ model, host }) {
       radius: mark.radius,
       label: mark.label,
       labelColor: mark.labelInk,
+      labelImage: mark.labelImage,
     });
     if (!res || !res.bytes) throw new Error('PDF redaction returned no output. Nothing was downloaded.');
     // A bar aimed at a page the document does not have is silently skipped by
@@ -3223,7 +3237,7 @@ async function exportFile({ model, host }) {
   }
   // Corner radius scaled to this frame, exactly as the preview scaled it.
   const frameMark = { ...mark, radius: markRadiusFor(mark.style, W, H) };
-  const canvas = drawRedacted(img, W, H, rects, grayscale, frameMark);
+  const canvas = await drawRedacted(img, W, H, rects, grayscale, frameMark);
 
   // Same-family re-encode is the metadata kill: jpeg→jpeg, png→png, webp→webp
   // (quality 1 asks the encoder for its lossless/best mode). SVG rasterises to

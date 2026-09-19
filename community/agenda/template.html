@@ -1,3 +1,19 @@
+{{#if isPresentation}}
+<main data-portable-root data-presentation class="ag-screen ag-look-{{programmeStyle}}" style="--ag-paper:{{paperColor}};--ag-ink:{{inkColor}};--ag-muted:{{mutedColor}};--ag-rule:{{ruleColor}};--ag-accent:{{accentColor}}">
+<script type="application/json" data-ag-document>{{{agendaDocument}}}</script>
+{{#if logo}}<img data-ag-logo src="{{asset logo}}" alt="{{headingText}}">{{/if}}
+{{#if backgroundImage}}<img data-ag-background src="{{asset backgroundImage}}" alt="">{{/if}}
+{{#each days}}{{#each sessions}}{{#if image}}<img data-ag-session-image="{{id}}" src="{{image}}" alt="">{{/if}}{{/each}}{{/each}}
+<canvas class="ag-backdrop" aria-hidden="true"></canvas>
+<div class="ag-live"></div>
+<section class="ag-fallback"><h1>{{headingText}}</h1><p>{{subtitleText}}</p>
+{{#each days}}<h2>{{label}}</h2>{{#each sessions}}<article data-room="{{room}}"><p>{{timeText}} · {{room}} · {{trackName}}</p><h3>{{title}}</h3><p>{{speaker}}</p><p>{{note}}</p></article>{{/each}}{{/each}}
+</section>
+</main>
+{{else}}
+<main data-portable-root data-presentation class="ag-screen ag-legacy ag-look-{{programmeStyle}}" style="--ag-paper:{{paperColor}};--ag-ink:{{inkColor}};--ag-muted:{{mutedColor}};--ag-rule:{{ruleColor}};--ag-accent:{{accentColor}}">
+<script type="application/json" data-ag-document>{{{agendaDocument}}}</script>
+<canvas class="ag-backdrop" aria-hidden="true"></canvas><div class="ag-live"></div><section class="ag-fallback">
 {{!-- Agenda.
      Three renders of one table. The hook has already grouped the sessions by
      day, given every track its colour and column, and worked out each cell's
@@ -261,3 +277,6 @@
   {{#if zoneWarning}}<p class="ag-zone-warn">{{zoneWarning}}</p>{{/if}}
   {{/if}}
 </div>
+
+</section></main>
+{{/if}}

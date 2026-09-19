@@ -6,11 +6,52 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.216.0
+
+- Hooks and portable documents receive the effective tool language, including URL and CLI overrides, without rewriting the saved profile.
+
+- Export lifecycle hooks receive the current input model, so validation works without reading the DOM or relying on state shared with a worker.
+
+- Table inputs can declare semantic named fields, date/time/choice editors, stable column names and a preview target. The input model carries these hints to a shared programme editor with mapped import, row operations, undo/redo and bulk time shifts. Existing table values and URL encoding stay compatible.
+- Trusted portable presentations can produce bounded event ZIP bundles through the normal export path, with self-contained screen variants, a contact sheet, PDF, poster, calendar and optional video.
+- Agenda adds event-scoped calendar identities, explicit overnight dates, session status and imagery, intermission/closing recipes, scene coverage reporting and translated authoring and audience controls.
+
+## 1.215.0
+
+- Tools can declare `render.portable` and ship a signed `presentation.js`. The normal runtime loads that browser presentation, and trusted installed tools can export it as self-contained HTML with embedded fonts and images. Untrusted tools cannot export executable documents through this path.
+- PowerPoint slides can carry an embedded MP4, a poster and autoplay/loop timing. `advanceAfterMs` also works on a silent slide independently of narration.
+- Agenda gains responsive screen scenes, a separate event clock and presentation clock, measured title travel, brand backgrounds, portable session search and calendar downloads. Printable exports use full-text pages. Calendar identities can be persisted in the session table, and invalid dates or ambiguous daylight-saving times are reported.
+- Shared table navigation separates cell selection from text editing, including the virtual grid. Arrow keys, rectangular paste/copy, range clearing, Enter, Escape and multiline edits use the same key model.
+
+## 1.214.0
+
+- New work defaults to the pinned Fluent High Contrast set with the original treatment across shells. Explicit document, link, brand and personal choices keep precedence; explicit clearing still draws neutral placeholders. The default downloads artwork only when used.
+- Fluent High Contrast follows the surrounding text colour under the original treatment, including its catalog specimens. Its pinned dark grey foreground paints become `currentColor`; white details remain white, as in OpenMoji Black.
+- Exact emoji style snapshots now retain pack checksums, ordered fallbacks, treatment palettes and protection in links, sessions and portable files. The optional emoji bridge installs validated custom bundles and materializes their dependencies. Runtime-scoped `renderText` and `renderSvg` provide selected artwork to canvas, shape and file-transform tools; SVG text supports bounded curved baselines. Design supports artwork during text editing; simple SVG text uses shaped outlines. The picker can create, import and export sets and download glyph credits. Brand defaults seed every shell.
+- Added bounded original-byte float image decode, composition, preview and still export through optional `host.codec` methods. `exportStill` can hand the host a `CodecFrame`, retaining normal export metadata and credentials. PNG16, classic TIFF, scanline OpenEXR, Radiance and JPEG XL retain precision; JPEG XL can encode PQ Rec.2020 at 16 bits.
+- Design and Darkroom offer optional wide colour / HDR editing. Brand colour references retain authored sRGB and wider faces. Sequence's float compositor reads original decoded video planes and emits real 10-bit PQ video; unavailable encoders and unsupported float effects fail explicitly. Standard editing stays the default. See `hdr-editing.md` for limits and tested paths.
+
+## 1.213.0
+
+- Added portable libjxl 0.12.0 still decoding and lossy/lossless 8-bit sRGB output in web and Node workers. `host.images` accepts `jxl` and `jxl-lossless`; PNG-capable tools derive both export choices. Animation, auxiliary channels and unsupported deep render requests fail explicitly.
+- Added `AssetRef.original` for preserved encoded sources whose `url` is a prepared display image. `assets.bytes(ref)` reads original bytes; history and portable transfers retain the durable source identity and discard temporary URLs.
+- Convert adds verified reversible JPEG compression and original JPEG restoration. Verification compares the complete restored bytes before accepting recompression. Generated JXL carries descriptive XMP and pixel marks, but no signed Content Credentials.
+
+## 1.212.0
+
+- Added source-bound, instance-local Lottie revisions for layer names, visibility and intervals, numeric transform keys and per-axis easing, and static fill/stroke properties. Inserting a numeric key subdivides its temporal curve; existing spatial tangents remain intact. Preview and web/CLI dotLottie export apply the same bounded revision to an immutable source copy.
+- Design appends `animationEdits` to its box wire format. Revisions survive ordinary history, saved sessions, compact document state and portable `.lolly` files without creating hidden asset dependencies. The Sequence timeline exposes nested source layers and property controls alongside its existing transport.
+- Structural export separates independently eased position axes without changing their motion. Independent anchor/scale axis curves fail by layer name with matching-curve or movie-export guidance because they differ across players.
+
 ## 1.211.0
 
 - Added portable `brandContext` and `contextTokens`: resolved colours, font families, asset IDs, recorded source coverage and explicit rules travel with a token document. No font availability, rights or subjective quality verdict is inferred.
 - Added `checkBrandDesign` and `applyBrandFix`: authored Design colours, references, fonts and assets can be compared with a chosen system. Custom values are review items, missing evidence is unknown, and a suggested change checks the original value, layer identity and lock before writing. Rendered contrast and layout remain mounted checks.
 - Added bounded style observations through `summarizeBrandStyles` and `readBrandStyleEvidence`, distinguishing declared values from measured browser samples. The schema records missing fields and capture viewport conditions without carrying selectors or page text.
+
+- Expanded the shared emoji catalog with Fluent Flat, Fluent High Contrast, Noto Color and Blobmoji Color. Bundles have a shared 64 MiB reader ceiling; manifests retain their 32 MiB ceiling. Static SVG admission accepts bounded local shape instances, fixed pixel viewports and integer RGB paints. Source notices now reach export attribution without repeated licence text for each glyph.
+- Added bounded raw Lottie JSON and dotLottie v1/v2 readers, a deterministic v2 writer and a whole-clip sequence compiler. The compiler preserves supported source precompositions, adapts frame-domain timing, namespaces dependencies, packages raster resources and translates supported outer pose keys. Unsupported content fails before delivery.
+- `ExportFormat` adds `lottie`; `ExportOpts.sourceDocument` carries a frozen authored model to structural exporters. Design's web and CLI paths compile the same snapshot. Original package assets retain all animations, and the append-only `animationId` box field records each instance's choice.
 
 ## 1.210.0
 

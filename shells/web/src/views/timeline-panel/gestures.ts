@@ -12,8 +12,9 @@ import { announce } from '../../a11y.ts';
 import { boxTiming, dropIndexAt, edgeZonePx, fmtDelta, fmtDur, fmtTime, groupDropIndex, indexOfId, kfDiamondTimes, kfLocalSec, kfSlideMs, kfTimelineSec, kfTrackDuplicate, kfTrackRetime, moveOverlay, moveOverlays, moveSeqClip, moveSeqClips, restackOverlay, seqBoxes, snapTime, trimClip, trimClips } from '../timeline-math.ts';
 import type { Box, LaneDrop } from '../timeline-math.ts';
 import { prefersReducedMotion } from '../../lib/a11y-prefs.ts';
+import { compactDesignViewport, panelStageHeight } from '../../lib/design-panel-layout.ts';
 import { RESERVE_PAD, SNAP_PX_COARSE, SNAP_PX_FINE, finite } from '../timeline-config.ts';
-import { clampPanelH, edgeBase, isCoarsePointer, pxToTime, snapCandidates, timeToPx } from './shared.ts';
+import { clampPanelH, edgeBase, isCoarsePointer, pxToTime, snapTargets, timeToPx } from './shared.ts';
 import type { Gesture } from './shared.ts';
 import { bindOp, type TpCtx } from './context.ts';
 
@@ -67,10 +68,15 @@ export function maybeSnap(tp: TpCtx,
   if (!tp.snapOn || alt) {
     showSnapline(tp, null);
     tp.snappedAt = null;
-    return raw;
+    return tp.opts.projectTime ? tp.helpers.quantiseTime(raw) : raw;
   }
   const boxes = getBoxes();
-  const cands = snapCandidates(boxes, cfg, clock.t() / 1000, raw, excludeId);
+  const marks = tp.marks.read();
+  const targets = snapTargets({ boxes, cfg, playhead: clock.t() / 1000, around: raw, excludeId }, [
+    ...marks.markers.flatMap(m => [{ t: m.ms / 1000, kind: 'marker' as const }, ...(m.endMs === undefined ? [] : [{ t: m.endMs / 1000, kind: 'range' as const }])]),
+    ...[marks.inMs, marks.outMs].filter((ms): ms is number => ms !== undefined).map(ms => ({ t: ms / 1000, kind: 'range' as const })),
+  ]);
+  const cands = targets.map(point => point.t);
   // The playhead latches onto diamonds; a CLIP being dragged does not. A clip's
   // edges snap to structure (cuts, the ruler's seconds, the playhead) - adding
   // another clip's keyframes to that set would make a move jump to a mark that has
@@ -82,6 +88,9 @@ export function maybeSnap(tp: TpCtx,
   const px = coarse ? SNAP_PX_COARSE : SNAP_PX_FINE;
   const r = snapTime(raw, cands, tp.pxPerSec, px);
   showSnapline(tp, r.snapped);
+  const caught = targets.find(point => point.t === r.snapped)?.kind;
+  const labels = { edge: t('Clip edge'), playhead: t('Playhead'), second: t('Second'), transition: t('Crossfade'), marker: t('Marker'), range: t('Range'), keyframe: t('Keyframe') };
+  tp.snapline.textContent = caught ? labels[caught] : r.snapped !== null ? t('Keyframe') : '';
   // Newly engaged, on a pointer with no cursor to watch: an 8ms tick is the only
   // feedback a thumb over the bar can actually receive. Gated on the LIVE gesture, not
   // on `coarse`: the haptic belongs to the drag, and firing it again from pointerup
@@ -103,7 +112,7 @@ export function maybeSnap(tp: TpCtx,
     }
   }
   tp.snappedAt = r.snapped;
-  return r.t;
+  return tp.opts.projectTime ? tp.helpers.quantiseTime(r.t) : r.t;
 }
 /** The `.tl-edge` element of one bar, by side. */
 export function edgeEl(_tp: TpCtx, 
@@ -127,6 +136,15 @@ export function trimIdsOf(_tp: TpCtx, g: Gesture): string[] {
  */
 export function trimRows(tp: TpCtx, boxes: Box[], ids: readonly string[], edge: 'in' | 'out', d: number): Box[] {
   const { cfg } = tp;
+  if (tp.opts.projectTime) {
+    const lead = boxes.find(box => String(box[cfg.idField]) === ids[0]);
+    if (lead) {
+      const span = tp.rows.span(lead, tp.rows.durationSec());
+      const timing = boxTiming(lead, cfg);
+      const base = edge === 'out' ? span.start + span.dur : timing.lane === 'seq' ? -span.dur : span.start;
+      d = tp.helpers.quantiseTime(base + d) - base;
+    }
+  }
   if (ids.length > 1)
     return trimClips(boxes, cfg, ids, edge, d, (id) => tp.helpers.mediaOf(id).dur, tp.helpers.mediaDur);
   const id = ids[0] ?? '';
@@ -488,6 +506,18 @@ export function chromeH(tp: TpCtx): number {
       ruler.getBoundingClientRect().height
   );
 }
+
+/** One height path for touch, mouse, keyboard, reopening and viewport changes. */
+export function resizePanel(tp: TpCtx, height: number): void {
+  const available = panelStageHeight(tp.stageEl);
+  const fraction = compactDesignViewport() ? 0.7 : 0.5;
+  tp.panelH = clampPanelH(height, available, chromeH(tp), fraction);
+  tp.root.style.height = `${tp.panelH}px`;
+  tp.handle.setAttribute('aria-valuenow', String(tp.panelH));
+  tp.handle.setAttribute('aria-valuemin', String(clampPanelH(0, available, chromeH(tp), fraction)));
+  tp.handle.setAttribute('aria-valuemax', String(clampPanelH(10000, available, chromeH(tp), fraction)));
+  tp.reserve(tp.panelH + RESERVE_PAD);
+}
 /**
  * The trim readout, anchored at the edge under the pointer. Its row was decided in
  * beginTrimChrome; per frame this writes only the horizontal place and the words.
@@ -527,16 +557,13 @@ export function commitMarquee(tp: TpCtx, g: Gesture): void {
 }
 /** Live preview - PANEL DOM ONLY. The model is untouched until pointerup. */
 export function paintGesture(tp: TpCtx, g: Gesture): void {
-  const { bars, cfg, getBoxes, reserve, root, stageEl } = tp;
+  const { bars, cfg, getBoxes } = tp;
   if (g.kind === 'marquee') {
     drawMarquee(tp, g.x0, g.y0, g.x, g.y);
     return;
   }
   if (g.kind === 'resize') {
-    const stageH = stageEl.getBoundingClientRect().height || 0;
-    tp.panelH = clampPanelH(g.h0 + (g.y0 - g.y), stageH, chromeH(tp));
-    root.style.height = `${tp.panelH}px`;
-    reserve(tp.panelH + RESERVE_PAD);
+    resizePanel(tp, g.h0 + (g.y0 - g.y));
     return;
   }
   if (g.kind === 'seek') {
@@ -703,6 +730,7 @@ export function onPointerUp(tp: TpCtx, e: PointerEvent): void {
   const { cfg, getBoxes, marquee, reserve } = tp;
   const g = tp.gesture;
   if (!g) return;
+  if (g.kind === 'resize') { g.y = e.clientY; paintGesture(tp, g); }
   endGesture(tp, g);
 
   // Rubber-band select: hit-test the bars against the final rect. A drag that never
@@ -885,6 +913,7 @@ export function gesturesOps(tp: TpCtx) {
     onPointerDown: bindOp(tp, onPointerDown),
     onPointerMove: bindOp(tp, onPointerMove),
     chromeH: bindOp(tp, chromeH),
+    resizePanel: bindOp(tp, resizePanel),
     paintTrimBadge: bindOp(tp, paintTrimBadge),
     drawMarquee: bindOp(tp, drawMarquee),
     commitMarquee: bindOp(tp, commitMarquee),

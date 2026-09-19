@@ -1832,6 +1832,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
     void (async () => {
       announce(t('Importing…'));
       try {
+        if (pendingImport.animation) { await fc.timeline.importAnimation(pendingImport.file); return; }
         let mode: ImportMode = pendingImport.rules && importArtboardCapable ? 'artboards' : pendingImport.scenes && importSceneCapable ? 'scenes' : 'board';
         if (mode === 'board' && (importArtboardCapable || importSceneCapable)) {
           // The "Edit in Design" door with a document of several pages: ask how they
@@ -1952,6 +1953,8 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
   }; fc.navigatorActions = navigatorActions;
 
   const inspectorActions: InspectorActions = {
+    editText: (id) => fc.textEdit.startTextEdit(id),
+    openDocumentSize: fc.document.openSizeMenu,
     pickImage: (ids) => {
       if (!ids.length) return;
       fc.selection = new Set(ids);
@@ -2043,6 +2046,8 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
       if (items.length && anchor) fc.menus.spawnPopover(anchor, items);
     },
     toggleTimeline: fc.timeline.toggleTimeline,
+    openAddMenu: fc.menus.openAddMenu,
+    finishTextEditing: fc.textEdit.commitTextEdit,
     isTimelineOpen: () => !!fc.timelinePanel?.isOpen(),
     toggleFramesPanel: () => fc.document.toggleFramesPanel(),
     isFramesPanelOpen: fc.document.isFramesPanelOpen,

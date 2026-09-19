@@ -1,3 +1,4 @@
+import { swatchFace } from '../../../../../engine/src/color-face.ts';
 import { getDesignPublication, restoreDesignPublication } from '../../lib/design-tool-publication.ts';
 import { getDesignToolSource, restoreDesignToolSource } from '../../lib/design-tool-source.ts';
 import { mountLockedTool } from '../locked-tool.ts';
@@ -102,7 +103,7 @@ export async function guardNetworkAndSeed(tview: ToolViewCtx): Promise<void> {
     const swatches = await tview.host.tokens?.colors?.();
     if (swatches?.length) {
       setSwatches(
-        swatches.map((s) => ({ value: s.value, label: s.name, group: s.group, ref: s.ref }))
+        swatches.map((s) => ({ value: s.value, wide: swatchFace(s, 'display-p3'), label: s.name, group: s.group, ref: s.ref }))
       );
     }
   } catch {
@@ -636,7 +637,25 @@ export function documentSurface(tview: ToolViewCtx): void {
 }
 
 export function wrapSetInput(tview: ToolViewCtx): void {
-  const { baseSetInput, inputHistory, runtime } = tview;
+  const { baseSetInput, inputHistory, mountLifecycle, runtime } = tview;
+  // A held pointer is one undo step (see tool-history.ts). Heard at the document, in
+  // the capture phase, because no control reports its own drags and a panel is free to
+  // stop a pointer event from bubbling. `pointercancel` and a lost window both end it,
+  // so a hold can never be left open by a drag that finished somewhere else.
+  if (typeof document !== 'undefined') {
+    const down = (): void => inputHistory.beginHold();
+    const up = (): void => inputHistory.endHold();
+    document.addEventListener('pointerdown', down, true);
+    document.addEventListener('pointerup', up, true);
+    document.addEventListener('pointercancel', up, true);
+    window.addEventListener('blur', up);
+    mountLifecycle.add('undo gesture brackets', () => {
+      document.removeEventListener('pointerdown', down, true);
+      document.removeEventListener('pointerup', up, true);
+      document.removeEventListener('pointercancel', up, true);
+      window.removeEventListener('blur', up);
+    });
+  }
   runtime.setInput = (id: string, value: InputValue) => {
     if (!tview.applyingHistory) {
       const cur = runtime.getModel().find((i) => i.id === id);
@@ -1335,7 +1354,7 @@ export async function wireEmojiSection(tview: ToolViewCtx): Promise<void> {
     root: viewEl,
     host,
     runtime,
-    url: { emoji: urlFlags.get('emoji') ?? '', emojifx: urlFlags.get('emojifx') ?? '' },
+    url: { emoji: urlFlags.get('emoji') ?? '', emojifx: urlFlags.get('emojifx') ?? '', emojistyle: urlFlags.get('emojistyle') ?? '' },
     session: tview.openedSession.emoji ?? null,
     canvas: () => contentEl ?? null,
     onStyle: (_style, params) => {
@@ -1345,6 +1364,7 @@ export async function wireEmojiSection(tview: ToolViewCtx): Promise<void> {
       setToolEmojiParams(params);
       setSessionEmojiStamp(params);
       tview.dirtyParams.add('emojifx');
+      tview.dirtyParams.add('emojistyle');
       tview.session.syncUrl('emoji');
     },
   });

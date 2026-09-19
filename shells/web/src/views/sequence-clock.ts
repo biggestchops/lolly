@@ -61,10 +61,14 @@
  * `requestAnimationFrame`, and real layout for box sizes.
  */
 
+import { SEEK_TOLERANCE_S, SEEK_NUDGE_S, MEDIA_END_EPS_S, looksLikeTrackerModule, waitSeekConfirmed } from '../lib/media-source.ts';
+export { SEEK_CONFIRM_MS, SEEK_TOLERANCE_S, SEEK_NUDGE_S, MEDIA_END_EPS_S, MODULE_EXTENSIONS, urlExtension, isModuleUrl, sniffTrackerModule, looksLikeTrackerModule, waitSeekConfirmed } from '../lib/media-source.ts';
 import { clipGainEvents, clipGainValueAt, isTrivialGain, scheduleGainEvents } from '../bridge/audio-envelope.ts';
 // The ref test alone - deliberately a leaf module (see its header) so the composer
 // stays out of this module's eager graph; the composer itself is imported lazily in
 // renderZzfxmToBuffer below.
+import { createPcmStore } from './sequence-pcm-store.ts';
+import { loadAudioSpan, type AudioSpan } from './sequence-audio-span.ts';
 import { volumeKeysOf } from '../bridge/sequence-plan.ts';
 // The one place the scene grammar turns milliseconds into a renderer's phase, so the
 // preview and the export compositor cannot disagree about which frame of a scene a
@@ -84,144 +88,141 @@ import { MIN_SPEED, MAX_SPEED } from './timeline-math.ts';
 
 // ── tunables ────────────────────────────────────────────────────────────────
 
-/** Per-seek confirmation budget while scrubbing/drift-correcting. */
-export const SEEK_CONFIRM_MS = 300;
-/** A landed frame further than this from the request earns one nudge. 1.5 frames @30. */
-export const SEEK_TOLERANCE_S = 1.5 / 30;
-/** How far past the target the single nudge asks for. A quarter of a frame @30. */
-export const SEEK_NUDGE_S = 0.25 / 30;
 /** While the pointer is down, at most one seek request per element per this long. */
 export const SCRUB_THROTTLE_MS = 100;
-/** Playback drift past this (seconds) triggers a corrective re-seek. */
-export const DRIFT_TOLERANCE_S = 0.08;
-/** How far short of a source's own end the last held frame sits. */
-export const MEDIA_END_EPS_S = 0.04;
 /**
- * How many DISTINCT audio sources one preview will ever decode.
+ * A PARKED element further than this (source seconds) from its target is re-seeked:
+ * the held last frame past a source's end, where nothing is playing and a seek is free.
+ * Steady playback does not use it - see `planDriftCorrection`.
+ */
+export const DRIFT_TOLERANCE_S = 0.08;
+
+// ── drift during playback (plans/268 SI-03) ──────────────────────────────────
+//
+// A playing element runs on its own clock, and this module only keeps it near the
+// playhead. It used to do that with one rule: further than 80ms of SOURCE time from
+// the target, seek. Measured on real footage (H.264, 1280 by 800) that rule produced
+// 10 to 30 seeks a SECOND at every speed, for a reason that has nothing to do with the
+// footage being bad:
+//
+//   • An element starts late. `play()` takes a few tens of ms to produce a frame, so a
+//     playing clip sits a steady 45 to 70ms behind. That is inside the tolerance only
+//     just, and ordinary jitter crosses it.
+//   • A seek on real footage takes longer than the tolerance. The element comes back on
+//     the frame that was right when the seek was ASKED for, which is already too far
+//     behind, so the correction orders the next correction. Each one flushes the decoder.
+//
+// So a small error is now CHASED by playing a few percent fast or slow, which costs
+// nothing and converges in about a second, and a seek is kept for an error too large to
+// chase. That seek aims AHEAD by the time the last one took, and no other may follow it
+// until the element has had time to come back. Every threshold is in TIMELINE seconds
+// (source drift divided by the clip's speed), because that is what a viewer can see: a
+// 4x clip covers 80ms of source in 20ms.
+
+/** Timeline seconds of drift that are left alone. Under a frame at 60 fps. */
+export const CHASE_DEADBAND_S = 0.012;
+/** Rate change per timeline second of drift: 60ms behind plays 9% fast. */
+export const CHASE_GAIN = 1.5;
+/** The most the rate is ever bent. With pitch preserved this is not audible as pitch. */
+export const CHASE_MAX = 0.12;
+/** Timeline seconds of drift too large to chase: seek. */
+export const HARD_DRIFT_S = 0.4;
+/** After a corrective seek, none follows for this long. */
+export const SEEK_COOLDOWN_MS = 600;
+/** The most a corrective seek ever aims ahead, source seconds. */
+export const SEEK_LEAD_MAX_S = 0.75;
+
+export interface DriftInput {
+  /** Target minus the element's position, SOURCE seconds. Positive: the element is behind. */
+  driftSec: number;
+  /** The clip's speed (its nominal playback rate). */
+  speed: number;
+  /** ms since this element's last corrective seek was issued. Infinity when there was none. */
+  sinceSeekMs: number;
+  /** How long a seek on this element has been taking, seconds. 0 when unknown. */
+  seekLatencySec: number;
+  /** A seek is in flight: the position is not a measurement, so nothing is decided from it. */
+  seeking: boolean;
+}
+
+export interface DriftPlan {
+  /** The playback rate to run at. */
+  rate: number;
+  /** Source seconds to ADD to the target when seeking, or null for no seek. */
+  seekLeadSec: number | null;
+}
+
+/** What to do about one playing element's drift. Pure, so the policy is testable. */
+export function planDriftCorrection(d: DriftInput): DriftPlan {
+  const speed = Number.isFinite(d.speed) && d.speed > 0 ? d.speed : 1;
+  if (d.seeking || !Number.isFinite(d.driftSec)) return { rate: speed, seekLeadSec: null };
+  const timelineSec = d.driftSec / speed;
+  const size = Math.abs(timelineSec);
+  if (size > HARD_DRIFT_S) {
+    // Inside the cooldown the element is still coming back from the last seek. Play at
+    // the clip's own rate and look again, rather than chase a position that is about to
+    // jump, or order a second seek on top of the first.
+    if (d.sinceSeekMs < SEEK_COOLDOWN_MS) return { rate: speed, seekLeadSec: null };
+    const lead = Math.min(SEEK_LEAD_MAX_S, Math.max(0, d.seekLatencySec) * speed);
+    return { rate: speed, seekLeadSec: lead };
+  }
+  if (size <= CHASE_DEADBAND_S) return { rate: speed, seekLeadSec: null };
+  const bend = Math.min(CHASE_MAX, size * CHASE_GAIN) * Math.sign(timelineSec);
+  return { rate: speed * (1 + bend), seekLeadSec: null };
+}
+/**
+ * How many DISTINCT audio sources one preview will ever decode. A sanity ceiling, not
+ * the memory defence: that is `previewPcmBudgetBytes`. It was 6 until plans/268 SI-04,
+ * when 6 was the ONLY thing that bounded the decodes in flight. A composition with a
+ * voice track, a music bed and a handful of sound effects went silent past the sixth
+ * with a line in the log. `PREVIEW_DECODE_CONCURRENCY` bounds the decodes in flight
+ * now, so the count can be what a real composition needs.
  *
  * Decoded PCM is raw f32 - roughly 10 MB per minute per channel - and there is no
- * streaming decode in the platform API, so the only defence is refusing to start.
+ * streaming decode in the platform API, so the defence is refusing to START a decode.
  * The compressed fetch is already bounded by MAX_AUDIO_DECODE_BYTES (shared with the
  * waveform reader, so a file the timeline refused to draw is never decoded for
- * preview either); these two ceilings bound what a composition full of music beds can
- * cost. Past either one the box is simply silent in preview and a warning is logged - 
- * NEVER a throw, because the picture must keep playing.
+ * preview either). Past a ceiling the box is simply silent in preview and a warning is
+ * logged - NEVER a throw, because the picture must keep playing.
  */
-export const MAX_PREVIEW_AUDIO_SOURCES = 6;
+export const MAX_PREVIEW_AUDIO_SOURCES = 24;
 /**
- * Ceiling on the decoded PCM this clock will hold at once, bytes.
+ * How many sources decode at once. The budget is checked when a decode STARTS, and a
+ * decode's size is unknown until it ends, so the budget can be passed by as many files
+ * as are in flight. Two keeps that overshoot to two files and still overlaps the fetch
+ * of one with the decode of the other.
+ */
+export const PREVIEW_DECODE_CONCURRENCY = 2;
+/**
+ * The floor of the decoded-PCM budget, bytes, and the whole budget on a device that
+ * does not report its memory.
  *
  * A tracker module is bounded differently on the way IN - its file is a few hundred
  * kB, so MAX_AUDIO_DECODE_BYTES says nothing useful about how long it plays - and its
  * own ceiling is the decode worker's `MAX_SECONDS` (480 s, lib/mod-worker.ts), after
- * which it stops rendering. What lands here is then accounted exactly like a decoded
+ * which it stops rendering. What arrives here is then accounted exactly like a decoded
  * file: a pathological module spends the whole budget and the tracks after it are
  * silent in preview WITH A WARNING, which is the same degradation an over-long wav
  * already gets. There is deliberately no second, module-specific budget.
  */
 export const MAX_PREVIEW_PCM_BYTES = 96 * 1024 * 1024;
+/** The most the budget ever grows to, whatever the device says. */
+export const MAX_PREVIEW_PCM_BYTES_CEILING = 384 * 1024 * 1024;
+/**
+ * The decoded-PCM budget for THIS device (plans/268 SI-04): 48 MB for each GB the
+ * browser reports, never under the 96 MB floor and never over the ceiling. Chrome
+ * reports at most 8, which is the ceiling. Safari and Firefox report nothing and
+ * keep the floor, which is the budget every device had before.
+ */
+export function previewPcmBudgetBytes(deviceMemoryGb?: number | null): number {
+  const gb = Number(deviceMemoryGb);
+  if (!Number.isFinite(gb) || gb <= 0) return MAX_PREVIEW_PCM_BYTES;
+  return Math.min(MAX_PREVIEW_PCM_BYTES_CEILING, Math.max(MAX_PREVIEW_PCM_BYTES, Math.round(gb * 48 * 1024 * 1024)));
+}
 /** Clamps mirroring the tool hook's own attribute clamps. */
 export { MIN_SPEED, MAX_SPEED };
 // MIN_/MAX_TRANSITION_MS are re-exported below, from the module that now owns the
 // applier - one declaration, same names on this module's surface as before.
-
-// ── tracker modules: recognising one ────────────────────────────────────────
-//
-// A .mod/.xm/.it/.s3m/.stm/.mtm file is a SCORE plus the instrument samples it plays - 
-// there is no encoded audio stream in it at all. `decodeAudioData` fails on one and so
-// does mediabunny; the only thing in this codebase that can turn it into sound is
-// libopenmpt (lib/mod-render.ts). So before either decoder is handed the bytes,
-// something has to say "this is a module" - and that is harder than it sounds:
-//
-//   • THE FORMAT FIELD WOULD BE THE BEST SIGNAL AND IS NOT AVAILABLE HERE. An uploaded
-//     asset's `AssetRef.format` is exactly 'mod'/'xm'/… (that is what the export bar
-//     switches on - views/tool-actions.ts, `isModuleFormat(r.format)`), but the
-//     sequence tool's hook emits only `data-audio-src="<url>"`, so by the time a box
-//     reaches this module the format has been thrown away. Recovering it means a new
-//     `data-audio-format` attribute in community/sequence-studio/hooks.js - reported,
-//     not done here.
-//   • THE EXTENSION IS NOT ENOUGH. A user upload resolves to a `blob:` URL minted by
-//     bridge/assets.ts (`URL.createObjectURL`) with no path, no extension and a MIME
-//     type of whatever the OS guessed - and an upload is the ONLY way a module gets
-//     into a composition today (no brand catalog ships one; the picker accepts
-//     .mod/.xm/.it/.s3m/.stm/.mtm as uploads).
-//
-// So the signal is the BYTES, with the extension as a free fast path when there is
-// one. Both live here, pure and exported, and bridge/sequence-providers.ts imports
-// them for the export mix - one definition, so preview and export can never disagree
-// about what is a module. (That import direction, bridge → this file, is the same
-// read-only reuse the seek helpers below already have; the reverse would be a cycle.)
-
-/** The module formats libopenmpt decodes for us. Mirrors `MODULE_FORMATS` in
- *  lib/mod-render.ts, which is the shipped list - a test asserts they are identical
- *  rather than importing it, because that module must stay out of the eager graph. */
-export const MODULE_EXTENSIONS = ['mod', 'xm', 's3m', 'it', 'stm', 'mtm'] as const;
-
-/** A url's own path extension, lowercased. '' for a blob:/data: url, or a query-only
- *  match - the query and fragment are cut first, so `?src=x.mod` is NOT an extension. */
-export function urlExtension(url: string): string {
-  const path = (url.split('#')[0] ?? '').split('?')[0] ?? '';
-  const base = path.slice(path.lastIndexOf('/') + 1);
-  const dot = base.lastIndexOf('.');
-  return dot > 0 ? base.slice(dot + 1).toLowerCase() : '';
-}
-
-/** Does this url NAME a tracker module? A fast path only - see the section header. */
-export function isModuleUrl(url: string): boolean {
-  return (MODULE_EXTENSIONS as readonly string[]).includes(urlExtension(url));
-}
-
-/** Original-MOD channel magics that are not a literal 4CHN/16CH-style pattern. */
-const MOD_MAGIC = new Set([
-  'M.K.', 'M!K!', 'M&K!', 'N.T.', 'FLT4', 'FLT8', 'EXO4', 'EXO8',
-  'OCTA', 'OKTA', 'CD81', 'FA04', 'FA06', 'FA08',
-]);
-/** `4CHN`, `16CH`, `TDZ3` - the channel-count magics, written as patterns. */
-const MOD_MAGIC_RE = /^(?:[1-9]CHN|[1-9][0-9]C[HN]|TDZ[1-9])$/;
-/** ScreamTracker 2 identifies itself at offset 20, with 0x1A as the EOF marker at 28. */
-const STM_TAGS = new Set(['!scream!', 'bmod2stm', 'wuzamod!', 'swavepro']);
-
-/**
- * Is this a tracker module, by its own bytes?
- *
- * Each of the six formats carries a magic, just not all in the same place: IT and XM
- * at the very start, MTM likewise, S3M at 0x2C, STM at 0x14, and the original MOD
- * family at 1080 - AFTER its 31 sample headers, which is why the buffer has to be at
- * least 1084 bytes before that one can be read at all.
- *
- * HONEST LIMIT: a 15-instrument SoundTracker MOD (pre-1987 layout) has NO magic
- * anywhere - nothing can identify it but its extension and a heuristic on its sample
- * table, and a heuristic that guesses wrong sends an mp3 to libopenmpt. So this
- * returns false for one, the extension path catches the ones named `.mod`, and the
- * rest degrade to the same logged silence as any other undecodable box. libopenmpt
- * itself sniffs the real format from the bytes, so this only has to decide WHO
- * decodes, never WHICH format it is.
- */
-export function sniffTrackerModule(src: ArrayBuffer | Uint8Array): boolean {
-  const b = src instanceof Uint8Array ? src : new Uint8Array(src);
-  if (b.length < 32) return false;
-  const tag = (at: number, len: number): string => {
-    let s = '';
-    for (let i = at; i < at + len && i < b.length; i++) s += String.fromCharCode(b[i] as number);
-    return s;
-  };
-  if (tag(0, 4) === 'IMPM') return true;                                  // Impulse Tracker
-  if (tag(0, 17) === 'Extended Module: ') return true;                    // FastTracker 2
-  if (tag(0, 3) === 'MTM' && (b[3] as number) < 0x20) return true;        // MultiTracker
-  if (b.length >= 48 && tag(44, 4) === 'SCRM') return true;               // ScreamTracker 3
-  if (STM_TAGS.has(tag(20, 8).toLowerCase()) && b[28] === 0x1a) return true; // ScreamTracker 2
-  if (b.length >= 1084) {                                                 // MOD and friends
-    const magic = tag(1080, 4);
-    if (MOD_MAGIC.has(magic) || MOD_MAGIC_RE.test(magic)) return true;
-  }
-  return false;
-}
-
-/** The one question both the preview and the export mix ask: does libopenmpt own this? */
-export function looksLikeTrackerModule(url: string, bytes?: ArrayBuffer | Uint8Array | null): boolean {
-  if (isModuleUrl(url)) return true;
-  return !!bytes && sniffTrackerModule(bytes);
-}
 
 // ── the public contract ─────────────────────────────────────────────────────
 
@@ -278,6 +279,7 @@ export interface SequenceClockOpts {
    * Defaults to the libopenmpt worker client, imported lazily at the point of use so
    * its WASM never enters the first-paint graph (see `defaultRenderModule`).
    */
+  loadSpan?: (url: string, span: AudioSpan, signal: AbortSignal) => Promise<AudioBuffer | null>;
   renderModule?: (ctx: BaseAudioContext, bytes: Uint8Array) => Promise<AudioBuffer>;
 }
 
@@ -364,7 +366,7 @@ export type {
 import {
   readTiming, endOf, createAuthoredStore, applyTimeToElements, OFF_CLASS,
   releaseShotBorrow, stageNativeSize, sequenceStageOf, registerSequenceWriter,
-  sequenceTimeElements,
+  sequenceTimeElements, sequenceHandoverOf,
   type Timing, type SequenceWriter,
 } from '../bridge/sequence-dom.ts';
 
@@ -486,58 +488,6 @@ export function createVideoSeeker(el: SeekableMedia, deps: SeekerDeps): VideoSee
   };
 }
 
-/**
- * Real confirmation that a seek presented a frame: rVFC where it exists (its
- * `mediaTime` is the frame actually on screen, unlike `currentTime` which is merely
- * what we asked for), the `seeked` event racing alongside for engines that skip rVFC
- * on a paused element, and a hard timeout so a stalled decoder cannot wedge the queue.
- *
- * Browser-only by nature; the seeker takes it as a dependency so tests inject a fake.
- */
-// An intersection, not an `extends`: newer lib.dom declares both members as REQUIRED on
-// HTMLVideoElement, and re-declaring them optional in a subinterface is a TS2430 conflict.
-// Intersecting keeps the widening additive for older lib versions and conflict-free for new ones.
-type RvfcVideo = HTMLVideoElement & {
-  requestVideoFrameCallback?(cb: (now: number, meta: { mediaTime?: number }) => void): number;
-  cancelVideoFrameCallback?(handle: number): void;
-};
-
-export function waitSeekConfirmed(el: SeekableMedia, signal?: AbortSignal, timeoutMs = SEEK_CONFIRM_MS): Promise<number | null> {
-  const v = el as unknown as RvfcVideo;
-  if (typeof v.addEventListener !== 'function') return Promise.resolve(el.currentTime);
-  return new Promise((resolve) => {
-    let done = false;
-    let handle = 0;
-    const cleanup = (): void => {
-      clearTimeout(timer);
-      v.removeEventListener('seeked', onSeeked);
-      v.removeEventListener('error', onFail);
-      signal?.removeEventListener('abort', onFail);
-      if (handle) { try { v.cancelVideoFrameCallback?.(handle); } catch { /* already gone */ } }
-    };
-    const finish = (value: number | null): void => {
-      if (done) return;
-      done = true;
-      cleanup();
-      resolve(value);
-    };
-    const onSeeked = (): void => finish(v.currentTime);
-    const onFail = (): void => finish(null);
-    const timer = setTimeout(() => finish(null), timeoutMs);
-    if (typeof v.requestVideoFrameCallback === 'function') {
-      try {
-        handle = v.requestVideoFrameCallback((_now, meta) => {
-          finish(typeof meta?.mediaTime === 'number' ? meta.mediaTime : v.currentTime);
-        });
-      } catch { handle = 0; }
-    }
-    v.addEventListener('seeked', onSeeked, { once: true });
-    v.addEventListener('error', onFail, { once: true });
-    if (signal?.aborted) { finish(null); return; }
-    signal?.addEventListener('abort', onFail, { once: true });
-  });
-}
-
 // ── the clock ───────────────────────────────────────────────────────────────
 
 interface VideoRec {
@@ -549,6 +499,14 @@ interface VideoRec {
    *  a window trimmed past its media, where the export holds the last frame. */
   loopWas: boolean | null;
   playing: boolean;
+  /** When the last corrective seek was issued (clock ms), for the cooldown and the latency. */
+  seekAtMs: number | null;
+  /** True from a corrective seek until the element is seen to have come back from it. */
+  seekOpen: boolean;
+  /** How long corrective seeks on this element take, seconds (a running average). */
+  seekLatencySec: number;
+  /** The rate last written, so an unchanged rate is never written again. */
+  rateWas: number | null;
 }
 
 /**
@@ -607,6 +565,12 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
 
   let tMs = 0;
   let scrubbing = false;
+  /**
+   * The playhead was MOVED while playing (a click on the ruler, a loop wrap), so for the
+   * one apply pass that follows every playing element is placed exactly, by a seek. Only
+   * the slow error of steady playback is chased by rate.
+   */
+  let jumped = false;
   let frame = 0;            // pending apply frame
   let loop = 0;             // pending playback frame
   let isPlaying = false;
@@ -615,6 +579,38 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
   let wall0 = 0;            // nowMs() at playhead 0 (fallback timebase)
   let dead = false;
   let pcmBytes = 0;         // decoded PCM currently held, bytes
+  const pcmBudget = previewPcmBudgetBytes((globalThis as { navigator?: { deviceMemory?: number } }).navigator?.deviceMemory);
+  // At most PREVIEW_DECODE_CONCURRENCY decodes run at once; the rest wait in order.
+  // A job that finds a slot free starts SYNCHRONOUSLY, exactly as every decode did
+  // before the queue existed, so a composition with one or two sources behaves as it
+  // always has. Only the third and later wait.
+  let decoding = 0;
+  const decodeWaiters: (() => void)[] = [];
+  function runDecode<T>(job: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const start = (): void => {
+        decoding++;
+        let run: Promise<T>;
+        try { run = job(); } catch (err) { run = Promise.reject(err); }
+        run.then(resolve, reject).finally(() => {
+          decoding--;
+          decodeWaiters.shift()?.();
+        });
+      };
+      if (decoding < PREVIEW_DECODE_CONCURRENCY) start(); else decodeWaiters.push(start);
+    });
+  }
+  const diskSpans = createPcmStore(384 * 1024 * 1024);
+  const resident = new Map<string, AudioBuffer>();
+  function evictSpans(need = 0): void {
+    if (!usesSpans) return;
+    const playing = new Set([...audios.values()].map(record => record.node?.buffer));
+    for (const [key, buffer] of resident) {
+      if (pcmBytes + need <= pcmBudget && buffers.size < MAX_PREVIEW_AUDIO_SOURCES) break;
+      if (playing.has(buffer)) continue;
+      resident.delete(key); buffers.delete(key); pcmBytes -= pcmSizeOf(buffer);
+    }
+  }
   let ctxWasRunning = false; // last seen ctx.state, to re-place audio after a resume
 
   const log = (level: string, msg: string): void => { try { host?.log?.(level, msg); } catch { /* logging is never fatal */ } };
@@ -649,6 +645,10 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
         mutedWas: null,
         loopWas: null,
         playing: false,
+        seekAtMs: null,
+        seekOpen: false,
+        seekLatencySec: 0,
+        rateWas: null,
       };
       videos.set(video, rec);
       // A video still LOADING when this pass runs cannot be posed yet - and nothing
@@ -665,6 +665,9 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
   /** Put a video back exactly as found: paused where we started it, muted as authored. */
   function releaseVideo(video: HTMLVideoElement, rec: VideoRec): void {
     if (rec.playing) { try { video.pause(); } catch { /* detached */ } rec.playing = false; }
+    // The next start writes the rate afresh, whatever a chase left on the element.
+    rec.rateWas = null;
+    rec.seekOpen = false;
     if (rec.mutedWas != null) { try { video.muted = rec.mutedWas; } catch { /* detached */ } rec.mutedWas = null; }
     if (rec.loopWas != null) { try { video.loop = rec.loopWas; } catch { /* detached */ } rec.loopWas = null; }
   }
@@ -742,6 +745,7 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
     try { node.stop(); } catch { /* never started, or already ended */ }
     try { node.disconnect(); } catch { /* already torn down */ }
     if (gainNode) { try { gainNode.disconnect(); } catch { /* already torn down */ } }
+    if (panNode) { try { panNode.disconnect(); } catch { /* already torn down */ } }
   }
 
   /** Silence one box and forget it, so the next pass may re-place it. */
@@ -807,6 +811,20 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
   }
 
   const loadAudio = opts.loadAudio || fetchAndDecode;
+  const usesSpans = !!opts.loadSpan || (!opts.loadAudio && !opts.renderModule);
+  const spanLoader = opts.loadSpan ?? (async (url: string, span: AudioSpan, signal: AbortSignal): Promise<AudioBuffer | null> => {
+    const decoded = await loadAudioSpan(url, span, signal, log);
+    if (decoded || signal.aborted) return decoded;
+    // Browsers without WebCodecs and uploaded song JSON retain their bounded fallback.
+    const full = await fetchAndDecode(url, signal);
+    if (!full || signal.aborted) return null;
+    const from = Math.round(span.from * full.sampleRate);
+    const length = Math.min(full.length, Math.round(span.to * full.sampleRate)) - from;
+    if (length <= 0) return null;
+    const buffer = new AudioBuffer({ length, numberOfChannels: full.numberOfChannels, sampleRate: full.sampleRate });
+    for (let ch = 0; ch < full.numberOfChannels; ch++) buffer.copyToChannel(full.getChannelData(ch).subarray(from, from + length), ch);
+    return buffer;
+  });
   const renderModule = opts.renderModule || defaultRenderModule;
 
   /** Bytes of raw PCM one decoded buffer holds. */
@@ -817,38 +835,72 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
   }
 
   /** The decoded buffer for a source, decoding it once and guarding the memory. */
-  function bufferFor(url: string): Promise<AudioBuffer | null> {
-    const hit = buffers.get(url);
-    if (hit) return hit;
-    if (audioFailed.has(url)) return Promise.resolve(null);
+  function bufferFor(url: string, timing: Timing): Promise<AudioBuffer | null> {
+    const span = { from: timing.clipIn / 1000,
+      to: timing.clipIn / 1000 + Math.max(0, audioEndSec(timing, seqMs()) - timing.start / 1000) * timing.speed, rate: 48_000 };
+    if (usesSpans && (span.to - span.from) * span.rate * 8 > pcmBudget) {
+      log('warn', 'sequence audio: this span exceeds the preview memory budget');
+      return Promise.resolve(null);
+    }
+    const cacheKey = usesSpans ? JSON.stringify([url, span.from, span.to, span.rate]) : url;
+    const hit = buffers.get(cacheKey);
+    if (hit) {
+      const buffer = resident.get(cacheKey);
+      if (buffer) { resident.delete(cacheKey); resident.set(cacheKey, buffer); }
+      return hit;
+    }
+    evictSpans(Math.max(0, span.to - span.from) * span.rate * 8);
+    if (audioFailed.has(cacheKey)) return Promise.resolve(null);
     if (buffers.size >= MAX_PREVIEW_AUDIO_SOURCES) {
-      audioFailed.add(url);
+      audioFailed.add(cacheKey);
       log('warn', `sequence audio: more than ${MAX_PREVIEW_AUDIO_SOURCES} distinct tracks in one composition - the rest are silent in preview`);
       return Promise.resolve(null);
     }
-    if (pcmBytes >= MAX_PREVIEW_PCM_BYTES) {
-      audioFailed.add(url);
+    if (pcmBytes >= pcmBudget) {
+      audioFailed.add(cacheKey);
       log('warn', 'sequence audio: decoded-audio budget reached - this track is silent in preview');
       return Promise.resolve(null);
     }
     const ac = new AbortController();
     audioAborts.add(ac);
-    const p = loadAudio(url, ac.signal)
+    const p = runDecode<AudioBuffer | null>(() => {
+      // Asked again HERE, with the decodes that were ahead of this one now counted.
+      // Without the second look every source of a large composition passes the first
+      // one together, while the total is still zero.
+      if (dead || ac.signal.aborted) return Promise.resolve(null);
+      if (pcmBytes >= pcmBudget) {
+        log('warn', 'sequence audio: decoded-audio budget reached - this track is silent in preview');
+        return Promise.resolve(null);
+      }
+      // Counted BEFORE the slot is given up, so the decode that was waiting behind this
+      // one is judged against a total that includes it.
+      const decode = async (): Promise<AudioBuffer | null> => {
+        if (!usesSpans) return loadAudio(url, ac.signal);
+        const cached = await diskSpans.get(cacheKey);
+        if (cached || ac.signal.aborted || dead) return cached;
+        const buffer = await spanLoader(url, span, ac.signal);
+        if (buffer && !dead) await diskSpans.put(cacheKey, buffer);
+        return buffer;
+      };
+      return decode().then((buf) => {
+        if (buf && !dead) { evictSpans(pcmSizeOf(buf)); pcmBytes += pcmSizeOf(buf); resident.set(cacheKey, buf); }
+        return buf;
+      });
+    })
       .then((buf) => {
-        if (!buf || dead) { buffers.delete(url); audioFailed.add(url); return null; }
-        pcmBytes += pcmSizeOf(buf);
+        if (!buf || dead) { buffers.delete(cacheKey); audioFailed.add(cacheKey); return null; }
         return buf;
       })
       .catch((err: unknown) => {
         // An undecodable, offline or aborted track degrades to silence. It must never
         // reject into the frame loop: the picture keeps playing without the sound.
-        buffers.delete(url);
-        audioFailed.add(url);
+        buffers.delete(cacheKey);
+        audioFailed.add(cacheKey);
         log('warn', `sequence audio: ${url} could not be decoded (${err instanceof Error ? err.message : String(err)}) - silent in preview`);
         return null;
       })
       .finally(() => { audioAborts.delete(ac); });
-    buffers.set(url, p);
+    buffers.set(cacheKey, p);
     return p;
   }
 
@@ -893,11 +945,13 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
     const spanSec = srcDur > 0
       ? Math.min(endSec - startSec, Math.max(0, srcDur - timing.clipIn / 1000))
       : endSec - startSec;
+    const hand = sequenceHandoverOf(el);
     const events = clipGainEvents({
       spanSec,
       gain: timing.gain,
-      fadeInSec: timing.enter ? timing.enterMs / 1000 : 0,
-      fadeOutSec: timing.exit ? timing.exitMs / 1000 : 0,
+      fadeInSec: hand?.headMs ? hand.headMs / 1000 : (timing.enter ? timing.enterMs / 1000 : 0),
+      fadeOutSec: hand?.tailMs ? hand.tailMs / 1000 : (timing.exit ? timing.exitMs / 1000 : 0),
+      fadeInPower: !!hand?.headMs, fadeOutPower: !!hand?.tailMs,
       volumeKeys: volumeKeysOf(timing.kf) ?? undefined,
       duck: timing.duck < 1 ? { level: timing.duck, spans: duckSpansOf(el, timing) } : undefined,
     });
@@ -954,8 +1008,8 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
 
   /**
    * The stretch-bounce cache (plans/165 WP-7): one rendered AudioBuffer per sped
-   * clip placement, keyed by the SAME audioKey that re-places a box when its
-   * timing changes - so a re-trim or speed change simply misses and re-bounces.
+   * clip source window, keyed separately from gain and pan so changing its
+   * level reuses the bounce, while a re-trim or speed change re-bounces.
    * Small and FIFO-capped: a bounce is one clip window, not a whole track.
    */
   const bounces = new Map<string, Promise<AudioBuffer | null>>();
@@ -963,12 +1017,28 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
     const hit = bounces.get(key);
     if (hit) return hit;
     const p = (async (): Promise<AudioBuffer | null> => {
+      if (usesSpans) {
+        const cached = await diskSpans.get(`fx:${key}`);
+        if (dead) return null;
+        if (cached) {
+          evictSpans(pcmSizeOf(cached));
+          if (pcmBytes + pcmSizeOf(cached) > pcmBudget) return null;
+          pcmBytes += pcmSizeOf(cached); return cached;
+        }
+      }
       const seq = seqMs();
       const spanSec = Math.max(0, audioEndSec(timing, seq) - timing.start / 1000);
       const srcRate = buf.sampleRate;
       const from = Math.round((timing.clipIn / 1000) * srcRate);
       const srcN = Math.min(Math.max(0, buf.length - from), Math.round(spanSec * timing.speed * srcRate));
       if (!(srcN > 0) || !(spanSec > 0)) return null;
+      if (usesSpans) {
+        const needed = Math.ceil(spanSec * srcRate) * Math.min(2, buf.numberOfChannels) * 4;
+        evictSpans(needed);
+        if (pcmBytes + needed > pcmBudget) {
+          log('warn', 'sequence audio: transformed span exceeds the preview memory budget'); return null;
+        }
+      }
       const chs: Float32Array[] = [];
       for (let c = 0; c < Math.min(2, buf.numberOfChannels); c++) {
         const all = buf.getChannelData(c);
@@ -1004,13 +1074,17 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
       }
       const bounced = new AudioBuffer({ length: out[0]!.length, numberOfChannels: out.length, sampleRate: srcRate });
       for (let c = 0; c < out.length; c++) bounced.copyToChannel(out[c] as Float32Array<ArrayBuffer>, c);
+      if (!dead) {
+        pcmBytes += pcmSizeOf(bounced);
+        if (usesSpans) await diskSpans.put(`fx:${key}`, bounced);
+      }
       return bounced;
     })().catch((err: unknown) => {
       log('warn', `sequence audio: stretch bounce failed (${err instanceof Error ? err.message : String(err)}) - this clip is silent in preview`);
       return null;
     });
     bounces.set(key, p);
-    if (bounces.size > 8) { const oldest = bounces.keys().next().value as string; bounces.delete(oldest); }
+    if (bounces.size > 8) { const oldest = bounces.keys().next().value as string; const old = bounces.get(oldest); bounces.delete(oldest); void old?.then(buf => { if (buf && !dead) pcmBytes -= pcmSizeOf(buf); }); }
     return p;
   }
 
@@ -1023,6 +1097,7 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
     if (!isPlaying || dead || audios.has(el)) return;
     if (!audioCtx()) return;                        // no output device: picture only
     const seq = seqMs();
+    if (usesSpans && timing.start > tMs + 5000) return;
     if (tMs / 1000 >= audioEndSec(timing, seq)) return;   // already past it
     // Muted or ignored (strikethrough, plans/174): reserve the slot so the box is not
     // re-placed every frame, but schedule no source - it stays silent.
@@ -1035,20 +1110,20 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
       // by the placement key (which carries speed, trim and window), and the
       // bounced buffer schedules exactly like any decoded track - so scrubbing
       // stays cheap and preview matches the file.
-      void bufferFor(url).then(async (buf) => {
+      void bufferFor(url, timing).then(async (buf) => {
         const cur = audios.get(el);
         if (!buf || !cur || cur.key !== key || cur.node) return;
-        const bounced = await bounceStretch(buf, timing, key);
+        const bounced = await bounceStretch(buf, usesSpans ? { ...timing, clipIn: 0 } : timing, JSON.stringify([url, timing.clipIn, timing.dur, timing.speed, timing.pitch, timing.varispeed, timing.fx]));
         const cur2 = audios.get(el);
         if (!bounced || !cur2 || cur2.key !== key || cur2.node) return;
         startAudio(el, { ...timing, clipIn: 0, speed: 1, pitch: 0, fx: '' }, bounced);
       });
       return;
     }
-    void bufferFor(url).then((buf) => {
+    void bufferFor(url, timing).then((buf) => {
       const cur = audios.get(el);
       if (!buf || !cur || cur.key !== key || cur.node) return;
-      startAudio(el, timing, buf);
+      startAudio(el, usesSpans ? { ...timing, clipIn: 0 } : timing, buf);
     });
   }
 
@@ -1060,7 +1135,9 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
   function driveAudio(el: HTMLElement, timing: Timing, active: boolean): void {
     const url = audioSrcOf(el);
     if (!url) return;
-    const key = audioKey(url, timing);
+    const hand = sequenceHandoverOf(el);
+    if (hand?.tailMs && timing.dur != null) timing = { ...timing, dur: timing.dur + hand.tailMs };
+    const key = audioKey(url, timing) + `|${hand?.headMs ?? 0}|${hand?.tailMs ?? 0}|${JSON.stringify(timing.kf)}`;
     const rec = audios.get(el);
     // Muted mid-playback, dragged, retrimmed: the placement is stale, drop it and let
     // the same frame re-place it against the new attributes.
@@ -1113,22 +1190,27 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
         // stated in the inspector's copy. Fades follow the export's kind rule: a
         // video's soundtrack fades only under the `fade` kind.
         if (!wantMuted) {
-          const spanRawSec = (endOf(timing, seqMs()) - timing.start) / 1000;
+          // At a crossfade junction the sound hands over exactly as the picture does
+          // (plans/268 SI-01), by the export mix's own rule: the outgoing clip plays on
+          // for the handover and fades out across IT, the incoming clip's fade-in is
+          // shortened to it, so the two gains cross where the two alphas do.
+          const hand = sequenceHandoverOf(el);
+          const spanRawSec = (endOf(timing, seqMs()) - timing.start + (hand?.tailMs ?? 0)) / 1000;
           const gainSpanSec = mediaEnd > 0
             ? Math.min(spanRawSec, Math.max(0, mediaEnd - timing.clipIn / 1000))
             : spanRawSec;
           const vol = clipGainValueAt({
             spanSec: gainSpanSec,
             gain: timing.gain,
-            fadeInSec: timing.enter === 'fade' ? timing.enterMs / 1000 : 0,
-            fadeOutSec: timing.exit === 'fade' ? timing.exitMs / 1000 : 0,
+            fadeInSec: hand?.headMs ? hand.headMs / 1000 : (timing.enter === 'fade' ? timing.enterMs / 1000 : 0),
+            fadeOutSec: hand?.tailMs ? hand.tailMs / 1000 : (timing.exit === 'fade' ? timing.exitMs / 1000 : 0),
+            fadeInPower: !!hand?.headMs, fadeOutPower: !!hand?.tailMs,
             volumeKeys: volumeKeysOf(timing.kf) ?? undefined,
             tSec: (tMs - timing.start) / 1000,
           });
           const capped = Math.min(1, vol);
           if (Math.abs(video.volume - capped) > 0.003) { try { video.volume = capped; } catch { /* detached */ } }
         }
-        try { video.playbackRate = timing.speed; } catch { /* rate out of engine range */ }
         if (pastEnd) {
           // Media exhausted inside the window: hold the last frame, exactly as the
           // compositor renders it. The element would otherwise fire `ended` (or, on
@@ -1137,8 +1219,42 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
           rec.playing = false;
           if (Math.abs((video.currentTime || 0) - targetSec) > DRIFT_TOLERANCE_S) rec.seeker.request(targetSec);
         } else {
-          const drift = Math.abs((video.currentTime || 0) - targetSec);
-          if (drift > DRIFT_TOLERANCE_S) rec.seeker.request(targetSec);
+          const at = video.currentTime || 0;
+          const seeking = !!video.seeking;
+          const nowAt = nowMs();
+          // The element is back from a corrective seek: how long that took is what the
+          // next one aims ahead by.
+          if (rec.seekOpen && !seeking && rec.seekAtMs != null) {
+            const took = Math.max(0, (nowAt - rec.seekAtMs) / 1000);
+            rec.seekLatencySec = rec.seekLatencySec > 0 ? rec.seekLatencySec * 0.6 + took * 0.4 : took;
+            rec.seekOpen = false;
+          }
+          let rate = timing.speed;
+          if (!rec.playing || jumped) {
+            // A START or a JUMP places the element exactly. Chasing is for the slow error
+            // of steady playback, never for a playhead that was moved on purpose.
+            if (Math.abs(at - targetSec) > DRIFT_TOLERANCE_S) rec.seeker.request(targetSec);
+          } else {
+            const plan = planDriftCorrection({
+              driftSec: targetSec - at,
+              speed: timing.speed,
+              sinceSeekMs: rec.seekAtMs == null ? Number.POSITIVE_INFINITY : nowAt - rec.seekAtMs,
+              seekLatencySec: rec.seekLatencySec,
+              seeking,
+            });
+            rate = plan.rate;
+            if (plan.seekLeadSec != null) {
+              const lead = mediaEnd > 0 ? Math.min(plan.seekLeadSec, Math.max(0, mediaEnd - MEDIA_END_EPS_S - targetSec)) : plan.seekLeadSec;
+              rec.seeker.request(targetSec + lead);
+              rec.seekAtMs = nowAt;
+              rec.seekOpen = true;
+            }
+          }
+          // Follows the clip's speed so a 2x clip plays 2x, bent a few percent while a
+          // small drift is chased. Written only when it changes.
+          if (rec.rateWas !== rate) {
+            try { video.playbackRate = rate; rec.rateWas = rate; } catch { /* rate out of engine range */ }
+          }
           if (!rec.playing) {
             rec.playing = true;
             try { void video.play()?.catch(() => { /* autoplay policy - silent */ }); } catch { /* detached */ }
@@ -1227,6 +1343,7 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
     } catch (err) {
       log('warn', `sequence-clock: frame failed - ${err instanceof Error ? err.message : String(err)}`);
     }
+    jumped = false;
     // Videos a repaint orphaned: PAUSE and un-mute them before dropping the record.
     // `releaseVideo` is the only path that restores `muted` and stops playback, so
     // skipping it leaves a detached element playing its audio until GC - one more
@@ -1327,6 +1444,7 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('visibilitychange', onVisibility);
   }
+  canvasEl.addEventListener?.('lolly:lottie-ready', schedule);
 
   const clock: SequenceClock = {
     t: () => tMs,
@@ -1338,6 +1456,7 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
       tMs = dur > 0 ? Math.min(v, dur) : v;
       scrubbing = !!o?.scrubbing;
       if (isPlaying) {                                   // keep playback in step
+        jumped = true;
         if (ctx) t0 = ctx.currentTime - tMs / 1000;
         wall0 = nowMs() - tMs;
         // Every scheduled source was placed against the OLD t0 and is now in the wrong
@@ -1394,6 +1513,7 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
     },
     destroy() {
       if (dead) return;
+      canvasEl.removeEventListener?.('lolly:lottie-ready', schedule);
       dead = true;
       isPlaying = false;
       if (frame) { caf(frame); frame = 0; }
@@ -1408,6 +1528,7 @@ export function createSequenceClock(opts: SequenceClockOpts): SequenceClock {
       stopAllAudio();
       for (const ac of [...audioAborts]) { try { ac.abort(); } catch { /* already settled */ } }
       audioAborts.clear();
+      diskSpans.destroy(); resident.clear(); bounces.clear();
       buffers.clear();               // the last reference to every decoded buffer
       audioFailed.clear();
       pcmBytes = 0;

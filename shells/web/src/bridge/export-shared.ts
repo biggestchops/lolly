@@ -40,6 +40,9 @@ export interface ImprintState { want: boolean; applied: boolean }
 // engine's ExportOpts - the extra fields (print marks, video timing, c2pa, …)
 // are web-shell extensions the engine passes through untouched.
 export interface ExportOpts {
+  portableDocument?: import('@lolly-tools/core/host-v1').ExportOpts['portableDocument'];
+  /** Linear float render supplied by a tool. Encoded through the normal metadata/credential path. */
+  deepFrame?: import('@lolly-tools/core/host-v1').CodecFrame;
   scale?: number;
   quality?: number;
   background?: string;
@@ -69,6 +72,7 @@ export interface ExportOpts {
     fingerprint: string;
     onReceipt?(receipt: AttributionReceiptV1): void;
   };
+  sourceDocument?: { toolId: string; values: Record<string, unknown> };
   c2paAiUpscale?: { model: string; version: string }; // AI-upscaled essence → created = compositeWithTrainedAlgorithmicMedia + a model-naming edit step (runtime-supplied)
   c2paAiIngredients?: Array<{ name: string; kind: 'full' | 'partial' }>; // placed assets the user declared AI-made (runtime-supplied) → composite created step + c2pa.placed + a section 18.28 ai-disclosure
   colorProfile?: string;
@@ -466,3 +470,27 @@ export async function blobToDataUrl(url: string): Promise<string> {
 
 /** export.ts hands the host over once, at createExportAPI(); everything else reads `_host`. */
 export function setExportHost(host: WebHost): void { _host = host; }
+
+// A top-&-tail recorder's render target carries [data-toptail] (on the node or a
+// descendant), routing webm/mp4 export through the real-time card+footage compositor.
+export function isTopTailStage(node: Element): boolean {
+  return Boolean((node as HTMLElement).matches?.('[data-toptail]') || node.querySelector?.('[data-toptail]'));
+}
+
+// The Record tool's editor strip carries [data-record-stage] (on the node or a
+// descendant): an intro card + live-camera clip + outro card, each object animated
+// in with its own transition. Routes webm/mp4 through renderRecord.
+export function isRecordStage(node: Element): boolean {
+  return Boolean((node as HTMLElement).matches?.('[data-record-stage]') || node.querySelector?.('[data-record-stage]'));
+}
+
+// Promisified canvas.toBlob - quality is passed through only for lossy encoders.
+export function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality?: number): Promise<Blob> {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error(`Encoding failed for ${mimeType}`)),
+      mimeType,
+      quality,
+    );
+  });
+}

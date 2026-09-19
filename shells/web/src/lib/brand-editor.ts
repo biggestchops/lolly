@@ -533,6 +533,13 @@ export async function mountBrandEditor(root: HTMLElement, host: EditorHost, opts
   bedit.type.seedFonts();
 
   bedit.type.paintTypeRoom();
+  if (bedit.typeCardsPanel) {
+    const { mountBrandEmoji } = await import('./emoji-brand-control.ts');
+    const emoji = mountBrandEmoji(bedit.typeCardsPanel, host, () => bedit.doc ?? {}, next => {
+      bedit.state.pushUndo('Emoji'); bedit.doc = next; bedit.state.persist(true);
+    });
+    paletteHooks.push(emoji.update); bedit.cleanups.push(emoji.destroy);
+  }
 
   /** The stage's seat when nothing is open: the scaffold position, straight
    *  after the cards panel. Both halves are remembered, because appending to the

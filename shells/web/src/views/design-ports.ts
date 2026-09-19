@@ -103,6 +103,8 @@ export interface NavigatorActions {
 
 /** Verbs the inspector delegates to the overlay. */
 export interface InspectorActions {
+  editText?(id: string): void;
+  openDocumentSize?(anchor: HTMLElement): void;
   pickImage(ids: string[]): void;
   openGradient(ids: string[]): void;
   /** Align / distribute / z-order verbs, by the overlay's existing op names. */
@@ -201,6 +203,8 @@ export interface DesignCanvasPorts {
   selectionRect(): CanvasRect | null;
   /** Open the Lolly mark popover anchored to the given element (the trimmed document menu). */
   openLollyMenu(anchor: HTMLElement): void;
+  openAddMenu?(anchor: HTMLElement): void;
+  finishTextEditing?(): void;
   toggleTimeline(): void;
   isTimelineOpen(): boolean;
   /** The legacy Artboards filmstrip (the navigator's mobile skin host). */

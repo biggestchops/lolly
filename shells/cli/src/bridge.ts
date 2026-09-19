@@ -10,6 +10,8 @@
  * changes were needed.
  */
 
+import { isJxl } from '../../../engine/src/jxl.ts';
+import { prepareJxlAsset } from '@lolly-tools/node-shell/jxl-asset';
 import { readFile } from 'node:fs/promises';
 import { assetBytes } from '@lolly-tools/node-shell/asset-bytes';
 // The .penpot archive's zip step (plans/178). fflate is already this shell's zip codec
@@ -23,7 +25,6 @@ import type {
 } from '@lolly-tools/core/host-v1';
 // Deep image encoders (v1.100 host.codec) - off the @lolly/engine barrel by
 // design, imported deep-relative like node-shell/raster.ts does for packExr.
-import { encodeExr, encodeRadiance, encodePng16, encodeDither8 } from '../../../engine/src/deep-encode.ts';
 // PDF metadata inspect/strip is pure pdf-lib (no DOM), so the lean node CLI
 // shares ONE implementation with the web shell rather than duplicating it. It
 // used to live in shells/web and be imported across the submodule boundary;
@@ -203,7 +204,7 @@ function urlAssetKind(mime: string, id: string): { type: 'vector' | 'raster' | '
   const ext = /\.([a-z0-9]{2,5})(?:[?#]|$)/i.exec(id)?.[1]?.toLowerCase();
   if (!ext) return null;
   if (ext === 'svg') return { type: 'vector', format: 'svg' };
-  if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif'].includes(ext)) return { type: 'raster', format: ext.replace('jpeg', 'jpg') };
+  if (['jxl', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif'].includes(ext)) return { type: 'raster', format: ext.replace('jpeg', 'jpg') };
   if (['mp4', 'webm', 'mov'].includes(ext)) return { type: 'video', format: ext };
   if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return { type: 'audio', format: ext };
   return null;
@@ -212,6 +213,8 @@ function urlAssetKind(mime: string, id: string): { type: 'vector' | 'raster' | '
 /** Options `host.export.render` reads beyond ExportOpts: the engine-hydrated
  *  data/text payload and the physical-unit qualifier threaded to the emitters. */
 interface CliExportRenderOpts extends ExportOpts {
+  c2pa?: boolean;
+  durable?: boolean;
   dataText?: string;
   dataMime?: string;
   unit?: string;
@@ -307,12 +310,23 @@ export async function createCliBridge(
   // Deep image codecs (v1.100) - the same pure engine writers the web shell
   // wraps, so a tool that hands over a float frame encodes identically headless.
   // (No native deps; the writers are pure TypeScript.)
-  host.codec = {
-    png16: async (f, o) => encodePng16({ ...f, space: f.space ?? 'srgb-linear' }, o),
-    exr: async (f, o) => encodeExr({ ...f, space: f.space ?? 'srgb-linear' }, o),
-    radiance: async (f, o) => encodeRadiance({ ...f, space: f.space ?? 'srgb-linear' }, o),
-    dither8: async (f, o) => encodeDither8({ ...f, space: f.space ?? 'srgb-linear' }, o),
-  };
+  host.codec = (await import('../../../engine/src/deep-codec-api.ts')).createDeepCodec({
+    jxl: async request => (await import('@lolly-tools/node-shell/jxl')).runJxl(request),
+    async bytes(source) {
+      if (source instanceof Uint8Array) return source;
+      if (typeof source === 'object' && 'arrayBuffer' in source) return new Uint8Array(await source.arrayBuffer());
+      if (typeof source !== 'string') return host.assets.bytes!(source);
+      if (source.startsWith('/catalog/')) return new Uint8Array(await readFile(assetFilePath(source)));
+      const response = await fetch(source);
+      if (!response.ok) throw new Error(`Could not read HDR source (${response.status}).`);
+      return new Uint8Array(await response.arrayBuffer());
+    },
+    async sdr(bytes) {
+      const canvas = await (await import('@lolly-tools/node-shell/canvas')).decodeToCanvas(bytes);
+      if (!canvas) throw new Error('SDR decoding needs the optional Node canvas adapter.');
+      return { width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data };
+    },
+  });
 
   // Layered-bitmap write-back (v1.102) - the same engine PSD writer the web
   // shell wraps, so `--export`ing a layered PSD is byte-identical headless.
@@ -602,18 +616,19 @@ export async function createCliBridge(
       // logged warning, exactly as on the web.
       if (/^data:/i.test(id)) {
         const mime = /^data:([^;,]+)/i.exec(id)?.[1] ?? '';
-        const kind = urlAssetKind(mime, id);
+        const bytes = new Uint8Array(await (await fetch(id)).arrayBuffer());
+        const kind = isJxl(bytes) ? { type: 'raster' as const, format: 'jxl' } : urlAssetKind(mime, id);
         if (!kind) throw new Error(`Unsupported data: asset type: ${mime || 'unknown'}`);
-        return { source: 'remote', id, type: kind.type, format: kind.format, url: id };
+        return prepareJxlAsset({ source: 'remote', id, type: kind.type, format: kind.format, url: id }, bytes);
       }
       if (/^https?:\/\//i.test(id)) {
         const res = await fetch(id, { signal: AbortSignal.timeout(20_000) });
         if (!res.ok) throw new Error(`URL asset fetch failed (${res.status}): ${id}`);
         const buf = Buffer.from(await res.arrayBuffer());
         const mime = res.headers.get('content-type') ?? '';
-        const kind = urlAssetKind(mime, id);
+        const kind = isJxl(buf) ? { type: 'raster' as const, format: 'jxl' } : urlAssetKind(mime, id);
         if (!kind) throw new Error(`Unsupported URL asset type (${mime || 'unknown'}): ${id}`);
-        return { source: 'remote', id, type: kind.type, format: kind.format, url: `data:${mime.split(';')[0] || 'application/octet-stream'};base64,${buf.toString('base64')}` };
+        return prepareJxlAsset({ source: 'remote', id, type: kind.type, format: kind.format, url: `data:${mime.split(';')[0] || 'application/octet-stream'};base64,${buf.toString('base64')}` }, buf);
       }
       // A presentation modifier can ride in the id, baked in at resolve time
       // (same contract as the web bridge). An id carries at most one:
@@ -661,7 +676,9 @@ export async function createCliBridge(
         const dimSrc = (fmt.width && fmt.height) ? fmt : meta.formats.find(f => f.width && f.height);
         const w = dimSrc?.width, h = dimSrc?.height;
         if (def && w && h) {
-          const href = `data:${mimeFor(fmt.format)};base64,${buf.toString('base64')}`;
+          const originalUrl = `data:${mimeFor(fmt.format)};base64,${buf.toString('base64')}`;
+          const prepared = await prepareJxlAsset({ id, source: 'library', type: 'raster', format: fmt.format, url: originalUrl }, buf);
+          const href = prepared.url;
           const svg = wrapRasterWithTreatment({ href, width: w, height: h, treatment: def });
           return {
             source: 'library',
@@ -671,6 +688,7 @@ export async function createCliBridge(
             url: `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`,
             version: meta.version,
             checksum: fmt.checksum,
+            original: prepared.original,
             meta: { ...extraMeta, treatment, baseId },
           };
         }
@@ -679,7 +697,7 @@ export async function createCliBridge(
       // jsdom doesn't have URL.createObjectURL by default; encode as data URL.
       const mime = mimeFor(fmt.format);
       const url = `data:${mime};base64,${buf.toString('base64')}`;
-      return {
+      return prepareJxlAsset({
         source: 'library',
         id,
         type: meta.type,
@@ -688,7 +706,7 @@ export async function createCliBridge(
         version: meta.version,
         checksum: fmt.checksum,
         meta: extraMeta,
-      };
+      }, buf);
     },
     async query(filter = {}) {
       return Array.from(assetById.values())
@@ -817,6 +835,13 @@ function rootSvgOf(node: Element | null): Element | null {
       if (opts.dataText !== undefined) {
         return new Blob([opts.dataText], { type: opts.dataMime ?? 'text/plain' });
       }
+      if (opts.deepFrame) {
+        if (opts.watermark || opts.durable) throw new Error('Float exports with a draft or durable mark require the web shell.');
+        return (await import('../../../engine/src/deep-export.ts')).exportDeepFrame(opts.deepFrame, format, { ...opts, hdr: !!opts.hdr }, {
+          jxl: async request => (await import('@lolly-tools/node-shell/jxl')).runJxl(request),
+        });
+      }
+      if (format === 'lottie') return (await import('../../../engine/src/design-lottie.ts')).exportDesignLottie(opts, host);
       // Strip the markers annotateTemplate leaves (plans/222) so every deliverable is
       // clean: data-canvas-input is web-edit-only, data-lolly-paint an intermediate,
       // and a data-lolly-bind is meaningful ONLY to the penpot export - kept there so
@@ -831,6 +856,7 @@ function rootSvgOf(node: Element | null): Element | null {
         if (format !== 'penpot') strip('data-lolly-bind');
       }
       if (format === 'html') {
+        if (opts.portableDocument) throw Object.assign(new Error('Portable HTML with embedded fonts needs a browser.'), { code: 'NEEDS_BROWSER' });
         // Strip any template <script> (editor-runtime helpers - e.g. a canvas
         // auto-resize hook) before serialising: the exported markup is static, and
         // the web shell's HTML export (renderStaticHtml) does the same. Clone so the
@@ -1041,6 +1067,30 @@ function rootSvgOf(node: Element | null): Element | null {
         });
         return new Blob([bytes as BlobPart], { type: mime || deepFormatMime(format) });
       }
+      if (format === 'jxl' || format === 'jxl-lossless') {
+        if (opts.hdr || opts.depth && opts.depth !== 8) throw new Error('JPEG XL render export currently supplies 8-bit sRGB pixels.');
+        if (opts.c2pa) throw new Error('JPEG XL Content Credentials are unavailable. Choose PNG for a signed export.');
+        if (opts.durable) throw new Error('JPEG XL neural watermarking needs the browser engine.');
+        const svg = rootSvgOf(node);
+        if (!svg) throw new Error('JPEG XL HTML rendering needs a browser engine.');
+        const raw = w.XMLSerializer ? new w.XMLSerializer().serializeToString(svg) : svg.outerHTML;
+        const { rasterizeSvgToRgba } = await import('@lolly-tools/node-shell/raster');
+        const { runJxl } = await import('@lolly-tools/node-shell/jxl');
+        const { jxlWithXmp } = await import('../../../engine/src/jxl-container.ts');
+        const { embedWatermark, canCarryWatermark, LOSSLESS_STRENGTH } = await import('@lolly/engine');
+        const dpi = opts.dpi ?? 300;
+        const px = (v: string | number | undefined, fallback: number): number => {
+          const d = parseDimension(v); return d ? Math.max(1, Math.round(toPixels(d, dpi))) : fallback;
+        };
+        const width = px(opts.width, parseFloat(svg.getAttribute('width') as string) || 1280);
+        const height = px(opts.height, parseFloat(svg.getAttribute('height') as string) || 720);
+        if (width * height > 8_000_000 || width > 16384 || height > 16384) throw new Error('JPEG XL encoding is limited to 8 megapixels.');
+        const frame = await rasterizeSvgToRgba(raw, width, height);
+        const pixels = opts.imprint !== false && canCarryWatermark(width, height)
+          ? embedWatermark(frame.data, { width, height, ...(format === 'jxl-lossless' ? { strength: LOSSLESS_STRENGTH } : {}) }) : frame.data;
+        const result = await runJxl({ operation: 'encode', bytes: pixels, width, height, options: { quality: opts.quality, lossless: format === 'jxl-lossless' } });
+        return new Blob([jxlWithXmp(result.bytes, (await import('../../../engine/src/image-meta.ts')).buildExportXmp(opts.meta)) as BlobPart], { type: 'image/jxl' });
+      }
       if (format === 'bmp') {
         // BMP joins exr/hdr as a browser-free raster: the engine's own encoder over a
         // resvg raster of THIS tool's SVG (no Chromium). Uncompressed Windows Bitmap - 
@@ -1246,13 +1296,13 @@ function rootSvgOf(node: Element | null): Element | null {
       const qual = (v: number | null | undefined): string | number | undefined => (typeof v === 'number' && v > 0 ? (u !== 'px' ? `${v}${u}` : v) : undefined);
       const blob = await host.export.render(el, fmt as ExportFormat, { width: qual(width), height: qual(height), dpi, embedMeta: false, watermark: false });
       const buf = Buffer.from(await blob.arrayBuffer());
-      return {
+      return prepareJxlAsset({
         source: 'remote',
         id: `compose:${toolId}`,
         type: fmt === 'svg' ? 'vector' : 'raster',
         format: fmt,
         url: `data:${mimeFor(fmt)};base64,${buf.toString('base64')}`,
-      };
+      }, buf);
     },
 
     // Render a pasted/stored Lolly tool URL to an AssetRef whose id is the
@@ -1339,6 +1389,14 @@ export async function applyBrandVars(el: HTMLElement, host: HostV1): Promise<voi
       : colorToHex(value);
     if (css) el.style.setProperty(`--brand-${slot}`, css);
   }
+  const { swatchFace, tokenColorVar } = await import('../../../engine/src/color-face.ts');
+  const target = el.matches('[data-editing-range="hdr"]') || el.querySelector('[data-editing-range="hdr"]') ? 'rec2020' : 'srgb';
+  for (const swatch of await host.tokens.colors()) {
+    const value = swatchFace(swatch,target); el.style.setProperty(tokenColorVar(swatch.ref),value);
+    const semantic = /^color\.semantic\.([a-z-]+)$/.exec(swatch.path);
+    if (semantic) el.style.setProperty('--brand-'+semantic[1],value);
+  }
+
 }
 
 // Embed authorship provenance as <title>/<desc> + a Dublin-Core <metadata> block
@@ -1381,6 +1439,7 @@ function mimeFor(format: string): string {
     case 'png': return 'image/png';
     case 'jpg': case 'jpeg': return 'image/jpeg';
     case 'webp': return 'image/webp';
+    case 'jxl': case 'jxl-lossless': return 'image/jxl';
     case 'bmp': return 'image/bmp';
     // Legacy Windows-metafile type rather than RFC 7903 image/emf|image/wmf:
     // it's the only MIME Google Drive opens in Google Drawings/Slides.

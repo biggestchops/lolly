@@ -37,13 +37,13 @@ const CATEGORY_LABEL: Record<FormatCategory, () => string> = {
 // Anything unlisted (palette exchanges, fonts, plotter/legacy vector, float
 // masters) deliberately reads as Other rather than guessing wrong.
 const CATEGORY_OF: Record<string, FormatCategory> = {
-  png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', avif: 'image',
+  jxl: 'image', 'jxl-lossless': 'image', png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', avif: 'image',
   svg: 'image', svgz: 'image', bmp: 'image', tiff: 'image', ico: 'image',
   pdf: 'document', 'pdf-cmyk': 'document', 'cmyk-tiff': 'document',
   pptx: 'document', penpot: 'document', lolly: 'document', docx: 'document', odt: 'document', html: 'document',
   md: 'document', txt: 'document', csv: 'document', json: 'document',
   ics: 'document', vcf: 'document', srt: 'document', vtt: 'document',
-  mp4: 'motion', webm: 'motion', gif: 'motion', apng: 'motion',
+  mp4: 'motion', webm: 'motion', gif: 'motion', apng: 'motion', lottie: 'motion',
   'webp-anim': 'motion', 'svg-anim': 'motion',
   wav: 'audio', mp3: 'audio', m4a: 'audio', aac: 'audio',
   opus: 'audio', ogg: 'audio', flac: 'audio',

@@ -7,7 +7,7 @@ test('shared glyphs retain viewBox, paint and accessibility attributes without r
   const icons = { arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M2 12h20"/></svg>' };
   const sprite = createIconSprite(icons);
   assert.match(sprite.svg, /<symbol id="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"/);
-  assert.match(sprite.icon('arrow')!, /viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"/);
+  assert.match(sprite.icon('arrow')!, /viewBox="0 0 24 24" aria-hidden="true"/);
   assert.ok(sprite.icon('arrow')!.includes(`/info/${sprite.filename}#arrow`));
   assert.ok(!sprite.icon('arrow')!.includes('<path'));
   assert.equal(createIconSprite(icons).filename, sprite.filename);

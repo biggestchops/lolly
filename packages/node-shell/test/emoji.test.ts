@@ -14,7 +14,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { EmojiPackPinV1 } from '@lolly-tools/core/emoji-v1';
+import { gzipSync } from 'node:zlib';
+import { EMOJI_BUNDLE_MAX_BYTES, type EmojiPackPinV1 } from '@lolly-tools/core/emoji-v1';
 import { createNodeEmojiAPI } from '../src/emoji.ts';
 
 const REPO = fileURLToPath(new URL('../../../', import.meta.url));
@@ -123,4 +124,48 @@ test('a bundle url that climbs out of the catalog is refused', async () => {
   assert.deepEqual((await escaping.sets()).map((set) => set.pin.id), [ASSET_ID], 'the entry is still listed');
   assert.equal(await escaping.manifest(pin) === null, true, 'but its bytes are never read from outside the catalog');
   rmSync(dir, { recursive: true, force: true });
+});
+
+test('a compressed server bundle returns the exact pinned manifest and artwork', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'lolly-emoji-compressed-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  mkdirSync(join(dir, 'assets'), { recursive: true });
+  const manifest = JSON.stringify({ id: ASSET_ID, version: entryMeta.version });
+  const checksum = sha256(manifest);
+  const compressedPin = { ...pin, checksum };
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h1v1z"/></svg>';
+  const bundle = JSON.stringify({ schemaVersion: 1, kind: 'emoji-pack-bundle', manifest, artwork: { 'glyph.svg': svg } });
+  writeFileSync(join(dir, 'assets/index.json'), JSON.stringify({ assets: [{
+    ...entry, meta: { emoji: { ...entry.meta!.emoji, checksum } },
+    formats: [{ format: 'json', url: '/catalog/pack.json' }],
+  }] }));
+  writeFileSync(join(dir, 'pack.json.gz'), gzipSync(bundle));
+  const packed = await createNodeEmojiAPI({ catalogDir: dir, parseXml: source => source });
+  assert.equal(new TextDecoder().decode((await packed.manifest(compressedPin))!), manifest);
+  assert.equal(new TextDecoder().decode((await packed.artwork(compressedPin, { url: 'glyph.svg' } as never))!), svg);
+  assert.equal(await packed.manifest({ ...compressedPin, checksum: sha256('wrong') }), null);
+
+  // A broken original must not be hidden by an older compressed copy.
+  writeFileSync(join(dir, 'pack.json'), '{}');
+  const original = await createNodeEmojiAPI({ catalogDir: dir, parseXml: source => source });
+  assert.equal(await original.manifest(compressedPin), null);
+  rmSync(join(dir, 'pack.json'));
+  writeFileSync(join(dir, 'pack.json.gz'), 'not gzip');
+  const corrupt = await createNodeEmojiAPI({ catalogDir: dir, parseXml: source => source });
+  assert.equal(await corrupt.manifest(compressedPin), null);
+});
+
+test('compressed server bundles cannot expand past the ordinary bundle limit', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'lolly-emoji-inflate-limit-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  mkdirSync(join(dir, 'assets'), { recursive: true });
+  const manifest = '{}', checksum = sha256(manifest);
+  writeFileSync(join(dir, 'assets/index.json'), JSON.stringify({ assets: [{
+    ...entry, meta: { emoji: { ...entry.meta!.emoji, checksum } },
+    formats: [{ format: 'json', url: '/catalog/pack.json' }],
+  }] }));
+  const oversized = JSON.stringify({ schemaVersion: 1, kind: 'emoji-pack-bundle', manifest, artwork: { 'large.svg': ' '.repeat(EMOJI_BUNDLE_MAX_BYTES) } });
+  writeFileSync(join(dir, 'pack.json.gz'), gzipSync(oversized));
+  const packed = await createNodeEmojiAPI({ catalogDir: dir, parseXml: source => source });
+  assert.equal(await packed.manifest({ ...pin, checksum }), null);
 });

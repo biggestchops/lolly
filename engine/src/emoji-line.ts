@@ -4,7 +4,7 @@ import type { EmojiGlyphV1, EmojiSourceV1, EmojiStyleV1, EmojiPackPinV1, EmojiMe
 import type { TextAPI } from '@lolly-tools/core/host-v1';
 import { bytesToBin, sha256Hex } from './bytes.ts';
 import { escapeXml } from './xml-escape.ts';
-import { describeEmojiPack, matchesEmojiPack, validateEmojiStyle } from './emoji-pack.ts';
+import { emojiPackNotices, describeEmojiPack, matchesEmojiPack, validateEmojiStyle } from './emoji-pack.ts';
 import type { VerifiedEmojiPack } from './emoji-pack.ts';
 import { resolveEmoji } from './emoji-resolve.ts';
 import { segmentEmojiText, requiresEmojiBidiLayout } from './emoji-segment.ts';
@@ -33,6 +33,8 @@ export interface EmojiLineSource {
   label: string;
   assetId: string;
   source: EmojiSourceV1;
+  /** Original notice texts that accompany the artwork when it is distributed. */
+  notices?: { name: string; text: string }[];
   sourceChecksum: string;
   artworkChecksum: string;
   canonicalChecksum: string;
@@ -137,7 +139,7 @@ export async function compileEmojiLine(input: EmojiLineInput, packs: readonly Ve
           if (!prepared.ok) return fail('unsupported-artwork', prepared.message, span);
           const source: EmojiLineSource = {
             pack: value.pack, family: described.family, style: described.style, meaning: value.meaning,
-            label: value.glyph.label, assetId: value.glyph.asset.id, source: value.glyph.source,
+            label: value.glyph.label, assetId: value.glyph.asset.id, source: value.glyph.source, notices: emojiPackNotices(pack),
             sourceChecksum: value.glyph.sourceChecksum, artworkChecksum: value.glyph.asset.checksum,
             canonicalChecksum: prepared.svg.checksum, normalizer: prepared.svg.normalizer,
             changes: emojiSvgChanges(prepared.svg), occurrences: [],

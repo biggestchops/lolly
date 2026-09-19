@@ -706,6 +706,7 @@ async function exportFile(ctx) {
     vbW: 100, vbH: vbH, pinInk: inkOn(accent),
   }, { w: W, h: H });
 
+  if (host.emoji && host.emoji.renderSvg) overlay = await host.emoji.renderSvg(overlay);
   var canvas = rasterCanvas(W, H);
   var c2d = canvas.getContext('2d');
   if (!c2d) throw new Error(HEADLESS_MSG);

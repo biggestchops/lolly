@@ -1403,6 +1403,7 @@ function grainVignettePass(gd, W, H, P) {
         var l01 = lattice[(gy0 + 1) * gw + gx0], l11 = lattice[(gy0 + 1) * gw + gx0 + 1];
         var nv = (l00 * (1 - gfx) + l10 * gfx) * (1 - gfy) + (l01 * (1 - gfx) + l11 * gfx) * gfy;
         var lum2 = (LUM_R * r5 + LUM_G * g5 + LUM_B * b5) / 255;
+        if (P.hdr) lum2 = clamp(lum2,0,1);
         var gw2 = 4 * lum2 * (1 - lum2); // midtone-weighted (peaks at 0.5)
         var add = nv * gAmt * (0.35 + 0.65 * gw2);
         r5 += add; g5 += add; b5 += add;
@@ -1635,6 +1636,7 @@ function composeTextureFloat(buf, W, H, P) {
   }
   // Clamp to the sRGB byte range the source domain implies (encode boundary
   // clamps again, but keeping the buffer sane avoids NaNs feeding srgbToLinear).
+  if (P.hdr) return;
   for (var q = 0; q < buf.length; q += 4) {
     buf[q] = clamp(buf[q], 0, 255); buf[q + 1] = clamp(buf[q + 1], 0, 255); buf[q + 2] = clamp(buf[q + 2], 0, 255); buf[q + 3] = 255;
   }
@@ -1763,6 +1765,75 @@ function getPipelineLut(P, userLut) {
   return lut;
 }
 
+// HDR keeps original float samples until the display or encoder boundary.
+var _hdrSource = { key: null, promise: null };
+var _hdrError = null;
+function hdrSource(ref) {
+  var key = JSON.stringify(ref);
+  if (_hdrSource.key !== key) _hdrSource = { key: key, promise: host.codec.decode(ref) };
+  return _hdrSource.promise;
+}
+async function composeHdr(source, W, H, P, stops, userLut) {
+  if (P.framing.pitch || P.framing.yaw) throw new Error('HDR perspective correction is unavailable. Set Vertical and Horizontal to zero.');
+  var r = frameRect(source.width, source.height, W, H, P.framing, P.fit);
+  var angle = r.rotate * Math.PI / 180, c = Math.cos(angle), s = Math.sin(angle);
+  var dx = r.dx - r.originX, dy = r.dy - r.originY;
+  var frame = await host.codec.compose(W, H, [{ frame: source, matrix: [c*r.dw/source.width,s*r.dw/source.width,-s*r.dh/source.height,c*r.dh/source.height,r.originX+c*dx-s*dy,r.originY+s*dx+c*dy] }]);
+  var data = frame.data, gain = Math.pow(2, P.exposure);
+  var gains = [(1+.28*P.temperature-.06*P.tint)*gain,(1-.06*Math.abs(P.temperature)-.22*P.tint)*gain,(1-.30*P.temperature-.06*P.tint)*gain];
+  var creative = Object.assign({}, P, { temperature: 0, tint: 0, exposure: 0, contrast: 0, highlights: 0, shadows: 0, saturation: 1, vibrance: 0 });
+  var fn = colorActive(creative, userLut) ? makeColorFn(creative, stops, userLut) : null;
+  for (var i = 0; i < data.length; i += 4) {
+    var rgb = [data[i]*gains[0],data[i+1]*gains[1],data[i+2]*gains[2]];
+    var lum = Math.max(0, LUM_R*rgb[0]+LUM_G*rgb[1]+LUM_B*rgb[2]);
+    var contrast = 1 + P.contrast*.8;
+    var outLum = .18*Math.pow(lum/.18, contrast);
+    var tone = lum > 1e-8 ? outLum/lum : 1;
+    tone *= Math.pow(2, P.highlights*(lum/(1+lum)) + P.shadows/(1+lum*8));
+    var max = Math.max.apply(null,rgb), min = Math.min.apply(null,rgb);
+    var saturation = Math.max(0, P.saturation + P.vibrance*(1-(max > 0 ? (max-min)/max : 0))*.9);
+    for (var ch = 0; ch < 3; ch++) rgb[ch] = (lum+(rgb[ch]-lum)*saturation)*tone;
+    // Display-referred creative looks operate on normalised colour; restore headroom afterwards.
+    if (fn) {
+      var peak = Math.max(1,rgb[0],rgb[1],rgb[2]);
+      var styled = fn(linearToSrgb(Math.max(0,rgb[0])/peak),linearToSrgb(Math.max(0,rgb[1])/peak),linearToSrgb(Math.max(0,rgb[2])/peak));
+      for (var k = 0; k < 3; k++) rgb[k] = srgbToLinear(styled[k])*peak + Math.min(0,rgb[k]);
+    }
+    for (var j = 0; j < 3; j++) data[i+j] = rgb[j]*255;
+    data[i+3] *= 255;
+  }
+  composeTextureFloat(data,W,H,Object.assign({},P,{ hdr: true }));
+  for (var p = 0; p < data.length; p++) data[p] /= 255;
+  return frame;
+}
+async function computeHdr(inputs, P, stops, lut, url, rows) {
+  _deepState = null; _hdrError = null;
+  try {
+    if (!host.codec || !host.codec.decode || !host.codec.compose || !host.codec.preview) throw new Error('This shell does not support HDR editing.');
+    var source;
+    if (rows.length) {
+      var layers = [];
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i]; if (!truthy(row.v,true) || !row.img) continue;
+        layers.push({ frame: await host.codec.decode(row.img), matrix: [1,0,0,1,n(row.x,0),n(row.y,0)], opacity: clamp(n(row.o,100),0,100)/100, blend: row.b || 'source-over' });
+      }
+      source = await host.codec.compose(P.W,P.H,layers);
+    } else {
+      if (!url) throw new Error('Choose an image to edit in HDR.');
+      source = await hdrSource(inputs.image || url);
+    }
+    var frame = await composeHdr(source,P.W,P.H,P,stops,lut);
+    var preview = await host.codec.preview(frame);
+    var canvas = document.createElement('canvas'); canvas.width = preview.width; canvas.height = preview.height;
+    var ctx = canvas.getContext('2d'); ctx.putImageData(new ImageData(preview.data,preview.width,preview.height),0,0);
+    _deepState = { hdr: true, frame: frame, source: source, P: P, stops: stops, userLut: lut };
+    return { outSrc: canvas.toDataURL('image/png'), prevSrc: null, note: P.splitPreview ? 'Before/after comparison is unavailable in HDR editing.' : null, histSvg: P.histogram ? buildHistogramSvg(canvas) : '', split: false, beforeSrc: null, videoLook: null, bakeLut: false, downloadPresetLut: false };
+  } catch (error) {
+    _hdrError = String(error && error.message || error);
+    return { outSrc: null, prevSrc: null, note: _hdrError, histSvg: '', split: false, beforeSrc: null, videoLook: null, bakeLut: false, downloadPresetLut: false };
+  }
+}
+
 async function compute(model) {
   var inputs = inputsFrom(model);
   var P = paramsFrom(inputs);
@@ -1857,6 +1928,9 @@ async function compute(model) {
     if (_defaultUrl) url = _defaultUrl;
   }
 
+  if (inputs.editingRange === 'hdr') return computeHdr(inputs, P, stops, lutRes.lut, url, rows);
+  _hdrError = null;
+  if (_deepState && _deepState.hdr) _deepState = null;
   var dims = workDims(P.W, P.H, STILL_MAX);
   var stackKey = rows.length ? layerStackKey(rows, P.W, P.H) : null;
   var memoKey = JSON.stringify({ url: url, stack: stackKey, P: P, d: dims, stops: stops });
@@ -1954,7 +2028,12 @@ function onInput(ctx) { return compute(ctx.model); }
 // shells - the source draw and the dust layer go through the platform canvas -
 // and this tool's pixels are a browser-canvas artefact, so the CLI (no canvas)
 // declines here and the export is a web/desktop affordance.
-function exportStill(ctx) {
+async function exportStill(ctx) {
+  if (_hdrError) throw new Error(_hdrError);
+  if (_deepState && _deepState.hdr) {
+    if (['svg','pdf','penpot','webm','mp4','psd'].indexOf(ctx.format) >= 0) throw new Error('Choose a raster still format for HDR Darkroom. Use Sequence for HDR video.');
+    return { frame: _deepState.frame };
+  }
   var h = (ctx && ctx.host) || host;
   if (!h || !h.codec) return null;                 // no deep codecs in this shell → 8-bit path
   var fmt = String((ctx && ctx.format) || '').toLowerCase();
@@ -2003,6 +2082,7 @@ function onFrame(ctx) {
   if (!frame || !frame.data || !frame.width || !frame.height) return null;
   if (!canRaster() || typeof ImageData === 'undefined') return null;
   var inputs = inputsFrom(ctx.model);
+  if (inputs.editingRange === 'hdr') return { outSrc: null, note: 'Live camera capture supplies SDR pixels. Choose Standard editing for the camera.' };
   var P = paramsFrom(inputs);
   var stops = _brandStops || { shadow: '#1c2230', mid: '#5c7cfa', highlight: '#f4f2ec' };
   _stopsForKey = stops;

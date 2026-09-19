@@ -97,7 +97,7 @@ export function wireDuration(ta: ActionsCtx): void {
       subtree: true,
       childList: true,
       attributes: true,
-      attributeFilter: ['data-seq-ms', 'data-sequence', 'data-clip-ms'],
+      attributeFilter: ['data-seq-ms', 'data-sequence', 'data-clip-ms', 'data-seq-marks', 'data-seq-fps'],
     });
   }
   ta.sequence.syncSequenceUi();
@@ -934,6 +934,7 @@ export function wireApprovalAndActions(ta: ActionsCtx): void {
             btn.textContent = `Exporting… ${pct}%`;
           },
           ...(isAnimated ? ta.video.videoParams() : {}),
+          ...(fmt === 'lottie' ? { fps: ta.video.videoParams().fps } : {}),
           // A staged click deck (plans/184 R3): the Duration field is each slide's dwell,
           // not the video's total - the total is the slides added up, which the compositor
           // reads off the stamped data-seq-ms when the duration is NOT flagged user-set.

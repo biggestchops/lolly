@@ -101,5 +101,9 @@
   "inputs.boxes.fields.font.options.mono": "Mono",
   "inputs.boxes.fields.tracking.label": "Kerning",
   "inputs.boxes.fields.shadow.options.text": "Text",
-  "description": "Un canvas deschis pentru aranjare liberă - text, imagini, forme și randări live din celelalte instrumente Lolly, toate aliniate la sistemul tău de design."
+  "description": "Un canvas deschis pentru aranjare liberă - text, imagini, forme și randări live din celelalte instrumente Lolly, toate aliniate la sistemul tău de design.",
+  "inputs.projectFps.label": "Rata de cadre a proiectului",
+  "inputs.sequenceMarks.label": "Marcaje pe cronologie",
+  "inputs.boxes.fields.animationId.label": "Animația din sursă",
+  "inputs.boxes.fields.animationEdits.label": "Modificări interne ale animației"
 }

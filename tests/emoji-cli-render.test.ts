@@ -38,6 +38,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const BIN = join(HERE, '..', 'shells', 'cli', 'bin', 'lolly.ts');
 const PACK_ID = 'community/emoji/twemoji/color';
 const PACK_PIN = 'twemoji/color@17.0.3';
+const DEFAULT_PACK_ID = 'community/emoji/fluent/high-contrast';
 const PACK_ROOT = join(HERE, '..', 'community', 'emoji-packs');
 const BUNDLE = join(PACK_ROOT, 'twemoji-color.json');
 const PACK_INDEX = join(PACK_ROOT, 'index.json');
@@ -69,9 +70,10 @@ if (packAvailable) {
   await mkdir(join(root, 'catalog', 'packs', 'emoji-packs'), { recursive: true });
   await mkdir(join(root, 'catalog', 'assets', 'lolly', 'tokens'), { recursive: true });
   await copyFile(BUNDLE, join(root, 'catalog', 'packs', 'emoji-packs', 'twemoji-color.json'));
+  await copyFile(join(PACK_ROOT, 'fluent-high-contrast.json'), join(root, 'catalog', 'packs', 'emoji-packs', 'fluent-high-contrast.json'));
   await copyFile(TOKENS, join(root, 'catalog', 'assets', 'lolly', 'tokens', 'brand.json'));
   await writeFile(join(root, 'catalog', 'assets', 'index.json'),
-    JSON.stringify({ assets: [entry(PACK_INDEX, PACK_ID), entry(INDEX, TOKENS_ID)] }));
+    JSON.stringify({ assets: [entry(PACK_INDEX, PACK_ID), entry(PACK_INDEX, DEFAULT_PACK_ID), entry(INDEX, TOKENS_ID)] }));
   await writeFile(join(root, 'catalog', 'tools', 'index.json'), JSON.stringify({
     version: '1',
     tools: [{ id: 'emoji-card', name: 'emoji-card', status: 'community', description: 'emoji-card description', category: 'utility', formats: ['html'] }],
@@ -195,8 +197,16 @@ test('two treatments recolour one drawing: different paints, identical geometry'
   assert.equal(geometry(plain), geometry(snap));
 });
 
-test('no set chosen gives the neutral placeholder, never an operating-system glyph', { skip: SKIP_NO_PACK }, async () => {
-  const html = await render('unset', IN_PACK, []);
+test('no emoji flags defaults to Fluent High Contrast', { skip: SKIP_NO_PACK }, async () => {
+  const implicit = await render('default', IN_PACK, []);
+  const explicit = await render('default-explicit', IN_PACK, ['--emoji=fluent/high-contrast@2026.8.24']);
+  assert.equal(implicit, explicit);
+  assert.match(implicit, /fill="currentColor"/);
+  assert.doesNotMatch(implicit, /lolly-emoji--unset/);
+});
+
+test('explicit none gives the neutral placeholder, never an operating-system glyph', { skip: SKIP_NO_PACK }, async () => {
+  const html = await render('unset', IN_PACK, ['--emoji=none']);
   const drawn = placements(html);
   assert.equal(drawn.length, 2);
   for (const p of drawn) {

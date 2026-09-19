@@ -316,6 +316,7 @@ export interface ModelItem {
 export interface RuntimeApi {
   getModel(): ModelItem[];
   setInput(id: string, value: any): void;
+  applyPatch?(values: Record<string, unknown>): Promise<void>;
   subscribe(fn: () => void): (() => void) | undefined;
   /** Feature-detected (engine 1.196): the emoji pass, so a clone of the page (an artboard
    *  thumbnail) draws the chosen set's artwork and never the machine's own emoji font. */
@@ -468,6 +469,7 @@ export interface ToolbarActions {
 }
 
 export interface EditingState {
+  disposeEmojiDisplay?: () => void;
   id: string;
   el: HTMLElement;
   boxEl: HTMLElement | null;
@@ -1074,4 +1076,3 @@ export interface TouchPt {
 }
 /** railSession is an ES module binding now: importers read it live and write it through here. */
 export function setRailSession(value: { left: number; top: number } | null): void { railSession = value; }
-

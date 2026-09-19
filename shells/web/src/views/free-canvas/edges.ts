@@ -403,8 +403,8 @@ export function openEdgePanel(fc: FcCtx): void {
   }
   if (colorF)
     wireColorField(p, {
-      onChange: (id, val) => {
-        if (id === 'fc-edge-color') setEdgeField(fc, colorF, fc.helpers.unwrapColor(val));
+      onChange: (id, val, detail) => {
+        if (id === 'fc-edge-color') setEdgeField(fc, colorF, fc.helpers.unwrapColor(val, detail));
       },
     });
   p.querySelector<HTMLButtonElement>('[data-ep="del"]')?.addEventListener('click', (ev) => {

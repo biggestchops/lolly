@@ -8,6 +8,7 @@
  * from mountTool() by scripts/split-closure.ts.
  */
 import { acquireCollabSession } from '../../lib/collab-session-source.ts';
+import { stageBottomReserve } from '../../lib/design-panel-layout.ts';
 import { carryMountState, willRemountForCollab } from '../../lib/collab-live-mount.ts';
 import { releaseTeamSessionOrigin } from '../../org/team-session-origin.ts';
 import type { ToolCollab } from '../tool-collab.ts';
@@ -123,10 +124,7 @@ export function fitCanvas(tview: ToolViewCtx): void {
   // it); justify-content:center then honours the margins, floating the canvas into the band.
   const cs = getComputedStyle(stageEl);
   const reserveTop = Math.max(0, parseFloat(cs.getPropertyValue('--stage-reserve-top')) || 0);
-  const reserveBottom = Math.max(
-    0,
-    parseFloat(cs.getPropertyValue('--stage-reserve-bottom')) || 0
-  );
+  const reserveBottom = stageBottomReserve(cs);
   // Left band: the free-canvas rail docks into a fixed-width left panel while the
   // timeline is open (see dockRailForTimeline). Same margin mechanism as top/bottom -
   // centring the margin box puts the canvas exactly centred in the remaining band.
@@ -707,9 +705,16 @@ export async function wireCanvas(tview: ToolViewCtx): Promise<void> {
   // The stage resized, so the canvas re-fits - and every remote focus ring and
   // cursor was anchored from rects that just moved. `collabReanchor` is null unless
   // a collab is live, so this stays the one-call observer it has always been.
+  // Fitting can change the observed stage's padding on compact screens. Defer
+  // those writes so WebKit can finish delivering this batch of resize entries.
+  let resizeFrame = 0;
   const ro = new ResizeObserver(() => {
-    tview.stageLayout.refitStage();
-    tview.collabReanchor?.();
+    if (resizeFrame) return;
+    resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0;
+      tview.stageLayout.refitStage();
+      tview.collabReanchor?.();
+    });
   }); tview.ro = ro;
   ro.observe(stageEl);
   tview.stageLayout.fitCanvas();
@@ -1236,6 +1241,7 @@ export async function wireCanvas(tview: ToolViewCtx): Promise<void> {
     styleEl.remove();
     shutter.destroy();
     ro.disconnect();
+    cancelAnimationFrame(resizeFrame);
     tview.stageZoom?.destroy();
     tview.exportTeardown?.();
     tview.framingTeardown?.();

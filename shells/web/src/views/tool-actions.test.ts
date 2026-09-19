@@ -620,7 +620,7 @@ test('sequence: a user edit stops the re-sync for good', async () => {
   assert.equal(d.value, '20', 'the timeline must not overwrite a deliberate user value');
 });
 
-test('durationUserSet reaches the export opts only after a user edit', async () => {
+test('sequence ranges own export duration even when an old hidden duration control changes', async () => {
   const h = mount({ seqMs: 12000 });
   const download = h.panel.querySelector('[data-action="download"]') as HTMLElement;
 
@@ -640,7 +640,7 @@ test('durationUserSet reaches the export opts only after a user edit', async () 
   download.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   await settle();
   assert.equal(h.exports().length, 2);
-  assert.equal(h.exports()[1]!.opts.durationUserSet, true);
+  assert.equal(h.exports()[1]!.opts.durationUserSet, false);
   assert.equal(h.exports()[1]!.opts.duration, 20);
 });
 
@@ -2311,4 +2311,15 @@ test('sequence export discloses audio settings without replacing controls or los
   assert.equal(options.open, false);
   assert.equal(options.querySelector('[data-action="audio-volume"]'), volume);
   assert.equal(volume.value, '65');
+});
+
+
+test('sequence export timing shows the project range and observes marker changes', async () => {
+  const h = mount({ seqMs: 12000 });
+  const stage = h.canvas.querySelector<HTMLElement>('[data-sequence]')!;
+  stage.dataset.seqMarks = 'v1|i,2000|o,6000'; stage.dataset.seqFps = '25';
+  await settle();
+  assert.equal(h.panel.querySelector('[data-seq-range]')?.textContent, 'Range: 2.00–6.00 s · 25 fps');
+  assert.equal((h.panel.querySelector('[data-seq-wait]') as HTMLElement).hidden, true);
+  assert.equal((h.panel.querySelector('[data-seq-duration]') as HTMLElement).hidden, true);
 });

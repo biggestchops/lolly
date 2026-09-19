@@ -170,3 +170,16 @@ test('a saved session carries the emoji stamp, and older records still open', ()
     assert.equal(sessionEmojiStamp(junk as { emoji?: unknown }), null, JSON.stringify(junk ?? null));
   }
 });
+
+test('a document link pins its full palette and fallbacks independently of another host', () => {
+  const snapshot = styleWith({ mode: 'snap', strengthBps: 10000, recipe: 'emoji-treatment-v1', palette: PALETTE,
+    protect: { skinTones: true, flags: false, custom: true } });
+  snapshot.fallbacks = [SETS[1]!.pin];
+  const params = emojiParams(snapshot);
+  const restored = parseEmojiParams(params, [], [{ id: 'different', hex: '#123456' }]);
+  assert.deepEqual(restored.style, snapshot);
+  const query = serializeUrlState([], { emoji: params.emoji, emojiFx: params.emojifx, emojiStyle: params.emojistyle });
+  assert.deepEqual(parseEmojiParams({ emojistyle: parseUrlState(query, { inputs: [] } as never).emojiStyle }).style, snapshot);
+  assert.equal(sessionEmojiStamp({ emoji: params })?.emojistyle, params.emojistyle);
+  assert.equal(parseEmojiParams({ ...params, emojistyle: '{bad' }, SETS, PALETTE).pin, undefined);
+});

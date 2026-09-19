@@ -55,6 +55,7 @@ export interface TranscriptPanelOpts {
   write: (next: Box[]) => void;
   /** Seek the playhead to an AUTHORED-time millisecond (the caller maps to the clock). */
   seek: (ms: number) => void;
+  markers?: readonly { ms: number; label: string }[];
   /** Subscribe to playhead ticks (AUTHORED ms) for the read-along highlight. */
   subscribeTick: (cb: (ms: number) => void) => () => void;
   /** Optional: subscribe to model changes so external edits refresh the words. */
@@ -391,6 +392,17 @@ export function openTranscriptPanel(opts: TranscriptPanelOpts): TranscriptPanel 
 
   toolbar.append(cut.b, skip.b);
   if (isTts) toolbar.append(editToggle.b, regen.b, recipeBtn.b);
+  if (opts.markers?.length) {
+    const markers = document.createElement('select'); markers.className = 'field-select field-select--sm';
+    markers.setAttribute('aria-label', t('Markers'));
+    const prompt = document.createElement('option'); prompt.value = ''; prompt.textContent = t('Markers'); markers.append(prompt);
+    for (const marker of opts.markers) {
+      const option = document.createElement('option'); option.value = String(marker.ms);
+      option.textContent = `${(marker.ms / 1000).toFixed(2)}s · ${marker.label || t('Marker')}`; markers.append(option);
+    }
+    markers.addEventListener('change', () => { if (markers.value !== '') seek(Number(markers.value)); markers.value = ''; });
+    toolbar.append(markers);
+  }
   toolbar.append(spacer, showSkipped);
   if (isTts) toolbar.append(keepPrev);
 

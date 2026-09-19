@@ -16,6 +16,9 @@
 import type { TableValue } from '@lolly/engine';
 import '../styles/parts/data-grid.css';
 import { escapeHtml } from '../lib/util/escape.ts';
+import { clipboardCells, gridKeyAction, pasteTableCells, selectedTableCells, tableCellClipboard, type GridCell } from '../lib/table-grid-navigation.ts';
+import { htmlTableToTsv } from '../lib/table-paste.ts';
+import { validTableDate, tableMinutes } from '../../../../engine/src/table-edit.ts';
 
 /** The slice of rows to render for a given scroll position, plus the offset + total
  *  height that place that slice inside a full-height scroll canvas. Pure. */
@@ -44,6 +47,7 @@ export interface DataGridOptions {
   onChange?: (next: TableValue, change?: { deletedRow: number }) => void;
   /** Fixed-schema grids keep their column headings. */
   fixedColumns?: boolean;
+  onError?: (message: string) => void;
   /** Column indices that are read-only even when the grid is editable (e.g. a
    *  formula column shown as its computed value - the honest-limits marker). */
   readOnlyCols?: number[];
@@ -53,6 +57,10 @@ export interface DataGridOptions {
   overscan?: number;
   /** Open details for a row by click, Enter or Space, including read-only grids. */
   onRowActivate?: (row: number) => void;
+  /** Observe cell navigation without switching the grid into row-selection mode. */
+  onCellSelect?: (row: number, column: number) => void;
+  activeCell?: GridCell;
+  columnKinds?: Array<'date' | 'time' | 'url' | 'choice' | 'text' | undefined>;
   /** Let one column use spare horizontal space without shrinking other columns. */
   growColumn?: number;
 }
@@ -60,6 +68,7 @@ export interface DataGridOptions {
 export interface DataGridHandle {
   setValue(next: TableValue): void;
   getValue(): TableValue;
+  focusCell(cell: GridCell): void;
   destroy(): void;
 }
 
@@ -108,6 +117,8 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
   const canvas = container.querySelector<HTMLElement>('.dg-canvas')!;
   const rowsEl = container.querySelector<HTMLElement>('.dg-rows')!;
   let activeRow = 0;
+  let activeCell: GridCell = opts.activeCell ?? { row: 0, col: 0 };
+  let anchor = activeCell;
 
   const totalWidth = () => widths.reduce((a, b) => a + b, 0) + actionW;
 
@@ -125,6 +136,8 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
   let rangeFirst = -1;
   let rangeLast = -1;
   function renderRows(force = false): void {
+    const focused = rowsEl.contains(document.activeElement) ? document.activeElement as HTMLElement : null;
+    const focusedRow = focused?.dataset.row, focusedCol = focused?.dataset.col;
     const { first, last, offsetY, totalHeight } = visibleRange(
       viewport.scrollTop, viewport.clientHeight, rowHeight, value.rows.length, overscan,
     );
@@ -138,7 +151,7 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
       html += `<div class="dg-row" role="row" aria-rowindex="${r + 2}" style="height:${rowHeight}px" data-row="${r}"${opts.onRowActivate ? ` tabindex="${r === activeRow ? 0 : -1}" aria-selected="${r === activeRow}"` : ''}>`;
       for (let c = 0; c < value.columns.length; c++) {
         const ro = !editable || readOnly.has(c);
-        html += `<div class="dg-cell${ro ? ' dg-ro' : ''}" role="gridcell" style="width:${widths[c]}px${opts.growColumn === c ? ';flex-grow:1' : ''}" data-row="${r}" data-col="${c}"${ro ? '' : ' tabindex="-1"'}>${esc(row[c] ?? '')}</div>`;
+        html += `<div class="dg-cell${ro ? ' dg-ro' : ''}" role="gridcell" style="width:${widths[c]}px${opts.growColumn === c ? ';flex-grow:1' : ''}" data-row="${r}" data-col="${c}" aria-colindex="${c + 1}" tabindex="${!opts.onRowActivate && r === activeCell.row && c === activeCell.col ? 0 : -1}"${r >= Math.min(anchor.row, activeCell.row) && r <= Math.max(anchor.row, activeCell.row) && c >= Math.min(anchor.col, activeCell.col) && c <= Math.max(anchor.col, activeCell.col) ? ' data-grid-selected' : ''}>${esc(row[c] ?? '')}</div>`;
       }
       // Trailing row-delete × (gutter column). Not a .dg-cell, so it never starts
       // a cell edit; the delegated click handler below removes the row.
@@ -146,6 +159,10 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
       html += '</div>';
     }
     rowsEl.innerHTML = html;
+    if (focusedRow !== undefined) {
+      const selector = focusedCol !== undefined ? `.dg-cell[data-row="${focusedRow}"][data-col="${focusedCol}"]` : `.dg-row[data-row="${focusedRow}"]`;
+      (rowsEl.querySelector<HTMLElement>(selector) ?? viewport).focus({ preventScroll: true });
+    }
   }
 
   function refreshAria(): void {
@@ -154,7 +171,7 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
   }
 
   // ── editing: click a cell → a single floating <input> over it ────────────────
-  let editor: HTMLInputElement | null = null;
+  let editor: HTMLTextAreaElement | HTMLInputElement | null = null;
   function commit(): void {
     if (!editor) return;
     const activeEditor = editor;
@@ -174,7 +191,7 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
     if (!ae || ae === document.body) viewport.focus();
     opts.onChange?.(clone(value));
   }
-  function beginEdit(cell: HTMLElement): void {
+  function beginEdit(cell: HTMLElement, replace?: string): void {
     if (!editable) return;
     const c = Number(cell.dataset.col);
     if (readOnly.has(c)) return;
@@ -182,20 +199,36 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
     const r = Number(cell.dataset.row);
     const box = cell.getBoundingClientRect();
     const host = viewport.getBoundingClientRect();
-    editor = document.createElement('input');
+    const text = replace ?? value.rows[r]?.[c] ?? '';
+    const kind = opts.columnKinds?.[c];
+    const native = kind === 'url' || kind === 'date' && (!text || validTableDate(text)) || kind === 'time' && (!text || tableMinutes(text) !== null && tableMinutes(text)! < 1440);
+    editor = document.createElement(native ? 'input' : 'textarea');
+    if (native) (editor as HTMLInputElement).type = kind!;
+    else (editor as HTMLTextAreaElement).rows = 1;
     editor.className = 'dg-editor';
-    editor.value = value.rows[r]?.[c] ?? '';
+    editor.value = text;
+    editor.setAttribute('aria-label', `${value.columns[c] || 'Cell'}, row ${r + 1}`);
     editor.dataset.row = String(r); editor.dataset.col = String(c);
     editor.style.left = `${box.left - host.left + viewport.scrollLeft}px`;
     editor.style.top = `${box.top - host.top + viewport.scrollTop}px`;
     editor.style.width = `${box.width}px`;
     editor.style.height = `${box.height}px`;
     inner.appendChild(editor);
-    editor.focus(); editor.select();
+    editor.focus();
+    if (!native || kind === 'url') {
+      if (replace === undefined) editor.select();
+      else editor.setSelectionRange(editor.value.length, editor.value.length);
+    }
     editor.addEventListener('blur', commit, { once: true });
     editor.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); commit(); viewport.focus(); }
-      else if (e.key === 'Escape') { e.preventDefault(); const cancelled = editor; editor = null; cancelled?.remove(); viewport.focus(); }
+      const action = gridKeyAction(e as KeyboardEvent, activeCell, value.rows.length, value.columns.length, true);
+      if (!action) return;
+      e.preventDefault(); e.stopPropagation();
+      if (action.kind === 'commit') { commit(); focusCell({ row: activeCell.row + action.direction, col: activeCell.col }); }
+      else if (action.kind === 'cancel') { const cancelled = editor; editor = null; cancelled?.remove(); focusCell(activeCell); }
+      else if (action.kind === 'newline' && editor?.tagName === 'TEXTAREA') {
+        editor.setRangeText('\n', editor.selectionStart!, editor.selectionEnd!, 'end');
+      }
     });
   }
 
@@ -223,10 +256,10 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
     opts.onChange?.(clone(value));
   }
 
-  const onScroll = (): void => { if (editor) commit(); renderRows(); };
+  const onScroll = (): void => { renderRows(); };
   const onDblClick = (e: MouseEvent): void => {
     const cell = (e.target as HTMLElement).closest<HTMLElement>('.dg-row .dg-cell');
-    if (cell) beginEdit(cell);
+    if (cell) { focusCell({ row: Number(cell.dataset.row), col: Number(cell.dataset.col) }); beginEdit(rowsEl.querySelector<HTMLElement>(`[data-row="${activeCell.row}"][data-col="${activeCell.col}"]`)!); }
   };
   // Delegated (rows recycle on scroll): a click on a row's × or a header's ×.
   const onClick = (e: MouseEvent): void => {
@@ -235,6 +268,15 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
     if (delRow) { e.preventDefault(); deleteRow(Number(delRow.dataset.delRow)); return; }
     const delCol = t.closest<HTMLElement>('[data-del-col]');
     if (delCol) { e.preventDefault(); deleteCol(Number(delCol.dataset.delCol)); }
+    const clickedCell = t.closest<HTMLElement>('.dg-row .dg-cell');
+    if (clickedCell && !opts.onRowActivate) {
+      commit();
+      focusCell({ row: Number(clickedCell.dataset.row), col: Number(clickedCell.dataset.col) }, e.shiftKey);
+      if ((e as PointerEvent).pointerType === 'touch') {
+        const cell = rowsEl.querySelector<HTMLElement>(`.dg-cell[data-row="${activeCell.row}"][data-col="${activeCell.col}"]`);
+        if (cell) beginEdit(cell);
+      }
+    }
     const row = t.closest<HTMLElement>('.dg-row');
     if (row && opts.onRowActivate) {
       activeRow = Number(row.dataset.row);
@@ -243,8 +285,37 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
       opts.onRowActivate(activeRow);
     }
   };
+  function focusCell(next: GridCell, extend = false): void {
+    activeCell = { row: Math.max(0, Math.min(value.rows.length - 1, next.row)), col: Math.max(0, Math.min(value.columns.length - 1, next.col)) };
+    if (!extend) anchor = activeCell;
+    const top = activeCell.row * rowHeight;
+    if (top < viewport.scrollTop) viewport.scrollTop = top;
+    else if (top + rowHeight * 2 > viewport.scrollTop + viewport.clientHeight) viewport.scrollTop = top + rowHeight * 2 - viewport.clientHeight;
+    renderRows(true);
+    const cell = rowsEl.querySelector<HTMLElement>(`.dg-cell[data-row="${activeCell.row}"][data-col="${activeCell.col}"]`);
+    cell?.focus({ preventScroll: true });
+    cell?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    opts.onCellSelect?.(activeCell.row, activeCell.col);
+  }
   const onKey = (event: KeyboardEvent): void => {
-    if (!opts.onRowActivate || editor || !value.rows.length) return;
+    if (editor || !value.rows.length) return;
+    if (!opts.onRowActivate) {
+      const action = gridKeyAction(event, activeCell, value.rows.length, value.columns.length, false);
+      if (!action) return;
+      event.preventDefault();
+      if (action.kind === 'clear' && editable) {
+        value = clone(value);
+        for (let r = Math.min(anchor.row, activeCell.row); r <= Math.max(anchor.row, activeCell.row); r++) {
+          for (let c = Math.min(anchor.col, activeCell.col); c <= Math.max(anchor.col, activeCell.col); c++) if (!readOnly.has(c)) value.rows[r]![c] = '';
+        }
+        renderRows(true); focusCell(activeCell, true); opts.onChange?.(clone(value));
+      } else if (action.kind === 'move') focusCell(action.cell, action.extend);
+      else if (action.kind === 'edit' || action.kind === 'newline') {
+        const cell = rowsEl.querySelector<HTMLElement>(`.dg-cell[data-row="${activeCell.row}"][data-col="${activeCell.col}"]`);
+        if (cell) beginEdit(cell, action.kind === 'edit' ? action.replace : '\n');
+      }
+      return;
+    }
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); opts.onRowActivate(activeRow); return; }
     const moves: Record<string, number> = { ArrowDown: 1, ArrowUp: -1, Home: -activeRow, End: value.rows.length - activeRow - 1 };
     if (moves[event.key] === undefined) return;
@@ -256,6 +327,29 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
     renderRows(true);
     rowsEl.querySelector<HTMLElement>(`.dg-row[data-row="${activeRow}"]`)?.focus({ preventScroll: true });
   };
+  const onCopy = (event: ClipboardEvent): void => {
+    if (editor || opts.onRowActivate) return;
+    event.preventDefault();
+    const copied = tableCellClipboard(selectedTableCells(value, anchor, activeCell));
+    event.clipboardData?.setData('text/plain', copied.text);
+    event.clipboardData?.setData('text/html', copied.html);
+  };
+  const onPaste = (event: ClipboardEvent): void => {
+    if (editor || !editable || opts.onRowActivate) return;
+    const text = htmlTableToTsv(event.clipboardData?.getData('text/html') ?? '') || event.clipboardData?.getData('text/plain') || '';
+    if (!text) return;
+    const cells = clipboardCells(text);
+    event.preventDefault(); event.stopPropagation();
+    let next: TableValue;
+    try { next = pasteTableCells(value, activeCell, cells); }
+    catch (error) { opts.onError?.((error as Error).message); return; }
+    for (const c of readOnly) next.rows.forEach((row, r) => { row[c] = value.rows[r]?.[c] ?? ''; });
+    value = next;
+    full(); focusCell(activeCell);
+    opts.onChange?.(clone(value));
+  };
+  viewport.addEventListener('copy', onCopy);
+  viewport.addEventListener('paste', onPaste);
   viewport.addEventListener('scroll', onScroll, { passive: true });
   rowsEl.addEventListener('dblclick', onDblClick);
   container.addEventListener('click', onClick);
@@ -269,9 +363,12 @@ export function mountDataGrid(container: HTMLElement, opts: DataGridOptions): Da
   full();
 
   return {
+    focusCell,
     setValue(next) { value = clone(next); activeRow = Math.max(0, Math.min(activeRow, value.rows.length - 1)); widths = value.columns.map((_, c) => colWidth(value, c)); full(); },
     getValue() { return clone(value); },
     destroy() {
+      viewport.removeEventListener('copy', onCopy);
+      viewport.removeEventListener('paste', onPaste);
       viewport.removeEventListener('scroll', onScroll);
       rowsEl.removeEventListener('dblclick', onDblClick);
       container.removeEventListener('click', onClick);

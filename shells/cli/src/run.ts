@@ -20,7 +20,7 @@ import type { Runtime } from '../../../engine/src/runtime.ts';
 // NODE_FORMATS: the DOM-free/raster format split, shared with the TUI. Everything not
 // in it - raster, pdf, video - is produced by raster.ts (resvg fast path, else the
 // scoped Chromium).
-import { NODE_FORMATS, DEEP_FORMATS, pxDims, matchedExportFormat, canCarryPrintPrep, printPrepRefusal } from '@lolly-tools/node-shell/raster';
+import { NODE_FORMATS, DEEP_FORMATS, needsFloatScene, pxDims, matchedExportFormat, canCarryPrintPrep, printPrepRefusal } from '@lolly-tools/node-shell/raster';
 import { wantsNativeHdrStill } from './raster.ts';
 import { buildExportC2paOpts } from '@lolly-tools/node-shell/c2pa-opts';
 // The enrolled signing identity (key + x5chain) - type only here; the module itself is
@@ -139,6 +139,7 @@ export { needsBrowserTier };
  *  the PDF open-password and the `hdr=` dials (the canonical HostV1 ExportOpts
  *  carries neither - the web shell extends it the same way). */
 type CliExportOpts = ExportOpts & {
+  fps?: number;
   password?: string;
   /** The resolved Imprint decision, forwarded to the DOM-free bridge for the one
    *  raster it produces there (BMP). Vector/data DOM-free formats ignore it. */
@@ -293,7 +294,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
   // different transport, so a packed share link must run identically here
   // (`lolly design --z=1eJ…`). A no-op for ordinary readable params.
   const query = await expandQuery(rawQuery);
-  const { values, format: paramFormat, width, height, unit, dpi, password, c2pa, bleed, imprint, durable, depth, hdr, filename, cuts, profile: pressProfileParam, designVersion: designvParam, slide, video, emoji: emojiParam, emojiFx: emojiFxParam } = parseUrlState(
+  const { values, format: paramFormat, width, height, unit, dpi, password, c2pa, bleed, imprint, durable, depth, hdr, filename, cuts, profile: pressProfileParam, designVersion: designvParam, slide, video, emoji: emojiParam, emojiFx: emojiFxParam, emojiStyle: emojiStyleParam } = parseUrlState(
     query,
     tool.manifest,
   );
@@ -433,14 +434,14 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     const mime = mimeForFile(abs);
     const isVec = mime === 'image/svg+xml';
     const bytes = await readFile(abs);
-    values[input.id] = {
+    values[input.id] = await (await import('@lolly-tools/node-shell/jxl-asset')).prepareJxlAsset({
       source: 'user',
       id: basename(abs),
       type: isVec ? 'vector' : 'raster',
       format: isVec ? 'svg' : (mime.split('/')[1] || 'png'),
       url: `data:${mime};base64,${bytes.toString('base64')}`,
       meta: { baked: true, name: basename(abs) },
-    };
+    }, bytes);
   }
 
   // Read a data-import file to text: an `.xlsx` is unzipped through the SAME engine
@@ -663,7 +664,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
   // `--emoji` / `--emojifx`: the set this render draws its emoji from and the brand
   // treatment applied to that artwork. Set before anything hydrates, so the first
   // pass over the canvas already has the packs it needs.
-  await applyEmojiParams(runtime, host, { emoji: emojiParam, emojiFx: emojiFxParam });
+  await applyEmojiParams(runtime, host, { emoji: emojiParam, emojiFx: emojiFxParam, emojiStyle: emojiStyleParam });
   // `--rights=private`: this render is not being delivered to anyone, so the
   // conditions that apply on sharing do not apply to it. Parsed here, beside the
   // other render params, and never anything but an explicit statement of the use.
@@ -863,6 +864,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     const u = unit || 'px';
     const qual = (v: number | null | undefined): string | number | undefined => (typeof v === 'number' && v > 0 ? (u !== 'px' ? `${v}${u}` : v) : undefined);
     const exportOpts: CliExportOpts = { width: qual(width), height: qual(height) };
+    if (targetFormat === 'lottie' && video.fps != null) exportOpts.fps = video.fps;
 
     // ── the `s=` still-export filter (plan 112 section 10) ────────────────────────────
     // `--s=2 --export=png` renders ONE slide of a framed document, exactly as
@@ -952,6 +954,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
     exportOpts.onTextFallback = (run) => textFallbacks.push(run);
 
     const dims = {
+      lang: normalizeLang(params.lang) ?? profile.lang,
       width: width ?? undefined, height: height ?? undefined, unit: unit ?? undefined, dpi: dpi ?? undefined,
       ...(password ? { password } : {}),
       ...(bleed ? { bleed } : {}),
@@ -1000,7 +1003,7 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
       const { renderRaster } = await import('./raster.ts');
       const res = await renderRaster({
         runtime, dom, manifest: tool.manifest, format: targetFormat, dims,
-        emoji: { emoji: emojiParam, emojiFx: emojiFxParam },
+        emoji: { emoji: emojiParam, emojiFx: emojiFxParam, emojiStyle: emojiStyleParam },
         initial: values as Record<string, unknown>,
       });
       const bytes = Buffer.from(res.bytes);
@@ -1065,7 +1068,8 @@ export async function runToolCli({ toolId, params, repeated = {}, outputPath, fo
         // through the bridge. Raster/PDF/video route to raster.ts: Tier A (resvg, no browser)
         // for PNG from an SVG-native tool, else Tier B (the scoped Chromium driving the built
         // web shell). `usedBrowser` tells us to tear the browser + server down before exit.
-        const domFree = NODE_FORMATS.includes(targetFormat.toLowerCase());
+        const portableVisual = targetFormat.toLowerCase() !== 'ics' && tool.manifest.render.portable;
+        const domFree = NODE_FORMATS.includes(targetFormat.toLowerCase()) && !portableVisual && !needsFloatScene(tool.manifest.id, values.editingRange, targetFormat, exportOpts.hdr);
         if (domFree) {
           const blob = await runtime.export(exportNode, targetFormat, exportOpts);
           buf = Buffer.from(await blob.arrayBuffer());
@@ -1461,11 +1465,16 @@ const UNSUPPORTED_RESERVED: Record<string, string> = {
 export async function applyEmojiParams(
   runtime: Awaited<ReturnType<typeof createRuntime>>,
   host: HostV1,
-  params: { emoji?: string | null; emojiFx?: string | null },
+  params: { emoji?: string | null; emojiFx?: string | null; emojiStyle?: string | null },
 ): Promise<void> {
   const named = params.emoji?.trim();
   const fx = params.emojiFx?.trim();
-  if (!named && !fx) return;
+  if (!named && !fx && !params.emojiStyle) {
+    const style = await (await import('../../../engine/src/emoji-default.ts')).brandEmojiStyle(host);
+    if (style) await runtime.setEmojiStyle(style);
+    return;
+  }
+  if (named === 'none') { await runtime.setEmojiStyle(null); return; }
   if (!host.emoji) {
     warn('EMOJI_UNAVAILABLE', 'this shell cannot load emoji sets, so --emoji had no effect.');
     return;
@@ -1476,15 +1485,16 @@ export async function applyEmojiParams(
   // so the export carries the palette it was actually drawn with.
   const swatches = host.tokens ? await host.tokens.colors() : [];
   const palette = swatches.map(swatch => ({ id: swatch.ref, hex: swatch.value }));
-  const parsed = parseEmojiParams({ emoji: named, emojifx: fx }, sets, palette);
+  const parsed = parseEmojiParams({ emoji: named, emojifx: fx, emojistyle: params.emojiStyle }, sets, palette);
   for (const issue of parsed.issues) warn('EMOJI_PARAM', issue.message);
   if (!parsed.pin) {
+    if (named || params.emojiStyle) await runtime.setEmojiStyle(null);
     if (fx && !named) {
       warn('EMOJI_PARAM', `--emojifx=${fx} names a treatment but no set, so there is no artwork to treat. Add --emoji=<id>@<version>.`);
     }
     return;
   }
-  await runtime.setEmojiStyle({
+  await runtime.setEmojiStyle(parsed.style ?? {
     schemaVersion: 1,
     primary: parsed.pin,
     fallbacks: [],
@@ -1827,6 +1837,7 @@ export function formatFromOutput(path: string, formats: string[]): string | null
 function mimeForFile(path: string): string {
   switch (extname(path).toLowerCase()) {
     case '.jpg': case '.jpeg': return 'image/jpeg';
+    case '.jxl': return 'image/jxl';
     case '.png':  return 'image/png';
     case '.webp': return 'image/webp';
     case '.gif':  return 'image/gif';

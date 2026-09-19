@@ -1,8 +1,8 @@
 {
   "id": "synth",
   "name": "Synth",
-  "version": "0.2.2",
-  "engineVersion": "^1.152.0",
+  "version": "0.2.3",
+  "engineVersion": "^1.214.0",
   "status": "experimental",
   "singleInstance": true,
   "category": "designer",

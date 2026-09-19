@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+.tl-animation-expand { position: absolute; inset-inline-end: 16px; top: 4px; z-index: 3; }
+.tl-animation-editor { flex: 0 1 250px; min-height: 120px; overflow: auto; padding: 6px 10px; border-block: 1px solid var(--ui-color-border-default); font-size: 12px; }
+.tl-animation-header, .tl-animation-actions, .tl-animation-meta, .tl-animation-values { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.tl-animation-header { margin-bottom: 8px; }
+.tl-animation-header > span { flex: 1; min-width: 180px; }
+.tl-animation-body { display: grid; grid-template-columns: minmax(100px, 180px) minmax(0, 1fr); gap: 12px; }
+.tl-animation-layers { display: flex; flex-direction: column; max-height: 240px; overflow: auto; }
+.tl-animation-layer { text-align: start; padding: 6px 8px; background: transparent; color: inherit; border: 0; border-radius: var(--radius-xs); cursor: pointer; overflow-wrap: anywhere; }
+.tl-animation-layer[aria-pressed="true"], .tl-animation-keys [aria-pressed="true"] { background: var(--ui-color-action-primary); color: var(--ui-color-action-on-primary); }
+.tl-animation-layer.is-hidden { opacity: 0.6; }
+.tl-animation-field { display: flex; align-items: center; gap: 5px; margin: 3px 0; }
+.tl-animation-field input[type="number"] { width: 80px; }
+.tl-animation-field input[type="text"] { width: 140px; }
+.tl-animation-field select { max-width: 280px; }
+.tl-animation-keys { display: flex; flex-wrap: wrap; gap: 4px; max-height: 72px; overflow: auto; margin: 5px 0; }
+.tl-animation-note, .tl-animation-status { color: var(--ui-color-text-muted); margin: 4px 0; }
+.tl-animation-status:empty { display: none; }
+.tl-animation-easing .ease-ed { max-width: 300px; }
+@media (max-width: 640px) {
+  .tl-animation-body { grid-template-columns: minmax(90px, 110px) minmax(0, 1fr); gap: 6px; }
+  .tl-animation-field { flex-wrap: wrap; }
+  .tl-animation-field select { max-width: 190px; }
+}
+
+.tl-animation-layer:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: -2px; }
+.tl-animation-editor .tl-btn { font: inherit; }

@@ -49,7 +49,7 @@ export interface DropzoneOpts {
 // Rendered as glanceable category chips (label to scan, exact formats on hover) so the
 // support list is subordinate to the drop prompt instead of a run-on sentence beside it.
 const FORMAT_GROUPS: ReadonlyArray<{ label: string; formats: string }> = [
-  { label: 'Images', formats: 'PNG, JPG, WEBP, GIF' },
+  { label: 'Images', formats: 'PNG, JPG, JPEG XL, WEBP, GIF' },
   { label: 'SVG', formats: 'SVG vector' },
   { label: '3D', formats: 'GLB, STL' },
   { label: 'PDF & AI', formats: 'PDF, Illustrator' },

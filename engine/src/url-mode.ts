@@ -399,6 +399,7 @@ export interface UrlState {
    *  suffix. Resolved against the brand's palette by `parseEmojiParams`, which is the
    *  only place that knows the colours. null ⇒ absent. */
   emojiFx: string | null;
+  emojiStyle?: string | null;
 }
 
 /** The slice of an input model item serializeUrlState reads. */
@@ -462,6 +463,7 @@ export interface SerializeUrlOpts {
    *  emoji a document draws belong to the document, not to the device. */
   emoji?: string | null;
   emojiFx?: string | null;
+  emojiStyle?: string | null;
   /** Keep device-local `user/…` asset ids in the serialised state (plan 171).
    *  Default FALSE - the engine-enforced product contract is that a device-local
    *  id never leaves the device (docs/url-mode.md), so a top-level `user/` asset
@@ -473,7 +475,7 @@ export interface SerializeUrlOpts {
 // Param names that are NOT tool inputs (export/render controls). Exported so the
 // engine contract test can assert it stays in lock-step with the documented list
 // (the header comment above + docs/url-mode.md) and nothing drifts silently.
-export const RESERVED = new Set(['format', 'export', 'copy', 'slot', 'output', 'filename', '_v', 'width', 'height', 'w', 'h', 'unit', 'dpi', 'profile', 'password', 'bleed', 'marks', 'c2pa', 'imprint', 'durable', 'meta', 'hdr', 'depth', 'cuts', 'lang', 'designv', 'ds', 'full', 'options', 'nostage', 'template', 'preset', 'present', 's', 'kiosk', 'z', 'zx', 'fps', 'seconds', 'wait', 'codec', 'vq', 'emoji', 'emojifx']);
+export const RESERVED = new Set(['format', 'export', 'copy', 'slot', 'output', 'filename', '_v', 'width', 'height', 'w', 'h', 'unit', 'dpi', 'profile', 'password', 'bleed', 'marks', 'c2pa', 'imprint', 'durable', 'meta', 'hdr', 'depth', 'cuts', 'lang', 'designv', 'ds', 'full', 'options', 'nostage', 'template', 'preset', 'present', 's', 'kiosk', 'z', 'zx', 'fps', 'seconds', 'wait', 'codec', 'vq', 'emoji', 'emojifx', 'emojistyle']);
 // NOTE on the presentation-mode kiosk flag: it was the unreserved `loop` until
 // 2026-08-28 (plan 171 executed the rename inside the id-break window). `loop` is a
 // live *input* id in several tools (deck-builder, 3d, flythrough, digi-ad,
@@ -729,6 +731,7 @@ export function parseUrlState(searchParams: string | URLSearchParams, manifest: 
     // pins them against the sets the host actually holds and the brand's palette.
     emoji: params.get('emoji') || null,
     emojiFx: params.get('emojifx') || null,
+    emojiStyle: params.get('emojistyle') || null,
   };
 }
 
@@ -809,6 +812,7 @@ export function serializeUrlState(model: UrlSerializableInput[], opts: Serialize
   // travel would draw placeholders for the recipient.
   if (opts.emoji?.trim()) params.set('emoji', opts.emoji.trim());
   if (opts.emojiFx?.trim()) params.set('emojifx', opts.emojiFx.trim());
+  if (opts.emojiStyle?.trim()) params.set('emojistyle', opts.emojiStyle.trim());
   return params.toString();
 }
 

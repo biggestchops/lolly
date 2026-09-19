@@ -56,6 +56,7 @@ export function sync(tp: TpCtx): void {
     tp.thumbs.scheduleThumbs();
   }
   tp.layout.sync();
+  tp.lottie.sync();
   tp.rows.updatePlayhead(clock.t());
   // A MODEL change can move the ghosts without moving the clock (a split, a trim, a
   // reorder), and a paused timeline emits no ticks at all. Gated by the same signature

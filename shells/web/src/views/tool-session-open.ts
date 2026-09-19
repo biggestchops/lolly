@@ -42,7 +42,8 @@ export async function openToolSession(state: StateAPI, toolId: string, url: UrlS
   // there is one and asked of the state bridge otherwise. A shell whose state has
   // no stamp reader simply has no stamp, and the open falls through to the
   // person's own preference - the same as a session saved before this existed.
-  const emoji = sessionEmojiStamp(opened?.record as Parameters<typeof sessionEmojiStamp>[0])
+  const emoji = sessionEmojiStamp({ emoji: (saved as Record<string, unknown> | null)?.__emoji })
+    ?? sessionEmojiStamp(opened?.record as Parameters<typeof sessionEmojiStamp>[0])
     ?? (await (state as WebStateAPI).emojiStamp?.(slot).catch(() => null)) ?? null;
   // The licence choices made in this document (plan 253), read the same way and
   // for the same reason: a ShareAlike decision belongs to the document, so it

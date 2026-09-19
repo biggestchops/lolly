@@ -34,7 +34,7 @@ export const isVectorFmt = (_ta: ActionsCtx, f: string | undefined): boolean =>
 // ABOUT. Gates the transparency mirror below: a JPEG, a PDF page or a video frame
 // has no alpha to keep, so offering the toggle there would promise nothing.
 export const isAlphaFmt = (_ta: ActionsCtx, f: string | undefined): boolean =>
-  !!f && ['png', 'webp', 'avif', 'svg', 'svgz', 'apng', 'webp-anim', 'svg-anim'].includes(f);
+  !!f && ['jxl', 'jxl-lossless', 'png', 'webp', 'avif', 'svg', 'svgz', 'apng', 'webp-anim', 'svg-anim'].includes(f);
 export const assetExportFormat = (ta: ActionsCtx): string | null => {
   const { formats, matchFmtInput, runtime } = ta;
   if (!matchFmtInput) return null;
@@ -109,7 +109,8 @@ export const stageAudioStart = (ta: ActionsCtx): number => {
 // types their own value), the same rule sequences use. This is deliberately NOT
 // a [data-sequence] stage: those route motion export through the compositor,
 // whereas an animated tool renders its own frames via __lollyFrameRender.
-export const animDurationS = (_ta: ActionsCtx): number | null => {
+export const animDurationS = (ta: ActionsCtx): number | null => {
+  if (ta.canvasEl?.querySelector('[data-presentation]') || ta.canvasEl?.matches('[data-presentation]')) return clipDurationS(ta);
   const a = (window as unknown as { __lollyAnim?: { active?: boolean; loopMs?: number } })
     .__lollyAnim;
   if (!a || a.active === false) return null;

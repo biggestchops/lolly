@@ -97,6 +97,7 @@ separately below).
 <!-- GEN:design-inputs -->
 | ID | Alias | Type | Default | What it does |
 |---|---|---|---|---|
+| `editingRange` | - | select | `sdr` | Editing range |
 | `background` | - | color | `{color.semantic.surface}` | Canvas background |
 | `documentUnit` | - | select | `px` | Document unit |
 | `documentDpi` | - | number | 300 | Document DPI |
@@ -109,6 +110,8 @@ separately below).
 | `narrationLeadInMs` | - | number | 400 | Narration lead-in (ms) |
 | `narrationTailMs` | - | number | 600 | Narration tail (ms) |
 | `showCaptionsWhenPresenting` | - | boolean | false | Show captions when presenting |
+| `projectFps` | - | select | `30` | Project frame rate |
+| `sequenceMarks` | - | longtext | `""` | Timeline markers |
 <!-- /GEN:design-inputs -->
 
 ## The `boxes` layer fields
@@ -222,4 +225,6 @@ are timing. Generated from the `boxes` block.
 | `slideTransition` | - | select | `""` | Transition to next |
 | `plainText` | - | boolean | false | Plain text |
 | `scene` | - | text | `""` | Scene |
+| `animationId` | - | text | `""` | Animation in source |
+| `animationEdits` | - | text | `""` | Internal animation edits |
 <!-- /GEN:design-boxes -->

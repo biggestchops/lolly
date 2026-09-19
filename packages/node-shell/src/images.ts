@@ -17,6 +17,9 @@
  * throws on every call. The resolve check is a synchronous `require.resolve`, so it
  * costs nothing; the native module itself is imported lazily on first use.
  */
+import { isJxl } from '../../../engine/src/jxl.ts';
+import { packPng } from '../../../engine/src/png.ts';
+import { runJxl } from './jxl.ts';
 import { createRequire } from 'node:module';
 import type { ImagesAPI, ImageInfo, ImageResizeOpts, ImageEncodeOpts, ImageResult } from '@lolly-tools/core/host-v1';
 import { carryImageMetadata } from '@lolly/engine';
@@ -26,6 +29,9 @@ import { carryImageMetadata } from '@lolly/engine';
 interface SharpLike {
   metadata(): Promise<{ width?: number; height?: number; format?: string; pages?: number; autoOrient?: { width?: number; height?: number } }>;
   rotate(): SharpLike;
+  ensureAlpha(): SharpLike;
+  raw(): SharpLike;
+  toColourspace(space: string): SharpLike;
   resize(opts: { width?: number; height?: number; fit: 'inside'; withoutEnlargement: true }): SharpLike;
   toFormat(fmt: string, opts?: { quality?: number }): SharpLike;
   toBuffer(opts: { resolveWithObject: true }): Promise<{ data: Buffer; info: { width: number; height: number; format: string } }>;
@@ -76,10 +82,20 @@ export function createNodeImagesAPI(): ImagesAPI | null {
     const sharp = await loadSharp();
     const buf = await toBuffer(input);
     if (!buf.length) throw new Error('host.images: empty input - nothing to decode.');
+    if (isJxl(buf)) {
+      const result = await runJxl({ operation: 'decode', bytes: buf });
+      const png = packPng(result.bytes, { width: result.info!.width, height: result.info!.height, channels: 4, depth: 8 });
+      return { img: sharp(Buffer.from(png)), buf };
+    }
     return { img: sharp(buf), buf };
   }
 
   async function finish(img: SharpLike, format: string, quality?: number): Promise<ImageResult> {
+    if (format === 'jxl' || format === 'jxl-lossless') {
+      const { data, info } = await img.toColourspace('srgb').ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      const result = await runJxl({ operation: 'encode', bytes: new Uint8Array(data), width: info.width, height: info.height, options: { quality, lossless: format === 'jxl-lossless' } });
+      return { bytes: result.bytes, mime: 'image/jxl', width: info.width, height: info.height };
+    }
     const fmt = format === 'jpg' ? 'jpeg' : format;
     const opts = q100(quality) !== undefined && fmt !== 'png' ? { quality: q100(quality)! } : undefined;
     const { data, info } = await img.toFormat(fmt, opts).toBuffer({ resolveWithObject: true });
@@ -104,7 +120,12 @@ export function createNodeImagesAPI(): ImagesAPI | null {
 
   return {
     async decode(input): Promise<ImageInfo> {
-      const { img } = await open(input);
+      const bytes = await toBuffer(input);
+      if (isJxl(bytes)) {
+        const { info } = await runJxl({ operation: 'probe', bytes });
+        return { width: info!.width, height: info!.height, mime: 'image/jxl', animated: info!.animated };
+      }
+      const { img } = await open(bytes);
       // `.rotate()` with no argument applies the EXIF orientation, so the metadata
       // read after it reports the ORIENTED dimensions the contract promises. These are
       // the same ones resize/encode will produce.

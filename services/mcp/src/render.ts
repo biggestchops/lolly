@@ -14,7 +14,7 @@
  */
 
 import {
-  createRuntime, parseUrlState, expandQuery,
+  createRuntime, parseUrlState, expandQuery, serializeHdr,
   C2PA_FORMATS, embedC2pa, buildInputModel, serializeUrlState,
   parseDimension, toPixels, PENPOT_MIME,
   attributionCredits, checkAttributionReadback, verifyC2pa,
@@ -27,7 +27,7 @@ import type { ToolManifest } from '../../../engine/src/loader.ts';
 // Relative imports (not `@lolly-tools/node-shell/...`): this file is inlined into the
 // Vercel MCP bundle, where a bare workspace specifier would dangle (see bridge.ts).
 import { assertRenderOk, RenderIntegrityError } from '@lolly-tools/node-shell/render-integrity';
-import { isDeepFormat, DeepSourceError } from '@lolly-tools/node-shell/raster';
+import { isDeepFormat, DeepSourceError, needsFloatScene } from '@lolly-tools/node-shell/raster';
 import { buildExportC2paOpts } from '@lolly-tools/node-shell/c2pa-opts';
 import { needsBrowserTier } from '@lolly-tools/node-shell/browser-tier';
 import { readFile, stat } from 'node:fs/promises';
@@ -217,6 +217,7 @@ function exportOpts(o: RenderOpts): ExportOpts & { password?: string } {
 export interface EmojiRequest {
   emoji?: string | null;
   emojifx?: string | null;
+  emojistyle?: string | null;
 }
 
 /**
@@ -237,23 +238,29 @@ async function applyEmojiRequest(
 ): Promise<string[]> {
   const named = request.emoji?.trim();
   const fx = request.emojifx?.trim();
-  if (!named && !fx) return [];
+  if (!named && !fx && !request.emojistyle) {
+    const style = await (await import('../../../engine/src/emoji-default.ts')).brandEmojiStyle(host);
+    if (style) await runtime.setEmojiStyle(style);
+    return [];
+  }
+  if (named === 'none') { await runtime.setEmojiStyle(null); return []; }
   if (!host.emoji) return ['This server cannot load emoji sets, so the emoji argument had no effect.'];
   const { parseEmojiParams } = await import('../../../engine/src/emoji-style.ts');
   const swatches = host.tokens ? await host.tokens.colors() : [];
   const parsed = parseEmojiParams(
-    { emoji: named, emojifx: fx },
+    { emoji: named, emojifx: fx, emojistyle: request.emojistyle },
     await host.emoji.sets(),
     swatches.map((swatch) => ({ id: swatch.ref, hex: swatch.value })),
   );
   const warnings = parsed.issues.map((issue) => issue.message);
   if (!parsed.pin) {
+    if (named || request.emojistyle) await runtime.setEmojiStyle(null);
     if (fx && !named) {
       warnings.push(`emojifx=${fx} names a treatment but no set, so there is no artwork to treat. Add emoji=<id>@<version>.`);
     }
     return warnings;
   }
-  await runtime.setEmojiStyle({
+  await runtime.setEmojiStyle(parsed.style ?? {
     schemaVersion: 1,
     primary: parsed.pin,
     fallbacks: [],
@@ -561,7 +568,7 @@ const EXPORT_URL_RESERVED = ['format', 'export', 'copy', 'width', 'w', 'height',
  */
 export function carriesEmojiParams(query: string): boolean {
   const p = new URLSearchParams(query);
-  return Boolean(p.get('emoji') || p.get('emojifx'));
+  return Boolean(p.get('emoji') || p.get('emojifx') || p.get('emojistyle'));
 }
 
 /** Build the `#/tool/<id>?…` URL that makes the web shell auto-export on load. */
@@ -575,6 +582,8 @@ export function exportUrl(base: string, toolId: string, query: string, fmt: stri
   if (unit !== 'px') { p.set('unit', unit); p.set('dpi', String(o.dpi || 300)); }
   // CMYK press condition for pdf-cmyk / cmyk-tiff (the app's `profile` reserved param).
   if (o.colorProfile) p.set('profile', o.colorProfile);
+  if (o.hdr) p.set('hdr', serializeHdr(o.hdr));
+  if (o.depth && o.depth !== 'auto') p.set('depth', String(o.depth));
   p.set('export', '1'); // presence flag → immediate download on load
   const q = p.toString();
   const tmpl = process.env.LOLLY_TOOL_URL_TEMPLATE || `${base}/#/tool/{id}?{query}`;
@@ -730,7 +739,7 @@ export async function render(toolId: string, query: string, o: RenderOpts = {}):
   const profile = o.profile ?? {};
   // The set and treatment travel in the query, so one reader answers for the
   // file, the editable link and the browser tier's URL alike.
-  const emoji: EmojiRequest = { emoji: st.emoji, emojifx: st.emojiFx };
+  const emoji: EmojiRequest = { emoji: st.emoji, emojifx: st.emojiFx, emojistyle: st.emojiStyle };
   const warnings: string[] = [];
   // Open-password is only wired through for standard `pdf` (via the one-shot
   // browser binding); the
@@ -745,7 +754,9 @@ export async function render(toolId: string, query: string, o: RenderOpts = {}):
   // What those sources ask of a delivery, for the same tier and the same reason.
   let evaluation: RightsEvaluationV1 | null = null;
 
-  if (TIER_A.has(exportFmt)) {
+  const floatScene = needsFloatScene(toolId, values.editingRange, exportFmt, merged.hdr);
+  if (floatScene && o.noBrowser) throw new RenderError('HDR Design composition requires the browser render tier.');
+  if (TIER_A.has(exportFmt) && !floatScene) {
     try {
       const r = await renderTierA(toolId, values, exportFmt, exportOpts(merged), profile, emoji);
       placed = r.ingredients;
@@ -765,7 +776,7 @@ export async function render(toolId: string, query: string, o: RenderOpts = {}):
       evaluation = null;
       out = { ...(await renderTierB(toolId, q, exportFmt, merged)), tier: 'B' };
     }
-  } else if (exportFmt === 'png' && formats.includes('svg')) {
+  } else if (exportFmt === 'png' && formats.includes('svg') && !floatScene && values.editingRange !== 'hdr') {
     // SVG-native fast path: engine SVG → resvg PNG, no browser.
     try {
       const svg = await renderTierA(toolId, values, 'svg', exportOpts({ ...merged, width: undefined, height: undefined, unit: 'px' }), profile, emoji);

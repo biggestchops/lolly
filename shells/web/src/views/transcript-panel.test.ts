@@ -675,3 +675,18 @@ test('Say it as at a bare caret leaves the caret in the empty phoneme slot', () 
     assert.match(r.toString(), /\[Hello\]\(\/$/, 'and it sits where the phonemes go');
   } finally { h.close(); }
 });
+
+
+test('document markers seek the shared playhead without changing the transcript', () => {
+  const seeks: number[] = [];
+  let writes = 0;
+  const api = openTranscriptPanel({ cfg: CFG, words: [], assetId: 'a', sourceId: 'b', assetField: 'image',
+    getBoxes: () => [], write: () => { writes++; }, seek: ms => seeks.push(ms), subscribeTick: () => () => {},
+    markers: [{ ms: 1234, label: 'Review' }],
+  });
+  try {
+    const select = document.querySelector<HTMLSelectElement>('.tr-panel select[aria-label="Markers"]')!;
+    select.value = '1234'; select.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+    assert.deepEqual(seeks, [1234]); assert.equal(writes, 0); assert.equal(select.value, '');
+  } finally { api.close(); }
+});

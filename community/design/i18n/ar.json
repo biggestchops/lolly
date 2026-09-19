@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "أسفل اليسار",
   "inputs.boxes.fields.imgpos.options.center bottom": "أسفل",
   "inputs.boxes.fields.imgpos.options.right bottom": "أسفل اليمين",
-  "description": "لوحة مفتوحة للترتيب الحر - نص وصور وأشكال وعروض مباشرة من أدوات Lolly الأخرى، كلها ملتزمة بعلامتك التجارية."
+  "description": "لوحة مفتوحة للترتيب الحر - نص وصور وأشكال وعروض مباشرة من أدوات Lolly الأخرى، كلها ملتزمة بعلامتك التجارية.",
+  "inputs.projectFps.label": "معدل إطارات المشروع",
+  "inputs.sequenceMarks.label": "علامات المخطط الزمني",
+  "inputs.boxes.fields.animationId.label": "الحركة في المصدر",
+  "inputs.boxes.fields.animationEdits.label": "تعديلات الحركة الداخلية"
 }

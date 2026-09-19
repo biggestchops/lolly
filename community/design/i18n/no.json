@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Nederst til venstre",
   "inputs.boxes.fields.imgpos.options.center bottom": "Nederst",
   "inputs.boxes.fields.imgpos.options.right bottom": "Nederst til høyre",
-  "description": "Et åpent lerret for fri utforming - tekst, bilder, former og levende gjengivelser fra dine andre Lolly-verktøy, alt holdt til designsystemet ditt."
+  "description": "Et åpent lerret for fri utforming - tekst, bilder, former og levende gjengivelser fra dine andre Lolly-verktøy, alt holdt til designsystemet ditt.",
+  "inputs.projectFps.label": "Prosjektets bildefrekvens",
+  "inputs.sequenceMarks.label": "Tidslinjemarkører",
+  "inputs.boxes.fields.animationId.label": "Animasjon i kilden",
+  "inputs.boxes.fields.animationEdits.label": "Interne animasjonsendringer"
 }

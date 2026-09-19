@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MPL-2.0
 /** The web host's pinned emoji packs: one catalog bundle asset in, exact manifest and artwork bytes out. */
-import type { AssetsAPI, EmojiAPI } from '@lolly-tools/core/host-v1';
+import type { EmojiAPI } from '@lolly-tools/core/host-v1';
+import { EMOJI_BUNDLE_MAX_BYTES } from '@lolly-tools/core/emoji-v1';
 import type { EmojiGlyphV1, EmojiPackBundleV1, EmojiPackPinV1, EmojiSetInfoV1 } from '@lolly-tools/core/emoji-v1';
+import { storeEmojiBundle, userEmojiRefs, type EmojiStorage } from './emoji-storage.ts';
+import { admitEmojiBundle } from '../../../../engine/src/emoji-bundle.ts';
+import type { EmojiXmlParser } from '../../../../engine/src/emoji-svg.ts';
 import { sha256Hex } from '../../../../engine/src/bytes.ts';
 
 /** The catalog tag that makes an asset an emoji pack. Nothing else is listed as a set. */
 export const EMOJI_PACK_TAG = 'emoji-pack';
 
 /** A bundle is a manifest plus every glyph's artwork, so it carries its own ceiling. */
-const BUNDLE_MAX_BYTES = 32 * 1024 * 1024;
+const BUNDLE_MAX_BYTES = EMOJI_BUNDLE_MAX_BYTES;
 
 /** What an asset index entry states about a pack before anything downloads it. */
 interface EmojiEntryMeta {
@@ -26,7 +30,7 @@ interface EmojiEntryMeta {
 }
 
 /** The assets surface this module needs. Narrow on purpose, so a test can stand in for it. */
-export type EmojiAssets = Pick<AssetsAPI, 'query' | 'get' | 'bytes'>;
+export type EmojiAssets = EmojiStorage;
 
 const pinKey = (pin: EmojiPackPinV1): string => JSON.stringify([pin.id, pin.pin?.version, pin.checksum]);
 
@@ -51,14 +55,16 @@ export function createEmojiAPI(assets: EmojiAssets): EmojiAPI {
   // Parsed bundles, keyed by pin. A refusal caches as null so a bad pack is not
   // re-fetched on every glyph of a paragraph.
   const bundles = new Map<string, Promise<EmojiPackBundleV1 | null>>();
+  let listing = "";
 
   async function entries(): Promise<Entry[]> {
-    const refs = await assets.query({ tags: [EMOJI_PACK_TAG] });
+    const refs = [...await userEmojiRefs(assets), ...await assets.query({ tags: [EMOJI_PACK_TAG] })];
     const found: Entry[] = [];
     for (const ref of refs) {
       const meta = readEntryMeta((ref.meta as { emoji?: unknown } | undefined)?.emoji);
       if (!meta) continue;
       const size = (ref.meta as { size?: unknown } | undefined)?.size;
+      if (found.some(entry => entry.meta.id === meta.id && entry.meta.version === meta.version && entry.meta.checksum === meta.checksum)) continue;
       found.push({ assetId: ref.id, meta, bytes: typeof size === 'number' ? size : undefined });
     }
     return found;
@@ -113,9 +119,43 @@ export function createEmojiAPI(assets: EmojiAssets): EmojiAPI {
     return hit;
   }
 
-  return {
+  const api: EmojiAPI = {
+    async install(bytes) {
+      const admitted = await admitEmojiBundle(bytes, api.parseXml as EmojiXmlParser);
+      const pin = admitted.info.pin;
+      const collision = (await api.sets()).some(set => set.pin.id === pin.id && set.pin.pin.version === pin.pin.version && set.pin.checksum !== pin.checksum);
+      if (collision) throw new Error('This emoji version already names different artwork. Give the edited set a new version.');
+      await storeEmojiBundle(assets, admitted.bundle, admitted.info);
+      for (const glyph of admitted.manifest.glyphs.filter(glyph => glyph.meaning.kind === 'custom')) {
+        const meaningDigest = await sha256Hex(new TextEncoder().encode(JSON.stringify(glyph.meaning)));
+        const id = `user/emoji-symbol/${pin.checksum.slice(7)}/${meaningDigest}`;
+        if (await assets._getUserRecord?.(id)) continue;
+        await assets._uploadUserAsset!({ id, type: 'vector', format: 'svg', version: pin.pin.version,
+          blob: new Blob([admitted.bundle.artwork[glyph.asset.url]!], { type: 'image/svg+xml' }),
+          meta: { name: glyph.label, tags: ['emoji-symbol'], license: glyph.source.license, attribution: glyph.source.attribution,
+            emojiSymbol: { meaning: glyph.meaning, pack: pin },
+            rights: { works: [{ id: glyph.asset.id, title: glyph.label, creators: [{ name: glyph.source.creator, role: 'creator' }],
+              sourceUrl: glyph.source.sourceUrl, revision: glyph.source.revision, rights: [{ declaration: glyph.source.license, url: glyph.source.licenseUrl,
+                assertedBy: 'author', notices: admitted.manifest.notices.map(notice => notice.text), status: 'parsed' }] }] } } });
+      }
+      bundles.clear();
+      return admitted.info;
+    },
+    async dependencies(pins) {
+      await api.sets();
+      const refs = [];
+      for (const pin of pins) {
+        const bundle = await bundleFor(pin);
+        if (!bundle) continue;
+        const info = (await api.sets()).find(set => pinKey(set.pin) === pinKey(pin));
+        if (info) refs.push(await storeEmojiBundle(assets, bundle, info));
+      }
+      return refs;
+    },
     async sets(): Promise<EmojiSetInfoV1[]> {
       const found = await entries();
+      const nextListing = found.map(entry => JSON.stringify(entry.meta)).sort().join('\n');
+      if (nextListing !== listing) { bundles.clear(); listing = nextListing; }
       return found.map((entry) => ({
         pin: { id: entry.meta.id, pin: { version: entry.meta.version }, checksum: entry.meta.checksum },
         family: entry.meta.family,
@@ -146,4 +186,6 @@ export function createEmojiAPI(assets: EmojiAssets): EmojiAPI {
       return new DOMParser().parseFromString(source, 'image/svg+xml');
     },
   };
+  if (!assets._uploadUserAsset) { delete api.install; delete api.dependencies; }
+  return api;
 }

@@ -124,12 +124,12 @@ export function paintCtxHtml(fc: FcCtx, first: Box, allPaths: boolean, allStroke
 export function wirePaintCtx(fc: FcCtx, scope: HTMLElement): void {
   const { cfg } = fc;
   wireColorField(scope, {
-    onChange: (id, val) => {
+    onChange: (id, val, detail) => {
       if (id === 'fc-fill') {
-        if (fc.gradEdit != null) fc.gradient.setGradStopColor(fc.helpers.unwrapColor(val));
-        else fc.fieldPanels.setField(cfg.fillField, fc.helpers.unwrapColor(val));
-      } else if (id === 'fc-fg') fc.fieldPanels.setField(cfg.textColorField, fc.helpers.unwrapColor(val));
-      else if (id === 'fc-stroke') fc.fieldPanels.setField(cfg.strokeField, fc.helpers.unwrapColor(val));
+        if (fc.gradEdit != null) fc.gradient.setGradStopColor(fc.helpers.unwrapColor(val, detail));
+        else fc.fieldPanels.setField(cfg.fillField, fc.helpers.unwrapColor(val, detail));
+      } else if (id === 'fc-fg') fc.fieldPanels.setField(cfg.textColorField, fc.helpers.unwrapColor(val, detail));
+      else if (id === 'fc-stroke') fc.fieldPanels.setField(cfg.strokeField, fc.helpers.unwrapColor(val, detail));
     },
   });
 }

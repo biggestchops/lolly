@@ -40,23 +40,27 @@
 import { fork } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { gzipSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
 import { JSDOM } from 'jsdom';
+import { EMOJI_BUNDLE_MAX_BYTES } from '../packages/core/src/emoji-v1.ts';
 import type { EmojiGlyphV1, EmojiMeaningV1, EmojiPackBundleV1, EmojiPackManifestV1, EmojiSourceV1 } from '../packages/core/src/emoji-v1.ts';
 import type { CreativeWorkRecordV1, RightsEvidenceV1 } from '../packages/core/src/rights-v1.ts';
 import { allAssetRoots } from '../packages/node-shell/src/content-roots.ts';
-import { EMOJI_PACK_MAX_BYTES, readEmojiPack } from '../engine/src/emoji-pack.ts';
+import { readEmojiPack } from '../engine/src/emoji-pack.ts';
 import { normaliseLicence } from '../engine/src/rights-profiles.ts';
 import { lookupEmojiSequence } from '../engine/src/emoji-sequence.ts';
 import { emojiSvgMarkup, prepareEmojiSvg } from '../engine/src/emoji-svg.ts';
 import unicodeData from '../engine/src/emoji-data/17.0.json' with { type: 'json' };
 
+import { SPECS, sourceInventory } from './lib/emoji-families.ts';
+import type { Spec } from './lib/emoji-families.ts';
+
 const ROOT = resolve(new URL('..', import.meta.url).pathname);
-const SOURCES = `${ROOT}/dist/emoji-sources`;
+
 const ARTWORK_MAX_BYTES = 2 * 1024 * 1024;
 const NOTICE_MAX_CHARS = 262_144;
 const RENDER_PX = 64;
@@ -67,44 +71,6 @@ const window = new JSDOM('').window;
 const parseXml = (source: string): Document => new window.DOMParser().parseFromString(source, 'image/svg+xml');
 const digest = (bytes: Uint8Array): string => `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
 const jsonBytes = (value: unknown): Uint8Array => new TextEncoder().encode(`${JSON.stringify(value, null, 2)}\n`);
-
-interface Spec {
-  slug: string; packId: string; family: string; style: string; version: string;
-  repo: string; commit: string; root: string; svgDir: string;
-  notices: string[]; license: string; licenseUrl: string; creator: string; attribution: string;
-  points: (name: string) => string[];
-}
-
-const OPENMOJI = {
-  repo: 'https://github.com/hfg-gmuend/openmoji', commit: 'f9fc506a3f913be9897ab0181d611d4c910a4104',
-  family: 'OpenMoji', version: '17.0.0', root: `${SOURCES}/openmoji`, notices: ['LICENSE.txt'],
-  license: 'CC-BY-SA-4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
-  creator: 'OpenMoji contributors',
-  attribution: 'All emojis designed by OpenMoji, the open-source emoji and icon project. CC BY-SA 4.0.',
-  points: (name: string): string[] => name.slice(0, -4).split('-'),
-};
-
-const SPECS: Record<string, Spec> = {
-  'openmoji-color': { ...OPENMOJI, slug: 'openmoji-color', packId: 'community/emoji/openmoji/color', style: 'Color', svgDir: 'color/svg' },
-  'openmoji-black': { ...OPENMOJI, slug: 'openmoji-black', packId: 'community/emoji/openmoji/black', style: 'Black', svgDir: 'black/svg' },
-  'twemoji-color': {
-    slug: 'twemoji-color', packId: 'community/emoji/twemoji/color', family: 'Twemoji', style: 'Color', version: '17.0.3',
-    repo: 'https://github.com/jdecked/twemoji', commit: 'b6b55fef1e8636b540a6d016a4729ca8cdf2e60b',
-    root: `${SOURCES}/twemoji`, svgDir: 'assets/svg', notices: ['LICENSE-GRAPHICS'],
-    license: 'CC-BY-4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
-    creator: 'Twitter, Inc. and other contributors',
-    attribution: 'Twemoji graphics by Twitter, Inc. and other contributors, CC BY 4.0.',
-    points: (name: string): string[] => name.slice(0, -4).split('-'),
-  },
-  'noto-color': {
-    slug: 'noto-color', packId: 'community/emoji/noto/color', family: 'Noto Emoji', style: 'Color', version: '2.051',
-    repo: 'https://github.com/googlefonts/noto-emoji', commit: '8998f5dd683424a73e2314a8c1f1e359c19e8742',
-    root: `${SOURCES}/noto`, svgDir: 'svg', notices: ['svg/LICENSE'],
-    license: 'Apache-2.0', licenseUrl: 'https://www.apache.org/licenses/LICENSE-2.0',
-    creator: 'Google, Inc.', attribution: 'Noto Emoji artwork, Copyright 2013 Google, Inc. Apache License 2.0.',
-    points: (name: string): string[] => name.slice(0, -4).replace(/^emoji_u/, '').split('_'),
-  },
-};
 
 /** Named subsets a starter pack can be cut to. The value is the Unicode `# group:` header it keeps. */
 const SUBSETS: Record<string, string> = { smileys: 'Smileys & Emotion' };
@@ -155,15 +121,15 @@ const meaningKey = (meaning: EmojiMeaningV1): string => (meaning.kind === 'unico
 function sourceRecord(item: Spec, file: string, creator: string): EmojiSourceV1 {
   const host = item.repo.replace('https://github.com/', 'https://raw.githubusercontent.com/');
   return {
-    creator, sourceUrl: `${host}/${item.commit}/${item.svgDir}/${file}`, revision: item.commit,
+    creator, sourceUrl: `${host}/${item.commit}/${[item.svgDir, file].join('/').split('/').filter(part => part !== '.').map(encodeURIComponent).join('/')}`, revision: item.commit,
     license: item.license, licenseUrl: item.licenseUrl, attribution: item.attribution, modifications: [],
   };
 }
 
 /** The file name's code points as one string. Null when a segment is not a scalar value. */
-function sequenceText(item: Spec, file: string): string | null {
+function sequenceText(points: readonly string[]): string | null {
   let text = '';
-  for (const part of item.points(file)) {
+  for (const part of points) {
     if (!/^[0-9a-f]{1,6}$/i.test(part)) return null;
     const point = Number.parseInt(part, 16);
     if (point > 0x10ffff || (point >= 0xd800 && point <= 0xdfff)) return null;
@@ -214,7 +180,8 @@ async function openmojiExtras(item: Spec): Promise<Map<string, { annotation: str
 async function scan(item: Spec): Promise<Scan> {
   const extras = await openmojiExtras(item);
   const dir = `${item.root}/${item.svgDir}`;
-  const names = (await readdir(dir)).filter(name => name.endsWith('.svg')).sort();
+  const inventory = await sourceInventory(item);
+  const names = [...inventory.keys()].sort();
   const result: Scan = { kept: [], files: names.length, sourceBytes: 0, viaAlias: 0, oversize: [], unparsable: [], unmapped: [], duplicates: [], viewBoxes: new Map() };
   const byMeaning = new Map<string, Scanned>();
   for (const file of names) {
@@ -223,7 +190,8 @@ async function scan(item: Spec): Promise<Scan> {
     if (bytes.byteLength > ARTWORK_MAX_BYTES) { result.oversize.push(file); continue; }
     const viewBox = rootViewBox(bytes.toString('utf8'));
     if (!viewBox) { result.unparsable.push(file); continue; }
-    const text = sequenceText(item, file);
+    const points = inventory.get(file)!;
+    const text = sequenceText(points);
     const sequence = text ? lookupEmojiSequence(text) : null;
     const hex = file.slice(0, -4).toLowerCase();
     const extra = extras.get(hex);
@@ -232,13 +200,13 @@ async function scan(item: Spec): Promise<Scan> {
       entry = {
         file, meaning: { kind: 'unicode', key: sequence.key }, label: sequence.label,
         creator: extra ? `${extra.author} (OpenMoji)` : item.creator,
-        checksum: digest(bytes), viewBox, alias: sequence.alias, scalars: item.points(file).length,
+        checksum: digest(bytes), viewBox, alias: sequence.alias, scalars: points.length,
       };
       if (sequence.alias) result.viaAlias++;
     } else if (extra && Array.from(text ?? '').some(char => isPrivateUse(char.codePointAt(0)!))) {
       entry = {
         file, meaning: { kind: 'custom', id: `community/emoji/openmoji/extras/${hex}` }, label: extra.annotation,
-        creator: `${extra.author} (OpenMoji)`, checksum: digest(bytes), viewBox, alias: false, scalars: item.points(file).length,
+        creator: `${extra.author} (OpenMoji)`, checksum: digest(bytes), viewBox, alias: false, scalars: points.length,
       };
     }
     if (!entry) { result.unmapped.push(file); continue; }
@@ -471,7 +439,7 @@ async function importFamily(item: Spec, measure: boolean, verify: boolean, outRo
   const notices = await readNotices(item);
   const noticeReport = notices.map(notice => ({ name: notice.name, bytes: notice.bytes, checksum: notice.checksum }));
   const found = await scan(item);
-  const manifest = buildManifest(item, found, notices);
+  const manifest = buildManifest(item, found, notices.map(({ name, text }) => ({ name, text })));
   const bytes = jsonBytes(manifest);
   await writeFile(`${out}/manifest.json`, bytes);
   const pin = { id: manifest.id, pin: { version: manifest.version }, checksum: digest(bytes) };
@@ -545,7 +513,7 @@ async function readNotices(item: Spec): Promise<NoticeFile[]> {
 /** The copyright line a notice states, when it states one. Never inferred from a repository or a family name. */
 function noticeCopyright(notices: readonly NoticeFile[]): string | null {
   for (const notice of notices) {
-    const first = notice.text.split('\n', 1)[0]!.trim();
+    const first = notice.text.split('\n').map(line => line.trim()).find(line => /^copyright\b/i.test(line)) ?? '';
     if (/^copyright\b/i.test(first) && first.length <= 1024) return first;
   }
   return null;
@@ -594,7 +562,7 @@ async function admitManifest(item: Spec, found: Scan, notices: readonly NoticeFi
   const manifest = buildManifest(item, found, notices.map(notice => ({ name: notice.name, text: notice.text })));
   // The manifest text is the pin: the sha256 below is what the index entry
   // advertises and what a host recomputes before it trusts a byte of the pack.
-  const text = `${JSON.stringify(manifest, null, 2)}\n`;
+  const text = `${JSON.stringify(manifest)}\n`;
   const bytes = new TextEncoder().encode(text);
   const pin = { id: manifest.id, pin: { version: manifest.version }, checksum: digest(bytes) };
   const pack = await readEmojiPack(bytes, pin);
@@ -671,7 +639,7 @@ async function bundleFamily(item: Spec, options: BundleOptions): Promise<string>
     artwork[glyph.asset.url] = svg;
   }
   const bundle: EmojiPackBundleV1 = { schemaVersion: 1, kind: 'emoji-pack-bundle', manifest: text, artwork };
-  const file = jsonBytes(bundle);
+  const file = new TextEncoder().encode(`${JSON.stringify(bundle)}\n`);
   await mkdir(resolve(options.outPath, '..'), { recursive: true });
   await writeFile(options.outPath, file);
   const supported = new Set(manifest.glyphs.flatMap(glyph => (glyph.meaning.kind === 'unicode' ? [glyph.meaning.key] : [])));
@@ -709,8 +677,8 @@ async function bundleFamily(item: Spec, options: BundleOptions): Promise<string>
   console.log(`${manifest.id} ${manifest.version}: ${manifest.glyphs.length} glyphs, ${file.byteLength} bytes raw, ${gzip} bytes gzip at ${options.outPath}`);
   if (missing.length) console.log(`Refused by the static subset and left out: ${missing.length} (${missing.slice(0, 5).map(row => row.file).join(', ')})`);
   if (withheld.length) console.log(`Withheld on purpose: ${withheld.length} (${withheld.map(row => row.key).join(', ')})`);
-  if (file.byteLength > EMOJI_PACK_MAX_BYTES) {
-    console.log(`This bundle is over the ${EMOJI_PACK_MAX_BYTES} byte ceiling a host will read, so it cannot be registered as it stands.`);
+  if (file.byteLength > EMOJI_BUNDLE_MAX_BYTES) {
+    console.log(`This bundle is over the ${EMOJI_BUNDLE_MAX_BYTES} byte ceiling a host will read, so it cannot be registered as it stands.`);
   }
   console.log('Register this asset index entry, then run build:catalog to fill checksum, size and the added date:');
   console.log(JSON.stringify(entry, null, 2));

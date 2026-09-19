@@ -482,7 +482,7 @@ function mount(
   initial: Box[],
   pxPerSecHint = 40,
   addKinds: Array<{ id: string; label?: string; seed?: Record<string, unknown> }> = ADD_KINDS,
-  extra: { addMedia?: () => Promise<void>; host?: unknown; capabilities?: string[]; assetField?: string; linkField?: string; cfgPatch?: Record<string, unknown>; frameSize?: () => { w: number; h: number } | null } = {},
+  extra: { projectTime?: import('./timeline-panel/shared.ts').TimelinePanelOpts['projectTime']; addMedia?: () => Promise<void>; host?: unknown; capabilities?: string[]; assetField?: string; linkField?: string; cfgPatch?: Record<string, unknown>; frameSize?: () => { w: number; h: number } | null } = {},
 ): Harness {
   const doc = dom.window.document;
   const stageEl = doc.createElement('div');
@@ -520,6 +520,7 @@ function mount(
       onChange: (cb: () => void) => { selListeners.add(cb); return () => { selListeners.delete(cb); }; },
     },
     reserve: (px: number) => { reserves.push(px); },
+    ...(extra.projectTime ? { projectTime: extra.projectTime } : {}),
     ...(extra.frameSize ? { frameSize: extra.frameSize } : {}),
     addKinds,
     ...(extra.assetField ? { assetField: extra.assetField } : {}),
@@ -3586,7 +3587,7 @@ test('localStorage throwing does not break the toggle - the session still gets i
   });
 });
 
-test('`o` toggles the onion skin from the keyboard; a model change re-emits the ghosts', async () => {
+test('`Shift+O` toggles the onion skin from the keyboard; a model change re-emits the ghosts', async () => {
   const store = fakeStorage();
   await withStorage(store, async () => {
     const h = mount([clip('a', 0, 3), clip('b', 3, 2), clip('c', 5, 2)]);
@@ -3597,7 +3598,7 @@ test('`o` toggles the onion skin from the keyboard; a model change re-emits the 
       const seen: Array<{ mode?: string; past?: string[]; future?: string[] }> = [];
       h.stageEl.addEventListener('tl-time', (e) => { seen.push((e as CustomEvent).detail); });
 
-      h.root.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'o', bubbles: true, cancelable: true }));
+      h.root.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'O', shiftKey: true, bubbles: true, cancelable: true }));
       assert.equal(seen.at(-1)?.mode, 'outline');
       assert.deepEqual(seen.at(-1)?.past, ['a']);
 
@@ -3609,8 +3610,8 @@ test('`o` toggles the onion skin from the keyboard; a model change re-emits the 
       await frames(3);
       assert.equal(seen.at(-1)?.past?.includes('a'), false, 'the deleted clip is no longer a ghost');
 
-      h.root.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'o', bubbles: true, cancelable: true }));
-      assert.equal(seen.at(-1)?.mode, '', 'and `o` again turns it off');
+      h.root.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'O', shiftKey: true, bubbles: true, cancelable: true }));
+      assert.equal(seen.at(-1)?.mode, '', 'and `Shift+O` again turns it off');
     } finally { h.teardown(); }
   });
 });
@@ -3651,7 +3652,7 @@ test('`o` toggles the onion skin from the keyboard; a model change re-emits the 
  */
 const ON_KEY_BRANCHES = [
   ' ', 'Spacebar', 'a', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End',
-  's', 'S', 'd', 'D', '[', ']', ',', '<', '.', '>', 'e', 'E', 'o', 'O', 'k', 'K',
+  's', 'S', 'd', 'D', '[', ']', ',', '<', '.', '>', 'e', 'E', 'o', 'O', 'k', 'K', 'j', 'J', 'l', 'L', 'm', 'M', 'i', 'I',
   '+', '=', '-', '_', 'f', 'F', 'Delete', 'Backspace', '?', 'ContextMenu', 'F10', 'Escape',
 ];
 
@@ -3876,27 +3877,15 @@ test('an OPEN-ENDED overlay is never offered as splittable - splitBox has no end
   } finally { h.teardown(); }
 });
 
-test('Caps Lock cannot invert the onion pair: the branch reads e.shiftKey, not the letter case', () => {
-  // KeyboardEvent.key reports the PRODUCED character, so with Caps Lock on a bare `o`
-  // arrives as 'O' with shiftKey false, and Shift+o arrives as 'o' with shiftKey true.
-  // A handler that branched on the letter's case would swap the two.
-  for (const [key, shiftKey, wantPopover] of [
-    ['o', false, false], ['O', false, false],   // both bare forms toggle
-    ['O', true, true], ['o', true, true],       // both shifted forms open the options
-  ] as const) {
-    const h = mount([clip('a', 0, 3), clip('b', 3, 2)]);
+test('Caps Lock does not change Shift+O: both letter cases toggle onion skin', () => {
+  for (const key of ['o', 'O']) {
+    const h = mount([clip('a', 0, 3)]);
     try {
       h.root.dispatchEvent(new dom.window.Event('pointerenter'));
-      const btn = onionBtnOf(h);
-      press(h.root, key, { shiftKey });
-      const pop = dom.window.document.querySelector('.tl-onion-pop');
-      if (wantPopover) {
-        assert.ok(pop, `Shift+${key}: the options popover opened`);
-        assert.equal(btn.getAttribute('aria-pressed'), 'false', 'and the layer was NOT toggled');
-      } else {
-        assert.equal(pop, null, `${key}: no popover`);
-        assert.equal(btn.getAttribute('aria-pressed'), 'true', 'the layer toggled on');
-      }
+      press(h.root, key, { shiftKey: true });
+      assert.equal(onionBtnOf(h).getAttribute('aria-pressed'), 'true');
+      press(h.root, key, { shiftKey: true });
+      assert.equal(onionBtnOf(h).getAttribute('aria-pressed'), 'false');
     } finally { closeOverlays(); h.teardown(); }
   }
 });
@@ -4140,13 +4129,13 @@ test('right-clicking the onion button opens its options, and a second right-clic
   } finally { closeOverlays(); h.teardown(); }
 });
 
-test('Shift+O opens the options without toggling the layer', () => {
+test('Shift+O toggles onion skin without opening its options', () => {
   const h = mount([clip('a', 0, 3), clip('b', 3, 2)]);
   try {
     h.root.dispatchEvent(new dom.window.Event('pointerenter'));
     press(h.root, 'O', { shiftKey: true });
-    assert.ok(onionPop(), 'the keyboard reaches the same dialog the pointer does');
-    assert.equal(onionBtnOf(h).getAttribute('aria-pressed'), 'false');
+    assert.equal(onionPop(), null);
+    assert.equal(onionBtnOf(h).getAttribute('aria-pressed'), 'true');
   } finally { closeOverlays(); h.teardown(); }
 });
 
@@ -5438,7 +5427,7 @@ test('audio has no pose to strike, so +Keyframe leaves it out of a mixed selecti
   } finally { h.teardown(); }
 });
 
-test('K is the SAME action from the keyboard - including the auto-promotion', async () => {
+test('Shift+K is the SAME action from the keyboard - including the auto-promotion', async () => {
   // section 8's M2.5 revision: "K stays" and routes through the one action, so a keyboard user
   // gets the whole feature rather than the half of it that existed before the button
   // did. Which means K now opens the door too: the panel being up with something
@@ -5450,7 +5439,7 @@ test('K is the SAME action from the keyboard - including the auto-promotion', as
     h.root.dispatchEvent(new dom.window.Event('pointerenter'));
     h.select(['a']);
     await seek(h, 2200);
-    press(h.root, 'k');
+    press(h.root, 'K', { shiftKey: true });
     assert.equal(h.commits.length, 1, 'ONE write');
     assert.deepEqual(parse(kfOf(h, 'a')).map((k) => k.t), [0, 1500, 2200]);
 
@@ -5458,7 +5447,7 @@ test('K is the SAME action from the keyboard - including the auto-promotion', as
     h.notify(); await frames(3);
     h.select(['b']);
     await seek(h, 3500);
-    press(h.root, 'k');
+    press(h.root, 'K', { shiftKey: true });
     assert.equal(h.commits.length, 2);
     assert.deepEqual(parse(kfOf(h, 'b')).map((k) => k.t), [500], 'in the clip\'s own local time');
 
@@ -5466,7 +5455,7 @@ test('K is the SAME action from the keyboard - including the auto-promotion', as
     // page: a shortcut that sometimes reaches the browser is one nobody can trust.
     h.notify(); await frames(3);
     h.select([]);
-    press(h.root, 'k');
+    press(h.root, 'K', { shiftKey: true });
     assert.equal(h.commits.length, 2, 'nothing selected, nothing written');
   } finally { h.teardown(); }
 });
@@ -5665,11 +5654,11 @@ test('a diamond right-click offers curve / duplicate / delete, and each is the S
 
 test('K and Alt+←/→ are in PANEL_SHORTCUTS - the sheet IS the contract, in both directions', () => {
   const rows = PANEL_SHORTCUTS.filter((r) => /Keyframe|keyframe/.test(r.label));
-  assert.deepEqual(rows.map((r) => r.keys), ['Alt + ← →', 'K'],
+  assert.deepEqual(rows.map((r) => r.keys), ['Alt + ← →', 'Shift + K'],
     'both are printed on the sheet a user presses `?` to read');
   assert.deepEqual(
     rows.flatMap((r) => r.events.map((e) => `${e.altKey ? 'Alt+' : ''}${e.key}`)),
-    ['Alt+ArrowLeft', 'Alt+ArrowRight', 'k'],
+    ['Alt+ArrowLeft', 'Alt+ArrowRight', 'K'],
     'and the machine half names every literal key + modifier the handler claims',
   );
   // The two directions of the drift guard are the two tests above this file's
@@ -7359,4 +7348,259 @@ test('track sizing is a persistent device preference, with bounded controls and 
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
     else Reflect.deleteProperty(globalThis, 'localStorage');
   }
+});
+
+// ── the crossfade you can see and drag (plans/268 SI-07) ─────────────────────────
+//
+// At the harness's 40px per second a cut at 3s is at x = 120, and 500ms is 20px.
+
+const xfadePair = (ms = 500): Box[] => [
+  { ...clip('a', 0, 3), exit: 'fade', exitMs: ms },
+  { ...clip('b', 3, 2), enter: 'fade', enterMs: ms },
+];
+
+test('a crossfade is drawn as a band from the cut, as wide as the handover', async () => {
+  const h = mount(xfadePair());
+  try {
+    await frames(2);
+    const bands = Array.from(h.root.querySelectorAll<HTMLElement>('.tl-xfade'));
+    assert.equal(bands.length, 1);
+    assert.deepEqual([bands[0]!.style.left, bands[0]!.style.width, bands[0]!.hidden], ['120px', '20px', false]);
+    assert.ok(h.root.querySelector('.tl-seam')!.classList.contains('is-xfade'));
+    // Pointer affordances only: the keyboard route is the dialog's number field.
+    assert.equal(bands[0]!.getAttribute('aria-hidden'), 'true');
+  } finally { h.teardown(); }
+});
+
+test('a fade out into a clip that RISES in is not a crossfade: no band, and the seam does not claim one', async () => {
+  const h = mount([{ ...clip('a', 0, 3), exit: 'fade', exitMs: 400 }, { ...clip('b', 3, 2), enter: 'rise', enterMs: 500 }]);
+  try {
+    await frames(2);
+    assert.equal(h.root.querySelectorAll('.tl-xfade').length, 0);
+    const seam = h.root.querySelector('.tl-seam')!;
+    assert.ok(!seam.classList.contains('is-xfade'));
+    assert.ok(seam.classList.contains('is-fade'), 'the older "something fades here" mark is unchanged');
+  } finally { h.teardown(); }
+});
+
+test('dragging the band grip sets the length on BOTH clips, in one commit, on release', async () => {
+  const h = mount(xfadePair());
+  try {
+    await frames(2);
+    h.commits.length = 0;
+    const grip = h.root.querySelector('.tl-xfade-grip') as HTMLElement;
+    grip.dispatchEvent(pointer('pointerdown', 140, { button: 0 }));
+    grip.dispatchEvent(pointer('pointermove', 150));
+    grip.dispatchEvent(pointer('pointermove', 161));           // 41px past the cut = 1025ms, on the 50ms grid 1050
+    assert.equal(h.commits.length, 0, 'nothing is written while the pointer is down');
+    assert.equal((h.root.querySelector('.tl-xfade') as HTMLElement).style.width, '42px', 'the band follows the pointer');
+    grip.dispatchEvent(pointer('pointerup', 161));
+    assert.equal(h.commits.length, 1);
+    const [a, b] = h.commits[0]!;
+    assert.deepEqual([a!.exit, a!.exitMs, b!.enter, b!.enterMs], ['fade', 1050, 'fade', 1050]);
+  } finally { h.teardown(); }
+});
+
+test('the length stops at the clip it hands over to, and pulled back to the cut it becomes a cut', async () => {
+  const h = mount(xfadePair());
+  try {
+    await frames(2);
+    h.commits.length = 0;
+    let grip = h.root.querySelector('.tl-xfade-grip') as HTMLElement;
+    grip.dispatchEvent(pointer('pointerdown', 140, { button: 0 }));
+    grip.dispatchEvent(pointer('pointermove', 900));           // far past the end of the 2s clip
+    grip.dispatchEvent(pointer('pointerup', 900));
+    assert.equal(h.commits.at(-1)![1]!.enterMs, 2000);
+    h.notify();
+    await frames(2);
+    grip = h.root.querySelector('.tl-xfade-grip') as HTMLElement;
+    grip.dispatchEvent(pointer('pointerdown', 200, { button: 0 }));
+    grip.dispatchEvent(pointer('pointermove', 121));           // 25ms: under half the shortest crossfade
+    grip.dispatchEvent(pointer('pointerup', 121));
+    const [a, b] = h.commits.at(-1)!;
+    assert.deepEqual([a!.exit, b!.enter], ['none', 'none']);
+    h.notify();
+    await frames(2);
+    assert.equal(h.root.querySelectorAll('.tl-xfade').length, 0);
+  } finally { h.teardown(); }
+});
+
+test('the seam of a plain cut pulls out into a crossfade, and a press with no travel writes nothing', async () => {
+  const h = mount([clip('a', 0, 3), clip('b', 3, 2)]);
+  try {
+    await frames(2);
+    h.commits.length = 0;
+    const seam = h.root.querySelector('.tl-seam') as HTMLElement;
+    seam.dispatchEvent(pointer('pointerdown', 120, { button: 0 }));
+    seam.dispatchEvent(pointer('pointermove', 122));           // under the 4px that makes it a drag
+    seam.dispatchEvent(pointer('pointerup', 122));
+    assert.equal(h.commits.length, 0);
+    seam.dispatchEvent(pointer('pointerdown', 120, { button: 0 }));
+    seam.dispatchEvent(pointer('pointermove', 136));
+    seam.dispatchEvent(pointer('pointerup', 136));
+    assert.equal(h.commits.length, 1);
+    assert.deepEqual([h.commits[0]![0]!.exitMs, h.commits[0]![1]!.enterMs], [400, 400]);
+  } finally { h.teardown(); }
+});
+
+test('Escape during the drag puts the band back and writes nothing', async () => {
+  const h = mount(xfadePair());
+  try {
+    await frames(2);
+    h.commits.length = 0;
+    const grip = h.root.querySelector('.tl-xfade-grip') as HTMLElement;
+    grip.dispatchEvent(pointer('pointerdown', 140, { button: 0 }));
+    grip.dispatchEvent(pointer('pointermove', 180));
+    dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    grip.dispatchEvent(pointer('pointerup', 180));
+    assert.equal(h.commits.length, 0);
+    assert.equal((h.root.querySelector('.tl-xfade') as HTMLElement).style.width, '20px');
+  } finally { h.teardown(); }
+});
+
+test('a clip that animates in or out carries a ramp as wide as the transition, and a crossfade side carries none', async () => {
+  const h = mount([
+    { ...clip('a', 0, 3), exit: 'fade', exitMs: 400 },
+    { ...clip('b', 3, 2), enter: 'rise', enterMs: 500 },
+    { ...overlay('o', 1, 1), enter: 'pop', enterMs: 3000, exit: 'none' },
+  ]);
+  try {
+    await frames(2);
+    const ramp = (id: string, side: string): string | null =>
+      h.root.querySelector<HTMLElement>(`.tl-clip[data-id="${id}"] > .tl-ramp-${side}`)?.style.width ?? null;
+    assert.deepEqual([ramp('a', 'in'), ramp('a', 'out')], [null, '16px']);
+    assert.deepEqual([ramp('b', 'in'), ramp('b', 'out')], ['20px', null]);
+    // Never more than half the bar, so an in and an out can never cross.
+    assert.deepEqual([ramp('o', 'in'), ramp('o', 'out')], ['20px', null]);
+  } finally { h.teardown(); }
+
+  const x = mount(xfadePair());
+  try {
+    await frames(2);
+    assert.equal(x.root.querySelectorAll('.tl-ramp').length, 0, 'the band says it; the first clip no longer fades before its cut');
+  } finally { x.teardown(); }
+});
+
+// ── the wedge grips: a clip's own enter and exit, resized on the bar ─────────────
+
+test('dragging a wedge grip resizes that clip\'s enter, in one commit, and never moves or trims the clip', async () => {
+  const h = mount([{ ...clip('a', 0, 3), exit: 'fade', exitMs: 1000 }, { ...clip('b', 3, 2), enter: 'rise', enterMs: 1000 }]);
+  try {
+    await frames(2);
+    h.bar('b');                                            // stubs the bar's rect: left 120, right 200
+    h.commits.length = 0;
+    const grip = h.root.querySelector('.tl-clip[data-id="b"] > .tl-ramp-grip-in') as HTMLElement;
+    assert.ok(grip, 'a 40px wedge is wide enough to carry a grip');
+    grip.dispatchEvent(pointer('pointerdown', 160, { button: 0 }));
+    grip.dispatchEvent(pointer('pointermove', 149));       // 29px from the clip's head = 725ms, on the grid 750 (30px)
+    assert.equal(h.commits.length, 0);
+    assert.equal((h.root.querySelector('.tl-clip[data-id="b"] > .tl-ramp-in') as HTMLElement).style.width, '30px');
+    grip.dispatchEvent(pointer('pointerup', 149));
+    assert.equal(h.commits.length, 1);
+    const b = h.commits[0]!.find((x) => x.id === 'b')!;
+    assert.deepEqual([b.enter, b.enterMs, b.start, b.dur], ['rise', 750, 3, 2]);
+  } finally { h.teardown(); }
+});
+
+test('an exit wedge grows from the clip\'s END, stops at half the clip, and Escape writes nothing', async () => {
+  const h = mount([{ ...clip('a', 0, 3), exit: 'fade', exitMs: 1000 }, clip('b', 3, 2)]);
+  try {
+    await frames(2);
+    h.bar('a');                                            // left 0, right 120
+    h.commits.length = 0;
+    const grip = (): HTMLElement => h.root.querySelector('.tl-clip[data-id="a"] > .tl-ramp-grip-out') as HTMLElement;
+    grip().dispatchEvent(pointer('pointerdown', 80, { button: 0 }));
+    grip().dispatchEvent(pointer('pointermove', 2));       // nearly the whole clip
+    dom.window.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    grip().dispatchEvent(pointer('pointerup', 2));
+    assert.equal(h.commits.length, 0);
+    grip().dispatchEvent(pointer('pointerdown', 80, { button: 0 }));
+    grip().dispatchEvent(pointer('pointermove', 2));
+    grip().dispatchEvent(pointer('pointerup', 2));
+    assert.equal(h.commits.at(-1)!.find((x) => x.id === 'a')!.exitMs, 1500, 'half of a three second clip');
+  } finally { h.teardown(); }
+});
+
+test('a wedge too narrow to clear the trim edge shows no grip, so a press at a clip end means one thing', async () => {
+  const h = mount([{ ...clip('a', 0, 3), exit: 'fade', exitMs: 400 }, clip('b', 3, 2)]);
+  try {
+    await frames(2);
+    assert.ok(h.root.querySelector('.tl-clip[data-id="a"] > .tl-ramp-out'), 'the 16px wedge is still drawn');
+    assert.equal(h.root.querySelector('.tl-clip[data-id="a"] > .tl-ramp-grip-out'), null);
+  } finally { h.teardown(); }
+});
+
+test('project frame rate drives the keyboard; markers and range marks stay in the document', async () => {
+  let wire = '';
+  const writes: string[] = [];
+  const h = mount([clip('a', 0, 3), clip('b', 3, 2)], 40, ADD_KINDS, {
+    projectTime: { rate: () => '25', marks: () => wire, writeMarks: next => { wire = next; writes.push(next); } },
+  });
+  try {
+    h.root.dispatchEvent(new dom.window.Event('pointerenter'));
+    await seek(h, 0);
+    press(h.root, 'ArrowRight');
+
+    press(h.root, 'm');
+    assert.match(wire, /^v1\|m,40,/);
+    assert.equal(h.root.querySelectorAll('.tl-marker').length, 1);
+    press(h.root, 'i');
+    assert.match(wire, /\|i,40/);
+    await seek(h, 1240);
+    press(h.root, 'o');
+    assert.match(wire, /\|o,1240/);
+    assert.ok(h.root.querySelector('.tl-marked-range'));
+    press(h.root, 'ArrowLeft', { ctrlKey: true });
+
+    press(h.root, 'm');
+    assert.equal(writes.length, 3, 'navigation and frame steps never write the document');
+  } finally { closeOverlays(); h.teardown(); }
+});
+
+
+for (const fps of [24, 25, 30, 50, 60]) test(`${fps} fps repeated trims keep one second exact on the millisecond wire`, async () => {
+  const h = mount([clip('a', 0, 3), clip('b', 3, 2)], 40, ADD_KINDS, {
+    projectTime: { rate: () => fps, marks: () => '', writeMarks: () => {} },
+  });
+  try {
+    h.select(['a']); h.bar('a').focus(); press(h.bar('a'), '[');
+    for (let i = 0; i < fps; i++) press(h.bar('a'), '.');
+    assert.equal(Number(h.boxes[0]!.clipIn), 1);
+    assert.equal(Number(h.boxes[0]!.dur), 2);
+    assert.equal(Number(h.boxes[1]!.start), 2);
+  } finally { h.teardown(); }
+});
+
+test('timeline keyboard resizing updates the reserve and keeps the chosen height on reopen', () => {
+  const h = mount([clip('a', 0, 3)]);
+  try {
+    const handle = h.root.querySelector<HTMLElement>('.tl-handle')!;
+    const press = (key: string): void => { handle.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })); };
+    press('Home');
+    const min = parseFloat(h.root.style.height);
+    press('ArrowUp');
+    assert.equal(parseFloat(h.root.style.height), min + 16);
+    assert.equal(handle.getAttribute('aria-valuenow'), String(min + 16));
+    assert.ok(Number(handle.getAttribute('aria-valuemax')) > min);
+    const reserve = h.reserves.at(-1);
+    h.panel.setOpen(false); h.panel.setOpen(true);
+    assert.equal(parseFloat(h.root.style.height), min + 16);
+    assert.equal(h.reserves.at(-1), reserve);
+  } finally { h.teardown(); }
+});
+
+
+test('timeline resizing follows the visual viewport reserve without reopening a closed panel', () => {
+  const h = mount([clip('a', 0, 3)]);
+  try {
+    const handle = h.root.querySelector<HTMLElement>('.tl-handle')!;
+    handle.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    const before = parseFloat(h.root.style.height);
+    h.stageEl.style.setProperty('--design-viewport-inset', '300px');
+    h.canvasEl.dispatchEvent(new dom.window.Event('canvas-resize'));
+    assert.ok(parseFloat(h.root.style.height) < before);
+    h.panel.setOpen(false);
+    h.canvasEl.dispatchEvent(new dom.window.Event('canvas-resize'));
+    assert.equal(h.reserves.at(-1), 0);
+  } finally { h.teardown(); }
 });

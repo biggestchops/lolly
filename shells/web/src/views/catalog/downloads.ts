@@ -75,7 +75,7 @@ export async function directDownload(cat: CatCtx, ref: AssetRef): Promise<void> 
   // zip and the send dialog; the three delivery surfaces share one path now).
   try { await host.export.download(await cat.bulk.credentialedBytes(ref), filename); return; }
   catch { /* fetch blocked (opaque/data URL edge) - anchor fallback below */ }
-  await saveUrl(cat, ref.url, filename);
+  await saveUrl(cat, ref.original?.url ?? ref.url, filename);
 }
 // "Send to…" for a STORED asset (plans/129 section 2.3): the same connected
 // destinations the export panel offers, fed the same byte-exact bytes a

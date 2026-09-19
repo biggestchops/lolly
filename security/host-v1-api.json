@@ -50,12 +50,12 @@
     "AssetRef": {
       "module": "asset-ref.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "2657e35dbfbba6723e7049c68d714f9c063181641f1664826bec6e727d52c54a"
+      "sha256": "14c50b00921356067db84ea0ef8cc07c54b505c06ef7e7fc5e372923cb9674fb"
     },
     "AssetsAPI": {
       "module": "assets.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "40cc3a1f176f30ea512e34991972c00ff80a90249749847cac3afe5cd6819058"
+      "sha256": "6f274190480adba3d5d8dd37a9d877040c9d125a478326510e0f68398194f745"
     },
     "IngredientCredential": {
       "module": "assets.ts",
@@ -160,7 +160,12 @@
     "CodecAPI": {
       "module": "codec.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "a8f440b24f6134ce5b1148130428d8c4ce546ed3f45717c958deb62390994069"
+      "sha256": "c5f541dff983f92a37660642c04e83bec9f048718207efb7f12811e89faa585c"
+    },
+    "CodecLayer": {
+      "module": "codec.ts",
+      "kind": "InterfaceDeclaration",
+      "sha256": "5585ba7db7fddb875705e9ec92591fe44ed983beaf87c8df060ce615ced9e0dc"
     },
     "ColorAPI": {
       "module": "color.ts",
@@ -362,10 +367,15 @@
       "kind": "InterfaceDeclaration",
       "sha256": "4724567ba25a41b1e29b89a425203558f7eefce1ca3524a1ad129da909cc6473"
     },
+    "EmojiTextRenderOpts": {
+      "module": "emoji.ts",
+      "kind": "InterfaceDeclaration",
+      "sha256": "af40750385df32e20f76ff2a272dab8200cf552f11b8158c85d6bbbcc0db706a"
+    },
     "EmojiAPI": {
       "module": "emoji.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "57ab8cf71c770457939d54ad17b816ed230b1fb5f5d54fd98dce19473f89586b"
+      "sha256": "8bf9d239cdf7a4c8c6229d60409c3c40c07fed9455efa856047f6c1a8e218044"
     },
     "ExportPackSpec": {
       "module": "export.ts",
@@ -385,12 +395,12 @@
     "ExportFormat": {
       "module": "export.ts",
       "kind": "TypeAliasDeclaration",
-      "sha256": "4a59c8433ffa03035a3dab97763eeeabbbd5820c8c56b9a6827cf8f3a3aee5ce"
+      "sha256": "1f12750df8f9d499ea5d663f893febdc821cc075318c4182815c1d18632710a9"
     },
     "ExportOpts": {
       "module": "export.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "4b1acf234591b2eb6bfbc4c3e833ebc93931c0645db0907daff321ee63df7060"
+      "sha256": "5022c68c8ccbd7ffdec6a5e6b67a5e367e4a35ea0c907c17fb22117b58910edf"
     },
     "ExportMeta": {
       "module": "export.ts",
@@ -510,7 +520,7 @@
     "ImageEncodeFormat": {
       "module": "images.ts",
       "kind": "TypeAliasDeclaration",
-      "sha256": "92ec9e00f32a9532767523975a25ceff21c2d49f1cb0956a0c13d830c2529b9f"
+      "sha256": "251cc4b490ef750f0f1008c1cd824955d2baec6c7898098b16abeb35eedd3f33"
     },
     "ImageResizeOpts": {
       "module": "images.ts",
@@ -735,7 +745,7 @@
     "PdfRedactOpts": {
       "module": "pdf.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "38b5fa328c84579e6b0fcf25b4d851f54932e94d000e49025ec66c0e19cf495d"
+      "sha256": "a1e8e5d56867b8b2df1d8972b24e2d1df74ed30a7c794e42a6c44f4447dc8dec"
     },
     "PdfRedactResult": {
       "module": "pdf.ts",
@@ -880,7 +890,7 @@
     "Profile": {
       "module": "profile.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "6a9a28092681d7a55f4bd6b400041446f11d0eabeb4890eab6cced576b4fccb9"
+      "sha256": "d213cbf1ec526884d03e2f179f5709451ad69c1e62038c0a3baa199038069318"
     },
     "RasterAPI": {
       "module": "raster.ts",
@@ -1055,7 +1065,7 @@
     "ColorSwatch": {
       "module": "tokens.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "24c5628074d97e8f5395d8d0df88b8950d0ea9cbe40e697ade05ba12820418b2"
+      "sha256": "a7f2a2a0033a97515d1b653f6592ae9626869c4b6a7b61617666c0a27b290fb8"
     },
     "SpotColor": {
       "module": "tokens.ts",

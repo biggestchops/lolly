@@ -214,5 +214,13 @@
   "Install and restart": "Installer og start på nytt",
   "The on-device model that hides an invisible credential in exported pixels. Pull it down now (~{size}) and the first durable export starts straight away, with no wait.": "Modellen på enheten som skjuler en usynlig legitimasjon i eksporterte piksler. Last den ned nå (~{size}), så starter den første eksporten med varig legitimasjon med én gang, uten ventetid.",
   "The on-device model that hides the durable credential in exported pixels. Removing it frees the space; it downloads again with your consent when next used.": "Modellen på enheten som skjuler den varige legitimasjonen i eksporterte piksler. Hvis du fjerner den, frigjøres plass; den lastes ned igjen med ditt samtykke neste gang den brukes.",
-  "Removed the durable-credential model": "Modellen for varig legitimasjon ble fjernet"
+  "Removed the durable-credential model": "Modellen for varig legitimasjon ble fjernet",
+  "No emoji artwork is used in this document yet.": "Dette dokumentet bruker ingen emoji-bilder ennå.",
+  "Emoji pack exceeds the 64 MiB limit.": "Emoji-pakken overskrider grensen på 64 MiB.",
+  "No emoji sets are available.": "Ingen emoji-sett er tilgjengelige.",
+  "This emoji set is incomplete.": "Dette emoji-settet er ufullstendig.",
+  "This emoji set is unavailable.": "Dette emoji-settet er ikke tilgjengelig.",
+  "The artwork exceeds the emoji import limit.": "Bildene overskrider grensen for import av emoji.",
+  "That set could not be saved. Your emoji preference is unchanged.": "Settet kunne ikke lagres. Emoji-innstillingen din er uendret.",
+  "JPEG XL original kept. Choose HDR editing to retain its full precision; previews use SDR.": "JPEG XL-originalen er beholdt. Velg HDR-redigering for å beholde full presisjon; forhåndsvisninger bruker SDR."
 }

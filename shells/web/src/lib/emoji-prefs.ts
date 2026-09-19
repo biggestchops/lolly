@@ -21,6 +21,7 @@ import type { EmojiPackPinV1, EmojiPreferenceV1, EmojiStyleV1, EmojiTreatmentMod
 export interface EmojiParamPair {
   emoji: string;
   emojifx: string;
+  emojistyle?: string;
 }
 
 /** The host slice this module persists through - the same weak shape a11y-prefs.ts uses. */
@@ -108,7 +109,7 @@ function usable(pair: EmojiParamPair | null | undefined): EmojiParamPair | null 
   if (!pair) return null;
   const emoji = typeof pair.emoji === 'string' ? pair.emoji.trim() : '';
   if (!emoji) return null;
-  return { emoji, emojifx: typeof pair.emojifx === 'string' ? pair.emojifx.trim() : '' };
+  return { emoji, emojifx: typeof pair.emojifx === 'string' ? pair.emojifx.trim() : '', ...(pair.emojistyle ? { emojistyle: pair.emojistyle } : {}) };
 }
 
 /**
@@ -138,6 +139,8 @@ export function emojiSeedParams(sources: {
  */
 export function writeEmojiParams(params: URLSearchParams, pair: EmojiParamPair | null): void {
   const chosen = usable(pair);
+  params.delete('emojistyle');
+  if (chosen?.emojistyle) params.set('emojistyle', chosen.emojistyle);
   if (!chosen) {
     params.delete('emoji');
     params.delete('emojifx');

@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Vlevo dole",
   "inputs.boxes.fields.imgpos.options.center bottom": "Dole",
   "inputs.boxes.fields.imgpos.options.right bottom": "Vpravo dole",
-  "description": "Otevřené plátno pro volné uspořádání - text, obrázky, tvary a živé vykreslení z tvých dalších nástrojů Lolly, vše v souladu s design systémem."
+  "description": "Otevřené plátno pro volné uspořádání - text, obrázky, tvary a živé vykreslení z tvých dalších nástrojů Lolly, vše v souladu s design systémem.",
+  "inputs.projectFps.label": "Snímková frekvence projektu",
+  "inputs.sequenceMarks.label": "Značky časové osy",
+  "inputs.boxes.fields.animationId.label": "Animace ve zdroji",
+  "inputs.boxes.fields.animationEdits.label": "Vnitřní úpravy animace"
 }

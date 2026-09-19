@@ -380,7 +380,7 @@ test('with TWO path boxes selected, one click writes both in ONE commit', () => 
 
 // ══ the colour gotcha: a token value must not reach the model ══════════════════
 
-test('a token swatch writes the plain colour, never the { ref, value } wrapper', () => {
+test('a token swatch writes a linked CSS colour with its sRGB fallback', () => {
   // The known repo gotcha (see the brand-editor colour-tab notes): the shared colour field
   // emits `{ ref, value }` for a swatch linked to a design token, and a caller that stores
   // it unchanged puts an OBJECT in the box - which every renderer downstream stringifies to
@@ -403,7 +403,7 @@ test('a token swatch writes the plain colour, never the { ref, value } wrapper',
   assert.equal(f.commits() - commits, 1);
   const v = byId(f, 'p1').stroke;
   assert.equal(typeof v, 'string', `stroke must be a string, got ${JSON.stringify(v)}`);
-  assert.equal(v, '#30ba78');
+  assert.equal(v, 'var(--brand-token-636f6c6f722e6272616e642e6a756e676c65, #30ba78)');
   f.destroy();
   setSwatches([{ value: '#30ba78', label: 'Jungle', group: 'Brand', ref: null }]);
 });

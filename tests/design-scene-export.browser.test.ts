@@ -271,10 +271,11 @@ const spreadOf = (px) => {
   return n ? dev / n : 0;
 };
 
-const bitmapPixels = async (source, w, h) => {
+const bitmapPixels = async (source, w, h, ground) => {
   const bitmap = source instanceof ImageBitmap ? source : await createImageBitmap(source);
   const cvs = new OffscreenCanvas(w, h);
   const ctx = cvs.getContext('2d', { willReadFrequently: true });
+  if (ground) { ctx.fillStyle = ground; ctx.fillRect(0, 0, w, h); }
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
   return ctx.getImageData(0, 0, w, h).data;
@@ -445,7 +446,8 @@ window.sceneExport = {
         const direct = await renderStudioPoster(
           info.values, shot.w, shot.h, 0, 'export', sceneRead, null, new AbortController().signal,
         );
-        delta = meanDelta(shot.data, await bitmapPixels(direct, shot.w, shot.h));
+        // Object-and-shadow output is transparent, so compare it on the artboard's ground.
+        delta = meanDelta(shot.data, await bitmapPixels(direct, shot.w, shot.h, getComputedStyle(pageEl()).backgroundColor));
       }
       return {
         ok: true, error: '', width: shot.full.width, height: shot.full.height, delta,

@@ -48,7 +48,7 @@ export function videoParams(ta: ActionsCtx): {
     el!.querySelector<HTMLSelectElement>('[data-action="video-hwaccel"]')?.value ?? '';
   const fpsNum = Number(fpsSel);
   return {
-    wait: Number.isFinite(wait) ? Math.max(0, wait) : 1,
+    wait: ta.formatRules.seqStageEl() ? 0 : Number.isFinite(wait) ? Math.max(0, wait) : 1,
     duration: Number.isFinite(duration) ? Math.max(0.5, duration) : 5,
     // Frame-rate select (24/25/30/50/60), the WP-B replacement for the old webm-only
     // 60fps checkbox. 'Auto' (empty) leaves fps unset, so each format keeps its default.
@@ -70,7 +70,7 @@ export function videoParams(ta: ActionsCtx): {
     // The cross-agent contract: true only when the user typed their own duration,
     // so a tool hook can safely overwrite an auto-derived one with the timeline's
     // length (`if (!ctx.opts.durationUserSet) ctx.opts.duration = derived`).
-    durationUserSet: ta.durationUserSet,
+    durationUserSet: !ta.formatRules.seqStageEl() && ta.durationUserSet,
   };
 }
 export const hasArtboards = (ta: ActionsCtx): boolean => !!(ta.artActive && (ta.artActive.sel || ta.artActive.timed));

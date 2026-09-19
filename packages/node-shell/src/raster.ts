@@ -30,7 +30,12 @@ import { catalogFile } from './content-roots.ts';
 // `penpot` joins the DOM-free list for the same reason emf/eps do: the .penpot writer
 // (engine/src/penpot-file.ts) is pure - it reads the tool's own <svg> and emits zip
 // entries, with no rasteriser and no browser anywhere in the path (plans/178).
-export const NODE_FORMATS = ['svg', 'svgz', 'emf', 'wmf', 'eps', 'eps-cmyk', 'dxf', 'penpot', 'bmp', 'exr', 'hdr', 'html', 'json', 'csv', 'ics', 'vcf', 'md'];
+export const NODE_FORMATS = ['svg', 'svgz', 'emf', 'wmf', 'eps', 'eps-cmyk', 'dxf', 'penpot', 'lottie', 'jxl', 'jxl-lossless', 'bmp', 'exr', 'hdr', 'html', 'json', 'csv', 'ics', 'vcf', 'md'];
+
+/** Design float composition requires the browser's measured scene layout. */
+export function needsFloatScene(toolId: string, editingRange: unknown, format: string, hdr: unknown): boolean {
+  return toolId === 'design' && (editingRange === 'hdr' || !!hdr) && !['html','json','csv','ics','vcf','md','txt'].includes(format.toLowerCase());
+}
 
 /**
  * The float interchange formats (plans/61-deeprichpixels.md section 4.2 / section 6 B3, surfaced

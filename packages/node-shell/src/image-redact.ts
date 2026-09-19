@@ -41,6 +41,8 @@ export interface BarMark {
   labelColor?: string;
   /** Cap on the stamp's type size in device pixels. Default 14. */
   labelMaxSize?: number;
+  labelImage?: import('@lolly-tools/core/host-v1').RasterFrame;
+  labelCanvas?: NodeCanvas;
 }
 
 /**
@@ -94,7 +96,10 @@ export function paintBars(cx: NodeCanvasCtx, rects: PixelRect[], mark: BarMark, 
       cx.textAlign = 'center';
       cx.textBaseline = 'middle';
       cx.font = `600 ${lay.size}px SUSE, system-ui, sans-serif`;
-      cx.fillText(label, lay.cx, lay.cy);
+      if (mark.labelCanvas) {
+        const ah = Math.max(0, Math.min(lay.size * 1.3, shape.h - 2, (shape.w - 2) * mark.labelCanvas.height / mark.labelCanvas.width)), aw = ah * mark.labelCanvas.width / mark.labelCanvas.height;
+        cx.drawImage(mark.labelCanvas,lay.cx-aw/2,lay.cy-ah/2,aw,ah);
+      } else cx.fillText(label, lay.cx, lay.cy);
     }
   }
 }
@@ -211,7 +216,7 @@ export async function redactImage(bytes: Uint8Array, opts: RedactImageOpts): Pro
     if (!Number.isFinite(x1) || !Number.isFinite(y1) || x1 <= x0 || y1 <= y0) { unplaced++; continue; }
     placed.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
   }
-  paintBars(cx, placed, opts, W, H);
+  paintBars(cx, placed, {...opts,labelCanvas:await labelArtworkCanvas(opts.labelImage)}, W, H);
 
   const fmt = outputFormat(mime, opts.format);
   const q = typeof opts.quality === 'number' && Number.isFinite(opts.quality)
@@ -241,4 +246,14 @@ export async function redactImage(bytes: Uint8Array, opts: RedactImageOpts): Pro
     bytes: new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength),
     mime: `image/${fmt}`, width: W, height: H, unplaced,
   };
+}
+
+/** Turn verified portable stamp pixels into the Node canvas used by both writers. */
+export async function labelArtworkCanvas(frame: BarMark['labelImage']): Promise<NodeCanvas | undefined> {
+  if (!frame) return undefined;
+  (await import('../../../engine/src/label-artwork.ts')).validateLabelArtwork(frame);
+  const mod = await nodeCanvas(); if (!mod) throw new Error('Label artwork needs a canvas.');
+  const canvas = mod.createCanvas(frame.width,frame.height), cx = canvas.getContext('2d');
+  const pixels = cx.createImageData(frame.width,frame.height) as {data:Uint8ClampedArray};
+  pixels.data.set(frame.data); cx.putImageData(pixels,0,0); return canvas;
 }

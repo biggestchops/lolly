@@ -57,6 +57,29 @@ export interface SelectOption {
  * type-specific members are validated by the schema and accepted via the index
  * signature.
  */
+export interface TableFieldSpec {
+  key: string;
+  label: string;
+  /** Stable stored column heading, independent of the translated label. */
+  column?: string;
+  aliases?: string[];
+  editor?: 'text' | 'date' | 'time' | 'choice' | 'url';
+  choices?: string[];
+  primary?: boolean;
+  required?: boolean;
+  identity?: boolean;
+  /** Key of the date field paired with this time for bulk shifting. */
+  dateField?: string;
+}
+
+export interface TableEditorSpec {
+  title: string;
+  fields: TableFieldSpec[];
+  /** A tool-computed list of row/message diagnostics. */
+  diagnostics?: string;
+  preview?: { date: string; time: string; input: string };
+}
+
 export interface InputSpec {
   id: string;
   type: InputType;
@@ -91,6 +114,8 @@ export interface InputSpec {
   display?: 'input' | 'slider';
   unit?: string;
   suffix?: string;
+  /** Named columns and optional form controls for a string-valued table. */
+  tableEditor?: TableEditorSpec;
   // color
   palette?: string;
   swatchesOnly?: boolean;
@@ -112,6 +137,8 @@ export interface InputSpec {
  * `formats` entries are validated against the schema's format enum.
  */
 export interface RenderSpec {
+  /** Load presentation.js as the tool's portable browser runtime. */
+  portable?: boolean;
   width: number;
   height: number;
   formats: string[];

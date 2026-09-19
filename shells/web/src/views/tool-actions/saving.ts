@@ -77,7 +77,7 @@ export async function performSave(ta: ActionsCtx,
     // the race caps a render that never quiesces. The generation check keeps a
     // slow capture from clobbering a NEWER re-save's data with this older data.
     const gen = ++ta.saveGen;
-    if (!ta.automaticHistory) void Promise.race([
+    const thumbnail = !ta.automaticHistory ? Promise.race([
       captureThumbnail(manifest, canvasEl, runtime, exportUnscaled, data.__export_format),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), THUMB_CAPTURE_TIMEOUT_MS)),
     ])
@@ -86,7 +86,9 @@ export async function performSave(ta: ActionsCtx,
       )
       .catch(() => {
         /* the thumbnail is an extra - the session is already saved */
-      });
+      }) : Promise.resolve();
+    // Keep the studio mounted until its preview is attached before Save leaves for Projects.
+    if (manifest.id === '3d-studio') await thumbnail;
     // Remember the slot so the next save updates THIS session rather than creating a
     // duplicate (see activeSlot above). Set before filing so a fresh first-save is
     // both filed into its folder AND pinned as the active slot for later edits.

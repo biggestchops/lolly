@@ -154,7 +154,9 @@ test('the add menu offers a 3D scene whose seed is a scene box', () => {
 test('scene is field 101 of design:boxes and the wire-order pin ratcheted with it', () => {
   const current: string[] = boxesField.fields.map((f: { id: string }) => f.id);
   const pinned = wireOrder.inputs['design:boxes']!;
-  assert.equal(current.length, 101, 'the boxes block has 101 fields');
+  assert.equal(current.length, 103, 'animation choices and internal edits append fields');
+  assert.equal(current[101], 'animationId');
+  assert.equal(current[102], 'animationEdits');
   assert.equal(current[100], 'scene', 'scene is the 101st field, appended after plainText');
   // The rule scripts/validate-catalog.ts enforces: the pin is a prefix of the manifest
   // and the two are the same length once ratcheted. Nothing existing may move.

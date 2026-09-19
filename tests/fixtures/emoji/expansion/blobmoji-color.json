@@ -1,0 +1,814 @@
+{
+  "family": "Blobmoji",
+  "style": "Color",
+  "slug": "blobmoji-color",
+  "packId": "community/emoji/blobmoji/color",
+  "version": "2023.06.25-7dd14d2",
+  "unicodeVersion": "17.0",
+  "upstream": {
+    "repo": "https://github.com/C1710/blobmoji",
+    "commit": "7dd14d2b0141693485fd26bc35817bd290352a79",
+    "svgDir": "."
+  },
+  "files": {
+    "total": 3781,
+    "mapped": 3417,
+    "oversizeSkipped": [],
+    "unparsable": [],
+    "unmapped": [
+      "svg/emoji_u1f1e6.svg",
+      "svg/emoji_u1f1e7.svg",
+      "svg/emoji_u1f1e8.svg",
+      "svg/emoji_u1f1e9.svg",
+      "svg/emoji_u1f1ea.svg",
+      "svg/emoji_u1f1eb.svg",
+      "svg/emoji_u1f1ec.svg",
+      "svg/emoji_u1f1ed.svg",
+      "svg/emoji_u1f1ee.svg",
+      "svg/emoji_u1f1ef.svg",
+      "svg/emoji_u1f1f0.svg",
+      "svg/emoji_u1f1f1.svg",
+      "svg/emoji_u1f1f2.svg",
+      "svg/emoji_u1f1f3.svg",
+      "svg/emoji_u1f1f4.svg",
+      "svg/emoji_u1f1f5.svg",
+      "svg/emoji_u1f1f6.svg",
+      "svg/emoji_u1f1f7.svg",
+      "svg/emoji_u1f1f8.svg",
+      "svg/emoji_u1f1f9.svg",
+      "svg/emoji_u1f1fa.svg",
+      "svg/emoji_u1f1fb.svg",
+      "svg/emoji_u1f1fc.svg",
+      "svg/emoji_u1f1fd.svg",
+      "svg/emoji_u1f1fe.svg",
+      "svg/emoji_u1f1ff.svg",
+      "svg/emoji_u1f35e_1f3fb.svg",
+      "svg/emoji_u1f35e_1f3fc.svg",
+      "svg/emoji_u1f35e_1f3fd.svg",
+      "svg/emoji_u1f35e_1f3fe.svg",
+      "svg/emoji_u1f35e_1f3ff.svg",
+      "svg/emoji_u1f3c3_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f3c3_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f3c3_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f3c3_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f3c4_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f3c4_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f3c4_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f3c4_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f3c7_1f9b0.svg",
+      "svg/emoji_u1f3c7_1f9b3.svg",
+      "svg/emoji_u1f3ca_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f3ca_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f3ca_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f3ca_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f3cb_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f3cb_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f3cb_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f3cb_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f431_1f3fb.svg",
+      "svg/emoji_u1f431_1f3fc.svg",
+      "svg/emoji_u1f431_1f3fd.svg",
+      "svg/emoji_u1f431_1f3fe.svg",
+      "svg/emoji_u1f431_1f3ff.svg",
+      "svg/emoji_u1f466_1f9b0.svg",
+      "svg/emoji_u1f466_1f9b3.svg",
+      "svg/emoji_u1f467_1f9b0.svg",
+      "svg/emoji_u1f467_1f9b3.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f33e.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f373.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f393.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f3a4.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f3a8.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f3eb.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f3ed.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f4bc.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f527.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f52c.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f680.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f692.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f9af.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f9bc.svg",
+      "svg/emoji_u1f468_1f9b0_200d_1f9bd.svg",
+      "svg/emoji_u1f468_1f9b0_200d_2695.svg",
+      "svg/emoji_u1f468_1f9b0_200d_2696.svg",
+      "svg/emoji_u1f468_1f9b0_200d_2708.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f33e.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f373.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f393.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f3a4.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f3a8.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f3eb.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f3ed.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f4bc.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f527.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f52c.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f680.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f692.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f9af.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f9bc.svg",
+      "svg/emoji_u1f468_1f9b3_200d_1f9bd.svg",
+      "svg/emoji_u1f468_1f9b3_200d_2695.svg",
+      "svg/emoji_u1f468_1f9b3_200d_2696.svg",
+      "svg/emoji_u1f468_1f9b3_200d_2708.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f33e.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f373.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f393.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f3a4.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f3a8.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f3eb.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f3ed.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f4bc.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f527.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f52c.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f680.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f692.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f9af.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f9b1.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f9bc.svg",
+      "svg/emoji_u1f469_1f9b0_200d_1f9bd.svg",
+      "svg/emoji_u1f469_1f9b0_200d_2695.svg",
+      "svg/emoji_u1f469_1f9b0_200d_2696.svg",
+      "svg/emoji_u1f469_1f9b0_200d_2708.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f33e.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f373.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f393.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f3a4.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f3a8.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f3eb.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f3ed.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f4bc.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f527.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f52c.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f680.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f692.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f9af.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f9b1.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f9bc.svg",
+      "svg/emoji_u1f469_1f9b3_200d_1f9bd.svg",
+      "svg/emoji_u1f469_1f9b3_200d_2695.svg",
+      "svg/emoji_u1f469_1f9b3_200d_2696.svg",
+      "svg/emoji_u1f469_1f9b3_200d_2708.svg",
+      "svg/emoji_u1f46a_1f3fb.svg",
+      "svg/emoji_u1f46a_1f3fc.svg",
+      "svg/emoji_u1f46a_1f3fd.svg",
+      "svg/emoji_u1f46a_1f3fe.svg",
+      "svg/emoji_u1f46a_1f3ff.svg",
+      "svg/emoji_u1f46b_1f9b0.svg",
+      "svg/emoji_u1f46b_1f9b3.svg",
+      "svg/emoji_u1f46c_1f9b0.svg",
+      "svg/emoji_u1f46c_1f9b3.svg",
+      "svg/emoji_u1f46d_1f9b0.svg",
+      "svg/emoji_u1f46d_1f9b3.svg",
+      "svg/emoji_u1f46e_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f46e_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f46e_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f46e_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f472_1f9b0.svg",
+      "svg/emoji_u1f472_1f9b3.svg",
+      "svg/emoji_u1f473_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f473_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f476_1f9b0.svg",
+      "svg/emoji_u1f476_1f9b3.svg",
+      "svg/emoji_u1f477_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f477_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f477_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f477_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f478_1f9b0.svg",
+      "svg/emoji_u1f478_1f9b3.svg",
+      "svg/emoji_u1f481_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f481_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f481_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f481_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f482_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f482_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f482_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f482_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f483_1f9b0.svg",
+      "svg/emoji_u1f483_1f9b3.svg",
+      "svg/emoji_u1f486_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f486_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f486_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f486_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f487_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f487_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f487_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f487_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f52b_200d_1f4a3.svg",
+      "svg/emoji_u1f52b_200d_2063.svg",
+      "svg/emoji_u1f575_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f575_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f575_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f575_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f57a_1f9b0.svg",
+      "svg/emoji_u1f57a_1f9b3.svg",
+      "svg/emoji_u1f644_200d_2063.svg",
+      "svg/emoji_u1f645_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f645_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f645_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f645_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f646_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f646_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f646_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f646_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f647_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f647_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f647_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f647_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f64b_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f64b_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f64b_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f64b_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f64d_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f64d_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f64d_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f64d_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f64e_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f64e_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f64e_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f64e_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f6a3_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f6a3_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f6a3_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f6a3_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f6b4_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f6b4_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f6b4_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f6b4_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f6b5_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f6b5_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f6b5_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f6b5_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f6b6_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f6b6_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f6b6_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f6b6_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f6c0_1f9b0.svg",
+      "svg/emoji_u1f6c0_1f9b3.svg",
+      "svg/emoji_u1f924_200d_2063.svg",
+      "svg/emoji_u1f926_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f926_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f926_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f926_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f928_200d_1f922.svg",
+      "svg/emoji_u1f92a_200d_2063.svg",
+      "svg/emoji_u1f930_1f9b0.svg",
+      "svg/emoji_u1f930_1f9b3.svg",
+      "svg/emoji_u1f934_1f9b0.svg",
+      "svg/emoji_u1f934_1f9b3.svg",
+      "svg/emoji_u1f937_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f937_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f937_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f937_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f938_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f938_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f938_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f938_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f939_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f939_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f939_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f939_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f93c_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f93c_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f93c_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f93c_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f93d_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f93d_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f93d_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f93d_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f93e_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f93e_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f93e_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f93e_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f95a_200d_1f3a8.svg",
+      "svg/emoji_u1f9b8_1f9b0.svg",
+      "svg/emoji_u1f9b8_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f9b8_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f9b8_1f9b3.svg",
+      "svg/emoji_u1f9b8_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f9b8_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f9b8_200d_2063.svg",
+      "svg/emoji_u1f9b9_1f9b0.svg",
+      "svg/emoji_u1f9b9_1f9b3.svg",
+      "svg/emoji_u1f9b9_200d_2063.svg",
+      "svg/emoji_u1f9cd_1f9b0.svg",
+      "svg/emoji_u1f9cd_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f9cd_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f9cd_1f9b3.svg",
+      "svg/emoji_u1f9cd_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f9cd_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f9ce_1f9b0.svg",
+      "svg/emoji_u1f9ce_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f9ce_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f9ce_1f9b3.svg",
+      "svg/emoji_u1f9ce_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f9ce_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f9cf_1f9b0.svg",
+      "svg/emoji_u1f9cf_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f9cf_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f9cf_1f9b3.svg",
+      "svg/emoji_u1f9cf_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f9cf_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f9d1_1f3fb_200d_1f91d_200d_1f9d1.svg",
+      "svg/emoji_u1f9d1_1f3fc_200d_1f91d_200d_1f9d1.svg",
+      "svg/emoji_u1f9d1_1f3fd_200d_1f91d_200d_1f9d1.svg",
+      "svg/emoji_u1f9d1_1f3fe_200d_1f91d_200d_1f9d1.svg",
+      "svg/emoji_u1f9d1_1f3ff_200d_1f91d_200d_1f9d1.svg",
+      "svg/emoji_u1f9d1_1f9b0.svg",
+      "svg/emoji_u1f9d1_1f9b0_200d_1f91d_200d_1f9d1.svg",
+      "svg/emoji_u1f9d1_1f9b0_200d_1f91d_200d_1f9d1_1f9b0.svg",
+      "svg/emoji_u1f9d1_1f9b3.svg",
+      "svg/emoji_u1f9d1_1f9b3_200d_1f91d_200d_1f9d1.svg",
+      "svg/emoji_u1f9d1_1f9b3_200d_1f91d_200d_1f9d1_1f9b3.svg",
+      "svg/emoji_u1f9d2_1f9b0.svg",
+      "svg/emoji_u1f9d2_1f9b3.svg",
+      "svg/emoji_u1f9d6_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f9d6_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f9d6_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f9d6_1f9b3_200d_2642.svg",
+      "svg/emoji_u1f9d8_1f9b0_200d_2640.svg",
+      "svg/emoji_u1f9d8_1f9b0_200d_2642.svg",
+      "svg/emoji_u1f9d8_1f9b3_200d_2640.svg",
+      "svg/emoji_u1f9d8_1f9b3_200d_2642.svg",
+      "svg/emoji_u20e3.svg",
+      "svg/emoji_u26bd_200d_1f308.svg",
+      "svg/emoji_u26f9_1f9b0_200d_2640.svg",
+      "svg/emoji_u26f9_1f9b0_200d_2642.svg",
+      "svg/emoji_u26f9_1f9b3_200d_2640.svg",
+      "svg/emoji_u26f9_1f9b3_200d_2642.svg",
+      "svg/emoji_ufe82b.svg"
+    ]
+  },
+  "licence": {
+    "license": "Apache-2.0",
+    "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0",
+    "notices": [
+      {
+        "name": "LICENSE",
+        "bytes": 11357,
+        "checksum": "sha256:c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+      },
+      {
+        "name": "AUTHORS_Noto",
+        "bytes": 364,
+        "checksum": "sha256:451de3fcfd07574e43cb5131f7a6cc688372fa8b1d4f52c26d1a3f7ce03aff32"
+      },
+      {
+        "name": "CONTRIBUTORS_Blob.md",
+        "bytes": 474,
+        "checksum": "sha256:9ef06bdfbb82bf285173225a176316178491f6672ced9075653675588e95dcb9"
+      },
+      {
+        "name": "README.md",
+        "bytes": 4377,
+        "checksum": "sha256:37edf66e52f9ba4509632500e01cd17d3bbc98f43e2bd12700cf6ddbb452bc0c"
+      }
+    ]
+  },
+  "bytes": {
+    "source": 23692717,
+    "manifest": 4373385
+  },
+  "duplicates": [
+    {
+      "key": "1f468-200d-2764-fe0f-200d-1f468",
+      "kept": "svg/couple with heart man man.svg",
+      "dropped": "svg/emoji_u1f468_200d_2764_200d_1f468.svg"
+    },
+    {
+      "key": "1f469-200d-2764-fe0f-200d-1f468",
+      "kept": "svg/couple with heart woman man.svg",
+      "dropped": "svg/emoji_u1f469_200d_2764_200d_1f468.svg"
+    },
+    {
+      "key": "1f469-200d-2764-fe0f-200d-1f469",
+      "kept": "svg/couple with heart woman woman.svg",
+      "dropped": "svg/emoji_u1f469_200d_2764_200d_1f469.svg"
+    },
+    {
+      "key": "1f91d-1f3ff",
+      "kept": "svg/emoji_u1f91d_1f3ff.svg",
+      "dropped": "svg/handshake dark skin tone.svg"
+    },
+    {
+      "key": "1f91d-1f3fb",
+      "kept": "svg/emoji_u1f91d_1f3fb.svg",
+      "dropped": "svg/handshake light skin tone.svg"
+    },
+    {
+      "key": "1f91d-1f3fd",
+      "kept": "svg/emoji_u1f91d_1f3fd.svg",
+      "dropped": "svg/handshake medium skin tone.svg"
+    },
+    {
+      "key": "1f91d-1f3fe",
+      "kept": "svg/emoji_u1f91d_1f3fe.svg",
+      "dropped": "svg/handshake medium-dark skin tone.svg"
+    },
+    {
+      "key": "1f91d-1f3fc",
+      "kept": "svg/emoji_u1f91d_1f3fc.svg",
+      "dropped": "svg/handshake medium-light skin tone.svg"
+    },
+    {
+      "key": "1f469-200d-2764-fe0f-200d-1f48b-200d-1f469",
+      "kept": "svg/kiss woman woman.svg",
+      "dropped": "svg/emoji_u1f469_200d_2764_200d_1f48b_200d_1f469.svg"
+    },
+    {
+      "key": "1f9dc-200d-2640-fe0f",
+      "kept": "svg/mermaid.svg",
+      "dropped": "svg/emoji_u1f9dc_200d_2640.svg"
+    },
+    {
+      "key": "1f9dc-200d-2642-fe0f",
+      "kept": "svg/merman.svg",
+      "dropped": "svg/emoji_u1f9dc_200d_2642.svg"
+    },
+    {
+      "key": "1f3c4-1f3ff",
+      "kept": "svg/emoji_u1f3c4_1f3ff.svg",
+      "dropped": "svg/person surfing dark skin tone.svg"
+    },
+    {
+      "key": "1f3f3-fe0f-200d-26a7-fe0f",
+      "kept": "svg/transgender flag.svg",
+      "dropped": "svg/emoji_u1f3f3_200d_26a7.svg"
+    },
+    {
+      "key": "1f426-200d-2b1b",
+      "kept": "svg/black bird.svg",
+      "dropped": "svg15/black bird.svg"
+    },
+    {
+      "key": "1facf",
+      "kept": "svg/donkey.svg",
+      "dropped": "svg15/donkey.svg"
+    },
+    {
+      "key": "1fa88",
+      "kept": "svg/flute.svg",
+      "dropped": "svg15/flute.svg"
+    },
+    {
+      "key": "1faad",
+      "kept": "svg/folding hand fan.svg",
+      "dropped": "svg15/folding hand fan.svg"
+    },
+    {
+      "key": "1fada",
+      "kept": "svg/ginger root.svg",
+      "dropped": "svg15/ginger root.svg"
+    },
+    {
+      "key": "1fabf",
+      "kept": "svg/goose.svg",
+      "dropped": "svg15/goose.svg"
+    },
+    {
+      "key": "1fa76",
+      "kept": "svg/grey heart.svg",
+      "dropped": "svg15/grey heart.svg"
+    },
+    {
+      "key": "1faae",
+      "kept": "svg/hair pick.svg",
+      "dropped": "svg15/hair pick.svg"
+    },
+    {
+      "key": "1fabb",
+      "kept": "svg/hyacinth.svg",
+      "dropped": "svg15/hyacinth.svg"
+    },
+    {
+      "key": "1fabc",
+      "kept": "svg/jellyfish.svg",
+      "dropped": "svg15/jellyfish.svg"
+    },
+    {
+      "key": "1faaf",
+      "kept": "svg/khanda.svg",
+      "dropped": "svg15/khanda.svg"
+    },
+    {
+      "key": "1faf7-1f3ff",
+      "kept": "svg/leftwards pushing hand dark skin tone.svg",
+      "dropped": "svg15/leftwards pushing hand dark skin tone.svg"
+    },
+    {
+      "key": "1faf7-1f3fb",
+      "kept": "svg/leftwards pushing hand light skin tone.svg",
+      "dropped": "svg15/leftwards pushing hand light skin tone.svg"
+    },
+    {
+      "key": "1faf7-1f3fd",
+      "kept": "svg/leftwards pushing hand medium skin tone.svg",
+      "dropped": "svg15/leftwards pushing hand medium skin tone.svg"
+    },
+    {
+      "key": "1faf7-1f3fe",
+      "kept": "svg/leftwards pushing hand medium-dark skin tone.svg",
+      "dropped": "svg15/leftwards pushing hand medium-dark skin tone.svg"
+    },
+    {
+      "key": "1faf7-1f3fc",
+      "kept": "svg/leftwards pushing hand medium-light skin tone.svg",
+      "dropped": "svg15/leftwards pushing hand medium-light skin tone.svg"
+    },
+    {
+      "key": "1faf7",
+      "kept": "svg/leftwards pushing hand.svg",
+      "dropped": "svg15/leftwards pushing hand.svg"
+    },
+    {
+      "key": "1fa75",
+      "kept": "svg/light blue heart.svg",
+      "dropped": "svg15/light blue heart.svg"
+    },
+    {
+      "key": "1fa87",
+      "kept": "svg/maracas.svg",
+      "dropped": "svg15/maracas.svg"
+    },
+    {
+      "key": "1face",
+      "kept": "svg/moose.svg",
+      "dropped": "svg15/moose.svg"
+    },
+    {
+      "key": "1fadb",
+      "kept": "svg/pea pod.svg",
+      "dropped": "svg15/pea pod.svg"
+    },
+    {
+      "key": "1fa77",
+      "kept": "svg/pink heart.svg",
+      "dropped": "svg15/pink heart.svg"
+    },
+    {
+      "key": "1faf8-1f3ff",
+      "kept": "svg/rightwards pushing hand dark skin tone.svg",
+      "dropped": "svg15/rightwards pushing hand dark skin tone.svg"
+    },
+    {
+      "key": "1faf8-1f3fb",
+      "kept": "svg/rightwards pushing hand light skin tone.svg",
+      "dropped": "svg15/rightwards pushing hand light skin tone.svg"
+    },
+    {
+      "key": "1faf8-1f3fd",
+      "kept": "svg/rightwards pushing hand medium skin tone.svg",
+      "dropped": "svg15/rightwards pushing hand medium skin tone.svg"
+    },
+    {
+      "key": "1faf8-1f3fe",
+      "kept": "svg/rightwards pushing hand medium-dark skin tone.svg",
+      "dropped": "svg15/rightwards pushing hand medium-dark skin tone.svg"
+    },
+    {
+      "key": "1faf8-1f3fc",
+      "kept": "svg/rightwards pushing hand medium-light skin tone.svg",
+      "dropped": "svg15/rightwards pushing hand medium-light skin tone.svg"
+    },
+    {
+      "key": "1faf8",
+      "kept": "svg/rightwards pushing hand.svg",
+      "dropped": "svg15/rightwards pushing hand.svg"
+    },
+    {
+      "key": "1fae8",
+      "kept": "svg/shaking face.svg",
+      "dropped": "svg15/shaking face.svg"
+    },
+    {
+      "key": "1fabd",
+      "kept": "svg/wing.svg",
+      "dropped": "svg15/wing.svg"
+    },
+    {
+      "key": "1f6dc",
+      "kept": "svg/wireless.svg",
+      "dropped": "svg15/wireless.svg"
+    }
+  ],
+  "viewBox": {
+    "default": {
+      "unitsPerEm": 128,
+      "advance": 128,
+      "baseline": 108.8
+    },
+    "variants": [
+      {
+        "viewBox": "0 0 128 128",
+        "count": 3309
+      },
+      {
+        "viewBox": "0 0 534 534",
+        "count": 152
+      }
+    ],
+    "perGlyphMetrics": 152
+  },
+  "metricsNote": "Baseline is provisional at 0.85 of the em box, the value the one-glyph fixtures carry. It is not measured from the artwork.",
+  "coverage": {
+    "repertoire": 3953,
+    "supported": 3417,
+    "missing": 536,
+    "viaAlias": 709,
+    "custom": 0,
+    "unmapped": 320,
+    "skinTone": {
+      "supported": 1805,
+      "total": 2035
+    },
+    "regionalFlag": {
+      "supported": 0,
+      "total": 259
+    },
+    "tagFlag": {
+      "supported": 0,
+      "total": 3
+    },
+    "keycap": {
+      "supported": 12,
+      "total": 12
+    },
+    "zwj": {
+      "supported": 1354,
+      "total": 1614
+    }
+  },
+  "admission": {
+    "admitted": 3000,
+    "rejected": 417,
+    "reasons": [
+      {
+        "message": "Unsupported SVG attribute namespace.",
+        "count": 169,
+        "examples": [
+          "svg/bullet train.svg",
+          "svg/check mark button.svg",
+          "svg/emoji_u1f170.svg",
+          "svg/emoji_u1f171.svg",
+          "svg/emoji_u1f17e.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG element text.",
+        "count": 75,
+        "examples": [
+          "svg/emoji_u0023_20e3.svg",
+          "svg/emoji_u002a_20e3.svg",
+          "svg/emoji_u0030_20e3.svg",
+          "svg/emoji_u0031_20e3.svg",
+          "svg/emoji_u0032_20e3.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG element style.",
+        "count": 50,
+        "examples": [
+          "svg/emoji_u1f321.svg",
+          "svg/emoji_u1f34c.svg",
+          "svg/emoji_u1f35b.svg",
+          "svg/emoji_u1f377.svg",
+          "svg/emoji_u1f3f5.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG number.",
+        "count": 35,
+        "examples": [
+          "svg/emoji_u1f33d.svg",
+          "svg/emoji_u1f351.svg",
+          "svg/emoji_u1f37a.svg",
+          "svg/emoji_u1f37b.svg",
+          "svg/emoji_u1f405.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG attribute font-weight.",
+        "count": 29,
+        "examples": [
+          "svg/emoji_u1f36b.svg",
+          "svg/emoji_u1f4d3.svg",
+          "svg/emoji_u1f4d6.svg",
+          "svg/emoji_u1f91f.svg",
+          "svg/emoji_u1f91f_1f3fb.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG paint; colours must be explicit and references local.",
+        "count": 27,
+        "examples": [
+          "svg/emoji_u1f3c7_1f3fb.svg",
+          "svg/emoji_u1f468_1f3fb_200d_1f9af.svg",
+          "svg/emoji_u1f468_1f3fb_200d_1f9bc.svg",
+          "svg/emoji_u1f469_1f3fb_200d_1f91d_200d_1f468_1f3fc.svg",
+          "svg/emoji_u1f469_1f3fb_200d_1f91d_200d_1f468_1f3fd.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG style font-variant-east_asian.",
+        "count": 20,
+        "examples": [
+          "svg/emoji_u1f3f4_200d_2620.svg",
+          "svg/emoji_u1f468_1f3fb_200d_1f9b3.svg",
+          "svg/emoji_u1f468_1f3fc_200d_1f9b3.svg",
+          "svg/emoji_u1f468_1f3fd_200d_1f9b3.svg",
+          "svg/emoji_u1f468_1f3fe_200d_1f9b3.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG path or number list.",
+        "count": 5,
+        "examples": [
+          "svg/astronaut dark skin tone.svg",
+          "svg/astronaut light skin tone.svg",
+          "svg/astronaut medium skin tone.svg",
+          "svg/astronaut medium-dark skin tone.svg",
+          "svg/astronaut medium-light skin tone.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG element image.",
+        "count": 3,
+        "examples": [
+          "svg/emoji_u1f600.svg",
+          "svg/face exhaling.svg",
+          "svg/ring buoy.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG element filter.",
+        "count": 2,
+        "examples": [
+          "svg/emoji_u1f3f9.svg",
+          "svg/emoji_u1f9e0.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG element font.",
+        "count": 1,
+        "examples": [
+          "svg/emoji_u1f4c6.svg"
+        ]
+      },
+      {
+        "message": "Unsupported SVG attribute aria-label.",
+        "count": 1,
+        "examples": [
+          "svg/emoji_u267e_fe0f.svg"
+        ]
+      }
+    ]
+  },
+  "ink": {
+    "renderPx": 64,
+    "alphaFloor": 8,
+    "rendered": 2996,
+    "empty": 0,
+    "blank": [],
+    "renderFailed": 0,
+    "widthEm": {
+      "p10": 0.6563,
+      "median": 0.9375,
+      "p90": 1
+    },
+    "heightEm": {
+      "p10": 0.7813,
+      "median": 0.9531,
+      "p90": 1
+    },
+    "centreX": {
+      "p10": 0.5,
+      "median": 0.5,
+      "p90": 0.5078
+    },
+    "centreY": {
+      "p10": 0.5,
+      "median": 0.5,
+      "p90": 0.5313
+    }
+  },
+  "fidelity": {
+    "renderPx": 64,
+    "equal": 2996,
+    "different": 0,
+    "differing": [],
+    "renderFailed": 0
+  },
+  "raster": {
+    "isolated": true,
+    "crashes": 4,
+    "crashed": [
+      "svg/emoji_u1f378.svg",
+      "svg/emoji_u1f3cb_200d_2642.svg",
+      "svg/emoji_u1f41e.svg",
+      "svg/emoji_u2615.svg"
+    ]
+  },
+  "manifest": {
+    "checksum": "sha256:47ce115f7c365f75c76e62715c04b5da1c014cc5b2aed1d3b3b371fc5d0289e8",
+    "admitted": true
+  }
+}

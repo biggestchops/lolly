@@ -530,6 +530,10 @@ async function textContours(h, text) {
     throw new Error('this host cannot resolve fonts');
   }
   var family = await familyFor(h);
+  if (h.emoji && h.emoji.renderText && /[\u200d\u20e3\u2190-\u2bff\u3030\u303d\u3297\u3299\ud800-\udfff\ufe0f]/.test(text)) {
+    var art = await h.emoji.renderText({ text: text, fontFamily: family, fontSize: 200, fontWeight: 700 });
+    return logoContours('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(art.svg));
+  }
   var f = await h.text.fontUrl(family, { weight: 700 });
   if (!f || !f.url) throw new Error('no font file found for "' + family + '"');
   var run = await h.text.toPath({ text: text, fontUrl: f.url, fontSize: 200, variations: f.variations });
@@ -660,7 +664,7 @@ async function compute(model, h) {
 }
 
 function onInit(ctx) { return compute(ctx.model, (ctx && ctx.host) || (typeof host !== 'undefined' ? host : null)); }
-function onInput(ctx) { return compute(ctx.model, (ctx && ctx.host) || (typeof host !== 'undefined' ? host : null)); }
+function onInput(ctx) { if (ctx.id === '__emoji') _memoKey = null; return compute(ctx.model, (ctx && ctx.host) || (typeof host !== 'undefined' ? host : null)); }
 
 // The template's rAF loop and the export frame clock advance THESE functions
 // rather than a second copy of the sim: hooks run in-realm and always before the

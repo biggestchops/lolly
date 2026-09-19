@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 /** File-first conversion UI. Codec work stays in the shared converter adapter. */
+import { isJxl } from '../../../../engine/src/jxl.ts';
 import type { HostV1 } from '@lolly-tools/core/host-v1';
 import { allocateFileName, type FileOperationReportV1 } from '@lolly-tools/core/file-v1';
 import { imageDimensions, sniffAnimatedRaster, storeZip } from '@lolly/engine';
@@ -61,7 +62,7 @@ export function mountConvertWorkbench(root: HTMLElement, sources: ConvertSource[
           <button type="button" class="btn" data-preset="webp"><strong>${t('Smaller for the web')}</strong><span>${t('WebP · up to 1920 px')}</span></button>
           <button type="button" class="btn" data-preset="jpeg"><strong>${t('Easy to share')}</strong><span>${t('JPEG · up to 2400 px')}</span></button>
         </div>` : ''}
-        <label class="convert-field">${t('Output format')}<select data-format>${targets.map(target => `<option value="${target.id}" ${target === defaultTarget ? 'selected' : ''}>${target.label}</option>`).join('')}</select></label>
+        <label class="convert-field">${t('Output format')}<select data-format>${targets.map(target => `<option value="${target.id}" ${target === defaultTarget ? 'selected' : ''}>${escapeHtml(t(target.label))}</option>`).join('')}</select></label>
         ${imageSource ? `<details class="convert-advanced"><summary>${t('Size, quality & background')}</summary>
           <div class="convert-options">
             <label class="convert-field">${t('Longest edge (px)')}<input data-edge type="number" min="0" max="16384" step="1" value="0"><small>${t('0 keeps the original size. Never enlarged; proportions stay the same.')}</small></label>
@@ -81,6 +82,11 @@ export function mountConvertWorkbench(root: HTMLElement, sources: ConvertSource[
       <button class="btn" type="button" data-batch-report>${t('Download batch report')}</button>
       <div data-outputs></div>
     </section>`;
+  if (isJxl(first.bytes)) {
+    void import('../bridge/jxl.ts').then(m => m.jxlDisplay(first.file)).then(({ blob }) => {
+      if (active) root.querySelector<HTMLImageElement>('.convert-preview img')!.src = urlFor(blob);
+    }).catch(error => { if (active) root.querySelector<HTMLElement>('[data-status]')!.textContent = String(error); });
+  }
   const format = root.querySelector<HTMLSelectElement>('[data-format]')!;
   const edge = root.querySelector<HTMLInputElement>('[data-edge]');
   const quality = root.querySelector<HTMLInputElement>('[data-quality]');
@@ -92,8 +98,12 @@ export function mountConvertWorkbench(root: HTMLElement, sources: ConvertSource[
   const zipButton = root.querySelector<HTMLButtonElement>('[data-zip]')!;
   const setStatus = (value: string): void => { if (active) status.textContent = value; };
   const showNotes = (): void => {
-    root.querySelector<HTMLElement>('[data-notes]')!.innerHTML = conversionFindings(first.kind, format.value).map(f => `<p>${escapeHtml(t(f.message))}</p>`).join('');
-    const lossy = ['jpeg', 'webp', 'avif'].includes(format.value);
+    root.querySelector<HTMLElement>('[data-notes]')!.innerHTML = conversionFindings(isJxl(first.bytes) ? 'jxl' : first.kind, format.value).map(f => `<p>${escapeHtml(t(f.message))}</p>`).join('');
+    const lossy = ['jpeg', 'webp', 'avif', 'jxl'].includes(format.value);
+    const reversible = ['jxl-recompress', 'jpeg-original'].includes(format.value);
+    if (edge) edge.disabled = reversible;
+    const targetBytes = root.querySelector<HTMLInputElement>('[data-target-bytes]');
+    if (targetBytes) targetBytes.disabled = reversible;
     if (quality) quality.disabled = !lossy;
     const note = root.querySelector<HTMLElement>('[data-quality-note]');
     if (note) note.textContent = lossy ? t('Higher keeps more detail. File size depends on the image.') : t('This format does not use the quality slider.');
@@ -164,7 +174,7 @@ export function mountConvertWorkbench(root: HTMLElement, sources: ConvertSource[
     controls.forEach(control => { control.disabled = true; });
     stopButton.hidden = false; stopButton.disabled = false;
     let succeeded = 0, failed = 0, cancelled = 0;
-    const request: FileOperationRequestV1 = { version: 1, operation: 'convert', target: target.id, options: { ...options } };
+    const request: FileOperationRequestV1 = { version: 1, operation: 'convert', target: target.id, options: ['jxl-recompress', 'jpeg-original'].includes(target.id) ? {} : { ...options } };
     let heartbeat: ReturnType<typeof setInterval> | undefined;
     let batchWarning = '';
     try {

@@ -17,6 +17,7 @@
  * back from what the encoder actually produced - canvas encoders fall back to
  * PNG where a requested type is unsupported - and resize never upscales.
  */
+import { isJxl } from '../../../../engine/src/jxl.ts';
 import type {
   ImagesAPI, ImageInfo, ImageResizeOpts, ImageEncodeOpts, ImageResult, ImageEncodeFormat,
 } from '@lolly-tools/core/host-v1';
@@ -24,6 +25,7 @@ import { decodeImageBitmap, MAX_SOURCE_PIXELS } from './image-resize.ts';
 import { sniffAnimatedRaster, carryImageMetadata } from '@lolly/engine';
 
 const MIME_OF: Record<ImageEncodeFormat, string> = {
+  jxl: 'image/jxl', 'jxl-lossless': 'image/jxl',
   webp: 'image/webp',
   jpeg: 'image/jpeg',
   png: 'image/png',
@@ -53,6 +55,7 @@ const AVIF_BRANDS = new Set(['avif', 'avis']);
 
 /** MIME type from magic bytes, or null when unrecognised. */
 export function sniffImageMime(bytes: Uint8Array): string | null {
+  if (isJxl(bytes)) return 'image/jxl';
   if (has(bytes, 0, 0xff, 0xd8, 0xff)) return 'image/jpeg';
   if (has(bytes, 0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return 'image/png';
   if (fourcc(bytes, 0, 'RIFF') && fourcc(bytes, 8, 'WEBP')) return 'image/webp';
@@ -168,7 +171,9 @@ async function drawAndEncode(
     cx.fillRect(0, 0, width, height);
   }
   cx.drawImage(bitmap, 0, 0, width, height);
-  const blob = await canvasToBlob(canvas, MIME_OF[format], clampQuality(quality));
+  const blob = format === 'jxl' || format === 'jxl-lossless'
+    ? await (await import('./jxl.ts')).encodeJxlCanvas(canvas, { quality: clampQuality(quality), lossless: format === 'jxl-lossless' })
+    : await canvasToBlob(canvas, MIME_OF[format], clampQuality(quality));
   if (!blob) throw new Error('Image encoding failed.');
   // Read the ACTUAL type back - canvas encoders fall back to PNG where the
   // requested type is unsupported, and the contract reports what really happened.

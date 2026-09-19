@@ -144,12 +144,12 @@ test('a bundle that is not an emoji-pack-bundle is refused', async () => {
 });
 
 test('a bundle whose index entry states too many bytes is refused before it downloads', async () => {
-  // The 32 MiB ceiling is worth nothing after the fetch: bytes() materialises the
+  // The 64 MiB ceiling is worth nothing after the fetch: bytes() materialises the
   // whole file, then the decode and the parse each copy it again.
   let fetched = 0;
   const huge: CatalogAsset = {
     ...entry,
-    formats: [{ ...entry.formats![0], size: 64 * 1024 * 1024 }],
+    formats: [{ ...entry.formats![0], size: 64 * 1024 * 1024 + 1 }],
   };
   const assets = fakeAssets({ assets: [huge], bytes: async () => { fetched++; return new Uint8Array(bundleBytes); } });
   const api = createEmojiAPI(assets);

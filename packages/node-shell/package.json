@@ -72,7 +72,11 @@
     "./trust-anchors": "./src/trust-anchors.ts",
     "./signing-identity": "./src/signing-identity.ts",
     "./text-tools": "./src/text-tools.ts",
-    "./text-xml": "./src/text-xml.ts"
+    "./text-xml": "./src/text-xml.ts",
+    "./jxl-asset": "./src/jxl-asset.ts",
+    "./jxl": "./src/jxl.ts",
+    "./jxl-codec": "./src/jxl-codec.ts",
+    "./jxl.wasm": "./wasm/jxl/lolly-jxl.wasm"
   },
   "files": [
     "src",

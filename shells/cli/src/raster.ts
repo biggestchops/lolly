@@ -14,7 +14,7 @@
  * web-shell driver) live in @lolly-tools/node-shell, shared with the TUI.
  */
 import type { JSDOM } from 'jsdom';
-import { serializeUrlState, isToolUrl } from '@lolly/engine';
+import { serializeUrlState, serializeHdr, HDR_DEFAULTS, isToolUrl } from '@lolly/engine';
 import { eligibleForResvgPng, rasterizeTierAPng, rasterizeSvgToRgba, pxDims } from '@lolly-tools/node-shell/raster';
 import type { DeepHdrRequest } from '@lolly-tools/node-shell/raster';
 import type { RenderDims } from '@lolly-tools/node-shell/webshell-render';
@@ -85,12 +85,14 @@ export async function renderRaster(opts: {
   runtime: Runtime; dom: JSDOM; manifest: Manifest; format: string; dims: RenderDims & HdrStillRequest;
   /** The reserved emoji params this run was given, forwarded into the Tier-B URL
    *  so the browser tier draws the same set from the same pins. */
-  emoji?: { emoji?: string | null; emojiFx?: string | null };
+  emoji?: { emoji?: string | null; emojiFx?: string | null; emojiStyle?: string | null };
   /** The values the runtime was created from. Tier B restores from them any Lolly
    *  tool link this process could not compose itself (see restoreToolLinks). */
   initial?: Record<string, unknown>;
 }): Promise<RasterResult> {
-  const { runtime, dom, manifest, dims } = opts;
+  const { runtime, dom, manifest } = opts;
+  const floatEditing = (runtime.getModel() as ModelItem[]).some(item => item.id === 'editingRange' && item.value === 'hdr') || manifest.id === 'design' && !!opts.dims.hdr;
+  const dims = floatEditing && opts.dims.hdr ? { ...opts.dims, hdrParam: opts.dims.hdrParam || serializeHdr({ ...HDR_DEFAULTS, ...opts.dims.hdr }) } : opts.dims;
   const fmt = opts.format.toLowerCase();
 
   // HDR stills (`--hdr=1` with png/jpg) are encoded HERE, on either tier's pixels.
@@ -99,8 +101,8 @@ export async function renderRaster(opts: {
   // exit 0. The encode is DOM-free engine code (16-bit PQ PNG, ISO 21496-1 gain-map
   // JPEG), so Node does it directly - which also makes the bytes device-independent,
   // the same whether resvg or Chromium supplied the source frame.
-  if (wantsNativeHdrStill(fmt, dims)) {
-    return await renderHdrStill({ runtime, dom, manifest, format: fmt, dims });
+  if (!floatEditing && wantsNativeHdrStill(fmt, dims)) {
+    return await renderHdrStill({ ...opts, format: fmt, dims });
   }
 
   // Tier A - PNG from an SVG-native tool: resvg rasterises the engine's own SVG. No
@@ -122,7 +124,7 @@ export async function renderRaster(opts: {
   // exit 0. run.ts now refuses those flags outright for any format that cannot carry
   // page geometry (PRINT_PREP_FORMATS), so this should be unreachable - it stays so the
   // silent no-op cannot come back if that allowlist ever widens.
-  if (eligibleForResvgPng(fmt, dims)) {
+  if (!floatEditing && eligibleForResvgPng(fmt, dims)) {
     const svg = await tryRenderSvg(runtime, dom, dims.slide);
     if (svg) {
       // Shared Tier-A rasteriser (node-shell): imprint + physical-unit DPI, identical to the
@@ -139,7 +141,7 @@ export async function renderRaster(opts: {
   // link: Tier B is the web shell rendering the same address, so it has to be told
   // which set to draw from or it would fall back to the browser's own emoji font.
   const model = opts.initial ? restoreToolLinks(runtime.getModel() as ModelItem[], opts.initial) : runtime.getModel();
-  const query = serializeUrlState(model as never, { emoji: opts.emoji?.emoji, emojiFx: opts.emoji?.emojiFx });
+  const query = serializeUrlState(model as never, { emoji: opts.emoji?.emoji, emojiFx: opts.emoji?.emojiFx, emojiStyle: opts.emoji?.emojiStyle });
   const MOTION = ['gif', 'apng', 'webm', 'mp4'];
   // PROTOTYPE opt-in: real Playwright screenshots instead of dom-to-image for the
   // frame-by-frame capture (see renderVideoViaScreenshot's doc comment). Motion
@@ -246,8 +248,10 @@ async function tryRenderSvg(runtime: Runtime, dom: JSDOM, slide?: string | null)
  */
 async function renderHdrStill(opts: {
   runtime: Runtime; dom: JSDOM; manifest: Manifest; format: string; dims: RenderDims & HdrStillRequest;
+  emoji?: { emoji?: string | null; emojiFx?: string | null; emojiStyle?: string | null };
 }): Promise<RasterResult> {
-  const { runtime, dom, manifest, dims } = opts;
+  const { runtime, dom, manifest } = opts;
+  const dims = opts.dims;
   const isPng = opts.format === 'png';
   const [{ encodeHdrPng, encodeGainMapJpeg, hdrBoostOptions, decodeRgba }, engine] = await Promise.all([
     import('@lolly-tools/node-shell/hdr'),
@@ -262,9 +266,9 @@ async function renderHdrStill(opts: {
     const { width, height } = pxDims(dims, manifest);
     frame = await rasterizeSvgToRgba(svg, width, height);
   } else {
-    const query = serializeUrlState(runtime.getModel() as never);
+    const query = serializeUrlState(runtime.getModel() as never, { emoji:opts.emoji?.emoji, emojiFx:opts.emoji?.emojiFx, emojiStyle:opts.emoji?.emojiStyle });
     const { renderViaWebShell } = await import('@lolly-tools/node-shell/webshell-render');
-    const { bytes } = await renderViaWebShell(manifest.id, query, 'png', { ...dims, imprint: false, c2pa: false });
+    const { bytes } = await renderViaWebShell(manifest.id, query, 'png', { ...dims, hdrParam: undefined, depth: undefined, imprint: false, c2pa: false });
     const decoded = await decodeRgba(bytes);
     frame = { data: decoded.data as Uint8Array, width: decoded.width, height: decoded.height };
     usedBrowser = true;

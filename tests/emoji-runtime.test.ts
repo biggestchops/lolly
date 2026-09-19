@@ -16,6 +16,7 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
 import { createRuntime } from '../engine/src/runtime.ts';
+import { DEFAULT_EMOJI_PIN, defaultEmojiStyle } from '../engine/src/emoji-default.ts';
 import { createNodeEmojiAPI } from '../packages/node-shell/src/emoji.ts';
 import type { EmojiAPI } from '../packages/core/src/host-v1.ts';
 import type { EmojiStyleV1 } from '../packages/core/src/emoji-v1.ts';
@@ -176,9 +177,34 @@ test('an export records the placed artwork as a componentOf source ingredient', 
   assert.ok(view.canvas.querySelector('.lolly-emoji svg path'));
 });
 
-test('with no set chosen the placeholder is drawn and no ingredient is recorded', async () => {
+test('fresh runtimes use Fluent High Contrast on demand, including export and source credits', async () => {
+  const api = await catalogEmoji();
+  let manifests = 0;
+  const { host } = hostDouble({ ...api, manifest: async pin => { manifests++; return api.manifest(pin); } });
+  const runtime = await createRuntime(toolDouble(), host);
+  assert.deepEqual(runtime.emoji.style, defaultEmojiStyle([{ pin: DEFAULT_EMOJI_PIN }]));
+  assert.equal(manifests, 0, 'choosing a default does not download artwork');
+  const view = page(runtime.getHydrated());
+  await runtime.export(view.canvas, 'png', {});
+  assert.equal(runtime.emoji.replaced, 1);
+  assert.equal(runtime.emoji.unresolved, 0);
+  assert.match(view.canvas.innerHTML, /fill="currentColor"/);
+  assert.equal(manifests, 1);
+  assert.match(runtime.emojiCredits(), /Fluent/);
+  runtime.destroy();
+});
+
+test('a missing default pin never selects another installed release or set', () => {
+  const changed = structuredClone(DEFAULT_EMOJI_PIN);
+  changed.checksum = `sha256:${'0'.repeat(64)}`;
+  assert.equal(defaultEmojiStyle([{ pin: changed }]), null);
+  assert.equal(defaultEmojiStyle([]), null);
+});
+
+test('explicitly clearing the set draws the placeholder and records no ingredient', async () => {
   const { host, renders } = hostDouble(await catalogEmoji());
   const runtime = await createRuntime(toolDouble(), host);
+  await runtime.setEmojiStyle(null);
 
   const view = page(runtime.getHydrated());
   const result = await runtime.applyEmojiToDom(view.canvas);
@@ -223,6 +249,7 @@ test('a host with no sets at all leaves the characters alone', async () => {
 test('setEmojiStyle re-draws the tree the pass last ran on, and tells subscribers', async () => {
   const { host } = hostDouble(await catalogEmoji());
   const runtime = await createRuntime(toolDouble(), host);
+  await runtime.setEmojiStyle(null);
 
   const view = page(runtime.getHydrated());
   await runtime.applyEmojiToDom(view.canvas);

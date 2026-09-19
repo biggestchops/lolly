@@ -11,19 +11,19 @@
   "rows": [
     {
       "file": "3d-studio.svg",
-      "bytes": 15308,
-      "sha": "b7f371030f889031",
-      "stddev": 27.469,
-      "inkRatio": 0.2341,
+      "bytes": 85843,
+      "sha": "1813e234e9b87090",
+      "stddev": 51.063,
+      "inkRatio": 0.17094,
       "ground": "white",
       "grounds": {
         "white": {
-          "stddev": 27.469,
-          "inkRatio": 0.2341
+          "stddev": 51.063,
+          "inkRatio": 0.17094
         },
         "black": {
-          "stddev": 27.469,
-          "inkRatio": 0.2341
+          "stddev": 43.625,
+          "inkRatio": 0.14542
         }
       },
       "blank": false,
@@ -50,20 +50,20 @@
       "sparse": false
     },
     {
-      "file": "agenda.look0.webp",
-      "bytes": 30346,
-      "sha": "6a2180a6cf2b20b3",
-      "stddev": 29.197,
-      "inkRatio": 0.1534,
+      "file": "agenda.look0.svg",
+      "bytes": 124693,
+      "sha": "8acfe43650219ac0",
+      "stddev": 46.596,
+      "inkRatio": 0.25255,
       "ground": "white",
       "grounds": {
         "white": {
-          "stddev": 29.197,
-          "inkRatio": 0.1534
+          "stddev": 46.596,
+          "inkRatio": 0.25255
         },
         "black": {
-          "stddev": 29.197,
-          "inkRatio": 0.1534
+          "stddev": 46.596,
+          "inkRatio": 0.25255
         }
       },
       "blank": false,
@@ -71,19 +71,19 @@
     },
     {
       "file": "agenda.look1.svg",
-      "bytes": 105289,
-      "sha": "15333dcc34db52ca",
-      "stddev": 30.354,
-      "inkRatio": 0.45222,
+      "bytes": 73119,
+      "sha": "d5f8f73ca34074a6",
+      "stddev": 25.525,
+      "inkRatio": 0.45907,
       "ground": "white",
       "grounds": {
         "white": {
-          "stddev": 30.354,
-          "inkRatio": 0.45222
+          "stddev": 25.525,
+          "inkRatio": 0.45907
         },
         "black": {
-          "stddev": 30.354,
-          "inkRatio": 0.45222
+          "stddev": 25.525,
+          "inkRatio": 0.45907
         }
       },
       "blank": false,
@@ -91,19 +91,19 @@
     },
     {
       "file": "agenda.svg",
-      "bytes": 130777,
-      "sha": "3ba045986e016b0e",
-      "stddev": 28.464,
-      "inkRatio": 0.18756,
+      "bytes": 111615,
+      "sha": "64c9945141408f11",
+      "stddev": 28.11,
+      "inkRatio": 0.47759,
       "ground": "white",
       "grounds": {
         "white": {
-          "stddev": 28.464,
-          "inkRatio": 0.18756
+          "stddev": 28.11,
+          "inkRatio": 0.47759
         },
         "black": {
-          "stddev": 28.464,
-          "inkRatio": 0.18756
+          "stddev": 28.11,
+          "inkRatio": 0.47759
         }
       },
       "blank": false,

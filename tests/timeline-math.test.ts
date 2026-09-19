@@ -323,14 +323,14 @@ test('removeAndRipple: deleting a seq clip closes the gap and carries later over
   assert.equal(byId(after, 'ov').start, 2.5, 'c moved -3, so its overlay moved -3');
 });
 
-test('removeAndRipple: an overlay anchored inside the DELETED clip stays put', () => {
+test('removeAndRipple: an overlay anchored inside the deleted clip moves to the vacated start', () => {
   const before = [
     clip('a', { start: 0, dur: 2 }),
     clip('b', { start: 2, dur: 3 }),
     overlay('ov', 2.5),
   ];
   const after = removeAndRipple(before, cfg, 'b');
-  assert.equal(byId(after, 'ov').start, 2.5);
+  assert.equal(byId(after, 'ov').start, 2);
 });
 
 test('removeAndRipple: deleting an overlay touches no timing; unknown id is a no-op copy', () => {
@@ -353,7 +353,7 @@ test('batch removal resolves overlay anchors once, independent of selection orde
   const after = removeManyAndRipple(before, cfg, ['c', 'a']);
   assert.deepEqual(after, removeManyAndRipple(before, cfg, ['a', 'c', 'a']));
   assert.deepEqual(after.map(b => [b.id, b.start]), [
-    ['b', 0], ['d', 2], ['on-b', 1], ['on-c', 5], ['on-d', 3],
+    ['b', 0], ['d', 2], ['on-b', 1], ['on-c', 2], ['on-d', 3],
   ]);
   assert.deepEqual(before, snapshot);
   assert.equal(removeManyAndRipple(before, cfg, ['missing']), before);
@@ -2372,4 +2372,172 @@ test('restackOverlay: seq boxes are never restacked and identity costs nothing',
   // Dropping b in front of a (onto a) when b is ALREADY directly in front and
   // ungrouped-vs-grouped differs - with no groupField, order unchanged = identity.
   assert.equal(restackOverlay(before, cfg, 'b', { onto: 'a' }), before, 'a no-op drag returns the array by identity');
+});
+
+// ── junctions: the cut between two main-row clips (plans/268 SI-07) ──────────────
+
+import {
+  JUNCTION_STEP_FINE_MS, MAX_JUNCTION_MS, MIN_JUNCTION_MS, clampJunctionMs, seqJunctions, setJunction,
+} from '../shells/web/src/views/timeline-math.ts';
+import { crossfadeJunctions, type JunctionLayer } from '../shells/web/src/bridge/sequence-plan.ts';
+
+const xfadeRow = (over: { a?: Box; b?: Box } = {}): Box[] => [
+  clip('a', { start: 0, dur: 2, exit: 'fade', exitMs: 600, ...over.a }),
+  clip('b', { start: 2, dur: 3, enter: 'fade', enterMs: 400, ...over.b }),
+  clip('c', { start: 5, dur: 1 }),
+];
+
+test('seqJunctions: one entry per gapless cut, and a crossfade is the PAIR of fades', () => {
+  const j = seqJunctions(xfadeRow(), cfg);
+  assert.deepEqual(j.map((x) => [x.aId, x.bId, x.cutSec, x.kind, x.ms]), [
+    ['a', 'b', 2, 'xfade', 400],      // the shorter of the two lengths
+    ['b', 'c', 5, 'cut', 0],
+  ]);
+  // One side alone is a fade of that clip's own and no handover: the planner's rule.
+  assert.equal(seqJunctions(xfadeRow({ b: { enter: 'rise' } }), cfg)[0]!.kind, 'cut');
+  assert.equal(seqJunctions(xfadeRow({ a: { exit: 'none' } }), cfg)[0]!.kind, 'cut');
+  // A gap is no junction at all, and overlays never form one.
+  assert.deepEqual(seqJunctions(xfadeRow({ b: { start: 2.5 } }), cfg).map((x) => x.aId), []);
+  assert.deepEqual(seqJunctions([overlay('o', 0, { dur: 1, exit: 'fade' }), overlay('p', 1, { dur: 1, enter: 'fade' })], cfg), []);
+});
+
+test('seqJunctions: the handover never outlives the clip it hands over to', () => {
+  const [j] = seqJunctions(xfadeRow({ a: { exitMs: 3000 }, b: { dur: 0.25, enterMs: 3000 }, }).slice(0, 2), cfg);
+  assert.equal(j!.maxMs, 250);
+  assert.equal(j!.ms, 250);
+});
+
+test('seqJunctions: a clip with too little source left reports the held part, a card reports none', () => {
+  // A plays source 0 to 2s of a 2.2s file, so it has 200ms of picture past the cut for a 400ms handover.
+  const held = seqJunctions(xfadeRow(), cfg, (b) => (b.id === 'a' ? 2.2 : null))[0]!;
+  assert.equal(held.heldMs, 200);
+  // At 2x the same 0.2s of source is 100ms of timeline.
+  const fast = seqJunctions(xfadeRow({ a: { speed: 2, dur: 1 }, b: { start: 1 } }), cfg, (b) => (b.id === 'a' ? 2.2 : null))[0]!;
+  assert.equal(fast.heldMs, 300);
+  assert.equal(seqJunctions(xfadeRow(), cfg, () => null)[0]!.heldMs, 0);
+  assert.equal(seqJunctions(xfadeRow(), cfg, (b) => (b.id === 'a' ? 10 : null))[0]!.heldMs, 0);
+});
+
+test('seqJunctions agrees with the planner that draws the handover, junction for junction', () => {
+  const rows = [
+    ...xfadeRow({ a: { exitMs: 900 }, b: { enterMs: 700 } }),
+    clip('d', { start: 6, dur: 0.3, enter: 'fade', enterMs: 2000 }),
+  ];
+  rows[2] = { ...rows[2]!, exit: 'fade', exitMs: 1500 };
+  const layers: JunctionLayer[] = rows.map((b, idx) => ({
+    idx, lane: 'seq', frameScene: false,
+    startMs: Number(b.start) * 1000, durMs: Number(b.dur) * 1000,
+    enter: (b.enter as JunctionLayer['enter']) ?? null, exit: (b.exit as JunctionLayer['exit']) ?? null,
+    enterMs: Number(b.enterMs ?? 400), exitMs: Number(b.exitMs ?? 400),
+    openEnded: false, split: '', splitUnits: 0, kind: 'static',
+  }));
+  const planned = crossfadeJunctions(layers).map((p) => [rows[p.aIdx]!.id, rows[p.bIdx]!.id, p.ms]);
+  const modelled = seqJunctions(rows, cfg).filter((x) => x.kind === 'xfade').map((x) => [x.aId, x.bId, x.ms]);
+  assert.deepEqual(modelled, planned);
+  assert.deepEqual(modelled, [['a', 'b', 700], ['c', 'd', 300]]);
+});
+
+test('clampJunctionMs: on the grid, inside the limits, inside what the junction can take', () => {
+  assert.equal(clampJunctionMs(437, 3000), 450);
+  assert.equal(clampJunctionMs(437, 3000, JUNCTION_STEP_FINE_MS), 440);
+  assert.equal(clampJunctionMs(10, 3000), MIN_JUNCTION_MS);
+  assert.equal(clampJunctionMs(99999, 99999), MAX_JUNCTION_MS);
+  assert.equal(clampJunctionMs(2000, 800), 800);
+  assert.equal(clampJunctionMs(Number.NaN, 800), MIN_JUNCTION_MS);
+});
+
+test('setJunction: one writer for a crossfade and for a cut, and no change is the SAME array', () => {
+  const rows = xfadeRow();
+  const longer = setJunction(rows, cfg, 'a', 'b', 750);
+  assert.deepEqual([longer[0]!.exit, longer[0]!.exitMs, longer[1]!.enter, longer[1]!.enterMs], ['fade', 750, 'fade', 750]);
+  assert.equal(longer[2], rows[2], 'a clip that is not part of the junction is not copied');
+  assert.equal(seqJunctions(longer, cfg)[0]!.ms, 750);
+  const cut = setJunction(longer, cfg, 'a', 'b', null);
+  assert.deepEqual([cut[0]!.exit, cut[1]!.enter], ['none', 'none']);
+  assert.equal(cut[0]!.exitMs, 750, 'a cut keeps the length, so turning the crossfade back on restores it');
+  assert.equal(setJunction(longer, cfg, 'a', 'b', 750), longer, 'the panel reads an unchanged array as no commit');
+  assert.equal(setJunction(rows, cfg, 'a', 'nope', 500), rows);
+  assert.equal(setJunction(rows, cfg, 'b', 'c', 40)[1]!.exitMs, MIN_JUNCTION_MS);
+});
+
+// ── paste: where a copied clip goes in time (plans/268 SI-11) ────────────────────
+
+import { anyTimed, placePasted } from '../shells/web/src/views/timeline-math.ts';
+
+const threeClips = (): Box[] => [
+  clip('a', { start: 0, dur: 2 }), clip('b', { start: 2, dur: 3 }), clip('c', { start: 5, dur: 1 }),
+];
+const rowOf = (boxes: Box[]): string[] =>
+  seqBoxes(boxes, cfg).map((b) => `${b.id}@${b.start}+${b.dur}`);
+
+test('placePasted: a copied main-row clip goes in after the clip under the playhead, and the row stays gapless', () => {
+  // The paste appended a clone of `a`, still carrying a's start: the stacked state this replaces.
+  const pasted = [...threeClips(), clip('a2', { start: 0, dur: 2 })];
+  assert.deepEqual(rowOf(placePasted(pasted, cfg, ['a2'], 2.5)), ['a@0+2', 'b@2+3', 'a2@5+2', 'c@7+1']);
+  // Playhead past the end: at the end. Playhead at 0: after the first clip, which is under it.
+  assert.deepEqual(rowOf(placePasted(pasted, cfg, ['a2'], 99)), ['a@0+2', 'b@2+3', 'c@5+1', 'a2@6+2']);
+  assert.deepEqual(rowOf(placePasted(pasted, cfg, ['a2'], 0)), ['a@0+2', 'a2@2+2', 'b@4+3', 'c@7+1']);
+});
+
+test('placePasted: several copied clips go in as one block, in the order they PLAYED', () => {
+  // Appended c2 first (array order is z-order and says nothing about time). The block
+  // still reads a2 then c2, because that is the order the originals play in.
+  const pasted = [...threeClips(), clip('c2', { start: 5, dur: 1 }), clip('a2', { start: 0, dur: 2 })];
+  assert.deepEqual(rowOf(placePasted(pasted, cfg, ['c2', 'a2'], 0.5)),
+    ['a@0+2', 'a2@2+2', 'c2@4+1', 'b@5+3', 'c@8+1']);
+});
+
+test('placePasted: overlays start at the playhead and keep their spacing; an overlay riding a moved clip ripples', () => {
+  const boxes = [
+    ...threeClips(),
+    overlay('title', 5.2, { dur: 0.5 }),            // rides clip c
+    overlay('t2', 1, { dur: 1 }), overlay('t3', 1.5, { dur: 1 }),   // the pasted pair, 0.5s apart
+    clip('a2', { start: 0, dur: 2 }),
+  ];
+  const out = placePasted(boxes, cfg, ['t2', 't3', 'a2'], 2.5);
+  const at = (id: string): number => Number(out.find((b) => b.id === id)!.start);
+  assert.deepEqual([at('t2'), at('t3')], [2.5, 3]);
+  assert.equal(at('title'), 7.2, 'c moved from 5 to 7, and the title on it went along');
+  assert.deepEqual(rowOf(out), ['a@0+2', 'b@2+3', 'a2@5+2', 'c@7+1']);
+});
+
+test('placePasted: a paste with nothing timed in it is the SAME array, and scenery is never given a time', () => {
+  const boxes = [...threeClips(), { id: 'logo' }, { id: 'logo2' }];
+  assert.equal(placePasted(boxes, cfg, ['logo2'], 3), boxes);
+  assert.equal(anyTimed([{ id: 'logo2' }], cfg), false);
+  assert.equal(anyTimed([clip('x', { start: 0, dur: 1 })], cfg), true);
+  const mixed = placePasted([...boxes, overlay('o2', 0, { dur: 1 })], cfg, ['logo2', 'o2'], 3);
+  assert.equal(mixed.find((b) => b.id === 'logo2')!.start, undefined);
+  assert.equal(mixed.find((b) => b.id === 'o2')!.start, 3);
+});
+
+// ── reveal: where the playhead goes to show a clip ───────────────────────────────
+
+import { revealTimeSec } from '../shells/web/src/views/timeline-math.ts';
+
+test('revealTimeSec: past the enter, so a selected clip is ON SCREEN and not still arriving', () => {
+  assert.equal(revealTimeSec(clip('a', { start: 3, dur: 3, enter: 'rise', enterMs: 500 }), cfg, 6), 3.5);
+  assert.equal(revealTimeSec(clip('a', { start: 3, dur: 3, enter: 'fade' }), cfg, 6), 3.4, 'the default enter length');
+  // No enter, or a cut: the first frame is already the clip.
+  assert.equal(revealTimeSec(clip('a', { start: 3, dur: 3 }), cfg, 6), 3);
+  assert.equal(revealTimeSec(clip('a', { start: 3, dur: 3, enter: 'none', enterMs: 900 }), cfg, 6), 3);
+  // A clip shorter than its own enter: the middle, never past the end.
+  assert.equal(revealTimeSec(clip('a', { start: 1, dur: 0.4, enter: 'fade', enterMs: 2000 }), cfg, 6), 1.2);
+  // An open-ended overlay uses the rest of the sequence as its length.
+  assert.equal(revealTimeSec(overlay('o', 2, { enter: 'fade', enterMs: 3000 }), cfg, 5), 3.5);
+});
+
+import { setTransitionMs } from '../shells/web/src/views/timeline-math.ts';
+
+test('setTransitionMs: resizes an enter or an exit, on the grid, never past half the clip, never inventing one', () => {
+  const rows = [clip('a', { start: 0, dur: 2, enter: 'rise', enterMs: 400, exit: 'fade', exitMs: 400 }), clip('b', { start: 2, dur: 1 })];
+  assert.equal(setTransitionMs(rows, cfg, 'a', 'enter', 730)[0]!.enterMs, 750);
+  assert.equal(setTransitionMs(rows, cfg, 'a', 'exit', 5000)[0]!.exitMs, 1000, 'half of a two second clip');
+  assert.equal(setTransitionMs(rows, cfg, 'a', 'exit', 1)[0]!.exitMs, MIN_JUNCTION_MS);
+  assert.equal(setTransitionMs(rows, cfg, 'a', 'enter', 733, JUNCTION_STEP_FINE_MS)[0]!.enterMs, 730);
+  assert.equal(setTransitionMs(rows, cfg, 'a', 'enter', 400), rows, 'no change is the same array');
+  assert.equal(setTransitionMs(rows, cfg, 'b', 'enter', 600), rows, 'a clip with no enter is left without one');
+  assert.equal(setTransitionMs(rows, cfg, 'nope', 'enter', 600), rows);
+  // An open-ended overlay has no length to halve: the ordinary ceiling applies.
+  assert.equal(setTransitionMs([overlay('o', 1, { enter: 'fade' })], cfg, 'o', 'enter', 99999)[0]!.enterMs, MAX_JUNCTION_MS);
 });

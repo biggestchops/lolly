@@ -964,8 +964,9 @@ html[data-a11y-motion="reduce"] .fc-toolbar .fc-btn { transition: none; }
 
 /* Touch: always-visible object bar + larger hit targets (no hover to reveal it
    on, so its auto-hide would strand it off-screen). */
-@media (pointer: coarse) {
+@media (any-pointer: coarse) {
   .fc-ctxbar { opacity: 1; }
+  .fc-btn, .fc-cbtn { flex-shrink: 0; min-width: 44px; min-height: 44px; }
   .fc-btn { width: 44px; height: 44px; }
   .fc-handle { width: 16px; height: 16px; margin-left: -8px; margin-top: -8px; }
   .fc-h-rotate { width: 18px; height: 18px; margin-left: -9px; margin-top: -9px; }

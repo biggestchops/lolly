@@ -88,13 +88,6 @@
     },
     {
       "file": "packages/node-shell/test/speech.test.ts",
-      "fullName": "a staged family reports complete, and its files are the size the pins claim",
-      "reason": "the kokoro model is not staged under /home/runner/.cache/lolly/models - run: lolly models fetch kokoro",
-      "capability": "model",
-      "owner": "packages/node-shell"
-    },
-    {
-      "file": "packages/node-shell/test/speech.test.ts",
       "fullName": "Kokoro speaks a sentence and times its words",
       "reason": "the kokoro model is not staged under /home/runner/.cache/lolly/models - run: lolly models fetch kokoro",
       "capability": "model",
@@ -104,6 +97,13 @@
       "file": "packages/node-shell/test/speech.test.ts",
       "fullName": "Whisper reads the clip Kokoro just spoke",
       "reason": "the whisper model is not staged under /home/runner/.cache/lolly/models - run: lolly models fetch whisper",
+      "capability": "model",
+      "owner": "packages/node-shell"
+    },
+    {
+      "file": "packages/node-shell/test/speech.test.ts",
+      "fullName": "a staged family reports complete, and its files are the size the pins claim",
+      "reason": "the kokoro model is not staged under /home/runner/.cache/lolly/models - run: lolly models fetch kokoro",
       "capability": "model",
       "owner": "packages/node-shell"
     },
@@ -333,6 +333,13 @@
     },
     {
       "file": "shells/web/src/bridge/text-outline-golden.test.ts",
+      "fullName": "golden: CJK run SUSE cannot cover (tofu/.notdef), Regular 48px",
+      "reason": "SUSE static fonts not present at brands/suse/catalog/fonts/ttf/SUSE-Regular.ttf etc. - the private brands/suse pack is not mounted in this checkout (git submodule update --init --checkout brands/suse). Skipping.",
+      "capability": "brand:suse",
+      "owner": "shells/web"
+    },
+    {
+      "file": "shells/web/src/bridge/text-outline-golden.test.ts",
       "fullName": "golden: basic Latin run, SUSE Regular 48px",
       "reason": "SUSE static fonts not present at brands/suse/catalog/fonts/ttf/SUSE-Regular.ttf etc. - the private brands/suse pack is not mounted in this checkout (git submodule update --init --checkout brands/suse). Skipping.",
       "capability": "brand:suse",
@@ -341,13 +348,6 @@
     {
       "file": "shells/web/src/bridge/text-outline-golden.test.ts",
       "fullName": "golden: blank/whitespace-only run",
-      "reason": "SUSE static fonts not present at brands/suse/catalog/fonts/ttf/SUSE-Regular.ttf etc. - the private brands/suse pack is not mounted in this checkout (git submodule update --init --checkout brands/suse). Skipping.",
-      "capability": "brand:suse",
-      "owner": "shells/web"
-    },
-    {
-      "file": "shells/web/src/bridge/text-outline-golden.test.ts",
-      "fullName": "golden: CJK run SUSE cannot cover (tofu/.notdef), Regular 48px",
       "reason": "SUSE static fonts not present at brands/suse/catalog/fonts/ttf/SUSE-Regular.ttf etc. - the private brands/suse pack is not mounted in this checkout (git submodule update --init --checkout brands/suse). Skipping.",
       "capability": "brand:suse",
       "owner": "shells/web"
@@ -529,20 +529,6 @@
     },
     {
       "file": "tests/app-history.browser.test.ts",
-      "fullName": "app History merges providers without skips and lists saved work without reading document values",
-      "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/app-history.browser.test.ts",
-      "fullName": "file History hands off to the exact batch and its retained report and download",
-      "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/app-history.browser.test.ts",
       "fullName": "History route supports project filters, milestones, right-panel versions, Back and mobile",
       "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
       "capability": "environment",
@@ -551,6 +537,20 @@
     {
       "file": "tests/app-history.browser.test.ts",
       "fullName": "History touch pickers keep their filter when Back dismisses the dropdown",
+      "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/app-history.browser.test.ts",
+      "fullName": "app History merges providers without skips and lists saved work without reading document values",
+      "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/app-history.browser.test.ts",
+      "fullName": "file History hands off to the exact batch and its retained report and download",
       "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
       "capability": "environment",
       "owner": "tests"
@@ -641,14 +641,14 @@
     },
     {
       "file": "tests/cli-tierb-video.test.ts",
-      "fullName": "a deck exports a real pptx through the browser tier",
+      "fullName": "a Tier-B failure fails, and fails PROMPTLY, with the debug log it was asked for",
       "reason": "no built web shell at /home/runner/work/lolly/lolly/shells/web/dist - run `pnpm run build:web`",
       "capability": "browser",
       "owner": "tests"
     },
     {
       "file": "tests/cli-tierb-video.test.ts",
-      "fullName": "a Tier-B failure fails, and fails PROMPTLY, with the debug log it was asked for",
+      "fullName": "a deck exports a real pptx through the browser tier",
       "reason": "no built web shell at /home/runner/work/lolly/lolly/shells/web/dist - run `pnpm run build:web`",
       "capability": "browser",
       "owner": "tests"
@@ -865,14 +865,14 @@
     },
     {
       "file": "tests/compare-visual.browser.test.ts",
-      "fullName": "catalog visual pairs and exact saved versions preserve selection and bytes offline",
+      "fullName": "PDF comparison reports page additions, rotation, changed text and font fidelity",
       "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell locally)",
       "capability": "environment",
       "owner": "tests"
     },
     {
       "file": "tests/compare-visual.browser.test.ts",
-      "fullName": "PDF comparison reports page additions, rotation, changed text and font fidelity",
+      "fullName": "catalog visual pairs and exact saved versions preserve selection and bytes offline",
       "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell locally)",
       "capability": "environment",
       "owner": "tests"
@@ -942,14 +942,14 @@
     },
     {
       "file": "tests/deck-builder-freeform.test.ts",
-      "fullName": "animation is opt-in: choosing a transition (and no focus) lets an unfocused deck play",
+      "fullName": "animation OFF by default: an unset transition rests STILL (sl-frozen on slide 0), never auto-plays",
       "reason": "SUSE brand pack not mounted (see profiles.json)",
       "capability": "brand:suse",
       "owner": "tests"
     },
     {
       "file": "tests/deck-builder-freeform.test.ts",
-      "fullName": "animation OFF by default: an unset transition rests STILL (sl-frozen on slide 0), never auto-plays",
+      "fullName": "animation is opt-in: choosing a transition (and no focus) lets an unfocused deck play",
       "reason": "SUSE brand pack not mounted (see profiles.json)",
       "capability": "brand:suse",
       "owner": "tests"
@@ -1124,6 +1124,20 @@
     },
     {
       "file": "tests/deck-builder-markdown.test.ts",
+      "fullName": "SECURITY: a javascript: link produces NO href (text only)",
+      "reason": "SUSE brand pack not mounted (see profiles.json)",
+      "capability": "brand:suse",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/deck-builder-markdown.test.ts",
+      "fullName": "SECURITY: an <img onerror> in a cell is escaped, never a live tag",
+      "reason": "SUSE brand pack not mounted (see profiles.json)",
+      "capability": "brand:suse",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/deck-builder-markdown.test.ts",
       "fullName": "a line of dashes is not treated as a table separator",
       "reason": "SUSE brand pack not mounted (see profiles.json)",
       "capability": "brand:suse",
@@ -1172,17 +1186,24 @@
       "owner": "tests"
     },
     {
-      "file": "tests/deck-builder-markdown.test.ts",
-      "fullName": "SECURITY: a javascript: link produces NO href (text only)",
-      "reason": "SUSE brand pack not mounted (see profiles.json)",
-      "capability": "brand:suse",
+      "file": "tests/deck-builder-style.test.ts",
+      "fullName": "SECURITY: a hostile font name is stripped of style-breakout characters",
+      "reason": "deck-builder is not in the active content profile",
+      "capability": "fixture",
       "owner": "tests"
     },
     {
-      "file": "tests/deck-builder-markdown.test.ts",
-      "fullName": "SECURITY: an <img onerror> in a cell is escaped, never a live tag",
-      "reason": "SUSE brand pack not mounted (see profiles.json)",
-      "capability": "brand:suse",
+      "file": "tests/deck-builder-style.test.ts",
+      "fullName": "SECURITY: custom CSS cannot close the <style> element or @import",
+      "reason": "deck-builder is not in the active content profile",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/deck-builder-style.test.ts",
+      "fullName": "SECURITY: html inside a fenced code block is escaped, never a live tag",
+      "reason": "deck-builder is not in the active content profile",
+      "capability": "fixture",
       "owner": "tests"
     },
     {
@@ -1250,27 +1271,6 @@
     },
     {
       "file": "tests/deck-builder-style.test.ts",
-      "fullName": "SECURITY: a hostile font name is stripped of style-breakout characters",
-      "reason": "deck-builder is not in the active content profile",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/deck-builder-style.test.ts",
-      "fullName": "SECURITY: custom CSS cannot close the <style> element or @import",
-      "reason": "deck-builder is not in the active content profile",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/deck-builder-style.test.ts",
-      "fullName": "SECURITY: html inside a fenced code block is escaped, never a live tag",
-      "reason": "deck-builder is not in the active content profile",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/deck-builder-style.test.ts",
       "fullName": "size % becomes a ratio scale var; weight becomes a weight var",
       "reason": "deck-builder is not in the active content profile",
       "capability": "fixture",
@@ -1291,22 +1291,15 @@
       "owner": "tests"
     },
     {
+      "file": "tests/deep-editing.browser.test.ts",
+      "fullName": "Darkroom, Design and raw HDR video preserve headroom in the browser",
+      "reason": "set LOLLY_EXPORT_TEST_URL",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
       "file": "tests/design-panels.browser.test.ts",
       "fullName": "artboard parents, overflowing tracks and the narrow inspector stay usable",
-      "reason": "Serve the web shell and set LOLLY_DESIGN_TOOL_TEST_URL.",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/design-tool.browser.test.ts",
-      "fullName": "an awaited file chooser imports Rules into the destination and remounts the Design vanity route",
-      "reason": "Serve the web shell and set LOLLY_DESIGN_TOOL_TEST_URL.",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/design-tool.browser.test.ts",
-      "fullName": "designer UI produces one portable tool; clean reader exports offline and pins revisions",
       "reason": "Serve the web shell and set LOLLY_DESIGN_TOOL_TEST_URL.",
       "capability": "environment",
       "owner": "tests"
@@ -1321,6 +1314,20 @@
     {
       "file": "tests/design-tool.browser.test.ts",
       "fullName": "Rules selection, Preview gestures and fitted text obey authored bounds",
+      "reason": "Serve the web shell and set LOLLY_DESIGN_TOOL_TEST_URL.",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/design-tool.browser.test.ts",
+      "fullName": "an awaited file chooser imports Rules into the destination and remounts the Design vanity route",
+      "reason": "Serve the web shell and set LOLLY_DESIGN_TOOL_TEST_URL.",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/design-tool.browser.test.ts",
+      "fullName": "designer UI produces one portable tool; clean reader exports offline and pins revisions",
       "reason": "Serve the web shell and set LOLLY_DESIGN_TOOL_TEST_URL.",
       "capability": "environment",
       "owner": "tests"
@@ -1628,6 +1635,20 @@
     },
     {
       "file": "tests/email-signature-inline-logo.test.ts",
+      "fullName": "email-signature: LOGO_GREY's credential verifies as SUSE, delivered by Lolly",
+      "reason": "SUSE brand pack not mounted (see profiles.json)",
+      "capability": "brand:suse",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/email-signature-inline-logo.test.ts",
+      "fullName": "email-signature: LOGO_STANDARD's credential verifies as SUSE, delivered by Lolly",
+      "reason": "SUSE brand pack not mounted (see profiles.json)",
+      "capability": "brand:suse",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/email-signature-inline-logo.test.ts",
       "fullName": "email-signature: inlined LOGO_GREY carries Content Credentials",
       "reason": "SUSE brand pack not mounted (see profiles.json)",
       "capability": "brand:suse",
@@ -1656,23 +1677,23 @@
     },
     {
       "file": "tests/email-signature-inline-logo.test.ts",
-      "fullName": "email-signature: LOGO_GREY's credential verifies as SUSE, delivered by Lolly",
-      "reason": "SUSE brand pack not mounted (see profiles.json)",
-      "capability": "brand:suse",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/email-signature-inline-logo.test.ts",
-      "fullName": "email-signature: LOGO_STANDARD's credential verifies as SUSE, delivered by Lolly",
-      "reason": "SUSE brand pack not mounted (see profiles.json)",
-      "capability": "brand:suse",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/email-signature-inline-logo.test.ts",
       "fullName": "email-signature: the wordmark is exactly 2x its display box",
       "reason": "SUSE brand pack not mounted (see profiles.json)",
       "capability": "brand:suse",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/emoji-tools.browser.test.ts",
+      "fullName": "tool previews draw curved emoji, timed captions and geometry from selected artwork",
+      "reason": "set LOLLY_EXPORT_TEST_URL",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/emoji-workflow.browser.test.ts",
+      "fullName": "custom emoji controls, credits, SVG text and rich-text composition use admitted artwork",
+      "reason": "set LOLLY_EXPORT_TEST_URL",
+      "capability": "environment",
       "owner": "tests"
     },
     {
@@ -1901,6 +1922,13 @@
     },
     {
       "file": "tests/history-adapters.browser.test.ts",
+      "fullName": "Snippet history retains an uploaded icon version after replacement and mobile history stays reachable",
+      "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/history-adapters.browser.test.ts",
       "fullName": "chart: edits recover, checkpoint with a thumbnail, reload, and reopen an older copy",
       "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
       "capability": "environment",
@@ -1930,13 +1958,6 @@
     {
       "file": "tests/history-adapters.browser.test.ts",
       "fullName": "qr-code: edits recover, checkpoint with a thumbnail, reload, and reopen an older copy",
-      "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/history-adapters.browser.test.ts",
-      "fullName": "Snippet history retains an uploaded icon version after replacement and mobile history stays reachable",
       "reason": "LOLLY_HISTORY_TEST_URL not set (serve the web shell and point it here)",
       "capability": "environment",
       "owner": "tests"
@@ -2027,20 +2048,6 @@
     },
     {
       "file": "tests/icc-real-profiles.test.ts",
-      "fullName": "icc real: every one of these is additive, so ink coverage is null",
-      "reason": "real-profile fixtures not on this machine: /home/runner/Desktop/profiles",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/icc-real-profiles.test.ts",
-      "fullName": "icc real: gamut membership cannot detect the swap, which is why we ask the transform",
-      "reason": "real-profile fixtures not on this machine: /home/runner/Desktop/profiles/sRGB-v2-2014.icc + /home/runner/Desktop/profiles/swapped-v2.icc",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/icc-real-profiles.test.ts",
       "fullName": "icc real: LargeRGB-elle-V2-g18.icc parses and reports its header",
       "reason": "real-profile fixture not on this machine: /home/runner/Desktop/profiles/LargeRGB-elle-V2-g18.icc",
       "capability": "fixture",
@@ -2055,6 +2062,20 @@
     },
     {
       "file": "tests/icc-real-profiles.test.ts",
+      "fullName": "icc real: every one of these is additive, so ink coverage is null",
+      "reason": "real-profile fixtures not on this machine: /home/runner/Desktop/profiles",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/icc-real-profiles.test.ts",
+      "fullName": "icc real: gamut membership cannot detect the swap, which is why we ask the transform",
+      "reason": "real-profile fixtures not on this machine: /home/runner/Desktop/profiles/sRGB-v2-2014.icc + /home/runner/Desktop/profiles/swapped-v2.icc",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/icc-real-profiles.test.ts",
       "fullName": "icc real: matrix/TRC display profiles are decided by the cube, not the round trip",
       "reason": "real-profile fixtures not on this machine: /home/runner/Desktop/profiles",
       "capability": "fixture",
@@ -2064,13 +2085,6 @@
       "file": "tests/icc-real-profiles.test.ts",
       "fullName": "icc real: none of these carry a characterization target",
       "reason": "real-profile fixtures not on this machine: /home/runner/Desktop/profiles",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/icc-real-profiles.test.ts",
-      "fullName": "icc real: spac is accepted as a gamut today (documented finding, see note above)",
-      "reason": "real-profile fixture not on this machine: /home/runner/Desktop/profiles/sRGB-v4-ICC_preference.icc",
       "capability": "fixture",
       "owner": "tests"
     },
@@ -2092,6 +2106,13 @@
       "file": "tests/icc-real-profiles.test.ts",
       "fullName": "icc real: sRGB2014 refuses a colour whose round trip barely moves",
       "reason": "real-profile fixture not on this machine: /home/runner/Desktop/profiles/sRGB-v2-2014.icc",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/icc-real-profiles.test.ts",
+      "fullName": "icc real: spac is accepted as a gamut today (documented finding, see note above)",
+      "reason": "real-profile fixture not on this machine: /home/runner/Desktop/profiles/sRGB-v4-ICC_preference.icc",
       "capability": "fixture",
       "owner": "tests"
     },
@@ -2132,27 +2153,6 @@
     },
     {
       "file": "tests/icc.test.ts",
-      "fullName": "absolute intent differs from relative by the media white rescale",
-      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/icc.test.ts",
-      "fullName": "an unknown intent string cannot reach a transform",
-      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/icc.test.ts",
-      "fullName": "bit-flipped real profiles never throw and never hang",
-      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/icc.test.ts",
       "fullName": "CLUT index order is last-channel-fastest: only the K axis moves when K does",
       "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
       "capability": "fixture",
@@ -2181,8 +2181,8 @@
     },
     {
       "file": "tests/icc.test.ts",
-      "fullName": "every truncation of a real profile is handled",
-      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
+      "fullName": "GRAY profile neutralises on the PCS axis rather than its unadapted white point",
+      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic Gray Profile.icc",
       "capability": "fixture",
       "owner": "tests"
     },
@@ -2195,8 +2195,36 @@
     },
     {
       "file": "tests/icc.test.ts",
-      "fullName": "GRAY profile neutralises on the PCS axis rather than its unadapted white point",
-      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic Gray Profile.icc",
+      "fullName": "XYZ-PCS LUT decodes u1Fixed15 PCS values into a sane Lab",
+      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic XYZ Profile.icc",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/icc.test.ts",
+      "fullName": "absolute intent differs from relative by the media white rescale",
+      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/icc.test.ts",
+      "fullName": "an unknown intent string cannot reach a transform",
+      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/icc.test.ts",
+      "fullName": "bit-flipped real profiles never throw and never hang",
+      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/icc.test.ts",
+      "fullName": "every truncation of a real profile is handled",
+      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic CMYK Profile.icc",
       "capability": "fixture",
       "owner": "tests"
     },
@@ -2313,13 +2341,6 @@
       "owner": "tests"
     },
     {
-      "file": "tests/icc.test.ts",
-      "fullName": "XYZ-PCS LUT decodes u1Fixed15 PCS values into a sane Lab",
-      "reason": "stock profile not on this machine: /System/Library/ColorSync/Profiles/Generic XYZ Profile.icc",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
       "file": "tests/instance-pack.test.ts",
       "fullName": "the suse pack builds clean: exclusions hold, fonts/tools/envelope complete",
       "reason": "brands/suse not mounted",
@@ -2398,6 +2419,20 @@
     },
     {
       "file": "tests/penpot-keynote-replay.test.ts",
+      "fullName": "keynote: PERSON INTRO’s master hydrates through the real design",
+      "reason": "UXDays keynote .penpot not on this machine",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/penpot-keynote-replay.test.ts",
+      "fullName": "keynote: a Work Sans box hydrates to font-family:'Work Sans' via the real design",
+      "reason": "UXDays keynote .penpot not on this machine",
+      "capability": "fixture",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/penpot-keynote-replay.test.ts",
       "fullName": "keynote: a baked path maps to its content bbox with rot 0; identity paths keep selrect + rot",
       "reason": "UXDays keynote .penpot not on this machine",
       "capability": "fixture",
@@ -2412,13 +2447,6 @@
     },
     {
       "file": "tests/penpot-keynote-replay.test.ts",
-      "fullName": "keynote: a Work Sans box hydrates to font-family:'Work Sans' via the real design",
-      "reason": "UXDays keynote .penpot not on this machine",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/penpot-keynote-replay.test.ts",
       "fullName": "keynote: each master subtree maps to boxes through the real resolvers",
       "reason": "UXDays keynote .penpot not on this machine",
       "capability": "fixture",
@@ -2426,14 +2454,14 @@
     },
     {
       "file": "tests/penpot-keynote-replay.test.ts",
-      "fullName": "keynote: every component preview belongs to an INSTANCE, so a master needs the fallback",
+      "fullName": "keynote: every Mask group holding blurred circles flattens with feGaussianBlur AND clip-path",
       "reason": "UXDays keynote .penpot not on this machine",
       "capability": "fixture",
       "owner": "tests"
     },
     {
       "file": "tests/penpot-keynote-replay.test.ts",
-      "fullName": "keynote: every Mask group holding blurred circles flattens with feGaussianBlur AND clip-path",
+      "fullName": "keynote: every component preview belongs to an INSTANCE, so a master needs the fallback",
       "reason": "UXDays keynote .penpot not on this machine",
       "capability": "fixture",
       "owner": "tests"
@@ -2462,13 +2490,6 @@
     {
       "file": "tests/penpot-keynote-replay.test.ts",
       "fullName": "keynote: path content is page-space-final - inverse transform lands on selrect (<0.1px)",
-      "reason": "UXDays keynote .penpot not on this machine",
-      "capability": "fixture",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/penpot-keynote-replay.test.ts",
-      "fullName": "keynote: PERSON INTRO’s master hydrates through the real design",
       "reason": "UXDays keynote .penpot not on this machine",
       "capability": "fixture",
       "owner": "tests"
@@ -2601,6 +2622,13 @@
     },
     {
       "file": "tests/performance-ui.browser.test.ts",
+      "fullName": "Performance UI wins the real CSS cascade while focus and creation surfaces keep their effects",
+      "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/performance-ui.browser.test.ts",
       "fullName": "existing Jelly controls stop physics, remain usable, and restore the saved preference",
       "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
       "capability": "environment",
@@ -2609,13 +2637,6 @@
     {
       "file": "tests/performance-ui.browser.test.ts",
       "fullName": "gallery searching preserves tile order and identity while sort still reorders",
-      "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/performance-ui.browser.test.ts",
-      "fullName": "Performance UI wins the real CSS cascade while focus and creation surfaces keep their effects",
       "reason": "set LOLLY_GALLERY_TEST_URL to a local Vite shell",
       "capability": "environment",
       "owner": "tests"
@@ -2671,13 +2692,6 @@
     },
     {
       "file": "tests/present-production.browser.test.ts",
-      "fullName": "clean output keeps camera and graphics through navigation, private Apply and popup loss",
-      "reason": "set LOLLY_PRESENT_TEST_URL to a local Vite shell to exercise presentation output",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/present-production.browser.test.ts",
       "fullName": "Countdown publishes one live timer into clean output and private preview",
       "reason": "set LOLLY_PRESENT_TEST_URL to a local Vite shell to exercise presentation output",
       "capability": "environment",
@@ -2686,6 +2700,13 @@
     {
       "file": "tests/present-production.browser.test.ts",
       "fullName": "Design saves the composition with its document and reopens without acquiring a camera",
+      "reason": "set LOLLY_PRESENT_TEST_URL to a local Vite shell to exercise presentation output",
+      "capability": "environment",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/present-production.browser.test.ts",
+      "fullName": "clean output keeps camera and graphics through navigation, private Apply and popup loss",
       "reason": "set LOLLY_PRESENT_TEST_URL to a local Vite shell to exercise presentation output",
       "capability": "environment",
       "owner": "tests"
@@ -2912,6 +2933,13 @@
       "fullName": "private SUSE icons keep a bevel on every shape",
       "reason": "STUDIO_SUSE is not set; private SUSE fixtures are opt-in.",
       "capability": "brand:suse",
+      "owner": "tests"
+    },
+    {
+      "file": "tests/studio3d-project-previews.browser.test.ts",
+      "fullName": "3D Studio first look is transparent and saved projects recover missing scene previews",
+      "reason": "set LOLLY_EXPORT_TEST_URL",
+      "capability": "environment",
       "owner": "tests"
     },
     {

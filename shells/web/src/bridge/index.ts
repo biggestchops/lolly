@@ -20,7 +20,7 @@ import { createRevisionStore } from './revision-history.ts';
 import { REVISION_STORES } from './revision-records.ts';
 import { createProfileAPI } from './profile.ts';
 import { trackHostChanges } from '../lib/sync-changes.ts';
-import { createPreviewsAPI } from './previews.ts';
+import type { PreviewsAPI } from './previews.ts';
 import { createAssetsAPI } from './assets.ts';
 import { createTokensAPI, USER_TOKENS_ID } from './tokens.ts';
 import { createDesignSystemRegistry, type DesignSystemRegistry, type RegistryDb } from '../lib/design-system/registry.ts';
@@ -69,7 +69,7 @@ import { openDB } from './db.ts';
 interface WebHost extends HostV1 {
   readonly shell: 'web';
   identity: Awaited<ReturnType<typeof import('./identity.ts')['createIdentityAPI']>>;
-  previews: ReturnType<typeof createPreviewsAPI>;
+  previews: PreviewsAPI;
   /** The design systems this device holds (plans/186) - web-only host helper,
    *  not part of the tool-facing contract; tools see `host.tokens.list()`. */
   designSystems: DesignSystemRegistry;
@@ -135,7 +135,15 @@ export async function createBridge(): Promise<WebHost> {
   } as WebHost['identity'];
   // Web-only host-UI helper (not in the tool-facing contract): cache of
   // profile-personalized gallery thumbnails. The gallery feature-detects it.
-  host.previews = createPreviewsAPI(db);
+  const loadPreviews = memo(async () => (await import('./previews.ts')).createPreviewsAPI(db));
+  host.previews = {
+    list: async () => (await loadPreviews()).list(),
+    size: async () => (await loadPreviews()).size(),
+    get: async id => (await loadPreviews()).get(id),
+    put: async (id, entry) => (await loadPreviews()).put(id, entry),
+    delete: async id => (await loadPreviews()).delete(id),
+    clear: async () => (await loadPreviews()).clear(),
+  };
   const loadFileHistory = memo(async () => (await import('../lib/file-history-backup.ts')).createFileHistoryBackup(db));
   host.fileHistory = {
     export: async () => (await loadFileHistory()).export(),
@@ -241,6 +249,8 @@ export async function createBridge(): Promise<WebHost> {
   // the rule here is that the surface always matches (see the capture note below).
   const loadEmoji = memo(async () => (await import('./emoji.ts')).createEmojiAPI(host.assets));
   host.emoji = {
+    install: async bytes => (await loadEmoji()).install!(bytes),
+    dependencies: async pins => (await loadEmoji()).dependencies!(pins),
     sets: async () => (await loadEmoji()).sets(),
     manifest: async (pin) => (await loadEmoji()).manifest(pin),
     artwork: async (pin, asset) => (await loadEmoji()).artwork(pin, asset),
@@ -505,8 +515,12 @@ export async function createBridge(): Promise<WebHost> {
   // (16-bit PNG / EXR / Radiance / dithered 8-bit). Lazy facade: bridge/codec.ts
   // pulls the engine's off-barrel EXR/Radiance/PNG writers, which have no place
   // in the boot chunk (only a tool's exportStill deep path ever calls this).
-  const loadCodec = memo(async () => (await import('./codec.ts')).createCodecAPI());
+  const loadCodec = memo(async () => (await import('./codec.ts')).createCodecAPI(host.assets));
   host.codec = {
+    decode: async source => (await loadCodec()).decode!(source),
+    preview: async (frame, exposure) => (await loadCodec()).preview!(frame, exposure),
+    compose: async (width, height, layers) => (await loadCodec()).compose!(width, height, layers),
+    validate: async frame => (await loadCodec()).validate!(frame),
     png16: async (f, o) => (await loadCodec()).png16(f, o),
     exr: async (f, o) => (await loadCodec()).exr(f, o),
     radiance: async (f, o) => (await loadCodec()).radiance(f, o),

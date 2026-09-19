@@ -42,8 +42,8 @@
     "",
     "",
     "",
-    "<img class=\"lolly-box-img\" src=\"https://ex.test/a.png\" style=\"object-fit:cover;object-position:left top;\" alt=\"\" draggable=\"false\">",
-    "<div class=\"lolly-box-img lolly-box-lottie\" data-lottie-src=\"https://ex.test/a.json\" data-lottie-loop=\"1\" data-lottie-autoplay=\"1\" data-lottie-fit=\"cover\" style=\"object-fit:cover;\"></div>",
+    "<img class=\"lolly-box-img\" data-deep-source=\"{&quot;url&quot;:&quot;https://ex.test/a.png&quot;,&quot;type&quot;:&quot;raster&quot;}\" src=\"https://ex.test/a.png\" style=\"object-fit:cover;object-position:left top;\" alt=\"\" draggable=\"false\">",
+    "<div class=\"lolly-box-img lolly-box-lottie\" data-lottie-src=\"https://ex.test/a.json\" data-lottie-animation=\"\" data-lottie-edits=\"\" data-lottie-loop=\"0\" data-lottie-autoplay=\"0\" data-lottie-fit=\"cover\" style=\"object-fit:cover;\"></div>",
     "<video class=\"lolly-box-img lolly-box-video\" src=\"https://ex.test/a.mp4\" data-video-key=\"vid\" muted loop autoplay playsinline style=\"object-fit:contain;\"></video>",
     ""
   ],

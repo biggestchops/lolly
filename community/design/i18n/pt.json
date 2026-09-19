@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Inferior esquerdo",
   "inputs.boxes.fields.imgpos.options.center bottom": "Inferior",
   "inputs.boxes.fields.imgpos.options.right bottom": "Inferior direito",
-  "description": "Uma tela aberta para organização livre - texto, imagens, formas e renderizações ao vivo das suas outras ferramentas Lolly, tudo alinhado ao seu sistema de design."
+  "description": "Uma tela aberta para organização livre - texto, imagens, formas e renderizações ao vivo das suas outras ferramentas Lolly, tudo alinhado ao seu sistema de design.",
+  "inputs.projectFps.label": "Taxa de quadros do projeto",
+  "inputs.sequenceMarks.label": "Marcadores da linha do tempo",
+  "inputs.boxes.fields.animationId.label": "Animação na origem",
+  "inputs.boxes.fields.animationEdits.label": "Alterações internas da animação"
 }

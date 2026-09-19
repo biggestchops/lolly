@@ -134,3 +134,8 @@ test('a rendered file and the link returned beside it carry the same setup', asy
   assert.equal(q.get('marks'), 'crop');
   assert.equal(q.get('imprint'), '0');
 });
+
+test('HDR Design refuses browser-free export instead of clipping the scene through resvg',async()=>{
+  const {render}=await import('../src/render.ts');
+  await assert.rejects(render('design','editingRange=hdr',{format:'png',noBrowser:true,c2pa:{on:false,days:null}}),/HDR Design composition requires the browser/);
+});

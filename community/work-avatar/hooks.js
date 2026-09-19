@@ -51,6 +51,7 @@ function safeColor(v, fallback) {
   if (!s) return fallback;
   if (/^#[0-9a-fA-F]{3,8}$/.test(s)) return s;
   if (/^(rgb|rgba|hsl|hsla)\([0-9.,%\s/]+\)$/i.test(s)) return s;
+  if (s.length <= 256 && /^(?:(?:ok)?(?:lab|lch)\([-+0-9.eE%\s/]+\)|color\((?:srgb|srgb-linear|display-p3|rec2020)\s+[-+0-9.eE%\s/]+\))$/i.test(s)) return s;
   if (/^[a-zA-Z]+$/.test(s)) return s; // named colour (e.g. "transparent", "tomato")
   // A brand-token CSS var with an OPTIONAL literal-colour fallback - the documented
   // brand-inheritance path (brand-vars.ts injects --brand-primary/… onto the canvas root,
@@ -348,6 +349,7 @@ async function shapeText(h, text, family, weight, italic, size, spacing) {
   if (!h || !h.text || typeof h.text.fontUrl !== 'function' || typeof h.text.toPath !== 'function') {
     return { live: 'this host cannot outline text' };
   }
+  if (/[\u200d\u20e3\u2190-\u2bff\u3030\u303d\u3297\u3299\ud800-\udfff\ufe0f]/.test(text)) return { live: 'emoji', emoji: true };
   var font = await fontFor(h, family, weight, italic);
   if (!font) return { live: 'no font file found for "' + family + '"' };
 
@@ -410,7 +412,7 @@ function glyphsSvg(placed, color) {
 
 // Honest fallback: a live <textPath> on the same baseline circle, reading the
 // same way. Needs the font at view time; waWarning says so.
-function liveTextSvg(text, rb, start, dir, sweep, s0, size, weight, italic, mono, spacing, color, id) {
+function liveTextSvg(text, rb, start, dir, sweep, s0, size, weight, italic, mono, spacing, color, id, family, anchor, position) {
   var flag = dir > 0 ? 1 : 0;
   var a1 = start + dir * sweep;
   var arc = 'A' + f2(rb) + ' ' + f2(rb) + ' 0 ';
@@ -422,9 +424,9 @@ function liveTextSvg(text, rb, start, dir, sweep, s0, size, weight, italic, mono
     d = 'M' + pt(rb, start) + arc + (sweep > 180 ? 1 : 0) + ' ' + flag + ' ' + pt(rb, a1);
   }
   return '<defs><path id="' + id + '" d="' + d + '"/></defs>'
-    + '<text' + (mono ? ' class="wa-mono"' : '') + ' font-size="' + f2(size) + '" font-weight="' + weight
+    + '<text font-family="' + esc(family || FALLBACK_FAMILY) + '"' + (mono ? ' class="wa-mono"' : '') + ' font-size="' + f2(size) + '" font-weight="' + weight
     + (italic ? '" font-style="italic' : '') + '" letter-spacing="' + f2(spacing) + '" fill="' + esc(color) + '">'
-    + '<textPath href="#' + id + '" startOffset="' + f2(s0) + '">' + esc(text) + '</textPath></text>';
+    + '<textPath data-lolly-text-fit="shrink" data-lolly-text-position="' + f2(position * 100) + '" text-anchor="' + esc(anchor) + '" href="#' + id + '" startOffset="' + f2(s0) + '">' + esc(text) + '</textPath></text>';
 }
 
 // ── the treatment ─────────────────────────────────────────────────────────────
@@ -594,8 +596,8 @@ async function compute(h, a) {
       var s0 = position * L - (anchor === 'middle' ? width / 2 : anchor === 'end' ? width : 0);
       s0 = clamp(s0, 0, Math.max(0, L - width));
       if (shaped.live) {
-        glyphs = liveTextSvg(text, rb, start, dir, g.sweep, s0, size, weight, italic, fontKind === 'mono', spacing, color, 'wa-tp-' + hashStr(text + '|' + f2(rb) + '|' + f2(start)));
-        patch.waWarning = 'Ring text is live text (' + shaped.live + '), so exports need the font installed.';
+        glyphs = liveTextSvg(text, rb, start, dir, g.sweep, s0, size, weight, italic, fontKind === 'mono', spacing, color, 'wa-tp-' + hashStr(text + '|' + f2(rb) + '|' + f2(start)), family, anchor, position);
+        patch.waWarning = shaped.emoji ? '' : 'Ring text is live text (' + shaped.live + '), so exports need the font installed.';
       } else {
         glyphs = glyphsSvg(placeOnPath(shaped.clusters, arcSampler(CX, CY, rb, start, dir), s0), color);
       }

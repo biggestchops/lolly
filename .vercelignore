@@ -156,3 +156,6 @@ scripts/i18n/cache.json
 
 # Local assistant caches and session databases are never build inputs.
 .tokensave
+
+# Rebuilt after the static site by build:mcp-fn; only the function needs these.
+community/emoji-packs/*.json.gz

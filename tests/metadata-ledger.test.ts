@@ -27,9 +27,10 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  insertPngMeta, insertPngXmp, insertJpegExif, insertJpegXmp, insertWebpMeta, insertAvifExif,
+  buildExportXmp, insertPngMeta, insertPngXmp, insertJpegExif, insertJpegXmp, insertWebpMeta, insertAvifExif,
   injectSvgMeta, withGifComment, carryImageMetadata, buildCarryExifTiff, pngChunk, readU32,
 } from '../engine/src/image-meta.ts';
+import { jxlWithXmp } from '../engine/src/jxl-container.ts';
 import { extractFileMetadata, extractXmpPacket } from '../engine/src/file-metadata.ts';
 import { insertJpegSegments } from '../engine/src/jpeg-segments.ts';
 import { C2PA_FORMATS } from '../engine/src/c2pa-containers.ts';
@@ -162,6 +163,12 @@ function pngChunks(bytes: Uint8Array): string[] {
 interface Proof { token: string; field: string; check: () => void }
 
 const PROOFS: Proof[] = [
+  {
+    token: 'JXL', field: 'xmp', check: () => {
+      const source = readFileSync(resolve(ROOT, 'tests/fixtures/jxl/gray.jxl'));
+      assert.ok(extractXmpPacket(jxlWithXmp(source, buildExportXmp(META)))?.includes(SENTINEL));
+    },
+  },
   {
     token: 'PNG', field: 'xmp', check: () => {
       const out = insertPngXmp(tinyPng(), META);

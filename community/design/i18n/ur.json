@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "نیچے بائیں",
   "inputs.boxes.fields.imgpos.options.center bottom": "نیچے",
   "inputs.boxes.fields.imgpos.options.right bottom": "نیچے دائیں",
-  "description": "آزاد ترتیب کے لیے ایک کھلا کینوس - متن، تصاویر، اشکال اور آپ کے دیگر Lolly ٹولز کے لائیو رینڈرز، سب آپ کے ڈیزائن سسٹم کے مطابق۔"
+  "description": "آزاد ترتیب کے لیے ایک کھلا کینوس - متن، تصاویر، اشکال اور آپ کے دیگر Lolly ٹولز کے لائیو رینڈرز، سب آپ کے ڈیزائن سسٹم کے مطابق۔",
+  "inputs.projectFps.label": "پروجیکٹ کا فریم ریٹ",
+  "inputs.sequenceMarks.label": "ٹائم لائن مارکرز",
+  "inputs.boxes.fields.animationId.label": "ماخذ میں اینیمیشن",
+  "inputs.boxes.fields.animationEdits.label": "اینیمیشن کی اندرونی تبدیلیاں"
 }

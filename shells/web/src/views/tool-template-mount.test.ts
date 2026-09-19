@@ -440,7 +440,7 @@ test('the inspector takes a slot in the ONE right-hand column, and is never a st
   // …and it must only write the device preference for a release the USER asked for. A
   // route change and the mobile-breakpoint undock both hand the panel back, and recording
   // "closed" for either meant leaving the editor once turned the inspector off forever.
-  assert.match(CODE, /if \(reason === 'user'\) writeColumnPref\(INSP_KEY, open\)/,
+  assert.match(CODE, /if \(reason === 'user' && !workspace\?\.adjusting\) writeColumnPref\(INSP_KEY, open\)/,
     'a host-driven release must not record a preference the user never set');
   assert.match(INSPECTOR_FLOAT, /releaseAction = 'destroy';\s*releaseDock\('inspector', 'host'\)/,
     'the controller teardown takes it back out of a column that outlives the view, as the HOST');

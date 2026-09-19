@@ -45,6 +45,7 @@
  * units. `zoom.zoomBy(f)` is a multiplier on the current view. Slice C's StageNav
  * additions must answer in those units or the readout lies.
  */
+import { compactDesignViewport } from '../lib/design-panel-layout.ts';
 import { t } from '../i18n.ts';
 import { isTypingTarget } from '../lib/typing-target.ts';
 import { icon, type IconName } from '../lib/icons.ts';
@@ -55,6 +56,7 @@ import type { NarrationActions } from './design-ports.ts';
  * that is what makes the bar mountable (and testable) on a bare jsdom stage.
  */
 export interface DesignTopbarOpts {
+  unsaved?(): boolean;
   /** The positioned `.tool-stage` the bar docks into (it appends itself). */
   stageEl: HTMLElement;
   /** The canvas the `canvas-resize` event is aimed at (tool.ts's fitCanvas listens). */
@@ -277,6 +279,18 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
   nameInput.setAttribute('aria-label', t('Document name'));
   nameInput.spellcheck = false;
   root.appendChild(nameInput);
+  const saveStatus = doc.createElement('span');
+  saveStatus.className = 'dtb-save-status';
+  saveStatus.setAttribute('role', 'status');
+  root.appendChild(saveStatus);
+  const syncSaveStatus = (): void => {
+    const dirty = !!opts.unsaved?.();
+    saveStatus.dataset.dirty = String(dirty);
+    saveStatus.title = dirty ? t('Unsaved changes') : t('No unsaved changes');
+    saveStatus.textContent = saveStatus.title;
+  };
+  syncSaveStatus();
+  opts.canvasEl.addEventListener('lolly-session-status', syncSaveStatus);
   /**
    * The full name on hover once the field has cut it short (plans/184 section 6, S8):
    * "Design-lo…" at 860px had no way to be read whole. A native title, because an
@@ -368,6 +382,10 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
   const right = doc.createElement('div');
   right.className = 'dtb-right';
   root.appendChild(right);
+  const compactUndo = mkBtn('compact-undo', t('Undo'), GLYPH.undo);
+  compactUndo.hidden = true;
+  compactUndo.addEventListener('click', () => opts.history.undo());
+  right.appendChild(compactUndo);
 
   // The hamburger: where the centre cluster (and, tighter still, Share and the Present
   // rows) folds when the bar's OWN width runs out - see syncDensity. Hidden at full width.
@@ -704,6 +722,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
     if (active === undoBtn && !canUndo && canRedo) redoBtn.focus();
     else if (active === redoBtn && !canRedo && canUndo) undoBtn.focus();
     undoBtn.disabled = !canUndo;
+    compactUndo.disabled = !canUndo;
     redoBtn.disabled = !canRedo;
   });
 
@@ -772,8 +791,8 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
   // is tried widest-first on every resize, so the bar climbs back up as room returns.
   // Andy, 2026-09-03: "collapse the top toolbar to icons and then to a hamburger menu",
   // with "responsive breaks for tablet and mobile".
-  type Density = 'full' | 'icons' | 'compact' | 'min';
-  const DENSITY_ORDER: Density[] = ['full', 'icons', 'compact', 'min'];
+  type Density = 'full' | 'icons' | 'compact' | 'min' | 'phone';
+  const DENSITY_ORDER: Density[] = ['full', 'icons', 'compact', 'min', 'phone'];
   let density: Density | '' = '';
   function fits(): boolean {
     // Content wider than the bar overflows its flex row: the right group's far edge
@@ -781,23 +800,27 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
     const r = root.getBoundingClientRect();
     const b = right.getBoundingClientRect();
     if (!r.width) return true;   // detached or unpainted (jsdom): stay at full
-    return b.right <= r.right - 8;
+    return b.right <= r.right - 8 && b.left >= r.left + 8 && (nameInput.getBoundingClientRect().width === 0 || nameInput.getBoundingClientRect().width >= 90);
   }
   function applyDensity(d: Density): void {
     if (density === d) return;
     density = d;
     root.setAttribute('data-density', d);
-    const folded = d === 'compact' || d === 'min';
+    const folded = d === 'compact' || d === 'min' || d === 'phone';
     centre.hidden = folded;
     moreBtn.hidden = !folded;
-    shareBtn.hidden = d === 'min';
-    presentMenuBtn.hidden = d === 'min';
+    shareBtn.hidden = d === 'min' || d === 'phone';
+    presentMenuBtn.hidden = d === 'min' || d === 'phone';
+    compactUndo.hidden = d !== 'phone';
   }
   function syncDensity(): void {
     if (!root.isConnected) return;
     const before = density;
-    applyDensity('full');
-    for (let i = 0; i < DENSITY_ORDER.length - 1 && !fits(); i++) applyDensity(DENSITY_ORDER[i + 1]!);
+    if (compactDesignViewport() || (root.getBoundingClientRect().width > 0 && root.getBoundingClientRect().width <= 640)) applyDensity('phone');
+    else {
+      applyDensity('full');
+      for (let i = 0; i < DENSITY_ORDER.length - 1 && !fits(); i++) applyDensity(DENSITY_ORDER[i + 1]!);
+    }
     if (density !== before) measure();
   }
   function moreRows(): MenuRow[] {
@@ -805,6 +828,15 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
       { label: t('Undo'), glyph: GLYPH.undo, disabled: undoBtn.disabled, run: () => opts.history.undo() },
       { label: t('Redo'), glyph: GLYPH.redo, disabled: redoBtn.disabled, run: () => opts.history.redo() },
     ];
+    if (density === 'phone') {
+      rows.unshift(
+        { label: t('Home'), glyph: icon('home'), run: () => root.querySelector<HTMLElement>('[data-back-pill]')?.click() },
+        { label: t('File menu'), glyph: icon('menu'), closeOnSelect: true, run: () => opts.onFileMenu(moreBtn) },
+      );
+      if (opts.intent) rows.push({ label: t('Design outcome'), closeOnSelect: true, run: () => toggleMenu(moreBtn, intentRows(), 'end') });
+      if (profileEl) rows.push({ label: t('Profile'), run: () => profileEl.click() });
+      rows.push({ label: presentLabel(), glyph: icon('play'), run: () => opts.present() });
+    }
     if (opts.revisions) rows.push({ label: t('History'), glyph: icon('history'), run: () => opts.revisions?.open() });
     if (!zoomGroup.hidden) {
       rows.push(
@@ -818,7 +850,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
       rows.push({ label: t('Timeline'), glyph: GLYPH.timeline, checked: () => opts.timeline.isOpen(), run: () => opts.timeline.toggle() });
     rows.push({ label: t('Navigator'), glyph: icon('dock'), checked: () => opts.navigator.isOpen(), run: () => opts.navigator.toggle() });
     if (opts.inspector) rows.push({ label: t('Inspector'), glyph: icon('sliders'), checked: () => !!opts.inspector?.isOpen(), closeOnSelect: true, run: () => opts.inspector?.toggle() });
-    if (density === 'min') {
+    if (density === 'min' || density === 'phone') {
       rows.push({ label: t('Share'), glyph: icon('share'), run: () => opts.share() });
       rows.push(...presentRows());
     }
@@ -826,6 +858,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
   }
 
   function sync(): void {
+    syncSaveStatus();
     syncing = true;
     // Guarded, because sync() now also runs while the user is TYPING in this field: the
     // host echoes the export sheet's filename input back here on every `input` event so
@@ -867,6 +900,7 @@ export function mountDesignTopbar(opts: DesignTopbarOpts): DesignTopbar {
     sync,
     focusInspectorToggle,
     destroy() {
+      opts.canvasEl.removeEventListener('lolly-session-status', syncSaveStatus);
       doc.removeEventListener('keydown', onPanelKey);
       closeMenu();
       doc.removeEventListener('pointerdown', onDocPointer, true);

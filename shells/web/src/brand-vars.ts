@@ -46,7 +46,7 @@ const SLOTS = [
  *  (plans/97 section 6a). Both answer the same two reads, which is the point. */
 interface BrandTokens {
   resolve(ref: string, opts?: { theme?: string }): Promise<unknown>;
-  colors?(opts?: { theme?: string }): Promise<Array<{ value: string }>>;
+  colors?(opts?: { theme?: string }): Promise<Array<{ value: string; ref?: string; path?: string; faces?: Record<string,string|number[]>; css?: string }>>;
 }
 
 /** The host slice this module reads - the (optional) tokens resolver, plus
@@ -1031,4 +1031,11 @@ export async function applyBrandVars(el: HTMLElement, host: BrandVarsHost): Prom
       else el.style.removeProperty(cssVar);
     } catch { /* cosmetic only - never break mounting */ }
   }));
+  try {
+    const colors = await host.tokens?.colors?.();
+    if (colors?.some(color => color.ref && color.path)) {
+      const { applyBrandFaces } = await import('./brand-faces.ts');
+      applyBrandFaces(el, colors.filter(color => color.ref && color.path) as import('@lolly-tools/core/host-v1').ColorSwatch[]);
+    }
+  } catch { /* The resolved semantic defaults remain available. */ }
 }

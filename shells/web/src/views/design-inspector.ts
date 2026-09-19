@@ -96,7 +96,7 @@ import type { EmojiStyleControl, EmojiStyleControlOpts } from '../components/emo
 import { icon } from '../lib/icons.ts';
 import type { IconName } from '../lib/icons.ts';
 import { colorFieldHtml, wireColorField, resolveColorVar, colorVarLabel } from '../components/color-field.ts';
-import type { ColorFieldValue } from '../components/color-field.ts';
+import { designColorValue } from '../lib/design-color.ts';
 import { numField } from '../components/num-field.ts';
 import type { NumFieldHandle } from '../components/num-field.ts';
 import {
@@ -191,6 +191,7 @@ export interface InspectorEmojiPort {
   /** The document's style now, or null while no set is chosen. Read on every
    *  rebuild, so a change made in the sidebar reaches this row through `sync()`. */
   value(): EmojiStyleV1 | null;
+  specimen?: (style: EmojiStyleV1) => Promise<string>;
   /** A new choice. The host writes it to the runtime and to the tool's URL state. */
   onChange(next: EmojiStyleV1 | null): void;
 }
@@ -488,9 +489,6 @@ function sceneSummary(query: string): { subject: string; studio: string } {
   return { subject: parts.join(' · '), studio: (q.get('studio') ?? '').trim() };
 }
 
-/** The picker hands back either a plain colour or `{ ref, value }` - the box stores the string. */
-const unwrapColor = (v: ColorFieldValue): string => (v && typeof v === 'object' && 'value' in v ? v.value : String(v ?? ''));
-
 export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorHandle {
   const { canvasEl, model, selection, artboard, actions, fonts, narration } = opts;
   let voiceList: SpeechVoiceInfo[] | null = null;   // the bridge's voices, fetched once per column
@@ -525,6 +523,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   const m4: FlagFields = { trans: F_TRANS, hidden: F_HIDDEN, locked: F_LOCKED };
   /** The 3D scene field (plan 265 milestone 3), or undefined on a tool without one. */
   const F_SCENE = declaredField('scene');
+  const F_NAME = declaredField(cfg.labelField ?? frame?.labelField ?? 'name');
 
   // ── the column ──────────────────────────────────────────────────────────────
   const el = document.createElement('aside');
@@ -553,8 +552,28 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   closeBtn.title = t('Hide inspector');
   closeBtn.innerHTML = icon('close');
   closeBtn.addEventListener('click', () => { setOpen(false); opts.onClose?.(); });
-  headBar.append(colTitle, closeBtn);
+  const layerName = document.createElement('input');
+  layerName.className = 'fc-insp-name';
+  layerName.type = 'text';
+  layerName.setAttribute('aria-label', t('Layer name'));
+  layerName.hidden = true;
+  layerName.addEventListener('change', () => write(F_NAME, layerName.value));
+  headBar.append(colTitle, layerName, closeBtn);
   el.appendChild(headBar);
+
+  let documentView = false;
+  let advancedTextOpen = false;
+  const tabs = document.createElement('nav');
+  tabs.className = 'fc-insp-tabs';
+  tabs.setAttribute('aria-label', t('Inspector settings'));
+  const selectionTab = document.createElement('button');
+  const documentTab = document.createElement('button');
+  for (const [button, label, value] of [[selectionTab, t('Selection'), false], [documentTab, t('Document'), true]] as const) {
+    button.type = 'button'; button.textContent = label;
+    button.addEventListener('click', () => { documentView = value; sync(true); });
+    tabs.appendChild(button);
+  }
+  el.appendChild(tabs);
 
   const scroll = document.createElement('div');
   scroll.className = 'fc-insp-scroll';
@@ -574,6 +593,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   let documentOptionsOpen = false;
   scroll.addEventListener('toggle', (event) => {
     const target = event.target as HTMLDetailsElement;
+    if (target.matches?.('[data-advanced-text]')) { advancedTextOpen = target.open; return; }
     if (!target.matches?.('[data-document-options]')) return;
     documentOptionsOpen = target.open;
     if (target.open && !emojiMounted) mountEmojiControl();
@@ -623,6 +643,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
 
   /** What the selection IS, and therefore which sections may show. */
   function gate(): Gate {
+    if (documentView) return { kind: 'empty', ids: [], box: null, rows: [], secs: ['document'] };
     const guide = opts.guides?.selected();
     if (guide) return { kind: 'guide', ids: [], box: null, rows: [], secs: ['guide'], guide };
     const ids = selection.get().filter((s) => s != null && s !== '');
@@ -634,7 +655,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     // for more than one box, only the paint groups that mean the same thing across them.
     // The groups that DO stay read every row, so a value the rows disagree about shows
     // as mixed instead of as the first box's.
-    if (ids.length > 1) return { kind: 'multi', ids, box, rows, secs: paintSecs(false) };
+    if (ids.length > 1) return { kind: 'multi', ids, box, rows, secs: [...(rows.length === ids.length && rows.every(row => kindOf(row) === 'text') ? ['text' as const] : []), ...paintSecs(false)] };
     if (frame && kindOf(box) === frame.frameKind) return { kind: 'frame', ids, box, rows, secs: ['artboard', 'present', 'motion'] };
     const secs: InspectorSection[] = [];
     const hasText = kindOf(box) === 'text' || (!!cfg.textField && String(box[cfg.textField] ?? '') !== '');
@@ -722,7 +743,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   function isExpanded(sec: InspectorSection, g: Gate): boolean {
     const said = sectionPrefs[sec];
     if (typeof said === 'boolean') return said;
-    if (opts.videoWorkspace?.() && ['object', 'fill', 'appearance'].includes(sec)) return false;
+    if ((opts.videoWorkspace?.() || g.secs.includes('text')) && ['object', 'fill', 'appearance'].includes(sec)) return false;
     return DEFAULT_OPEN[sec] || autoOpens(sec, g.box);
   }
 
@@ -866,10 +887,11 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     `<label class="fc-row fc-row-toggle field-toggle"><span>${label}</span>`
     + `<input type="checkbox" class="field-check" data-fld="${escape(field)}" data-kind="bool"${on ? ' checked' : ''}></label>`;
 
-  const selectRow = (label: string, field: string, choices: Array<[string, string]>, cur: unknown): string =>
+  const selectRow = (label: string, field: string, choices: Array<[string, string]>, cur: unknown, mixed = false): string =>
     `<label class="fc-row"><span>${label}</span>`
     + `<select class="field-select field-select--sm" data-fld="${escape(field)}" data-kind="str">`
-    + choices.map(([v, l]) => opt(v, l, cur)).join('') + '</select></label>';
+    + (mixed ? `<option value="" disabled selected>${t('Mixed')}</option>` : '')
+    + choices.map(([v, l]) => opt(v, l, mixed ? null : cur)).join('') + '</select></label>';
 
   const colorRow = (label: string, id: string, raw: unknown, extra = '', mixed = false): string =>
     `<div class="fc-row"><span>${label}</span><span class="fc-cfield">${colorField(id, raw, label, mixed)}</span>${extra}</div>`;
@@ -1051,7 +1073,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     const unit = documentUnit();
     const scale = CSS_PX_PER_UNIT[unit];
     const fmt = (n: number): string => String(Math.round(n / scale * 1000) / 1000);
-    const options = docSelectRow(t('Document unit'), 'documentUnit', DOCUMENT_UNITS.map((u) => [u, u]))
+    const options = (model.getInput('projectFps') == null || !(opts.videoWorkspace?.() || model.getBoxes().some(row => frame && kindOf(row) === frame.frameKind)) ? '' : docSelectRow(t('Project frame rate'), 'projectFps', ['24', '25', '30', '50', '60'].map(rate => [rate, `${rate} fps`])))
+      + docSelectRow(t('Document unit'), 'documentUnit', DOCUMENT_UNITS.map((u) => [u, u]))
       + docNumRow(t('Document DPI'), 'documentDpi', 300, {
         min: 36, max: 2400, step: 1, precision: 0, unit: 'dpi',
         onCommit: (dpi) => {
@@ -1059,14 +1082,15 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
           model.setInput('documentDpi', next);
           canvasEl.dispatchEvent(new CustomEvent('fc-document-dpi', { detail: next }));
         },
-      }) + emojiDocRows() + narrationDocRows();
-    return designHealthHtml(size)
-      + readRow(t('Canvas size'), `${fmt(size.w)} x ${fmt(size.h)} ${unit}`)
+      }) + narrationDocRows();
+    return (actions.openDocumentSize ? doorBtn(`${t('Canvas size')}: ${fmt(size.w)} x ${fmt(size.h)} ${unit}`, 'documentsize', 'resize') : readRow(t('Canvas size'), `${fmt(size.w)} x ${fmt(size.h)} ${unit}`))
       + `<div class="fc-row"><span>${t('Background')}</span><span class="fc-cfield">${colorField('fc-insp-bg', model.getInput('background'), t('Background'))}</span></div>`
+      + (model.getInput('editingRange') == null ? '' : docSelectRow(t('Editing range'), 'editingRange', [['sdr', t('SDR')], ['hdr', t('HDR / wide gamut')]]) + `<p class="fc-insp-hint">${t('Preview depends on your display. Export HDR is chosen separately.')}</p>`)
+      + emojiDocRows()
       + (opts.videoWorkspace?.()
         ? `<details class="fc-insp-document-options" data-document-options${documentOptionsOpen ? ' open' : ''}><summary>${t('More document settings')}</summary>${options}</details>`
         : options)
-      + `<p class="fc-insp-hint">${t('Select something to edit its properties.')}</p>`;
+      + designHealthHtml(size);
   }
 
   /**
@@ -1085,10 +1109,9 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
 
   /** Put the shared control in the slot the Document section left for it. */
   function mountEmojiControl(): void {
-    if (scroll.querySelector('[data-document-options]:not([open])')) return;
     const port = opts.emoji;
     const slot = scroll.querySelector<HTMLElement>('[data-emoji-slot]');
-    if (!port || !slot) return;
+    if (!port || !slot || slot.closest('[data-document-options]:not([open])')) return;
     emojiMounted = port.mount(slot, {
       host: port.host,
       mode: 'document',
@@ -1096,6 +1119,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
       // This column is denser than the sidebar: an inline label beside a small
       // select, the shape every other row here already has.
       compact: true,
+      compactManagement: true,
+      specimen: port.specimen,
       onChange: (next) => port.onChange((next ?? null) as EmojiStyleV1 | null),
     });
   }
@@ -1135,7 +1160,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     const sw = Math.max(0, Math.round(clampN(fv(b, cfg.strokeWField), 0, 0, 400)));
     const clipF = frame?.clipChildrenField;
     const orderF = frame?.orderField;
-    const labelF = frame?.labelField || cfg.labelField || 'name';
+    const labelF = frame?.labelField || F_NAME || 'name';
     return (labelF ? textRow(t('Name'), labelF, b[labelF], t('Artboard')) : '')
       + `<div class="fc-dims-row"><span class="fc-dims-ic" data-tip="${escape(t('Size'))}">${icon('resize')}</span>`
       + `${dimCell(t('W'), cfg.wField, w, { min: 1, max: 100000, name: t('Width') })}`
@@ -1278,45 +1303,36 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
       + '</div>';
   }
 
-  function textBody(b: Box): string {
-    const fontCur = String(fv(b, cfg.fontField) ?? '');
-    const size = Math.max(1, Math.round(clampN(fv(b, cfg.fontSizeField), 48, 1, 2000)));
-    const lh = Number.isFinite(parseFloat(String(fv(b, cfg.lineHeightField)))) ? parseFloat(String(fv(b, cfg.lineHeightField))) : 1.12;
-    const tr = Number.isFinite(parseFloat(String(fv(b, cfg.trackingField)))) ? parseFloat(String(fv(b, cfg.trackingField))) : 0;
-    // Defaults MUST match hooks.js textCss so an unset field shows the rendered value
-    // (pad defaults to 8, not 0) - a control that lies about the current state is worse
-    // than no control.
-    const pad = Math.max(0, Math.round(Number.isFinite(parseFloat(String(fv(b, cfg.padField)))) ? parseFloat(String(fv(b, cfg.padField))) : 8));
-    const fontChoices = fonts ? fonts.options() : [];
-    const weightChoices = fonts ? fonts.weights(fontCur) : [];
-    return (cfg.fontField && fontChoices.length ? selectRow(t('Font'), cfg.fontField, fontChoices, fontCur) : '')
-      + (cfg.fontSizeField
-        ? `<div class="fc-row"><span>${t('Size')}</span><div class="fc-stepper">`
-          + `<button type="button" class="fc-cbtn" data-act="smaller" data-tip="${escape(t('Smaller'))}" aria-label="${escape(t('Smaller text'))}">A-</button>`
-          + numCell('', cfg.fontSizeField, size, { name: t('Size'), min: 4, max: 2000, unit: 'px' })
-          + `<button type="button" class="fc-cbtn" data-act="bigger" data-tip="${escape(t('Bigger'))}" aria-label="${escape(t('Bigger text'))}">A+</button>`
-          + '</div></div>'
-        : '')
-      + (cfg.weightField && weightChoices.length ? selectRow(t('Weight'), cfg.weightField, weightChoices, String(fv(b, cfg.weightField) ?? '700')) : '')
-      + (cfg.lineHeightField
-        ? ctrlRow(FIELD_GLYPH.textM, t('Line height'),
-          numCell('', cfg.lineHeightField, lh, { name: t('Line height'), min: 0.7, max: 3, step: 0.01 }))
-        : '')
-      + (cfg.trackingField
-        ? ctrlRow(FIELD_GLYPH.textC, t('Letter spacing'),
-          numCell('', cfg.trackingField, tr, { name: t('Letter spacing'), min: -20, max: 100, step: 0.5, precision: 2, unit: 'px' }))
-        : '')
+  function textBody(b: Box, rows: Box[]): string {
+    const mixed = (field: string | undefined): boolean => differs(rows, field);
+    const num = (field: string | undefined, fallback: number, lo: number, hi: number): number | 'mixed' =>
+      agree(rows, row => clampN(fv(row, field), fallback, lo, hi));
+    const choice = (label: string, field: string | undefined, options: Array<[string, string]>, fallback = ''): string =>
+      field && options.length ? selectRow(label, field, options, fv(b, field) ?? fallback, mixed(field)) : '';
+    const font = String(fv(b, cfg.fontField) ?? '');
+    const weights = (fonts?.weights(font) ?? []).filter(([weight]) => rows.every(row =>
+      fonts?.weights(String(fv(row, cfg.fontField) ?? '')).some(([value]) => value === weight)));
+    const align = cfg.alignField ? segRow(FIELD_GLYPH.textL, mixed(cfg.alignField) ? t('Align (Mixed)') : t('Align'),
+      segHtml(cfg.alignField, mixed(cfg.alignField) ? '' : String(fv(b, cfg.alignField) ?? 'center'), [
+        ['left', t('Align left'), FIELD_GLYPH.textL], ['center', t('Align centre'), FIELD_GLYPH.textC], ['right', t('Align right'), FIELD_GLYPH.textR]], t('Align'))) : '';
+    return choice(t('Font'), cfg.fontField, fonts?.options() ?? [])
+      + (cfg.fontSizeField ? `<div class="fc-row"><span>${t('Size')}</span><div class="fc-stepper">`
+        + `<button type="button" class="fc-cbtn" data-act="smaller" aria-label="${escape(t('Smaller text'))}">A-</button>`
+        + numCell('', cfg.fontSizeField, num(cfg.fontSizeField, 48, 1, 2000), { name: t('Size'), min: 4, max: 2000, unit: 'px' })
+        + `<button type="button" class="fc-cbtn" data-act="bigger" aria-label="${escape(t('Bigger text'))}">A+</button></div></div>` : '')
+      + (cfg.textColorField ? colorRow(t('Text colour'), 'fc-insp-fg', fv(b, cfg.textColorField), '', mixed(cfg.textColorField)) : '')
+      + align
+      + `<details data-advanced-text${advancedTextOpen ? ' open' : ''}><summary>${t('Advanced typography')}</summary>`
+      + choice(t('Weight'), cfg.weightField, weights, '700')
+      + (cfg.lineHeightField ? ctrlRow(FIELD_GLYPH.textM, t('Line height'), numCell('', cfg.lineHeightField, num(cfg.lineHeightField, 1.12, 0.7, 3), { name: t('Line height'), min: 0.7, max: 3, step: 0.01 })) : '')
+      + (cfg.trackingField ? ctrlRow(FIELD_GLYPH.textC, t('Letter spacing'), numCell('', cfg.trackingField, num(cfg.trackingField, 0, -20, 100), { name: t('Letter spacing'), min: -20, max: 100, step: 0.5, precision: 2, unit: 'px' })) : '')
       + (cfg.ligaturesField ? toggleRow(t('Ligatures'), cfg.ligaturesField, boolOf(fv(b, cfg.ligaturesField), true)) : '')
       + (cfg.alternatesField ? toggleRow(t('Alternates'), cfg.alternatesField, boolOf(fv(b, cfg.alternatesField), false)) : '')
       + (cfg.fitTextField ? toggleRow(t('Shrink text to fit'), cfg.fitTextField, boolOf(fv(b, cfg.fitTextField), false)) : '')
-      + (cfg.alignField ? segRow(FIELD_GLYPH.textL, t('Align'), segHtml(cfg.alignField, String(fv(b, cfg.alignField) ?? 'center'), [
-        ['left', t('Align left'), FIELD_GLYPH.textL], ['center', t('Align centre'), FIELD_GLYPH.textC], ['right', t('Align right'), FIELD_GLYPH.textR]], t('Align'))) : '')
-      + (cfg.valignField ? segRow(FIELD_GLYPH.textM, t('Vertical'), segHtml(cfg.valignField, String(fv(b, cfg.valignField) ?? 'middle'), [
+      + (cfg.valignField ? segRow(FIELD_GLYPH.textM, mixed(cfg.valignField) ? t('Vertical (Mixed)') : t('Vertical'), segHtml(cfg.valignField, mixed(cfg.valignField) ? '' : String(fv(b, cfg.valignField) ?? 'middle'), [
         ['top', t('Align top'), FIELD_GLYPH.textT], ['middle', t('Centre vertically'), FIELD_GLYPH.textM], ['bottom', t('Align bottom'), FIELD_GLYPH.textB]], t('Vertical'))) : '')
-      + (cfg.padField
-        ? ctrlRow(FIELD_GLYPH.size, t('Padding'), numCell('', cfg.padField, pad, { name: t('Padding'), min: 0, max: 200, unit: 'px' }))
-        : '')
-      + (cfg.textColorField ? colorRow(t('Text colour'), 'fc-insp-fg', fv(b, cfg.textColorField)) : '');
+      + (cfg.padField ? ctrlRow(FIELD_GLYPH.size, t('Padding'), numCell('', cfg.padField, num(cfg.padField, 8, 0, 200), { name: t('Padding'), min: 0, max: 200, unit: 'px' })) : '')
+      + '</details>';
   }
 
   function imageBody(b: Box): string {
@@ -1367,8 +1383,11 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   function appearRows(b: Box): string {
     const mode = appearModeOf(b);
     const step = Math.max(1, Math.round(clampN(b['build'], 1, 1, 999)));
-    const startS = Math.max(0, clampN(fv(b, cfg.startField), 0, 0, 86400));
-    const durS = Math.max(0, clampN(fv(b, cfg.durField), 0, 0, 86400));
+    // The same fallback the chips below use. Without it these two fields read a field
+    // named `undefined` on a tool whose canvas config does not name its time fields, and
+    // showed "At 0 for 0" beside chips that correctly said "Start 3s, Duration 3s".
+    const startS = Math.max(0, clampN(fv(b, cfg.startField ?? 'start'), 0, 0, 86400));
+    const durS = Math.max(0, clampN(fv(b, cfg.durField ?? 'dur'), 0, 0, 86400));
     const seg = segHtml(APPEAR_SEG, mode, [
       ['slide', t('With the slide')],
       ['click', t('On click')],
@@ -1541,8 +1560,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     if (sec === 'document') return documentBody();
     if (sec === 'guide' && g.kind === 'guide') return guideBody(g.guide);
     const b = (g.box ?? {}) as Box;
-    // The paint groups are the only ones a multi-selection shows, so they are the only
-    // ones handed every row: the rest answer for one box by construction (see `gate`).
+    // Paint and compatible text controls read every selected row for mixed values.
     const rows = g.rows.length ? g.rows : [b];
     if (sec === 'artboard') return artboardBody(b);
     if (sec === 'object') return objectBody(b);
@@ -1551,7 +1569,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     if (sec === 'shadow') return shadowBody(b, rows);
     if (sec === 'tilt') return tiltBody(b);
     if (sec === 'arrange') return arrangeGrid(g.ids.length);
-    if (sec === 'text') return textBody(b);
+    if (sec === 'text') return textBody(b, g.rows);
     if (sec === 'image') return imageBody(b);
     if (sec === 'scene') return sceneBody(b);
     if (sec === 'motion') return motionBody(b, g.kind === 'frame');
@@ -1599,14 +1617,23 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     emojiMounted = null;
     // The column head says WHAT is selected; a multi-selection has no one section that
     // could carry the count now that the paint groups stand on their own.
-    colTitle.textContent = g.kind === 'multi' ? t('{n} selected', { n: g.ids.length }) : t('Inspector');
+    colTitle.textContent = g.kind === 'multi' ? t('{n} selected', { n: g.ids.length }) : g.kind === 'empty' ? t('Document') : g.kind === 'guide' ? t('Guide') : [kindOf(g.box), String(fv(g.box ?? {}, F_NAME) ?? '')].filter(Boolean).join(': ');
+    selectionTab.setAttribute('aria-pressed', String(!documentView));
+    documentTab.setAttribute('aria-pressed', String(documentView));
+    layerName.hidden = !(g.ids.length === 1 && F_NAME);
+    colTitle.hidden = !layerName.hidden;
+    if (document.activeElement !== layerName) layerName.value = String(fv(g.box ?? {}, F_NAME) ?? '');
+    layerName.placeholder = colTitle.textContent || t('Layer name');
+    layerName.title = colTitle.textContent || t('Layer name');
     scroll.innerHTML = g.secs.map((sec) => {
       const openSec = isExpanded(sec, g);
       const deferred = opts.videoWorkspace?.() && !openSec;
       return `<section class="fc-insp-sec" data-sec="${sec}">`
-        + `<button type="button" class="fc-insp-head" data-head="${sec}" aria-expanded="${openSec}">`
+        + `<div class="fc-insp-heading"><button type="button" class="fc-insp-head" data-head="${sec}" aria-expanded="${openSec}">`
         + `${icon(SECTION_META[sec].glyph)}<span>${escape(SECTION_META[sec].title())}</span>`
+        + (!openSec && autoOpens(sec, g.box) ? `<small>${t('In use')}</small>` : '')
         + `<i class="fc-insp-caret" aria-hidden="true"></i></button>`
+        + (sec === 'text' && g.rows.length === 1 && actions.editText ? `<button type="button" class="fc-insp-edit-text" data-act="edittext">${t('Edit text')}</button>` : '') + '</div>'
         + `<div class="fc-insp-rows" data-rows="${sec}"${deferred ? ' data-deferred' : ''}${openSec ? '' : ' hidden'}>${deferred ? '' : bodyFor(sec, g)}</div>`
         + '</section>';
     }).join('') || `<p class="fc-insp-hint">${t('Nothing selected')}</p>`;
@@ -1700,9 +1727,9 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     });
 
     wireColorField(scroll, {
-      onChange: (id, val) => {
-        const colour = unwrapColor(val);
-        if (id === 'fc-insp-guide' && renderedGuideId) { opts.guides?.update(renderedGuideId, { color: colour }); return; }
+      onChange: (id, val, detail) => {
+        const colour = designColorValue(val, model.getInput('editingRange'), detail);
+        if (id === 'fc-insp-guide' && renderedGuideId) { opts.guides?.update(renderedGuideId, { color: typeof val === 'object' ? val.value : val }); return; }
         if (id === 'fc-insp-bg') { model.setInput('background', colour); return; }
         write(colorTarget(id), colour);
       },
@@ -1747,6 +1774,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
       const kind = inp.dataset.kind;
       const type = (inp as HTMLInputElement).type;
       if (kind === 'bool') {
+        (inp as HTMLInputElement).indeterminate = differs(boxesById(renderedIds), inp.dataset.fld);
         inp.addEventListener('change', () => write(inp.dataset.fld, (inp as HTMLInputElement).checked));
         return;
       }
@@ -1785,6 +1813,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
         // row built for one selection must not open on another.
         const ids = [...renderedIds];
         switch (btn.dataset.act) {
+          case 'documentsize': actions.openDocumentSize?.(btn); break;
+          case 'edittext': if (ids[0]) actions.editText?.(ids[0]); break;
           case 'delete-guide': if (renderedGuideId) opts.guides?.remove(renderedGuideId); break;
           case 'gradient': actions.openGradient(ids); break;
           case 'pickimage': actions.pickImage(ids); break;
@@ -1816,9 +1846,10 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   /** A/A- steps the size of every box THIS COLUMN SHOWS by `d`, floored at 4 - one commit. */
   function bumpFont(d: number): void {
     if (!cfg.fontSizeField) return;
-    const rows = boxesById(renderedIds);
-    const cur = Math.round(clampN(rows[0]?.[cfg.fontSizeField], 48, 1, 2000));
-    write(cfg.fontSizeField, Math.max(4, cur + d));
+    const field = cfg.fontSizeField;
+    const wanted = new Set(renderedIds);
+    model.commit(model.getBoxes().map((row, i) => wanted.has(idOf(row, i))
+      ? { ...row, [field]: Math.max(4, Math.min(2000, Math.round(clampN(row[field], 48, 1, 2000)) + d)) } : row));
   }
 
   /** The user's own answer about a section, remembered for next time. */
@@ -1853,7 +1884,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
    * the control shows a stale value until the next selection change.
    */
   function signature(g: Gate): string {
-    const watched: unknown[] = [opts.videoWorkspace?.() === true, g.kind === 'guide' ? g.guide : null, model.getInput('documentUnit')];
+    const watched: unknown[] = [documentView, g.rows.map(row => fv(row, F_NAME)), model.getInput('editingRange'), opts.videoWorkspace?.() === true, g.kind === 'guide' ? g.guide : null, model.getInput('documentUnit')];
     for (const sec of g.secs) {
       // EVERY selected row, not just the first. A paint group's cells read them all to
       // decide whether to show a number or "Mixed", so a change to the second box's
@@ -1863,7 +1894,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     // Document's readout is the one value that is NOT in the model - it measures the
     // canvas - so it is hashed here and woken by the canvas's own `canvas-resize`.
     const size = g.secs.includes('document') ? canvasSize() : null;
-    const doc = size ? [model.getInput('background'), size.w, size.h, model.getBoxes()] : [];
+    const doc = size ? [model.getInput('background'), model.getInput('projectFps'), size.w, size.h, model.getBoxes()] : [];
     // Narration status is the OTHER value no watched field carries: it is derived from
     // the `narration:<frameId>` clip's resolved asset meta, on a different row entirely.
     // Without it the Present section kept saying "Not narrated yet." after a successful
@@ -2021,6 +2052,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   function onRootKey(ev: KeyboardEvent): void {
     if (ev.metaKey || ev.ctrlKey) return;
     if (ev.key === 'Escape') {
+      if (ev.defaultPrevented) return;
+      if (el.classList.contains('is-compact-sheet')) return;
       if (el.closest('dialog')) { ev.stopPropagation(); return; }
       // Escape here must NOT reach the editor's ladder. With the column mounted the
       // object bar's buttons open no floating panel, so `dismissFloating()` finds
@@ -2122,7 +2155,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
       // object-bar button (or wherever else) that asked for this section.
       const from = typeof document !== 'undefined' ? document.activeElement as HTMLElement | null : null;
       returnFocus = from && !el.contains(from) ? from : returnFocus;
-      if (!open) setOpen(true);
+      documentView = section === 'document';
+      if (!open) setOpen(true); else sync(true);
       // The object bar asks for 'object' when its Stroke and More buttons are pressed
       // (views/design-ports.ts pins that call to the seven original names), and a
       // multi-selection has no Object section any more - so fall through to the first

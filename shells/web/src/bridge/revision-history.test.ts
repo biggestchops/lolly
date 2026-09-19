@@ -6,8 +6,8 @@ import { expiredAutomatic } from './revision-commit.ts';
 import { createMemoryStateAPI } from '../lib/ephemeral-state.ts';
 
 test('canonical snapshots deduplicate key order and resolved asset URLs, preserving authored row identity and order', async () => {
-  const first = await revisionSnapshot({ blocks: [{ id: 'a', text: 'hello' }, { id: 'b' }], image: { source: 'library', id: 'photo', version: 1, url: 'blob:one' } });
-  const second = await revisionSnapshot({ image: { url: 'blob:two', version: 1, id: 'photo', source: 'library' }, blocks: [{ text: 'hello', id: 'a' }, { id: 'b' }] });
+  const first = await revisionSnapshot({ blocks: [{ id: 'a', text: 'hello' }, { id: 'b' }], image: { source: 'library', id: 'photo', version: 1, url: 'blob:one', original: { url: 'blob:jxl-one', format: 'jxl' } } });
+  const second = await revisionSnapshot({ image: { url: 'blob:two', original: { url: 'blob:jxl-two', format: 'jxl' }, version: 1, id: 'photo', source: 'library' }, blocks: [{ text: 'hello', id: 'a' }, { id: 'b' }] });
   assert.equal(first.hash, second.hash);
   assert.notEqual(first.hash, (await revisionSnapshot({ ...first.data, blocks: [{ id: 'b' }, { id: 'a', text: 'hello' }] })).hash);
   second.data.blocks = [];

@@ -3,6 +3,8 @@ import type { InputModelItem } from '../../../../engine/src/inputs.ts';
 import { escape as esc } from '../utils.ts';
 import { inputTableValue } from './block-table.ts';
 import { tableBodyCellHtml, tableColumnEditor, wantsGhostRow } from './table-cells.ts';
+import { tableField } from '../../../../engine/src/table-edit.ts';
+import { t as translate } from '../i18n.ts';
 export const TABLE_VIRTUALIZE_ROWS = 50;
 export function tableRowActions(row: number, movable: boolean): string {
   return `<td class="table-rowctl">${movable && row > 0 ? `<button type="button" class="table-btn" data-table-move-up="${row}" aria-label="Move row ${row + 1} up">↑</button>` : ''}<button type="button" class="table-del-row" data-table-del-row="${row}" aria-label="Remove row ${row + 1}">✕</button></td>`;
@@ -16,6 +18,13 @@ export function tableInputHtml(input: InputModelItem): string {
   const t = inputTableValue(input);
   const fixed = input.type === 'blocks';
   const id = esc(input.id);
+  if (input.tableEditor) {
+    const spec = input.tableEditor;
+    const title = t.columns.findIndex(column => { const field = tableField(column, spec); return field?.primary && field.editor === 'text'; });
+    const days = t.columns.findIndex(column => { const field = tableField(column, spec); return field?.primary && field.editor === 'date'; });
+    const dayCount = days >= 0 ? new Set(t.rows.map(row => row[days]).filter(Boolean)).size : 0;
+    return `<div class="table-input table-input--summary" data-table-id="${id}"><button type="button" class="table-btn" data-table-workbench>${esc(spec.title)}</button><p class="table-count">${t.rows.length} ${esc(translate('rows'))} &middot; ${t.columns.length} ${esc(translate('columns'))}${dayCount ? ` &middot; ${dayCount} ${esc(translate('days'))}` : ''}</p><p>${esc(t.rows.slice(0, 3).map(row => row[title] ?? row[0] ?? '').join(' · '))}</p></div>`;
+  }
   const cellAttrs = (r: number, c: number): string => `data-field-id="${id}:t:${r}:${c}"`;
   const head = t.columns
     .map(
@@ -78,7 +87,7 @@ export function tableInputHtml(input: InputModelItem): string {
           <button type="button" class="table-btn" data-table-add-row${t.columns.length ? '' : ' disabled'}>+ Row</button>
           ${fixed ? '' : '<button type="button" class="table-btn" data-table-add-col>+ Column</button>'}
           <span class="table-toolbar-gap"></span>
-          <button type="button" class="table-btn" data-table-paste title="Replace with the table on your clipboard">Paste</button>
+          <button type="button" class="table-btn" data-table-paste title="Replace with the table on your clipboard">Replace table</button>
           <button type="button" class="table-btn" data-table-copy${t.rows.length ? '' : ' disabled'} title="Copy as a table for Sheets, Docs, Slack&#8230;">Copy</button>
         </div>
         ${t.rows.length ? `<p class="table-count">${t.rows.length} row${t.rows.length === 1 ? '' : 's'} &middot; ${t.columns.length} column${t.columns.length === 1 ? '' : 's'}</p>` : ''}

@@ -7,6 +7,7 @@
  * a value (an event listener), goes through `ta.<module>.<fn>`. Extracted verbatim
  * from renderActions() by scripts/split-closure.ts.
  */
+import { sequenceSettings } from '../../bridge/sequence-range.ts';
 import { t } from '../../i18n.ts';
 import { escape as escapeText } from '../../utils.js';
 import { MAX_TIME_S } from '../timeline-math.ts';
@@ -53,6 +54,14 @@ export function syncSequenceUi(ta: ActionsCtx): void {
   const { durationEl, liveLabelEl } = ta;
   const isSeq = !!ta.formatRules.seqStageEl();
   const secs = ta.formatRules.seqDurationS();
+  const stage = ta.formatRules.seqStageEl();
+  const range = stage && secs != null ? sequenceSettings(stage, secs * 1000) : null;
+  const rangeEl = ta.el?.querySelector<HTMLElement>('[data-seq-range]');
+  for (const field of ta.el?.querySelectorAll<HTMLElement>('[data-seq-wait], [data-seq-duration]') ?? []) field.hidden = isSeq;
+  if (rangeEl) {
+    rangeEl.hidden = !isSeq;
+    rangeEl.textContent = range ? `${t('Range')}: ${(range.fromMs / 1000).toFixed(2)}–${(range.toMs / 1000).toFixed(2)} s · ${range.fps} fps` : '';
+  }
   const options = ta.el?.querySelector<HTMLDetailsElement>('[data-video-options]');
   if (options) {
     const compact = isSeq && ta.formatRules.isVideoFmt(ta.formatEl?.value ?? ta.initialFmt);

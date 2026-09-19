@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Linksonder",
   "inputs.boxes.fields.imgpos.options.center bottom": "Onder",
   "inputs.boxes.fields.imgpos.options.right bottom": "Rechtsonder",
-  "description": "Een open canvas voor vrije indeling - tekst, afbeeldingen, vormen en live renders van je andere Lolly-tools, allemaal gebonden aan je huisstijl."
+  "description": "Een open canvas voor vrije indeling - tekst, afbeeldingen, vormen en live renders van je andere Lolly-tools, allemaal gebonden aan je huisstijl.",
+  "inputs.projectFps.label": "Framesnelheid van het project",
+  "inputs.sequenceMarks.label": "Tijdlijnmarkeringen",
+  "inputs.boxes.fields.animationId.label": "Animatie in de bron",
+  "inputs.boxes.fields.animationEdits.label": "Interne animatiewijzigingen"
 }

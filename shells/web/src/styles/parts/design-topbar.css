@@ -303,7 +303,16 @@
 .design-topbar[data-density="compact"] .dtb-name,
 .design-topbar[data-density="min"] .dtb-name { flex: 1 1 auto; }
 
-@media (pointer: coarse) {
+/* A compact header has one menu, a readable name, Undo and Export. */
+.design-topbar[data-density="phone"] { gap: 4px; padding-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px)); }
+.design-topbar[data-density="phone"] :is(.chrome-topleft, [data-topbar="file"], .dtb-intent, .dtb-split, .dtb-profile) { display: none; }
+.design-topbar[data-density="phone"] .dtb-name { flex: 1 1 90px; min-width: 90px; width: 0; padding-inline: 4px; }
+.design-topbar[data-density="phone"] .dtb-right { flex: none; gap: 4px; }
+.design-topbar[data-density="phone"] .dtb-btn { flex: none; width: 44px; height: 44px; padding: 0; }
+.design-topbar[data-density="phone"] .dtb-label { display: none; }
+.design-topbar[data-density="phone"] .dtb-name { min-height: 44px; }
+
+@media (any-pointer: coarse) {
   .dtb-btn { min-width: 44px; min-height: 44px; }
   .design-topbar .chrome-topleft button,
   .design-topbar .chrome-topleft a { min-width: 44px; min-height: 44px; }
@@ -313,3 +322,5 @@
    it goes with the rest of it. !important because the kill switch has to beat a
    `display` set by any layer, matching the list in parts/editor.css. */
 .tool-view.is-chrome-hidden .design-topbar { display: none !important; }
+.dtb-save-status { width: 8px; height: 8px; flex: 0 0 8px; border-radius: var(--radius-round); background: var(--ui-color-text-muted); overflow: hidden; font-size: 0; }
+.dtb-save-status[data-dirty="true"] { background: var(--ui-color-action-primary); }

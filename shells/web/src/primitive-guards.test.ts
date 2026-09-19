@@ -1612,6 +1612,9 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // translated labels are escaped, properties are allowlisted, and counts and
   // viewport dimensions were bounded by readBrandStyleEvidence before rendering.
   'views/start/reference.ts': 1,
+  // Hydrated tool markup enters an inert template for resource embedding, then
+  // portableHtml strips undeclared scripts, event handlers and unsafe URLs.
+  'bridge/export-portable.ts': 1,
 };
 
 test('R10: raw-HTML sinks are a pinned inventory, not a growing one', () => {

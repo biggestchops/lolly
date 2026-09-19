@@ -189,10 +189,11 @@
       "Import-only source footage"
     ],
     "Lottie": [
-      "Bodymovin JSON or packed .lottie",
-      "Validated before placement",
-      "Vector, sharp at any size",
-      "Placed as live animation"
+      "Reads Lottie JSON and dotLottie v1/v2",
+      "Retains the original source package",
+      "Edits supported layers and property keys",
+      "Exports composed dotLottie v2",
+      "Readable credits inside the package"
     ],
     "WAV": [
       "Lossless PCM",
@@ -433,6 +434,14 @@
       "USTAR headers; readable by system tar and libarchive",
       "Gzip it for .tar.gz; reads members back on drop",
       "Over-long names / >8 GiB files are refused, never truncated"
+    ],
+    "JXL": [
+      "Original still image retained on import",
+      "Prepared 8-bit sRGB display, with orientation and alpha",
+      "Lossy or true lossless rendered 8-bit output",
+      "Verified original JPEG reconstruction in Convert",
+      "Local worker codec; cached offline after use",
+      "Animation and auxiliary channels refused; no C2PA writer"
     ]
   },
   "_unsupported_note": "Known gaps per format token, shown in the dialog under 'Not yet supported'. Editorial and accurate, not exhaustive: seed only what is genuinely true today. A format with no entry shows no gap list. Expand this during the format-support roadmap review.",
@@ -680,6 +689,30 @@
         ],
         "preserves": "none",
         "note": "EXIF is written as a HEIF Exif item (engine insertAvifExif) and read the same way, alongside the XMP item. The Content Credential uses the BMFF binding."
+      }
+    },
+    {
+      "token": "JXL",
+      "name": "JPEG XL",
+      "full": "JPEG XL",
+      "category": "Image",
+      "dir": "both",
+      "features": [
+        "raster",
+        "alpha",
+        "lossless",
+        "lossy"
+      ],
+      "desc": "A still-image format with lossy and lossless coding. Lolly keeps imported originals and prepares an oriented 8-bit sRGB view for editing, including an SDR view of deeper or HDR sources. New renders encode those 8-bit pixels. Convert can also wrap an original JPEG and restore its complete bytes, including metadata, after verification. Animation and extra channels are refused. JPEG XL output does not carry signed Content Credentials.",
+      "metadata": {
+        "reads": [
+          "xmp"
+        ],
+        "writes": [
+          "xmp"
+        ],
+        "preserves": "none",
+        "note": "Uncompressed XML metadata boxes are read and generated descriptive XMP is written. Ordinary conversion drops source metadata. Original imports retain all bytes; reversible JPEG compression/restoration preserves and verifies the complete original JPEG. Compressed metadata and JXL C2PA are not interpreted."
       }
     },
     {
@@ -1027,16 +1060,17 @@
       "name": "Lottie",
       "full": "Lottie / Bodymovin Animation",
       "category": "Motion",
-      "dir": "in",
+      "dir": "both",
       "features": [
         "vector",
         "animation"
       ],
-      "desc": "A lightweight vector animation format (Bodymovin JSON, or its packed .lottie form) used for slick UI motion and micro-animations. Because it's vector, it stays sharp at any size and the file is tiny. Lolly validates and places these as live animations you can drop into a layout.",
+      "desc": "Lottie stores vector animation as JSON or a packed .lottie file. Lolly preserves the original upload, lets you combine clips and edit supported internal layers, transform keys, easing and static fill/stroke properties in Sequence, then exports one composed dotLottie v2 animation. Unsupported source features are reported explicitly.",
       "metadata": {
         "reads": [],
         "writes": [],
-        "preserves": "n/a"
+        "preserves": "none",
+        "note": "The original package stays intact as an asset. Edited exports create a new composition with readable credits and a metadata JSON companion; they do not carry signed Content Credentials."
       }
     },
     {

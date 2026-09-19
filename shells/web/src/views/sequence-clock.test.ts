@@ -39,7 +39,9 @@ const {
   readTiming, endOf, isActiveAt, transitionAt, composeTransform, composeOpacity,
   createAuthoredStore, applyTimeToElements, createVideoSeeker, waitSeekConfirmed,
   createSequenceClock, OFF_CLASS, SEEK_NUDGE_S, SCRUB_THROTTLE_MS,
-  MAX_PREVIEW_AUDIO_SOURCES,
+  MAX_PREVIEW_AUDIO_SOURCES, MAX_PREVIEW_PCM_BYTES, MAX_PREVIEW_PCM_BYTES_CEILING,
+  PREVIEW_DECODE_CONCURRENCY, previewPcmBudgetBytes,
+  planDriftCorrection, CHASE_DEADBAND_S, CHASE_MAX, HARD_DRIFT_S, SEEK_COOLDOWN_MS, SEEK_LEAD_MAX_S,
   MODULE_EXTENSIONS, urlExtension, isModuleUrl, sniffTrackerModule, looksLikeTrackerModule,
 } = await import('./sequence-clock.ts');
 
@@ -259,6 +261,71 @@ test('applyTimeToElements: media callback reports clipIn + local × speed, and i
   applyTimeToElements([el], 4000, ctx);
   assert.deepEqual(seen[0], { sourceMs: 500 + 500 * 2, active: true });
   assert.equal(seen[1]!.active, false);
+});
+
+// ── the crossfade handover (plans/268 SI-01) ────────────────────────────────
+//
+// The rule is bridge/sequence-plan.ts's `crossfadeJunctions`, and tests/sequence-plan
+// pins it. What is pinned HERE is that the preview applier asks it: before SI-01 the
+// preview ran A's fade out before the cut and dropped A at the cut.
+
+const xfadePair = (over: { a?: BoxSpec; b?: BoxSpec } = {}): HTMLElement[] => [
+  box({ start: 0, dur: 1000, lane: 'seq', exit: 'fade', exitMs: 400, ...over.a }),
+  box({ start: 1000, dur: 1000, lane: 'seq', enter: 'fade', enterMs: 400, ...over.b }),
+];
+
+test('transitionAt: a crossfade tail defers the exit past the cut, and shortens the enter', () => {
+  const [a, b] = xfadePair().map((el) => readTiming(el)) as [ReturnType<typeof readTiming>, ReturnType<typeof readTiming>];
+  // With a 400ms tail A is at REST right up to its cut, then runs out across the tail.
+  assert.equal(transitionAt(a, 800, 2000, 400), null);
+  assert.deepEqual(transitionAt(a, 1200, 2000, 400), { kind: 'fade', p: 0.5, ease: '' });
+  // Without one (no junction) the same clip is half faded at 800, as it always was.
+  assert.deepEqual(transitionAt(a, 800, 2000), { kind: 'fade', p: 0.5, ease: '' });
+  // B's enter takes the handover length, not its own longer one.
+  assert.deepEqual(transitionAt({ ...b, enterMs: 1000 }, 1200, 2000, 0, 400), { kind: 'fade', p: 0.5, ease: '' });
+});
+
+test('applyTimeToElements: two faded neighbours on the main row hand over across the cut', () => {
+  const els = xfadePair();
+  const ctx = ctxFor(2000);
+  applyTimeToElements(els, 800, ctx);
+  assert.equal(els[0]!.style.opacity, '', 'A is at rest before the cut, not fading early');
+  assert.ok(els[1]!.classList.contains(OFF_CLASS));
+  applyTimeToElements(els, 1200, ctx);
+  assert.ok(!els[0]!.classList.contains(OFF_CLASS), 'A stays on screen through the handover');
+  assert.ok(!els[1]!.classList.contains(OFF_CLASS));
+  const alphaA = Number(els[0]!.style.opacity);
+  assert.ok(alphaA > 0 && alphaA < 1, `A is part way out, got opacity "${els[0]!.style.opacity}"`);
+  applyTimeToElements(els, 1400, ctx);
+  assert.ok(els[0]!.classList.contains(OFF_CLASS), 'the tail is half-open: A is gone when the handover ends');
+  assert.equal(els[0]!.style.opacity, '', 'and its authored opacity is handed back');
+});
+
+test('applyTimeToElements: the handover keeps the outgoing media running on its own source time', () => {
+  const els = xfadePair({ a: { clipIn: 500, speed: 2 } });
+  const seen: { i: number; sourceMs: number; active: boolean }[] = [];
+  applyTimeToElements(els, 1200, { ...ctxFor(2000), media: (el, _t, sourceMs, active) => { seen.push({ i: els.indexOf(el), sourceMs, active }); } });
+  assert.deepEqual(seen.find((s) => s.i === 0), { i: 0, sourceMs: 500 + 1200 * 2, active: true });
+});
+
+test('applyTimeToElements: no handover without the pair, the adjacency or the main row', () => {
+  const cases: [string, HTMLElement[]][] = [
+    ['B does not fade in', xfadePair({ b: { enter: 'rise' } })],
+    ['a gap between them', xfadePair({ b: { start: 1200 } })],
+    ['overlay lane', xfadePair({ a: { lane: '' }, b: { lane: '' } })],
+  ];
+  for (const [name, els] of cases) {
+    applyTimeToElements(els, 1100, ctxFor(2400));
+    assert.ok(els[0]!.classList.contains(OFF_CLASS), `${name}: A must leave at its own end`);
+  }
+});
+
+test('applyTimeToElements: the handover is never longer than the clip it hands over to', () => {
+  const els = xfadePair({ a: { exitMs: 1000 }, b: { dur: 200, enterMs: 1000 } });
+  applyTimeToElements(els, 1150, ctxFor(1200));
+  assert.ok(!els[0]!.classList.contains(OFF_CLASS));
+  applyTimeToElements(els, 1200, ctxFor(1200));
+  assert.ok(els[0]!.classList.contains(OFF_CLASS), 'A outlived the 200ms clip it handed over to');
 });
 
 test('AuthoredStore: prune forgets detached elements, restoreAll puts the rest back', () => {
@@ -613,6 +680,118 @@ test('clock: a video orphaned by a canvas repaint is paused and un-muted, never 
   // until GC - one more overlapping soundtrack per repaint during playback.
   assert.equal(v.pauses, 1, 'the orphan was paused');
   assert.equal(v.muted, false, 'and its authored mute flag restored');
+  clock.destroy();
+  canvas.remove();
+});
+
+test('clock: at a crossfade the two soundtracks cross over the handover, as the export mixes them', () => {
+  const { canvas, els } = stage(2000, [
+    { start: 0, dur: 1000, lane: 'seq', exit: 'fade', exitMs: 400 },
+    { start: 1000, dur: 1000, lane: 'seq', enter: 'fade', enterMs: 400 },
+  ]);
+  const vols: number[][] = [[], []];
+  els.forEach((el, i) => {
+    const v = stubVideo(el);
+    let volume = 1;
+    Object.defineProperty(v.node, 'volume', { get: () => volume, set: (x: number) => { volume = x; vols[i]!.push(x); }, configurable: true });
+  });
+  let wall = 0;
+  const frame: { cb: (() => void) | null } = { cb: null };
+  const clock = createSequenceClock({
+    canvasEl: canvas,
+    raf: (cb) => { frame.cb = cb; return 1; },
+    caf: () => { frame.cb = null; },
+    now: () => wall,
+  });
+  clock.play();
+  const at = (ms: number): void => { wall = ms; frame.cb?.(); };
+  at(800);
+  // Before SI-01 the outgoing clip was already half faded here, 200ms ahead of its cut.
+  assert.equal(vols[0]!.length, 0, `A holds full volume up to the cut, wrote ${JSON.stringify(vols[0])}`);
+  at(1200);
+  const a = vols[0]!.at(-1) as number;
+  const b = vols[1]!.at(-1) as number;
+  // Equal power (plans/268 SI-02): each side stands at 0.707 in the middle, so the two
+  // powers add to one and the sound does not sag across the handover.
+  assert.ok(Math.abs(a - Math.SQRT1_2) < 0.02, `A is half way out in the middle of the handover, got ${a}`);
+  assert.ok(Math.abs(b - Math.SQRT1_2) < 0.02, `B is half way in, got ${b}`);
+  assert.ok(Math.abs(a * a + b * b - 1) < 0.02, `the pair keeps its power, got ${a * a + b * b}`);
+  clock.destroy();
+  canvas.remove();
+});
+
+// ── drift during playback (plans/268 SI-03) ─────────────────────────────────
+//
+// Measured before this policy, on real H.264 footage: 5 to 29 corrective seeks a SECOND
+// at every speed, because a seek took longer than the 80ms tolerance and so ordered the
+// next one. After: the one seek that starts playback, and a smaller mean drift.
+
+const steady = { sinceSeekMs: Number.POSITIVE_INFINITY, seekLatencySec: 0, seeking: false };
+
+test('planDriftCorrection: a small error is chased by rate and never by a seek', () => {
+  // 60ms behind at speed 1: play 9% fast, do not seek.
+  const behind = planDriftCorrection({ ...steady, driftSec: 0.06, speed: 1 });
+  assert.equal(behind.seekLeadSec, null);
+  assert.ok(Math.abs(behind.rate - 1.09) < 1e-9, `rate ${behind.rate}`);
+  // Ahead plays slow, by the same amount.
+  const ahead = planDriftCorrection({ ...steady, driftSec: -0.06, speed: 1 });
+  assert.ok(Math.abs(ahead.rate - 0.91) < 1e-9, `rate ${ahead.rate}`);
+  // Inside the deadband the clip runs at its own speed.
+  assert.deepEqual(planDriftCorrection({ ...steady, driftSec: CHASE_DEADBAND_S / 2, speed: 2 }), { rate: 2, seekLeadSec: null });
+});
+
+test('planDriftCorrection: thresholds are in TIMELINE time, so a fast clip is not punished', () => {
+  // 0.3s of SOURCE drift is 75ms of timeline at 4x: chased. At speed 1 it is 0.3s: still chased,
+  // at the cap. The old rule seeked both, and the 4x one for ever.
+  const fast = planDriftCorrection({ ...steady, driftSec: 0.3, speed: 4 });
+  assert.equal(fast.seekLeadSec, null);
+  assert.ok(Math.abs(fast.rate - 4 * (1 + 0.075 * 1.5)) < 1e-9, `rate ${fast.rate}`);
+  const capped = planDriftCorrection({ ...steady, driftSec: 0.3, speed: 1 });
+  assert.ok(Math.abs(capped.rate - (1 + CHASE_MAX)) < 1e-9, `rate ${capped.rate}`);
+});
+
+test('planDriftCorrection: a large error seeks AHEAD by what the last seek cost, once per cooldown', () => {
+  // 1.2s of source drift at 2x is 0.6s of timeline: past the limit of what is chased.
+  const big = { driftSec: (HARD_DRIFT_S + 0.2) * 2, speed: 2, seeking: false };
+  // The first seek knows no latency and aims at the target itself.
+  assert.deepEqual(planDriftCorrection({ ...big, sinceSeekMs: Number.POSITIVE_INFINITY, seekLatencySec: 0 }), { rate: 2, seekLeadSec: 0 });
+  // A seek that took 150ms aims 300ms of source ahead at 2x.
+  assert.deepEqual(planDriftCorrection({ ...big, driftSec: 2, sinceSeekMs: SEEK_COOLDOWN_MS, seekLatencySec: 0.15 }), { rate: 2, seekLeadSec: 0.3 });
+  // Never further than the cap, however slow the last one was.
+  assert.equal(planDriftCorrection({ ...big, driftSec: 9, sinceSeekMs: 5000, seekLatencySec: 3 }).seekLeadSec, SEEK_LEAD_MAX_S);
+  // Inside the cooldown there is no second seek and no chase of a position about to jump.
+  assert.deepEqual(planDriftCorrection({ ...big, driftSec: 2, sinceSeekMs: SEEK_COOLDOWN_MS - 1, seekLatencySec: 0.15 }), { rate: 2, seekLeadSec: null });
+});
+
+test('planDriftCorrection: a position read during a seek decides nothing, and junk is inert', () => {
+  assert.deepEqual(planDriftCorrection({ ...steady, driftSec: 5, speed: 1, seeking: true }), { rate: 1, seekLeadSec: null });
+  assert.deepEqual(planDriftCorrection({ ...steady, driftSec: Number.NaN, speed: 1 }), { rate: 1, seekLeadSec: null });
+  assert.deepEqual(planDriftCorrection({ ...steady, driftSec: 0.05, speed: Number.NaN }).seekLeadSec, null);
+});
+
+test('clock: steady playback that runs a little behind is chased by rate, with no seek', () => {
+  const { canvas, els } = stage(10_000, [{ start: 0, dur: 10_000 }]);
+  const v = stubVideo(els[0]!) as unknown as { seeks: number[]; currentTime: number; node: HTMLElement };
+  const rates: number[] = [];
+  Object.defineProperty(v.node, 'playbackRate', { get: () => rates.at(-1) ?? 1, set: (x: number) => { rates.push(x); }, configurable: true });
+  let wall = 0;
+  const frame: { cb: (() => void) | null } = { cb: null };
+  const clock = createSequenceClock({
+    canvasEl: canvas,
+    raf: (cb) => { frame.cb = cb; return 1; },
+    caf: () => { frame.cb = null; },
+    now: () => wall,
+  });
+  clock.play();
+  wall = 100; frame.cb?.();
+  const startSeeks = v.seeks.length;
+  // The element is 100ms behind the playhead, which the old 80ms rule answered with a seek.
+  wall = 1000; v.currentTime = 0.9; v.seeks.length = startSeeks; frame.cb?.();
+  assert.equal(v.seeks.length, startSeeks, `no corrective seek, got ${JSON.stringify(v.seeks)}`);
+  assert.ok((rates.at(-1) as number) > 1 && (rates.at(-1) as number) <= 1 + CHASE_MAX, `plays fast to catch up, rate ${rates.at(-1)}`);
+  // A jump of the playhead while playing places the element exactly, whatever the size.
+  clock.seek(1200);
+  assert.deepEqual(v.seeks.slice(startSeeks), [1.2], 'a moved playhead is a seek, not a chase');
   clock.destroy();
   canvas.remove();
 });
@@ -1137,13 +1316,84 @@ test('audio: the distinct-source ceiling is enforced, and the overflow degrades 
     let loads = 0;
     const clock = createSequenceClock({
       canvasEl: canvas, host: L.host, raf: q.raf, caf: q.caf, now: () => 0,
-      loadAudio: async () => { loads++; return fakeBuffer(); },
+      // One second each: this test is about the COUNT, so nothing here may reach the byte budget.
+      loadAudio: async () => { loads++; return fakeBuffer(1); },
     });
     clock.play();
-    await settle();
+    // Two decode at a time (plans/268 SI-04), so the queue needs a turn for each pair.
+    for (let i = 0; i < n; i++) await settle();
     assert.equal(loads, MAX_PREVIEW_AUDIO_SOURCES, 'decoded PCM is bounded by the ceiling, not by the composition');
     assert.equal(a.live().length, MAX_PREVIEW_AUDIO_SOURCES);
     assert.ok(L.lines.some((l) => l.includes('distinct tracks')), L.lines.join(' / '));
+    clock.destroy();
+    canvas.remove();
+  });
+});
+
+// ── the preview audio budget (plans/268 SI-04, first stage) ─────────────────
+
+test('previewPcmBudgetBytes: sized to the device, never under the old budget, never over the ceiling', () => {
+  const MB = 1024 * 1024;
+  assert.equal(previewPcmBudgetBytes(undefined), MAX_PREVIEW_PCM_BYTES, 'a browser that reports nothing keeps the budget it always had');
+  assert.equal(previewPcmBudgetBytes(null), MAX_PREVIEW_PCM_BYTES);
+  assert.equal(previewPcmBudgetBytes(Number.NaN), MAX_PREVIEW_PCM_BYTES);
+  assert.equal(previewPcmBudgetBytes(0.5), MAX_PREVIEW_PCM_BYTES, 'a small device is never given LESS than before');
+  assert.equal(previewPcmBudgetBytes(4), 192 * MB);
+  assert.equal(previewPcmBudgetBytes(8), MAX_PREVIEW_PCM_BYTES_CEILING);
+  assert.equal(previewPcmBudgetBytes(64), MAX_PREVIEW_PCM_BYTES_CEILING);
+});
+
+test('audio: a composition with more than six tracks is heard, which the old ceiling silenced', async () => {
+  await withAudioCtx(async (a) => {
+    const specs: BoxSpec[] = [];
+    for (let i = 0; i < 10; i++) specs.push({ start: 0, dur: 8000, audio: `stem-${i}.ogg` });
+    const { canvas } = stage(8000, specs);
+    const q = frameQueue();
+    const L = logs();
+    const clock = createSequenceClock({
+      canvasEl: canvas, host: L.host, raf: q.raf, caf: q.caf, now: () => 0,
+      loadAudio: async () => fakeBuffer(10),
+    });
+    clock.play();
+    for (let i = 0; i < 12; i++) await settle();
+    assert.equal(a.live().length, 10, L.lines.join(' / '));
+    assert.ok(!L.lines.some((l) => l.includes('silent in preview')), L.lines.join(' / '));
+    clock.destroy();
+    canvas.remove();
+  });
+});
+
+test('audio: never more than two decodes in flight, and the budget is asked again as each one starts', async () => {
+  await withAudioCtx(async () => {
+    const specs: BoxSpec[] = [];
+    for (let i = 0; i < 6; i++) specs.push({ start: 0, dur: 8000, audio: `big-${i}.wav` });
+    const { canvas } = stage(8000, specs);
+    const q = frameQueue();
+    const L = logs();
+    let inFlight = 0;
+    let peak = 0;
+    let loads = 0;
+    const gates: (() => void)[] = [];
+    // Each "file" decodes to 60 MB (two channels of f32), so the 96 MB floor holds two.
+    const big = (): AudioBuffer => ({ ...fakeBuffer(97), length: 7_500_000, numberOfChannels: 2 }) as AudioBuffer;
+    const clock = createSequenceClock({
+      canvasEl: canvas, host: L.host, raf: q.raf, caf: q.caf, now: () => 0,
+      loadAudio: () => {
+        loads++; inFlight++; peak = Math.max(peak, inFlight);
+        return new Promise((res) => { gates.push(() => { inFlight--; res(big()); }); });
+      },
+    });
+    clock.play();
+    await settle();
+    assert.equal(loads, PREVIEW_DECODE_CONCURRENCY, 'the rest wait their turn');
+    while (gates.length) { gates.shift()!(); for (let i = 0; i < 4; i++) await settle(); }
+    assert.equal(peak, PREVIEW_DECODE_CONCURRENCY);
+    // The first decode to finish counts 60 MB, still under the 96 MB floor, so the third
+    // starts. The second finishes at 120 MB and everything behind it is refused as it
+    // reaches the front. The budget is passed by no more than the files in flight - the
+    // old code started all six together, against a total that was still zero.
+    assert.equal(loads, 3, `decoded ${loads} of six files against a budget that holds two`);
+    assert.ok(L.lines.some((l) => l.includes('decoded-audio budget reached')), L.lines.join(' / '));
     clock.destroy();
     canvas.remove();
   });
@@ -1466,5 +1716,43 @@ test('audio: a narration box inside a timed slide page sounds ONCE - the page do
     assert.equal(a.live().length, 1, 'one voice: the box placed the clip, the page did not');
     clock.destroy();
     canvas.remove();
+  });
+});
+
+test('audio spans: trim is decoded once and gain edits reuse the source window', async () => {
+  await withAudioCtx(async (a) => {
+    const { canvas, els: boxes } = stage(8000, [{ start: 2000, dur: 3000, clipIn: 1500, audio: true }]);
+    const q = frameQueue();
+    const spans: unknown[] = [];
+    const clock = createSequenceClock({ canvasEl: canvas, raf: q.raf, caf: q.caf,
+      loadSpan: async (_url, span) => { spans.push(span); return fakeBuffer(3); },
+    });
+    try {
+      clock.play(); await settle(); await settle();
+      assert.deepEqual(spans, [{ from: 1.5, to: 4.5, rate: 48_000 }]);
+      assert.deepEqual(a.sources[0]?.started, { when: 2, offset: 0, dur: 3 });
+      clock.pause();
+      boxes[0]!.setAttribute('data-t-pan', '0.2');
+      clock.play(); await settle(); await settle();
+      assert.equal(spans.length, 1, 'pan did not decode again');
+    } finally { clock.destroy(); canvas.remove(); }
+  });
+});
+
+test('audio spans: a main-row crossfade extends the outgoing decoded window', async () => {
+  await withAudioCtx(async () => {
+    const { canvas, els: boxes } = stage(4000, [
+      { start: 0, dur: 2000, audio: true, exit: 'fade', exitMs: 500 },
+      { start: 2000, dur: 2000, audio: true, enter: 'fade', enterMs: 500 },
+    ]);
+    for (const box of boxes) box.setAttribute('data-t-lane', 'seq');
+    const q = frameQueue(); const spans: { from: number; to: number }[] = [];
+    const clock = createSequenceClock({ canvasEl: canvas, raf: q.raf, caf: q.caf,
+      loadSpan: async (_url, span) => { spans.push(span); return fakeBuffer(span.to - span.from); },
+    });
+    try {
+      clock.play(); await settle(); await settle();
+      assert.ok(spans.some(span => span.to === 2.5), JSON.stringify(spans));
+    } finally { clock.destroy(); canvas.remove(); }
   });
 });

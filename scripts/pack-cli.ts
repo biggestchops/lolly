@@ -40,7 +40,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
-  chmodSync, copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync,
+  chmodSync, copyFileSync, cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -205,6 +205,7 @@ const VERSION = cliPkg.version;
 // ── 2. compile: two entries, one shared chunk graph ───────────────────────────
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(PKG, { recursive: true });
+cpSync(join(REPO, 'packages/node-shell/wasm/jxl'), join(PKG, 'wasm/jxl'), { recursive: true });
 
 const result = await build({
   // The output NAMES matter: shells/cli/src/tui.ts starts the TUI by looking for
@@ -271,7 +272,7 @@ writeFileSync(
       type: 'module',
       bin: { lolly: './bin/lolly.js', 'lolly-tui': './bin/lolly-tui.js' },
       engines: { node: '>=22.18.0' },
-      files: ['bin', 'dist', 'README.md', 'LICENSE'],
+      files: ['bin', 'dist', 'wasm', 'README.md', 'LICENSE'],
       dependencies,
       optionalDependencies,
       publishConfig: { access: 'public', provenance: true },
@@ -366,6 +367,15 @@ const svg = readFileSync(qr, 'utf8');
 // follows it.
 if (!/^\s*(?:<\?xml[^>]*\?>\s*)?<svg\b/.test(svg)) {
   throw new Error(`qr.svg is not an SVG document: ${JSON.stringify(svg.slice(0, 60))}`);
+}
+
+// The local JXL worker and WASM must resolve outside the checkout, without sharp.
+if (binding) {
+  const jxl = join(SMOKE, 'qr.jxl');
+  run(LOLLY, ['qr-code', '--url=https://example.com', '--export=jxl-lossless', '--no-provenance', `--output=${jxl}`], SMOKE, { LOLLY_ROOT: REPO });
+  const bytes = readFileSync(jxl);
+  if (!(bytes[0] === 255 && bytes[1] === 10) && bytes.toString('ascii', 4, 8) !== 'JXL ')
+    throw new Error('The installed CLI did not produce a JPEG XL image.');
 }
 
 // The no-content experience, exercised where it is real: no LOLLY_ROOT, and an install

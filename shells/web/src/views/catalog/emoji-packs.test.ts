@@ -230,11 +230,13 @@ test('a specimen-bearing entry draws without the pack being loaded', async () =>
 });
 
 test('a single-ink set keeps its paints bound to the surrounding text colour', () => {
-  const meta = emojiPackMeta(packRef('community/emoji/openmoji/black'))!;
-  const markup = Object.values(meta.specimen!).join('');
-  // inkPreparedEmojiSvg rewrites a monochrome set's black paints to currentColor, so
-  // the glyphs follow the tile's text colour instead of vanishing on a dark theme.
-  assert.ok(markup.includes('currentColor'), 'the baked artwork carries the ink rewrite');
+  for (const id of ['community/emoji/openmoji/black', 'community/emoji/fluent/high-contrast']) {
+    const meta = emojiPackMeta(packRef(id))!;
+    for (const markup of Object.values(meta.specimen!)) {
+      assert.ok(markup.includes('currentColor'), `${id}: the baked artwork carries the ink rewrite`);
+      assert.doesNotMatch(markup, /(?:fill|stroke)="#(?:000|000000|212121|1c1c1c)"/);
+    }
+  }
 });
 
 test('a stale specimen is refused rather than drawn', () => {

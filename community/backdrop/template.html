@@ -60,6 +60,7 @@
       return { u_colors: C.arr, u_colorsCount: C.arr.length, u_colorBack: C.back,
         u_colorAccent: accent, u_intensity: I, u_density: D, u_brandMix: BRAND_MIX[cfg.brandInfluence] ?? 0.7 };
     }
+// === lolly:shared backdrop-shaders - generated from community/_shared/backdrop-shaders.js; edit there and run pnpm run sync:shared ===
     var FLUX_HEADER = `#version 300 es
 precision highp float;
 uniform float u_time;
@@ -180,6 +181,7 @@ void main() {
 }
 `,
     };
+// === /lolly:shared backdrop-shaders ===
 
     /* ── per-effect curation ─────────────────────────────────────────────────
        I/D are the intensity/density knobs in 0..1; each map is tuned so 0.5

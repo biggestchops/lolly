@@ -136,9 +136,10 @@ export function splitScope(tp: TpCtx,
   // leaves the clip edges and whole seconds, which is exactly what a razor should
   // land on. It also draws no snapline: there is no drag here to give feedback about.
   const raw = clock.t() / 1000;
-  const at = tp.snapOn
-    ? snapTime(raw, snapCandidates(boxes, cfg, -1, raw), tp.pxPerSec, SNAP_PX_FINE).t
+  const snapped = tp.snapOn
+    ? snapTime(raw, snapCandidates(boxes, cfg, -1, raw).concat(tp.marks.read().markers.map(mark => mark.ms / 1000), [tp.marks.read().inMs, tp.marks.read().outMs].filter((ms): ms is number => ms !== undefined).map(ms => ms / 1000)), tp.pxPerSec, SNAP_PX_FINE).t
     : raw;
+  const at = tp.helpers.quantiseTime(snapped);
   let ids: string[];
   if (everything) {
     ids = boxes

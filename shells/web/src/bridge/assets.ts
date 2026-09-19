@@ -365,7 +365,7 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
       // or failed fetch throws, and resolveOne already drops the asset with a
       // logged warning instead of breaking the mount.
       if (/^data:/i.test(id) || /^https?:\/\//i.test(id)) {
-        return await resolveUrlAsset(id);
+        return await (await import('./url-asset.ts')).resolveUrlAsset(id);
       }
 
       // A presentation modifier can ride in the id, chosen at pick time and
@@ -468,6 +468,13 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
           // depends on.
           const cacheKey = `library:${blobKey}:pt:${treatment}`;
           const common = { ...meta, id, format: format.format, cacheKey, meta: { ...refMeta, treatment, baseId } };
+          if (format.format === 'jxl') {
+            const original = await toAssetRef({ ...meta, blob: await loadBlob(), format: 'jxl', cacheKey: `library:${blobKey}` }, 'library');
+            const href = await blobToDataUri(await (await fetch(original.url)).blob());
+            const svg = wrapRasterWithTreatment({ href, width: w, height: h, treatment: def });
+            const display = await toAssetRef({ ...common, format: 'svg', blob: new Blob([svg], { type: 'image/svg+xml' }) }, 'library');
+            return { ...display, format: 'jxl', original: original.original };
+          }
           if (OBJECT_URL_CACHE.has(cacheKey)) return toAssetRef(common, 'library');
           const href = await blobToDataUri(await loadBlob());
           const svg = wrapRasterWithTreatment({ href, width: w, height: h, treatment: def });
@@ -542,7 +549,7 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
       // directly without a cached blob first. Only flag a placeholder when
       // there's genuinely no URL to resolve (an unresolved/on-demand tier
       // with no static formats[0].url).
-      return filtered.map((m): AssetRef => {
+      return Promise.all(filtered.map(async (m): Promise<AssetRef> => {
         // Pick the format the picker should point at: for video the actual
         // clip (a <video> plays it), for everything else formats[0], never a
         // companion still.
@@ -562,6 +569,7 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
         const filePoster = (m.type === 'model' || m.type === 'lut')
           ? (m.formats.find(f => /^(png|webp|jpe?g)$/i.test(f.format))?.url ?? '')
           : '';
+        if (primary?.format === 'jxl') return api.get(m.id);
         const directUrl = lottiePoster || (primary?.url ?? '');
         // Catalog animated rasters (gif/apng/animated-webp) are authored
         // type:'raster' and tagged "animated" so the picker badges the
@@ -614,7 +622,7 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
             ...(m.rights ? { rights: m.rights } : {}),
           },
         };
-      });
+      }));
     },
 
     /**
@@ -734,19 +742,19 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
       // reader; when none do, the whole c2pa cluster is never fetched.
       const needsRead = all.some(r => r.aiGenerated === undefined && r.credential && r.credentialFormat);
       const c2pa = needsRead ? await loadC2paVerify() : null;
-      return all
+      return Promise.all(all
         // Newest first by real creation time (the id's <ms>), with the id as a stable
         // tiebreak so same-ms duplicates keep their padded-counter order (newer first).
         .sort((a, b) => (userIdTime(String(b.id)) - userIdTime(String(a.id)))
           || String(b.id).localeCompare(String(a.id)))
-        .map(rec => {
-          const ref = toAssetRef(rec, 'user');
+        .map(async rec => {
+          const ref = await toAssetRef(rec, 'user');
           // Surface the AI flag on the ref (persisted on the record for new uploads;
           // recomputed from `credential` for older ones that predate this).
           const ai = detectAiGenerated(rec, c2pa);
           if (ai) ref.meta = { ...(ref.meta ?? {}), aiGenerated: ai };
           return ref;
-        });
+        }));
     },
 
     /**
@@ -1185,7 +1193,7 @@ export function createAssetsAPI(db: AssetsDb, opts: AssetsApiOptions = {}) {
     // answer to the page's fetch; a foreign origin is refused so this is never
     // a way around host.net's allowlist.
     async bytes(target: AssetRef | string): Promise<Uint8Array> {
-      const url = typeof target === 'string' ? target : target.url;
+      const url = typeof target === 'string' ? target : target.original?.url ?? target.url;
       if (!url) throw new Error('asset has no url');
       const ok = url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/')
         || (typeof location !== 'undefined' && url.startsWith(location.origin + '/'));
@@ -1360,51 +1368,7 @@ const healLegacyType = (record: AssetRefSource): AssetRef['type'] =>
     ? 'raster'
     : record.type;
 
-/** MIME → the AssetRef type vocabulary. SVG is vector; other images raster. */
-function urlAssetType(mime: string): { type: AssetRef['type']; format: string } | null {
-  const m = mime.toLowerCase().split(';')[0]!.trim();
-  if (m === 'image/svg+xml') return { type: 'vector', format: 'svg' };
-  if (m.startsWith('image/')) return { type: 'raster', format: m.slice(6).replace('jpeg', 'jpg') };
-  if (m.startsWith('video/')) return { type: 'video', format: m.slice(6) };
-  if (m.startsWith('audio/')) return { type: 'audio', format: m.slice(6).replace('mpeg', 'mp3') };
-  return null;
-}
-
-/** Direct-URL assets (see get()): one object URL per remote id for the page's
- *  lifetime, so re-resolves (every input edit re-runs resolveAssetRefs) don't
- *  refetch or leak a new blob URL each time. */
-const urlAssetCache = new Map<string, AssetRef>();
-const URL_ASSET_TIMEOUT_MS = 20_000;
-const URL_ASSET_MAX_BYTES = 64 * 1024 * 1024;   // a poster-sized fetch, not a runaway
-
-async function resolveUrlAsset(id: string): Promise<AssetRef> {
-  const hit = urlAssetCache.get(id);
-  if (hit) return hit;
-  let ref: AssetRef;
-  if (/^data:/i.test(id)) {
-    // Inline bytes: the id IS the url (the CSP admits data: in img-src), no
-    // fetch and no object URL to manage. Type straight off the data: MIME.
-    const mime = /^data:([^;,]+)/i.exec(id)?.[1] ?? '';
-    const kind = urlAssetType(mime);
-    if (!kind) throw new Error(`Unsupported data: asset type: ${mime || 'unknown'}`);
-    ref = { source: 'remote', id, type: kind.type, format: kind.format, url: id };
-  } else {
-    const res = await fetch(id, { signal: AbortSignal.timeout(URL_ASSET_TIMEOUT_MS) });
-    if (!res.ok) throw new Error(`URL asset fetch failed (${res.status}): ${id}`);
-    const blob = await res.blob();
-    if (blob.size > URL_ASSET_MAX_BYTES) throw new Error(`URL asset too large (${Math.round(blob.size / 1048576)} MB): ${id}`);
-    // Content-type first; a served-as-octet-stream file falls back to its extension.
-    const ext = /\.([a-z0-9]{2,5})(?:[?#]|$)/i.exec(id)?.[1]?.toLowerCase();
-    const kind = urlAssetType(blob.type)
-      ?? (ext ? urlAssetType(ext === 'svg' ? 'image/svg+xml' : ext === 'mp3' ? 'audio/mpeg' : ext === 'mp4' || ext === 'webm' ? `video/${ext}` : `image/${ext}`) : null);
-    if (!kind) throw new Error(`Unsupported URL asset type (${blob.type || 'unknown'}): ${id}`);
-    ref = { source: 'remote', id, type: kind.type, format: kind.format, url: URL.createObjectURL(blob) };
-  }
-  urlAssetCache.set(id, ref);
-  return ref;
-}
-
-function toAssetRef(record: AssetRefSource, source: 'user' | 'library'): AssetRef {
+async function toAssetRef(record: AssetRefSource, source: 'user' | 'library'): Promise<AssetRef> {
   // record.cacheKey overrides the default key - themed icon refs key on the
   // base blob + pairing colours (see get()) so identical bakes share one URL.
   const cacheKey = record.cacheKey ?? `${source}:${record.id}:${record.format}:${record.version ?? 'x'}`;
@@ -1414,7 +1378,7 @@ function toAssetRef(record: AssetRefSource, source: 'user' | 'library'): AssetRe
     OBJECT_URL_CACHE.set(cacheKey, url);
   }
   const type = healLegacyType(record);
-  return {
+  const ref: AssetRef = {
     source,
     id: record.id,
     type,
@@ -1426,6 +1390,11 @@ function toAssetRef(record: AssetRefSource, source: 'user' | 'library'): AssetRe
     height: record.height,
     meta: record.meta,
   };
+  if (record.type === 'raster' && ['tiff','hdr','exr'].includes(record.format ?? '') && record.blob) return (await import('./deep-asset.ts')).deepAssetRef(ref,record.blob,OBJECT_URL_CACHE,`${cacheKey}:deep-sdr-v1`);
+  if (record.format === 'jxl' && record.blob) {
+    return (await import('./jxl.ts')).jxlAssetRef(ref, record.blob, OBJECT_URL_CACHE, `${cacheKey}:jxl-srgb-v1`);
+  }
+  return ref;
 }
 
 // Generative-AI provenance derived from a user upload's captured C2PA

@@ -89,7 +89,7 @@ export async function prepareSessionTool(
         .filter(Boolean)
         .join('\n')
     );
-    const next = { ...ref, url, pin: undefined, meta: { ...ref.meta, baked: true, bakedAt: 0 } };
+    const next = { ...ref, url, original: undefined, pin: undefined, meta: { ...ref.meta, baked: true, bakedAt: 0 } };
     delete (next.meta as Record<string, unknown>).toolUrl;
     refs[ref.id] = next;
     return next;

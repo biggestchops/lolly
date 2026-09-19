@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Dưới trái",
   "inputs.boxes.fields.imgpos.options.center bottom": "Dưới",
   "inputs.boxes.fields.imgpos.options.right bottom": "Dưới phải",
-  "description": "Một canvas mở để sắp xếp tự do - văn bản, hình ảnh, hình khối và bản dựng trực tiếp từ các công cụ Lolly khác của bạn, tất cả đều theo đúng hệ thống thiết kế của bạn."
+  "description": "Một canvas mở để sắp xếp tự do - văn bản, hình ảnh, hình khối và bản dựng trực tiếp từ các công cụ Lolly khác của bạn, tất cả đều theo đúng hệ thống thiết kế của bạn.",
+  "inputs.projectFps.label": "Tốc độ khung hình của dự án",
+  "inputs.sequenceMarks.label": "Dấu mốc trên dòng thời gian",
+  "inputs.boxes.fields.animationId.label": "Hoạt ảnh trong nguồn",
+  "inputs.boxes.fields.animationEdits.label": "Chỉnh sửa nội bộ hoạt ảnh"
 }

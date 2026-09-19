@@ -101,5 +101,9 @@
   "inputs.boxes.fields.imgpos.options.left bottom": "Kaliwang ibaba",
   "inputs.boxes.fields.imgpos.options.center bottom": "Ibaba",
   "inputs.boxes.fields.imgpos.options.right bottom": "Kanang ibaba",
-  "description": "Isang bukas na canvas para sa malayang pag-aayos - text, larawan, hugis at live render mula sa iyong ibang Lolly tools, lahat naaayon sa iyong design system."
+  "description": "Isang bukas na canvas para sa malayang pag-aayos - text, larawan, hugis at live render mula sa iyong ibang Lolly tools, lahat naaayon sa iyong design system.",
+  "inputs.projectFps.label": "Frame rate ng proyekto",
+  "inputs.sequenceMarks.label": "Mga marker sa timeline",
+  "inputs.boxes.fields.animationId.label": "Animation sa source",
+  "inputs.boxes.fields.animationEdits.label": "Mga internal na edit ng animation"
 }

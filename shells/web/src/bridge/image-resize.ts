@@ -23,6 +23,7 @@
  */
 
 import { looksLikeHeic, decodeHeicBitmap } from './heic-decode.ts';
+import { isJxl } from '../../../../engine/src/jxl.ts';
 
 /** Longest-edge cap, in px, applied to stored user rasters (4K - high enough to
  *  stay crisp when a tool exports at 2×–3× on a large canvas). */
@@ -101,6 +102,10 @@ export function describeDecodeFailure(file: Blob & { name?: string }): string {
  * @returns {Promise<ImageBitmap>}
  */
 export async function decodeImageBitmap(file: Blob & { name?: string }): Promise<ImageBitmap> {
+  if (isJxl(new Uint8Array(await file.slice(0, 12).arrayBuffer()))) {
+    const { jxlDisplay } = await import('./jxl.ts');
+    return createImageBitmap((await jxlDisplay(file)).blob);
+  }
   try {
     return await createImageBitmap(file, { imageOrientation: 'from-image' });
   } catch {
@@ -205,5 +210,30 @@ function encodeCanvas(canvas: HTMLCanvasElement): Promise<{ blob: Blob; format: 
       OUTPUT_TYPE,
       OUTPUT_QUALITY,
     );
+  });
+}
+
+/** Read native image dimensions with a bounded wait and URL cleanup. */
+export function readDimensions(file: Blob): Promise<{ width?: number; height?: number }> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) return resolve({});
+    let settled = false;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    // A cap mirrors readVideoDimensions: <img> normally fires load or error, but a
+    // valid-container-yet-undecodable file could fire neither and wedge the awaiting
+    // upload forever (and leak the object URL). Resolve empty dims after the cap.
+    const cap = setTimeout(() => { if (!settled) { settled = true; URL.revokeObjectURL(url); resolve({}); } }, 5000);
+    img.onload = () => {
+      if (settled) return;
+      settled = true; clearTimeout(cap); URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = (e) => {
+      if (settled) return;
+      settled = true; clearTimeout(cap); URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
   });
 }

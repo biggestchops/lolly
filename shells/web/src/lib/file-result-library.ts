@@ -14,7 +14,7 @@ export interface FileResultLibraryHost {
   };
 }
 export function fileResultType(facts: FileFactsV1): AssetRef['type'] {
-  if (/^image\/(png|jpeg|webp|avif|gif|bmp)$/.test(facts.mime)) return 'raster';
+  if (/^image\/(jxl|png|jpeg|webp|avif|gif|bmp)$/.test(facts.mime)) return 'raster';
   if (/^audio\//.test(facts.mime)) return 'audio';
   if (/^video\//.test(facts.mime)) return 'video';
   if (/^(ttf|otf|woff|woff2)$/.test(facts.format)) return 'font';

@@ -34,7 +34,7 @@ import { mountProfileFab } from '../components/profile-menu.ts';
 import '../styles/parts/platform.css';   // .platform-layout / .plat-header / .plat-title / .plat-sub
 import '../styles/parts/convert.css';    // async CSS chunk (lazy view - not on the landing)
 
-import { targetsFor, detectKind, sniffOfficeZip } from '../lib/convert-codecs.ts';
+import { targetsForSource, detectKind, sniffOfficeZip } from '../lib/convert-codecs.ts';
 export { sourceToGrid, gridToTarget } from '../lib/convert-codecs.ts';
 export type { Target } from '../lib/convert-codecs.ts';
 
@@ -276,7 +276,7 @@ export async function mountConvert(viewEl: HTMLElement, host: HostV1, params = '
         }
         if (files.length > 1 && !['raster', 'svg', 'svgz'].includes(kind)) throw new Error('Batch conversion currently supports images. Choose one font, video, document or data file at a time.');
         const legalFonts = fontConversionTargets(bytes);
-        const targets = targetsFor(kind).filter(target => target.id !== kind && (!['ttf', 'otf', 'woff'].includes(kind) || legalFonts.includes(target.id as 'ttf' | 'otf' | 'woff')));
+        const targets = (await targetsForSource(kind, bytes)).filter(target => target.id !== kind && (!['ttf', 'otf', 'woff'].includes(kind) || legalFonts.includes(target.id as 'ttf' | 'otf' | 'woff')));
         if (!targets.length) throw new Error(`No on-device conversion is available for ${file.name} yet. The original has not been changed.`);
         sources.push({ bytes, file, kind, targets });
       }
