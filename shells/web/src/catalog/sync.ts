@@ -18,6 +18,7 @@
  */
 
 import { AssetChecksumError } from '../bridge/assets.ts';
+import { duringAssetSync } from '../lib/asset-sync.ts';
 import { assertToolIndexIntegrity, getToolIntegrity } from './integrity.ts';
 import { currentLang, t } from '../i18n.ts';
 import { pinnedAssetIds, refreshPinnedToolFiles } from '../lib/offline-pins.ts';
@@ -245,7 +246,7 @@ export async function syncCatalog(
   try {
     await Promise.all([
       syncTools(host),
-      syncAssets(host, onAssetsReady, maintenanceGate),
+      duringAssetSync(syncAssets(host, onAssetsReady, maintenanceGate)),
     ]);
   } catch (e) {
     setOffline(true);

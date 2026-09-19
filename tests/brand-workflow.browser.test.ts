@@ -7,6 +7,22 @@ import { chromium } from 'playwright';
 
 const origin = process.env.LOLLY_IMPORT_TEST_URL;
 const options = { skip: origin ? false : 'set LOLLY_IMPORT_TEST_URL to a local Vite shell', timeout: 120_000 };
+test('cold brand discovery shares a slow asset sync without a second index request', options, async () => {
+  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
+  const browser = await chromium.launch({ headless: true, channel: process.env.LOLLY_BROWSER_CHANNEL });
+  try {
+    const page = await browser.newPage();
+    let reads = 0;
+    await page.route('**/catalog/assets/index.json', async route => {
+      reads++;
+      await new Promise<void>(resolve => setTimeout(resolve, 750));
+      await route.continue();
+    });
+    await page.goto(`${origin}/`, { waitUntil: 'networkidle' });
+    assert.equal(reads, 1);
+  } finally { await browser.close(); }
+});
+
 test('local looks compare without writes, apply through recovery, and retain search tags', options, async () => {
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
   const browser = await chromium.launch({ headless: true, channel: process.env.LOLLY_BROWSER_CHANNEL });

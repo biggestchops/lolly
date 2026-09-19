@@ -64,6 +64,7 @@ import {
   resolveDesignVersion, versionAssetId,
 } from '../../../../engine/src/design-version.ts';
 import { instanceFetch, instancePath } from '../lib/instance.ts';
+import { pendingAssetSync } from '../lib/asset-sync.ts';
 import type { DesignSystemSummary, TokensAPI, TokensSnapshot, TokenSet } from '@lolly-tools/core/host-v1';
 // The design systems this device holds and which one is active (plans/186). A
 // type-only import: the registry is handed in through the host slice, so a test's
@@ -577,6 +578,12 @@ export function createTokensAPI(host: TokensHost): WebTokensAPI {
     try {
       const meta = await host.assets._findMetaByType('tokens', { catalogOnly });
       if (meta) return meta;
+      const syncing = pendingAssetSync();
+      if (syncing) {
+        await syncing;
+        const synced = await host.assets._findMetaByType('tokens', { catalogOnly });
+        if (synced) return synced;
+      }
     } catch { /* IDB unavailable / not synced yet - fall through to the index */ }
     try {
       // The catalog index carries only shipped assets, so it is catalog-only by

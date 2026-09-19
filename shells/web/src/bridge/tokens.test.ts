@@ -18,6 +18,7 @@ import { createTokensAPI, installUserTokens, BrandLockedError, VersionExistsErro
 import { createAssetsAPI } from './assets.ts';
 import { applyBrandVars } from '../brand-vars.ts';
 import { TOKEN_EXT } from '../../../../engine/src/tokens.ts';
+import { duringAssetSync, pendingAssetSync } from '../lib/asset-sync.ts';
 
 // Minimal DTCG doc - one colour token, enough for a non-empty set.
 const DOC  = { color: { brand: { jungle: { $type: 'color', $value: '#30ba78' } } } };
@@ -98,6 +99,48 @@ test('total failure yields an empty set that is never cached - the next call ret
   assert.equal((await api.get()).size, 0);   // discovery ok but no bytes anywhere
   blob = docBlob(DOC);                       // …then boot sync finishes caching the blob
   assert.equal(await api.resolve('color.brand.jungle'), '#30ba78'); // retried, not stuck empty
+});
+
+test('cold token discovery joins a running asset sync instead of fetching the index twice', async () => {
+  const fetchLog: string[] = [];
+  stubFetch({}, fetchLog);
+  let synced = false;
+  let release!: () => void;
+  let sawRead!: () => void;
+  const readStarted = new Promise<void>(resolve => { sawRead = resolve; });
+  const sync = duringAssetSync(new Promise<void>(resolve => { release = resolve; }).then(() => { synced = true; }));
+  const api = createTokensAPI({ assets: {
+    _findMetaByType: async () => { sawRead(); return synced ? { id: 'acme/tokens/brand', formats: [] } : null; },
+    _getBlob: async () => docBlob(DOC),
+  } });
+  const loading = api.resolve('color.brand.jungle');
+  try {
+    await readStarted;
+    await new Promise<void>(resolve => setImmediate(resolve));
+    assert.deepEqual(fetchLog, [], 'the sync already owns the index request');
+  } finally { release(); await sync; }
+  assert.equal(await loading, '#30ba78');
+  assert.deepEqual(fetchLog, []);
+  assert.equal(pendingAssetSync(), null);
+});
+
+test('failed and overlapping asset syncs settle so token fallback can retry', async () => {
+  let reject!: (reason: Error) => void;
+  let release!: () => void;
+  const first = duringAssetSync(new Promise<void>((_resolve, fail) => { reject = fail; }));
+  const second = duringAssetSync(new Promise<void>(resolve => { release = resolve; }));
+  reject(new Error('offline'));
+  await assert.rejects(first, /offline/);
+  assert.ok(pendingAssetSync(), 'the second sync is still running');
+  release();
+  await second;
+  await pendingAssetSync();
+  assert.equal(pendingAssetSync(), null);
+  const fetchLog: string[] = [];
+  stubFetch({ '/catalog/assets/index.json': { assets: [{ id: 'acme/tokens/brand', type: 'tokens', formats: [] }] } }, fetchLog);
+  const api = createTokensAPI({ assets: { _findMetaByType: async () => null, _getBlob: async () => docBlob(DOC) } });
+  assert.equal(await api.resolve('color.brand.jungle'), '#30ba78');
+  assert.deepEqual(fetchLog, ['/catalog/assets/index.json']);
 });
 
 test('bust() drops the memoised document and per-theme sets', async () => {
