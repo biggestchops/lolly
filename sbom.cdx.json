@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:c31ee063-a50c-4649-80c2-dd650c54c586",
+  "serialNumber": "urn:uuid:5f329bf3-960b-46aa-8067-60ba94ce28ab",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-17T11:00:57.251Z",
+    "timestamp": "2026-09-19T00:40:07.453Z",
     "tools": [
       {
         "vendor": "lolly",
@@ -24898,10 +24898,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/adm-zip@0.6.0",
+      "bom-ref": "pkg:npm/adm-zip@0.6.1",
       "name": "adm-zip",
-      "version": "0.6.0",
-      "purl": "pkg:npm/adm-zip@0.6.0",
+      "version": "0.6.1",
+      "purl": "pkg:npm/adm-zip@0.6.1",
       "scope": "required",
       "licenses": [
         {
@@ -24913,7 +24913,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "5e57abc8c85bba4b1d2ada1f9d667d4a4fb80944db9ace0c6ff114df6499c13a00c99e51815a2cfe48bc9fecabd0b5873862ae6a46d74eeb983472d08e175d82"
+          "content": "5f0ae36bc9f1f5ee68d8dd66cb80ec28278aa5dae7002cabd70b5b3f1043806ccaccac84f6446d04503c99695d23e455943ec205935663fc10dbec9dc0e47a91"
         }
       ]
     },
