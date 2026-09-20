@@ -29,17 +29,18 @@ Download the disk image, open it, and drag Lolly to Applications. Nothing else
 is needed - the app carries its own engine and tool catalogue.
 
 - **Download:** [`lolly-latest.dmg`](https://lolli.li/lolly-latest.dmg) - always the newest build.
-- **Versioned:** `https://lolli.li/Lolly_<version>_aarch64.dmg` (for example `Lolly_1.0.0_aarch64.dmg`) - pinned, never overwritten.
-- **Intel Macs:** not published. Tauri does not cross-compile, so an
-  `x86_64-apple-darwin` build has to run on Intel hardware or a rosetta CI
-  runner; if you need one, build it yourself with the steps below.
+- **Versioned:** `https://lolli.li/Lolly_<version>_aarch64.dmg` - pinned, never overwritten.
+- **Intel Macs:** not published. an `x86_64-apple-darwin` package needs its matching native CLI runtime and
+  libraries. The release-build workflow uses an Intel runner.
 
 Build it yourself:
 
 ```bash
 git clone https://github.com/lolly-tools/lolly.git
 cd lolly && pnpm install
-pnpm run build:desktop
+pnpm -C shells/tauri-desktop install --frozen-lockfile
+# Configure catalog signing as described in the Build Guide, then:
+LOLLY_PROFILE=lolly-start LOLLY_EMBED_CATALOG=profile pnpm run build:desktop
 # → shells/tauri-desktop/src-tauri/target/release/bundle/macos/
 ```
 
@@ -57,7 +58,7 @@ sudo zypper install https://lolli.li/lolly-latest.rpm
 
 Or download [`lolly-latest.rpm`](https://lolli.li/lolly-latest.rpm) and install the
 file directly. The versioned build sits beside it, for example
-`https://lolli.li/lolly-desktop-1.0.7-0.x86_64.rpm`.
+`https://lolli.li/lolly-desktop-<version>-0.x86_64.rpm`.
 
 A signed OBS repository - so updates arrive with the rest of your system - is
 planned; until it is live a direct `.rpm` does not auto-update, so check back here
@@ -78,7 +79,7 @@ Leap 16 has its own build, and you need it: the Tumbleweed `.rpm`
 (`lolly-latest.rpm`) is compiled against a newer glibc and refuses to install
 here with `nothing provides 'libm.so.6(GLIBC_2.43)'`. The versioned build sits
 beside the alias, for example
-`https://lolli.li/lolly-desktop-1.0.7-0.leap16.x86_64.rpm`.
+`https://lolli.li/lolly-desktop-<version>-0.leap16.x86_64.rpm`.
 
 The two packages are otherwise identical in content; only the toolchain they
 were built against differs.
@@ -108,7 +109,7 @@ flatpak run tools.lolly.Desktop
 ```
 
 The app id is `tools.lolly.Desktop` and the runtime is `org.gnome.Platform`
-version 49. A Flathub listing - which would carry updates automatically - is
+version 50. A Flathub listing - which would carry updates automatically - is
 planned; the manifest and the local build steps are in
 `shells/tauri-desktop/flatpak/README.md`.
 
@@ -143,7 +144,7 @@ git clone https://github.com/lolly-tools/lolly.git
 cd lolly/shells/tauri-desktop/linux/arch && makepkg -si
 ```
 
-The package repacks the official 1.0.7 desktop build and installs the whole
+The package repacks the official desktop version pinned in its recipe and installs the whole
 desktop integration - the `.lolly` MIME type, `lolly://` links, the thumbnailer,
 the GNOME Shell search provider, the D-Bus services, and the KDE service menu.
 
@@ -171,8 +172,8 @@ curl -LO https://lolli.li/lolly-latest-arm64.deb && sudo apt install ./lolly-lat
 ```
 
 Versioned files sit beside them, for example
-`https://lolli.li/lolly-desktop-1.0.7_amd64.deb` and
-`lolly-desktop-1.0.7_arm64.deb`. A direct `.deb` does not auto-update, so check
+`https://lolli.li/lolly-desktop-<version>_amd64.deb` and
+`lolly-desktop-<version>_arm64.deb`. A direct `.deb` does not auto-update, so check
 back here for a newer build, or use the Flatpak above, which updates in place
 once its Flathub listing is live.
 
@@ -187,8 +188,8 @@ browser or file manager to install applications this once. Android will ask -
 that prompt is the system working correctly, not a warning about this file.
 
 - **Download:** [`lolly-latest.apk`](https://lolli.li/lolly-latest.apk) - always the newest build.
-- **Versioned:** `https://lolli.li/Lolly-<version>.apk` (for example `Lolly-1.0.0.apk`).
-- **Minimum:** Android 8.0
+- **Versioned:** `https://lolli.li/Lolly-<version>.apk`.
+- **Minimum:** Android 7.0
 - **Architecture:** `arm64-v8a`
 
 Check the file before installing it. Every release publishes a checksums file at
@@ -248,8 +249,7 @@ stronger check - see [Verify It Yourself](/info/verify-yourself.html).
 ## Which one should I pick?
 
 - **You are on a Mac.** The DMG.
-- **You are on Tumbleweed or Leap 16.** The RPM repository, so updates arrive
-  with the rest of your system.
+- **You are on Tumbleweed or Leap 16.** The RPM built for your distribution.
 - **You are on any other Linux.** The Flatpak.
 - **You are on a phone.** The APK on Android; the web app on iOS.
 - **You do not want to install anything.** [The web app](/). It is the same

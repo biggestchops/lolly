@@ -12,32 +12,33 @@ shipped broken.
 
 ## The order
 
-The Arch step depends on the `.deb` already being **published**, because the
-PKGBUILD repacks the artifact users actually download. So:
+These commands run from the repository root. Publication is a separate step after verification. The Arch recipe downloads a versioned `.deb`; before publication, stage the exact built file in the makepkg source cache and set its checksum in the release recipe.
 
 ```bash
 pnpm install
 export LOLLY_PROFILE=lolly-start            # public brand - never ship `suse`
+export LOLLY_EMBED_CATALOG=profile
+# Supply LOLLY_CATALOG_SIGNING_KEY and VITE_CATALOG_PUBLIC_KEY_JWK privately.
 pnpm -C shells/tauri-desktop install
 
-release/build-deb.sh                        # amd64 .deb
-release/build-flatpak.sh                    # bundle from that .deb
-release/verify-flatpak.sh                   # INSTALL IT AND LOOK AT IT
+shells/tauri-desktop/release/build-deb.sh                        # amd64 .deb
+shells/tauri-desktop/release/build-flatpak.sh                    # bundle from that .deb
+shells/tauri-desktop/release/verify-flatpak.sh                   # INSTALL IT AND LOOK AT IT
 
 cd shells/tauri-desktop && rpm/make-sources.sh --skip-frontend && cd -
-release/build-rpm.sh tumbleweed
-release/build-rpm.sh leap16
+shells/tauri-desktop/release/build-rpm.sh tumbleweed
+shells/tauri-desktop/release/build-rpm.sh leap16
 
 export LOLLI_S3_ACCESS_KEY=... LOLLI_S3_SECRET_KEY=...
-release/lolli.py put out/lolly-desktop-<ver>_amd64.deb
+shells/tauri-desktop/release/lolli.py put out/lolly-desktop-<ver>_amd64.deb
 # ...the rest of the artifacts, then:
-release/lolli.py alias lolly-latest.deb lolly-desktop-<ver>_amd64.deb
+shells/tauri-desktop/release/lolli.py alias lolly-latest.deb lolly-desktop-<ver>_amd64.deb
 
 # only now, with the .deb live:
 #   bump linux/arch/PKGBUILD pkgver + sha256sums
-release/build-arch.sh
-release/lolli.py put out/arch/x86_64/<pkg> arch/x86_64/<pkg>
-release/lolli.py sums --write
+shells/tauri-desktop/release/build-arch.sh
+shells/tauri-desktop/release/lolli.py put out/arch/x86_64/<pkg> arch/x86_64/<pkg>
+shells/tauri-desktop/release/lolli.py sums --write
 ```
 
 Artifacts land in `$LOLLY_RELEASE_OUT` (default `~/.cache/lolly-release/artifacts`).

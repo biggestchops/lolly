@@ -19,7 +19,7 @@ How to build Lolly for each distribution target: standalone CLI binary, desktop 
 
 ## Prerequisites (all targets)
 
-- <!--l:node-->**Node.js ≥ 22.18** (the 22 LTS line) **or ≥ 24**, and **npm 10+**. The repo's scripts run TypeScript sources directly (`node scripts/foo.ts`), which relies on Node's unflagged type-stripping - added in Node 22.18 and 24. Node 20 and early 22.x fail at `pnpm install`. `.nvmrc` pins `22`, so nvm users can just run `nvm install` in the repo.
+- <!--l:node-->**Node.js ≥ 22.18** **or ≥ 24**, and **npm 10+**. The repo's scripts run TypeScript sources directly (`node scripts/foo.ts`), which relies on Node's unflagged type-stripping - added in Node 22.18 and 24. Node 20 and early 22.x fail at `pnpm install`. `.nvmrc` pins `24`, so nvm users can just run `nvm install` in the repo.
 - The repo checked out, dependencies installed - see below
 
 ---

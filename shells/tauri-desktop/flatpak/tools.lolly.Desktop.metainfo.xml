@@ -85,6 +85,17 @@
   <url type="homepage">https://lolly.tools</url>
 
   <releases>
+    <release version="1.0.9" date="2026-09-20">
+      <description>
+        <p>The pre-pressive one: publishing tools for Design and a complete Agenda programme editor.</p>
+        <ul>
+          <li>Compose stories across columns and linked frames, with styles and text on paths.</li>
+          <li>Use a tidier inspector, editable vector text and a dedicated Share tab.</li>
+          <li>Build multi-day programmes with import mapping and export bundles.</li>
+          <li>Updated documentation, publishing examples and export corrections.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.8" date="2026-09-15">
       <description>
         <p>Share designs as portable tools with editable inputs and fixed artwork.</p>

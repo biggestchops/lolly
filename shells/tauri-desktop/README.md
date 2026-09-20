@@ -32,7 +32,7 @@ native command surface. There is no HTTP plugin - see the `remote_fetch` note
 further down. OAuth and file reveal use narrow Rust commands; the generic
 shell-open plugin is intentionally absent.
 
-The **frontend** entry is the web shell's, `shells/web/index.html` → `/src/main.js` → `shells/web/src/main.ts`. `src-tauri/tauri.conf.json` points `devUrl` at `http://localhost:5173` and `frontendDist` at `../dist`, and its `beforeDevCommand` and `beforeBuildCommand` run this package's `dev:frontend` and `build:frontend`, both plain `vite`.
+The **frontend** entry is the web shell's, `shells/web/index.html` → `/src/main.js` → `shells/web/src/main.ts`. `src-tauri/tauri.conf.json` points `devUrl` at `http://localhost:5173` and `frontendDist` at `../dist`, and its `beforeDevCommand` runs `dev:frontend`. The production `beforeBuildCommand` runs the signed `build:frontend:release` wrapper, builds the macOS Quick Look extensions where applicable, and installs the native CLI sidecar.
 
 ## How the bridge gets composed: build-time module substitution
 

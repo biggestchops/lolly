@@ -13,6 +13,13 @@ val tauriProperties = Properties().apply {
     }
 }
 
+val releaseSigning = listOf(
+    "ANDROID_KEY_STORE", "ANDROID_KEY_STORE_PASSWORD", "ANDROID_KEY_ALIAS", "ANDROID_KEY_PASSWORD"
+).associateWith { System.getenv(it)?.takeIf(String::isNotBlank) }
+require(releaseSigning.values.all { it == null } || releaseSigning.values.all { it != null }) {
+    "Provide all four ANDROID_KEY_* signing variables, or leave all unset for an unsigned build."
+}
+
 android {
     compileSdk = 36
     namespace = "tools.lolly.mobile"
@@ -23,6 +30,16 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+    }
+    signingConfigs {
+        if (releaseSigning.values.all { it != null }) {
+            create("release") {
+                storeFile = file(releaseSigning.getValue("ANDROID_KEY_STORE")!!)
+                storePassword = releaseSigning.getValue("ANDROID_KEY_STORE_PASSWORD")
+                keyAlias = releaseSigning.getValue("ANDROID_KEY_ALIAS")
+                keyPassword = releaseSigning.getValue("ANDROID_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -37,6 +54,7 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

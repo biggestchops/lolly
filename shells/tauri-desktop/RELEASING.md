@@ -19,8 +19,7 @@ launches, and spawns WebKit. The only symptoms:
 - the window says **"Could not connect to localhost: Connection refused"**, and
 - the binary is **~43 MB instead of ~110 MB**.
 
-**Check the binary size before believing any packaging build.** It is the only
-reliable signal. `rpm/lolly-desktop.spec`'s `%check` fails under 80 MB for this reason.
+**Check the binary size before believing any packaging build.** It catches this failure; also verify the signed catalog and launch the packaged UI. `rpm/lolly-desktop.spec`'s `%check` fails under 80 MB for this reason.
 
 ## `build:frontend` does less than `build:web` - know what you are missing
 
@@ -49,7 +48,7 @@ If you add a step to `build:web`, ask whether this shell needs it too.
 
 ## Tool previews: rebuild them, and decide whether to ship them
 
-`catalog/previews/` is **git-ignored and generated** - 190 per-tool SVG previews built
+`catalog/previews/` is **git-ignored and generated** - per-tool SVG previews built
 by `pnpm run previews` (a real browser via Playwright; `pnpm exec playwright install chromium`
 first). They are the gallery's tool thumbnails.
 
@@ -99,7 +98,7 @@ structurally, by pinning this repository as its one source with
 - Screenshot mirroring errors from `flatpak-builder-lint repo` are expected locally;
   Flathub's own builders mirror automatically.
 - Bump `runtime-version` and the CI container tag together. GNOME 47 is EOL and no
-  longer published, which is why the manifest moved to 49.
+  longer published, which is why the manifests and CI containers now use 50.
 
 ## Arch / AUR
 
@@ -109,7 +108,7 @@ per-release ritual: bump `pkgver`, update `sha256sums`, regenerate `.SRCINFO`, p
 
 ## Before you call a build good
 
-1. Binary size is ~110 MB, not ~43 MB.
+1. The embedded app passes the 80 MB minimum-size guard, its catalog verifies, and the bundled CLI runs.
 2. The app launches and **renders its UI** - not just "the process is alive". A missing
    frontend still starts, still spawns WebKit, and still passes every automated check.
 3. `dist/info/*.html` is non-empty (docs bundled).

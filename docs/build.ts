@@ -1475,7 +1475,7 @@ function downloadsRail(lang: Lang): string {
   // one x86_64 rpm for now; split them when distro-specific rpms ship.
   const RELEASE = 'https://lolli.li';
   const DOWNLOAD_FILE: Record<string, string> = {
-    macos: 'lolly-latest.dmg', tumbleweed: 'lolly-latest.rpm', leap: 'lolly-latest.rpm',
+    macos: 'lolly-latest.dmg', tumbleweed: 'lolly-latest.rpm', leap: 'lolly-latest-leap16.rpm',
     flatpak: 'lolly-latest.flatpak', android: 'lolly-latest.apk', deb: 'lolly-latest.deb',
   };
   const tiles = d.items.map((it) => {

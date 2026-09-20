@@ -503,7 +503,11 @@ function inject(): void {
   ];
   const r = postjectBin
     ? spawnSync(postjectBin, args, { stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8' })
-    : spawnSync('npx', ['--yes', `postject@${POSTJECT_VERSION}`, ...args], {
+    : process.platform === 'win32' && process.env.npm_execpath
+      ? spawnSync(process.execPath, [process.env.npm_execpath, 'dlx', `postject@${POSTJECT_VERSION}`, ...args], {
+          stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8',
+        })
+      : spawnSync('npx', ['--yes', `postject@${POSTJECT_VERSION}`, ...args], {
         stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8',
       });
   if (r.status !== 0) {

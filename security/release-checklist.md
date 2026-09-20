@@ -41,7 +41,7 @@ This is the repository-closure checklist. Commands are authoritative; tick boxes
 | core-engine | `npm run pack:core && npm run pack:engine` | `pnpm run test:unit:engine`<br>`pnpm run test:contracts`<br>`pnpm run test:conformance` | not applicable |
 | yunohost | `npm run release:yunohost -- --build` | `pnpm run test:security`<br>`pnpm run test:contracts` | required |
 
-For signed targets, provide `LOLLY_CATALOG_SIGNING_PRIVATE_JWK` and `LOLLY_CATALOG_SIGNING_PUBLIC_JWK`; the release wrapper verifies that they match without printing either value.
+For signed targets, provide `LOLLY_CATALOG_SIGNING_KEY` and `VITE_CATALOG_PUBLIC_KEY_JWK`; the release wrapper verifies that they match without printing either value.
 
 ## Platform evidence
 

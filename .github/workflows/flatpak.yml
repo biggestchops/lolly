@@ -107,6 +107,17 @@ jobs:
           path: out/*.deb
           if-no-files-found: error
 
+      - name: Bundle AppImage from the same executable
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: pnpm -C shells/tauri-desktop run tauri bundle --bundles appimage
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lolly-appimage
+          path: shells/tauri-desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+
   flatpak:
     name: Build .flatpak (x86_64)
     needs: build-deb

@@ -26,38 +26,28 @@ pnpm run cli quotes --quote="Open source wins." --name="Andy" --export=png --out
 
 The CLI supports **SVG, EMF, EPS, HTML and the text/data formats** (JSON, CSV, ICS, VCF, MD, TXT) natively - hydrated by the engine with no browser engine needed (SVG/EMF only for tools with an `<svg>`-based template, since the lean CLI has no layout engine). **PNG** from an `<svg>`-based tool is also browser-free: resvg rasterises the engine's own SVG (Tier A). The remaining raster formats - **JPG, WebP, PDF and video (GIF, WebM, MP4)**, plus HTML-layout PNG - render through the CLI's own scoped headless Chromium (Tier B): install it once with `lolly install-browser`, then they export straight from the CLI. (ZIP is the one format the lean CLI leaves out - no zip dependency - so its batch writes a folder instead.)
 
-### Standalone binary
+### Package and native binary
 
-To distribute the CLI without requiring Node.js installed:
-
-**1. Bundle to a single CJS file:**
+Run these commands from the repository root after `pnpm install`:
 
 ```bash
-cd shells/cli
-pnpm exec esbuild bin/lolly.ts \
-  --bundle \
-  --platform=node \
-  --target=node20 \
-  --format=cjs \
-  --outfile=dist/lolly.cjs
+# An npm-compatible package containing both CLI and TUI
+pnpm run pack:cli
+
+# A native executable with its own Node runtime and companion resources
+pnpm run build:cli-sidecar
+
+# Install those resources into the desktop shell for Tauri packaging
+node scripts/build-cli-sidecar.ts --install
 ```
 
-**2. Package with `@yao-pkg/pkg` (includes a Node runtime):**
+The package is written to `dist/cli-pack/`, with a tarball and a manifest recording its source commit and checksum. Packaging also installs it into a temporary consumer and checks version reporting, tool listing, SVG rendering, the missing-content error and the TUI entry.
 
-```bash
-npx @yao-pkg/pkg dist/lolly.cjs \
-  --targets node20-macos-arm64,node20-macos-x64,node20-linux-x64,node20-win-x64 \
-  --output dist/lolly
-```
+The native build is written to `dist/cli-sidecar/bin/` and `dist/cli-sidecar/cli-lib/`. Keep both directories together. It uses Node's single executable application support for a small launcher; the CLI and TUI remain ESM resources. A single CommonJS bundle cannot replace that layout.
 
-Output binaries land in `shells/cli/dist/` - one per platform target.
+Native builds include the matching resvg library. Build on the target platform, or provide a matching Node runtime and native binding using the options in `scripts/build-cli-sidecar.ts`. The desktop release build runs this installer automatically.
 
-> The `tools/` and `catalog/` directories must ship alongside the binary. The CLI resolves them relative to the binary location, so the expected layout is:
-> ```
-> lolly          ← binary
-> tools/              ← tool definitions
-> catalog/            ← asset + tool catalogs
-> ```
+Both forms need a content root. Set `LOLLY_ROOT` to a Lolly checkout or a materialised public content bundle; packaged desktop apps extract their embedded content for the CLI. The terminal package itself contains no brand pack or tool catalog. Its package version is independent of the desktop app version.
 
 ---
 
@@ -84,7 +74,7 @@ pnpm run build:web         # a built web shell the TUI drives for pixel-identica
 
 With those present, raster (PNG/JPG), PDF, video and the `url-shot` live-URL capture all export from the terminal; without them, those formats fail with a clear setup message and the TUI writes HTML instead. The browser is lazy - it launches only on the first such export, never at startup. Override the browser with `LOLLY_BROWSER_CHANNEL` / `LOLLY_BROWSER_PATH`, or point at a running/prebuilt web shell with `LOLLY_WEB_BASE` / `LOLLY_WEB_DIST`.
 
-> No standalone-binary recipe yet - the TUI ships as a repo/dev surface today. Package it like the CLI (esbuild + `@yao-pkg/pkg`) once a target calls for it.
+The packaged CLI and native sidecar both include the TUI. Start it with `lolly tui` in a real terminal.
 
 ---
 

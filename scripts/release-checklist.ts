@@ -81,7 +81,7 @@ export function renderChecklist(inventory: Inventory): string {
     '|---|---|---|---|',
     ...inventory.releaseTargets.map((target) => `| ${target.id} | \`${target.build}\` | ${target.tests.map((test) => `\`pnpm run ${test}\``).join('<br>')} | ${target.signing ? 'required' : 'not applicable'} |`),
     '',
-    'For signed targets, provide `LOLLY_CATALOG_SIGNING_PRIVATE_JWK` and `LOLLY_CATALOG_SIGNING_PUBLIC_JWK`; the release wrapper verifies that they match without printing either value.',
+    'For signed targets, provide `LOLLY_CATALOG_SIGNING_KEY` and `VITE_CATALOG_PUBLIC_KEY_JWK`; the release wrapper verifies that they match without printing either value.',
     '',
     '## Platform evidence',
     '',

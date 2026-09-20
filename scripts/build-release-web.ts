@@ -56,7 +56,16 @@ export function validateReleaseEnvironment(env: NodeJS.ProcessEnv): void {
 }
 
 function run(command: string, args: string[], env: NodeJS.ProcessEnv): void {
-  const result = spawnSync(command, args, { cwd: ROOT, env, stdio: 'inherit' });
+  // Windows cannot execute a .cmd shim through spawn without a shell. The
+  // invoking package manager supplies its JavaScript entry point instead.
+  const packageEntry = process.platform === 'win32' && command === 'pnpm.cmd'
+    ? env.npm_execpath : undefined;
+  if (process.platform === 'win32' && command === 'pnpm.cmd' && !packageEntry) {
+    throw new Error('Run the release wrapper through pnpm on Windows.');
+  }
+  const result = packageEntry
+    ? spawnSync(process.execPath, [packageEntry, ...args], { cwd: ROOT, env, stdio: 'inherit' })
+    : spawnSync(command, args, { cwd: ROOT, env, stdio: 'inherit' });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
 }

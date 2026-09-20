@@ -96,7 +96,11 @@ pnpm run dev:ios
 
 ### Production build
 
+Use the public content profile and provide `LOLLY_CATALOG_SIGNING_KEY` plus `VITE_CATALOG_PUBLIC_KEY_JWK` through your private credential store. The production frontend wrapper signs the exact catalog embedded in the app. Install the mobile shell's separate dependencies with `pnpm -C shells/tauri-mobile install --frozen-lockfile` from the repository root.
+
 ```bash
+export LOLLY_PROFILE=lolly-start
+export LOLLY_EMBED_CATALOG=profile
 # Android - outputs APK + AAB
 pnpm run build:android
 # or: pnpm run build:android from repo root
@@ -115,6 +119,8 @@ export ANDROID_KEY_ALIAS=...
 export ANDROID_KEY_PASSWORD=...
 ```
 
+All four variables are required together. With none set, the build is unsigned. Keep the keystore and passwords outside the checkout; release APK and AAB files must use the established application key so installed copies can update.
+
 **iOS signing** - configure your Development Team in Xcode:
 
 ```bash
@@ -123,6 +129,8 @@ open Lolly.xcodeproj
 ```
 
 Set the team in the project's Signing & Capabilities tab, then build from CLI or Xcode.
+
+The `ios-release.yml` GitHub workflow builds a signed IPA using the configured distribution identity on a supported macOS runner. Dispatch it with `upload=false` to collect the IPA without submitting it to App Store Connect.
 
 ---
 
