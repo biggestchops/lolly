@@ -7,7 +7,7 @@
   "functions": {
     "api/mcp/**": {
       "maxDuration": 60,
-      "includeFiles": "{packages/node-shell/wasm/jxl/**,community/**,brands/lolly-start/{tools/**,catalog/{{assets,fonts,tools}/**,previews/*.{svg,json}}},profiles.json}",
+      "includeFiles": "{packages/node-shell/wasm/jxl/**,community/{!(emoji-packs)/**,emoji-packs/{index.json,*.json.gz}},brands/lolly-start/{tools/**,catalog/{{assets,fonts,tools}/**,previews/*.{svg,json}}},profiles.json}",
       "excludeFiles": "community/emoji-packs/*-*.json",
       "regions": ["fra1"]
     },
