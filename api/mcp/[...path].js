@@ -38367,8 +38367,10 @@ function subCubic(c, t0, t1) {
 }
 function quadRoots01(a, b, c) {
   const out = [];
-  if (Math.abs(a) < 1e-12) {
-    if (Math.abs(b) > 1e-12) {
+  const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c));
+  if (!(scale > 0)) return out;
+  if (Math.abs(a) <= 1e-14 * scale) {
+    if (Math.abs(b) > 1e-14 * scale) {
       const t = -c / b;
       if (t > 0 && t < 1) out.push(t);
     }
@@ -38377,7 +38379,10 @@ function quadRoots01(a, b, c) {
   const disc = b * b - 4 * a * c;
   if (disc < 0) return out;
   const s = Math.sqrt(disc);
-  for (const t of [(-b + s) / (2 * a), (-b - s) / (2 * a)]) if (t > 0 && t < 1) out.push(t);
+  const q = -0.5 * (b + (b < 0 ? -s : s));
+  const r1 = q / a, r23 = q !== 0 ? c / q : r1;
+  if (r1 > 0 && r1 < 1) out.push(r1);
+  if (r23 !== r1 && r23 > 0 && r23 < 1) out.push(r23);
   return out;
 }
 function extremaCubic(c) {
@@ -52259,62 +52264,117 @@ function intersectSegments(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1) {
   const tc = Math.min(1, Math.max(0, t)), uc = Math.min(1, Math.max(0, u));
   return { t1: tc, t2: uc, x: ax0 + rx * tc, y: ay0 + ry * tc };
 }
-function cubicRoots01(a, b, c, d) {
-  const out = [];
-  const push = (t) => {
-    if (t >= -T_EPS && t <= 1 + T_EPS) out.push(Math.min(1, Math.max(0, t)));
-  };
-  if (Math.abs(a) < 1e-12) {
-    if (Math.abs(b) < 1e-12) {
-      if (Math.abs(c) > 1e-12) push(-d / c);
-      return dedupeRoots(out);
+function cubicRoots01(a, b, c, d, dirs) {
+  const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d));
+  if (!(scale > 0) || !Number.isFinite(scale)) return [];
+  const tiny = ROOT_SNAP * Number.EPSILON * scale;
+  const cuts = [-T_EPS, 1 + T_EPS, 0, 0];
+  let nc = 2;
+  const qa = 3 * a, qb = 2 * b, qc = c;
+  if (Math.abs(qa) > 1e-300) {
+    const disc = qb * qb - 4 * qa * qc;
+    if (disc >= 0) {
+      const sq = Math.sqrt(disc);
+      const q = -0.5 * (qb + (qb < 0 ? -sq : sq));
+      const r0 = q !== 0 ? q / qa : -qb / (2 * qa), r1 = q !== 0 ? qc / q : r0;
+      if (r0 > -T_EPS && r0 < 1 + T_EPS) cuts[nc++] = r0;
+      if (q !== 0 && r1 > -T_EPS && r1 < 1 + T_EPS) cuts[nc++] = r1;
     }
-    const disc2 = c * c - 4 * b * d;
-    if (disc2 < 0) return [];
-    const s = Math.sqrt(disc2);
-    push((-c + s) / (2 * b));
-    push((-c - s) / (2 * b));
-    return dedupeRoots(out);
+  } else if (Math.abs(qb) > 1e-300) {
+    const r3 = -qc / qb;
+    if (r3 > -T_EPS && r3 < 1 + T_EPS) cuts[nc++] = r3;
   }
-  const b1 = b / a, c1 = c / a, d1 = d / a;
-  const p = c1 - b1 * b1 / 3;
-  const q = 2 * b1 * b1 * b1 / 27 - b1 * c1 / 3 + d1;
-  const shift = -b1 / 3;
-  const disc = q * q / 4 + p * p * p / 27;
-  if (disc > 1e-18) {
-    const s = Math.sqrt(disc);
-    push(Math.cbrt(-q / 2 + s) + Math.cbrt(-q / 2 - s) + shift);
-  } else if (disc > -1e-18) {
-    const u = Math.cbrt(-q / 2);
-    push(2 * u + shift);
-    push(-u + shift);
-  } else {
-    const r3 = Math.sqrt(-(p * p * p) / 27);
-    const phi = Math.acos(Math.min(1, Math.max(-1, -q / (2 * r3))));
-    const m2 = 2 * Math.cbrt(r3);
-    for (let k = 0; k < 3; k++) push(m2 * Math.cos((phi + 2 * Math.PI * k) / 3) + shift);
+  for (let i = 1; i < nc; i++) {
+    const v = cuts[i];
+    let j = i - 1;
+    while (j >= 0 && cuts[j] > v) {
+      cuts[j + 1] = cuts[j];
+      j--;
+    }
+    cuts[j + 1] = v;
   }
-  const polished = out.map((t0) => {
-    let t = t0;
-    for (let i = 0; i < 2; i++) {
-      const f = ((a * t + b) * t + c) * t + d;
-      const df = (3 * a * t + 2 * b) * t + c;
-      if (Math.abs(df) < 1e-14) break;
-      const next = t - f / df;
-      if (next < -T_EPS || next > 1 + T_EPS) break;
+  const vals = [0, 0, 0, 0];
+  for (let i = 0; i < nc; i++) {
+    const v = ((a * cuts[i] + b) * cuts[i] + c) * cuts[i] + d;
+    vals[i] = Math.abs(v) <= tiny ? 0 : v;
+  }
+  const out = [], sg = [];
+  for (let i = 0; i < nc; i++) {
+    if (vals[i] !== 0) continue;
+    let j = i;
+    while (j + 1 < nc && vals[j + 1] === 0) j++;
+    const before = i > 0 ? vals[i - 1] : 0, after = j + 1 < nc ? vals[j + 1] : 0;
+    const t = (cuts[i] + cuts[j]) / 2;
+    if (t >= -T_EPS && t <= 1 + T_EPS) {
+      out.push(Math.min(1, Math.max(0, t)));
+      sg.push(before < 0 && after > 0 ? 1 : before > 0 && after < 0 ? -1 : 0);
+    }
+    i = j;
+  }
+  for (let i = 1; i < nc; i++) {
+    const lo = cuts[i - 1], hi = cuts[i], flo = vals[i - 1], fhi = vals[i];
+    if (flo === 0 || fhi === 0 || flo < 0 === fhi < 0) continue;
+    let x0 = lo, x1 = hi, f0 = flo, t = (lo + hi) / 2;
+    for (let k = 0; k < 80; k++) {
+      const ft = ((a * t + b) * t + c) * t + d;
+      if (ft === 0) break;
+      if (ft < 0 === f0 < 0) {
+        x0 = t;
+        f0 = ft;
+      } else x1 = t;
+      if (x1 - x0 <= 4e-16) break;
+      const slope = (3 * a * t + 2 * b) * t + c;
+      let next = slope !== 0 ? t - ft / slope : (x0 + x1) / 2;
+      if (!(next > x0 && next < x1)) next = (x0 + x1) / 2;
       t = next;
     }
-    return Math.min(1, Math.max(0, t));
-  });
-  return dedupeRoots(polished);
+    if (t >= -T_EPS && t <= 1 + T_EPS) {
+      out.push(Math.min(1, Math.max(0, t)));
+      sg.push(fhi > 0 ? 1 : -1);
+    }
+  }
+  return dedupeRoots(out, sg, dirs);
 }
-function dedupeRoots(ts) {
-  const s = ts.slice().sort((x, y) => x - y);
+function dedupeRoots(ts, sg, dirs) {
+  const n6 = ts.length;
+  if (n6 === 0) {
+    if (dirs) dirs.length = 0;
+    return ts;
+  }
+  if (n6 === 1) {
+    if (dirs) {
+      dirs.length = 0;
+      dirs.push(sg[0]);
+    }
+    return ts;
+  }
+  for (let i = 1; i < n6; i++) {
+    const t = ts[i], g2 = sg[i];
+    let j = i - 1;
+    while (j >= 0 && ts[j] > t) {
+      ts[j + 1] = ts[j];
+      sg[j + 1] = sg[j];
+      j--;
+    }
+    ts[j + 1] = t;
+    sg[j + 1] = g2;
+  }
   const out = [];
-  for (const t of s) if (!out.length || t - out[out.length - 1] > 1e-9) out.push(t);
+  const dd = [];
+  for (let i = 0; i < n6; i++) {
+    const t = ts[i];
+    if (!out.length || t - out[out.length - 1] > 1e-9) {
+      out.push(t);
+      dd.push(sg[i]);
+    } else dd[dd.length - 1] = Math.sign(dd[dd.length - 1] + sg[i]);
+  }
+  if (dirs) {
+    dirs.length = 0;
+    for (const v of dd) dirs.push(v);
+  }
   return out;
 }
-function intersectLineCubic(x0, y0, x1, y1, c, tol = EPS2) {
+function intersectLineCubic(x0, y0, x1, y1, c, tol = EPS2, clamp6 = true) {
   const dx = x1 - x0, dy = y1 - y0;
   const len2 = Math.hypot(dx, dy);
   if (len2 < 1e-12) return [];
@@ -52326,11 +52386,14 @@ function intersectLineCubic(x0, y0, x1, y1, c, tol = EPS2) {
   const C = -3 * d0 + 3 * d1;
   const D = d0;
   const out = [];
-  for (const t of cubicRoots01(A, B, C, D)) {
+  const dirs = [];
+  const roots2 = cubicRoots01(A, B, C, D, dirs);
+  for (let i = 0; i < roots2.length; i++) {
+    const t = roots2[i];
     const p = evalCubic(c, t);
     const u = ((p.x - x0) * dx + (p.y - y0) * dy) / (len2 * len2);
     if (u < -tol / len2 || u > 1 + tol / len2) continue;
-    out.push({ t1: Math.min(1, Math.max(0, u)), t2: t, x: p.x, y: p.y });
+    out.push({ t1: clamp6 ? Math.min(1, Math.max(0, u)) : u, t2: t, x: p.x, y: p.y, dir: dirs[i] });
   }
   return out;
 }
@@ -52379,131 +52442,17 @@ function clipToFatLine(c, fat, cutPad, testPad) {
     }
     return ts2;
   };
-  const cutLo = fat.dMin - cutPad, cutHi = fat.dMax + cutPad;
+  const lo = fat.dMin - cutPad, hi = fat.dMax + cutPad;
   const inBand = (v) => v >= fat.dMin - testPad && v <= fat.dMax + testPad;
   const ts = [];
   for (const h of [upper, lower3]) {
-    ts.push(...crossings(h, cutLo), ...crossings(h, cutHi));
+    ts.push(...crossings(h, lo), ...crossings(h, hi));
   }
   if (inBand(d[0])) ts.push(0);
   if (inBand(d[3])) ts.push(1);
   if (!ts.length) return null;
-  const lo = Math.max(0, Math.min(...ts)), hi = Math.min(1, Math.max(...ts));
-  return hi < lo ? null : [lo, hi];
-}
-function clipIntersect(c1, c2, t1lo, t1hi, t2lo, t2hi, tol, depth, out, work, swap = false) {
-  if (work.over) return;
-  if (++work.nodes > work.limit) {
-    work.over = true;
-    return;
-  }
-  const emit = (t1, t2, x, y) => out.push(swap ? { t1: t2, t2: t1, x, y } : { t1, t2, x, y });
-  if (out.length > 128 || depth > 60) return;
-  if (!boxesOverlap(hullBounds(c1), hullBounds(c2), tol)) return;
-  const s1 = Math.hypot(c1[6] - c1[0], c1[7] - c1[1]) + flatnessCubic(c1);
-  const s2 = Math.hypot(c2[6] - c2[0], c2[7] - c2[1]) + flatnessCubic(c2);
-  if (s1 <= tol && s2 <= tol) {
-    const p = evalCubic(c1, 0.5);
-    emit((t1lo + t1hi) / 2, (t2lo + t2hi) / 2, p.x, p.y);
-    return;
-  }
-  const fat = fatLine(c2);
-  const clipped = fat ? clipToFatLine(c1, fat, 0, 1e-12) : [0, 1];
-  if (!clipped) return;
-  const [lo, hi] = clipped;
-  const shrink = hi - lo;
-  if (shrink > 0.8) {
-    if (s1 >= s2) {
-      const [a, b] = splitCubic(c1, 0.5);
-      const mid3 = (t1lo + t1hi) / 2;
-      clipIntersect(a, c2, t1lo, mid3, t2lo, t2hi, tol, depth + 1, out, work, swap);
-      clipIntersect(b, c2, mid3, t1hi, t2lo, t2hi, tol, depth + 1, out, work, swap);
-    } else {
-      const [a, b] = splitCubic(c2, 0.5);
-      const mid3 = (t2lo + t2hi) / 2;
-      clipIntersect(c1, a, t1lo, t1hi, t2lo, mid3, tol, depth + 1, out, work, swap);
-      clipIntersect(c1, b, t1lo, t1hi, mid3, t2hi, tol, depth + 1, out, work, swap);
-    }
-    return;
-  }
-  const nc1 = subCubic(c1, lo, hi);
-  const nt1lo = t1lo + (t1hi - t1lo) * lo;
-  const nt1hi = t1lo + (t1hi - t1lo) * hi;
-  clipIntersect(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, out, work, !swap);
-}
-function dedupe(list2, tol) {
-  const out = [];
-  for (const i of list2) {
-    if (!out.some((o) => Math.hypot(o.x - i.x, o.y - i.y) <= tol * 8 && Math.abs(o.t1 - i.t1) <= 1e-6 + tol && Math.abs(o.t2 - i.t2) <= 1e-6 + tol)) out.push(i);
-  }
-  return out.sort((a, b) => a.t1 - b.t1);
-}
-function chordFractionToParam(c, u) {
-  const dx = c[6] - c[0], dy = c[7] - c[1];
-  const l2 = dx * dx + dy * dy;
-  if (l2 < 1e-24) return u;
-  const g2 = [
-    0,
-    ((c[2] - c[0]) * dx + (c[3] - c[1]) * dy) / l2,
-    ((c[4] - c[0]) * dx + (c[5] - c[1]) * dy) / l2,
-    1
-  ];
-  if (Math.abs(g2[1] - 1 / 3) < 1e-12 && Math.abs(g2[2] - 2 / 3) < 1e-12) return u;
-  const A = -g2[0] + 3 * g2[1] - 3 * g2[2] + g2[3];
-  const B = 3 * g2[0] - 6 * g2[1] + 3 * g2[2];
-  const C = -3 * g2[0] + 3 * g2[1];
-  const D = g2[0] - u;
-  const roots2 = cubicRoots01(A, B, C, D);
-  if (!roots2.length) return u;
-  let best = roots2[0], bestErr = Infinity;
-  for (const t of roots2) {
-    const mt = 1 - t;
-    const val = mt * mt * mt * g2[0] + 3 * mt * mt * t * g2[1] + 3 * mt * t * t * g2[2] + t * t * t * g2[3];
-    const err = Math.abs(val - u);
-    if (err < bestErr) {
-      bestErr = err;
-      best = t;
-    }
-  }
-  return best;
-}
-function intersectCubics(c1, c2, tol = EPS2) {
-  if (!boxesOverlap(boundsCubic(c1), boundsCubic(c2), tol)) return [];
-  const l1 = isLineCubic(c1, tol), l2 = isLineCubic(c2, tol);
-  if (l1 && l2) {
-    const hit = intersectSegments(c1[0], c1[1], c1[6], c1[7], c2[0], c2[1], c2[6], c2[7]);
-    if (!hit) return [];
-    return [{
-      ...hit,
-      t1: chordFractionToParam(c1, hit.t1),
-      t2: chordFractionToParam(c2, hit.t2)
-    }];
-  }
-  if (l1) {
-    return dedupe(intersectLineCubic(c1[0], c1[1], c1[6], c1[7], c2, tol).map((i) => ({ ...i, t1: chordFractionToParam(c1, i.t1) })), tol);
-  }
-  if (l2) {
-    return dedupe(intersectLineCubic(c2[0], c2[1], c2[6], c2[7], c1, tol).map((i) => ({ t1: i.t2, t2: chordFractionToParam(c2, i.t1), x: i.x, y: i.y })), tol);
-  }
-  const out = [];
-  const work = { nodes: 0, limit: CLIP_BUDGET.maxNodes, over: false };
-  clipIntersect(c1, c2, 0, 1, 0, 1, tol, 0, out, work);
-  CLIP_COUNTS.pairs++;
-  CLIP_COUNTS.nodes += work.nodes;
-  CLIP_COUNTS.lastNodes = work.nodes;
-  if (!work.over) return dedupe(out, tol);
-  CLIP_COUNTS.overruns++;
-  return intersectOverrun(c1, c2, tol);
-}
-function intersectOverrun(c1, c2, tol) {
-  const run = sharedRun(c1, c2, tol);
-  if (run) return run;
-  let mag = 0;
-  for (let i = 0; i < 8; i++) mag = Math.max(mag, Math.abs(c1[i]), Math.abs(c2[i]));
-  const search = { c1, c2, out: [], stalled: [], pad: Math.max(1e-12, mag * 64 * Number.EPSILON) };
-  overrunClip(c1, c2, 0, 1, 0, 1, tol, 0, search);
-  if (search.stalled.length) scanStalled(c1, c2, search.stalled, tol, search.out);
-  return dedupe(search.out, tol);
+  const t0 = Math.max(0, Math.min(...ts)), t1 = Math.min(1, Math.max(...ts));
+  return t1 < t0 ? null : [t0, t1];
 }
 function withinFatLine(c, fat, pad) {
   const lo = fat.dMin - pad, hi = fat.dMax + pad;
@@ -52649,7 +52598,8 @@ function shallow(search, swap, a, b) {
   if ((a <= TOUCH || a >= 1 - TOUCH) && (b <= TOUCH || b >= 1 - TOUCH)) return false;
   const d1 = tangentAt(search.c1, swap ? b : a), d2 = tangentAt(search.c2, swap ? a : b);
   const l1 = Math.hypot(d1.x, d1.y), l2 = Math.hypot(d2.x, d2.y);
-  if (!(l1 > 0 && l2 > 0)) return true;
+  const still = FOOT_SPEED * search.size;
+  if (!(l1 > still && l2 > still)) return true;
   return Math.abs(d1.x * d2.y - d1.y * d2.x) < SHALLOW * l1 * l2;
 }
 function stall(search, swap, t1lo, t1hi, t2lo, t2hi) {
@@ -52658,6 +52608,11 @@ function stall(search, swap, t1lo, t1hi, t2lo, t2hi) {
   else search.stalled.push(t1lo, t1hi, t2lo, t2hi);
 }
 function overrunClip(c1, c2, t1lo, t1hi, t2lo, t2hi, tol, depth, search, swap = false) {
+  if (search.nodes >= OVERRUN_BUDGET.maxNodes) {
+    search.over = true;
+    return;
+  }
+  search.nodes++;
   const out = search.out;
   const emit = (t1, t2, x, y) => out.push(swap ? { t1: t2, t2: t1, x, y } : { t1, t2, x, y });
   if (out.length > MAX_HITS) return;
@@ -52699,6 +52654,7 @@ function overrunClip(c1, c2, t1lo, t1hi, t2lo, t2hi, tol, depth, search, swap = 
   const [lo, hi] = clipped;
   const shrink = hi - lo;
   if (shrink > 0.8) {
+    if (search.twin !== 0 && twinNode(search, swap, c1, t1lo, t1hi, t2lo, t2hi, tol)) return;
     if (s1 > FLOOR_MIN_SIZE * tol && s2 > FLOOR_MIN_SIZE * tol) {
       const twin = coincidentTwin(search, swap, c1, t1lo, t1hi, tol);
       if (twin) {
@@ -52727,6 +52683,235 @@ function overrunClip(c1, c2, t1lo, t1hi, t2lo, t2hi, tol, depth, search, swap = 
   const nt1lo = t1lo + (t1hi - t1lo) * lo;
   const nt1hi = t1lo + (t1hi - t1lo) * hi;
   overrunClip(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, search, !swap);
+}
+function clipIntersect(c1, c2, t1lo, t1hi, t2lo, t2hi, tol, depth, out, work, swap = false) {
+  if (work.over) return;
+  if (++work.nodes > work.limit) {
+    work.over = true;
+    return;
+  }
+  const emit = (t1, t2, x, y) => out.push(swap ? { t1: t2, t2: t1, x, y } : { t1, t2, x, y });
+  if (out.length > 128 || depth > 60) return;
+  if (!boxesOverlap(hullBounds(c1), hullBounds(c2), tol)) return;
+  const s1 = Math.hypot(c1[6] - c1[0], c1[7] - c1[1]) + flatnessCubic(c1);
+  const s2 = Math.hypot(c2[6] - c2[0], c2[7] - c2[1]) + flatnessCubic(c2);
+  if (s1 <= tol && s2 <= tol) {
+    const p = evalCubic(c1, 0.5);
+    emit((t1lo + t1hi) / 2, (t2lo + t2hi) / 2, p.x, p.y);
+    return;
+  }
+  const fat = fatLine(c2);
+  const clipped = fat ? clipToFatLine(c1, fat, 0, 1e-12) : [0, 1];
+  if (!clipped) return;
+  const [lo, hi] = clipped;
+  const shrink = hi - lo;
+  if (shrink > 0.8) {
+    if (s1 >= s2) {
+      const [a, b] = splitCubic(c1, 0.5);
+      const mid3 = (t1lo + t1hi) / 2;
+      clipIntersect(a, c2, t1lo, mid3, t2lo, t2hi, tol, depth + 1, out, work, swap);
+      clipIntersect(b, c2, mid3, t1hi, t2lo, t2hi, tol, depth + 1, out, work, swap);
+    } else {
+      const [a, b] = splitCubic(c2, 0.5);
+      const mid3 = (t2lo + t2hi) / 2;
+      clipIntersect(c1, a, t1lo, t1hi, t2lo, mid3, tol, depth + 1, out, work, swap);
+      clipIntersect(c1, b, t1lo, t1hi, mid3, t2hi, tol, depth + 1, out, work, swap);
+    }
+    return;
+  }
+  const nc1 = subCubic(c1, lo, hi);
+  const nt1lo = t1lo + (t1hi - t1lo) * lo;
+  const nt1hi = t1lo + (t1hi - t1lo) * hi;
+  clipIntersect(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, out, work, !swap);
+}
+function bernMul(p, q) {
+  const m2 = p.length - 1, n6 = q.length - 1;
+  const out = new Array(m2 + n6 + 1).fill(0);
+  const bm = BINOM[m2], bn = BINOM[n6], bmn = BINOM[m2 + n6];
+  for (let i = 0; i <= m2; i++) {
+    for (let j = 0; j <= n6; j++) out[i + j] = out[i + j] + bm[i] * bn[j] / bmn[i + j] * p[i] * q[j];
+  }
+  return out;
+}
+function bernRuns(c, t0, t1, depth, out) {
+  let lo = Infinity, hi = -Infinity;
+  for (const v of c) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  if (lo > 0) return;
+  if (hi <= 0 || depth >= TWIN_RUN_DEPTH) {
+    if (out.length && out[out.length - 1] === t0) out[out.length - 1] = t1;
+    else out.push(t0, t1);
+    return;
+  }
+  const n6 = c.length, left = new Array(n6), right = new Array(n6);
+  const w = c.slice();
+  left[0] = w[0];
+  right[n6 - 1] = w[n6 - 1];
+  for (let k = 1; k < n6; k++) {
+    for (let i = 0; i < n6 - k; i++) w[i] = (w[i] + w[i + 1]) * 0.5;
+    left[k] = w[0];
+    right[n6 - 1 - k] = w[n6 - 1 - k];
+  }
+  const mid3 = (t0 + t1) / 2;
+  bernRuns(left, t0, mid3, depth + 1, out);
+  bernRuns(right, mid3, t1, depth + 1, out);
+}
+function twinNode(search, swap, c1, t1lo, t1hi, t2lo, t2hi, tol) {
+  const twin = search.twin;
+  const W = swap ? twin === 1 ? search.c1 : search.c1r : twin === 1 ? search.c2 : search.c2r;
+  const m2lo = twin === 1 ? t2lo : 1 - t2hi, m2hi = twin === 1 ? t2hi : 1 - t2lo;
+  const lo0 = Math.min(t1lo, m2lo), hi0 = Math.max(t1hi, m2hi);
+  const half = (hi0 - lo0) * 0.5;
+  const R0 = Math.max(0, lo0 - half), R1 = Math.min(1, hi0 + half);
+  if (!(R1 > R0)) return false;
+  const q = subCubic(W, R0, R1);
+  const k = 3 / (R1 - R0);
+  const dx0 = (q[2] - q[0]) * k, dy0 = (q[3] - q[1]) * k;
+  const dx1 = (q[4] - q[2]) * k, dy1 = (q[5] - q[3]) * k;
+  const dx2 = (q[6] - q[4]) * k, dy2 = (q[7] - q[5]) * k;
+  let ux = dx0 + dx1 + dx2, uy = dy0 + dy1 + dy2;
+  const ul = Math.hypot(ux, uy);
+  if (!(ul > 0)) return false;
+  ux /= ul;
+  uy /= ul;
+  const still = FOOT_SPEED * search.size;
+  let vlo = Infinity;
+  for (const [dx, dy] of [[dx0, dy0], [dx1, dy1], [dx2, dy2]]) {
+    const along2 = dx * ux + dy * uy;
+    if (!(along2 >= TWIN_TURN * Math.hypot(dx, dy)) || along2 < still) return false;
+    if (along2 < vlo) vlo = along2;
+  }
+  const kappa = 2 * Math.max(Math.hypot(dx1 - dx0, dy1 - dy0), Math.hypot(dx2 - dx1, dy2 - dy1)) / ((R1 - R0) * vlo * vlo);
+  const m2 = subCubic(W, t1lo, t1hi);
+  const dX = [c1[0] - m2[0], c1[2] - m2[2], c1[4] - m2[4], c1[6] - m2[6]];
+  const dY = [c1[1] - m2[1], c1[3] - m2[3], c1[5] - m2[5], c1[7] - m2[7]];
+  let T = 0;
+  for (let i = 0; i < 4; i++) T = Math.max(T, Math.hypot(dX[i], dY[i]));
+  const rho = tol + T;
+  if (kappa * rho * rho > TWIN_BEND * tol) return false;
+  const eX = [3 * (m2[2] - m2[0]), 3 * (m2[4] - m2[2]), 3 * (m2[6] - m2[4])];
+  const eY = [3 * (m2[3] - m2[1]), 3 * (m2[5] - m2[3]), 3 * (m2[7] - m2[5])];
+  const pa = bernMul(eX, dY), pb = bernMul(eY, dX);
+  const P = pa.map((v, i) => v - pb[i]);
+  const sa = bernMul(eX, eX), sb = bernMul(eY, eY);
+  const S2 = bernMul(sa.map((v, i) => v + sb[i]), ONES_6);
+  const thr2 = (TWIN_REACH * tol) ** 2;
+  const pp = bernMul(P, P);
+  const Q = pp.map((v, i) => v - thr2 * S2[i]);
+  const runs = [];
+  bernRuns(Q, 0, 1, 0, runs);
+  const deltaP = rho / vlo;
+  for (let i = 0; i < runs.length; i += 2) {
+    const r0 = t1lo + (t1hi - t1lo) * runs[i], r1 = t1lo + (t1hi - t1lo) * runs[i + 1];
+    const w0 = Math.max(0, r0 - deltaP), w1 = Math.min(1, r1 + deltaP);
+    if (twin === 1) stall(search, swap, r0, r1, w0, w1);
+    else stall(search, swap, r0, r1, 1 - w1, 1 - w0);
+  }
+  return true;
+}
+function dedupe(list2, tol) {
+  const out = [];
+  for (const i of list2) {
+    if (!out.some((o) => Math.hypot(o.x - i.x, o.y - i.y) <= tol * 8 && Math.abs(o.t1 - i.t1) <= 1e-6 + tol && Math.abs(o.t2 - i.t2) <= 1e-6 + tol)) out.push(i);
+  }
+  return out.sort((a, b) => a.t1 - b.t1);
+}
+function chordFractionToParam(c, u) {
+  const dx = c[6] - c[0], dy = c[7] - c[1];
+  const l2 = dx * dx + dy * dy;
+  if (l2 < 1e-24) return u;
+  const g2 = [
+    0,
+    ((c[2] - c[0]) * dx + (c[3] - c[1]) * dy) / l2,
+    ((c[4] - c[0]) * dx + (c[5] - c[1]) * dy) / l2,
+    1
+  ];
+  if (Math.abs(g2[1] - 1 / 3) < 1e-12 && Math.abs(g2[2] - 2 / 3) < 1e-12) return u;
+  const A = -g2[0] + 3 * g2[1] - 3 * g2[2] + g2[3];
+  const B = 3 * g2[0] - 6 * g2[1] + 3 * g2[2];
+  const C = -3 * g2[0] + 3 * g2[1];
+  const D = g2[0] - u;
+  const roots2 = cubicRoots01(A, B, C, D);
+  if (!roots2.length) return u;
+  let best = roots2[0], bestErr = Infinity;
+  for (const t of roots2) {
+    const mt = 1 - t;
+    const val = mt * mt * mt * g2[0] + 3 * mt * mt * t * g2[1] + 3 * mt * t * t * g2[2] + t * t * t * g2[3];
+    const err = Math.abs(val - u);
+    if (err < bestErr) {
+      bestErr = err;
+      best = t;
+    }
+  }
+  return best;
+}
+function intersectCubics(c1, c2, tol = EPS2) {
+  if (!boxesOverlap(boundsCubic(c1), boundsCubic(c2), tol)) return [];
+  const l1 = isLineCubic(c1, tol), l2 = isLineCubic(c2, tol);
+  if (l1 && l2) {
+    const hit = intersectSegments(c1[0], c1[1], c1[6], c1[7], c2[0], c2[1], c2[6], c2[7]);
+    if (!hit) return [];
+    return [{
+      ...hit,
+      t1: chordFractionToParam(c1, hit.t1),
+      t2: chordFractionToParam(c2, hit.t2)
+    }];
+  }
+  if (l1) {
+    return dedupe(intersectLineCubic(c1[0], c1[1], c1[6], c1[7], c2, tol).map((i) => ({ ...i, t1: chordFractionToParam(c1, i.t1) })), tol);
+  }
+  if (l2) {
+    return dedupe(intersectLineCubic(c2[0], c2[1], c2[6], c2[7], c1, tol).map((i) => ({ t1: i.t2, t2: chordFractionToParam(c2, i.t1), x: i.x, y: i.y })), tol);
+  }
+  const out = [];
+  const work = { nodes: 0, limit: CLIP_BUDGET.maxNodes, over: false };
+  clipIntersect(c1, c2, 0, 1, 0, 1, tol, 0, out, work);
+  CLIP_COUNTS.pairs++;
+  CLIP_COUNTS.nodes += work.nodes;
+  CLIP_COUNTS.lastNodes = work.nodes;
+  if (!work.over) return dedupe(out, tol);
+  CLIP_COUNTS.overruns++;
+  return intersectOverrun(c1, c2, tol);
+}
+function intersectOverrun(c1, c2, tol) {
+  const run = sharedRun(c1, c2, tol);
+  if (run) return run;
+  let mag = 0;
+  for (let i = 0; i < 8; i++) mag = Math.max(mag, Math.abs(c1[i]), Math.abs(c2[i]));
+  const b1 = boundsCubic(c1), b2 = boundsCubic(c2);
+  const size = Math.max(1, Math.max(b1.x1, b2.x1) - Math.min(b1.x0, b2.x0), Math.max(b1.y1, b2.y1) - Math.min(b1.y0, b2.y0));
+  let twin = coincideAtParams(c1, c2, TWIN_BAND * size) ? 1 : 0;
+  let c1r = null, c2r = null;
+  if (!twin) {
+    const rev = [c2[6], c2[7], c2[4], c2[5], c2[2], c2[3], c2[0], c2[1]];
+    if (coincideAtParams(c1, rev, TWIN_BAND * size)) {
+      twin = -1;
+      c2r = rev;
+      c1r = [c1[6], c1[7], c1[4], c1[5], c1[2], c1[3], c1[0], c1[1]];
+    }
+  }
+  const search = {
+    c1,
+    c2,
+    out: [],
+    stalled: [],
+    pad: Math.max(1e-12, mag * 64 * Number.EPSILON),
+    size,
+    twin,
+    c1r,
+    c2r,
+    nodes: 0,
+    over: false
+  };
+  overrunClip(c1, c2, 0, 1, 0, 1, tol, 0, search);
+  CLIP_COUNTS.overrunNodes += search.nodes;
+  CLIP_COUNTS.lastOverrunNodes = search.nodes;
+  if (search.nodes > CLIP_COUNTS.maxOverrunNodes) CLIP_COUNTS.maxOverrunNodes = search.nodes;
+  if (search.over) CLIP_COUNTS.ceilings++;
+  if (search.stalled.length) scanStalled(c1, c2, search.stalled, tol, search.out);
+  return dedupe(search.out, tol);
 }
 function scanStalled(c1, c2, stalled, tol, out) {
   let mag = 0;
@@ -53065,7 +53250,8 @@ function reportRunEnds(scan2, samples) {
     }
   }
   if (lo < 0 || hi <= lo) return;
-  const a = samples[lo], b = samples[hi];
+  const a = lo > 0 ? runEnd(scan2, samples[lo - 1], samples[lo]) : samples[lo];
+  const b = hi < samples.length - 1 ? runEnd(scan2, samples[hi + 1], samples[hi]) : samples[hi];
   if (Math.hypot(a.px - b.px, a.py - b.py) < RUN_MIN_REL * scan2.size) return;
   if (out.length > MAX_HITS - 2) return;
   for (const s of [a, b]) {
@@ -53073,6 +53259,19 @@ function reportRunEnds(scan2, samples) {
       out.push({ t1: s.t, t2: s.u, x: s.px, y: s.py });
     }
   }
+}
+function runEnd(scan2, outside, inside) {
+  const limit = scan2.tol * RUN_END_SHARE;
+  let a = outside.t, b = inside.t, best = inside;
+  for (let i = 0; i < RUN_END_STEPS && Math.abs(b - a) > 4 * Number.EPSILON; i++) {
+    const s = gapAt(scan2, (a + b) / 2);
+    if (!s) break;
+    if (s.d <= limit) {
+      best = s;
+      b = s.t;
+    } else a = s.t;
+  }
+  return best;
 }
 function gapAt(scan2, t) {
   if (scan2.budget-- <= 0) return null;
@@ -53246,15 +53445,14 @@ function touchPoint(scan2, samples) {
   if (fd && size(fd) < size(best)) best = fd;
   return Math.hypot(best.px - best.qx, best.py - best.qy) > tol ? null : best;
 }
-var EPS2, T_EPS, CLIP_BUDGET, CLIP_COUNTS, FLOOR_MIN_SIZE, POLISH_STEPS, POLISH_STEP_MIN, POLISH_PATIENCE, MAX_DEPTH, BOX_SLACK, POINT_OFF_SLACK, SHALLOW, MAX_HITS, SCAN_LIMITS, SAMPLES_PER_PIECE, MAX_STRETCH_SAMPLES, MIN_STRETCH_SAMPLES, GAP_BUDGET, LOOK_OUT_STEPS, END_NEAR, TOUCH, TOUCH_MERGE, TOUCH_JOIN_SAMPLES, STRETCH_REACH, side, readable, FOOT_SPEED, FOOT_SHARE, RUN_MIN_REL, CLOSEST_STEPS, TOUCH_STEPS;
+var EPS2, T_EPS, ROOT_SNAP, FLOOR_MIN_SIZE, POLISH_STEPS, POLISH_STEP_MIN, POLISH_PATIENCE, MAX_DEPTH, BOX_SLACK, POINT_OFF_SLACK, SHALLOW, CLIP_BUDGET, CLIP_COUNTS, TWIN_BAND, TWIN_TURN, TWIN_BEND, TWIN_REACH, TWIN_RUN_DEPTH, BINOM, ONES_6, OVERRUN_BUDGET, MAX_HITS, SCAN_LIMITS, SAMPLES_PER_PIECE, MAX_STRETCH_SAMPLES, MIN_STRETCH_SAMPLES, GAP_BUDGET, LOOK_OUT_STEPS, END_NEAR, TOUCH, TOUCH_MERGE, TOUCH_JOIN_SAMPLES, STRETCH_REACH, side, readable, FOOT_SPEED, FOOT_SHARE, RUN_MIN_REL, RUN_END_STEPS, RUN_END_SHARE, CLOSEST_STEPS, TOUCH_STEPS;
 var init_intersect = __esm({
   "engine/src/geom/intersect.ts"() {
     "use strict";
     init_bezier();
     EPS2 = 1e-9;
     T_EPS = 1e-9;
-    CLIP_BUDGET = { maxNodes: 16384 };
-    CLIP_COUNTS = { pairs: 0, overruns: 0, nodes: 0, lastNodes: 0 };
+    ROOT_SNAP = 32;
     FLOOR_MIN_SIZE = 16;
     POLISH_STEPS = 64;
     POLISH_STEP_MIN = 4 * Number.EPSILON;
@@ -53263,6 +53461,25 @@ var init_intersect = __esm({
     BOX_SLACK = 16;
     POINT_OFF_SLACK = 1e3;
     SHALLOW = 1e-3;
+    CLIP_BUDGET = { maxNodes: 16384 };
+    CLIP_COUNTS = { pairs: 0, overruns: 0, ceilings: 0, nodes: 0, lastNodes: 0, overrunNodes: 0, lastOverrunNodes: 0, maxOverrunNodes: 0 };
+    TWIN_BAND = 1e-4;
+    TWIN_TURN = 0.5;
+    TWIN_BEND = 0.35;
+    TWIN_REACH = 1.5;
+    TWIN_RUN_DEPTH = 12;
+    BINOM = (() => {
+      const rows2 = [[1]];
+      for (let n6 = 1; n6 <= 10; n6++) {
+        const prev = rows2[n6 - 1], row = [1];
+        for (let k = 1; k < n6; k++) row.push(prev[k - 1] + prev[k]);
+        row.push(1);
+        rows2.push(row);
+      }
+      return rows2;
+    })();
+    ONES_6 = [1, 1, 1, 1, 1, 1, 1];
+    OVERRUN_BUDGET = { maxNodes: 131072 };
     MAX_HITS = 128;
     SCAN_LIMITS = { maxStalledPairs: 65536 };
     SAMPLES_PER_PIECE = 8;
@@ -53280,6 +53497,8 @@ var init_intersect = __esm({
     FOOT_SPEED = 1e-3;
     FOOT_SHARE = 0.5;
     RUN_MIN_REL = 1e-3;
+    RUN_END_STEPS = 40;
+    RUN_END_SHARE = 0.9;
     CLOSEST_STEPS = 40;
     TOUCH_STEPS = 48;
   }
@@ -53311,23 +53530,42 @@ function booleanPath(a, b, op, opts = {}) {
   const splitsA = idxA.curves.map(() => []);
   const splitsB = idxB.curves.map(() => []);
   crossSplits(idxA.curves, idxB.curves, splitsA, splitsB, tol, weld, budget3);
+  const srcA = [], srcB = [];
+  const rangesA = [], rangesB = [];
   const edges = [
-    ...splitIntoEdges(idxA.curves, splitsA, weld),
-    ...splitIntoEdges(idxB.curves, splitsB, weld)
+    ...splitIntoEdges(idxA.curves, splitsA, weld, srcA, rangesA),
+    ...splitIntoEdges(idxB.curves, splitsB, weld, srcB, rangesB)
   ];
+  const nA = srcA.length;
+  const twins = findTwins(edges, weld, budget3);
+  const bundleOf = (i, ofA) => {
+    if (!twins[i].length) return null;
+    const map = /* @__PURE__ */ new Map();
+    for (const j of twins[i]) {
+      const inA = j < nA;
+      if (inA !== ofA) continue;
+      const ci = inA ? srcA[j] : srcB[j - nA], range = inA ? rangesA[j] : rangesB[j - nA];
+      const list2 = map.get(ci);
+      if (list2) list2.push(range);
+      else map.set(ci, [range]);
+    }
+    return map.size ? map : null;
+  };
   const kept = [];
-  for (const e of edges) {
-    const m2 = evalCubic(e, 0.5);
-    const ref = midTangent(e);
-    const wa = sideWindings(idxA, m2.x, m2.y, ref.x, ref.y, near, budget3);
-    const wb = sideWindings(idxB, m2.x, m2.y, ref.x, ref.y, near, budget3);
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    const tm = decideAt(e);
+    const m2 = evalCubic(e, tm);
+    const ref = midTangent(e, tm);
+    const wa = sideWindings(idxA, m2.x, m2.y, ref.x, ref.y, near, budget3, bundleOf(i, true));
+    const wb = sideWindings(idxB, m2.x, m2.y, ref.x, ref.y, near, budget3, bundleOf(i, false));
     const left = combine(wa.left !== 0, wb.left !== 0, op);
     const right = combine(wa.right !== 0, wb.right !== 0, op);
     if (left === right) continue;
     kept.push(left ? e : reverseCubic(e));
   }
   if (budget3.work <= 0) return abandon(A, B, op, "the work budget ran out mid-classification");
-  return compactPath(walkLoops(dedupeEdges(kept, weld), weld));
+  return compactPath(walkLoops(dedupeEdges(kept, weld, budget3), weld));
 }
 function unionPath(a, b, opts) {
   return booleanPath(a, b, "union", opts);
@@ -53359,22 +53597,38 @@ function selfUnion(p, opts = {}) {
   if (path.length === 1 && !splits.some((s) => s.length) && !selfTouching(path[0], weld)) {
     const only = path[0];
     const probe = only.curves[0];
-    const m2 = evalCubic(probe, 0.5);
-    const ref = midTangent(probe);
+    const tm = decideAt(probe);
+    const m2 = evalCubic(probe, tm);
+    const ref = midTangent(probe, tm);
     const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3);
     return [filled(w.left, rule) ? only : reverseContour(only)];
   }
   const kept = [];
-  for (const c of splitIntoEdges(idx.curves, splits, weld)) {
-    const m2 = evalCubic(c, 0.5);
-    const ref = midTangent(c);
-    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3);
+  const src = [];
+  const ranges = [];
+  const pieces = splitIntoEdges(idx.curves, splits, weld, src, ranges);
+  const twins = findTwins(pieces, weld, budget3);
+  for (let i = 0; i < pieces.length; i++) {
+    const c = pieces[i];
+    const tm = decideAt(c);
+    const m2 = evalCubic(c, tm);
+    const ref = midTangent(c, tm);
+    let bundle = null;
+    if (twins[i].length) {
+      bundle = /* @__PURE__ */ new Map();
+      for (const j of twins[i]) {
+        const list2 = bundle.get(src[j]);
+        if (list2) list2.push(ranges[j]);
+        else bundle.set(src[j], [ranges[j]]);
+      }
+    }
+    const w = sideWindings(idx, m2.x, m2.y, ref.x, ref.y, near, budget3, bundle);
     const left = filled(w.left, rule), right = filled(w.right, rule);
     if (left === right) continue;
     kept.push(left ? c : reverseCubic(c));
   }
   if (budget3.work <= 0) return path;
-  return compactPath(walkLoops(dedupeEdges(kept, weld), weld));
+  return compactPath(walkLoops(dedupeEdges(kept, weld, budget3), weld));
 }
 function windingNumber(p, x, y) {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return 0;
@@ -53490,12 +53744,26 @@ function buildIndex(p) {
   }
   return { curves, box: box3 };
 }
-function midTangent(c) {
-  const t = tangentAt(c, 0.5);
+function midTangent(c, at = 0.5) {
+  const t = tangentAt(c, at);
   if (Math.hypot(t.x, t.y) > 1e-12) return t;
   const dx = c[6] - c[0], dy = c[7] - c[1];
   if (Math.hypot(dx, dy) > 1e-12) return { x: dx, y: dy };
   return { x: 1, y: 0 };
+}
+function decideAt(c) {
+  const ext = extent(c);
+  let bestT = 0.5, bestS = -1;
+  for (const t of DECIDE_TS) {
+    const d = tangentAt(c, t);
+    const sp = Math.hypot(d.x, d.y);
+    if (t === 0.5 && sp >= DECIDE_SPEED * ext) return 0.5;
+    if (sp > bestS) {
+      bestS = sp;
+      bestT = t;
+    }
+  }
+  return bestT;
 }
 function sweepPairs(a, b, self, budget3, visit) {
   const byStart = (list2) => list2.map((_, i) => i).sort((p, q) => list2[p].box.x0 - list2[q].box.x0);
@@ -53618,7 +53886,7 @@ function pairSplits(ci, cj, tol, weld, budget3) {
       b0 = Math.min(b0, h.t2);
       b1 = Math.max(b1, h.t2);
     }
-    if (hits2.length > 9 || continuesAsSameCurve(ci, a0, a1, cj, b0, b1, weld) !== 0) {
+    if (continuesAsSameCurve(ci, a0, a1, cj, b0, b1, weld) !== 0) {
       return overlapSplits(ci, cj, weld, budget3);
     }
   }
@@ -53651,8 +53919,19 @@ function overlapRun(ci, cj, weld, budget3) {
   }
   const sa = subCubic(ci, a0, a1), sb = subCubic(cj, b0, b1);
   if (extent(sa) <= weld || extent(sb) <= weld) return null;
-  if (coincidence(sa, sb, weld) === 0) return null;
+  if (coincidence(sa, sb, weld) === 0 && !sameTrace(sa, sb, weld, budget3)) return null;
   return { a: [a0, a1], b: [b0, b1] };
+}
+function sameTrace(a, b, weld, budget3) {
+  for (let k = 1; k < TRACE_SAMPLES; k++) {
+    budget3.work -= 32 * 2;
+    const t = k / TRACE_SAMPLES;
+    const p = evalCubic(a, t);
+    if (nearestOnCubic(b, p.x, p.y).distance > weld) return false;
+    const q = evalCubic(b, t);
+    if (nearestOnCubic(a, q.x, q.y).distance > weld) return false;
+  }
+  return true;
 }
 function inflated(b, x, y, pad) {
   return x >= b.x0 - pad && x <= b.x1 + pad && y >= b.y0 - pad && y <= b.y1 + pad;
@@ -53743,6 +54022,33 @@ function overlapSplits(ci, cj, weld, budget3) {
   }
   return { a, b };
 }
+function alignSplits(groups, weld, budget3) {
+  const points = [];
+  for (const g2 of groups) {
+    for (let i = 0; i < g2.curves.length; i++) {
+      for (const t of g2.splits[i]) {
+        const p = evalCubic(g2.curves[i].c, t);
+        points.push(p);
+      }
+    }
+  }
+  if (!points.length) return;
+  let curveCount = 0;
+  for (const g2 of groups) curveCount += g2.curves.length;
+  if (points.length * curveCount > MAX_ALIGN_PAIRS) return;
+  for (const g2 of groups) {
+    for (let j = 0; j < g2.curves.length; j++) {
+      const ic = g2.curves[j];
+      for (const p of points) {
+        if (!inflated(ic.box, p.x, p.y, weld)) continue;
+        if (budget3.work <= 0) return;
+        budget3.work -= 32;
+        const n6 = nearestOnCubic(ic.c, p.x, p.y);
+        if (n6.distance <= weld) addSplit(g2.splits, j, n6.t, budget3);
+      }
+    }
+  }
+}
 function selfSplits(curves, splits, tol, weld, budget3) {
   const identities = /* @__PURE__ */ new Map();
   const ids2 = curves.map(({ c }) => {
@@ -53769,6 +54075,7 @@ function selfSplits(curves, splits, tol, weld, budget3) {
     for (const t of found.a) addSplit(splits, i, t, budget3);
     for (const t of found.b) addSplit(splits, j, t, budget3);
   });
+  alignSplits([{ curves, splits }], weld, budget3);
 }
 function crossSplits(a, b, splitsA, splitsB, tol, weld, budget3) {
   sweepPairs(a, b, false, budget3, (i, j) => {
@@ -53777,14 +54084,19 @@ function crossSplits(a, b, splitsA, splitsB, tol, weld, budget3) {
     for (const t of found.a) addSplit(splitsA, i, t, budget3);
     for (const t of found.b) addSplit(splitsB, j, t, budget3);
   });
+  alignSplits([{ curves: a, splits: splitsA }, { curves: b, splits: splitsB }], weld, budget3);
 }
-function splitIntoEdges(curves, splits, weld) {
+function splitIntoEdges(curves, splits, weld, src, ranges) {
   const out = [];
   for (let i = 0; i < curves.length; i++) {
     const ts = splits[i];
     const c = curves[i].c;
     if (!ts.length) {
-      if (extent(c) > weld) out.push(c);
+      if (extent(c) > weld) {
+        out.push(c);
+        src?.push(i);
+        ranges?.push([0, 1]);
+      }
       continue;
     }
     const cuts = [0];
@@ -53799,10 +54111,69 @@ function splitIntoEdges(curves, splits, weld) {
     else cuts[cuts.length - 1] = 1;
     for (let k = 1; k < cuts.length; k++) {
       const piece = subCubic(c, cuts[k - 1], cuts[k]);
-      if (extent(piece) > weld) out.push(piece);
+      if (extent(piece) > weld) {
+        out.push(piece);
+        src?.push(i);
+        ranges?.push([cuts[k - 1], cuts[k]]);
+      }
     }
   }
   return out;
+}
+function inBundle(bundle, ci, t) {
+  const ranges = bundle.get(ci);
+  if (!ranges) return false;
+  for (const [t0, t1] of ranges) if (t >= t0 - 1e-6 && t <= t1 + 1e-6) return true;
+  return false;
+}
+function findTwins(edges, weld, budget3) {
+  const twins = edges.map(() => []);
+  const spans = edges.map(extent);
+  nearPieces(edges, weld, (i, j) => {
+    if (spans[i] <= 2 * weld || spans[j] <= 2 * weld) return true;
+    if (budget3.work <= 0) return false;
+    if (coincidence(edges[i], edges[j], weld) !== 0 || sameTrace(edges[i], edges[j], weld, budget3)) {
+      twins[i].push(j);
+      twins[j].push(i);
+    }
+    return true;
+  });
+  return twins;
+}
+function nearPieces(edges, weld, visit) {
+  const cell = Math.max(weld * 4, 1e-12);
+  const buckets = /* @__PURE__ */ new Map();
+  const put = (x, y, i) => {
+    const key = `${Math.round(x / cell)},${Math.round(y / cell)}`;
+    const bucket = buckets.get(key);
+    if (bucket) {
+      if (bucket[bucket.length - 1] !== i) bucket.push(i);
+    } else buckets.set(key, [i]);
+  };
+  const mids = edges.map((e) => evalCubic(e, 0.5));
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    put(e[0], e[1], i);
+    put(mids[i].x, mids[i].y, i);
+    put(e[6], e[7], i);
+  }
+  const seen = /* @__PURE__ */ new Set();
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    seen.clear();
+    for (const [x, y] of [[e[0], e[1]], [mids[i].x, mids[i].y], [e[6], e[7]]]) {
+      const cx = Math.round(x / cell), cy = Math.round(y / cell);
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          for (const j of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
+            if (j <= i || seen.has(j)) continue;
+            seen.add(j);
+            if (!visit(i, j)) return;
+          }
+        }
+      }
+    }
+  }
 }
 function buildRayDirs() {
   const out = [[1, 0], [0, 1]];
@@ -53825,18 +54196,21 @@ function reachFrom(idx, px, py) {
   const dx = Math.max(b.x0 - px, px - b.x1, 0), dy = Math.max(b.y0 - py, py - b.y1, 0);
   return 2 * (diag + Math.hypot(dx, dy)) + 1;
 }
-function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false) {
+function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false, bundle = null) {
+  const twin = near * 100;
   const reach2 = reachFrom(idx, px, py);
   const qx = px + ux * reach2, qy = py + uy * reach2;
-  const rx0 = Math.min(px, qx) - near, rx1 = Math.max(px, qx) + near;
-  const ry0 = Math.min(py, qy) - near, ry1 = Math.max(py, qy) + near;
   const nx = -uy, ny = ux;
   const hitTol = Math.max(
     near,
     64 * Number.EPSILON * Math.max(Math.abs(px), Math.abs(py), Math.abs(qx), Math.abs(qy), 1)
   );
+  const look2 = Math.max(hitTol, 4 * twin, near * 32);
+  const rx0 = Math.min(px, qx) - look2, rx1 = Math.max(px, qx) + look2;
+  const ry0 = Math.min(py, qy) - look2, ry1 = Math.max(py, qy) + look2;
   let far = 0, net = 0, ok3 = true;
-  for (const ic of idx.curves) {
+  for (let ci = 0; ci < idx.curves.length; ci++) {
+    const ic = idx.curves[ci];
     if (budget3.work <= 0) return { far, net, ok: false };
     budget3.work -= 1;
     const b = ic.box;
@@ -53848,18 +54222,31 @@ function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false) {
       continue;
     }
     budget3.work -= 8;
-    for (const hit of intersectLineCubic(px, py, qx, qy, c, hitTol)) {
+    const hits2 = intersectLineCubic(px - ux * reach2, py - uy * reach2, qx, qy, c, hitTol, false);
+    for (const hit of hits2) {
       const t = hit.t2;
-      const s = hit.t1 * reach2;
+      const s = (hit.t1 * 2 - 1) * reach2;
+      if (s < -look2) continue;
       const tg = tangentAt(c, t);
-      if (s <= near && ref) {
+      const off = Math.abs(s);
+      if (bundle && ref && off <= 4 * twin && inBundle(bundle, ci, t)) {
         net += Math.sign(tg.x * ref.x + tg.y * ref.y);
         continue;
       }
-      const mag = Math.hypot(tg.x, tg.y);
-      const cr = ux * tg.y - uy * tg.x;
-      const sideless = mag < 1e-12 || Math.abs(cr) < 1e-6 * mag;
-      if (sideless || t < T_GUARD || t > 1 - T_GUARD || ref !== null && s <= near * 32) {
+      if (ref && off <= near) {
+        net += Math.sign(tg.x * ref.x + tg.y * ref.y);
+        continue;
+      }
+      const cr = hit.dir ?? Math.sign(ux * tg.y - uy * tg.x);
+      if (s < 0) {
+        if (off <= near * 32 && !complete) {
+          ok3 = false;
+          return { far, net, ok: ok3 };
+        }
+        continue;
+      }
+      const sideless = cr === 0;
+      if (sideless || t < T_GUARD || t > 1 - T_GUARD || ref !== null && off <= near * 32) {
         ok3 = false;
         if (!complete) return { far, net, ok: ok3 };
         if (sideless || t > 1 - T_GUARD) continue;
@@ -53869,7 +54256,7 @@ function castRay(idx, px, py, ux, uy, ref, near, budget3, complete = false) {
   }
   return { far, net, ok: ok3 };
 }
-function sideWindings(idx, px, py, rx, ry, near, budget3) {
+function sideWindings(idx, px, py, rx, ry, near, budget3, bundle = null) {
   const dirs = rayDirections(rx, ry);
   const sidesOf = (d2, cast2) => {
     const g2 = d2[0] * ry - d2[1] * rx;
@@ -53877,13 +54264,13 @@ function sideWindings(idx, px, py, rx, ry, near, budget3) {
   };
   let last = null;
   for (const d2 of dirs) {
-    const cast2 = castRay(idx, px, py, d2[0], d2[1], { x: rx, y: ry }, near, budget3);
+    const cast2 = castRay(idx, px, py, d2[0], d2[1], { x: rx, y: ry }, near, budget3, false, bundle);
     if (cast2.ok) return sidesOf(d2, cast2);
     last = sidesOf(d2, cast2);
     if (budget3.work <= 0) return last;
   }
   const d = dirs[0];
-  const cast = castRay(idx, px, py, d[0], d[1], { x: rx, y: ry }, near, budget3, true);
+  const cast = castRay(idx, px, py, d[0], d[1], { x: rx, y: ry }, near, budget3, true, bundle);
   return cast.ok || budget3.work > 0 ? sidesOf(d, cast) : last ?? { left: 0, right: 0 };
 }
 function coincidence(a, b, weld) {
@@ -53920,39 +54307,22 @@ function continuesAsSameCurve(ci, a0, a1, cj, b0, b1, weld) {
   }
   return 0;
 }
-function dedupeEdges(edges, weld) {
-  const cell = Math.max(weld * 4, 1e-12);
-  const buckets = /* @__PURE__ */ new Map();
-  const mids = edges.map((e) => evalCubic(e, 0.5));
+function dedupeEdges(edges, weld, budget3) {
   const spans = edges.map(extent);
   const dead = new Uint8Array(edges.length);
-  for (let i = 0; i < edges.length; i++) {
-    const m2 = mids[i];
-    const key = `${Math.round(m2.x / cell)},${Math.round(m2.y / cell)}`;
-    const bucket = buckets.get(key);
-    if (bucket) bucket.push(i);
-    else buckets.set(key, [i]);
-  }
-  for (let i = 0; i < edges.length; i++) {
-    if (dead[i]) continue;
-    const m2 = mids[i];
-    const cx = Math.round(m2.x / cell), cy = Math.round(m2.y / cell);
-    for (let ox = -1; ox <= 1 && !dead[i]; ox++) {
-      for (let oy = -1; oy <= 1 && !dead[i]; oy++) {
-        for (const j of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
-          if (j <= i || dead[j]) continue;
-          if (spans[i] <= 2 * weld || spans[j] <= 2 * weld) continue;
-          const rel = coincidence(edges[i], edges[j], weld);
-          if (rel === 0) continue;
-          dead[j] = 1;
-          if (rel === -1) {
-            dead[i] = 1;
-            break;
-          }
-        }
-      }
+  nearPieces(edges, weld, (i, j) => {
+    if (dead[i] || dead[j]) return true;
+    if (spans[i] <= 2 * weld || spans[j] <= 2 * weld) return true;
+    let rel = coincidence(edges[i], edges[j], weld);
+    if (rel === 0 && budget3.work > 0 && sameTrace(edges[i], edges[j], weld, budget3)) {
+      const ti = midTangent(edges[i]), tj = midTangent(edges[j]);
+      rel = ti.x * tj.x + ti.y * tj.y >= 0 ? 1 : -1;
     }
-  }
+    if (rel === 0) return true;
+    dead[j] = 1;
+    if (rel === -1) dead[i] = 1;
+    return true;
+  });
   return edges.filter((_, i) => !dead[i]);
 }
 function walkLoops(edges, weld) {
@@ -53968,7 +54338,26 @@ function walkLoops(edges, weld) {
   });
   const used = new Uint8Array(edges.length);
   const out = [];
-  const candidatesAt = (x, y) => {
+  const nearestStart = (x, y, radius) => {
+    const cx = Math.round(x / cell), cy = Math.round(y / cell);
+    const span = Math.ceil(radius / cell) + 1;
+    let best = -1, bestD = radius;
+    for (let ox = -span; ox <= span; ox++) {
+      for (let oy = -span; oy <= span; oy++) {
+        for (const i of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
+          if (used[i]) continue;
+          const e = edges[i];
+          const d = Math.hypot(e[0] - x, e[1] - y);
+          if (d <= bestD) {
+            bestD = d;
+            best = i;
+          }
+        }
+      }
+    }
+    return best;
+  };
+  const candidatesAt = (x, y, radius) => {
     const cx = Math.round(x / cell), cy = Math.round(y / cell);
     const found = [];
     for (let ox = -1; ox <= 1; ox++) {
@@ -53976,7 +54365,7 @@ function walkLoops(edges, weld) {
         for (const i of buckets.get(`${cx + ox},${cy + oy}`) ?? []) {
           if (used[i]) continue;
           const e = edges[i];
-          if (Math.hypot(e[0] - x, e[1] - y) <= weld) found.push(i);
+          if (Math.hypot(e[0] - x, e[1] - y) <= radius) found.push(i);
         }
       }
     }
@@ -53989,21 +54378,44 @@ function walkLoops(edges, weld) {
     const sx = start[0], sy = start[1];
     let cur = seed;
     let joined = false;
+    let slack = false;
     for (let guard2 = 0; guard2 <= edges.length; guard2++) {
       used[cur] = 1;
-      const e = edges[cur];
+      let e = edges[cur];
+      if (curves.length) {
+        const prev = curves[curves.length - 1];
+        if (e[0] !== prev[6] || e[1] !== prev[7]) e = [prev[6], prev[7], e[2], e[3], e[4], e[5], e[6], e[7]];
+      }
       curves.push(e);
       const ex = e[6], ey = e[7];
       if (Math.hypot(ex - sx, ey - sy) <= weld) {
         joined = true;
         break;
       }
-      const options2 = candidatesAt(ex, ey);
-      if (!options2.length) break;
+      let options2 = candidatesAt(ex, ey, weld);
+      if (!options2.length) {
+        options2 = candidatesAt(ex, ey, WALK_SLACK * weld);
+        if (options2.length) slack = true;
+      }
+      if (!options2.length) {
+        const hop = nearestStart(ex, ey, WALK_HOP * weld);
+        if (hop >= 0) {
+          options2 = [hop];
+          slack = true;
+        }
+      }
+      if (!options2.length) {
+        if (Math.hypot(ex - sx, ey - sy) <= WALK_SLACK * weld) slack = true;
+        break;
+      }
       cur = options2.length === 1 ? options2[0] : pickTurn(edges, e, options2);
     }
     if (!curves.length) continue;
-    if (!joined && Math.abs(contourArea({ curves, closed: true })) <= weld * chainSpan(curves)) continue;
+    if ((!joined || slack) && Math.abs(contourArea({ curves, closed: true })) <= weld * chainSpan(curves)) continue;
+    if (joined || slack) {
+      const last = curves[curves.length - 1], first = curves[0];
+      if (last[6] !== first[0] || last[7] !== first[1]) curves[curves.length - 1] = [last[0], last[1], last[2], last[3], last[4], last[5], first[0], first[1]];
+    }
     out.push({ curves, closed: true });
   }
   return out;
@@ -54021,7 +54433,7 @@ function pickTurn(edges, incoming, options2) {
     const d = startTangent(edges[i]);
     let delta = back - Math.atan2(d.y, d.x);
     delta -= Math.floor(delta / (Math.PI * 2)) * (Math.PI * 2);
-    if (delta <= 1e-12) delta = Math.PI * 2;
+    if (delta <= TURN_TIE || delta >= Math.PI * 2 - TURN_TIE) delta = Math.PI * 2;
     if (delta < bestDelta) {
       bestDelta = delta;
       best = i;
@@ -54039,7 +54451,7 @@ function endTangent(c) {
   if (Math.hypot(t.x, t.y) > 1e-12) return t;
   return { x: c[6] - c[0], y: c[7] - c[1] };
 }
-var GeomLimitError, MAX_CURVES, MAX_SPLITS, MAX_PAIRS, MAX_WORK, MAX_CONTACT_NODES, CONTACT_SEED, MAX_CONTACT_LEAVES, T_GUARD, reverseCubic, RAY_DIRS;
+var GeomLimitError, MAX_CURVES, MAX_SPLITS, MAX_PAIRS, MAX_WORK, MAX_CONTACT_NODES, CONTACT_SEED, MAX_CONTACT_LEAVES, T_GUARD, reverseCubic, DECIDE_TS, DECIDE_SPEED, TRACE_SAMPLES, MAX_ALIGN_PAIRS, RAY_DIRS, WALK_SLACK, WALK_HOP, TURN_TIE;
 var init_boolean = __esm({
   "engine/src/geom/boolean.ts"() {
     "use strict";
@@ -54063,7 +54475,14 @@ var init_boolean = __esm({
     MAX_CONTACT_LEAVES = 24;
     T_GUARD = 1e-7;
     reverseCubic = (k) => [k[6], k[7], k[4], k[5], k[2], k[3], k[0], k[1]];
+    DECIDE_TS = [0.5, 0.25, 0.75, 0.375, 0.625];
+    DECIDE_SPEED = 0.1;
+    TRACE_SAMPLES = 7;
+    MAX_ALIGN_PAIRS = 2e6;
     RAY_DIRS = buildRayDirs();
+    WALK_SLACK = 4;
+    WALK_HOP = 64;
+    TURN_TIE = 1e-6;
   }
 });
 
@@ -57886,13 +58305,13 @@ function packBitsEncode(src) {
   let o = 0;
   let i = 0;
   while (i < n6) {
-    let runEnd = i + 1;
-    while (runEnd < n6 && runEnd - i < 128 && src[runEnd] === src[i]) runEnd++;
-    const runLen = runEnd - i;
+    let runEnd2 = i + 1;
+    while (runEnd2 < n6 && runEnd2 - i < 128 && src[runEnd2] === src[i]) runEnd2++;
+    const runLen = runEnd2 - i;
     if (runLen >= 3) {
       out[o++] = 257 - runLen;
       out[o++] = src[i];
-      i = runEnd;
+      i = runEnd2;
     } else {
       let j = i + 1;
       while (j < n6 && j - i < 128) {

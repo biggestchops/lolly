@@ -7,9 +7,9 @@
  *
  * | pair | method | exactness |
  * |---|---|---|
- * | line × line | one determinant | exact |
- * | line × cubic | cubic root solve in the line's frame | exact to root-solver precision |
- * | cubic × cubic | fat-line (Bézier) clipping | converges quadratically to `tol` |
+ * | line x line | one determinant | exact |
+ * | line x cubic | cubic root solve in the line's frame | exact to root-solver precision |
+ * | cubic x cubic | fat-line (Bezier) clipping | converges quadratically to `tol` |
  *
  * A line is not a special case in the data model. It is a cubic with collinear
  * controls. So the code picks a method by testing the geometry, not by checking a type
@@ -20,7 +20,7 @@
  * The obvious method is recursive bisection: split both curves, keep the pairs whose
  * boxes overlap, and stop when the pieces are small. This converges LINEARLY, so
  * pinning an intersection to 1e-9 takes about 30 levels and up to 2^30 pairs in the
- * worst case. Fat-line clipping (Sederberg & Nishita 1990) instead computes, in one
+ * worst case. Fat-line clipping (Sederberg and Nishita 1990) instead computes, in one
  * step, the parameter interval of curve A that could possibly lie inside the "fat
  * line" bounding curve B, and discards the rest. This converges quadratically, usually
  * 5-8 iterations to full double precision, and it never approximates the curve, only
@@ -28,98 +28,146 @@
  * cannot make progress: near-tangential contact, where the fat line barely clips
  * anything.
  *
- * ## The clip search is the contract, and it now counts its work
+ * ## What is always on
  *
- * What this file returns is what it returned before the budget existed: for every pair that
- * finishes inside the budget, the same hits, in the same order, at the same parameters. No
- * answer depends on how much budget was left.
+ * The root solve, on every call. `cubicRoots01` isolates its roots between the derivative's
+ * zeros instead of using Cardano's formula, reports a repeated root once, and gives each
+ * root the sign the cubic changes by there. That sign reaches a caller as `Intersection.dir`
+ * on the line paths, and the boolean's ray cast counts a crossing from it rather than from
+ * the tangent at the root, which at the apex of a cusp is a rounding-sized vector pointing
+ * anywhere. `cubicRoots01` says what the closed form got wrong and where. The line paths
+ * have no budget and no second search: what they return is what every caller gets.
  *
- * The budget is here because the clip search has one failure of cost, not of correctness. A
- * clip measures how far one curve is from the other's fat line and nothing else, so two
- * curves that agree to high order along a stretch give it nothing to cut: a shape against a
- * copy rounded or rotated by a hair, a C/S pair repeated in one path, or a stroke outline
- * built from either. Bisecting such a pair only doubles the pieces, which still lie along
- * each other, so the search runs for hundreds of thousands of steps. The weekly fuzz soak
- * found one 185-byte path of repeated coincident C/S pairs costing about a second per
- * boolean operation that way; it is kept as
- * `tests/fuzz/regressions/geom-repeated-coincident-cs-pairs.bin`.
+ * This is not free of consequence, and the consequence was measured. Over the 1,807,972
+ * distinct cubic pairs of 620 real SVGs in this tree (catalog assets, the docs screenshots,
+ * the test fixtures, the community tools and the web shell's own artwork), the two builds
+ * report a different SET of points on 4,205 pairs that took an exact line path. Every one of
+ * those differences is a contact the committed build missed and this one reports: 4,157 of
+ * them a shared vertex, 48 of them an interior contact. Zero points are reported by this
+ * build that do not lie on both curves, and zero contacts reported by the committed build
+ * are lost. The commonest case is a rounded rectangle, whose straight side ends exactly where
+ * the corner arc begins: the root is a rounding error outside [0, 1], at -1e-19, and the
+ * committed solver found no sign change there, so the vertex was not reported at all.
  *
- * Ordinary work is nowhere near that. Counting calls to `clipIntersect` per pair: over the
- * 41,151 pairs of the two recorded corpora (real paths, and the geom fuzz corpus) the median
- * is 9 to 14, the p99 141 to 430 and the p99.9 467 to 571; over the 18,234 pairs of a sweep
- * of ordinary shapes (circles, ellipses, stars, rounded rectangles, and booleans of them) the
- * p99.9 is 1,614 and the heaviest single pair takes 7,598. The pairs that cannot be clipped
- * apart take 21,627 to 6,017,622.
+ * ## What is behind a budget, and why
  *
- * `CLIP_BUDGET.maxNodes` is 16,384: twenty-eight times the p99.9 of the corpora, and more than
- * twice the heaviest pair the ordinary sweep produced. Six of the 41,151 corpus pairs cross
- * it, five of them come back with a different answer, and those five are the same five that
- * change at four times the budget, so the number is not cutting into a crowd. Lowering it to
- * 4,096 would change five more answers; raising it to 32,768 changes none back, and costs the
- * reproducer half as much again.
+ * The clip search has one failure of cost, not of correctness. A clip measures how far one
+ * curve is from the other's fat line and nothing else, so two curves that agree to high
+ * order along a stretch give it nothing to cut: a shape against a copy rounded or rotated by
+ * a hair, a C/S pair repeated in one path, or a stroke outline built from either. Bisecting
+ * such a pair only doubles the pieces, which still lie along each other, so the search runs
+ * for hundreds of thousands of steps. The weekly fuzz soak found one 185-byte path of
+ * repeated coincident C/S pairs costing about a second per boolean operation that way; it is
+ * kept as `tests/fuzz/regressions/geom-repeated-coincident-cs-pairs.bin`.
  *
- * ## What happens to a pair that runs out of budget
- *
- * It is abandoned whole. The hits the clip search had already found for it are thrown away,
- * and the pair alone is answered by the overrun search in the second half of this file
- * (`intersectOverrun`). So a pair is answered by one search or by the other, never partly by
- * each, and which one answers it depends on nothing but the two curves, the order they are
- * given in, and the tolerance: the same call takes the same path every time.
+ * So `clipIntersect` counts its calls. A pair that passes `CLIP_BUDGET.maxNodes` is
+ * abandoned whole, the hits it had already found thrown away, and answered instead by
+ * `intersectOverrun`, the search in the second half of this file. A pair is answered by one
+ * search or by the other, never partly by each, and which one answers it depends on nothing
+ * but the two curves, the order they are given in, and the tolerance.
  *
  * The order matters because the clip search is not symmetric: it clips one curve against the
  * other's fat line and then exchanges their roles, so the two orders cost slightly different
- * numbers of nodes. A pair right at the budget can therefore go one way in one order and the
- * other way in the other (a loop against a copy of itself a hundred-thousandth away takes
- * 15,701 nodes one way round and more than the budget the other). That was already true of
- * the answers themselves, which have never been symmetric either.
+ * numbers of nodes, and a pair right at the budget can go one way in one order and the other
+ * way in the other. That was already true of the answers themselves, which have never been
+ * symmetric either.
  *
- * The overrun search asks the question a different way, for the pairs where clipping cannot
- * see. `sharedRun` answers two curves that are the same curve over a run. `overrunClip` stops
- * on a pair it cannot separate rather than bisecting it for ever. `scanStalled` then finds
- * the crossings and touches inside each stopped stretch by reading which side of one curve
- * the other is on, which works at angles far below anything a clip can resolve. What it
- * promises is listed on `intersectOverrun`, and it is not the same promise as the clip
- * search's: it reports one contact per zone of contact rather than a point per piece the
- * clip happened to close on.
+ * What the budget buys, and what it costs, both measured on this tree:
+ *
+ * - Under the budget nothing moved. Of those 1,807,972 real pairs, 33,870 reached the clip
+ *   search and 1,416 crossed the budget; every one of the other 32,454 returns the committed
+ *   build's answer, point for point and digit for digit.
+ * - Real artwork DOES cross it. Those 1,416 pairs are in about sixty files, the heaviest
+ *   being `docs/shots/bs-palette-pane.svg` (196 pairs), `at2-manifest-about-card.svg` (144)
+ *   and the `deck-studio` and `stationery` catalog previews. This is not a budget only a
+ *   fuzzer reaches.
+ * - There is no cost cliff at the line. 16,384 nodes is only 4.5 to 10.3 ms of the committed
+ *   build's time, so a pair it answers quickly can still cross, which is the sharpest form of
+ *   the concern. Twenty-three pairs engineered to land at exactly 16,385 nodes (two shapes,
+ *   ten shifts, both operand orders) cost the committed build 4.5 to 10.3 ms and this build
+ *   4.5 to 6.5: every ratio between 0.5x and 1.1x, and not one of them over 10 ms and more
+ *   than twice as slow. The reason the cliff is not there is `twinNode`, which decides a
+ *   near-copy node from the polynomial of the offset instead of cutting it down.
+ *
+ * What the budget costs is the other half of that first bullet, and it is a real cost. A pair
+ * under the budget keeps the clip search's answer, DEFECTS INCLUDED. On the near-copy families
+ * this build is far better than the committed one and measurably worse than a build with no
+ * budget at all: over four shards of loops and cusps against near-copies, the committed build
+ * is wrong on 2,494 grid judgements, this build on 197 (31 of them wrong only here, nearly all
+ * inside a sliver a weld radius wide), and the same search with the budget at zero on 1. The
+ * curve is in plans/geom-kernel-notes.md with what each budget costs in time; the number is
+ * one line, and it was chosen to keep "under the budget nothing moves" true rather than to
+ * make that family come out best.
+ *
+ * The number itself came from the node counts. Ordinary pairs finish in tens of nodes; over
+ * the recorded corpora the p99.9 is 467 to 571, and the heaviest pair of a sweep of circles,
+ * ellipses, stars and rounded rectangles takes 7,598. The pairs that cannot be clipped apart
+ * take 21,627 and up, to six million. The gap between those two populations is wide and
+ * empty, and 16,384 is inside it.
  *
  * ## What the handoff costs, measured
  *
  * A boolean calls this for every pair of curves in its two operands, so one operation can get
- * both kinds of answer: the clip search's for most pairs, and the overrun search's for the few
- * that went over. boolean.ts was written against the first kind and has always had it, and
- * that mixture is not free. Over the adversarial shape families this change was measured on
- * (near-copies at four scales, transforms, weld borders, cusp tips, stacks of near-copies,
- * triple crossings, about 60,000 grid judgements in all), the result is right where the clip
- * search alone was wrong about 3,570 times, and wrong where the clip search alone was right
- * about 58 times, most of them extra sliver contours on shapes whose two boundaries lie within
- * a weld radius of each other. One family of stacked near-copies also has two rows where a
- * stroke comes out worse than before. The way to remove those is for one search to answer
- * everything, which is what the parked work below was for.
+ * both kinds of answer. On the families where the committed search is slow, the handoff is
+ * what makes them fast:
  *
- * ## The rest of that work is parked
+ * - The four reversed near-coincident loop pairs: 10 to 97 ms against 110 to 3,837.
+ * - The 44 slow tangent pairs of the round 3 corpus: 815 ms in total against 184,085, worst
+ *   89 ms against 18,018, and not one pair more than twice as slow.
+ * - The fuzz reproducer: see `tests/geom-work-budget.test.ts`, which pins it.
  *
- * The overrun search came out of four rounds of rewriting this file and boolean.ts, between
- * 2026-09-16 and 2026-09-18. Every round was better on most families and worse on one, and
- * the last was worse on three: cusp-tip shapes came out grossly wrong through a new ray
- * parity test in boolean.ts, reversed near-identical loops ran seven to nine times slower,
- * and one sub-weld case changed. Only the cost fix ships. Parked with it: every change to
- * boolean.ts, a root solver that isolates roots between a cubic's critical points, and the
- * `clamp` argument on `intersectLineCubic` that the boolean's ray cast wanted. The evidence
- * is the maintainer's review reports geom-verdict-1.txt, geom-round2-full.json,
- * geom-round3-full.json, geom-verdict-3.json and geom-round4-all.json, with a snapshot of the
- * round 4 tree beside them, all local to that machine rather than in any repo (the same
- * standing as a `plans/` file).
+ * ## The overrun search has a ceiling of its own
  *
- * ## A bug this file still has
+ * Neither search bounds its own recursion, and each has inputs that run away in it. The
+ * committed one runs away on a shape against a near-copy of itself, which is what the budget
+ * above answers. The overrun search runs away on a curve against a REPARAMETRISED piece of
+ * itself, two fits of one arc cut at different places: `twinNode` cannot see such a pair,
+ * because it is not a twin at equal parameters, and `sharedRun` answers it only while its
+ * ends project onto each other, so at large coordinates the pair falls through to bisection
+ * and the pieces still lie along each other at every level. Two overlapping pieces of one
+ * cubic 30,000 units long spent 28,235,256 nodes and 47 seconds there.
  *
- * `cubicRoots01` returns no root at all for a cubic whose leading coefficient is tiny against
- * the others: `cubicRoots01(2.47e-9, -3, 3, -0.514)` is `[]`, where the true roots in [0, 1]
- * are 0.2196 and 0.7804. In the depressed form, p and q are then of the order of (b/a)
- * squared and cubed, and their cancellation loses the two roots that matter. A line against a
- * near-copy of a symmetric curve reaches it, so a ray cast can miss such a curve entirely.
- * The parked root solver fixes this. This change deliberately does not: the fix would move
- * the answer on the line paths, which have no budget and no second search, and those answers
- * are the contract.
+ * So `overrunClip` counts its calls too, against `OVERRUN_BUDGET.maxNodes`, and stops
+ * descending when it passes them. The pair is not abandoned: the stretches already kept go to
+ * `scanStalled` as any others, so the answer is a search of less of the pair rather than a
+ * different kind of answer. On the 30,000-unit pair above the answer is the same at every
+ * ceiling from 32,768 to 524,288 and to none at all: the two ends of the shared run, at
+ * (0.4286, 0) and (1, 0.5714). Only the time changes.
+ *
+ * ## Known limits, measured
+ *
+ * Two crossings a hundredth of the curve apart at the apex of a cusp against a copy of
+ * itself come back as one contact: within a hundredth of the apex the nearest point on the
+ * copy jumps between its two branches, no side can be read there, and the two crossings
+ * are one zone. The boolean then cuts once, and the lens between the two crossings, a few
+ * weld radii wide at most, goes to whichever side the piece is decided on.
+ *
+ * A feature no wider than one weld radius is below what a boolean at that tolerance can
+ * resolve, and this search reports the run rather than the two sides of it. The operation
+ * then comes back EMPTY on some of those, where the search before it kept a sliver: 40 rows
+ * of a sweep over bars and combs from 0.3 to 3000 weld radii wide, every one of them at 0.3
+ * or 1.0. Neither answer is specified at or under the resolution; what IS specified is that
+ * the answer stops changing with the tolerance once the feature is a weld radius and a half
+ * wide, which it does from 1.5 up.
+ *
+ * The reparametrised near-copy above is a hole in BOTH searches, not a defect this change
+ * introduced, and each build has its own inputs that fall in it. Over 162 rows of that family
+ * (three shapes, six sizes, three cut placements, three gaps) the committed build spends
+ * 2,379 seconds in total and this one 10.4. This one is faster by more than twice and by more
+ * than 10 ms on 103 of the 162, including four rows of 111 to 149 seconds that come back in
+ * 5 to 8 ms. It is SLOWER by more than twice and by more than 10 ms on three, and those are
+ * worth stating plainly, medians of five alternating readings:
+ *
+ * | row | committed | this build |
+ * |---|---|---|
+ * | loop L=30000 cut [0, 0.7] x [0.3, 1] | 14 ms, 31 points | 113 ms, 2 points |
+ * | loop L=1 cut [0.1, 0.9] x [0.2, 1], gap 1e-9 | 19 ms, 31 points | 67 ms, 5 points |
+ * | loop L=100000 cut [0, 0.7] x [0.3, 1] | 31 ms, 34 points | 84 ms, 2 points |
+ *
+ * All three reach the overrun ceiling, and all three are pairs where the committed build's
+ * fast answer is a scatter of points along a run rather than the run's two ends. The two
+ * ceilings bound both directions; neither removes the class.
+ * `tests/geom-work-budget.test.ts` pins one input of each kind.
  *
  * ## What "clean" means here
  *
@@ -140,6 +188,13 @@ export interface Intersection {
   t2: number;
   x: number;
   y: number;
+  /** Set by `intersectLineCubic` only: which way the curve crosses the line, as the sign
+   *  change of its signed distance to the line at the root. +1 where the curve passes from
+   *  the line's right to its left (the side its normal points to), -1 the other way, 0 where
+   *  it touches the line without crossing. A winding count reads the crossing from this
+   *  rather than from the tangent at the root, which at a cusp is a rounding-sized vector
+   *  pointing anywhere. */
+  dir?: number;
 }
 
 /** Default positional tolerance, in the caller's units (CSS px throughout Lolly).
@@ -173,72 +228,137 @@ export function intersectSegments(
 /**
  * Real roots of a·t³ + b·t² + c·t + d within [0,1].
  *
- * Uses Cardano's formula, with a Newton polish on each root. The polish matters more
- * than the formula: Cardano's trigonometric branch loses several digits of precision
- * in the three-real-root case, and two Newton steps recover them at negligible cost.
+ * By isolation, not by the closed form. The derivative's roots cut [0, 1] into at most
+ * three intervals on which the cubic is monotone, each interval whose end values differ in
+ * sign holds exactly one root, and that root is found by Newton steps kept inside the
+ * interval, with bisection where a step leaves it. A root the cubic touches without
+ * crossing (a double root) sits at a critical point where the value is zero to rounding,
+ * and is reported once; a triple root, where both critical points fall together, is one
+ * root. So the count of reported roots matches the cubic's sign changes, which is what a
+ * winding count needs, and a double root is still there for a caller after a tangency.
+ *
+ * Cardano's formula was used before this, with a Newton polish, and it was wrong in the
+ * two places the geometry visits most: a leading coefficient small against the others (a
+ * copy of a symmetric curve nudged by a billionth, against a horizontal line) cancelled
+ * catastrophically and returned NO root where the line crossed the curve twice; and a
+ * repeated root (any line through the apex of a cusp) put the discriminant within rounding
+ * of zero, the branch taken depended on the sign of that rounding, and the polish, dividing
+ * a rounding-sized value by a rounding-sized slope, walked one copy of the root a hundredth
+ * of the curve away, to a point where the cubic was nowhere near zero. A ray cast then
+ * counted that point as a crossing. Isolation has no branch to get wrong and no closed form
+ * to cancel, and it is exact to rounding for any coefficients, a leading coefficient of
+ * exactly zero included.
  */
-export function cubicRoots01(a: number, b: number, c: number, d: number): number[] {
-  const out: number[] = [];
-  const push = (t: number) => {
-    if (t >= -T_EPS && t <= 1 + T_EPS) out.push(Math.min(1, Math.max(0, t)));
-  };
-
-  if (Math.abs(a) < 1e-12) {
-    // Degenerates to a quadratic (or lower). Not a rare path: an axis-aligned line
-    // against a curve with a symmetric control net hits it constantly.
-    if (Math.abs(b) < 1e-12) {
-      if (Math.abs(c) > 1e-12) push(-d / c);
-      return dedupeRoots(out);
+export function cubicRoots01(a: number, b: number, c: number, d: number, dirs?: number[]): number[] {
+  const scale = Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d));
+  if (!(scale > 0) || !Number.isFinite(scale)) return [];
+  // A value this close to zero is zero to rounding: the coefficients carry a few ulps of
+  // their own size, and evaluating the cubic at a parameter in [0, 1] adds a few more.
+  const tiny = ROOT_SNAP * Number.EPSILON * scale;
+  // The cuts: the two ends, plus the derivative's zeros where they fall between them. Four
+  // at most, in fixed slots rather than a growing array, because this runs once per curve
+  // per ray cast and the allocation showed up in the boolean's profile.
+  //
+  // The ends carry the parameter slack every root is accepted at: a curve starting exactly
+  // on a line has its root a rounding error outside [0, 1], at -1e-19, and isolating over
+  // [0, 1] alone found no sign change there. Every end cap of a band against the curve it
+  // caps lost its vertex that way.
+  const cuts = [-T_EPS, 1 + T_EPS, 0, 0];
+  let nc = 2;
+  // Critical points, by the stable form of the quadratic formula so that a tiny leading
+  // coefficient does not cancel the root that lies in [0, 1].
+  const qa = 3 * a, qb = 2 * b, qc = c;
+  if (Math.abs(qa) > 1e-300) {
+    const disc = qb * qb - 4 * qa * qc;
+    if (disc >= 0) {
+      const sq = Math.sqrt(disc);
+      const q = -0.5 * (qb + (qb < 0 ? -sq : sq));
+      const r0 = q !== 0 ? q / qa : -qb / (2 * qa), r1 = q !== 0 ? qc / q : r0;
+      if (r0 > -T_EPS && r0 < 1 + T_EPS) cuts[nc++] = r0;
+      if (q !== 0 && r1 > -T_EPS && r1 < 1 + T_EPS) cuts[nc++] = r1;
     }
-    const disc = c * c - 4 * b * d;
-    if (disc < 0) return [];
-    const s = Math.sqrt(disc);
-    push((-c + s) / (2 * b)); push((-c - s) / (2 * b));
-    return dedupeRoots(out);
+  } else if (Math.abs(qb) > 1e-300) {
+    const r = -qc / qb;
+    if (r > -T_EPS && r < 1 + T_EPS) cuts[nc++] = r;
   }
-
-  // Depressed cubic t = y - b/3a  ⇒  y³ + py + q = 0
-  const b1 = b / a, c1 = c / a, d1 = d / a;
-  const p = c1 - (b1 * b1) / 3;
-  const q = (2 * b1 * b1 * b1) / 27 - (b1 * c1) / 3 + d1;
-  const shift = -b1 / 3;
-  const disc = (q * q) / 4 + (p * p * p) / 27;
-
-  if (disc > 1e-18) {
-    const s = Math.sqrt(disc);
-    push(Math.cbrt(-q / 2 + s) + Math.cbrt(-q / 2 - s) + shift);
-  } else if (disc > -1e-18) {
-    // Repeated root(s).
-    const u = Math.cbrt(-q / 2);
-    push(2 * u + shift); push(-u + shift);
-  } else {
-    // Three distinct real roots - the trigonometric form.
-    const r = Math.sqrt(-(p * p * p) / 27);
-    const phi = Math.acos(Math.min(1, Math.max(-1, -q / (2 * r))));
-    const m = 2 * Math.cbrt(r);
-    for (let k = 0; k < 3; k++) push(m * Math.cos((phi + 2 * Math.PI * k) / 3) + shift);
+  // Insertion sort: four entries at most.
+  for (let i = 1; i < nc; i++) {
+    const v = cuts[i]!;
+    let j = i - 1;
+    while (j >= 0 && cuts[j]! > v) { cuts[j + 1] = cuts[j]!; j--; }
+    cuts[j + 1] = v;
   }
-
-  // Newton polish against the ORIGINAL coefficients.
-  const polished = out.map((t0) => {
-    let t = t0;
-    for (let i = 0; i < 2; i++) {
-      const f = ((a * t + b) * t + c) * t + d;
-      const df = (3 * a * t + 2 * b) * t + c;
-      if (Math.abs(df) < 1e-14) break;
-      const next = t - f / df;
-      if (next < -T_EPS || next > 1 + T_EPS) break;
+  const vals = [0, 0, 0, 0];
+  for (let i = 0; i < nc; i++) {
+    const v = ((a * cuts[i]! + b) * cuts[i]! + c) * cuts[i]! + d;
+    vals[i] = Math.abs(v) <= tiny ? 0 : v;
+  }
+  // Roots in the order they are found: repeated ones first, then the sign changes. Both
+  // sequences run left to right, so the merge below sorts four entries at most.
+  const out: number[] = [], sg: number[] = [];
+  // A critical point where the cubic is zero to rounding is a repeated root. Two of them
+  // are a triple root (a cubic has no other way to touch zero twice), reported once, in the
+  // middle: a vertical line through the apex of a cusp nudged sideways by a billionth has
+  // exactly that, and reporting both critical points counted one crossing as two. The
+  // direction of a repeated root is read from the values either side of it: a double root
+  // touches without crossing, a triple root crosses.
+  for (let i = 0; i < nc; i++) {
+    if (vals[i] !== 0) continue;
+    let j = i;
+    while (j + 1 < nc && vals[j + 1] === 0) j++;
+    const before = i > 0 ? vals[i - 1]! : 0, after = j + 1 < nc ? vals[j + 1]! : 0;
+    const t = (cuts[i]! + cuts[j]!) / 2;
+    if (t >= -T_EPS && t <= 1 + T_EPS) {
+      out.push(Math.min(1, Math.max(0, t)));
+      sg.push(before < 0 && after > 0 ? 1 : before > 0 && after < 0 ? -1 : 0);
+    }
+    i = j;
+  }
+  for (let i = 1; i < nc; i++) {
+    const lo = cuts[i - 1]!, hi = cuts[i]!, flo = vals[i - 1]!, fhi = vals[i]!;
+    if (flo === 0 || fhi === 0 || (flo < 0) === (fhi < 0)) continue;
+    let x0 = lo, x1 = hi, f0 = flo, t = (lo + hi) / 2;
+    for (let k = 0; k < 80; k++) {
+      const ft = ((a * t + b) * t + c) * t + d;
+      if (ft === 0) break;
+      if ((ft < 0) === (f0 < 0)) { x0 = t; f0 = ft; } else x1 = t;
+      if (x1 - x0 <= 4e-16) break;
+      const slope = (3 * a * t + 2 * b) * t + c;
+      let next = slope !== 0 ? t - ft / slope : (x0 + x1) / 2;
+      if (!(next > x0 && next < x1)) next = (x0 + x1) / 2;
       t = next;
     }
-    return Math.min(1, Math.max(0, t));
-  });
-  return dedupeRoots(polished);
+    if (t >= -T_EPS && t <= 1 + T_EPS) { out.push(Math.min(1, Math.max(0, t))); sg.push(fhi > 0 ? 1 : -1); }
+  }
+  return dedupeRoots(out, sg, dirs);
 }
 
-function dedupeRoots(ts: number[]): number[] {
-  const s = ts.slice().sort((x, y) => x - y);
+/** Ulps of the largest coefficient within which a value of the cubic counts as zero. */
+const ROOT_SNAP = 32;
+
+/** Roots sorted and merged where they fall within 1e-9 of each other. Two crossings that
+ *  merge cancel their directions, as the curve comes back to the side it started on.
+ *
+ *  Sorted by insertion, and the common counts answered before that: a cubic has three roots
+ *  at most, this is called once per curve per ray cast, and a comparator sort allocates. */
+function dedupeRoots(ts: number[], sg: number[], dirs?: number[]): number[] {
+  const n = ts.length;
+  if (n === 0) { if (dirs) dirs.length = 0; return ts; }
+  if (n === 1) { if (dirs) { dirs.length = 0; dirs.push(sg[0]!); } return ts; }
+  for (let i = 1; i < n; i++) {
+    const t = ts[i]!, g = sg[i]!;
+    let j = i - 1;
+    while (j >= 0 && ts[j]! > t) { ts[j + 1] = ts[j]!; sg[j + 1] = sg[j]!; j--; }
+    ts[j + 1] = t; sg[j + 1] = g;
+  }
   const out: number[] = [];
-  for (const t of s) if (!out.length || t - out[out.length - 1]! > 1e-9) out.push(t);
+  const dd: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = ts[i]!;
+    if (!out.length || t - out[out.length - 1]! > 1e-9) { out.push(t); dd.push(sg[i]!); }
+    else dd[dd.length - 1] = Math.sign(dd[dd.length - 1]! + sg[i]!);
+  }
+  if (dirs) { dirs.length = 0; for (const v of dd) dirs.push(v); }
   return out;
 }
 
@@ -250,7 +370,7 @@ function dedupeRoots(ts: number[]): number[] {
  * closed form. No iteration, no subdivision, and the roots are the true parameters.
  */
 export function intersectLineCubic(
-  x0: number, y0: number, x1: number, y1: number, c: Cubic, tol = EPS,
+  x0: number, y0: number, x1: number, y1: number, c: Cubic, tol = EPS, clamp = true,
 ): Intersection[] {
   const dx = x1 - x0, dy = y1 - y0;
   const len = Math.hypot(dx, dy);
@@ -266,12 +386,19 @@ export function intersectLineCubic(
   const D = d0;
 
   const out: Intersection[] = [];
-  for (const t of cubicRoots01(A, B, C, D)) {
+  const dirs: number[] = [];
+  const roots = cubicRoots01(A, B, C, D, dirs);
+  for (let i = 0; i < roots.length; i++) {
+    const t = roots[i]!;
     const p = evalCubic(c, t);
     // Where along the line does it land? Outside the segment is not an intersection.
     const u = ((p.x - x0) * dx + (p.y - y0) * dy) / (len * len);
     if (u < -tol / len || u > 1 + tol / len) continue;
-    out.push({ t1: Math.min(1, Math.max(0, u)), t2: t, x: p.x, y: p.y });
+    // A caller that looks a little way past the segment's ends (the boolean's ray cast, which
+    // looks behind its origin) needs the fraction as it is, sign and all; a clamped fraction
+    // put every hit just behind the origin AT the origin, where it read as a curve through
+    // the point.
+    out.push({ t1: clamp ? Math.min(1, Math.max(0, u)) : u, t2: t, x: p.x, y: p.y, dir: dirs[i] });
   }
   return out;
 }
@@ -352,276 +479,16 @@ function clipToFatLine(
   // the bare band and tests a hair outside it, as it always has. The overrun search cuts and
   // tests at the same padded band: at the depths it reaches, the distances it measures carry
   // a few hundred ulps of rounding, and a bare cut threw away ranges that still held a
-  // crossing.
-  const cutLo = fat.dMin - cutPad, cutHi = fat.dMax + cutPad;
+  // crossing, so two arcs a hair apart lost it.
+  const lo = fat.dMin - cutPad, hi = fat.dMax + cutPad;
   const inBand = (v: number) => v >= fat.dMin - testPad && v <= fat.dMax + testPad;
   const ts: number[] = [];
-  for (const h of [upper, lower]) { ts.push(...crossings(h, cutLo), ...crossings(h, cutHi)); }
+  for (const h of [upper, lower]) { ts.push(...crossings(h, lo), ...crossings(h, hi)); }
   if (inBand(d[0]!)) ts.push(0);
   if (inBand(d[3]!)) ts.push(1);
   if (!ts.length) return null;                    // entirely outside the band
-  const lo = Math.max(0, Math.min(...ts)), hi = Math.min(1, Math.max(...ts));
-  return hi < lo ? null : [lo, hi];
-}
-
-/**
- * The work one pair of curves may cost the clip search before the pair is handed to the
- * overrun search, counted in calls to `clipIntersect`.
- *
- * Exported mutable so a test can lower it and show what the other search answers, as
- * `SCAN_LIMITS` below is and as `HOOK_BUDGET_MS` in runtime.ts is. The default is the
- * contract: raise it and slow pairs come back, lower it and ordinary pairs stop being
- * answered by the search whose answers this file promises.
- *
- * The number came from the node counts of the search itself, measured over every corpus and
- * shape family in this tree (the head of this file has the distribution). Ordinary pairs
- * finish in tens of nodes and the heaviest one measured takes 7,598; the pairs that cannot be
- * clipped apart take 21,627 and up. The gap this number is chosen in is wide and empty.
- *
- * On the reproducer it is worth about twenty times: each boolean operation on that path takes
- * 42 to 45 ms of CPU where the clip search alone took 990 to 1,053, and the stroke 81 against
- * 498 (best of five runs each, interleaved in one process). A pair that goes over wastes at
- * most 16,384 nodes, about a millisecond, before the handoff.
- */
-export const CLIP_BUDGET = { maxNodes: 16384 };
-
-/**
- * Running counts: how many cubic against cubic pairs have reached the clip search, how many
- * of those ran out of budget, the nodes the clip search has spent in all, and the nodes the
- * most recent pair spent. A pair that ran out stops one node past the budget, so `lastNodes`
- * is the budget plus one for it rather than what the pair would have cost. A pair answered by
- * one of the exact line paths never reaches the clip search and moves none of these.
- *
- * Diagnostic only. Nothing in the engine reads them and no answer depends on them; they are
- * how a test tells which search answered a pair, and how the budget was measured.
- */
-export const CLIP_COUNTS = { pairs: 0, overruns: 0, nodes: 0, lastNodes: 0 };
-
-/** One pair's budget while the clip search runs on it. */
-interface ClipWork {
-  /** Calls to `clipIntersect` so far. */
-  nodes: number;
-  /** The value of `CLIP_BUDGET.maxNodes` this pair started with, so that a change to the
-   *  budget partway through a boolean cannot split one pair between two limits. */
-  limit: number;
-  /** The budget ran out, so this pair's partial hits are thrown away and the overrun search
-   *  answers it. */
-  over: boolean;
-}
-
-/** Cubic × cubic, by alternating fat-line clips with bisection when a clip stalls. */
-function clipIntersect(
-  c1: Cubic, c2: Cubic, t1lo: number, t1hi: number, t2lo: number, t2hi: number,
-  tol: number, depth: number, out: Intersection[], work: ClipWork, swap = false,
-): void {
-  // Counting the node, and stopping when the count passes the budget, is the only change to
-  // this search. Every decision below is the one it has always made, so a pair that finishes
-  // inside the budget gets the answer it always got.
-  if (work.over) return;
-  if (++work.nodes > work.limit) { work.over = true; return; }
-  // `swap` tracks whether c1/c2 are currently the caller's second/first curve. The
-  // recursion exchanges them every step (that alternation is what makes the clipping
-  // converge quadratically), and this flag puts the parameters back the right way
-  // round on the way out - rather than the results being silently transposed.
-  const emit = (t1: number, t2: number, x: number, y: number) =>
-    out.push(swap ? { t1: t2, t2: t1, x, y } : { t1, t2, x, y });
-  if (out.length > 128 || depth > 60) return;
-  if (!boxesOverlap(hullBounds(c1), hullBounds(c2), tol)) return;
-
-  // Both pieces are down to a point: record one intersection.
-  const s1 = Math.hypot(c1[6] - c1[0], c1[7] - c1[1]) + flatnessCubic(c1);
-  const s2 = Math.hypot(c2[6] - c2[0], c2[7] - c2[1]) + flatnessCubic(c2);
-  if (s1 <= tol && s2 <= tol) {
-    const p = evalCubic(c1, 0.5);
-    emit((t1lo + t1hi) / 2, (t2lo + t2hi) / 2, p.x, p.y);
-    return;
-  }
-
-  const fat = fatLine(c2);
-  const clipped = fat ? clipToFatLine(c1, fat, 0, 1e-12) : [0, 1] as [number, number];
-  if (!clipped) return;
-  const [lo, hi] = clipped;
-  const shrink = hi - lo;
-
-  // A clip that removes less than a fifth of the domain is not making progress -
-  // the classic near-tangential case. Bisect the LONGER curve and recurse on both
-  // halves; this is what keeps the worst case finite rather than spinning.
-  if (shrink > 0.8) {
-    if (s1 >= s2) {
-      const [a, b] = splitCubic(c1, 0.5);
-      const mid = (t1lo + t1hi) / 2;
-      clipIntersect(a, c2, t1lo, mid, t2lo, t2hi, tol, depth + 1, out, work, swap);
-      clipIntersect(b, c2, mid, t1hi, t2lo, t2hi, tol, depth + 1, out, work, swap);
-    } else {
-      const [a, b] = splitCubic(c2, 0.5);
-      const mid = (t2lo + t2hi) / 2;
-      clipIntersect(c1, a, t1lo, t1hi, t2lo, mid, tol, depth + 1, out, work, swap);
-      clipIntersect(c1, b, t1lo, t1hi, mid, t2hi, tol, depth + 1, out, work, swap);
-    }
-    return;
-  }
-
-  const nc1 = subCubic(c1, lo, hi);
-  const nt1lo = t1lo + (t1hi - t1lo) * lo;
-  const nt1hi = t1lo + (t1hi - t1lo) * hi;
-  // Roles exchange so the next iteration clips the other curve.
-  clipIntersect(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, out, work, !swap);
-}
-
-/** Merge results that are the same point reached by different subdivisions. */
-function dedupe(list: Intersection[], tol: number): Intersection[] {
-  const out: Intersection[] = [];
-  for (const i of list) {
-    if (!out.some((o) => Math.hypot(o.x - i.x, o.y - i.y) <= tol * 8
-                      && Math.abs(o.t1 - i.t1) <= 1e-6 + tol
-                      && Math.abs(o.t2 - i.t2) <= 1e-6 + tol)) out.push(i);
-  }
-  return out.sort((a, b) => a.t1 - b.t1);
-}
-
-/**
- * Where along a straight cubic's OWN parameterisation does a given chord fraction fall?
- *
- * The exact line paths above take a curve's endpoints and report a fraction along the
- * chord. For a cubic built by `lineToCubic` that fraction IS the parameter, because the
- * controls are evenly spaced. It is easy to assume this holds in general, but it does
- * not. `M0,0 C0,0 0,0 100,0` (handles resting on the start point, which is what a pen
- * tool with un-dragged handles, and much imported SVG, produce) is perfectly straight
- * but grossly non-uniform: its midpoint is at x=12.5, not 50. Returning the chord
- * fraction as `t` in that case gives a point that is on the LINE but nowhere near the
- * curve at that parameter. Every consumer splits with `subCubic(c, t)`, so the split
- * lands in the wrong place and the resulting geometry does not close.
- *
- * So convert it. The along-chord displacement is itself a cubic in `t` (the Bernstein
- * coefficients are just the controls projected onto the chord), so this uses the same
- * closed-form root solve as everything else in this file: exact, not a search.
- */
-function chordFractionToParam(c: Cubic, u: number): number {
-  const dx = c[6] - c[0], dy = c[7] - c[1];
-  const l2 = dx * dx + dy * dy;
-  if (l2 < 1e-24) return u;                       // degenerate chord: nothing to convert
-  const g = [
-    0,
-    ((c[2] - c[0]) * dx + (c[3] - c[1]) * dy) / l2,
-    ((c[4] - c[0]) * dx + (c[5] - c[1]) * dy) / l2,
-    1,
-  ];
-  // Uniformly spaced controls are the overwhelmingly common case; skip the solve.
-  if (Math.abs(g[1]! - 1 / 3) < 1e-12 && Math.abs(g[2]! - 2 / 3) < 1e-12) return u;
-  const A = -g[0]! + 3 * g[1]! - 3 * g[2]! + g[3]!;
-  const B = 3 * g[0]! - 6 * g[1]! + 3 * g[2]!;
-  const C = -3 * g[0]! + 3 * g[1]!;
-  const D = g[0]! - u;
-  const roots = cubicRoots01(A, B, C, D);
-  if (!roots.length) return u;
-  // A non-monotone straight cubic (controls that double back) genuinely passes the same
-  // point more than once; the caller asked about one crossing, so take the root whose
-  // displacement is closest to what was asked for.
-  let best = roots[0]!, bestErr = Infinity;
-  for (const t of roots) {
-    const mt = 1 - t;
-    const val = mt * mt * mt * g[0]! + 3 * mt * mt * t * g[1]! + 3 * mt * t * t * g[2]! + t * t * t * g[3]!;
-    const err = Math.abs(val - u);
-    if (err < bestErr) { bestErr = err; best = t; }
-  }
-  return best;
-}
-
-/**
- * Every intersection of two cubics.
- *
- * Dispatches on geometry, not on how the caller labelled the curve: a cubic whose
- * controls are collinear IS a line and takes the exact algebraic path. That path
- * returns a fraction along the chord, which is NOT the curve's parameter unless the
- * controls happen to be evenly spaced, so it is converted back before it leaves here.
- * See `chordFractionToParam`. Getting this wrong reports points tens of units off the
- * curve they claim to lie on.
- *
- * Overlapping (coincident) curves are reported as their two overlap endpoints, not as
- * an infinity of points. That is enough for a boolean operation to split at, and it is
- * accurate: there is no single isolated crossing to report.
- *
- * A cubic against a cubic is searched by clipping, under `CLIP_BUDGET`. A pair that runs out
- * of budget is abandoned whole, partial hits and all, and answered by `intersectOverrun`
- * instead. Every pair that finishes inside the budget gets the clip search's answer, which is
- * this function's contract.
- */
-export function intersectCubics(c1: Cubic, c2: Cubic, tol = EPS): Intersection[] {
-  if (!boxesOverlap(boundsCubic(c1), boundsCubic(c2), tol)) return [];
-
-  const l1 = isLineCubic(c1, tol), l2 = isLineCubic(c2, tol);
-  if (l1 && l2) {
-    const hit = intersectSegments(c1[0], c1[1], c1[6], c1[7], c2[0], c2[1], c2[6], c2[7]);
-    if (!hit) return [];
-    return [{
-      ...hit,
-      t1: chordFractionToParam(c1, hit.t1),
-      t2: chordFractionToParam(c2, hit.t2),
-    }];
-  }
-  if (l1) {
-    return dedupe(intersectLineCubic(c1[0], c1[1], c1[6], c1[7], c2, tol)
-      .map((i) => ({ ...i, t1: chordFractionToParam(c1, i.t1) })), tol);
-  }
-  if (l2) {
-    // Same call with the roles reversed, then swap the parameters back.
-    return dedupe(intersectLineCubic(c2[0], c2[1], c2[6], c2[7], c1, tol)
-      .map((i) => ({ t1: i.t2, t2: chordFractionToParam(c2, i.t1), x: i.x, y: i.y })), tol);
-  }
-
-  const out: Intersection[] = [];
-  const work: ClipWork = { nodes: 0, limit: CLIP_BUDGET.maxNodes, over: false };
-  clipIntersect(c1, c2, 0, 1, 0, 1, tol, 0, out, work);
-  CLIP_COUNTS.pairs++;
-  CLIP_COUNTS.nodes += work.nodes;
-  CLIP_COUNTS.lastNodes = work.nodes;
-  if (!work.over) return dedupe(out, tol);
-  CLIP_COUNTS.overruns++;
-  return intersectOverrun(c1, c2, tol);
-}
-
-// ── the overrun search: pairs the clip search could not finish ────────────────
-
-/**
- * One pair, answered without asking a clip to separate curves that lie along each other.
- *
- * Reached only from `intersectCubics`, and only for a pair that spent `CLIP_BUDGET.maxNodes`
- * nodes without finishing. Nothing the clip search found for the pair is carried in: the
- * partial hits are thrown away by the caller, and this search starts from the two whole
- * curves, so the answer is one search's or the other's and never a mixture.
- *
- * Three steps, each with its own notes below:
- *
- * 1. `sharedRun`: two curves that ARE the same curve over a run are answered as the two ends
- *    of that run. This is where the reproducer that prompted the budget is settled, in
- *    microseconds rather than a second.
- * 2. `overrunClip`: the same fat-line clip, but a pair it cannot separate is kept rather
- *    than bisected for ever (`atResolutionFloor`, `coincidentTwin`).
- * 3. `scanStalled`: the crossings and touches inside those kept stretches, found by reading
- *    which side of one curve the other is on rather than by clipping.
- *
- * What it promises for the pairs it answers, which is not what the clip search promises:
- *
- * - Every hit lies within `tol` of BOTH curves. A point that cannot be shown to lie on both
- *   is not reported.
- * - One contact per zone where the curves stay within `tol` of each other. Two crossings a
- *   hair apart inside such a zone come back as one point: at this tolerance they are one
- *   contact.
- * - A zone longer than a thousandth of the pair's bounding size reports its two ends as
- *   well, so a boolean can cut both curves where the shared run begins and ends.
- * - Nothing is moved. A crossing is reported where it is, never folded onto a touch or onto
- *   a vertex beside it.
- */
-function intersectOverrun(c1: Cubic, c2: Cubic, tol: number): Intersection[] {
-  const run = sharedRun(c1, c2, tol);
-  if (run) return run;
-
-  let mag = 0;
-  for (let i = 0; i < 8; i++) mag = Math.max(mag, Math.abs(c1[i]!), Math.abs(c2[i]!));
-  const search: ClipSearch = { c1, c2, out: [], stalled: [], pad: Math.max(1e-12, mag * 64 * Number.EPSILON) };
-  overrunClip(c1, c2, 0, 1, 0, 1, tol, 0, search);
-  if (search.stalled.length) scanStalled(c1, c2, search.stalled, tol, search.out);
-  return dedupe(search.out, tol);
+  const t0 = Math.max(0, Math.min(...ts)), t1 = Math.min(1, Math.max(...ts));
+  return t1 < t0 ? null : [t0, t1];
 }
 
 /** Is the whole of `c` within `pad` of the band of `fat`? By the convex hull property that
@@ -926,7 +793,15 @@ function shallow(search: ClipSearch, swap: boolean, a: number, b: number): boole
   if ((a <= TOUCH || a >= 1 - TOUCH) && (b <= TOUCH || b >= 1 - TOUCH)) return false;
   const d1 = tangentAt(search.c1, swap ? b : a), d2 = tangentAt(search.c2, swap ? a : b);
   const l1 = Math.hypot(d1.x, d1.y), l2 = Math.hypot(d2.x, d2.y);
-  if (!(l1 > 0 && l2 > 0)) return true;
+  // A point where either curve is nearly stationary has no direction to judge the angle
+  // by: at the apex of a cusp the tangent is a rounding-sized vector pointing anywhere,
+  // and two cusp curves touching at their apexes read as crossing at a wide angle at every
+  // one of the pieces the clip closed on there. A hundred and twenty-nine points were
+  // reported for that one contact, the hit cap was reached, and the search stopped before
+  // it had looked at the two real crossings further along. The threshold is the one the
+  // scan reads a side by, and the scan is what such a point goes to.
+  const still = FOOT_SPEED * search.size;
+  if (!(l1 > still && l2 > still)) return true;
   return Math.abs(d1.x * d2.y - d1.y * d2.x) < SHALLOW * l1 * l2;
 }
 
@@ -940,15 +815,20 @@ function stall(
 }
 
 /**
- * Cubic × cubic for the overrun search: the same fat-line clip, alternating with bisection,
- * but a pair it cannot separate is kept for `scanStalled` instead of being bisected until
- * the caps end it. Every difference from `clipIntersect` above is one of those stops, and
- * each is a case measured on a real pair.
+ * The overrun search's own clip: the same alternation of fat-line clips and bisection, with
+ * the three ways out of a pair it cannot separate (`twinNode`, `coincidentTwin`,
+ * `atResolutionFloor`) and a work ceiling. Reached only past `CLIP_BUDGET`.
  */
 function overrunClip(
   c1: Cubic, c2: Cubic, t1lo: number, t1hi: number, t2lo: number, t2hi: number,
   tol: number, depth: number, search: ClipSearch, swap = false,
 ): void {
+  // The ceiling, checked before anything else. Without it one pair of a curve against a
+  // reparametrised piece of itself (`OVERRUN_BUDGET` says which) ran to 28 million nodes and
+  // 47 seconds. Past it the search stops descending; the stretches it has already kept still
+  // go to the scan, so the pair is answered rather than abandoned.
+  if (search.nodes >= OVERRUN_BUDGET.maxNodes) { search.over = true; return; }
+  search.nodes++;
   const out = search.out;
   // `swap` tracks whether c1/c2 are currently the caller's second/first curve. The
   // recursion exchanges them every step (that alternation is what makes the clipping
@@ -1043,6 +923,10 @@ function overrunClip(
     // the hull of its controls), so it is a proof about the pieces, not a sample. Their
     // ranges go to the scan whole, however long they are, which is what keeps a near-copy of
     // a long curve from being cut into a hundred thousand pieces before the scan sees it.
+    // A near-copy of the curve is decided from the polynomial of its offset, where the
+    // pieces are regular enough for that to be a proof, instead of being cut down until
+    // the fat lines part: two loops a hair apart spent a million clip nodes that way.
+    if (search.twin !== 0 && twinNode(search, swap, c1, t1lo, t1hi, t2lo, t2hi, tol)) return;
     if (s1 > FLOOR_MIN_SIZE * tol && s2 > FLOOR_MIN_SIZE * tol) {
       const twin = coincidentTwin(search, swap, c1, t1lo, t1hi, tol);
       if (twin) {
@@ -1078,9 +962,494 @@ function overrunClip(
   overrunClip(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, search, !swap);
 }
 
-// ── the stalled stretches of the overrun search ───────────────────────────────
+// ── the clip search, and the budget it runs under ──────────────────────────
 
-/** Hits the overrun search reports at most, from its clip and its scan together. */
+/**
+ * Calls to `clipIntersect` one cubic against cubic pair may make before it is abandoned to
+ * the overrun search.
+ *
+ * Exported mutable so a test can lower it and show what the other search answers, as
+ * `SCAN_LIMITS` below is and as `HOOK_BUDGET_MS` in runtime.ts is. The default is the
+ * contract: raise it and slow pairs come back, lower it and ordinary pairs stop being
+ * answered by the search whose answers this file has always promised.
+ *
+ * The number came from the node counts of the search itself, measured over every corpus and
+ * shape family in this tree. Ordinary pairs finish in tens of nodes; over the recorded
+ * corpora the p99.9 is 467 to 571 and the heaviest pair of a sweep of circles, ellipses,
+ * stars and rounded rectangles takes 7,598. The pairs that cannot be clipped apart take
+ * 21,627 and up, to six million. The gap this number sits in is wide and empty.
+ */
+export const CLIP_BUDGET = { maxNodes: 16384 };
+
+/**
+ * Running counts: how many cubic against cubic pairs have reached the clip search, how many
+ * of those ran out of budget, how many of those the overrun search then had to stop as well,
+ * the nodes each search has spent in all, and the nodes the most recent pair spent in each.
+ *
+ * Diagnostic only. Nothing in the engine reads them and no answer depends on them; they are
+ * how a test tells which search answered a pair, and how the budgets were measured.
+ */
+export const CLIP_COUNTS = { pairs: 0, overruns: 0, ceilings: 0, nodes: 0, lastNodes: 0, overrunNodes: 0, lastOverrunNodes: 0, maxOverrunNodes: 0 };
+
+/** One pair's budget while the clip search runs on it. */
+interface ClipWork {
+  /** Calls to `clipIntersect` so far. */
+  nodes: number;
+  /** The value of `CLIP_BUDGET.maxNodes` this pair started with, so that a change to the
+   *  budget partway through a boolean cannot split one pair between two limits. */
+  limit: number;
+  /** The budget ran out, so this pair's partial hits are thrown away and the overrun search
+   *  answers it. */
+  over: boolean;
+}
+
+/** Cubic × cubic, by alternating fat-line clips with bisection when a clip stalls. */
+function clipIntersect(
+  c1: Cubic, c2: Cubic, t1lo: number, t1hi: number, t2lo: number, t2hi: number,
+  tol: number, depth: number, out: Intersection[], work: ClipWork, swap = false,
+): void {
+  // Counting the node, and stopping when the count passes the budget, is the only change to
+  // this search. Every decision below is the one it has always made, so a pair that finishes
+  // inside the budget gets the answer it always got.
+  if (work.over) return;
+  if (++work.nodes > work.limit) { work.over = true; return; }
+  // `swap` tracks whether c1/c2 are currently the caller's second/first curve. The
+  // recursion exchanges them every step (that alternation is what makes the clipping
+  // converge quadratically), and this flag puts the parameters back the right way
+  // round on the way out - rather than the results being silently transposed.
+  const emit = (t1: number, t2: number, x: number, y: number) =>
+    out.push(swap ? { t1: t2, t2: t1, x, y } : { t1, t2, x, y });
+  if (out.length > 128 || depth > 60) return;
+  if (!boxesOverlap(hullBounds(c1), hullBounds(c2), tol)) return;
+
+  // Both pieces are down to a point: record one intersection.
+  const s1 = Math.hypot(c1[6] - c1[0], c1[7] - c1[1]) + flatnessCubic(c1);
+  const s2 = Math.hypot(c2[6] - c2[0], c2[7] - c2[1]) + flatnessCubic(c2);
+  if (s1 <= tol && s2 <= tol) {
+    const p = evalCubic(c1, 0.5);
+    emit((t1lo + t1hi) / 2, (t2lo + t2hi) / 2, p.x, p.y);
+    return;
+  }
+
+  const fat = fatLine(c2);
+  const clipped = fat ? clipToFatLine(c1, fat, 0, 1e-12) : [0, 1] as [number, number];
+  if (!clipped) return;
+  const [lo, hi] = clipped;
+  const shrink = hi - lo;
+
+  // A clip that removes less than a fifth of the domain is not making progress -
+  // the classic near-tangential case. Bisect the LONGER curve and recurse on both
+  // halves; this is what keeps the worst case finite rather than spinning.
+  if (shrink > 0.8) {
+    if (s1 >= s2) {
+      const [a, b] = splitCubic(c1, 0.5);
+      const mid = (t1lo + t1hi) / 2;
+      clipIntersect(a, c2, t1lo, mid, t2lo, t2hi, tol, depth + 1, out, work, swap);
+      clipIntersect(b, c2, mid, t1hi, t2lo, t2hi, tol, depth + 1, out, work, swap);
+    } else {
+      const [a, b] = splitCubic(c2, 0.5);
+      const mid = (t2lo + t2hi) / 2;
+      clipIntersect(c1, a, t1lo, t1hi, t2lo, mid, tol, depth + 1, out, work, swap);
+      clipIntersect(c1, b, t1lo, t1hi, mid, t2hi, tol, depth + 1, out, work, swap);
+    }
+    return;
+  }
+
+  const nc1 = subCubic(c1, lo, hi);
+  const nt1lo = t1lo + (t1hi - t1lo) * lo;
+  const nt1hi = t1lo + (t1hi - t1lo) * hi;
+  // Roles exchange so the next iteration clips the other curve.
+  clipIntersect(c2, nc1, t2lo, t2hi, nt1lo, nt1hi, tol, depth + 1, out, work, !swap);
+}
+
+// ── twin pairs: a curve against a near-copy of itself ─────────────────────────
+
+/** How near, as a share of the pair's size, every control point of one curve must be to
+ *  the corresponding one of the other (or of the other reversed) before a pair is tried
+ *  as twins. Generous on purpose: `twinNode` measures its own bounds at each node. */
+const TWIN_BAND = 1e-4;
+/** The cosine of the most a curve may turn over a range `twinNode` treats as regular. */
+const TWIN_TURN = 0.5;
+/** The most the curvature bound times the square of the twin distance may reach, as a
+ *  share of `tol`, for the offset polynomial to bound every contact. See `twinNode`. */
+const TWIN_BEND = 0.35;
+/** The multiple of `tol` within which the offset polynomial must lie for a point to be a
+ *  possible contact: `tol` itself plus the bend allowance, rounded up. */
+const TWIN_REACH = 1.5;
+/** Subdivisions the run search makes at most: the runs' ends are located to 2^-12 of the
+ *  piece's parameter, and the scan's sentinels place them from there. */
+const TWIN_RUN_DEPTH = 12;
+
+/** Binomial coefficients up to the degree of the run polynomial. */
+const BINOM: number[][] = (() => {
+  const rows: number[][] = [[1]];
+  for (let n = 1; n <= 10; n++) {
+    const prev = rows[n - 1]!, row = [1];
+    for (let k = 1; k < n; k++) row.push(prev[k - 1]! + prev[k]!);
+    row.push(1);
+    rows.push(row);
+  }
+  return rows;
+})();
+/** The constant 1 as a Bernstein polynomial of degree 6, for raising a degree-4 one to 10. */
+const ONES_6 = [1, 1, 1, 1, 1, 1, 1];
+
+/** The product of two polynomials in Bernstein form, in Bernstein form. */
+function bernMul(p: number[], q: number[]): number[] {
+  const m = p.length - 1, n = q.length - 1;
+  const out: number[] = new Array(m + n + 1).fill(0);
+  const bm = BINOM[m]!, bn = BINOM[n]!, bmn = BINOM[m + n]!;
+  for (let i = 0; i <= m; i++) {
+    for (let j = 0; j <= n; j++) out[i + j] = out[i + j]! + ((bm[i]! * bn[j]!) / bmn[i + j]!) * p[i]! * q[j]!;
+  }
+  return out;
+}
+
+/** The parameter ranges of [t0, t1] over which a Bernstein polynomial can be at or below
+ *  zero, by subdivision: a piece whose coefficients are all positive is positive (the hull
+ *  property), one whose coefficients are all at or below zero is a run, and a mixed one is
+ *  split until it is one or the other or the depth runs out. Adjacent ranges are merged. */
+function bernRuns(c: number[], t0: number, t1: number, depth: number, out: number[]): void {
+  let lo = Infinity, hi = -Infinity;
+  for (const v of c) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  if (lo > 0) return;
+  if (hi <= 0 || depth >= TWIN_RUN_DEPTH) {
+    if (out.length && out[out.length - 1] === t0) out[out.length - 1] = t1;
+    else out.push(t0, t1);
+    return;
+  }
+  const n = c.length, left: number[] = new Array(n), right: number[] = new Array(n);
+  const w = c.slice();
+  left[0] = w[0]!; right[n - 1] = w[n - 1]!;
+  for (let k = 1; k < n; k++) {
+    for (let i = 0; i < n - k; i++) w[i] = (w[i]! + w[i + 1]!) * 0.5;
+    left[k] = w[0]!; right[n - 1 - k] = w[n - 1 - k]!;
+  }
+  const mid = (t0 + t1) / 2;
+  bernRuns(left, t0, mid, depth + 1, out);
+  bernRuns(right, mid, t1, depth + 1, out);
+}
+
+/**
+ * Decide one node of the clip search between a curve and a near-copy of itself from the
+ * polynomial of their offset, where that is a proof.
+ *
+ * Clipping cannot separate two curves a hair apart: the fat line of a piece is as wide as
+ * the piece is bent, so the pieces must be cut down until they bend by less than the gap,
+ * which for two loops a ten-millionth apart is a hundred thousand pieces and a million
+ * nodes, nearly all of them proving that nothing happens there. A near-copy is a different
+ * question, and has a direct answer. Let c1 be the piece being clipped and W the other
+ * curve (reversed when the copy runs the other way), so that m = W over c1's own range is
+ * the matched piece and D = c1 - m their offset, a cubic whose controls are the differences
+ * of theirs. The signed distance of c1(s) from the tangent line of W at the matched point is
+ * P(s) / |m'(s)| with P = m' x D, a polynomial of degree five. Where the two curves are
+ * regular this is within a known amount of the true gap, so a run of the parameter where P
+ * stays clear of zero holds no contact, and a run where it does not is handed to the scan.
+ *
+ * What makes it a proof, node by node:
+ *
+ * - W is regular over a range R holding both pieces' parameters: every leg of its
+ *   derivative's control polygon points within 60 degrees of their mean direction and is
+ *   no shorter than the scan's own speed floor. Then any two points of W in R are at least
+ *   `vlo` times their parameter distance apart, and the curvature is bounded by
+ *   `kappa = 2 max|d'| / vlo^2`, the second derivative's largest control (the legs'
+ *   differences over the range's width) over the least speed squared.
+ * - A contact of c1(s) with W at u lies within tol of c1(s), which lies within T of m(s),
+ *   so |W(u) - W(t)| <= rho = tol + T, u is within rho / vlo of t, and the arc between them
+ *   is at most 1.16 rho long (a turn under 60 degrees). The point W(u) is therefore within
+ *   0.67 kappa rho^2 of the tangent line at W(t), and c1(s) within that plus tol. With
+ *   kappa rho^2 held under 0.35 tol, every contact has |P| / |m'| <= 1.25 tol, and every
+ *   run of {|P| <= 1.5 tol |m'|}, found from the Bernstein form of P^2 - (1.5 tol)^2 |m'|^2,
+ *   holds every contact of the node. Those runs are stalled for the scan, with the range on
+ *   W widened by rho / vlo, and nothing else in the node needs looking at.
+ *
+ * A node whose range is not regular (it holds a loop's turn, or a cusp's apex, where the
+ * speed floor fails) returns false and is clipped and bisected as any other. Its children
+ * are regular sooner or later, except the ones holding the apex itself, which the search
+ * cuts down to the scan's floor as before; so a copy of a cusp costs the clip tree only
+ * around its apex. A crossing between different branches of the curve (a loop against a
+ * copy crosses the copy's other branch too) is in a node whose range holds the turn, and
+ * is found by the clip as before.
+ */
+function twinNode(
+  search: ClipSearch, swap: boolean, c1: Cubic, t1lo: number, t1hi: number, t2lo: number, t2hi: number, tol: number,
+): boolean {
+  const twin = search.twin;
+  const W = swap ? (twin === 1 ? search.c1 : search.c1r!) : (twin === 1 ? search.c2 : search.c2r!);
+  // The other piece's range in W's parameter, and the range both lie in, widened by half.
+  const m2lo = twin === 1 ? t2lo : 1 - t2hi, m2hi = twin === 1 ? t2hi : 1 - t2lo;
+  const lo0 = Math.min(t1lo, m2lo), hi0 = Math.max(t1hi, m2hi);
+  const half = (hi0 - lo0) * 0.5;
+  const R0 = Math.max(0, lo0 - half), R1 = Math.min(1, hi0 + half);
+  if (!(R1 > R0)) return false;
+  // Regularity of W over R, from the control polygon of its derivative there.
+  const q = subCubic(W, R0, R1);
+  const k = 3 / (R1 - R0);
+  const dx0 = (q[2] - q[0]) * k, dy0 = (q[3] - q[1]) * k;
+  const dx1 = (q[4] - q[2]) * k, dy1 = (q[5] - q[3]) * k;
+  const dx2 = (q[6] - q[4]) * k, dy2 = (q[7] - q[5]) * k;
+  let ux = dx0 + dx1 + dx2, uy = dy0 + dy1 + dy2;
+  const ul = Math.hypot(ux, uy);
+  if (!(ul > 0)) return false;
+  ux /= ul; uy /= ul;
+  const still = FOOT_SPEED * search.size;
+  let vlo = Infinity;
+  for (const [dx, dy] of [[dx0, dy0], [dx1, dy1], [dx2, dy2]] as const) {
+    const along = dx * ux + dy * uy;
+    if (!(along >= TWIN_TURN * Math.hypot(dx, dy)) || along < still) return false;
+    if (along < vlo) vlo = along;
+  }
+  // The second derivative's controls are the legs' differences over the range's width, so
+  // the curvature bound carries that width: without it a short range read as a thousand
+  // times straighter than it was, and the certificate fired on pieces a tenth of a unit
+  // apart where it holds only for pieces a millionth apart.
+  const kappa = 2 * Math.max(Math.hypot(dx1 - dx0, dy1 - dy0), Math.hypot(dx2 - dx1, dy2 - dy1)) / ((R1 - R0) * vlo * vlo);
+  // The matched piece and the offset, with the most the offset reaches.
+  const m = subCubic(W, t1lo, t1hi);
+  const dX = [c1[0] - m[0], c1[2] - m[2], c1[4] - m[4], c1[6] - m[6]];
+  const dY = [c1[1] - m[1], c1[3] - m[3], c1[5] - m[5], c1[7] - m[7]];
+  let T = 0;
+  for (let i = 0; i < 4; i++) T = Math.max(T, Math.hypot(dX[i]!, dY[i]!));
+  const rho = tol + T;
+  if (kappa * rho * rho > TWIN_BEND * tol) return false;
+  // P = m' x D and S = |m'|^2 in Bernstein form over the piece's own parameter.
+  const eX = [3 * (m[2] - m[0]), 3 * (m[4] - m[2]), 3 * (m[6] - m[4])];
+  const eY = [3 * (m[3] - m[1]), 3 * (m[5] - m[3]), 3 * (m[7] - m[5])];
+  const pa = bernMul(eX, dY), pb = bernMul(eY, dX);
+  const P = pa.map((v, i) => v - pb[i]!);
+  const sa = bernMul(eX, eX), sb = bernMul(eY, eY);
+  const S = bernMul(sa.map((v, i) => v + sb[i]!), ONES_6);
+  const thr2 = (TWIN_REACH * tol) ** 2;
+  const pp = bernMul(P, P);
+  const Q = pp.map((v, i) => v - thr2 * S[i]!);
+  const runs: number[] = [];
+  bernRuns(Q, 0, 1, 0, runs);
+  const deltaP = rho / vlo;
+  for (let i = 0; i < runs.length; i += 2) {
+    const r0 = t1lo + (t1hi - t1lo) * runs[i]!, r1 = t1lo + (t1hi - t1lo) * runs[i + 1]!;
+    const w0 = Math.max(0, r0 - deltaP), w1 = Math.min(1, r1 + deltaP);
+    if (twin === 1) stall(search, swap, r0, r1, w0, w1);
+    else stall(search, swap, r0, r1, 1 - w1, 1 - w0);
+  }
+  return true;
+}
+
+/** Merge results that are the same point reached by different subdivisions. */
+function dedupe(list: Intersection[], tol: number): Intersection[] {
+  const out: Intersection[] = [];
+  for (const i of list) {
+    if (!out.some((o) => Math.hypot(o.x - i.x, o.y - i.y) <= tol * 8
+                      && Math.abs(o.t1 - i.t1) <= 1e-6 + tol
+                      && Math.abs(o.t2 - i.t2) <= 1e-6 + tol)) out.push(i);
+  }
+  return out.sort((a, b) => a.t1 - b.t1);
+}
+
+/**
+ * Where along a straight cubic's OWN parameterisation does a given chord fraction fall?
+ *
+ * The exact line paths above take a curve's endpoints and report a fraction along the
+ * chord. For a cubic built by `lineToCubic` that fraction IS the parameter, because the
+ * controls are evenly spaced. It is easy to assume this holds in general, but it does
+ * not. `M0,0 C0,0 0,0 100,0` (handles resting on the start point, which is what a pen
+ * tool with un-dragged handles, and much imported SVG, produce) is perfectly straight
+ * but grossly non-uniform: its midpoint is at x=12.5, not 50. Returning the chord
+ * fraction as `t` in that case gives a point that is on the LINE but nowhere near the
+ * curve at that parameter. Every consumer splits with `subCubic(c, t)`, so the split
+ * lands in the wrong place and the resulting geometry does not close.
+ *
+ * So convert it. The along-chord displacement is itself a cubic in `t` (the Bernstein
+ * coefficients are just the controls projected onto the chord), so this uses the same
+ * closed-form root solve as everything else in this file: exact, not a search.
+ */
+function chordFractionToParam(c: Cubic, u: number): number {
+  const dx = c[6] - c[0], dy = c[7] - c[1];
+  const l2 = dx * dx + dy * dy;
+  if (l2 < 1e-24) return u;                       // degenerate chord: nothing to convert
+  const g = [
+    0,
+    ((c[2] - c[0]) * dx + (c[3] - c[1]) * dy) / l2,
+    ((c[4] - c[0]) * dx + (c[5] - c[1]) * dy) / l2,
+    1,
+  ];
+  // Uniformly spaced controls are the overwhelmingly common case; skip the solve.
+  if (Math.abs(g[1]! - 1 / 3) < 1e-12 && Math.abs(g[2]! - 2 / 3) < 1e-12) return u;
+  const A = -g[0]! + 3 * g[1]! - 3 * g[2]! + g[3]!;
+  const B = 3 * g[0]! - 6 * g[1]! + 3 * g[2]!;
+  const C = -3 * g[0]! + 3 * g[1]!;
+  const D = g[0]! - u;
+  const roots = cubicRoots01(A, B, C, D);
+  if (!roots.length) return u;
+  // A non-monotone straight cubic (controls that double back) genuinely passes the same
+  // point more than once; the caller asked about one crossing, so take the root whose
+  // displacement is closest to what was asked for.
+  let best = roots[0]!, bestErr = Infinity;
+  for (const t of roots) {
+    const mt = 1 - t;
+    const val = mt * mt * mt * g[0]! + 3 * mt * mt * t * g[1]! + 3 * mt * t * t * g[2]! + t * t * t * g[3]!;
+    const err = Math.abs(val - u);
+    if (err < bestErr) { bestErr = err; best = t; }
+  }
+  return best;
+}
+
+/**
+ * Every intersection of two cubics.
+ *
+ * Dispatches on geometry, not on how the caller labelled the curve: a cubic whose
+ * controls are collinear IS a line and takes the exact algebraic path. That path
+ * returns a fraction along the chord, which is NOT the curve's parameter unless the
+ * controls happen to be evenly spaced, so it is converted back before it leaves here.
+ * See `chordFractionToParam`. Getting this wrong reports points tens of units off the
+ * curve they claim to lie on.
+ *
+ * Overlapping (coincident) curves are reported as their two overlap endpoints, not as
+ * an infinity of points. That is enough for a boolean operation to split at, and it is
+ * accurate: there is no single isolated crossing to report. See `sharedRun`, which also
+ * says what it leaves out.
+ *
+ * Curves that do not share a run but stay within `tol` of each other along a stretch (a
+ * shape against a slightly rounded or rotated copy, or two curves that agree to high
+ * order where they meet) are searched by the side each point is on rather than by
+ * clipping, so a crossing at an angle of a millionth of a radian is still reported. A
+ * stretch where the curves touch without crossing is reported once, where they come
+ * closest. See `scanStalled`.
+ *
+ * A shared vertex is reported as that vertex, at parameter 0 or 1 on both curves, including
+ * when the two curves agree there so closely that the clip search trims the vertex off the
+ * pieces it keeps.
+ *
+ * Two contacts closer together than `tol` come back as one point: they enclose a lens
+ * thinner than the tolerance asked for, and one point is the answer at that tolerance. Past
+ * that, nothing is moved. Every hit is reported where it is and lies within `tol` of both
+ * curves.
+ */
+export function intersectCubics(c1: Cubic, c2: Cubic, tol = EPS): Intersection[] {
+  if (!boxesOverlap(boundsCubic(c1), boundsCubic(c2), tol)) return [];
+
+  const l1 = isLineCubic(c1, tol), l2 = isLineCubic(c2, tol);
+  if (l1 && l2) {
+    const hit = intersectSegments(c1[0], c1[1], c1[6], c1[7], c2[0], c2[1], c2[6], c2[7]);
+    if (!hit) return [];
+    return [{
+      ...hit,
+      t1: chordFractionToParam(c1, hit.t1),
+      t2: chordFractionToParam(c2, hit.t2),
+    }];
+  }
+  if (l1) {
+    return dedupe(intersectLineCubic(c1[0], c1[1], c1[6], c1[7], c2, tol)
+      .map((i) => ({ ...i, t1: chordFractionToParam(c1, i.t1) })), tol);
+  }
+  if (l2) {
+    // Same call with the roles reversed, then swap the parameters back.
+    return dedupe(intersectLineCubic(c2[0], c2[1], c2[6], c2[7], c1, tol)
+      .map((i) => ({ t1: i.t2, t2: chordFractionToParam(c2, i.t1), x: i.x, y: i.y })), tol);
+  }
+
+  const out: Intersection[] = [];
+  const work: ClipWork = { nodes: 0, limit: CLIP_BUDGET.maxNodes, over: false };
+  clipIntersect(c1, c2, 0, 1, 0, 1, tol, 0, out, work);
+  CLIP_COUNTS.pairs++;
+  CLIP_COUNTS.nodes += work.nodes;
+  CLIP_COUNTS.lastNodes = work.nodes;
+  if (!work.over) return dedupe(out, tol);
+  CLIP_COUNTS.overruns++;
+  return intersectOverrun(c1, c2, tol);
+}
+
+/**
+ * Calls to `overrunClip` one pair may make before the overrun search stops descending.
+ *
+ * Exported mutable beside `CLIP_BUDGET`, and measured the same way. Across every pair in this
+ * tree that actually escalates, the heaviest spends 41,271 nodes: 1,416 escalated pairs of
+ * 620 real SVGs have a median of 0 and a maximum of 12,552, the fuzz reproducer's four
+ * operations peak at 2,987, and the adversarial families of thirty copies of one blob, exact,
+ * jittered, fanned and shifted at two scales, peak at 41,271. This ceiling is three times that.
+ *
+ * The case that needs a ceiling at all is a curve against a REPARAMETRISED piece of itself,
+ * two fits of one arc cut at different places. `twinNode` cannot see such a pair, because it
+ * is not a twin at equal parameters, and `sharedRun` answers it only while its ends project
+ * onto each other, so at large coordinates the pair falls through to bisection and the pieces
+ * still lie along each other at every level. Two overlapping pieces of one cubic 30,000 units
+ * long spend 28,235,256 nodes and 47 seconds with no ceiling (3 ms at 10,000 units, where
+ * `sharedRun` still catches it). At this ceiling the same pair takes about 270 ms.
+ *
+ * What a pair at the ceiling gets: the stretches `overrunClip` had already kept, scanned as
+ * any others. It is not abandoned and it is not a different kind of answer, only a search of
+ * less of the pair. On the pair above the answer is the same at every ceiling from 32,768 to
+ * 524,288 and at none at all: the two ends of the shared run. `CLIP_COUNTS.ceilings` counts
+ * the pairs that reach it, and over all of the artwork and families above it is zero.
+ */
+export const OVERRUN_BUDGET = { maxNodes: 131072 };
+
+/**
+ * One pair, answered without asking a clip to separate curves that lie along each other.
+ *
+ * Reached only from `intersectCubics`, and only for a pair that spent `CLIP_BUDGET.maxNodes`
+ * nodes without finishing. Nothing the clip search found for the pair is carried in: the
+ * partial hits are thrown away by the caller, and this search starts from the two whole
+ * curves, so the answer is one search's or the other's and never a mixture.
+ *
+ * Four steps, each with its own notes below:
+ *
+ * 1. `sharedRun`: two curves that ARE the same curve over a run are answered as the two ends
+ *    of that run. This is where the reproducer that prompted the budget is settled, in
+ *    microseconds rather than a second.
+ * 2. the twin test: whether the two are near-copies of each other at equal parameters or at
+ *    reversed ones, which is what lets `twinNode` decide a node from the polynomial of their
+ *    offset instead of cutting it down.
+ * 3. `overrunClip`: the same fat-line clip, but a pair it cannot separate is kept rather than
+ *    bisected for ever, and the descent stops at `OVERRUN_BUDGET`.
+ * 4. `scanStalled`: the crossings and touches inside those kept stretches, found by reading
+ *    which side of one curve the other is on rather than by clipping.
+ *
+ * What it promises for the pairs it answers, which is not what the clip search promises:
+ *
+ * - Every hit lies within `tol` of BOTH curves. A point that cannot be shown to lie on both
+ *   is not reported.
+ * - One contact per zone where the curves stay within `tol` of each other. Two crossings a
+ *   hair apart inside such a zone come back as one point: at this tolerance they are one
+ *   contact.
+ * - A zone longer than a thousandth of the pair's bounding size reports its two ends as
+ *   well, placed where the gap reaches the tolerance, so a boolean can cut both curves where
+ *   the shared run begins and ends.
+ * - Nothing is moved. A crossing is reported where it is, never folded onto a touch or onto
+ *   a vertex beside it.
+ */
+function intersectOverrun(c1: Cubic, c2: Cubic, tol: number): Intersection[] {
+  const run = sharedRun(c1, c2, tol);
+  if (run) return run;
+
+  let mag = 0;
+  for (let i = 0; i < 8; i++) mag = Math.max(mag, Math.abs(c1[i]!), Math.abs(c2[i]!));
+  const b1 = boundsCubic(c1), b2 = boundsCubic(c2);
+  const size = Math.max(1, Math.max(b1.x1, b2.x1) - Math.min(b1.x0, b2.x0), Math.max(b1.y1, b2.y1) - Math.min(b1.y0, b2.y0));
+  // A near-copy of the curve, at the same parameters or the reversed ones, is searched by
+  // `twinNode` rather than by clipping alone. The band here only asks whether that is worth
+  // trying; the node decides on its own bounds.
+  let twin: 0 | 1 | -1 = coincideAtParams(c1, c2, TWIN_BAND * size) ? 1 : 0;
+  let c1r: Cubic | null = null, c2r: Cubic | null = null;
+  if (!twin) {
+    const rev: Cubic = [c2[6], c2[7], c2[4], c2[5], c2[2], c2[3], c2[0], c2[1]];
+    if (coincideAtParams(c1, rev, TWIN_BAND * size)) { twin = -1; c2r = rev; c1r = [c1[6], c1[7], c1[4], c1[5], c1[2], c1[3], c1[0], c1[1]]; }
+  }
+  const search: ClipSearch = {
+    c1, c2, out: [], stalled: [], pad: Math.max(1e-12, mag * 64 * Number.EPSILON), size, twin, c1r, c2r,
+    nodes: 0, over: false,
+  };
+  overrunClip(c1, c2, 0, 1, 0, 1, tol, 0, search);
+  CLIP_COUNTS.overrunNodes += search.nodes;
+  CLIP_COUNTS.lastOverrunNodes = search.nodes;
+  if (search.nodes > CLIP_COUNTS.maxOverrunNodes) CLIP_COUNTS.maxOverrunNodes = search.nodes;
+  if (search.over) CLIP_COUNTS.ceilings++;
+  if (search.stalled.length) scanStalled(c1, c2, search.stalled, tol, search.out);
+  return dedupe(search.out, tol);
+}
+
+// ── stalled stretches: which side of c2 is c1 on ──────────────────────────────
+
+/** Hits one search reports at most, from the clip and the scan together. */
 const MAX_HITS = 128;
 /**
  * Limits of the stalled-stretch scan. Exported mutable so tests can show what a lower
@@ -1127,6 +1496,20 @@ interface ClipSearch {
    *  or closed on at a point just off the other piece, four numbers each: the range on the
    *  caller's first curve, then the range on its second. */
   stalled: number[];
+  /** The larger extent of the pair's bounding box, at least 1: what a speed is measured
+   *  against when asking whether a point of a curve has a direction. */
+  size: number;
+  /** Whether the two curves are near-copies of each other at equal parameters (1), at
+   *  reversed parameters (-1), or neither (0). See `twinNode`. */
+  twin: 0 | 1 | -1;
+  /** The two curves reversed, kept only for a reversed twin pair. */
+  c1r: Cubic | null;
+  c2r: Cubic | null;
+  /** Calls to `overrunClip` so far, against `OVERRUN_BUDGET.maxNodes`. */
+  nodes: number;
+  /** The ceiling was reached, so the search stopped descending. Diagnostic: the answer is
+   *  whatever the scan makes of the stretches kept up to that point. */
+  over: boolean;
 }
 
 /** The state `scanStalled` shares with its helpers. */
@@ -1708,7 +2091,12 @@ function reportRunEnds(scan: Scan, samples: Gap[]): void {
     if (samples[i]!.d <= tol) { if (lo < 0) lo = i; hi = i; }
   }
   if (lo < 0 || hi <= lo) return;
-  const a = samples[lo]!, b = samples[hi]!;
+  // The ends are placed where the gap reaches `tol`, between the innermost sample in
+  // contact and its neighbour outside, not at the samples themselves: a stretch the twin
+  // certificate hands over whole is sampled a few times only, and an end read off a sample
+  // was up to an eighth of the run away from where the contact ends.
+  const a = lo > 0 ? runEnd(scan, samples[lo - 1]!, samples[lo]!) : samples[lo]!;
+  const b = hi < samples.length - 1 ? runEnd(scan, samples[hi + 1]!, samples[hi]!) : samples[hi]!;
   if (Math.hypot(a.px - b.px, a.py - b.py) < RUN_MIN_REL * scan.size) return;
   if (out.length > MAX_HITS - 2) return;
   for (const s of [a, b]) {
@@ -1716,6 +2104,27 @@ function reportRunEnds(scan: Scan, samples: Gap[]): void {
       out.push({ t1: s.t, t2: s.u, x: s.px, y: s.py });
     }
   }
+}
+
+/** Bisection steps `runEnd` takes on the parameter. */
+const RUN_END_STEPS = 40;
+/** The share of `tol` a run's end is placed at, so that the point reported is within `tol`
+ *  of both curves by a margin and not by the last rounding of the bisection. */
+const RUN_END_SHARE = 0.9;
+
+/** Where a stretch of contact ends, between a sample outside it (`outside`, gap above
+ *  `tol`) and the innermost sample inside it (`inside`, gap within `tol`): the point nearest
+ *  the outer sample whose gap is still within nine tenths of `tol`, by bisection on the
+ *  parameter. The sample inside is returned when the budget runs out. */
+function runEnd(scan: Scan, outside: Gap, inside: Gap): Gap {
+  const limit = scan.tol * RUN_END_SHARE;
+  let a = outside.t, b = inside.t, best = inside;
+  for (let i = 0; i < RUN_END_STEPS && Math.abs(b - a) > 4 * Number.EPSILON; i++) {
+    const s = gapAt(scan, (a + b) / 2);
+    if (!s) break;
+    if (s.d <= limit) { best = s; b = s.t; } else a = s.t;
+  }
+  return best;
 }
 
 /** The signed gap from `c1(t)` to c2, positive on the left of c2's direction of travel.

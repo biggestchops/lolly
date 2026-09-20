@@ -33,7 +33,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Cubic } from '../engine/src/geom/bezier.ts';
+import { type Cubic, evalCubic } from '../engine/src/geom/bezier.ts';
 import { CLIP_BUDGET, CLIP_COUNTS, intersectCubics } from '../engine/src/geom/intersect.ts';
 
 interface Hit { t1: number; t2: number; x: number; y: number }
@@ -247,12 +247,28 @@ const OVER_THE_BUDGET: { what: string; c1: Cubic; c2: Cubic; overrun: Hit[]; cli
   },
 ];
 
+function assertOverrunContacts(hits: Hit[], fixture: typeof OVER_THE_BUDGET[number]): void {
+  assert.equal(hits.length, fixture.overrun.length, `${fixture.what}: contact count changed`);
+  for (const [i, hit] of hits.entries()) {
+    const expected = fixture.overrun[i]!;
+    // The isolating root solver can choose a different point in a shallow contact zone.
+    // Keep the recorded zones, but verify each answer lies on both original curves.
+    assert.ok(Math.abs(hit.t1 - expected.t1) < 1e-8 && Math.abs(hit.t2 - expected.t2) < 1e-8,
+      `${fixture.what}: contact moved out of its recorded zone`);
+    const a = evalCubic(fixture.c1, hit.t1), b = evalCubic(fixture.c2, hit.t2);
+    assert.ok(Math.hypot(a.x - b.x, a.y - b.y) <= 1e-9,
+      `${fixture.what}: reported contact is not on both curves`);
+    assert.ok(Math.hypot(hit.x - a.x, hit.y - a.y) <= 1e-9,
+      `${fixture.what}: reported point does not match its parameter`);
+  }
+}
+
 test('a pair over the budget is answered by the overrun search', () => {
   for (const c of OVER_THE_BUDGET) {
     const got = answer(c.c1, c.c2);
     assert.equal(got.overrun, true, `${c.what}: the clip search finished it`);
     assert.equal(got.nodes, CLIP_BUDGET.maxNodes + 1, `${c.what}: stopped at ${got.nodes} nodes`);
-    assert.deepEqual(got.hits, c.overrun, `${c.what}: the overrun answer moved`);
+    assertOverrunContacts(got.hits, c);
   }
 });
 
@@ -265,7 +281,7 @@ test('raising the budget past the pair puts the clip search back in charge, and 
 
     const back = answer(c.c1, c.c2);
     assert.equal(back.overrun, true, `${c.what}: did not hand over again`);
-    assert.deepEqual(back.hits, c.overrun, `${c.what}: the overrun answer did not come back`);
+    assertOverrunContacts(back.hits, c);
   }
 });
 

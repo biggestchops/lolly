@@ -257,10 +257,10 @@ The table is generated. Run `node scripts/gen-engine-modules.ts` after adding, r
 | `gamut.ts` | 542 | Display-gamut classification for OKLCH colours - which of sRGB, Display-P3 or Rec.2020 can actually show a given lightness/chroma/hue. | yes | `tests/gamut.test.ts` | – |
 | `geom-api.ts` | 689 | `host.geom` - the tool-facing face of the geometry kernel (HostV1 v1.64). | yes | `tests/geom-api.test.ts` | – |
 | `geom/authored-url.ts` | 316 | The wire form of an `AuthoredPath` - what a pen shape looks like inside one `blocks` sub-field, and therefore inside a share link. | yes | indirect | – |
-| `geom/bezier.ts` | 472 | Cubic Bézier kernel - the geometric substrate for boolean operations, offsetting and stroke outlining. | yes | `tests/geom-bezier.test.ts` | – |
-| `geom/boolean.ts` | 1428 | Boolean operations on regions bounded by cubic Béziers - union, intersection, difference, exclusive-or - and the winding-number test they are all decided by. | yes | `tests/geom-boolean.test.ts` | – |
+| `geom/bezier.ts` | 483 | Cubic Bézier kernel - the geometric substrate for boolean operations, offsetting and stroke outlining. | yes | `tests/geom-bezier.test.ts` | – |
+| `geom/boolean.ts` | 1812 | Boolean operations on regions bounded by cubic Béziers - union, intersection, difference, exclusive-or - and the winding-number test they are all decided by. | yes | `tests/geom-boolean.test.ts` | – |
 | `geom/fit.ts` | 1260 | Fitting cubics to a curve that has no Bézier form - an exact offset, a stroke edge, a distorted path. | yes | `tests/geom-fit.test.ts` | – |
-| `geom/intersect.ts` | 1942 | Curve intersection. | yes | `tests/geom-intersect.test.ts` | – |
+| `geom/intersect.ts` | 2351 | Curve intersection. | yes | `tests/geom-intersect.test.ts` | – |
 | `geom/offset.ts` | 1315 | Offsetting: moving a path a fixed distance sideways. | yes | `tests/geom-offset.test.ts` | – |
 | `geom/path.ts` | 224 | The path model the geometry operates on, and its conversions to and from the rest of the engine. | yes | indirect | – |
 | `geom/spiro.ts` | 437 | Spiro. | no | `tests/spiro.test.ts` | – |
