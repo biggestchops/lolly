@@ -35,7 +35,7 @@ jobs:
           cache: pnpm
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
       - name: Install packaging tools
-        run: sudo apt-get update && sudo apt-get install -y rpm zstd
+        run: sudo apt-get update && sudo apt-get install -y rpm zstd xz-utils
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile

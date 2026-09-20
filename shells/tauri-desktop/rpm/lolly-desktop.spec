@@ -145,7 +145,7 @@ test -d linux/mime -a -d linux/search -a -d linux/thumbnailer || {
 
 %build
 # Absolute, because the build runs from src-tauri/ a few lines down.
-export ORT_LIB_LOCATION="$(pwd)/onnxruntime"
+export ORT_LIB_LOCATION="$(pwd)/onnxruntime/lib"
 # Belt and braces: even if ORT_LIB_LOCATION were ignored, this stops the download
 # rather than letting the build hang on a network call OBS will refuse.
 export ORT_SKIP_DOWNLOAD=1

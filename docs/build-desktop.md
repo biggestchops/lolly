@@ -28,13 +28,13 @@ pnpm install
 |---|---|
 | macOS | Xcode Command Line Tools (`xcode-select --install`) |
 | Windows | Microsoft C++ Build Tools or Visual Studio with C++ workload |
-| Linux | `build-essential`, `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libappindicator3-dev` |
+| Linux | `build-essential`, `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`, `libsoup-3.0-dev`, `libssl-dev` |
 
 Full list: https://tauri.app/start/prerequisites/
 
 ### Icons
 
-Tauri requires icon files at `src-tauri/icons/`. Generate them from a 1024×1024 source PNG (the build will fail with a missing-file error if this step is skipped):
+Production icons are committed under `src-tauri/icons/`. To regenerate the fallback sizes from new artwork:
 
 ```bash
 cd shells/tauri-desktop
@@ -43,7 +43,7 @@ npx @tauri-apps/cli icon path/to/icon-1024.png
 
 This writes all required sizes and formats (`32x32.png`, `128x128.png`, `128x128@2x.png`, `icon.icns`, `icon.ico`, etc.) to `src-tauri/icons/`.
 
-> Placeholder icons committed to the repo are solid-green squares - replace them with production artwork before releasing.
+The macOS bundle also carries the branded asset catalog and document icon. Keep these consistent with any replacement artwork.
 
 ### Development
 
@@ -58,18 +58,22 @@ Tauri opens a native window. The Vite dev server runs in the background; hot rel
 
 ### Production build
 
+Provide `LOLLY_CATALOG_SIGNING_KEY` and `VITE_CATALOG_PUBLIC_KEY_JWK` through your private credential store. These sign the catalog embedded in the app; operating-system code signing uses a separate identity.
+
 ```bash
+export LOLLY_PROFILE=lolly-start
+export LOLLY_EMBED_CATALOG=profile
 cd shells/tauri-desktop
 pnpm run build
 # or from repo root:
 pnpm run build:desktop
 ```
 
-This runs `vite build` (producing `dist/`) then `tauri build`. Output:
+Tauri first builds and signs its frontend, builds the native CLI sidecar, and builds the Quick Look extensions on macOS. It then compiles and packages the application. Output:
 
 | Platform | Artifact | Location |
 |---|---|---|
-| macOS | `.app` + `.dmg` | `src-tauri/target/release/bundle/macos/` |
+| macOS | `.app` + `.dmg` | `src-tauri/target/release/bundle/macos/` and `bundle/dmg/` |
 | Windows | `.msi` + `.exe` NSIS installer | `src-tauri/target/release/bundle/` |
 | Linux | `.deb` + `.AppImage` | `src-tauri/target/release/bundle/` |
 

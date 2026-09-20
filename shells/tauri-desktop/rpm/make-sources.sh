@@ -43,6 +43,7 @@ command -v cargo >/dev/null || die "cargo not found (need rust >= 1.88)"
 command -v node  >/dev/null || die "node not found (need node 24 - see .nvmrc)"
 command -v tar   >/dev/null || die "tar not found"
 command -v zstd  >/dev/null || die "zstd not found"
+command -v xz    >/dev/null || die "xz not found"
 
 version="$(node -p "require('$desktop/src-tauri/tauri.conf.json').version")"
 [ -n "$version" ] || die "could not read version from tauri.conf.json"
@@ -110,20 +111,31 @@ grep -q 'directory = "vendor"' "$out/cargo_config" \
 #    enables no cuda/webgpu/training feature (see src-tauri/Cargo.toml).
 # --------------------------------------------------------------------------
 step "Fetching ONNX Runtime prebuilts"
-dist_txt="$(echo "$desktop"/src-tauri/vendor/ort-sys-*/dist.txt)"
-[ -f "$dist_txt" ] || die "vendored ort-sys dist.txt not found at $dist_txt"
+dist_tsv="$(echo "$desktop"/src-tauri/vendor/ort-sys-*/build/download/dist.tsv)"
+[ -f "$dist_tsv" ] || die "vendored ort-sys distribution table not found at $dist_tsv"
 
 for target in x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu; do
-  line="$(awk -F'\t' -v t="$target" '$1=="none" && $2==t {print; exit}' "$dist_txt")"
-  [ -n "$line" ] || die "no 'none' dist entry for $target in $dist_txt"
+  line="$(awk -F'\t' -v t="$target" '$1==t && $2=="none" {print; exit}' "$dist_tsv")"
+  [ -n "$line" ] || die "no 'none' distribution entry for $target in $dist_tsv"
   url="$(printf '%s' "$line" | cut -f3)"
   want="$(printf '%s' "$line" | cut -f4 | tr 'A-F' 'a-f')"
   dest="$out/onnxruntime-$target.tgz"
 
   echo "    $target"
-  curl -fsSL -o "$dest" "$url" || die "download failed: $url"
-  got="$(sha256sum "$dest" | cut -d' ' -f1)"
+  raw="$out/onnxruntime-$target.tar.lzma2"
+  curl -fsSL -o "$raw" "$url" || die "download failed: $url"
+  got="$(sha256sum "$raw" | cut -d' ' -f1)"
   [ "$got" = "$want" ] || die "sha256 mismatch for $target: got $got want $want"
+  # ort-sys rc.13 uses raw LZMA2 and a single static library at the archive root.
+  # Keep the RPM source layout stable after verifying the original archive bytes.
+  repack="$(mktemp -d)"
+  mkdir -p "$repack/onnxruntime/lib"
+  xz --format=raw --lzma2=dict=64MiB --decompress --stdout "$raw" \
+    | tar -xf - -C "$repack/onnxruntime/lib"
+  [ -f "$repack/onnxruntime/lib/libonnxruntime.a" ] || die "missing static library for $target"
+  tar -czf "$dest" -C "$repack" onnxruntime
+  rm -rf "$repack"
+  rm "$raw"
   # The spec asserts this layout; catch a repackaged upstream here rather than in OBS.
   tar tzf "$dest" | grep -q '^onnxruntime/lib/libonnxruntime\.a$' \
     || die "$target tarball no longer contains onnxruntime/lib/libonnxruntime.a"
