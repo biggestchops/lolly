@@ -123,12 +123,14 @@ export function fitCanvas(tview: ToolViewCtx): void {
   // overlay is inset to the stage's padding box, so padding would drag the toolbars in with
   // it); justify-content:center then honours the margins, floating the canvas into the band.
   const cs = getComputedStyle(stageEl);
-  const reserveTop = Math.max(0, parseFloat(cs.getPropertyValue('--stage-reserve-top')) || 0);
+  const reserveTop = Math.max(0, parseFloat(cs.getPropertyValue('--stage-reserve-top')) || 0,
+    parseFloat(cs.getPropertyValue('--stage-rulers-bottom')) || 0);
   const reserveBottom = stageBottomReserve(cs);
   // Left band: the free-canvas rail docks into a fixed-width left panel while the
   // timeline is open (see dockRailForTimeline). Same margin mechanism as top/bottom -
   // centring the margin box puts the canvas exactly centred in the remaining band.
-  const reserveLeft = Math.max(0, parseFloat(cs.getPropertyValue('--stage-reserve-left')) || 0);
+  const reserveLeft = Math.max(0, parseFloat(cs.getPropertyValue('--stage-reserve-left')) || 0,
+    parseFloat(cs.getPropertyValue('--stage-rulers-right')) || 0);
   // There is NO right band. The one right-hand column is the app's edge dock
   // (lib/edge-dock.ts) - the export sheet, the compact zoom bar and the Design
   // inspector all take a slot in it - and that column reserves its space by nudging

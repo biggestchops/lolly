@@ -4004,7 +4004,7 @@ html[data-a11y-text="large"] .input-section--dense .input-section-body {
 }
 
 /* Fullscreen utility tools (no sidebar, no export) */
-.tool-layout[data-sidebar="hidden"] .tool-stage {
+.tool-layout[data-sidebar="hidden"]:not(.is-editor) .tool-stage {
   overflow: auto;
   align-items: flex-start;
   justify-content: flex-start;

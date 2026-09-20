@@ -53,12 +53,25 @@ test('RTL Design fits the full physical canvas on desktop and compact screens', 
         await page.goto(`${origin}/design?${new URLSearchParams({ lang: 'ar', width: '1600', height: '1000', boxes: JSON.stringify(boxes), c2pa: '0', imprint: '0' })}`);
         await page.locator('#tool-canvas [data-box-id="corner-0"]').waitFor();
         await page.locator('#tool-canvas').focus();await page.keyboard.press('0');
-        await page.waitForFunction(width => [...document.querySelectorAll('#tool-canvas [data-box-id]')].every(element => {
-          const rect = element.getBoundingClientRect();return rect.width > 0 && rect.left >= 0 && rect.right <= width && rect.top >= 0 && rect.bottom <= 844;
-        }), width);
+        await page.waitForFunction(width => {
+          const stage = document.querySelector<HTMLElement>('#tool-stage')!, bounds = stage.getBoundingClientRect();
+          const reserve = (prop: string) => parseFloat(stage.style.getPropertyValue(prop)) || 0;
+          const left = bounds.left + Math.max(reserve('--stage-reserve-left'), reserve('--stage-rulers-right'));
+          const top = bounds.top + Math.max(reserve('--stage-reserve-top'), reserve('--stage-rulers-bottom'));
+          return [...document.querySelectorAll('#tool-canvas [data-box-id]')].every(element => {
+            const rect = element.getBoundingClientRect();
+            return rect.width > 0 && rect.left >= left && rect.right <= width && rect.top >= top && rect.bottom <= 844;
+          });
+        }, width);
         assert.equal(await page.locator('#tool-canvas').evaluate(element => getComputedStyle(element).direction), 'rtl');
-        await page.locator('#tool-canvas [data-box-id="corner-0"]').click();
-        assert.equal(await page.locator('#tool-canvas [data-box-id="corner-0"]').getAttribute('aria-pressed'), 'true');
+        const stageStyle = await page.locator('#tool-stage').evaluate(element => {
+          const style = getComputedStyle(element);return { overflow: style.overflow, align: style.alignItems, justify: style.justifyContent };
+        });
+        assert.deepEqual(stageStyle, { overflow: 'clip', align: 'center', justify: 'center' });
+        for (const box of boxes) {
+          const target = page.locator(`#tool-canvas [data-box-id="${box.id}"]`);
+          await target.click();assert.equal(await target.getAttribute('aria-pressed'), 'true');
+        }
       } catch (error) { await diagnose(error);throw error; } finally { await context.close(); }
     }
   } finally { await closeBrowser(); }

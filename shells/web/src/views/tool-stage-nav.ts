@@ -223,9 +223,9 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
     && matchMedia('(pointer: coarse) and (max-width: 640px), (pointer: coarse) and (max-height: 430px)').matches;
   function stageBox(): { left: number; top: number; right: number; bottom: number; width: number; height: number } {
     const sr = stageEl.getBoundingClientRect();
-    const left = sr.left + reserveOf('--stage-reserve-left');
+    const left = sr.left + Math.max(reserveOf('--stage-reserve-left'), reserveOf('--stage-rulers-right'));
     const right = sr.right - reserveOf('--stage-reserve-right');
-    const top = sr.top + reserveOf('--stage-reserve-top');
+    const top = sr.top + Math.max(reserveOf('--stage-reserve-top'), reserveOf('--stage-rulers-bottom'));
     let bottom = sr.bottom - stageBottomReserve(stageEl.style);
     // The compact tool rail becomes a horizontal palette at the foot of a touch
     // screen. It intentionally remains draggable chrome rather than claiming the

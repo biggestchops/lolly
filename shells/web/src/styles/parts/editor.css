@@ -6,10 +6,10 @@
 /* ─── WYSIWYG editor layout (render.layout:'editor') ──────────────────────────
    A chromeless free-canvas surface: no input sidebar, but the fixed render canvas,
    pan/zoom and full export UI are kept. The direct-manipulation overlay + left
-   toolbar are stage siblings mounted by shells/web/src/views/free-canvas.js. All
+   toolbar are stage siblings mounted by shells/web/src/views/free-canvas.ts. All
    chrome carries [data-export-hide] and sits outside #tool-canvas, so it never
-   appears in exported files. These rules follow the [data-sidebar="hidden"] block
-   above so .is-editor re-centres the fixed canvas (that block left-aligns it). */
+   appears in exported files. The fullscreen utility rule excludes .is-editor so
+   centring and panning stay independent of stylesheet load order. */
 .tool-layout.is-editor .tool-stage {
   /* Focus must not create a second, native scroll offset beside canvas panning. */
   overflow: clip;
