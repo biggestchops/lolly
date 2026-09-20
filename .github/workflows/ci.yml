@@ -222,6 +222,9 @@ jobs:
         env:
           LOLLY_SKIP_REPORT: artifacts/test-skips.json
           PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.browsers
+          # Browser rendering and encoding share the runner's CPU. Keep two files
+          # active so independent Chromium processes do not consume every core.
+          LOLLY_TEST_CONCURRENCY: ${{ matrix.shard == 'browser' && '2' || '' }}
         run: |
           set -o pipefail
           mkdir -p artifacts
@@ -244,7 +247,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: test-skips-${{ matrix.artifact }}-${{ github.run_attempt }}
-          path: artifacts/test-skips.json
+          path: |
+            artifacts/test-skips.json
+            artifacts/public-journey-shell.log
           if-no-files-found: error
 
   typecheck:

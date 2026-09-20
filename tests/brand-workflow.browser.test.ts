@@ -7,6 +7,44 @@ import { chromium } from 'playwright';
 
 const origin = process.env.LOLLY_IMPORT_TEST_URL;
 const options = { skip: origin ? false : 'set LOLLY_IMPORT_TEST_URL to a local Vite shell', timeout: 120_000 };
+test('cold catalog and welcome progress while the local profile read is pending', options, async () => {
+  assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
+  const browser = await chromium.launch({ headless: true, channel: process.env.LOLLY_BROWSER_CHANNEL });
+  try {
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      const pending: Array<() => void> = [];
+      let released = false;
+      const get = IDBObjectStore.prototype.get;
+      IDBObjectStore.prototype.get = function (key) {
+        const request = get.call(this, key);
+        if (this.name !== 'profile' || key !== 'me') return request;
+        const add = request.addEventListener.bind(request);
+        request.addEventListener = ((type: string, listener: EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => {
+          add(type, event => {
+            const fire = () => typeof listener === 'function' ? listener.call(request, event) : listener.handleEvent(event);
+            if (type === 'success' && !released) pending.push(fire);
+            else fire();
+          }, options);
+        }) as typeof request.addEventListener;
+        return request;
+      };
+      Object.assign(window, {
+        profileReadWaiting: () => pending.length > 0,
+        releaseProfileRead: () => { released = true; for (const fire of pending.splice(0)) fire(); },
+      });
+    });
+    const assets = page.waitForRequest('**/catalog/assets/index.json');
+    await page.goto(`${origin}/`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => (window as unknown as { profileReadWaiting(): boolean }).profileReadWaiting());
+    await assets;
+    await page.locator('.welcome-dialog').waitFor();
+    await page.evaluate(() => (window as unknown as { releaseProfileRead(): void }).releaseProfileRead());
+    await page.locator('.gallery').waitFor({ state: 'attached' });
+    assert.equal(await page.locator('.welcome-dialog').count(), 1);
+  } finally { await browser.close(); }
+});
+
 test('cold brand discovery shares a slow asset sync without a second index request', options, async () => {
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
   const browser = await chromium.launch({ headless: true, channel: process.env.LOLLY_BROWSER_CHANNEL });

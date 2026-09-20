@@ -924,7 +924,61 @@ function afterWelcomeIdle(fn: () => void): void {
   void welcomeSettled().then(() => afterLoadIdle(() => { void welcomeSettled().then(fn); }));
 }
 
+/** Start the catalog once the shell's instance choice is settled. */
+function startBootCatalog(host: Awaited<ReturnType<typeof createBridge>>, coldGallery: boolean): Promise<void> {
+  const welcomeRoute = parseRoute().name;
+  if ((welcomeRoute === 'gallery' || welcomeRoute === 'utilities') && !isWelcomeDismissed()) expectWelcomeDecision();
+  const catalogHost = host as unknown as Parameters<typeof syncCatalog>[0] & Parameters<typeof showGalleryWelcome>[0];
+  return syncCatalog(catalogHost, () => {
+    if (coldGallery && parseRoute().name === 'gallery') {
+      void showGalleryWelcome(catalogHost, () => parseRoute().name === 'gallery').catch(console.error);
+    }
+  }, welcomeSettled)
+    .then(async () => { try { await mergeInstalledToolsIntoIndex(); } catch { /* no installed tools / no index yet */ } });
+}
+
 async function boot(): Promise<void> {
+  // Prime the in-memory tool index from the last cached copy so the gallery can
+  // paint immediately, before the network catalog sync resolves. syncCatalog
+  // overwrites window.__toolIndex with fresh data when it lands. (Mirrors the
+  // 'sbt-tool-index' fallback key written by catalog/sync.js.) localizeToolIndex
+  // overlays the active language's names/descriptions - a no-op while the locale
+  // catalog is still in flight (Task 3.7 stopped awaiting it), which is why the
+  // continuation after the first navigate re-runs it once the locale resolves.
+  if (!window.__toolIndex) {
+    try {
+      const cached = localStorage.getItem('sbt-tool-index');
+      if (cached) {
+        const primed = JSON.parse(cached);
+        localizeToolIndex(primed);
+        window.__toolIndex = primed;
+      }
+    } catch { /* ignore corrupt/oversized cache */ }
+  }
+
+  // No cached index = a genuinely cold visit, and the ONE case where the first
+  // gallery paint has nothing to draw until the network answers. The slim index
+  // (plans/155 Task 3.8) is ~19 KB gz against the full index's 168, already in flight
+  // from index.html's preload, and the race below paints from whichever of the two
+  // answers first. Skipped entirely for everyone who has a cache, so no repeat visitor
+  // pays for a fetch they won't read.
+  //
+  // WHEN it starts follows the same rule as the org probe above, and for the same
+  // reason: loadSlimToolIndex awaits initInstanceBase(), so starting it here on a
+  // Tauri shell would fire that memoised IndexedDB read against the first-run sheet's
+  // setInstanceBase() write - a race whose loser decides both which deployment's
+  // catalog this cold paint comes from and, if the read resolves late, what base every
+  // later caller sees. On web/PWA the sheet never shows, the base has exactly one
+  // source, and the overlap with the sheet + probe is the whole point of the slim
+  // index, so it starts here; on Tauri it starts below, once the sheet has settled
+  // the base for good. Correctness costs Tauri nothing measurable - the sheet is one
+  // fast IndexedDB read on every boot after the first.
+  const coldGallery = !window.__toolIndex;
+  if (coldGallery && parseRoute().name === 'gallery') {
+    void import('./components/welcome-dialog.ts');
+  }
+  let slimIndexReady = coldGallery && !isTauriShell() ? loadSlimToolIndex() : null;
+
   const host = await createBridge();
   // The optional deployment control plane's probe (src/org/) is up to a 1,500 ms
   // time-boxed fetch that no other boot step feeds - not i18n, not the catalog - so it
@@ -952,6 +1006,8 @@ async function boot(): Promise<void> {
   let releaseOrgProbe!: () => void;
   const orgPromise = new Promise<void>(resolve => { releaseOrgProbe = resolve; }).then(() => initOrgProbeFirst());
   if (!isTauriShell()) void initInstanceBase().then(releaseOrgProbe, releaseOrgProbe);
+  // Web can sync while profile and chrome initialize. Tauri waits for its instance sheet.
+  const earlyCatalog = !isTauriShell() ? startBootCatalog(host, coldGallery) : null;
   trackVisualViewport();
   initMobilePlatformFit();
   // A Design 3D scene box keeps its uploads as asset ids inside its scene query, and only
@@ -1272,47 +1328,6 @@ async function boot(): Promise<void> {
     }
   });
 
-  // Prime the in-memory tool index from the last cached copy so the gallery can
-  // paint immediately, before the network catalog sync resolves. syncCatalog
-  // overwrites window.__toolIndex with fresh data when it lands. (Mirrors the
-  // 'sbt-tool-index' fallback key written by catalog/sync.js.) localizeToolIndex
-  // overlays the active language's names/descriptions - a no-op while the locale
-  // catalog is still in flight (Task 3.7 stopped awaiting it), which is why the
-  // continuation after the first navigate re-runs it once the locale resolves.
-  if (!window.__toolIndex) {
-    try {
-      const cached = localStorage.getItem('sbt-tool-index');
-      if (cached) {
-        const primed = JSON.parse(cached);
-        localizeToolIndex(primed);
-        window.__toolIndex = primed;
-      }
-    } catch { /* ignore corrupt/oversized cache */ }
-  }
-
-  // No cached index = a genuinely cold visit, and the ONE case where the first
-  // gallery paint has nothing to draw until the network answers. The slim index
-  // (plans/155 Task 3.8) is ~19 KB gz against the full index's 168, already in flight
-  // from index.html's preload, and the race below paints from whichever of the two
-  // answers first. Skipped entirely for everyone who has a cache, so no repeat visitor
-  // pays for a fetch they won't read.
-  //
-  // WHEN it starts follows the same rule as the org probe above, and for the same
-  // reason: loadSlimToolIndex awaits initInstanceBase(), so starting it here on a
-  // Tauri shell would fire that memoised IndexedDB read against the first-run sheet's
-  // setInstanceBase() write - a race whose loser decides both which deployment's
-  // catalog this cold paint comes from and, if the read resolves late, what base every
-  // later caller sees. On web/PWA the sheet never shows, the base has exactly one
-  // source, and the overlap with the sheet + probe is the whole point of the slim
-  // index, so it starts here; on Tauri it starts below, once the sheet has settled
-  // the base for good. Correctness costs Tauri nothing measurable - the sheet is one
-  // fast IndexedDB read on every boot after the first.
-  const coldGallery = !window.__toolIndex;
-  if (coldGallery && parseRoute().name === 'gallery') {
-    void import('./components/welcome-dialog.ts');
-  }
-  let slimIndexReady = coldGallery && !isTauriShell() ? loadSlimToolIndex() : null;
-
   // First-run instance choice (Tauri shells only, once): gate BEFORE the first
   // catalog sync so a chosen instance is honoured immediately instead of a
   // bundled sync followed by a second one. A no-op (one fast IndexedDB read,
@@ -1347,20 +1362,7 @@ async function boot(): Promise<void> {
   // the catalog lands, so they appear in the galleries/pickers and pass the tool view's
   // existence check. Part of catalogReady so the first gallery paint already includes them.
   //
-  // None of that waits for the first-run welcome: the gallery must be complete behind
-  // the dialog when the visitor closes it. Only the housekeeping does (lib/welcome-gate.ts):
-  // a gallery visit whose welcome is unsettled holds the gate from here until the first
-  // welcome decision (or the first mount, below) says whether the dialog opens, and
-  // syncCatalog runs its stale-asset prune once the gate opens, detached from catalogReady.
-  const welcomeRoute = parseRoute().name;
-  if ((welcomeRoute === 'gallery' || welcomeRoute === 'utilities') && !isWelcomeDismissed()) expectWelcomeDecision();
-  const catalogHost = host as unknown as Parameters<typeof syncCatalog>[0] & Parameters<typeof showGalleryWelcome>[0];
-  const catalogReady = syncCatalog(catalogHost, () => {
-    if (coldGallery && parseRoute().name === 'gallery') {
-      void showGalleryWelcome(catalogHost, () => parseRoute().name === 'gallery').catch(console.error);
-    }
-  }, welcomeSettled)
-    .then(async () => { try { await mergeInstalledToolsIntoIndex(); } catch { /* no installed tools / no index yet */ } });
+  const catalogReady = earlyCatalog ?? startBootCatalog(host, coldGallery);
   // Core-asset warming: 32 fetches / ~787 KB, fire-and-forget, and nothing on screen
   // waits for any of it. Firing at catalog-land put it in direct competition with the
   // first viewport's preview art, so it waits for load + idle now (plans/155 Task 3.6,

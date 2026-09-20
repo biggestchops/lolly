@@ -18,10 +18,12 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
   const emoji = '\u{1f600}';
   const chosenSet = 'community/emoji/twemoji/color@17.0.3';
   const choose = async () => {
+    await page.locator('.emoji-pop').getByRole('button', { name: 'Change emoji set', exact: true }).click();
     const select = page.locator('.emoji-choice [data-emoji-set]');
     await select.waitFor();
     assert.equal(await page.locator('.emoji-pop unicode-emoji-picker').count(), 0);
     await select.selectOption(chosenSet);
+    await page.getByLabel('Use this set for new work', { exact: true }).check();
     await page.locator('.emoji-choice').getByRole('button', { name: 'Continue', exact: true }).click();
     await page.locator('.emoji-pop unicode-emoji-picker').waitFor();
   };
@@ -41,11 +43,13 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     await heading.fill('Hello friend');
     await heading.evaluate((field: HTMLInputElement) => { field.focus(); field.setSelectionRange(6, 12); });
     const insert = heading.locator('..').getByRole('button', { name: 'Insert emoji', exact: true });
+    const initialStyle = new URL(page.url()).searchParams.get('emojistyle');
+    assert.equal(JSON.parse(initialStyle!).primary.id, 'community/emoji/fluent/high-contrast');
     await insert.click();
-    await page.locator('.emoji-choice [data-emoji-set]').waitFor();
+    await page.locator('.emoji-pop unicode-emoji-picker').waitFor();
     await page.keyboard.press('Escape');
     assert.equal(await heading.inputValue(), 'Hello friend');
-    assert.equal(new URL(page.url()).searchParams.has('emoji'), false);
+    assert.equal(new URL(page.url()).searchParams.get('emojistyle'), initialStyle);
     await insert.click();
     await choose();
     await pick();
@@ -156,7 +160,6 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     const blackSum = await mobileArt.getAttribute('data-emoji-sum');
     assert.match(blackSum ?? '', /^[a-f0-9]{16}$/);
     await mobileHeading.locator('..').getByRole('button', { name: 'Insert emoji', exact: true }).click();
-    await page.locator('.emoji-pop').getByRole('button', { name: 'Change emoji set', exact: true }).click();
     await choose();
     await page.keyboard.press('Escape');
     await page.waitForFunction(sum => {
