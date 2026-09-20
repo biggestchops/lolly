@@ -642,3 +642,19 @@ export function destroyToolStudio(container?: Element): void {
   for (const entry of registry.values())
     if (!container || entry.container === container) destroy(entry);
 }
+
+/** Save the mounted preview without preparing a second export scene or shader set. */
+export function captureStudioThumbnail(root: HTMLElement, maxWidth = 720, maxHeight = 560): string | null {
+  const canvas = root.querySelector<HTMLCanvasElement>('canvas.lolly-studio-canvas');
+  const entry = canvas && owners.get(canvas);
+  if (!canvas || !entry?.ready || entry.capturing || entry.closed) return null;
+  entry.render('preview');
+  const scale = Math.min(1, maxWidth / canvas.width, maxHeight / canvas.height);
+  const output = root.ownerDocument.createElement('canvas');
+  output.width = Math.max(1, Math.round(canvas.width * scale));
+  output.height = Math.max(1, Math.round(canvas.height * scale));
+  const context = output.getContext('2d');
+  if (!context) return null;
+  context.drawImage(canvas, 0, 0, output.width, output.height);
+  return output.toDataURL('image/png');
+}

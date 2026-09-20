@@ -236,6 +236,14 @@ export async function captureThumbnail(
     if (flat && flat !== canvasEl) canvasEl = flat;
   }
 
+  if (manifest.id === '3d-studio' && canvasEl) {
+    try {
+      const { captureStudioThumbnail } = await import('../lib/studio3d/mount.ts');
+      const thumbnail = captureStudioThumbnail(canvasEl);
+      if (thumbnail) return thumbnail;
+    } catch { /* A missing preview still gets the ordinary export fallback. */ }
+  }
+
   const nw = canvasEl?.offsetWidth || manifest.render.width || 600;
   const nh = canvasEl?.offsetHeight || manifest.render.height || 600;
 
