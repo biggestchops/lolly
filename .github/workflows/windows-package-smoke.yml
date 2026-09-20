@@ -8,6 +8,11 @@ on:
         description: Run containing lolly-windows-x64
         required: true
         type: string
+      browser_args:
+        description: Optional WebView2 arguments for diagnosing runner behaviour
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -23,6 +28,7 @@ jobs:
         installer: [msi, nsis]
     env:
       LOLLY_CLI_TIMEOUT: '180'
+      WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: ${{ inputs.browser_args }}
     steps:
       - name: Download the built installers
         env:
@@ -59,8 +65,10 @@ jobs:
       - name: Run the bundled CLI and native WebView exports
         run: |
           function Run-Lolly($Arguments, $Name) {
+            Write-Host "Starting $Name"
             $process = Start-Process $env:LOLLY_SMOKE_APP -ArgumentList $Arguments -Wait -PassThru -RedirectStandardOutput "evidence/$Name.stdout" -RedirectStandardError "evidence/$Name.stderr"
             if ($process.ExitCode -ne 0) { Get-Content "evidence/$Name.stderr"; throw "$Name exited $($process.ExitCode)" }
+            Write-Host "Finished $Name"
           }
           Run-Lolly 'list --json' 'tools'
           $tools = Get-Content evidence/tools.stdout -Raw | ConvertFrom-Json
