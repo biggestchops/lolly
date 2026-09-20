@@ -178,10 +178,10 @@ function stubThree(kind: 'gpu' | 'gl', built: string[], gltf?: { result?: unknow
     FrontSide: 0,
     GLTFLoader: function Loader(this: Record<string, unknown>) {
       this.load = (_url: string, onDone: (g: unknown) => void, _progress: unknown, onError: (e: Error) => void) => {
-        setTimeout(() => {
+        queueMicrotask(() => {
           if (gltf?.error) onError(new Error('404'));
           else onDone(gltf?.result ?? { scene: null });
-        }, 0);
+        });
       };
       return this;
     },
