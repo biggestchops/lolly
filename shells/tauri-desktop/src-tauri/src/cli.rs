@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 //! Command-line mode for the desktop binary.
 //!
-//! The macOS `.app` ships a single Mach-O at `Lolly.app/Contents/MacOS/Lolly`.
+//! The macOS `.app` ships its main Mach-O at `Lolly.app/Contents/MacOS/lolly-desktop`.
 //! Run it with no arguments (or from Finder) and it opens the GUI, exactly as
 //! before. Run it with a tool to render and it does the render HEADLESSLY and
 //! exits - one binary, both a desktop app and a command line, which is the
@@ -468,7 +468,13 @@ pub(crate) fn build_offscreen_window<M: tauri::Manager<tauri::Wry>>(
     manager: &M,
     job: &CliJob,
 ) -> tauri::Result<tauri::WebviewWindow> {
-    tauri::WebviewWindowBuilder::new(manager, WINDOW_LABEL, tauri::WebviewUrl::App("index.html".into()))
+    // WebView2 needs the route in its initial navigation. Changing the hash from
+    // a document-start script can interrupt loading before the HTML is parsed.
+    #[cfg(target_os = "windows")]
+    let page = format!("index.html#/tool/{}?{}", pct(&job.tool_id), job.query);
+    #[cfg(not(target_os = "windows"))]
+    let page = "index.html".to_string();
+    tauri::WebviewWindowBuilder::new(manager, WINDOW_LABEL, tauri::WebviewUrl::App(page.into()))
         .title("Lolly")
         .visible(true)
         .focused(false)
@@ -483,16 +489,19 @@ pub(crate) fn build_offscreen_window<M: tauri::Manager<tauri::Wry>>(
 /// stderr, and fail fast on an unknown tool id.
 fn build_init_script(job: &CliJob) -> String {
     let global = serde_json::json!({ "output": job.output, "stdout": job.stdout }).to_string();
-    let hash = serde_json::to_string(&format!("#/tool/{}?{}", pct(&job.tool_id), job.query)).unwrap();
     let tool_json = serde_json::to_string(&job.tool_id).unwrap();
 
     let mut s = String::new();
     s.push_str("window.__LOLLY_CLI__ = ");
     s.push_str(&global);
     s.push_str(";\n");
-    s.push_str("try{ if(!location.hash){ location.hash = ");
-    s.push_str(&hash);
-    s.push_str("; } }catch(e){}\n");
+    #[cfg(not(target_os = "windows"))]
+    {
+        let hash = serde_json::to_string(&format!("#/tool/{}?{}", pct(&job.tool_id), job.query)).unwrap();
+        s.push_str("try{ if(!location.hash){ location.hash = ");
+        s.push_str(&hash);
+        s.push_str("; } }catch(e){}\n");
+    }
     // Lazy internal invoke - __TAURI_INTERNALS__ may not exist the instant an early
     // error fires; the try/catch just drops the diagnostic in that window.
     s.push_str("function __li(c,a){try{return window.__TAURI_INTERNALS__.invoke(c,a);}catch(e){return null;}}\n");

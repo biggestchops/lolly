@@ -129,14 +129,19 @@ jobs:
           Run-Lolly 'list --json' 'tools'
           $tools = Get-Content evidence/tools.stdout -Raw | ConvertFrom-Json
           if (-not $tools) { throw 'Bundled CLI returned no catalog' }
-          foreach ($format in @('svg', 'png')) {
-            $output = "$PWD/evidence/qr.$format"
-            Run-Lolly "qr-code --url=https://lolly.tools --format=$format --output=`"$output`"" $format
-            if (-not (Test-Path $output) -or (Get-Item $output).Length -lt 100) { throw "$format export is empty" }
+          foreach ($check in @('svg', 'png', 'pdf', 'png-repeat')) {
+            $format = $check.Split('-')[0]
+            $output = "$PWD/evidence/qr-$check.$format"
+            Run-Lolly "qr-code --url=https://lolly.tools --format=$format --output=`"$output`"" $check
+            if (-not (Test-Path $output) -or (Get-Item $output).Length -lt 100) { throw "$check export is empty" }
           }
-          if ((Get-Content evidence/qr.svg -Raw) -notmatch '<svg') { throw 'SVG export is invalid' }
-          $png = [System.IO.File]::ReadAllBytes("$PWD/evidence/qr.png")
-          if ([BitConverter]::ToString($png[0..7]) -ne '89-50-4E-47-0D-0A-1A-0A') { throw 'PNG signature is invalid' }
+          if ((Get-Content evidence/qr-svg.svg -Raw) -notmatch '<svg') { throw 'SVG export is invalid' }
+          foreach ($name in @('qr-png.png', 'qr-png-repeat.png')) {
+            $png = [System.IO.File]::ReadAllBytes("$PWD/evidence/$name")
+            if ([BitConverter]::ToString($png[0..7]) -ne '89-50-4E-47-0D-0A-1A-0A') { throw 'PNG signature is invalid' }
+          }
+          $pdf = [System.IO.File]::ReadAllBytes("$PWD/evidence/qr-pdf.pdf")
+          if ([System.Text.Encoding]::ASCII.GetString($pdf[0..4]) -ne '%PDF-') { throw 'PDF signature is invalid' }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: ${{ !cancelled() }}
         with:
