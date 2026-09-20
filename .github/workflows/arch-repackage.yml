@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: MPL-2.0
+name: Arch release package
+
+on:
+  workflow_dispatch:
+    inputs:
+      deb_run_id:
+        description: Workflow run containing the verified lolly-deb artifact
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Download and inspect the DEB
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DEB_RUN_ID: ${{ inputs.deb_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$DEB_RUN_ID" =~ ^[0-9]+$ ]]
+          gh run download "$DEB_RUN_ID" --name lolly-deb --dir package
+          deb=$(find package -maxdepth 1 -name '*.deb' -print -quit)
+          test -n "$deb"
+          version=$(jq -r .version shells/tauri-desktop/src-tauri/tauri.conf.json)
+          test "$(dpkg-deb -f "$deb" Version)" = "$version"
+          test "$(dpkg-deb -f "$deb" Architecture)" = amd64
+          test "$(stat -c%s "$deb")" -gt 80000000
+          cp "$deb" "package/lolly-desktop-${version}_amd64.deb"
+          cp shells/tauri-desktop/linux/arch/PKGBUILD package/
+          digest=$(sha256sum "$deb" | cut -d' ' -f1)
+          sed -i "s/^pkgver=.*/pkgver=$version/; s/^sha256sums=.*/sha256sums=('$digest')/" package/PKGBUILD
+      - name: Repackage the exact artifact
+        run: |
+          docker run --rm -v "$PWD/package:/work" archlinux:base-devel bash -euc '
+            useradd -m builder
+            mkdir /home/builder/package
+            cp /work/PKGBUILD /work/*.deb /home/builder/package/
+            chown -R builder:builder /home/builder/package
+            su builder -c "cd /home/builder/package && makepkg --noconfirm --nodeps"
+            su builder -c "cd /home/builder/package && makepkg --printsrcinfo > .SRCINFO"
+            cp /home/builder/package/*.pkg.tar.zst /home/builder/package/.SRCINFO /work/
+          '
+          sha256sum package/*.pkg.tar.zst > package/SHA256SUMS.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lolly-arch-x64
+          path: |
+            package/*.pkg.tar.zst
+            package/PKGBUILD
+            package/.SRCINFO
+            package/SHA256SUMS.txt
+          include-hidden-files: true
+          if-no-files-found: error

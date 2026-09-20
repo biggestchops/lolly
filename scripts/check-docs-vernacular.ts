@@ -29,9 +29,10 @@
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { printVernacularWhy } from './lib/vernacular-why.ts';
 
-const ROOT = resolve(new URL('..', import.meta.url).pathname);
+const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
 export interface Violation {
   file: string;
@@ -379,7 +380,7 @@ export function staleAllows(): string[] {
   return stale;
 }
 
-const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname);
+const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
   const v = [...scan(), ...scanBuilt()];
   const stale = staleAllows();
