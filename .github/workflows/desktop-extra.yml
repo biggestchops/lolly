@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-name: Desktop additional packages
+name: Windows installers
 
 on:
   workflow_dispatch:
@@ -19,9 +19,6 @@ jobs:
           - target: windows-x64
             runner: windows-2025
             bundles: nsis,msi
-          - target: macos-x64
-            runner: macos-15-intel
-            bundles: app,dmg
     defaults:
       run:
         shell: bash

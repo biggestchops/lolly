@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: MPL-2.0
+name: macOS Intel package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15-intel
+    timeout-minutes: 180
+    env:
+      LOLLY_PROFILE: lolly-start
+      LOLLY_EMBED_CATALOG: profile
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+      NODE_OPTIONS: --max-old-space-size=6144
+      MACOSX_DEPLOYMENT_TARGET: '13.3'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24'
+      - name: Install the pinned package manager
+        run: |
+          npm install --global --prefix "$RUNNER_TEMP/lolly-pnpm" pnpm@11.26.0
+          echo "$RUNNER_TEMP/lolly-pnpm/bin" >> "$GITHUB_PATH"
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+      - name: Check out ONNX Runtime 1.28.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: microsoft/onnxruntime
+          ref: da9b5e364c465de65c49d91e696cd6485270757f
+          path: upstream-ort
+          submodules: recursive
+      - name: Build the Intel CPU runtime
+        working-directory: upstream-ort
+        run: |
+          ./build.sh --config Release --build_shared_lib --parallel 4 \
+            --skip_tests --compile_no_warning_as_error --skip_submodule_sync \
+            --build_dir "$RUNNER_TEMP/lolly-ort-build" \
+            --cmake_extra_defines CMAKE_OSX_ARCHITECTURES=x86_64 \
+              onnxruntime_BUILD_UNIT_TESTS=OFF onnxruntime_USE_TELEMETRY=OFF
+      - name: Prepare and verify the runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/lolly-ort"
+          dylib=$(find "$RUNNER_TEMP/lolly-ort-build" -type f -name 'libonnxruntime.1.28.0.dylib' -print -quit)
+          test -n "$dylib"
+          cp "$dylib" "$RUNNER_TEMP/lolly-ort/libonnxruntime.dylib"
+          install_name_tool -id '@rpath/libonnxruntime.dylib' "$RUNNER_TEMP/lolly-ort/libonnxruntime.dylib"
+          file "$RUNNER_TEMP/lolly-ort/libonnxruntime.dylib" | grep x86_64
+          echo "ORT_LIB_PATH=$RUNNER_TEMP/lolly-ort" >> "$GITHUB_ENV"
+          echo 'ORT_PREFER_DYNAMIC_LINK=1' >> "$GITHUB_ENV"
+          echo 'RUSTFLAGS=-C link-arg=-Wl,-rpath,@executable_path/../Frameworks' >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import ctypes, os
+          lib = ctypes.CDLL(os.environ['RUNNER_TEMP'] + '/lolly-ort/libonnxruntime.dylib')
+          class ApiBase(ctypes.Structure):
+              _fields_ = [('get_api', ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_uint32)),
+                          ('version', ctypes.CFUNCTYPE(ctypes.c_char_p))]
+          lib.OrtGetApiBase.restype = ctypes.POINTER(ApiBase)
+          api = lib.OrtGetApiBase().contents
+          assert api.get_api(28) and api.version() == b'1.28.0'
+          print('ONNX Runtime 1.28.0 provides API 28')
+          PY
+          node -e 'require("fs").writeFileSync(process.env.RUNNER_TEMP+"/lolly-intel.json", JSON.stringify({bundle:{macOS:{minimumSystemVersion:"13.3",frameworks:[process.env.RUNNER_TEMP+"/lolly-ort/libonnxruntime.dylib"]}}}))'
+          rm -rf "$RUNNER_TEMP/lolly-ort-build" upstream-ort
+      - name: Install application dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -C shells/tauri-desktop install --frozen-lockfile
+      - name: Build the application
+        env:
+          LOLLY_CATALOG_SIGNING_KEY: ${{ secrets.LOLLY_CATALOG_SIGNING_KEY }}
+          VITE_CATALOG_PUBLIC_KEY_JWK: ${{ vars.VITE_CATALOG_PUBLIC_KEY_JWK }}
+        run: pnpm -C shells/tauri-desktop run tauri build --bundles app,dmg --config "$RUNNER_TEMP/lolly-intel.json"
+      - name: Verify the bundle and preserve permissions
+        run: |
+          app=shells/tauri-desktop/src-tauri/target/release/bundle/macos/Lolly.app
+          "$app/Contents/MacOS/lolly-desktop" --version
+          "$app/Contents/MacOS/lolly-desktop" list --json > intel-tools.json
+          otool -L "$app/Contents/MacOS/lolly-desktop" | grep '@rpath/libonnxruntime.dylib'
+          test -f "$app/Contents/Frameworks/libonnxruntime.dylib"
+          ditto -c -k --keepParent "$app" Lolly-macos-x64.app.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lolly-macos-x64
+          path: |
+            shells/tauri-desktop/src-tauri/target/release/bundle/dmg/*.dmg
+            Lolly-macos-x64.app.zip
+            intel-tools.json
+          if-no-files-found: error
