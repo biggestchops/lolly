@@ -929,11 +929,9 @@ function startBootCatalog(host: Awaited<ReturnType<typeof createBridge>>, coldGa
   const welcomeRoute = parseRoute().name;
   if ((welcomeRoute === 'gallery' || welcomeRoute === 'utilities') && !isWelcomeDismissed()) expectWelcomeDecision();
   const catalogHost = host as unknown as Parameters<typeof syncCatalog>[0] & Parameters<typeof showGalleryWelcome>[0];
-  return syncCatalog(catalogHost, () => {
-    if (coldGallery && parseRoute().name === 'gallery') {
-      void showGalleryWelcome(catalogHost, () => parseRoute().name === 'gallery').catch(console.error);
-    }
-  }, welcomeSettled)
+  const welcomeFirst = coldGallery && welcomeRoute === 'gallery'
+    ? () => showGalleryWelcome(catalogHost, () => parseRoute().name === 'gallery').catch(console.error) : undefined;
+  return syncCatalog(catalogHost, welcomeFirst, welcomeSettled)
     .then(async () => { try { await mergeInstalledToolsIntoIndex(); } catch { /* no installed tools / no index yet */ } });
 }
 

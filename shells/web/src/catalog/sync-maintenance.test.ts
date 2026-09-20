@@ -23,10 +23,11 @@ globalThis.localStorage = dom.window.localStorage;
 const TOOLS = { version: '1', generatedAt: 'g1', tools: [{ id: 'qr-code', name: 'QR Code' }] };
 const ASSETS = { assets: [{ id: 'lolly/logo/primary', version: '1', tier: 'core', formats: [{ format: 'svg', url: '/catalog/assets/logo.svg' }] }] };
 let assetStatus = 200;
+let toolRequests = 0;
 
 globalThis.fetch = (async (input: string | URL | Request) => {
   const url = String(input instanceof Request ? input.url : input);
-  if (url.endsWith('/catalog/tools/index.json')) return Response.json(TOOLS);
+  if (url.endsWith('/catalog/tools/index.json')) { toolRequests++; return Response.json(TOOLS); }
   if (url.endsWith('/catalog/assets/index.json')) {
     if (assetStatus === 304) return new Response(null, { status: 304 });
     return Response.json(ASSETS, { headers: { ETag: '"assets-1"' } });
@@ -67,6 +68,16 @@ function within<T>(promise: Promise<T>, ms: number, what: string): Promise<T> {
 }
 
 const settle = (ms = 20) => new Promise((resolve) => setTimeout(resolve, ms));
+
+test('a cold welcome decision paints before the full tool catalog competes for bandwidth', async () => {
+  const decision = deferred(), started = deferred(), calls: Call[] = [], before = toolRequests;
+  const sync = syncCatalog(mockHost(calls), async () => { started.open(); await decision.promise; }, async () => {});
+  await within(started.promise, 2000, 'welcome decision');
+  assert.equal(toolRequests, before);
+  decision.open(); await sync;
+  assert.equal(toolRequests, before + 1);
+  assert.equal(window.__toolIndex?.tools[0]?.id, 'qr-code');
+});
 
 test('the sync resolves while the gate is shut; the prune starts only after it opens', async () => {
   localStorage.clear();

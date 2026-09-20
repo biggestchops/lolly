@@ -169,6 +169,7 @@ test('gallery renders branded templates, preserves their framing, and invalidate
       const { renderGalleryLook } = await import(previewPath);
       const host = await createBridge();
       const original = await host.tokens.get();
+      const hostTokensColors = host.tokens.colors.bind(host.tokens);
       let primary = '#b83a74';
       const resolve = (ref: string) => ref.replace(/[{}]/g, '') === 'color.semantic.primary' ? primary : original.resolve(ref);
       const records = new Map();
@@ -178,6 +179,7 @@ test('gallery renders branded templates, preserves their framing, and invalidate
         active: async () => ({ id: 'preview-palette-test' }),
         get: async () => ({ ...original, query: () => original.query().map((e: { path: string }) => e.path === 'color.semantic.primary' ? { ...e, value: primary } : e), resolve }),
         resolve: async (ref: string) => resolve(ref),
+        colors: async () => (await hostTokensColors()).map((color: { ref?: string }) => color.ref === '{color.semantic.primary}' ? { ...color, value: primary, faces: undefined } : color),
       };
       host.previews = {
         get: async (key: string) => records.get(key) ?? null,

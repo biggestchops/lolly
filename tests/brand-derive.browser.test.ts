@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { journeyDiagnostics } from './helpers/journey-diagnostics.ts';
 
 const origin = process.env.LOLLY_IMPORT_TEST_URL;
 test('reference onboarding previews locally, applies exact colours, and restores the previous design system', {
@@ -12,6 +13,7 @@ test('reference onboarding previews locally, applies exact colours, and restores
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin!).hostname));
   const browser = await chromium.launch({ headless: true, channel: process.env.LOLLY_BROWSER_CHANNEL });
   const context = await browser.newContext({ viewport: { width: 1280, height: 1000 }, hasTouch: true, reducedMotion: 'reduce' });
+  const diagnose = journeyDiagnostics(context, 'brand-derive');
   try {
     await context.addInitScript(() => {
       for (const key of ['lolly-welcome-dismissed', 'lolly-tips-dismissed', 'lolly-privacy-ack']) localStorage.setItem(key, '1');
@@ -127,5 +129,5 @@ test('reference onboarding previews locally, applies exact colours, and restores
     await dialog.locator('[data-reference-review]').waitFor();
     assert.deepEqual((await read()).light, before.light, 'the colour room also opens a read-only review');
     assert.deepEqual(errors, []);
-  } finally { await context.close(); await browser.close(); }
+  } catch (error) { await diagnose(error); throw error; } finally { await context.close(); await browser.close(); }
 });

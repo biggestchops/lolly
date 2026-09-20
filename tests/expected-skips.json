@@ -1291,13 +1291,6 @@
       "owner": "tests"
     },
     {
-      "file": "tests/deep-editing.browser.test.ts",
-      "fullName": "Darkroom, Design and raw HDR video preserve headroom in the browser",
-      "reason": "set LOLLY_EXPORT_TEST_URL",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
       "file": "tests/design-panels.browser.test.ts",
       "fullName": "artboard parents, overflowing tracks and the narrow inspector stay usable",
       "reason": "Serve the web shell and set LOLLY_DESIGN_TOOL_TEST_URL.",
@@ -1692,13 +1685,6 @@
     {
       "file": "tests/emoji-tools.browser.test.ts",
       "fullName": "tool previews draw curved emoji, timed captions and geometry from selected artwork",
-      "reason": "set LOLLY_EXPORT_TEST_URL",
-      "capability": "environment",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/emoji-workflow.browser.test.ts",
-      "fullName": "custom emoji controls, credits, SVG text and rich-text composition use admitted artwork",
       "reason": "set LOLLY_EXPORT_TEST_URL",
       "capability": "environment",
       "owner": "tests"
@@ -2908,6 +2894,13 @@
       "owner": "tests"
     },
     {
+      "file": "tests/sequence-golden.browser.test.ts",
+      "fullName": "sequence preview matches the export over time (browser tier) > open-GOP HEVC seeks agree with native video after an interior trim",
+      "reason": "HEVC decoding is unavailable in this browser build",
+      "capability": "browser",
+      "owner": "tests"
+    },
+    {
       "file": "tests/sequence-render.browser.test.ts",
       "fullName": "sequence export (browser tier) > WP-B: an explicit HEVC codec + CBR encodes deterministically and decodes (mp4)",
       "reason": "no HEVC encode in this browser build - set LOLLY_BROWSER_CHANNEL=chrome",
@@ -2940,13 +2933,6 @@
       "fullName": "private SUSE icons keep a bevel on every shape",
       "reason": "STUDIO_SUSE is not set; private SUSE fixtures are opt-in.",
       "capability": "brand:suse",
-      "owner": "tests"
-    },
-    {
-      "file": "tests/studio3d-project-previews.browser.test.ts",
-      "fullName": "3D Studio first look is transparent and saved projects recover missing scene previews",
-      "reason": "set LOLLY_EXPORT_TEST_URL",
-      "capability": "environment",
       "owner": "tests"
     },
     {

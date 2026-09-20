@@ -251,7 +251,7 @@ describe('sequence preview matches the export over time (browser tier)', { skip:
       try { return (await VideoDecoder.isConfigSupported({ codec: 'hvc1.1.6.L60.B0', codedWidth: 160, codedHeight: 120 })).supported; }
       catch { return false; }
     });
-    if (!supported) { t.skip('HEVC decoding is unavailable'); return; }
+    if (!supported) { t.skip('HEVC decoding is unavailable in this browser build'); return; }
     const encoded = readFileSync(new URL('./fixtures/sequence/open-gop-hevc.mp4', import.meta.url)).toString('base64');
     const clip = await H.page.evaluate(async (data) => (window as never as { SEQ: SeqApi }).SEQ.perf.adopt(data, 'video/mp4'), encoded);
     assert.equal(clip.error, null);

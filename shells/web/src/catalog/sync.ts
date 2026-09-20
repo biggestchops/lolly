@@ -235,7 +235,7 @@ let cachedAssetIndex: AssetIndex | null = null;
  */
 export async function syncCatalog(
   host: SyncHost,
-  onAssetsReady?: () => void,
+  onAssetsReady?: () => unknown,
   maintenanceGate?: () => Promise<unknown>,
 ): Promise<void> {
   // Load the persisted instance base BEFORE the first fetch. Wired here (not in
@@ -244,9 +244,10 @@ export async function syncCatalog(
   await initInstanceBase();
   setOffline(false);
   try {
+    const assetsReady = duringAssetSync(syncAssets(host, onAssetsReady, maintenanceGate));
     await Promise.all([
-      syncTools(host),
-      duringAssetSync(syncAssets(host, onAssetsReady, maintenanceGate)),
+      assetsReady,
+      onAssetsReady ? assetsReady.catch(() => {}).then(() => syncTools(host)) : syncTools(host),
     ]);
   } catch (e) {
     setOffline(true);
@@ -486,11 +487,11 @@ function absolutizeAssetUrls(index: AssetIndex): AssetIndex {
 // it, and pruning against the old one would delete the newer index's metadata.
 let freshAssetSyncs = 0;
 
-async function syncAssets(host: SyncHost, onAssetsReady?: () => void, maintenanceGate?: () => Promise<unknown>): Promise<void> {
+async function syncAssets(host: SyncHost, onAssetsReady?: () => unknown, maintenanceGate?: () => Promise<unknown>): Promise<void> {
   const resp = await conditionalFetch(instancePath(`${CATALOG_BASE}/assets/index.json`), 'assets-index');
   if (!resp) {
     host.log('info', 'Asset catalog unchanged (304)');
-    onAssetsReady?.();
+    await onAssetsReady?.();
     return;
   }
   const index = absolutizeAssetUrls(await resp.json() as AssetIndex);
@@ -508,7 +509,7 @@ async function syncAssets(host: SyncHost, onAssetsReady?: () => void, maintenanc
 
   // Write metadata into IndexedDB so host.assets.get(id) can resolve whatever asset.
   await host.assets._syncFromIndex(index.assets);
-  onAssetsReady?.();
+  await onAssetsReady?.();
 
   if (maintenanceGate) {
     // Called before any await, so a hold that onAssetsReady just took is seen.
