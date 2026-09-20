@@ -143,6 +143,23 @@ jobs:
           }
           $pdf = [System.IO.File]::ReadAllBytes("$PWD/evidence/qr-pdf.pdf")
           if ([System.Text.Encoding]::ASCII.GetString($pdf[0..4]) -ne '%PDF-') { throw 'PDF signature is invalid' }
+          $publishing = "$PWD/evidence/field-notes.png"
+          Run-Lolly "design --template=publishing-field-notes --format=png --width=960 --height=1280 --c2pa=0 --imprint=0 --output=`"$publishing`"" 'publishing'
+          Add-Type -AssemblyName System.Drawing
+          $bitmap = [System.Drawing.Bitmap]::new($publishing)
+          try {
+            if ($bitmap.Width -ne 960 -or $bitmap.Height -ne 1280) { throw 'Publishing page has incorrect dimensions' }
+            foreach ($left in @(72, 500)) {
+              $ink = 0
+              for ($y = 580; $y -lt 1100; $y += 4) {
+                for ($x = $left; $x -lt ($left + 390); $x += 4) {
+                  $pixel = $bitmap.GetPixel($x, $y)
+                  if ($pixel.R -lt 70 -and $pixel.A -gt 200) { $ink++ }
+                }
+              }
+              if ($ink -lt 300) { throw 'Publishing column is missing its text' }
+            }
+          } finally { $bitmap.Dispose() }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: ${{ !cancelled() }}
         with:

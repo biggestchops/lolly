@@ -86,4 +86,6 @@ Two documents map this suite onto the things it is meant to prove:
 
 `LOLLY_EXPORT_TEST_URL=http://127.0.0.1:5178 LOLLY_BROWSER_CHANNEL=chrome node --test tests/lottie-import.browser.test.ts` exercises the real gallery drop, chooser, trim/speed, duplicate/split, save/reopen and download controls against a running local shell.
 
+`tests/composed-text-raster.browser.test.ts` uses the same local-shell setting to rasterise a full publishing page and check its headline, columns and intermediate SVG size. Set `LOLLY_WEBKIT_TEST=1` to repeat the raster check in Playwright WebKit after installing that browser. The WebKit check reuses settled page markup so its result measures rasterisation independently of IndexedDB support in the test browser.
+
 `lottie-edit.test.ts` covers source-bound revisions, independent property easing, key edits and nested time conversion. Run `lottie-internal.browser.test.ts` with the same local-shell variables for the nested layer, curve, undo/redo, duplicate and save/reopen/export journey. `node tests/fuzz/run.ts 5000 lottie-edits` mutates the bounded revision reader.
