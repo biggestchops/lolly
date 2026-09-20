@@ -121,7 +121,7 @@ const localBin = path.join(root, 'node_modules/.bin/lighthouse');
 const candidates: Runner[] = [
   ...(existsSync(localBin) ? [{ cmd: localBin, pre: [], label: 'node_modules/.bin/lighthouse' }] : []),
   { cmd: 'lighthouse', pre: [], label: 'lighthouse (PATH)' },
-  { cmd: 'npx', pre: ['--no', 'lighthouse'], label: 'npx lighthouse (cached)' },
+  { cmd: 'npx', pre: ['--no', `--package=${LIGHTHOUSE_PIN}`, '--', 'lighthouse'], label: `npx ${LIGHTHOUSE_PIN} (cached)` },
 ];
 
 let runner: Runner | null = null;
@@ -136,7 +136,7 @@ for (const c of candidates) {
 }
 if (!runner) {
   console.log(`• no Lighthouse installed - fetching ${LIGHTHOUSE_PIN} via npx (one-off, ~50 MB)`);
-  runner = { cmd: 'npx', pre: ['--yes', LIGHTHOUSE_PIN], label: `npx ${LIGHTHOUSE_PIN}` };
+  runner = { cmd: 'npx', pre: ['--yes', `--package=${LIGHTHOUSE_PIN}`, '--', 'lighthouse'], label: `npx ${LIGHTHOUSE_PIN}` };
 } else {
   console.log(`• lighthouse ${lhVersion} via ${runner.label}`);
 }
