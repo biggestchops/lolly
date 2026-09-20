@@ -184,10 +184,10 @@ There is **no second renderer**. A Lolly tool can only render with a JavaScript 
 
 1. `classify()` turns argv into a job: tool id + `--k=v` params become a `#/tool/<id>?…&export=1` hash (`--output`/`-o` and `--format`/`-f`/`--export` are lifted out; `-o -` means stdout). A pasted `…/#/tool/<id>?…` link works too; later `--flags` override it.
 2. `run_cli()` builds the app with the config window cleared (`config_mut().app.windows.clear()`, so nothing visible auto-opens) and creates one **off-screen** window (`-4000,-4000`, visible so WKWebView doesn't throttle its rAF) pointed at that hash, with `window.__LOLLY_CLI__` and an unknown-tool guard injected as an `initialization_script`. macOS activation policy is `Accessory` (no dock icon).
-
-On Windows the tool route is part of the initial page URL. The document-start script does not change `location.hash`: doing so can interrupt WebView2's document load and leave a blank page on a subsequent CLI export.
 3. The web shell auto-exports on an `export=` deep link (shells/web `views/tool.ts`), calling `host.export.download`. The [`export` override](#the-four-overrides-and-why-each-exists), seeing `window.__LOLLY_CLI__`, sends the bytes to `cli_write` (→ the exact `--output` path, or stdout) instead of Downloads, then `cli_done` exits 0.
 4. A watchdog thread (`LOLLY_CLI_TIMEOUT`, default 90s) is the hard stop; page-side `console.error`/uncaught errors are forwarded to stderr via `cli_log`. **stdout carries only the payload; every diagnostic is on stderr** - the Node CLI's contract.
+
+On Windows the tool route is part of the initial page URL. The document-start script does not change `location.hash`: doing so can interrupt WebView2's document load and leave a blank page on a subsequent CLI export.
 
 Two boot-path facts this depends on, both **load-bearing**:
 

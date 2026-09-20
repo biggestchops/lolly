@@ -119,7 +119,7 @@ jobs:
           function Run-Lolly($Arguments, $Name) {
             Write-Host "Starting $Name"
             $process = Start-Process $env:LOLLY_SMOKE_APP -ArgumentList $Arguments -PassThru -RedirectStandardOutput "evidence/$Name.stdout" -RedirectStandardError "evidence/$Name.stderr"
-            if ($Name -eq 'png' -and $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS.Contains('--remote-debugging-port=9222')) {
+            if ($Name -eq 'png' -and $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -and $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS.Contains('--remote-debugging-port=9222')) {
               node "$env:RUNNER_TEMP/lolly-inspect.cjs"
             }
             $process.WaitForExit()
