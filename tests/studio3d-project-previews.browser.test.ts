@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 import test from 'node:test';
+import { journeyDiagnostics } from './helpers/journey-diagnostics.ts';
 import assert from 'node:assert/strict';
 import { getBrowser,closeBrowser } from '../packages/node-shell/src/browsers.ts';
 const origin=process.env.LOLLY_EXPORT_TEST_URL;
 test('3D Studio first look is transparent and saved projects recover missing scene previews',{skip:origin?false:'set LOLLY_EXPORT_TEST_URL',timeout:180000},async()=>{
   const browser=await getBrowser({graphics:'auto'}),context=await browser.newContext({serviceWorkers:'block',viewport:{width:1400,height:1000}});
+  const diagnose = journeyDiagnostics(context, 'studio3d-project-previews');
   try {
     const page=await context.newPage();page.setDefaultTimeout(90000);
     await page.goto(`${origin}/t/3d-studio?samples=8&c2pa=0&imprint=0`);
@@ -33,5 +35,5 @@ test('3D Studio first look is transparent and saved projects recover missing sce
       return !!tile?.querySelector('img[src^="data:image/"]');
     });
     await page.screenshot({path:'/tmp/lolly-studio-project-preview.png'});
-  }finally{await context.close();await closeBrowser();}
+  }catch(error){await diagnose(error);throw error;}finally{await context.close();await closeBrowser();}
 });

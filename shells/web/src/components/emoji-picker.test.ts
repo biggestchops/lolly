@@ -483,3 +483,21 @@ test('the picker module imports no engine emoji module at the top level', () => 
   assert.equal(imports.some((line) => /emoji-(dom|pack|style|inline|svg|treatment)/.test(line)), false,
     'the pass arrives from the caller, so this chunk never pulls the engine tables onto the page');
 });
+
+test('panel scrolling while the picker downloads retains the requested popover', async () => {
+  const { dom, anchor } = mountDom();
+  const { openEmojiPopover, closeEmojiPopover } = await import('./emoji-picker.ts');
+  let release!: () => void;
+  const loading = new Promise<void>(resolve => { release = resolve; });
+  const opened = openEmojiPopover(anchor, () => {}, { defineElement: async () => { await loading; await definePicker(dom)(); } });
+  try {
+    anchor.focus();
+    dom.window.dispatchEvent(new dom.window.Event('scroll'));
+    assert.ok(dom.window.document.querySelector('.emoji-pop')?.isConnected);
+    release();
+    const pop = await opened;
+    assert.ok(pop.querySelector('unicode-emoji-picker'));
+    dom.window.dispatchEvent(new dom.window.Event('resize'));
+    assert.ok(pop.isConnected);
+  } finally { release(); closeEmojiPopover(); dom.window.close(); }
+});

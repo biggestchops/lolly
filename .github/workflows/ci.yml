@@ -250,6 +250,7 @@ jobs:
           path: |
             artifacts/test-skips.json
             artifacts/public-journey-shell.log
+            artifacts/browser-journeys/
           if-no-files-found: error
 
   typecheck:

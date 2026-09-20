@@ -2,6 +2,7 @@
 /** Exercises the shared input picker against real tools and the shipped emoji catalog. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { journeyDiagnostics } from './helpers/journey-diagnostics.ts';
 import { getBrowser, closeBrowser } from '../packages/node-shell/src/browsers.ts';
 
 const origin = process.env.LOLLY_IMPORT_TEST_URL;
@@ -37,12 +38,14 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
     await cell.click();
     await page.locator('.emoji-pop').waitFor({ state: 'detached' });
   };
+  const diagnose = journeyDiagnostics(context, 'sidebar-emoji');
   try {
     await page.goto(`${origin}/#/tool/jump`, { waitUntil: 'networkidle' });
     const heading = page.locator('input[data-input-id="heading"]');
     await heading.fill('Hello friend');
     await heading.evaluate((field: HTMLInputElement) => { field.focus(); field.setSelectionRange(6, 12); });
     const insert = heading.locator('..').getByRole('button', { name: 'Insert emoji', exact: true });
+    await page.waitForURL(url => url.searchParams.has('emojistyle'));
     const initialStyle = new URL(page.url()).searchParams.get('emojistyle');
     assert.equal(JSON.parse(initialStyle!).primary.id, 'community/emoji/fluent/high-contrast');
     await insert.click();
@@ -177,5 +180,5 @@ test('tool sidebars choose an emoji set once, insert at the caret, and preserve 
       const mirror = field.parentElement!.querySelector<HTMLElement>('.input-emoji-display-text');
       return field.scrollLeft > 0 && mirror?.style.transform.includes(`${-field.scrollLeft}px`);
     });
-  } finally { await context.close(); await closeBrowser(); }
+  } catch (error) { await diagnose(error); throw error; } finally { await context.close(); await closeBrowser(); }
 });

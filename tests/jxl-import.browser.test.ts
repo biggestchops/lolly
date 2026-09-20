@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import test from 'node:test';
+import { journeyDiagnostics } from './helpers/journey-diagnostics.ts';
 import sharp from 'sharp';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -30,6 +31,7 @@ test('Design keeps a JXL original through export, history and fresh-profile port
     }) as typeof window.createImageBitmap;
   });
   const page = await context.newPage(); page.setDefaultTimeout(20000);
+  const diagnose = journeyDiagnostics(context, 'jxl-import');
   try {
     await page.goto(`${origin}/#/tool/design`, { waitUntil: 'networkidle' });
     await page.getByText('Blank canvas', { exact: true }).click();
@@ -90,5 +92,5 @@ test('Design keeps a JXL original through export, history and fresh-profile port
       const [cached] = await Promise.all([page.waitForEvent('download'), page.locator('[data-action=download]').click()]);
       assert.ok(isJxl(await readFile((await cached.path())!)));
     }
-  } finally { await context.close(); await fresh.close(); await closeBrowser(); }
+  } catch (error) { await diagnose(error); throw error; } finally { await context.close(); await fresh.close(); await closeBrowser(); }
 });

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 import test from 'node:test';
+import { journeyDiagnostics } from './helpers/journey-diagnostics.ts';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { getBrowser, closeBrowser } from '../packages/node-shell/src/browsers.ts';
@@ -15,6 +16,7 @@ test('gallery drop, selection, clip edits, save/reopen and actual dotLottie down
   await context.addInitScript(() => { Object.defineProperty(window, 'showSaveFilePicker', { value: undefined }); });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
+  const diagnose = journeyDiagnostics(context, 'lottie-import');
   try {
     await page.goto(origin!, { waitUntil: 'networkidle' });
     await page.evaluate(bytes => {
@@ -61,5 +63,5 @@ test('gallery drop, selection, clip edits, save/reopen and actual dotLottie down
     await page.locator('[data-action="format"]').selectOption('lottie', { force: true });
     const [again] = await Promise.all([page.waitForEvent('download'), page.locator('[data-action="download"]').click()]);
     assert.deepEqual(readLottie(new Uint8Array(await readFile((await again.path())!))).animations[0]!.animation, first);
-  } finally { await context.close(); await closeBrowser(); }
+  } catch (error) { await diagnose(error); throw error; } finally { await context.close(); await closeBrowser(); }
 });

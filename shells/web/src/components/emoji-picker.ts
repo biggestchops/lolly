@@ -435,20 +435,21 @@ function arm(pop: HTMLElement, anchor: HTMLElement, close: () => void): () => vo
     close();
     anchor.focus();
   };
-  // A fixed popover does not follow a scrolling sidebar, so a scroll dismisses it
-  // rather than stranding it over unrelated controls. The anchor going away (a
-  // sidebar rebuild) counts the same.
-  const onScroll = (): void => { if (!anchor.isConnected || !pop.contains(document.activeElement)) close(); };
+  // A compact panel can still be settling while the picker downloads. Follow the
+  // anchor through that scroll instead of cancelling a tap before focus enters it.
+  const onScroll = (): void => { if (!anchor.isConnected) close(); else position(pop, anchor); };
   // CAPTURE for the pointer press: canvas and drag layers stop pointerdown for
   // their own handling, which starves a bubble-phase closer and leaves the
   // popover open over nothing.
   document.addEventListener('pointerdown', onDown, true);
   document.addEventListener('keydown', onKey, true);
   window.addEventListener('scroll', onScroll, true);
+  window.addEventListener('resize', onScroll);
   return () => {
     document.removeEventListener('pointerdown', onDown, true);
     document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('scroll', onScroll, true);
+    window.removeEventListener('resize', onScroll);
   };
 }
 
