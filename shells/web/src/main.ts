@@ -2000,8 +2000,16 @@ function parseRoute(): Route {
 // chunks and the first viewport's art were still downloading, so the install ate
 // bandwidth from the paint it exists to make faster next time. Nothing about the
 // FIRST load depends on the SW being registered early.
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  onWindowLoad(() => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+if ('serviceWorker' in navigator) {
+  if (isTauriShell()) {
+    // Native bundles already serve their files offline. A persisted PWA worker
+    // can intercept the next WebView2 launch with a stale protocol handler.
+    void navigator.serviceWorker.getRegistrations()
+      .then(registrations => Promise.all(registrations.map(registration => registration.unregister())))
+      .catch(() => {});
+  } else if (import.meta.env.PROD) {
+    onWindowLoad(() => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+  }
 }
 
 

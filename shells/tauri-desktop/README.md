@@ -187,7 +187,7 @@ There is **no second renderer**. A Lolly tool can only render with a JavaScript 
 3. The web shell auto-exports on an `export=` deep link (shells/web `views/tool.ts`), calling `host.export.download`. The [`export` override](#the-four-overrides-and-why-each-exists), seeing `window.__LOLLY_CLI__`, sends the bytes to `cli_write` (→ the exact `--output` path, or stdout) instead of Downloads, then `cli_done` exits 0.
 4. A watchdog thread (`LOLLY_CLI_TIMEOUT`, default 90s) is the hard stop; page-side `console.error`/uncaught errors are forwarded to stderr via `cli_log`. **stdout carries only the payload; every diagnostic is on stderr** - the Node CLI's contract.
 
-On Windows the tool route is part of the initial page URL. The document-start script does not change `location.hash`: doing so can interrupt WebView2's document load and leave a blank page on a subsequent CLI export.
+On Windows the tool route is part of the initial page URL, so the document-start script does not interrupt loading by changing `location.hash`. Native shells also skip PWA service-worker registration and remove older registrations when loaded: their files are already bundled offline, and a persisted worker can return a 404 through the previous WebView2 instance's protocol handler on a subsequent launch.
 
 Two boot-path facts this depends on, both **load-bearing**:
 
