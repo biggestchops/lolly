@@ -477,6 +477,18 @@ const zeroCounters = (): Counters => ({
 
 let counters: Counters = zeroCounters();
 let instrumented = false;
+let captureRaw: ((frame: VideoFrame) => void) | null = null;
+
+async function rawFrameHash(source: VideoFrame): Promise<string> {
+  const frame = source.clone();
+  try {
+    const options = { format: 'RGBA' as const };
+    const bytes = new Uint8Array(frame.allocationSize(options));
+    await frame.copyTo(bytes, options);
+    const hash = await crypto.subtle.digest('SHA-256', bytes);
+    return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  } finally { frame.close(); }
+}
 
 /**
  * Wrap `VideoFrame` and `createImageBitmap` so the streaming path's two memory
@@ -516,6 +528,14 @@ function instrument(): void {
       },
     });
   }
+  const encoder = g.VideoEncoder?.prototype;
+  if (encoder) {
+    const encode = encoder.encode;
+    encoder.encode = function (frame: VideoFrame, options?: VideoEncoderEncodeOptions): void {
+      captureRaw?.(frame);
+      encode.call(this, frame, options);
+    };
+  }
   const RealVD = g.VideoDecoder;
   if (RealVD) {
     // mediabunny opens exactly one VideoDecoder per sink, i.e. one per live provider,
@@ -548,6 +568,7 @@ function resetCounters(): void {
 // ── running an export ────────────────────────────────────────────────────────
 
 export interface ExportRun {
+  rawHashes?: string[];
   key: string | null;
   type: string;
   size: number;
@@ -585,8 +606,15 @@ async function exportSeq(spec: StageSpec, format: 'mp4' | 'webm' | 'gif' | 'apng
   instrument();
   resetCounters();
   const target = buildStage(spec);
-  const { applyClockAtMs, freezeVideos, deviceMemory, worker, gl, breakWorker, heartbeat, fxCacheBytes, ...renderOpts } = opts as Any;
+  const { applyClockAtMs, freezeVideos, deviceMemory, worker, gl, breakWorker, heartbeat, fxCacheBytes, rawFrames, ...renderOpts } = opts as Any;
   const undo: (() => void)[] = [];
+  const rawHashes: Promise<string>[] = [];
+  if (Array.isArray(rawFrames)) {
+    const indices = new Set<number>(rawFrames.slice(0, 8));
+    let index = 0;
+    captureRaw = frame => { if (indices.has(index++)) rawHashes.push(rawFrameHash(frame)); };
+    undo.push(() => { captureRaw = null; });
+  }
   if (fxCacheBytes != null) {
     // plans/104 P3.1: the cached-shadow allowance, pinned. 0 renders the scene the way
     // it rendered before the cache existed, which is what a pixel-identity golden
@@ -694,7 +722,7 @@ async function exportSeq(spec: StageSpec, format: 'mp4' | 'webm' | 'gif' | 'apng
     const key = put(blob);
     for (const u of undo.reverse()) u();
     return {
-      key, type: blob.type, size: blob.size, ms, logs, error: null,
+      key, type: blob.type, size: blob.size, ms, logs, error: null, rawHashes: await Promise.all(rawHashes),
       beat: { ...beat },
       counters: { ...counters },
       frames: stage ? frameTimestamps(stage.totalMs, fps).length : 0, fps,

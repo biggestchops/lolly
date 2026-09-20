@@ -594,6 +594,14 @@ export async function templatePick(tview: ToolViewCtx): Promise<void> {
   } = await prepareToolDesignSystemContext(tview.host, urlDesignSystem, slot); tview.dsRegistry = dsRegistry; tview.mountedSystemId = mountedSystemId; tview.madeWith = madeWith;
 
   const runtime: ToolRuntime = await createRuntime(tview.tool, tview.host, tview.initialValues); tview.runtime = runtime;
+  // Input pickers can open before the optional sidebar section mounts. Seed an
+  // explicit link choice before any of those controls become interactive.
+  const emoji = tview.urlFlags.get('emoji') ?? '';
+  const emojistyle = tview.urlFlags.get('emojistyle') ?? '';
+  if (emoji || emojistyle) {
+    const { seedEmojiRuntime } = await import('../../lib/emoji-runtime-style.ts');
+    await seedEmojiRuntime(runtime, tview.host, { emoji, emojistyle, emojifx: tview.urlFlags.get('emojifx') ?? '' });
+  }
   // A locked policy value (and a choice whose current value is outside the
   // allowed set) goes into the runtime, not only onto the sidebar: the canvas,
   // the saved session and any link then carry the value the control shows.

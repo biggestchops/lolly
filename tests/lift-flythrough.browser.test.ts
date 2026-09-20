@@ -558,7 +558,7 @@ describe('plans/104 P3 - the Lift-layers exit demo', { skip: gate ?? false, conc
 
   // ── 2b. the cached shadow plate is a CACHE, not a cheaper lane ──────────────
 
-  test('cached and uncached shadows decode to the SAME pixels, and the cache is what makes this affordable', async () => {
+  test('cached and uncached shadows encode the SAME source pixels, and the cache is what makes this affordable', async () => {
     const r = await page().evaluate(async ({ spec, fps, width, last }) => {
       const S = (window as never as { SEQ: SeqApi }).SEQ;
       // The compositor directly, both ways, in ONE run on ONE engine - the only way to
@@ -566,12 +566,12 @@ describe('plans/104 P3 - the Lift-layers exit demo', { skip: gate ?? false, conc
       // `fxCacheBytes: 0` is `_setFxCacheBytes(0)`: the allowance is nothing, so every
       // layer re-renders its filter on every frame, which is the path that shipped
       // before P3.1 and the path the numbers below are measured against.
-      const off = await S.exportSeq(spec, 'mp4', { fps, width, fxCacheBytes: 0 });
-      const on = await S.exportSeq(spec, 'mp4', { fps, width });
       const idx = [0, Math.round(last / 3), Math.round((2 * last) / 3), last];
+      const off = await S.exportSeq(spec, 'mp4', { fps, width, fxCacheBytes: 0, rawFrames: idx });
+      const on = await S.exportSeq(spec, 'mp4', { fps, width, rawFrames: idx });
       return {
-        on: { err: on.error, size: on.size, ms: on.ms, pix: on.key ? await S.frameHashes(on.key, idx, fps) : [] },
-        off: { err: off.error, size: off.size, ms: off.ms, pix: off.key ? await S.frameHashes(off.key, idx, fps) : [] },
+        on: { err: on.error, size: on.size, ms: on.ms, raw: on.rawHashes, pix: on.key ? await S.frameHashes(on.key, idx, fps) : [] },
+        off: { err: off.error, size: off.size, ms: off.ms, raw: off.rawHashes, pix: off.key ? await S.frameHashes(off.key, idx, fps) : [] },
       };
     }, { spec, fps: GATE_FPS, width: GATE_WIDTH, last: LAST });
 
@@ -581,18 +581,24 @@ describe('plans/104 P3 - the Lift-layers exit demo', { skip: gate ?? false, conc
     }
     assert.equal(r.off.err, null, `the uncached control failed: ${JSON.stringify(r.off.err)}`);
     assert.equal(r.on.err, null, `the cached render failed: ${JSON.stringify(r.on.err)}`);
-    // THE CLAIM. Not "within a tolerance" - the cached frame is composited by the same
-    // `ctx.drawImage`, of the same canvas, at the same four numbers.
-    assert.deepEqual(r.on.pix, r.off.pix,
-      `the cached shadow plate changed the picture:\n  cached   ${r.on.pix.join('\n           ')}\n  uncached ${r.off.pix.join('\n           ')}`);
-    assert.equal(r.on.size, r.off.size, 'and the encoder agreed, byte for byte of container');
+    // Exact RGBA at VideoEncoder.encode isolates the cache from lossy encoding.
+    // The software CI encoder does not promise repeatable quantization or bytes.
+    assert.equal(r.on.raw?.length, 4, 'all four cached source frames were captured');
+    assert.equal(r.off.raw?.length, 4, 'all four uncached source frames were captured');
+    assert.deepEqual(r.on.raw, r.off.raw, 'the cache must preserve every source pixel');
+    assert.equal(r.on.pix.length, 4, 'the cached movie decodes all sampled frames');
+    assert.equal(r.off.pix.length, 4, 'the uncached movie decodes all sampled frames');
+    if (!process.env.CI || process.env.LOLLY_BROWSER_CHANNEL === 'chrome') {
+      assert.deepEqual(r.on.pix, r.off.pix, 'decoded pixels match on the stable encoder');
+      assert.equal(r.on.size, r.off.size, 'the stable encoder produces equal container sizes');
+    }
 
     const frames = LAST + 1;
     const per = (ms: number): number => Math.round(ms / frames);
     say(`[demo] 3b. depth shadows @${GATE_WIDTH}px/${GATE_FPS}fps over ${rows.length} lifted layers `
       + `(${rows.filter((r, i) => layers[i]!.viewBox).length} of them cut to their own ink): `
       + `${per(r.off.ms)} ms/frame uncached → ${per(r.on.ms)} ms/frame cached `
-      + `(${(r.off.ms / Math.max(1, r.on.ms)).toFixed(1)}×), identical decoded pixels and identical ${r.on.size} B`);
+      + `(${(r.off.ms / Math.max(1, r.on.ms)).toFixed(1)}×), identical source pixels; ${r.off.size}/${r.on.size} B encoded`);
   });
 
   // ── 3. the posed still stays VECTOR, and so does the lifted artwork ─────────
@@ -681,6 +687,7 @@ describe('plans/104 P3 - the Lift-layers exit demo', { skip: gate ?? false, conc
 // ── the page-side API, typed only as far as this file uses it ────────────────
 
 interface RunLike {
+  rawHashes?: string[];
   key: string | null; type: string; size: number; ms: number; logs: string[];
   error: { code: string; message: string } | null;
 }

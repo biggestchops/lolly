@@ -111,7 +111,9 @@ test('phone inspector preserves P3 through undo and reload, and Escape dismisses
     await page.keyboard.press('Escape');
     assert.equal(await field.locator('.color-popover').isVisible(), false);
     assert.equal(await page.locator('.is-compact-sheet').count(), 1);
-    assert.equal(await field.locator('.color-trigger').evaluate(e => e === document.activeElement), true);
+    // A pending inspector paint can replace the trigger after locator resolution.
+    // Read the live trigger and focus together, after that paint settles.
+    await page.waitForFunction(() => document.querySelector('[data-color-field="fc-insp-fg"] .color-trigger') === document.activeElement);
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('.is-compact-sheet').count(), 0);
     assert.deepEqual(await selection(page), ['headline']);
