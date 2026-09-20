@@ -1,3 +1,4 @@
+import { commitToolTransaction, transactionHistoryValues } from '../tool-transaction.ts';
 import { collabHistoryValue } from '../../lib/collab-undo.ts';
 import { rowIdField } from '../../lib/row-id.ts';
 // SPDX-License-Identifier: MPL-2.0
@@ -99,30 +100,44 @@ export const applyHistory = (tview: ToolViewCtx, id: string, value: InputValue) 
     tview.applyingHistory = false;
   }
 };
+export const commitInputs = async (tview: ToolViewCtx, values: Record<string, unknown>, label: string, typingGroup?: string): Promise<void> => {
+  if (tview.collabHandle?.role === 'observer') throw new Error(t('This document is read-only.'));
+  const pending = commitToolTransaction(tview.runtime, tview.inputHistory, values, label, typingGroup);
+  refreshHistoryUI(tview);
+  try { await pending; } finally { tview.revisionChanged(); }
+};
+function applyEntry(tview: ToolViewCtx, entry: import('../tool-history.ts').HistoryEntry, redo: boolean): boolean {
+  if (entry.fields) {
+    tview.inputHistory.endGesture();
+    const values = transactionHistoryValues(tview.runtime, entry, redo);
+    if (values) void tview.runtime.applyPatch(values).then(() => tview.revisionChanged()).catch(error => announce(String(error)));
+    else announce(t('This edit changed in another session. Its current content was kept.'));
+    return !!values;
+  }
+  const item = tview.runtime.getModel().find(i => i.id === entry.id);
+  applyHistory(tview, entry.id, collabHistoryValue(tview.runtime, entry.id, item?.value, redo ? entry.before : entry.after, redo ? entry.after : entry.before, entry.collabStamp, item ? rowIdField(item) : 'id') as InputValue);
+  return true;
+}
 export const undoHistory = (tview: ToolViewCtx) => {
+  if (tview.collabHandle?.role === 'observer') { announce(t('This document is read-only.')); return; }
   const { inputHistory } = tview;
   const entry = inputHistory.undo();
   if (!entry) {
     showHistoryToast(tview, { empty: 'undo' });
     return;
   }
-  const item = tview.runtime.getModel().find(i => i.id === entry.id);
-  applyHistory(tview, entry.id, collabHistoryValue(tview.runtime, entry.id, item?.value, entry.after, entry.before, entry.collabStamp,
-    item ? rowIdField(item) : 'id') as InputValue);
-  showHistoryToast(tview, { kind: 'undo', label: entry.label });
+  if (applyEntry(tview, entry, false)) showHistoryToast(tview, { kind: 'undo', label: entry.label });
   refreshHistoryUI(tview);
 };
 export const redoHistory = (tview: ToolViewCtx) => {
+  if (tview.collabHandle?.role === 'observer') { announce(t('This document is read-only.')); return; }
   const { inputHistory } = tview;
   const entry = inputHistory.redo();
   if (!entry) {
     showHistoryToast(tview, { empty: 'redo' });
     return;
   }
-  const item = tview.runtime.getModel().find(i => i.id === entry.id);
-  applyHistory(tview, entry.id, collabHistoryValue(tview.runtime, entry.id, item?.value, entry.before, entry.after, entry.collabStamp,
-    item ? rowIdField(item) : 'id') as InputValue);
-  showHistoryToast(tview, { kind: 'redo', label: entry.label });
+  if (applyEntry(tview, entry, true)) showHistoryToast(tview, { kind: 'redo', label: entry.label });
   refreshHistoryUI(tview);
 };
 // Transient bottom-centre toast confirming what was undone/redone, with a
@@ -432,13 +447,19 @@ export function wireHistory(tview: ToolViewCtx): void {
   const canvasRole = runtime.hasExportFile || tview.toolId === '3d-studio' ? 'group' : 'img'; tview.canvasRole = canvasRole;
 }
 
+/** Bind history commands outside the mount orchestrator. */
+export function transactionActions(tview: ToolViewCtx, register: (sync: (canUndo: boolean, canRedo: boolean) => void) => void): { register: typeof register; commit: (values: Record<string, unknown>, label: string, typingGroup?: string) => Promise<void>; endGesture: () => void } {
+  return { register, commit:tview.history.commitInputs, endGesture:()=>tview.inputHistory.endGesture() };
+}
 export function historyOps(tview: ToolViewCtx) {
   return {
+    transactionActions: bindOp(tview, transactionActions),
     setDesignIntent: bindOp(tview, setDesignIntent),
     compileForSurface: bindOp(tview, compileForSurface),
     refreshHistoryUI: bindOp(tview, refreshHistoryUI),
     changeLabel: bindOp(tview, changeLabel),
     applyHistory: bindOp(tview, applyHistory),
+    commitInputs: bindOp(tview, commitInputs),
     undoHistory: bindOp(tview, undoHistory),
     redoHistory: bindOp(tview, redoHistory),
     showHistoryToast: bindOp(tview, showHistoryToast),

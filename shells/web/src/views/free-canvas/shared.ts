@@ -88,6 +88,9 @@ export interface CanvasCfg {
   imgPosField?: string;
   blendField?: string;
   textField?: string;
+  textDocumentInput?: string;
+  textStoryField?: string;
+  textFrameField?: string;
   textColorField?: string;
   fontSizeField?: string;
   alignField?: string;
@@ -314,6 +317,8 @@ export interface ModelItem {
   value: any;
 }
 export interface RuntimeApi {
+  peekTextLayout?(request: import('@lolly-tools/core').TextLayoutRequestV1): import('@lolly/engine').TextLayoutReceipt | null;
+  layoutText?(request: import('@lolly-tools/core').TextLayoutRequestV1): Promise<import('@lolly-tools/core').TextLayoutV1>;
   getModel(): ModelItem[];
   setInput(id: string, value: any): void;
   applyPatch?(values: Record<string, unknown>): Promise<void>;
@@ -354,6 +359,8 @@ export interface HistoryApi {
   undo(): void;
   redo(): void;
   register(cb: (canUndo: boolean, canRedo: boolean) => void): void;
+  commit?(values: Record<string, unknown>, label: string, typingGroup?: string): Promise<void>;
+  endGesture?(): void;
 }
 
 /**
@@ -469,11 +476,14 @@ export interface ToolbarActions {
 }
 
 export interface EditingState {
+  composed?: { editor: import('../../lib/text-editor-session.ts').ComposedTextEditor; cancel(): void; destroy(): void; position(): void };
   disposeEmojiDisplay?: () => void;
   id: string;
   el: HTMLElement;
   boxEl: HTMLElement | null;
   prevHtml: string;
+  prevSource: string;
+  prevRichText: string;
   prevStyle: string;
   prevBoxStyle: string;
   pending: Record<string, any>;
@@ -1076,3 +1086,5 @@ export interface TouchPt {
 }
 /** railSession is an ES module binding now: importers read it live and write it through here. */
 export function setRailSession(value: { left: number; top: number } | null): void { railSession = value; }
+
+export type LayoutClipboard = Box[] | { version: 2; boxes: Box[]; textDocument: string };

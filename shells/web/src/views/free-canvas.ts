@@ -91,6 +91,18 @@ import { objectsOps } from './free-canvas/objects.ts';
 import { opsOps } from './free-canvas/ops.ts';
 import { penToolOps } from './free-canvas/pen-tool.ts';
 import { modesOps } from './free-canvas/modes.ts';
+import { storyTextOps } from './free-canvas/story-text.ts';
+import { storyTextPropertiesOps } from './free-canvas/story-text-properties.ts';
+import { storyFlowOps } from './free-canvas/story-flow.ts';
+import { storyFlowUiOps } from './free-canvas/story-flow-ui.ts';
+import { storyRecoveryOps } from './free-canvas/story-recovery.ts';
+import { storyPathHandlesOps } from './free-canvas/story-path-handles.ts';
+import { storyTypeOps } from './free-canvas/story-type.ts';
+import { storyWrapOps } from './free-canvas/story-wrap.ts';
+import { storyVectorOps } from './free-canvas/story-vector.ts';
+import { storyPathOps } from './free-canvas/story-path.ts';
+import { storyPathUiOps } from './free-canvas/story-path-ui.ts';
+import { storyGuidesOps } from './free-canvas/story-guides.ts';
 import { textEditOps } from './free-canvas/text-edit.ts';
 import { gesturesOps } from './free-canvas/gestures.ts';
 import { connectorsOps } from './free-canvas/connectors.ts';
@@ -198,6 +210,18 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
   fc.penTool = penToolOps(fc);
   fc.modes = modesOps(fc);
   fc.textEdit = textEditOps(fc);
+  fc.storyText = storyTextOps(fc);
+  fc.storyTextProperties = storyTextPropertiesOps(fc);
+  fc.storyFlow = storyFlowOps(fc);
+  fc.storyFlowUi = storyFlowUiOps(fc);
+  fc.storyRecovery = storyRecoveryOps(fc);
+  fc.storyGuides = storyGuidesOps(fc);
+  fc.storyVector = storyVectorOps(fc);
+  fc.storyWrap = storyWrapOps(fc);
+  fc.storyType = storyTypeOps(fc);
+  fc.storyPath = storyPathOps(fc);
+  fc.storyPathHandles = storyPathHandlesOps(fc);
+  fc.storyPathUi = storyPathUiOps(fc);
   fc.gestures = gesturesOps(fc);
   fc.connectors = connectorsOps(fc);
   fc.edges = edgesOps(fc);
@@ -1953,6 +1977,7 @@ export function initFreeCanvas(opts: InitFreeCanvasOpts): FreeCanvasHandle {
   }; fc.navigatorActions = navigatorActions;
 
   const inspectorActions: InspectorActions = {
+    text: fc.storyTextProperties.port(),
     editText: (id) => fc.textEdit.startTextEdit(id),
     openDocumentSize: fc.document.openSizeMenu,
     pickImage: (ids) => {

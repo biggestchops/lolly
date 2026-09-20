@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "प्रोजेक्ट फ़्रेम दर",
   "inputs.sequenceMarks.label": "टाइमलाइन मार्कर",
   "inputs.boxes.fields.animationId.label": "स्रोत में ऐनिमेशन",
-  "inputs.boxes.fields.animationEdits.label": "एनिमेशन के आंतरिक बदलाव"
+  "inputs.boxes.fields.animationEdits.label": "एनिमेशन के आंतरिक बदलाव",
+  "inputs.boxes.fields.textStory.label": "जुड़ा हुआ पाठ",
+  "inputs.boxes.fields.textFrame.label": "टेक्स्ट फ़्रेम सेटिंग्स",
+  "inputs.boxes.fields.pathPaint.label": "वेक्टर पेंट",
+  "inputs.boxes.fields.vectorSource.label": "वेक्टर का स्रोत और श्रेय",
+  "inputs.boxes.fields.textWrap.label": "टेक्स्ट रैप सेटिंग्स",
+  "inputs.textDocument.label": "टेक्स्ट दस्तावेज",
+  "inputs.exportVisibleText.label": "केवल दिखाई देने वाला पाठ निर्यात करें",
+  "inputs.exportVisibleText.help": "जानबूझकर काटे गए निर्यात की अनुमति दें। स्थिर फ़्रेमों से बाहर का पाठ और अभी न रखे गए जुड़े हुए पाठ छोड़ दिए जाते हैं; पूरा स्रोत आपके दस्तावेज़ में रहता है।"
 }

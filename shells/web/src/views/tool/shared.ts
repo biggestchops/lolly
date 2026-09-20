@@ -772,6 +772,7 @@ export function showShareDialog(
   manifest: ToolManifest,
   lolly?: ShareDialogLolly
 ): void {
+  if (exportScope && !exportScope.dispatchEvent(new CustomEvent('lolly:share-open', { cancelable: true }))) return;
   openShareDialog(shareDialogOptions(runtime, exportScope, manifest, lolly));
 }
 

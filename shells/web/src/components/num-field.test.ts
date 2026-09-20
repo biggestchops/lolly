@@ -420,3 +420,19 @@ test('destroy takes the listeners with it and drops any pending burst', async ()
   assert.equal(r.f.el.isConnected, false);
   assert.equal(document.body.classList.contains('is-scrubbing'), false);
 });
+
+test('new guide bounds clamp edits and update the announced limits', () => {
+  const r = rig(); r.f.bounds(-10, 15); r.f.set(8);
+  assert.equal(r.input.getAttribute('aria-valuemin'), '-10');
+  assert.equal(r.input.getAttribute('aria-valuemax'), '15');
+  r.type('100'); r.key('Enter'); assert.deepEqual(r.commits, [15]);
+  r.f.bounds(-Infinity, Infinity); assert.equal(r.input.getAttribute('aria-valuemax'), null);
+  r.f.destroy();
+});
+
+test('disabled values cannot scrub and unchanged model echoes preserve a gesture', () => {
+  const r = rig(); r.input.disabled = true; r.drag(20); assert.deepEqual(r.commits, []);
+  r.input.disabled = false; r.press(0); r.move(10); r.f.set(100);
+  assert.equal(r.input.value, '110'); r.release(10); assert.deepEqual(r.commits, [110]);
+  r.f.destroy();
+});

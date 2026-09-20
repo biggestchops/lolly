@@ -12,7 +12,7 @@
 import { recordFeaturedRoute } from './lib/featured-activity.ts';
 import { mountIOSTextScale } from './lib/ios-text-scale.ts';
 import { createBridge } from './bridge/index.ts';
-import { setSceneManifestLoader, SCENE_TOOL_ID } from './bridge/asset-dependencies.ts';
+import { setSceneManifestLoader, SCENE_TOOL_ID } from './bridge/scene-manifest.ts';
 import type { Profile } from '@lolly-tools/core/host-v1';
 import { syncCatalog, syncCorePrefetch, defaultFavouriteAssetIds, toolIndexChanged, localizeToolIndex, loadSlimToolIndex } from './catalog/sync.ts';
 import { mergeInstalledToolsIntoIndex } from './lib/installed-tools.ts';

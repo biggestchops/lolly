@@ -10,7 +10,7 @@
 import { num, resolveFrame, withRect } from '../free-canvas-math.ts';
 import type { Box, FrameFields, SeqPose } from '../free-canvas-math.ts';
 import { pickTopmost } from '../canvas-scene.ts';
-import { colorToHexString, parseColor } from '@lolly/engine';
+import { colorToHexString, parseColor, resizeDesignTextFrames } from '@lolly/engine';
 import { ensureRowIds, ulid } from '../../lib/row-id.ts';
 import { openDesignShortcuts } from '../design-shortcuts.ts';
 import { contrastText } from '../../brand-vars.ts';
@@ -128,8 +128,9 @@ export function freshId(fc: FcCtx, boxes: Box[]): string {
 export const withIds = (fc: FcCtx, boxes: Box[]): Box[] => { const { cfg, hasIdField } = fc; return (hasIdField ? ensureRowIds(boxes, cfg.idField) : boxes); };
 export function commit(fc: FcCtx, nextBoxes: Box[]): void {
   const { blockId, onDirty, runtime } = fc;
+  if (fc.storyFlow?.reconcile(nextBoxes)) return;
   onDirty?.(blockId);
-  runtime.setInput(blockId, withIds(fc, nextBoxes));
+  runtime.setInput(blockId, withIds(fc, fc.cv.textDocumentInput ? resizeDesignTextFrames(getBoxes(fc), nextBoxes) : nextBoxes));
 }
 // ── frame containment-on-drop (plan 93 F1b-1) ────────────────────────────────
 // Re-bucket the boxes TOUCHED by a gesture (by array index) into the frame their

@@ -8,7 +8,7 @@ import type { StateRecord } from './state.ts';
 import { MAX_REVISION_BYTES as MAX_BYTES } from './revision-limits.ts';
 import { revisionSnapshot } from './revision-snapshot.ts';
 import { pinRevisionAssets } from './revision-asset-pins.ts';
-import { collectAssetRefs } from './asset-dependencies.ts';
+import { collectAssetRefs } from './asset-ref-collector.ts';
 import { REVISION_STORES as STORES, type DocumentHead, documentVersion, writeCurrentState } from './revision-records.ts';
 
 /** Minute detail for an hour, hourly for a day, daily for a month, weekly after

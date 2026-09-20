@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import type { LearningBlock } from '@lolly-tools/core/learning-v1';
 import type { LearningBytes } from '../../../../engine/src/learning/compile.ts';
+import { isUnit } from '../../../../engine/src/units.ts';
 import { learningRenditions } from '../../../../engine/src/learning/delivery.ts';
 import type { PickerHost } from '../views/picker.ts';
 import { learningReader } from './learning-entry.ts';
@@ -27,8 +28,10 @@ export async function resolveLearningBlock(
     const row = { toolId: source.toolId, values: source.values } as Parameters<
       typeof renderRowToBlob
     >[0];
+    const positive = (key: string): number | undefined => { const value = Number(source.values![key]); return Number.isFinite(value) && value > 0 ? value : undefined; };
+    const savedDimensions = { width: positive('__export_width'), height: positive('__export_height'), unit: isUnit(String(source.values.__export_unit)) ? String(source.values.__export_unit) as import('../../../../engine/src/units.ts').Unit : 'px' as const, dpi: positive('__export_dpi') };
     if (block.kind === 'slides') {
-      const result = await renderToolPages(row, host, { format: rendition.format, signal });
+      const result = await renderToolPages(row, host, { format: rendition.format, ...savedDimensions, signal });
       if (result.format !== rendition.format)
         throw new Error('The renderer changed the requested format.');
       return Promise.all(result.pages.map(blobBytes));
@@ -52,7 +55,7 @@ export async function resolveLearningBlock(
       frame.w > 0 &&
       frame.h > 0
         ? { width: frame.w, height: frame.h }
-        : {};
+        : savedDimensions;
     const rendered = await renderRowToBlob(row, host, {
       format: rendition.format,
       ...dimensions,

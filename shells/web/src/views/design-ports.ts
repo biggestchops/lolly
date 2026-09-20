@@ -12,6 +12,29 @@
  * wrapper - never `setInputNoHistory`.
  */
 import type { Box, BoxFieldConfig } from './free-canvas-math.ts';
+import type { TextCharacterV1, TextFrameV1, TextParagraphStyleV1 } from '@lolly-tools/core';
+import type { TextStyleCommand, TextSpanPatch } from '@lolly/engine';
+import type { TextStyleControlState } from '../lib/text-style-controls.ts';
+export interface TextPropertyState {
+  scope: 'caret' | 'range' | 'story';
+  storyIds: string[];
+  character: TextCharacterV1;
+  mixed: string[];
+  paragraph: TextParagraphStyleV1;
+  frame: TextFrameV1;
+  family: string;
+  styles: TextStyleControlState;
+  linked: boolean;
+  appliedScale: number;
+}
+export type TextPropertyCommand = { kind: 'character'; value: TextCharacterV1 } | { kind: 'paragraph'; value: TextParagraphStyleV1 } | { kind: 'style'; value: TextStyleCommand } | { kind: 'span'; value: TextSpanPatch } |
+  { kind: 'frame'; value: Partial<TextFrameV1> } | {kind:'style-definition';value:import('@lolly-tools/core').TextNamedStyleV1} | { kind: 'font'; family?: string; weight?: number; italic?: boolean };
+export interface TextPropertyPort {
+  typography?(ids:string[]):import('../lib/text-typography-controls.ts').TextTypographyPort;
+  read(ids: string[]): TextPropertyState | null;
+  apply(ids: string[], command: TextPropertyCommand, label: string): void;
+  subscribe(listener: () => void): () => void;
+}
 
 /** An authoring line through a document-space point, rotated clockwise from horizontal. */
 export interface DesignGuide {
@@ -103,6 +126,7 @@ export interface NavigatorActions {
 
 /** Verbs the inspector delegates to the overlay. */
 export interface InspectorActions {
+  text?: TextPropertyPort;
   editText?(id: string): void;
   openDocumentSize?(anchor: HTMLElement): void;
   pickImage(ids: string[]): void;

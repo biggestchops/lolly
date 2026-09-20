@@ -5,22 +5,22 @@ This file exists so you can find the code for a feature without reading all of i
 The counts below are GENERATED - `pnpm run build:web-src-readme`, checked in CI by `pnpm run check:web-src-readme`, so they cannot rot the way the hand-measured ones did. They convey proportion; don't cite them as an API.
 
 <!-- web-src-dirs:start -->
-Roughly 577,000 lines of TypeScript, tests included, and 50,000 lines of CSS.
+Roughly 580,000 lines of TypeScript, tests included, and 50,000 lines of CSS.
 
 | Directory | Source | Tests | CSS |
 |---|---|---|---|
-| `views/` | 373 files, 160,445 lines | 161 files, 57,495 lines | 6 files, 1,427 lines |
-| `lib/` | 569 files, 126,688 lines | 323 files, 62,801 lines | 11 files, 1,780 lines |
-| `bridge/` | 163 files, 48,128 lines | 98 files, 21,297 lines | none |
-| `components/` | 79 files, 22,820 lines | 37 files, 10,877 lines | 11 files, 796 lines |
+| `views/` | 387 files, 161,904 lines | 161 files, 57,518 lines | 6 files, 1,427 lines |
+| `lib/` | 597 files, 128,538 lines | 327 files, 62,955 lines | 11 files, 1,780 lines |
+| `bridge/` | 165 files, 48,196 lines | 98 files, 21,297 lines | none |
+| `components/` | 80 files, 22,921 lines | 37 files, 10,893 lines | 12 files, 804 lines |
 | `collab/` | 20 files, 13,532 lines | 22 files, 14,132 lines | none |
-| `pro/` | 22 files, 8,498 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
+| `pro/` | 22 files, 8,513 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
 | `org/` | 19 files, 5,881 lines | 15 files, 4,257 lines | none |
 | `catalog/` | 2 files, 895 lines | 2 files, 231 lines | none |
 | `ext/` | 2 files, 136 lines | 1 file, 86 lines | none |
-| `styles/` | none | 4 files, 857 lines | 91 files, 44,392 lines |
+| `styles/` | none | 4 files, 857 lines | 92 files, 44,486 lines |
 
-Plus 48 `.ts`/`.js` files at the top level of `src/`, 15,854 lines all told, of which 22 are tests and 3 are ambient declarations. `main.ts` is 2,123 of that.
+Plus 48 `.ts`/`.js` files at the top level of `src/`, 15,878 lines all told, of which 22 are tests and 3 are ambient declarations. `main.ts` is 2,123 of that.
 <!-- web-src-dirs:end -->
 
 ## How do I find a feature
@@ -71,12 +71,12 @@ Do not be ambushed by these. The largest source files, by line count:
 | 2,548 | `views/timeline-math.ts` | yes |
 | 2,462 | `views/design-import.ts` | **none** |
 | 2,363 | `views/free-canvas-math.ts` | yes |
-| 2,204 | `views/design-inspector.ts` | yes |
-| 2,190 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
+| 2,215 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
+| 2,211 | `views/design-inspector.ts` | yes |
 | 2,123 | `main.ts` | yes |
 | 2,103 | `lib/clip-thumbs.ts` | yes |
 | 2,100 | `components/color-field.ts` | yes |
-| 2,095 | `views/tool/session.ts` | yes |
+| 2,096 | `views/tool/session.ts` | yes |
 | 2,075 | `pro/index.ts` | yes |
 <!-- web-src-largest:end -->
 

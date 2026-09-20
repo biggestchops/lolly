@@ -86,12 +86,18 @@ importers:
 
   engine:
     dependencies:
+      '@cto.af/linebreak':
+        specifier: 4.0.3
+        version: 4.0.3
       '@lolly-tools/core':
         specifier: workspace:*
         version: link:../packages/core
       ajv:
         specifier: ^8.17.1
         version: 8.20.0
+      bidi-shaper:
+        specifier: 0.1.2
+        version: 0.1.2
       css-tree:
         specifier: ^3.2.1
         version: 3.2.1
@@ -164,6 +170,9 @@ importers:
       playwright-core:
         specifier: ^1.63.0
         version: 1.63.0
+      woff2-encoder:
+        specifier: 2.0.0
+        version: 2.0.0
     devDependencies:
       typescript:
         specifier: ^5.5.0
@@ -526,6 +535,14 @@ packages:
   '@csstools/css-tokenizer@3.0.4':
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
     engines: {node: '>=18'}
+
+  '@cto.af/linebreak@4.0.3':
+    resolution: {integrity: sha512-GiyepYtGQMo4LDynuhyFr0/hBGv0SFNVKnPjHuhFMnkseCBCIMecaCkKL8V3cu9mRas1djpSWznxigw/irV5Lw==}
+    engines: {node: '>=20'}
+
+  '@cto.af/unicode-trie-runtime@3.2.9':
+    resolution: {integrity: sha512-H4FHtvIef/8NlU+NsQolcL9SKu+fYIPMZI++h6rQcM1IN7C/AwiCs9L8WRff+O4hDMamksAEuwBjet2S9uPt4w==}
+    engines: {node: '>=20'}
 
   '@dimforge/rapier3d-compat@0.12.0':
     resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
@@ -1719,6 +1736,10 @@ packages:
 
   babel-runtime@6.26.0:
     resolution: {integrity: sha512-ITKNuq2wKlW1fJg9sSW52eepoYgZBggvOAHC0u/CYu/qxQ9EVzThCgR69BnSXLHjy2f7SY5zaQ4yt7H9ZVxY2g==}
+
+  bidi-shaper@0.1.2:
+    resolution: {integrity: sha512-JBRKDJ5lIu0DEUJdNVLmXCVLe01k3Y5AO3KoW6vB1MPj9yc0u570uJY4LrM1JusP10Zbr70ClIdVQ2JD+g6R1g==}
+    engines: {node: '>=18'}
 
   binary-search-bounds@2.0.5:
     resolution: {integrity: sha512-H0ea4Fd3lS1+sTEB2TgcLoK21lLhwEJzlQv3IN47pJS976Gx4zoWe0ak3q+uYh60ppQxg9F16Ri4tS1sfD4+jA==}
@@ -3456,6 +3477,14 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.4': {}
 
+  '@cto.af/linebreak@4.0.3':
+    dependencies:
+      '@cto.af/unicode-trie-runtime': 3.2.9
+
+  '@cto.af/unicode-trie-runtime@3.2.9':
+    dependencies:
+      fflate: 0.8.3
+
   '@dimforge/rapier3d-compat@0.12.0': {}
 
   '@emnapi/core@1.11.1':
@@ -4381,6 +4410,8 @@ snapshots:
     dependencies:
       core-js: 2.6.12
       regenerator-runtime: 0.11.1
+
+  bidi-shaper@0.1.2: {}
 
   binary-search-bounds@2.0.5: {}
 

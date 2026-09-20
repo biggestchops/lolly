@@ -78,7 +78,7 @@ test('the sensor capabilities still validate (screen is additive, not a replacem
 
 // ─── version ─────────────────────────────────────────────────────────────────
 
-test('ENGINE_VERSION is 1.216.0', () => {
+test('ENGINE_VERSION is 1.217.0', () => {
   // A literal pin: the screencap surface shipped at 1.54, and tools declare
   // ^1.54.0 to require it. session-record only checks the stamp equals whatever
   // ENGINE_VERSION happens to be (tautological) - this catches an errant bump.
@@ -502,7 +502,8 @@ test('ENGINE_VERSION is 1.216.0', () => {
   // 1.213.0 adds still JPEG XL export; capture is unchanged.
   // 1.214.0 adds float editing and runtime emoji artwork; capture is unchanged.
   // 1.216.0 adds semantic table editing and presentation kits; capture is unchanged.
-  assert.equal(ENGINE_VERSION, '1.216.0');
+  // 1.217.0 adds authored text composition and vector paint; capture is unchanged.
+  assert.equal(ENGINE_VERSION, '1.217.0');
 });
 
 // ─── loadTool: a ^1.54.0 tool loads against this engine ───────────────────────

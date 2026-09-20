@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Projektbildrate",
   "inputs.sequenceMarks.label": "Zeitleistenmarkierungen",
   "inputs.boxes.fields.animationId.label": "Animation in der Quelle",
-  "inputs.boxes.fields.animationEdits.label": "Interne Animationsänderungen"
+  "inputs.boxes.fields.animationEdits.label": "Interne Animationsänderungen",
+  "inputs.boxes.fields.textStory.label": "Textabschnitt",
+  "inputs.boxes.fields.textFrame.label": "Textrahmen-Einstellungen",
+  "inputs.boxes.fields.pathPaint.label": "Vektordarstellung",
+  "inputs.boxes.fields.vectorSource.label": "Vektorquelle und Credits",
+  "inputs.boxes.fields.textWrap.label": "Textumfluss-Einstellungen",
+  "inputs.textDocument.label": "Textdokument",
+  "inputs.exportVisibleText.label": "Nur sichtbaren Text exportieren",
+  "inputs.exportVisibleText.help": "Absichtlich beschnittenen Export zulassen. Text außerhalb fester Rahmen und unplatzierte Textabschnitte werden ausgelassen; der vollständige Quelltext bleibt im Dokument."
 }

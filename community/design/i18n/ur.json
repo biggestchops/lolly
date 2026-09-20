@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "پروجیکٹ کا فریم ریٹ",
   "inputs.sequenceMarks.label": "ٹائم لائن مارکرز",
   "inputs.boxes.fields.animationId.label": "ماخذ میں اینیمیشن",
-  "inputs.boxes.fields.animationEdits.label": "اینیمیشن کی اندرونی تبدیلیاں"
+  "inputs.boxes.fields.animationEdits.label": "اینیمیشن کی اندرونی تبدیلیاں",
+  "inputs.boxes.fields.textStory.label": "مربوط متن",
+  "inputs.boxes.fields.textFrame.label": "متن کے فریم کی ترتیبات",
+  "inputs.boxes.fields.pathPaint.label": "ویکٹر کی بھرائی اور لکیریں",
+  "inputs.boxes.fields.vectorSource.label": "ویکٹر کا ماخذ اور انتساب",
+  "inputs.boxes.fields.textWrap.label": "متن کے گھیراؤ کی ترتیبات",
+  "inputs.textDocument.label": "متن کی دستاویز",
+  "inputs.exportVisibleText.label": "صرف نظر آنے والا متن برآمد کریں",
+  "inputs.exportVisibleText.help": "جان بوجھ کر تراشی گئی برآمد کی اجازت دیں۔ مقررہ فریموں سے باہر کا متن اور ابھی نہ رکھا گیا مربوط متن شامل نہیں ہوتا؛ پورا اصل مواد آپ کی دستاویز میں رہتا ہے۔"
 }

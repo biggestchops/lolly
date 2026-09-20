@@ -47,7 +47,7 @@ function panel(id: string): HTMLElement {
   return el;
 }
 function reset(): void {
-  for (const id of ['zoom', 'neuro', 'inspector', 'export', 'transcript'] as const) ED.releaseDock(id);
+  for (const id of ['zoom', 'neuro', 'inspector', 'export', 'share', 'transcript'] as const) ED.releaseDock(id);
   document.querySelector('.edge-dock-drop')?.remove();
   document.documentElement.dir = '';
   mobile = false;
@@ -61,6 +61,23 @@ const collapseBtn = (): HTMLElement => document.querySelector<HTMLElement>('.edg
 const expandColumn = (): void => { if (ED.edgeDockCollapsed()) collapseBtn().click(); };
 const visibleSlots = (): string[] =>
   [...document.querySelectorAll<HTMLElement>('.edge-dock-slot')].filter((s) => !s.hidden).map((s) => s.dataset.slot ?? '');
+
+test('Share and Export use separate tabs and refresh only when Share is activated', () => {
+  reset();
+  ED.requestDock('export', panel('px'), { label: 'Export' });
+  let activations = 0;
+  ED.requestDock('share', panel('pt'), { label: 'Share', onActivate: () => { activations++; } });
+  assert.deepEqual(visibleSlots(), ['share']);
+  assert.equal(document.querySelectorAll('[role="tab"]').length, 2);
+  ED.showPanel('export');
+  assert.deepEqual(visibleSlots(), ['export']);
+  ED.showPanel('share');
+  assert.deepEqual(visibleSlots(), ['share']);
+  assert.equal(activations, 1);
+  ED.showPanel('share');
+  assert.equal(activations, 1);
+  reset();
+});
 
 test('below the mobile breakpoint docking is fully inert', () => {
   reset();

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
+import type { TextDocumentV1, TextFontResourceV1 } from '@lolly-tools/core';
 import type { HostV1, AssetRef } from '@lolly-tools/core/host-v1';
 import type { DesignToolDraftV1, DesignToolDefinitionV1 } from '@lolly-tools/core/design-tool-v1';
 import { compileDesignTool } from '../../../../engine/src/design-tool/compiler.ts';
 import { resolveVectorFont } from '../bridge/font-registry.ts';
 import { readFontEmbedding } from './font-utils.ts';
 import { redistribution } from './redistribution.ts';
+import { packageTextFonts } from './text-font-package.ts';
 import { instancePath } from './instance.ts';
 
 export class DesignPreparationError extends Error {
@@ -31,6 +33,7 @@ export async function prepareDesignTool(draft: DesignToolDraftV1, canvas: HTMLEl
   const assets: Record<string, Uint8Array> = {};
   const dependencies: DesignToolDefinitionV1['dependencies'] = [];
   const fonts = new Map<string, string>();
+  const fontResources = new Map<string, TextFontResourceV1>();
   const fontInputs = new Map<string, Map<string, string>>();
   const images = new Map<string, AssetRef>();
   let css = '';
@@ -66,7 +69,10 @@ export async function prepareDesignTool(draft: DesignToolDraftV1, canvas: HTMLEl
     images.set(ref.id, resolved);
     return resolved;
   };
-  const font = async (node: HTMLElement, name?: string, weight?: string): Promise<string> => {
+  const font = async (node: HTMLElement, name?: string, weight?: string, composed?: TextDocumentV1): Promise<string> => {
+    const pinned=composed?.fonts.find(resource=>resource.id===name||resource.family===name);
+    if(pinned)return pinned.id;
+    const attach=(key:string,family:string)=>{const resource=fontResources.get(key);if(composed&&resource&&!composed.fonts.some(font=>font.id===resource.id))composed.fonts.push(structuredClone(resource));return family;};
     const probe = node.cloneNode(false) as HTMLElement;
     if (name) probe.style.fontFamily = name === 'sans' ? 'var(--font-brand)' : name === 'mono' ? 'var(--font-mono)' : name;
     if (weight) probe.style.fontWeight = weight;
@@ -74,7 +80,7 @@ export async function prepareDesignTool(draft: DesignToolDraftV1, canvas: HTMLEl
     try {
       const style = getComputedStyle(probe);
       const key = `${style.fontFamily}/${style.fontWeight}/${style.fontStyle}`;
-      const cached = fonts.get(key); if (cached) return cached;
+      const cached = fonts.get(key); if (cached) return attach(key,cached);
       const face = await resolveVectorFont(style, `${node.textContent}ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789`);
       if (face?.face && name && !['sans', 'mono', 'display'].includes(name) && face.face.family.toLowerCase() !== name.toLowerCase()) throw new Error('The original font is unavailable. Add it or choose an explicit replacement in Design.');
       if (!face || face.fallbacks?.length) throw new Error('Add a complete font file for this text before sharing.');
@@ -86,8 +92,9 @@ export async function prepareDesignTool(draft: DesignToolDraftV1, canvas: HTMLEl
       const familyDigest = await designDigest(new TextEncoder().encode(`${d.id}/${d.version}/${face.face?.family || style.fontFamily}`));
       const family = `LollyFont${familyDigest.slice(0, 16)}`;
       fonts.set(key, family);
+      fontResources.set(key,{id:family,family,sha256:await designDigest(bytes),faceIndex:0,source:{kind:'embedded',base64:dataUrl(bytes,'font/ttf').split(',')[1]!}});
       css += `@font-face{font-family:'${family}';src:url('${dataUrl(bytes, 'font/ttf')}');font-weight:${face.face?.weight || style.fontWeight};font-style:${style.fontStyle};}\n`;
-      return family;
+      return attach(key,family);
     } finally { probe.remove(); }
   };
   const textSource = (layerId: string): HTMLElement => {
@@ -95,11 +102,12 @@ export async function prepareDesignTool(draft: DesignToolDraftV1, canvas: HTMLEl
     if (!node) throw new Error('The text source is unavailable. Return to Design and review this artboard.');
     return node;
   };
+  for(const variant of d.variants)if(variant.textDocument)variant.textDocument=await packageTextFonts(variant.textDocument,host,addBytes,options.signal);
   for (const v of d.variants) for (const b of v.boxes) {
     options.signal?.throwIfAborted();
     try {
     if (['audio', 'camera', 'video'].includes(String(b.kind)) || b.tool || b.kf || b.anim || b.textAnim) throw new Error('Freeze motion and linked tools to still artwork before sharing.');
-    if (b.kind === 'text' || b.text) {
+    if (!b.textStory && (b.kind === 'text' || b.text)) {
       const node = textSource(String(b.id));
       const families = new Set([String(b.font || 'sans')]);
       const weights = new Set([String(b.weight || getComputedStyle(node).fontWeight)]);
@@ -118,18 +126,23 @@ export async function prepareDesignTool(draft: DesignToolDraftV1, canvas: HTMLEl
     if (b.image) b.image = await image(b.image);
     } catch (error) { options.signal?.throwIfAborted(); throw new DesignPreparationError((error as Error).message, String(b.id), d.inputs.find(f => f.targets.some(t => t.layerId === b.id))?.input.id); }
   }
+  const targetDocument=(variantId:string,layerId:string)=>{const variant=d.variants.find(variant=>variant.id===variantId);return variant?.boxes.some(box=>box.id===layerId&&box.textStory)?variant.textDocument:undefined;};
   for (const f of d.inputs) {
     options.signal?.throwIfAborted();
     if (f.input.type === 'asset' && f.input.default) f.input.default = await image(f.input.default);
     if (f.targets[0]?.property === 'font') {
       const node = textSource(f.targets[0].layerId);
       const mapped = new Map<string, string>();
-      for (const option of f.input.options || []) { const name = option.value; option.value = await font(node, name); mapped.set(name, option.value); }
+      for (const option of f.input.options || []) {
+        const name=option.value,values=await Promise.all(f.targets.map(target=>font(textSource(target.layerId),name,undefined,targetDocument(target.variantId,target.layerId))));
+        if(new Set(values).size>1)throw new DesignPreparationError('Use the same pinned font for every target of this font field.',undefined,f.input.id);
+        option.value=values[0]??await font(node,name);mapped.set(name,option.value);
+      }
       f.input.default = mapped.get(String(f.input.default));
       f.approved = f.input.options?.map(o => o.value);
       fontInputs.set(f.input.id,mapped);
     }
-    if (f.targets[0]?.property === 'weight') {
+    if (f.targets[0]?.property === 'weight' && !targetDocument(f.targets[0].variantId,f.targets[0].layerId)) {
       const node = textSource(f.targets[0].layerId);
       for (const option of f.input.options || []) await font(node, undefined, option.value);
     }
@@ -137,8 +150,8 @@ export async function prepareDesignTool(draft: DesignToolDraftV1, canvas: HTMLEl
   for (const choice of d.choices) for (const option of choice.options) {
     for (const write of option.writes) {
       if (write.property === 'image') write.value = await image(write.value);
-      if (write.property === 'font') write.value = await font(textSource(write.layerId), String(write.value));
-      if (write.property === 'weight') await font(textSource(write.layerId), undefined, String(write.value));
+      if (write.property === 'font') write.value = await font(textSource(write.layerId), String(write.value),undefined,targetDocument(write.variantId,write.layerId));
+      if (write.property === 'weight' && !targetDocument(write.variantId,write.layerId)) await font(textSource(write.layerId), undefined, String(write.value));
     }
     for (const [id, value] of Object.entries(option.defaults || {})) {
       if (d.inputs.find(f => f.input.id === id)?.input.type === 'asset') option.defaults![id] = await image(value);

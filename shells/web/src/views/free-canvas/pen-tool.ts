@@ -11,6 +11,7 @@ import { boxRect, edgeArrowHead, pathEndPoints, pathEndTangents, seedBox } from 
 import type { Box, Rect as MathRect } from '../free-canvas-math.ts';
 import { pickTopmost } from '../canvas-scene.ts';
 import { segHtml, wireSegs } from '../free-canvas-fields.ts';
+import { transformVectorPaintPaths } from '@lolly/engine';
 import type { AuthoredPath, Continuity, Cubic, SplineKind, SplineNode } from '@lolly/engine';
 import { PEN_KINDS, alignPoints, convertKind, decodePathContours, defaultContinuity, deleteNodes, denormNodes, distributePoints, encodePathField, encodePathFields, frameToLocal, handlePoint, insertNodeOnCurve, kindReadsHandles, localToFrame, lowerAuthored, nodeAt, normNodes, pathPaintIsVisible, pathPaintSeed, penCommitFromNative, penFrame, pickPathPaint, refitFrame, resolveDrawnInk, setNodeContinuity } from '../free-canvas-pen.ts';
 import type { InsertResult, NodeAlignEdge, PenPointRef } from '../free-canvas-pen.ts';
@@ -89,6 +90,7 @@ export function exitPen(fc: FcCtx): void {
   fc.penDraft = null;
   fc.penCursor = null;
   fc.penWarm = null;
+  fc.textPathDrawing=false;
   stageEl.classList.remove('fc-penning');
   fc.gestures.clearGuides();
   fc.chromeSync.renderChrome();
@@ -157,6 +159,7 @@ export function penFinishDraw(fc: FcCtx): void {
  * tool with no `pathField`) - the caller's cue to repaint its own chrome.
  */
 export function commitPathBox(fc: FcCtx, draft: AuthoredPath, extra?: Box): boolean {
+  if(fc.textPathDrawing)return fc.storyPath.drawn(draft);
   const { addKinds, cfg, penPaintFields } = fc;
   if (!cfg.pathField) return false;
   const made = penCommitFromNative(draft);
@@ -282,13 +285,15 @@ export function startPenEdit(fc: FcCtx, id: string): void {
   const boxes = fc.select.getBoxes();
   const i = fc.select.indexOfId(boxes, id);
   if (i < 0) return;
-  const decoded = decodePathContours(boxes[i]![cfg.pathField]);
+  const guide=fc.storyText.available()?fc.storyPath.paths(id):null;
+  let decoded = guide ?? decodePathContours(boxes[i]![cfg.pathField]);
+  if(!guide&&boxes[i]!.pathPaint){try{decoded=transformVectorPaintPaths(decoded,boxes[i]!.pathPaint);}catch(error){fc.stage.flash(error instanceof Error?error.message:String(error));return;}}
   if (!decoded.length) {
     fc.stage.flash(t('That shape has no editable path.'));
     return;
   }
   const frame = penFrame(boxes[i], cfg);
-  const local = decoded.map((p) => denormNodes(p, frame.w, frame.h));
+  const local = guide ?? decoded.map((p) => denormNodes(p, frame.w, frame.h));
   const joined = penJoin(fc, local);
   fc.penEdit = { id, frame, path: joined.path, parts: joined.parts };
   fc.penSel = new Set<number>();
@@ -330,13 +335,15 @@ export function penSyncFromModel(fc: FcCtx, boxes: Box[]): void {
     endPenEdit(fc);
     return;
   }
-  const decoded = decodePathContours(boxes[i]![cfg.pathField]);
+  const guide=fc.storyText.available()?fc.storyPath.paths(fc.penEdit.id):null;
+  let decoded = guide ?? decodePathContours(boxes[i]![cfg.pathField]);
+  if(!guide&&boxes[i]!.pathPaint){try{decoded=transformVectorPaintPaths(decoded,boxes[i]!.pathPaint);}catch(error){fc.stage.flash(error instanceof Error?error.message:String(error));return;}}
   if (!decoded.length) {
     endPenEdit(fc);
     return;
   }
   const frame = penFrame(boxes[i], cfg);
-  const local = decoded.map((p) => denormNodes(p, frame.w, frame.h));
+  const local = guide ?? decoded.map((p) => denormNodes(p, frame.w, frame.h));
   const joined = penJoin(fc, local);
   fc.penEdit = { id: fc.penEdit.id, frame, path: joined.path, parts: joined.parts };
   const n = fc.penEdit.path.nodes.length;
@@ -376,6 +383,14 @@ export function penEditWrite(fc: FcCtx, next: AuthoredPath): void {
 export function penEditWritePaths(fc: FcCtx, all: AuthoredPath[]): void {
   const { cfg } = fc;
   if (!fc.penEdit || !cfg.pathField || !all.length) return;
+  if(fc.storyText.available()&&fc.storyPath.frame(fc.penEdit.id)?.path){void fc.storyPath.writePaths(fc.penEdit.id,all);return;}
+  const painted=fc.select.getBoxes().find(box=>box[cfg.idField]===fc.penEdit!.id);
+  if(painted?.pathPaint){
+    try{const frame=fc.penEdit.frame,paths=transformVectorPaintPaths(all.map(path=>normNodes(path,frame.w,frame.h)),painted.pathPaint,true,decodePathContours(painted[cfg.pathField]));
+      const value=encodePathFields(paths);if(!value)throw new Error(t('That edit could not be saved, so nothing was changed.'));
+      fc.select.commit(fc.select.getBoxes().map(box=>box===painted?{...box,[cfg.pathField]:value}:box));
+    }catch(error){fc.stage.flash(error instanceof Error?error.message:String(error));penSyncFromModel(fc,fc.select.getBoxes());fc.chromeSync.renderChrome();}return;
+  }
   // No refit when there is no curve to fit (an unlowerable kind): the old frame is then
   // the only frame there is, and it is better than a frame invented from nothing.
   const fit = refitFrame(all, fc.penEdit.frame, fc.penWarm);

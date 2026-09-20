@@ -58,6 +58,12 @@ export function duplicateSelection(fc: FcCtx): void {
       { gap: FRAME_DUP_GAP, groupField: cfg.groupField, refFields: dupRefFields(fc) }
     );
     if (res.frameId) {
+      if (fc.storyFlow && fc.cv.textStoryField) {
+        const sourceRows = fc.modes.copyRows(boxes,idx), copied = res.boxes.filter(box => res.ids.includes(String(box[cfg.idField])));
+        const originals = [boxes[idx[0]!]!,...sourceRows.filter(box => box[cfg.idField] !== boxes[idx[0]!]![cfg.idField])];
+        const copies = new Map(originals.map((box,i) => [String(box[cfg.idField]),String(copied[i]![cfg.idField])]));
+        if (originals.some(box => box[fc.cv.textStoryField!])) { void fc.storyFlow.duplicate(res.boxes,copies,new Set([res.frameId])); return; }
+      }
       fc.selection = new Set([res.frameId]); // the new PAGE, not its contents
       fc.select.commit(res.boxes);
       return;
@@ -66,6 +72,7 @@ export function duplicateSelection(fc: FcCtx): void {
   const clones: Box[] = [];
   const nextSel = new Set<string>();
   const pool = boxes.slice();
+  const copies = new Map<string,string>();
   for (const i of idx) {
     const id = fc.select.freshId(pool.concat(clones));
     const r = boxRect(boxes[i], cfg);
@@ -76,8 +83,10 @@ export function duplicateSelection(fc: FcCtx): void {
       [cfg.yField]: Math.round(r.y + 24),
     };
     clones.push(clone);
+    copies.set(String(boxes[i]![cfg.idField]),id);
     nextSel.add(id);
   }
+  if (fc.storyFlow && fc.cv.textStoryField && clones.some(box => box[fc.cv.textStoryField!])) { void fc.storyFlow.duplicate([...boxes,...clones],copies,nextSel); return; }
   fc.selection = nextSel;
   fc.select.commit([...boxes, ...clones]);
 }

@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "معدل إطارات المشروع",
   "inputs.sequenceMarks.label": "علامات المخطط الزمني",
   "inputs.boxes.fields.animationId.label": "الحركة في المصدر",
-  "inputs.boxes.fields.animationEdits.label": "تعديلات الحركة الداخلية"
+  "inputs.boxes.fields.animationEdits.label": "تعديلات الحركة الداخلية",
+  "inputs.boxes.fields.textStory.label": "تدفق نصي",
+  "inputs.boxes.fields.textFrame.label": "إعدادات إطار النص",
+  "inputs.boxes.fields.pathPaint.label": "تعبئات وحدود متجهة",
+  "inputs.boxes.fields.vectorSource.label": "مصدر المتجه ونسب المصادر",
+  "inputs.boxes.fields.textWrap.label": "إعدادات التفاف النص",
+  "inputs.textDocument.label": "مستند النص",
+  "inputs.exportVisibleText.label": "تصدير النص المرئي فقط",
+  "inputs.exportVisibleText.help": "السماح بتصدير مقصوص عن قصد. يُستبعد النص خارج الإطارات الثابتة والتدفقات غير الموضوعة؛ ويبقى المصدر الكامل في المستند."
 }

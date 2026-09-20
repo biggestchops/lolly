@@ -67,7 +67,7 @@ export function mountDesignRules(opts: DesignRulesOptions): DesignRulesHandle {
   };
   const variants = () => {
     const size = opts.size();
-    return designVariants(opts.ports.model.getBoxes(), size.width, size.height, opts.runtime.getModel().find(i => i.id === 'transparentBg')?.value === true ? 'transparent' : String(opts.runtime.getModel().find(i => i.id === 'background')?.value || '#ffffff'));
+    return designVariants(opts.ports.model.getBoxes(), size.width, size.height, opts.runtime.getModel().find(i => i.id === 'transparentBg')?.value === true ? 'transparent' : String(opts.runtime.getModel().find(i => i.id === 'background')?.value || '#ffffff'),opts.runtime.getModel().find(i=>i.id==='textDocument')?.value);
   };
   const save = (): void => {
     if (!draft) return;

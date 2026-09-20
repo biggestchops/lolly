@@ -1,3 +1,4 @@
+import { mountTextInspector } from '../lib/text-inspector.ts';
 // SPDX-License-Identifier: MPL-2.0
 /**
  * The Design editor's INSPECTOR column - plan 179 M3, slice (c).
@@ -1304,6 +1305,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
   }
 
   function textBody(b: Box, rows: Box[]): string {
+    if (rows.some(row => row.textStory)) return '<div data-composed-inspector></div>';
     const mixed = (field: string | undefined): boolean => differs(rows, field);
     const num = (field: string | undefined, fallback: number, lo: number, hi: number): number | 'mixed' =>
       agree(rows, row => clampN(fv(row, field), fallback, lo, hi));
@@ -1601,7 +1603,9 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     return null;
   }
 
+  let textMounted: ReturnType<typeof mountTextInspector> | null = null;
   function render(g: Gate): void {
+    textMounted?.destroy(); textMounted = null;
     const keep = focusKey(typeof document !== 'undefined' ? document.activeElement : null);
     renderedIds = [...g.ids];
     renderedGuideId = g.kind === 'guide' ? g.guide.id : null;
@@ -1639,6 +1643,8 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
     }).join('') || `<p class="fc-insp-hint">${t('Nothing selected')}</p>`;
     mountNums();
     mountEmojiControl();
+    const textSlot = scroll.querySelector<HTMLElement>('[data-composed-inspector]');
+    if (textSlot && actions.text) textMounted = mountTextInspector(textSlot, g.ids, actions.text, fonts);
     wire();
     if (g.secs.includes('document')) scheduleMountedAudit();
     // Put the user back on the control they were operating. `preventScroll` because a
@@ -2172,6 +2178,7 @@ export function initDesignInspector(opts: DesignInspectorOpts): DesignInspectorH
       head?.focus();
     },
     destroy(): void {
+      textMounted?.destroy();
       if (destroyed) return;
       destroyed = true;
       returnFocus = null;

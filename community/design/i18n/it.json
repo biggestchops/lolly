@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Frequenza fotogrammi del progetto",
   "inputs.sequenceMarks.label": "Marcatori della timeline",
   "inputs.boxes.fields.animationId.label": "Animazione nella sorgente",
-  "inputs.boxes.fields.animationEdits.label": "Modifiche interne animazione"
+  "inputs.boxes.fields.animationEdits.label": "Modifiche interne animazione",
+  "inputs.boxes.fields.textStory.label": "Brano di testo",
+  "inputs.boxes.fields.textFrame.label": "Impostazioni della cornice di testo",
+  "inputs.boxes.fields.pathPaint.label": "Pittura vettoriale",
+  "inputs.boxes.fields.vectorSource.label": "Fonte vettoriale e crediti",
+  "inputs.boxes.fields.textWrap.label": "Impostazioni di contorno del testo",
+  "inputs.textDocument.label": "Documento di testo",
+  "inputs.exportVisibleText.label": "Esporta solo il testo visibile",
+  "inputs.exportVisibleText.help": "Consenti un’esportazione volutamente ritagliata. Il testo oltre le cornici fisse e i brani non posizionati vengono omessi; il testo sorgente completo rimane nel documento."
 }

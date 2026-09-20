@@ -360,5 +360,7 @@
   "Who is behind this": "Wer dahintersteckt",
   "**We built Lolly for ourselves.** SUSE needed thousands of on-brand files, each with its name sealed inside, made without handing anything to outside services. So we built a tool that does all of it on the device, and released it as open source, like everything else we make. We keep maintaining it because we use it every day. **There is no obligation:** everything here works with or without us.": "**Wir haben Lolly für uns selbst gebaut.** SUSE brauchte Tausende markenkonformer Dateien, jede mit ihrem Namen fest versiegelt darin, erstellt ohne irgendetwas an externe Dienste weiterzugeben. Also haben wir ein Tool gebaut, das alles auf dem Gerät selbst erledigt, und es als Open Source veröffentlicht, wie alles andere, was wir machen. Wir pflegen es weiter, weil wir es jeden Tag selbst nutzen. **Es gibt keine Verpflichtung:** Alles hier funktioniert mit oder ohne uns.",
   "FAQ": "FAQ",
-  "No cookies · No analytics · Nothing reported back": "Keine Cookies · Keine Analytics · Nichts wird übermittelt"
+  "No cookies · No analytics · Nothing reported back": "Keine Cookies · Keine Analytics · Nichts wird übermittelt",
+  "Text in Design": "Text in Design",
+  "Authored text composition": "Satz des erstellten Textes"
 }

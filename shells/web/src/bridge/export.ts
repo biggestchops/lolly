@@ -1714,9 +1714,9 @@ async function renderEmf(node: Element, opts: ExportOpts = {}): Promise<Blob> {
   // Live text records are the default (editable in Office / Google Drawings);
   // opts.text === 'outline' (the "Outline fonts" chip) forces text-as-paths.
   const outline = opts.text === 'outline';
-  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : (node.querySelector?.('svg') ?? null);
+  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : isSvgRooted(node) ? node.querySelector('svg') : null;
   if (!svgEl) {
-    // HTML-layout tool with no inline <svg>: synthesise an SVG first - outlined,
+    // HTML layout: synthesise the complete canvas SVG, including embedded artwork,
     // or with positioned <text> runs that the live walk below keeps as records.
     const svgBlob = await renderSvgFromHtml(node, { ...opts, convertPaths: outline, noBoxShadow: true });
     const xml = await svgBlob.text();
@@ -1740,7 +1740,7 @@ async function renderEmf(node: Element, opts: ExportOpts = {}): Promise<Blob> {
 // vector paste for legacy Office / clip-art pipelines. `attribution` is accepted for
 // call-site symmetry but is inert: WMF has no comment record to carry a source URL.
 async function renderWmf(node: Element, opts: ExportOpts = {}): Promise<Blob> {
-  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : (node.querySelector?.('svg') ?? null);
+  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : isSvgRooted(node) ? node.querySelector('svg') : null;
   if (!svgEl) {
     const svgBlob = await renderSvgFromHtml(node, { ...opts, convertPaths: true, noBoxShadow: true });
     const xml = await svgBlob.text();
@@ -1772,7 +1772,7 @@ async function renderWmf(node: Element, opts: ExportOpts = {}): Promise<Blob> {
 // flattened to solids upstream and text is outlined upstream, so the emitter
 // ships no fonts.
 async function renderEps(node: Element, opts: ExportOpts = {}, cmyk = false): Promise<Blob> {
-  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : (node.querySelector?.('svg') ?? null);
+  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : isSvgRooted(node) ? node.querySelector('svg') : null;
   if (!svgEl) {
     const svgBlob = await renderSvgFromHtml(node, { ...opts, convertPaths: true, noBoxShadow: true });
     const xml = await svgBlob.text();
@@ -1805,7 +1805,7 @@ async function renderEps(node: Element, opts: ExportOpts = {}, cmyk = false): Pr
 // has no raster form, so any escape-hatch image prim is dropped - we surface that as
 // a log warning rather than silently losing the effect.
 async function renderDxf(node: Element, opts: ExportOpts = {}): Promise<Blob> {
-  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : (node.querySelector?.('svg') ?? null);
+  let svgEl: Element | null = node.tagName?.toLowerCase() === 'svg' ? node : isSvgRooted(node) ? node.querySelector('svg') : null;
   if (!svgEl) {
     const svgBlob = await renderSvgFromHtml(node, { ...opts, convertPaths: true, noBoxShadow: true });
     const xml = await svgBlob.text();

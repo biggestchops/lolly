@@ -18,6 +18,7 @@ The light SVG player is lottie-web 5.13.0, without its expression interpreter. A
 | Clip placement, trim, speed and finite duration | Compiled into nested compositions with explicit time remapping |
 | Outer x/y, uniform scale, rotation and opacity keys | Compiled from the engine's sparse-channel keyframe semantics; opacity is linear except for explicit holds |
 | Native Design rectangles, rounded rectangles, pills, ellipses and paths | Solid fills and strokes lower to native Lottie shapes |
+| Converted vectors with independent `pathPaint` fills, transforms or clipping | Refused instead of replacing their paint with the box's single fill |
 | Native still images | Centred contain/cover fitting, transforms and transparency |
 | Text/fonts, 3D, expressions, masks/mattes, blends, effects and unlisted shape operations | Refused with the source/layer named |
 | Themed appearance | Refused; slots must be resolved before import |

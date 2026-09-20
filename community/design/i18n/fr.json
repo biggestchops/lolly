@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Cadence du projet",
   "inputs.sequenceMarks.label": "Repères de la timeline",
   "inputs.boxes.fields.animationId.label": "Animation dans la source",
-  "inputs.boxes.fields.animationEdits.label": "Modifications internes de l’animation"
+  "inputs.boxes.fields.animationEdits.label": "Modifications internes de l’animation",
+  "inputs.boxes.fields.textStory.label": "Article",
+  "inputs.boxes.fields.textFrame.label": "Paramètres du cadre de texte",
+  "inputs.boxes.fields.pathPaint.label": "Peinture vectorielle",
+  "inputs.boxes.fields.vectorSource.label": "Source vectorielle et crédits",
+  "inputs.boxes.fields.textWrap.label": "Paramètres d'habillage de texte",
+  "inputs.textDocument.label": "Document de texte",
+  "inputs.exportVisibleText.label": "Exporter uniquement le texte visible",
+  "inputs.exportVisibleText.help": "Autoriser une exportation intentionnellement tronquée. Le texte au-delà des cadres fixes et des articles non placés est omis ; la source complète reste dans ton document."
 }

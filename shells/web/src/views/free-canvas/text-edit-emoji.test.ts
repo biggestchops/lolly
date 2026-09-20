@@ -272,3 +272,26 @@ test('a host with no emoji pass edits and commits exactly as before', async () =
     f.destroy();
   }
 });
+
+test('unchanged legacy edits preserve special spaces, literal Markdown and terminal breaks', () => {
+  for (const source of ['Hello\u00a0there', '*literal* **symbols** _text_', 'First\nlast\n', 'A\u202fB\u2009C', 'office e\u0301 👨‍👩‍👧‍👦']) {
+    const f = mount(source, false);
+    try {
+      select(f); openEdit(); editKey(f.textEl, 'Enter', true);
+      assert.equal(f.boxes()[0]!.text, source);
+      assert.equal(f.textEl.textContent, source);
+      assert.equal(f.boxes()[0]!.h, 120);
+    } finally { f.destroy(); }
+  }
+});
+
+test('a legacy edit changed and reverted before Done retains its original encoding', () => {
+  const source = '*literal*\u00a0text\n', f = mount(source, false);
+  try {
+    select(f); openEdit();
+    f.textEl.textContent = `${source}added`;
+    f.textEl.textContent = source;
+    editKey(f.textEl, 'Enter', true);
+    assert.equal(f.boxes()[0]!.text, source);
+  } finally { f.destroy(); }
+});

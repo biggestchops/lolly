@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Tốc độ khung hình của dự án",
   "inputs.sequenceMarks.label": "Dấu mốc trên dòng thời gian",
   "inputs.boxes.fields.animationId.label": "Hoạt ảnh trong nguồn",
-  "inputs.boxes.fields.animationEdits.label": "Chỉnh sửa nội bộ hoạt ảnh"
+  "inputs.boxes.fields.animationEdits.label": "Chỉnh sửa nội bộ hoạt ảnh",
+  "inputs.boxes.fields.textStory.label": "Luồng văn bản",
+  "inputs.boxes.fields.textFrame.label": "Cài đặt khung văn bản",
+  "inputs.boxes.fields.pathPaint.label": "Màu tô và nét viền vector",
+  "inputs.boxes.fields.vectorSource.label": "Nguồn vector và ghi công",
+  "inputs.boxes.fields.textWrap.label": "Cài đặt văn bản bao quanh",
+  "inputs.textDocument.label": "Tài liệu văn bản",
+  "inputs.exportVisibleText.label": "Chỉ xuất văn bản hiển thị",
+  "inputs.exportVisibleText.help": "Cho phép xuất được cắt có chủ đích. Văn bản vượt quá khung cố định và luồng chưa đặt sẽ bị bỏ qua; toàn bộ nguồn vẫn còn trong tài liệu của bạn."
 }

@@ -8,9 +8,7 @@
  * warn the user.
  */
 
-import { collectAssetRefs } from './asset-dependencies.ts';
 import { indexSavedWork } from './history-index.ts';
-export { collectAssetRefs } from './asset-dependencies.ts';
 import { sessionEmojiStamp, sessionRightsDecisions, sessionVersionStamp, migrateSessionRecord } from '../../../../engine/src/session-record.ts';
 import type { SessionEmojiStamp } from '../../../../engine/src/session-record.ts';
 import type { RightsDecisionV1 } from '@lolly-tools/core/rights-v1';
@@ -225,6 +223,7 @@ export function createStateAPI(db: StateDb, revisions?: RevisionStore): WebState
     // Returns the set of blob keys (id:format:version) referenced across all saved sessions.
     // Used by sync to avoid evicting on-demand blobs that a session still needs.
     async _getAssetRefs() {
+      const { collectAssetRefs } = await import('./asset-ref-collector.ts');
       const all = await db.getAll('state');
       const refs = new Set<string>();
       for (const record of all) collectAssetRefs(record.data, refs);

@@ -6,7 +6,7 @@ import { escapeXml } from './xml-escape.ts';
 import { findEmojiGlyph, matchesEmojiPack, verifyEmojiArtwork } from './emoji-pack.ts';
 import type { VerifiedEmojiPack } from './emoji-pack.ts';
 import { svgNumberList, svgPath, svgScalar, svgTransform } from './emoji-svg-syntax.ts';
-import { NAMED_COLORS } from './css-color.ts';
+import { NAMED_COLORS, parseColor, formatColor } from './css-color.ts';
 
 export const EMOJI_SVG_VERSION = 'static-svg-v1';
 /** What {@link recolorPreparedEmojiSvg} stamps: the same subset, with paints rewritten by the treatment recipe. */
@@ -67,7 +67,7 @@ const referenceTargets: Record<string, string[]> = { fill: ['linearGradient', 'r
 const localId = (name: string, value: string): string | null =>
   (name === 'href' ? /^#([A-Za-z_][A-Za-z0-9_.-]{0,127})$/ : /^url\(#([A-Za-z_][A-Za-z0-9_.-]{0,127})\)$/).exec(value)?.[1] ?? null;
 
-function attribute(name: string, value: string, tag: string): string {
+export function staticSvgAttribute(name: string, value: string, tag: string, authoredPaint = false): string {
   value = value.trim();
   if (name === 'id') { if (!idPattern.test(value)) throw new Error('Unsupported SVG id.'); return value; }
   if (name === 'd') return svgPath(value);
@@ -84,6 +84,7 @@ function attribute(name: string, value: string, tag: string): string {
     return parts.join(' ');
   }
   if (['fill', 'stroke', 'stop-color'].includes(name)) {
+    if (authoredPaint && value.length <= 256) { const parsed = parseColor(value); if (parsed) return /^#[a-f0-9]{6}$/i.test(value) ? value.toLowerCase() : formatColor(parsed); }
     const rgb = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/.exec(value);
     if (rgb?.slice(1).every(channel => Number(channel) <= 255)) return `#${rgb.slice(1).map(channel => Number(channel).toString(16).padStart(2, '0')).join('')}`;
     if (/^#(?:[a-f0-9]{3}|[a-f0-9]{6})$/i.test(value)) return value.toLowerCase();
@@ -123,7 +124,7 @@ function attribute(name: string, value: string, tag: string): string {
   throw new Error(`Unsupported SVG attribute ${name}.`);
 }
 
-function normalize(source: string, viewBox: readonly number[], parseXml: EmojiXmlParser): SvgRecord {
+function normalize(source: string, viewBox: readonly number[] | null, parseXml: EmojiXmlParser, authoredPaint = false): SvgRecord {
   let body = source.replace(/^\uFEFF?\s*<\?xml\s+version=["']1\.0["'](?:\s+encoding=["']utf-8["'])?(?:\s+standalone=["'](?:yes|no)["'])?\s*\?>/i, '');
   // Remove only this exact inert declaration before invoking the host parser.
   // Internal subsets, entities and every other doctype remain refused.
@@ -154,7 +155,7 @@ function normalize(source: string, viewBox: readonly number[], parseXml: EmojiXm
       return;
     }
     if (name !== 'id' && name !== 'transform' && !presentation.has(name) && !tags[tag]!.includes(name)) throw new Error(`Unsupported SVG attribute ${name}.`);
-    attributes[name] = attribute(name, value, tag);
+    attributes[name] = staticSvgAttribute(name, value, tag, authoredPaint);
   }
   function walk(element: Element, depth: number): SvgNode | null {
     if (++nodes > 4096 || depth > 32) throw new Error('SVG exceeds the supported element or depth limit.');
@@ -223,6 +224,8 @@ function normalize(source: string, viewBox: readonly number[], parseXml: EmojiXm
   }
   for (const child of Array.from(doc.childNodes)) if (child !== doc.documentElement && child.nodeType !== 8 && (child.nodeType !== 3 || child.textContent?.trim())) throw new Error('Unsupported SVG document node.');
   const tree = walk(doc.documentElement, 0)!;
+  viewBox ??= tree.attributes.viewBox?.split(' ').map(Number) ?? [0, 0, Number(tree.attributes.width), Number(tree.attributes.height)];
+  if (viewBox.length !== 4 || !viewBox.every(Number.isFinite) || viewBox[2]! <= 0 || viewBox[3]! <= 0) throw new Error('SVG needs a finite positive viewport.');
   if (tree.attributes.viewBox === undefined && viewBox[0] === 0 && viewBox[1] === 0
     && tree.attributes.width === String(viewBox[2]) && tree.attributes.height === String(viewBox[3])) {
     tree.attributes.viewBox = viewBox.join(' ');
@@ -251,6 +254,12 @@ function serialize(node: SvgNode, prefix: string): string {
     return ` ${name}="${escapeXml(value)}"`;
   }).join('');
   return `<${node.tag}${attrs}>${node.children.map(child => serialize(child, prefix)).join('')}</${node.tag}>`;
+}
+
+/** Admit authored inline artwork through the same bounded static subset as emoji. */
+export function admitTextInlineSvg(source: string, parseXml: EmojiXmlParser, prefix: string): string {
+  if (typeof source !== 'string' || new TextEncoder().encode(source).byteLength > 2 * 1024 * 1024 || !idPattern.test(prefix)) throw new Error('Invalid inline SVG size or placement prefix.');
+  return serialize(normalize(source, null, parseXml, true).tree, prefix);
 }
 
 /** The host parser must parse XML without network access. DTDs are rejected before it runs. */

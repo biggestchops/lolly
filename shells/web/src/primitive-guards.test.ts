@@ -794,6 +794,10 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // count, Math.max-clamped) and fixed literal fragments ('it'/'them', 'asset'/'assets')
   // chosen by ternaries on that number - no user text reaches the sink.
   'components/share-dialog.ts': 2, // +1 2026-09-08: the export-panel share surface (mountSharePanel) fills with the same shell-composed markup as the modal path
+  // Reviewed 2026-09-20: fixed registry icons only, with literal names and sizes.
+  // Panel titles and labels use textContent; no user or tool values enter these sinks.
+  'components/docked-panel.ts': 1,
+  'views/export-share.ts': 1,
   // The row list's innerHTML replace, modelled on profiles-manager.ts. Reviewed - 
   // every interpolated value (digest, name, fact line, reported-speech claim,
   // priced-summary) goes through escape() in rowHtml.
@@ -1615,6 +1619,26 @@ const RAW_HTML_ALLOWED: Record<string, number> = {
   // Hydrated tool markup enters an inert template for resource embedding, then
   // portableHtml strips undeclared scripts, event handlers and unsafe URLs.
   'bridge/export-portable.ts': 1,
+  // Registry icons only; labels use textContent and DOM attributes.
+  'lib/text-control-ui.ts': 1,
+  'lib/text-editor-controls.ts': 1,
+  // Already admitted tool HTML enters an inert template for reconciliation.
+  // Composed SVG comes from the bounded engine layout and admitted inline paint.
+  'lib/text-edit-paint.ts': 2,
+  // Capture and restore the existing canvas branch or its settled composed SVG.
+  'lib/text-editor-session.ts': 2,
+  'views/free-canvas/story-text.ts': 1,
+  // Typography previews use the same engine SVG and pinned font resources.
+  'lib/text-typography-controls.ts': 1,
+  // Guide markup contains only numeric geometry and fixed SVG attributes.
+  'views/free-canvas/story-flow-ui.ts': 1,
+  // Preview/restore engine SVG; the extra guide sink contains numeric geometry.
+  'views/free-canvas/story-guides.ts': 3,
+  // The owned path is parsed, then escaped in a double-quoted SVG attribute.
+  // The other two sinks preview/restore settled engine SVG.
+  'views/free-canvas/story-path-handles.ts': 3,
+  'views/free-canvas/story-type.ts': 2,
+  'views/free-canvas/story-wrap.ts': 2,
 };
 
 test('R10: raw-HTML sinks are a pinned inventory, not a growing one', () => {

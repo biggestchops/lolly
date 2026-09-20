@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "프로젝트 프레임 속도",
   "inputs.sequenceMarks.label": "타임라인 마커",
   "inputs.boxes.fields.animationId.label": "원본의 애니메이션",
-  "inputs.boxes.fields.animationEdits.label": "애니메이션 내부 편집"
+  "inputs.boxes.fields.animationEdits.label": "애니메이션 내부 편집",
+  "inputs.boxes.fields.textStory.label": "연결된 텍스트",
+  "inputs.boxes.fields.textFrame.label": "텍스트 프레임 설정",
+  "inputs.boxes.fields.pathPaint.label": "벡터 채우기와 윤곽선",
+  "inputs.boxes.fields.vectorSource.label": "벡터 출처와 저작자 표시",
+  "inputs.boxes.fields.textWrap.label": "텍스트 둘러싸기 설정",
+  "inputs.textDocument.label": "텍스트 문서",
+  "inputs.exportVisibleText.label": "가시적 텍스트만 내보내기",
+  "inputs.exportVisibleText.help": "의도적인 잘린 내보내기를 허용합니다. 고정 프레임 밖의 텍스트와 배치되지 않은 연결 텍스트는 생략되며, 전체 원본은 문서에 남습니다."
 }

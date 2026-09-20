@@ -470,11 +470,17 @@ export function mountDesignGuides(opts: DesignGuidesOptions): DesignGuidesHandle
   function paint(): void {
     if (destroyed) return;
     root.hidden = !visible;
-    if (!visible) return;
+    if (!visible) {
+      stageEl.style.removeProperty('--stage-rulers-bottom');
+      stageEl.style.removeProperty('--stage-rulers-right');
+      return;
+    }
     const stage = stageEl.getBoundingClientRect();
     const canvas = canvasEl.getBoundingClientRect();
     const topInset = chromeTop(stage);
     const leftInset = chromeLeft(stage);
+    stageEl.style.setProperty('--stage-rulers-bottom', `${topInset + RULER}px`);
+    stageEl.style.setProperty('--stage-rulers-right', `${leftInset + RULER}px`);
     corner.style.top = `${topInset}px`;
     corner.style.left = `${leftInset}px`;
     top.style.top = `${topInset}px`;
@@ -557,6 +563,8 @@ export function mountDesignGuides(opts: DesignGuidesOptions): DesignGuidesHandle
     snapTargets: () => guideSnapTargets(guides),
     destroy(): void {
       if (destroyed) return;
+      stageEl.style.removeProperty('--stage-rulers-bottom');
+      stageEl.style.removeProperty('--stage-rulers-right');
       cancelDrag();
       destroyed = true;
       stageEl.removeEventListener('pointerdown', onStageDown);

@@ -499,7 +499,7 @@ export async function createCliBridge(
   // it, brand-lockup (and any host.text-in-hooks tool) throws in onInit and emits an
   // empty SVG. Fonts resolve off disk under the repo root (see text.ts). Node-only fonts
   // are all sfnt; the WASM loads lazily on first shape.
-  host.text = createNodeTextAPI({ repoRoot: REPO_ROOT });
+  host.text = createNodeTextAPI({ repoRoot: REPO_ROOT, assets: host.assets, parseXml: source => new w.DOMParser().parseFromString(source, 'image/svg+xml') });
 
   // host.audio (v1.71) - the SAME per-frame analysis the web shell runs (the engine's
   // analysePcm), so an audio-reactive tool draws identical frames headlessly. The

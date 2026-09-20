@@ -392,7 +392,7 @@ export function boxToPath(box: Box | undefined, cfg?: VectorFieldConfig): GeomPa
 // ── path → box ────────────────────────────────────────────────────────────────
 
 /** One contour → an authored `cubic` path, handles as offsets from each node. */
-function authoredFromContour(c: Contour, toFrame: (x: number, y: number) => [number, number]): AuthoredPath | null {
+export function authoredFromContour(c: Contour, toFrame: (x: number, y: number) => [number, number]): AuthoredPath | null {
   // An implicitly-closed contour gets its closing edge made explicit first, so the node
   // count matches the curve count and the wrap segment is a real curve rather than a gap
   // `toCubics` would have to invent.
@@ -630,6 +630,7 @@ export type BooleanOpName = 'union' | 'intersect' | 'difference' | 'xor';
  * bounded-work ceiling, which is exactly why they throw.
  */
 export function booleanBoxes(boxes: Box[], op: BooleanOpName, opts: VectorOpOptions = {}): VectorOpResult {
+  if(boxes.some(box=>box.pathPaint))return fail('no-outline','This operation cannot preserve grouped vector paints. Use Edit points, or separate the painted objects first.',[]);
   const f = fields(opts.cfg);
   const { operands, skipped, bad } = lowerOperands(boxes, f, opts.tol);
   if (bad.length) return fail('bad-input', 'a selected shape has an unreadable path', bad);
@@ -672,6 +673,7 @@ export interface OffsetBoxesOptions extends VectorOpOptions {
  * which is what the kernel's fold-handedness defect used to produce.
  */
 export function offsetBoxes(boxes: Box[], distance: number, opts: OffsetBoxesOptions = {}): VectorOpResult {
+  if(boxes.some(box=>box.pathPaint))return fail('no-outline','This operation cannot preserve grouped vector paints. Use Edit points, or separate the painted objects first.',[]);
   const f = fields(opts.cfg);
   if (!Number.isFinite(distance)) return fail('bad-input', 'the offset distance is not a number');
   const { operands, skipped, bad } = lowerOperands(boxes, f, opts.tol);
@@ -704,6 +706,7 @@ export interface StrokeBoxesOptions extends VectorOpOptions {
  * inside the union, which is not what the user drew.
  */
 export function strokeBoxesToPath(boxes: Box[], opts: StrokeBoxesOptions = {}): VectorOpResult {
+  if(boxes.some(box=>box.pathPaint))return fail('no-outline','This operation cannot preserve grouped vector paints. Use Edit points, or separate the painted objects first.',[]);
   const f = fields(opts.cfg);
   const { operands, skipped, bad } = lowerOperands(boxes, f, opts.tol);
   if (bad.length) return fail('bad-input', 'a selected shape has an unreadable path', bad);
@@ -760,6 +763,7 @@ export function strokeBoxesToPath(boxes: Box[], opts: StrokeBoxesOptions = {}): 
  * caller's to allocate.
  */
 export function simplifyBoxes(boxes: Box[], tolerance: number, opts: VectorOpOptions = {}): VectorOpResult {
+  if(boxes.some(box=>box.pathPaint))return fail('no-outline','This operation cannot preserve grouped vector paints. Use Edit points, or separate the painted objects first.',[]);
   const f = fields(opts.cfg);
   if (!Number.isFinite(tolerance) || tolerance <= 0) return fail('bad-input', 'the tolerance must be a positive number');
   const skipped: number[] = [];

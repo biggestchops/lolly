@@ -310,6 +310,10 @@ export interface Runtime {
    */
   emojiIngredients(): C2paSourceIngredient[];
   emojiCredits(): string;
+  /** The document-scoped composer shares its selected emoji pins with tool hooks. */
+  layoutText(request: import('@lolly-tools/core').TextLayoutRequestV1): Promise<import('@lolly-tools/core').TextLayoutV1>;
+  /** A synchronous receipt exists only for the exact settled source, geometry and emoji pins. */
+  peekTextLayout(request: import('@lolly-tools/core').TextLayoutRequestV1): import('./text-layout-cache.ts').TextLayoutReceipt | null;
   /**
    * What the recorded sources in this render ask of the person delivering it
    * (plan 253): the reviewed licence rules applied to the works this render
@@ -489,6 +493,14 @@ export async function createRuntime(
     renderText: async value => (await toolEmojiService()).renderText(value),
     renderSvg: async value => (await toolEmojiService()).renderSvg(value),
   } };
+  if (textApi?.layoutRuns && emojiApi) host = { ...host, text: { ...textApi, layoutRuns: async request => (await toolEmojiService()).layoutRuns(request) } };
+  let textLayoutCache: ReturnType<typeof import('./text-layout-cache.ts')['createTextLayoutCache']> | undefined;
+  const scopedLayout = host.text?.layoutRuns;
+  if (scopedLayout) host = { ...host,text:{...host.text!,layoutRuns:async request => {
+    const cache = await import('./text-layout-cache.ts'); textLayoutCache ??= cache.createTextLayoutCache();
+    const key = cache.textLayoutKey(request), dependency = JSON.stringify(emojiStyle);
+    const result = await scopedLayout(request); textLayoutCache.remember(key,dependency,result); return result;
+  }} };
   const composeStack = opts.composeStack ?? [];
   // Per-runtime memo so resolveNestedRenders skips re-rendering a child whose
   // bound inputs are unchanged across keystrokes.
@@ -976,12 +988,15 @@ export async function createRuntime(
     node: unknown, opts: RuntimeEmojiPassOpts = {},
   ): Promise<RuntimeEmojiResult> {
     const api = host.emoji;
-    if (!api) return { present: false, replaced: 0, unresolved: 0, census: [] };
     // A pass queued before the shell unmounted must not run now, and above all
     // must not take a fresh reference to a tree destroy() just let go of.
     if (destroyed) return { present: true, replaced: 0, unresolved: 0, census: [] };
     const root = node as { textContent?: string | null } | null | undefined;
     if (!root || typeof root !== 'object') return { present: true, replaced: 0, unresolved: 0, census: [] };
+    const portableNodes=(root as {querySelectorAll?:(selector:string)=>ArrayLike<{getAttribute(name:string):string|null;closest?:(selector:string)=>unknown}>}).querySelectorAll?.('[data-emoji-vector-sources]');
+    let portable:EmojiLineSource[]=[];
+    if(portableNodes?.length){const {readEmojiSourceRecords,mergeEmojiSourceRecords}=await import('./emoji-source-records.ts');portable=mergeEmojiSourceRecords(Array.from(portableNodes).filter(element=>!element.closest?.('[data-export-hide]')).flatMap(element=>readEmojiSourceRecords(element.getAttribute('data-emoji-vector-sources'))));}
+    if(!api){if(opts.track!==false)emojiCensus=portable;return {present:false,replaced:0,unresolved:0,census:portable};}
     // A tracked pass IS the render. An untracked one (chrome drawing its own
     // emoji) draws artwork, reports what it drew and records nothing: it neither
     // becomes the tree a set change redraws nor rewrites the counts the Emoji
@@ -990,11 +1005,15 @@ export async function createRuntime(
     const track = opts.track !== false;
     const nothing: EmojiDomResult = { replaced: 0, unresolved: 0, census: [] };
     const record = (result: EmojiDomResult): void => {
+      const geometrySources=(root as {querySelectorAll?:(selector:string)=>ArrayLike<{getAttribute(name:string):string|null;closest?:(selector:string)=>unknown}>}).querySelectorAll?.('[data-emoji-tool-source]');
+      const combined=[...result.census,...portable,...(toolEmoji?.censusFor(Array.from(geometrySources??[]).filter(element=>!element.closest?.('[data-export-hide]')).map(element=>element.getAttribute('data-emoji-tool-source')??''))??[])];
+      const distinct=new Map<string,EmojiLineSource>();for(const source of combined){const key=`${source.pack.checksum}:${source.assetId}:${source.canonicalChecksum}`;if(!distinct.has(key))distinct.set(key,source);}
+      result.census=[...distinct.values()];
       if (!track) return;
       emojiReplaced = result.replaced;
-      emojiUnresolved = result.unresolved;
-      const geometrySource = (root as {querySelectorAll?: (selector:string) => ArrayLike<{getAttribute(name:string):string|null}>}).querySelectorAll?.('[data-emoji-tool-source]');
-      emojiCensus = [...result.census, ...(toolEmoji?.censusFor(Array.from(geometrySource ?? []).map(el => el.getAttribute('data-emoji-tool-source') ?? '')) ?? [])];
+      const missingParagraph = (root as {querySelectorAll?: (selector:string) => ArrayLike<{getAttribute(name:string):string|null}>}).querySelectorAll?.('[data-text-emoji-missing]');
+      emojiUnresolved = result.unresolved + Array.from(missingParagraph ?? []).reduce((count, el) => count + Math.max(0, Number(el.getAttribute('data-text-emoji-missing')) || 0), 0);
+      emojiCensus = result.census;
       notifyEmoji();
     };
     if (track) emojiNode = root;
@@ -1138,6 +1157,9 @@ export async function createRuntime(
     },
     emojiIngredients: () => emojiSourceIngredients(emojiCensus),
     emojiCredits: () => emojiCreditsText(emojiCensus),
+    async layoutText(request) { if (!host.text?.layoutRuns) throw new Error('This host cannot compose text paragraphs.'); return host.text.layoutRuns(request); },
+
+    peekTextLayout: request => textLayoutCache?.peek(request,JSON.stringify(emojiStyle)) ?? null,
 
     rights: (context) => evaluateRights(emojiCensus, context).evaluation,
     setRightsDecision(decision) {
@@ -1569,6 +1591,12 @@ export async function createRuntime(
     },
 
     async export(renderedNode, format, opts = {}) {
+      const composedSource = model.some(item => item.id === 'textDocument' && item.value) || !!extras.__lollyTextPreflight;
+      const exportRevision = composedSource ? JSON.stringify([modelToValues(model), emojiStyle]) : null;
+      const checkTextRevision = (): void => {
+        if (exportRevision !== null && exportRevision !== JSON.stringify([modelToValues(model), emojiStyle]))
+          throw new Error('The text changed while its export was prepared. Wait for layout, then export again.');
+      };
       if ((format === 'html' || format === 'zip') && tool.manifest.render.portable) {
         if (!tool.presentationSource) throw new Error('The portable presentation runtime is missing. Reload the tool before exporting.');
         if (tool.trustClass === 'remote-untrusted' || tool.trustClass === 'sideloaded-consented') throw new Error('Interactive HTML export requires a trusted installed tool.');
@@ -1588,6 +1616,10 @@ export async function createRuntime(
         const size = designExportSize(tool.manifest.designTool, modelToValues(model), format, opts.width === undefined ? undefined : Number(opts.width), opts.height === undefined ? undefined : Number(opts.height));
         opts = { ...opts, ...size };
         if (!host.export.checkLayout) throw Object.assign(new Error('This tool needs a browser for text layout checks before export.'), { code: 'NEEDS_BROWSER' });
+        if (extras.__lollyTextPreflight) {
+          const { checkDesignTextReceipt } = await import('./design-tool/text-preflight.ts');
+          checkDesignTextReceipt(extras.__lollyTextPreflight, modelToValues(model), renderedNode);
+        }
         const check = await host.export.checkLayout(renderedNode as Element);
         if (!check.ok) throw new Error(check.issues.join('\n'));
         if (hookErrors.length) throw new Error('The tool could not render. Resolve its reported errors before export.');
@@ -1605,6 +1637,7 @@ export async function createRuntime(
       // makes the promise hold on every shell: an export sees pinned artwork even
       // where the live canvas never ran the pass. Idempotent, so a canvas the
       // shell already drew is walked and left alone.
+      checkTextRevision();
       const emojiPass = await queueEmoji(() => runEmojiPass(renderedNode));
       // Central transparent-background default - the counterpart to a tool's own beforeExport.
       // A tool whose synthesised `transparentBg` input is ON wants a transparent backdrop, but
@@ -1830,6 +1863,7 @@ export async function createRuntime(
       const c2paAiIngredients = stampProvenance ? (await import('./c2pa.ts')).collectAiIngredientDeclarations(model) : [];
       let blob;
       try {
+        checkTextRevision();
         blob = await host.export.render(renderedNode as Element, format as ExportFormat, {
           ...opts,
           watermark: opts.watermark ?? (isExperimental && !isOnDevice),

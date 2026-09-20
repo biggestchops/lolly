@@ -428,6 +428,15 @@ export function attachCollabPlumbing(
   let projectionPending = false;
   let replacePending = false;
   let queueBytes = 0;
+  let blockedProjection = false;
+  let textProjection: Awaited<ReturnType<typeof import('./text-collab.ts').createTextSyncProjection>> = null;
+  const textReady = runtime.getModel().some(item => item.type === 'blocks' && item.canvas?.textDocumentInput)
+    ? import('./text-collab.ts').then(module => { textProjection = module.createTextSyncProjection(runtime); }) : null;
+  let flushing = Promise.resolve();
+  const scheduleFlush = (): void => {
+    if (!textReady) { void flush().catch(error => warn('flush', error)); return; }
+    flushing = flushing.then(flush).catch(error => warn('flush', error));
+  };
 
   const warn = (what: string, e: unknown): void => {
     console.warn(`[lolly:collab] ${what}`, e);
@@ -513,6 +522,7 @@ export function attachCollabPlumbing(
   const inner = runtime.setInput;
   const outer = (id: string, value: InputValue): Promise<void> => {
     if (!applyingRemote && opts.canEdit?.() === false) return Promise.resolve();
+    if (!applyingRemote && !detached) textProjection?.assertReady();
     if (!applyingRemote && !applyingLocalPatch && !detached) {
       // A sync failure must never cost the user their edit.
       try { emitLocal(id, value); } catch (e) { warn('outbound', e); }
@@ -524,6 +534,7 @@ export function attachCollabPlumbing(
   const outerPatch = (values: Record<string, unknown>): Promise<void> => {
     if (applyingRemote || detached) return innerPatch.call(runtime, values);
     if (opts.canEdit?.() === false) return Promise.resolve();
+    textProjection?.assertReady();
     for (const [id, value] of Object.entries(values)) emitLocal(id, value as InputValue);
     applyingLocalPatch = true;
     try { return innerPatch.call(runtime, values); }
@@ -709,6 +720,7 @@ export function attachCollabPlumbing(
   }
 
   async function flush(): Promise<void> {
+    if (textReady) await textReady;
     if (detached) return;
     const ops = queue;
     queue = []; queueBytes = 0;
@@ -724,8 +736,10 @@ export function attachCollabPlumbing(
     let snapshot: CanvasDocState | null = null;
     try { snapshot = adapter.state(); } catch (e) { warn('adapter state', e); }
     let values: Record<string, unknown> | null = null;
-    try { values = project && snapshot ? fullProjection(snapshot, replace) : buildPatch(ops, convergedRead(snapshot)); } catch (e) { warn('inbound', e); }
+    try { values = (project || blockedProjection) && snapshot ? fullProjection(snapshot, replace) : buildPatch(ops, convergedRead(snapshot)); } catch (e) { warn('inbound', e); }
     if (!values) return;
+    if (textProjection && !textProjection.validate(values, ops)) { blockedProjection = true; return; }
+    blockedProjection = false;
     // The guard is held across the SYNCHRONOUS part of the apply only. That is the
     // whole re-entrancy window - applyPatch lands every value in the model before
     // its first await - and releasing it there means a keystroke the user makes
@@ -750,7 +764,7 @@ export function attachCollabPlumbing(
       queue = []; queueBytes = 0; projectionPending = true; replacePending = true;
       if (scheduled) return;
       scheduled = true;
-      raf(() => { scheduled = false; void flush().catch(e => warn('snapshot', e)); });
+      raf(() => { scheduled = false; scheduleFlush(); });
     },
     applyRemotePatch(ops) {
       if (detached || !ops.length) return;
@@ -769,13 +783,14 @@ export function attachCollabPlumbing(
       scheduled = true;
       raf(() => {
         scheduled = false;
-        void flush().catch(e => warn('flush', e));
+        scheduleFlush();
       });
     },
     detach() {
       if (detached) return;
       detached = true;
       stopUndoTracking();
+      textProjection?.clearPending();
       queue = []; queueBytes = 0; projectionPending = false;
       // Only if nothing wrapped us since - otherwise we would drop their wrapper.
       if (runtime.setInput === outer) runtime.setInput = inner;

@@ -62,6 +62,11 @@ export function learningAssetBlock(asset: AssetRef): LearningBlock {
     source: { kind: 'asset', asset: structuredClone(asset), capturedAt: new Date().toISOString() },
   };
 }
+/** Keep the saved canvas and emoji recipe while excluding unrelated session metadata. */
+export function learningSourceValues(data: Record<string, unknown>): Record<string, unknown> {
+  const retained = new Set(['__export_width', '__export_height', '__export_unit', '__export_dpi', '__emoji', '__emojiAssets']);
+  return structuredClone(Object.fromEntries(Object.entries(data).filter(([key]) => !key.startsWith('__') || retained.has(key))));
+}
 export async function learningSessionCandidate(
   reader: LearningReader,
   slot: string,
@@ -87,7 +92,7 @@ export async function learningSessionCandidate(
     throw new Error(
       'This tool cannot provide a saved course rendition. Export its finished file and add that file instead.'
     );
-  const values = Object.fromEntries(Object.entries(data).filter(([key]) => !key.startsWith('__')));
+  const values = learningSourceValues(data);
   const boxes = Array.isArray(values.boxes) ? values.boxes : [];
   const moving =
     ['mp4', 'webm', 'gif', 'apng'].includes(String(data.__export_format)) ||

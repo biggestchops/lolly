@@ -86,3 +86,9 @@ test('no canvas is an empty receipt, not a thrown share', async () => {
   assert.deepEqual(await collectSessionFonts(null), []);
   assert.deepEqual(await collectSessionFonts(undefined), []);
 });
+
+test('composed outlines report their pinned font dependencies instead of the SVG title font', async () => {
+  const text = { version: 1, stories: [{ version: 1, id: 'story', revision: 0, source: 'Office', breaks: [], paragraphs: [{ id: 'p', start: 0, end: 6 }], spans: [], inlines: [], frameIds: ['frame'], defaultStyle: 'body' }], styles: [{ id: 'body', kind: 'paragraph', name: 'Body', paragraph: { character: { font: 'face', size: 20, axes: { wght: 650 }, features: { liga: 1 } } } }], fonts: [{ id: 'face', family: 'Authored font', faceIndex: 2, sha256: 'a'.repeat(64), source: { kind: 'asset', id: 'user/font-upload' } }, { id: 'unused', family: 'Unused font', faceIndex: 0, sha256: 'b'.repeat(64), source: { kind: 'bundled', path: '/fonts/unused.ttf' } }] };
+  const fonts = await collectSessionFonts(canvas('<svg data-composed-text="story"><title>Office</title><path d="M0 0L10 10"/></svg>'), text);
+  assert.deepEqual(fonts, [{ family: 'Authored font', weight: '650', style: 'normal', source: 'user', sha256: 'a'.repeat(64), faceIndex: 2, axes: { wght: 650 }, features: { liga: 1 }, file: 'user/font-upload' }]);
+});

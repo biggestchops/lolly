@@ -107,6 +107,8 @@ export interface StageNav {
   /** Zoom to the current selection's AABB (Shift+2). No-op when nothing is selected. */
   fitSelection(): void;
   focusRect(x: number, y: number, w: number, h: number): void;
+  /** Pan just enough to expose a native caret, preserving the person's zoom. */
+  revealRect?(rect: StageRect, viewport: StageRect): void;
   /**
    * Multiply the current zoom about the stage centre - the keyboard's `+`/`-` verb, so a
    * button can spend it too. A MULTIPLIER (1.25 in, 0.8 out), not an absolute.
@@ -277,17 +279,17 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
     originY = r.top  - ty;
   }
 
-  // Keep the (scaled) content centre inside the stage so it can never be lost.
+  // Design has a free pasteboard, including objects outside every artboard. Other
+  // tools keep an edge reachable while allowing every corner to reach the centre.
   function clampPan(): void {
-    const sr = stageEl.getBoundingClientRect();
+    if (opts?.editorLayout) return;
+    const sr = stageBox();
     const w  = outerEl.offsetWidth  * scale;
     const h  = outerEl.offsetHeight * scale;
-    const cx = originX + tx + w / 2;
-    const cy = originY + ty + h / 2;
-    if (cx < sr.left)   tx += sr.left   - cx;
-    if (cx > sr.right)  tx += sr.right  - cx;
-    if (cy < sr.top)    ty += sr.top    - cy;
-    if (cy > sr.bottom) ty += sr.bottom - cy;
+    const cx = (sr.left + sr.right) / 2;
+    const cy = (sr.top + sr.bottom) / 2;
+    tx = Math.max(cx - originX - w, Math.min(cx - originX, tx));
+    ty = Math.max(cy - originY - h, Math.min(cy - originY, ty));
   }
 
   // Zooming OUT past Fit is allowed down to an absolute floor of MIN_ABS (so
@@ -432,10 +434,8 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
     ty = ly - (ly - ty) * r;
     scale = next;
     contentFit = false;   // a framed artboard/selection is a chosen view; fitContent re-sets it
-    // …then slide the (still-pinned) frame centre onto the stage centre. NO clampPan here:
-    // it keeps the whole WRAPPER's centre in view, which for a multi-frame canvas makes an
-    // edge artboard un-centrable (the wrapper centre would have to leave the stage). A frame
-    // parked at the stage centre is in view by construction, so the clamp is not needed.
+    // Centre the target in the visible band. A target may sit outside the wrapper,
+    // so this explicit framing does not constrain its position to that wrapper.
     const sc = stageCentre();
     tx += sc.x - fcx;
     ty += sc.y - fcy;
@@ -556,7 +556,7 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
     // changes here either way: the chords stay the host's, and this handler must
     // never re-capture them.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.code === 'Space' && !isTyping()) { spaceDown = true; stageEl.classList.add('is-grabbable'); return; }
+    if (e.code === 'Space' && !isTyping()) { e.preventDefault(); spaceDown = true; stageEl.classList.add('is-grabbable'); return; }
     if (isTyping()) return;
     // Shift+1 / Shift+2 are matched on `code`, not `key`: the shifted digits are '!' and
     // '@' on a US layout and something else on every other, while Digit1/Digit2 name the
@@ -857,7 +857,7 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         zoomAbout(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
-      } else if (isZoomed()) {
+      } else if (isZoomed() || opts?.editorLayout) {
         e.preventDefault();
         captureOrigin();
         contentFit = false;
@@ -898,9 +898,13 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
     window.addEventListener('keyup', onKeyUp);
   }
 
+  let textFocusView:{scale:number;tx:number;ty:number;contentFit:boolean;contentFloor:number}|undefined;
+  const onTextFocus=(event:Event)=>{const active=(event as CustomEvent<{active:boolean}>).detail?.active;if(active){textFocusView??={scale,tx,ty,contentFit,contentFloor};}else if(textFocusView){({scale,tx,ty,contentFit,contentFloor}=textFocusView);textFocusView=undefined;captureOrigin();apply();}};
+  stageEl.addEventListener('fc-text-focus',onTextFocus);
   syncHud();
 
   function destroy(): void {
+    stageEl.removeEventListener('fc-text-focus',onTextFocus);
     window.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('keyup', onKeyUp);
     offDockChange?.();    // before the undock below, so the auto-dock can't answer its own release
@@ -912,6 +916,13 @@ export function setupStageNav(stageEl: HTMLElement, outerEl: HTMLElement, canvas
 
   return {
     reset, isZoomed, isUserZoomed, sync: syncHud, fit, fitSelection, focusRect,
+    revealRect(rect, viewport) {
+      if (![rect.x, rect.y, rect.w, rect.h, viewport.x, viewport.y, viewport.w, viewport.h].every(Number.isFinite) || viewport.w <= 0 || viewport.h <= 0) return;
+      const dx = rect.x < viewport.x ? viewport.x - rect.x : rect.x + rect.w > viewport.x + viewport.w ? viewport.x + viewport.w - rect.x - rect.w : 0;
+      const dy = rect.y < viewport.y ? viewport.y - rect.y : rect.y + rect.h > viewport.y + viewport.h ? viewport.y + viewport.h - rect.y - rect.h : 0;
+      if (Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
+      captureOrigin(); tx += dx; ty += dy; contentFit = false; apply();
+    },
     zoomBy, zoomTo, actual: absScale,
     // Called back once immediately so a fresh readout paints the current view rather than
     // waiting for the first gesture (the bar mounts before anything has been zoomed).

@@ -46,7 +46,8 @@ import { encodeAssetVersion } from '../engine/src/asset-version.ts';
 import { DESIGN_LAYER_KINDS, inspectDesignV1 } from '../packages/core/src/design-v1.ts';
 import { encodeModelParam, SCALAR_CAP } from '../shells/web/src/lib/url-budget.ts';
 import { collectSessionAssetRefs } from '../shells/web/src/lib/beam-pack.ts';
-import { collectAssetRefs, setSceneManifest } from '../shells/web/src/bridge/asset-dependencies.ts';
+import { setSceneManifest } from '../shells/web/src/bridge/asset-dependencies.ts';
+import { collectAssetRefs } from '../shells/web/src/bridge/asset-ref-collector.ts';
 import { baseHost } from './helpers/host.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -154,7 +155,10 @@ test('the add menu offers a 3D scene whose seed is a scene box', () => {
 test('scene is field 101 of design:boxes and the wire-order pin ratcheted with it', () => {
   const current: string[] = boxesField.fields.map((f: { id: string }) => f.id);
   const pinned = wireOrder.inputs['design:boxes']!;
-  assert.equal(current.length, 103, 'animation choices and internal edits append fields');
+  assert.equal(current.length, 108, 'text ownership, paint, credits and wrap append fields');
+  assert.equal(current[103], 'textStory');
+  assert.equal(current[104], 'textFrame');
+  assert.deepEqual(current.slice(105), ['pathPaint', 'vectorSource', 'textWrap']);
   assert.equal(current[101], 'animationId');
   assert.equal(current[102], 'animationEdits');
   assert.equal(current[100], 'scene', 'scene is the 101st field, appended after plainText');
@@ -371,7 +375,7 @@ test('the boot module registers how to load the 3D Studio manifest, lazily', asy
   // main.ts is the browser entry - it touches window, the service worker and the DOM on
   // import, so Node cannot load it.
   const main = await readFile(join(ROOT, 'shells/web/src/main.ts'), 'utf8');
-  assert.match(main, /import \{ setSceneManifestLoader, SCENE_TOOL_ID \} from '\.\/bridge\/asset-dependencies\.ts';/,
+  assert.match(main, /import \{ setSceneManifestLoader, SCENE_TOOL_ID \} from '\.\/bridge\/scene-manifest\.ts';/,
     'main.ts imports the registration from the boot-safe module that owns the registry');
   assert.match(main, /setSceneManifestLoader\(\(\) =>/, 'and calls it during boot');
   // Lazy: the tool loader pulls in the engine barrel, which must stay off the boot path

@@ -1,0 +1,9 @@
+{
+  "source": "../notosanssc/NotoSansSC[wght].ttf",
+  "sourceSha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+  "file": "NotoSansSC-test.ttf",
+  "bytes": 193144,
+  "sha256": "049b36fdbfea0c1af2f9748ddcd1052bdfedeaec5fca2f7f30cb41232a267f39",
+  "purpose": "Test-only Unicode punctuation and CJK shaping fixture; not a document fallback font",
+  "subsetCommand": "pyftsubset 'NotoSansSC[wght].ttf' --output-file=NotoSansSC-test.ttf --unicodes='U+0000-00FF,U+2000-206F,U+3000-303F' --text='你好世界日本語句読点括弧行末測試文本中文测试行换字體漢字的一个長段落大小标题字体' --layout-features='*' --name-IDs='*' --name-languages='*' --name-legacy --notdef-glyph --notdef-outline --recommended-glyphs --no-recalc-timestamp"
+}

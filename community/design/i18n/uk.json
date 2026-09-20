@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Частота кадрів проєкту",
   "inputs.sequenceMarks.label": "Маркери часової шкали",
   "inputs.boxes.fields.animationId.label": "Анімація в джерелі",
-  "inputs.boxes.fields.animationEdits.label": "Внутрішні зміни анімації"
+  "inputs.boxes.fields.animationEdits.label": "Внутрішні зміни анімації",
+  "inputs.boxes.fields.textStory.label": "Текстовий потік",
+  "inputs.boxes.fields.textFrame.label": "Налаштування текстової рамки",
+  "inputs.boxes.fields.pathPaint.label": "Векторні заливки й обводки",
+  "inputs.boxes.fields.vectorSource.label": "Джерело вектора й авторство",
+  "inputs.boxes.fields.textWrap.label": "Налаштування обтікання текстом",
+  "inputs.textDocument.label": "Текстовий документ",
+  "inputs.exportVisibleText.label": "Експортувати тільки видимий текст",
+  "inputs.exportVisibleText.help": "Дозволити навмисно обрізаний експорт. Текст поза фіксованими рамками та нерозміщені потоки пропускаються; повне джерело залишається в документі."
 }

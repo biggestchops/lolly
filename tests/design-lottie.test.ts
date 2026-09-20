@@ -147,3 +147,10 @@ test('the real CLI forwards an explicit fps override through native dotLottie ex
     assert.deepEqual([animation.w, animation.h, animation.fr, animation.op], [64, 64, 50, 50]);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('independent vector paint is refused before its colours or transforms can be lost', async () => {
+  const host = hostForTest();
+  await assert.rejects(exportDesignLottie({ sourceDocument: { toolId: 'design', values: { boxes: [
+    { id: 'outlined-heading', kind: 'path', x: 0, y: 0, w: 100, h: 40, pathPaint: '{"version":1}', bg: '#000000' },
+  ] } } }, host), /outlined-heading: independent vector paint/);
+});

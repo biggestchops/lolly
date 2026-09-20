@@ -445,6 +445,7 @@ export function buildPrintAndRows(ta: ActionsCtx): void {
         return `
         <label class="export-option help-tip-host" data-vector-only${hide ? ' style="display:none"' : ''}>
           <span>${t('Text')}</span>${tip.button}${tip.pop}
+          ${runtime.getModel().some(item=>item.id==='textDocument'&&item.value)?`<small>${escapeText(t('Composed text exports as paths to preserve its exact appearance. Exported paths do not have ordinary text editing.'))}</small>`:''}
           <select class="field-select" data-input-id="convertPaths" aria-label="${escapeText(t('Export text'))}">
             <option value="outline"${i.value ? ' selected' : ''}>${t('Outline')}</option>
             <option value="embed"${i.value ? '' : ' selected'} data-embed-label>${initialFmt === 'pdf' ? t('Embed (subset)') : t('Keep text')}</option>

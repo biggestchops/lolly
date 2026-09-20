@@ -7,7 +7,7 @@ import { assetVersionPin, encodeAssetVersion, decodeAssetVersion, assetDependenc
 import { parseUrlState, serializeUrlState } from '../engine/src/url-mode.ts';
 import { pinRevisionAssets } from '../shells/web/src/bridge/revision-asset-pins.ts';
 import { revisionSnapshot } from '../shells/web/src/bridge/revision-snapshot.ts';
-import { collectAssetRefs } from '../shells/web/src/bridge/asset-dependencies.ts';
+import { collectAssetRefs } from '../shells/web/src/bridge/asset-ref-collector.ts';
 
 const pin = { version: 'old/v1 ~ #é', format: 'png' };
 const asset = { source: 'user' as const, id: 'user/upload/photo', type: 'raster' as const, format: 'png', version: 'new', url: 'blob:gone', pin };

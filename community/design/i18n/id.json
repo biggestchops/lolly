@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Laju bingkai proyek",
   "inputs.sequenceMarks.label": "Penanda lini masa",
   "inputs.boxes.fields.animationId.label": "Animasi dalam sumber",
-  "inputs.boxes.fields.animationEdits.label": "Edit internal animasi"
+  "inputs.boxes.fields.animationEdits.label": "Edit internal animasi",
+  "inputs.boxes.fields.textStory.label": "Rangkaian teks",
+  "inputs.boxes.fields.textFrame.label": "Pengaturan bingkai teks",
+  "inputs.boxes.fields.pathPaint.label": "Isian dan goresan vektor",
+  "inputs.boxes.fields.vectorSource.label": "Sumber vektor dan kredit",
+  "inputs.boxes.fields.textWrap.label": "Pengaturan pembungkusan teks",
+  "inputs.textDocument.label": "Dokumen teks",
+  "inputs.exportVisibleText.label": "Ekspor teks yang terlihat saja",
+  "inputs.exportVisibleText.help": "Izinkan ekspor yang disengaja terpotong. Teks di luar bingkai tetap dan rangkaian teks yang belum ditempatkan diabaikan; sumber lengkap tetap ada di dokumen Anda."
 }

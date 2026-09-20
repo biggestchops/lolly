@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Prosjektets bildefrekvens",
   "inputs.sequenceMarks.label": "Tidslinjemarkører",
   "inputs.boxes.fields.animationId.label": "Animasjon i kilden",
-  "inputs.boxes.fields.animationEdits.label": "Interne animasjonsendringer"
+  "inputs.boxes.fields.animationEdits.label": "Interne animasjonsendringer",
+  "inputs.boxes.fields.textStory.label": "Tekstartikkel",
+  "inputs.boxes.fields.textFrame.label": "Tekstrammeinnstillinger",
+  "inputs.boxes.fields.pathPaint.label": "Vektorfarge",
+  "inputs.boxes.fields.vectorSource.label": "Vektorkilde og kreditering",
+  "inputs.boxes.fields.textWrap.label": "Innstillinger for tekstbryting rundt objekter",
+  "inputs.textDocument.label": "Tekstdokument",
+  "inputs.exportVisibleText.label": "Eksporter bare synlig tekst",
+  "inputs.exportVisibleText.help": "Tillat en bevisst beskåret eksport. Tekst utenfor faste rammer og uplasserte artikler utelates; hele kildeteksten forblir i dokumentet."
 }

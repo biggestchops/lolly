@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MPL-2.0
 /** Mixed vector text for tools that sample artwork or paint their own canvas. */
 import type { EmojiAPI, EmojiTextRenderOpts, TextAPI } from '@lolly-tools/core/host-v1';
+import type { TextLayoutRequestV1, TextLayoutV1 } from '@lolly-tools/core';
+import { sha256Hex } from './bytes.ts';
 import type { EmojiStyleV1 } from '@lolly-tools/core/emoji-v1';
 import { readEmojiPack, type VerifiedEmojiPack } from './emoji-pack.ts';
 import { prepareEmojiText, type EmojiArtworkCache } from './emoji-inline.ts';
@@ -25,6 +27,26 @@ export function createEmojiToolText(api: EmojiAPI, text: TextAPI | undefined, se
   }
   const io={loadArtwork:async(pin:Parameters<EmojiAPI['artwork']>[0],asset:Parameters<EmojiAPI['artwork']>[1])=>{const bytes=await api.artwork(pin,asset);if(!bytes)throw new Error('Emoji artwork is unavailable.');return bytes;},parseXml:api.parseXml as Parameters<typeof prepareEmojiText>[3]['parseXml']};
   return {
+    async layoutRuns(request:TextLayoutRequestV1):Promise<TextLayoutV1> {
+      used=true;
+      if(!text?.layoutRuns)throw new Error('This engine cannot compose text paragraphs.');
+      const style=selected(),{prepareParagraphEmoji}=await import('./text-emoji.ts');
+      const prepared=await prepareParagraphEmoji(request,style,await packsFor(style),io,artwork);
+      const layout=await text.layoutRuns(prepared.request);
+      layout.diagnostics.push(...prepared.diagnostics);
+      const key=await sha256Hex(new TextEncoder().encode(JSON.stringify([prepared.story,style])));
+      census=[];
+      for(const [index,frame] of layout.frames.entries()){
+        const visible=prepared.census.map(source=>({...source,occurrences:source.occurrences.filter(range=>range.start>=frame.start&&range.end<=frame.end)})).filter(source=>source.occurrences.length);
+        const marker=`paragraph-${key}-${index}`;sources.set(marker,visible);census.push(...visible);
+        const missing=prepared.diagnostics.filter(issue=>issue.start>=frame.start&&issue.end<=frame.end).length;
+        if(frame.svg)frame.svg=frame.svg.replace('<svg ',`<svg data-emoji-tool-source="${marker}"${missing ? ` data-text-emoji-missing="${missing}"` : ''} `);
+      }
+      layout.emojiSources=structuredClone(census);
+      while(sources.size>512)sources.delete(sources.keys().next().value!);
+      for(const item of prepared.request.artwork)if(item.sha256 && !layout.resources.some(resource=>resource.id===item.id&&resource.sha256===item.sha256))layout.resources.push({id:item.id,sha256:item.sha256});
+      return layout;
+    },
     async renderSvg(source:string):Promise<string> {
       used=true;
       if(typeof source!=='string'||source.length>4*1024*1024||/<!DOCTYPE|<!ENTITY/i.test(source))throw new Error('SVG text exceeds the supported input budget.');

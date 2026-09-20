@@ -183,7 +183,8 @@ export function showArmHint(fc: FcCtx, kind: AddKind | null | undefined): void {
   }
   const seedKind = kind.seed != null ? String(kind.seed[cfg.kindField] ?? '') : '';
   const asset = assetArmHint(fc, kind.id);
-  if (coarsePointer(fc)) {
+  if(kind.id==='linked-text-frame'){armHintTxt.textContent=t('Choose a text frame, or drag to create the next frame. Escape cancels.');}
+  else if (coarsePointer(fc)) {
     // No cursor and no drag-to-size: a finger TAPS and the box appears at its seed size.
     const isText = kind.id === 'text' || seedKind === 'text';
     armHintTxt.textContent = isText

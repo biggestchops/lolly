@@ -84,6 +84,7 @@ export function markSessionSaved(tview: ToolViewCtx): void {
 }
 export function syncUrl(tview: ToolViewCtx, dirtyId?: string): void {
   const { TOOL_URL_BASE, actionsEl, barSeq, dirtyParams, runtime, templateSeededIds } = tview;
+  actionsEl?.dispatchEvent(new Event('lolly:share-change'));
   if (dirtyId) dirtyParams.add(dirtyId);
 
   // Ambient URL-budget gauge: the SHARE-link cost of the current edit (reads the cost
@@ -1411,7 +1412,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
           history: {
             undo: tview.history.undoHistory,
             redo: tview.history.redoHistory,
-            register: registerHistory,
+            ...tview.history.transactionActions(registerHistory),
           },
           // Chrome the tool view owns and the overlay's trimmed Lolly menu now hosts: the
           // theme cycle and sound toggles the retired zoom HUD used to carry (see the
@@ -1446,7 +1447,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
             save: () => tview.renderSaveBtn?.click(),
             copy: () => viewEl.querySelector<HTMLButtonElement>('[data-action="copy"]')?.click(),
             share: () =>
-              viewEl.querySelector<HTMLButtonElement>('[data-action="copy-url"]')?.click(),
+              actionsEl?.querySelector<HTMLButtonElement>('[data-action="copy-url"]')?.click(),
             // Present the frames as a fullscreen deck (plan 112). Fire-and-forget: the
             // presenter module is lazily imported on first use. An optional frame id starts
             // the deck there - what the navigator's "Present from here" row spends.
@@ -1611,7 +1612,7 @@ export async function wireLiveEditing(tview: ToolViewCtx): Promise<void> {
                 subscribe: (cb) => onDockChange(cb),
               },
               share: () => {
-                viewEl.querySelector<HTMLButtonElement>('[data-action="copy-url"]')?.click();
+                actionsEl?.querySelector<HTMLButtonElement>('[data-action="copy-url"]')?.click();
               },
               present: (o) => {
                 void openPresenter(o);

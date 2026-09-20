@@ -3,7 +3,8 @@ import { MAX_RECOVERY_BYTES } from './revision-limits.ts';
 import { indexSavedWork } from './history-index.ts';
 /** Load recovery writes only when an author saves or replaces work. */
 import type { IDBPDatabase } from 'idb';
-import { collectAssetRefs, type StateRecord } from './state.ts';
+import type { StateRecord } from './state.ts';
+import { collectAssetRefs } from './asset-ref-collector.ts';
 import { pinRevisionAssets } from './revision-asset-pins.ts';
 import { canonicalRevisionData, revisionSnapshot } from './revision-snapshot.ts';
 import {

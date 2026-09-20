@@ -1,0 +1,59 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+.text-controls { min-width: 0; color: var(--ui-color-text-default); font-size: var(--ui-type-label); }
+.text-controls :is(input, select, textarea, button) { max-width: 100%; min-width: 0; }
+.text-controls :is(p, legend) { font-size: var(--ui-type-caption); }
+.text-controls p { margin: 0; color: var(--ui-color-text-muted); line-height: 1.5; }
+.text-controls > * + * { margin-block-start: var(--ui-space-control-inline); }
+.text-controls :is(.text-control-row, .fc-row), .text-controls fieldset > label {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); align-items: center;
+  gap: var(--ui-space-control-inline); min-width: 0; margin-block: var(--ui-space-control-inline);
+}
+.text-controls :is(.text-control-row, .fc-row) > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.text-controls :is(.text-control-row, .fc-row):has(> input[type="checkbox"]) { grid-template-columns: minmax(0, 1fr) auto; min-height: var(--ui-size-target); cursor: pointer; }
+.text-controls :is(.text-control-row, .fc-row) > :is(input:not([type="checkbox"]), select) { width: 100%; min-width: 0; }
+.text-controls .text-control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ui-space-control-inline); }
+.text-controls .text-control-grid > .text-control-row { grid-template-columns: minmax(0, 1fr); gap: calc(var(--ui-space-control-inline) / 2); }
+.text-controls .text-control-grid > .text-control-row > span { font-size: var(--ui-type-caption); color: var(--ui-color-text-muted); }
+.text-controls .text-control-choices { display: flex; gap: calc(var(--ui-space-control-inline) / 2); min-width: 0; }
+.text-controls .text-control-choices > button { flex: 1; }
+.text-controls .text-control-row:has(> .text-control-choices) { grid-template-columns: minmax(0, 1fr); }
+.text-controls .btn { min-height: var(--ui-size-target); white-space: normal; }
+.text-controls .text-control-action { display: inline-flex; align-items: center; justify-content: center; gap: var(--ui-space-control-inline); min-height: var(--ui-size-target); white-space: normal; line-height: 1.3; }
+.text-controls .text-control-action > svg { flex-shrink: 0; }
+.text-controls .text-control-icon { min-width: var(--ui-size-target); padding-inline: calc(var(--ui-space-control-inline) / 2); }
+.text-controls button[aria-pressed="true"] { background: var(--ui-color-selection-surface); color: var(--ui-color-text-default); box-shadow: var(--ui-effect-selected); }
+.text-controls button[aria-pressed="mixed"] { background: var(--ui-color-selection-surface); outline: 1px dashed var(--ui-color-border-default); }
+.text-controls .text-control-toolbar { display: flex; align-items: center; gap: var(--ui-space-control-inline); flex-wrap: wrap; }
+.text-controls .text-control-toolbar > .text-control-choices { flex: 1; }
+.text-controls [data-text-format="weight"] { font-weight: 800; }
+.text-controls [data-text-format="italic"] { font-style: italic; }
+.text-controls [data-text-format="underline"] { text-decoration: underline; text-underline-offset: .2em; }
+.text-control-choices[data-direction="rtl"] :is([data-value="start"], [data-value="end"]) svg { transform: scaleX(-1); }
+.text-controls details { border-block-start: 1px solid var(--ui-color-border-default); }
+.text-controls summary { min-height: var(--ui-size-target); box-sizing: border-box; padding-block: var(--ui-space-control-inline); cursor: pointer; font-weight: 600; font-size: var(--ui-type-label); }
+.text-controls summary:focus-visible { outline: 2px solid var(--ui-color-focus-ring); outline-offset: -2px; border-radius: var(--ui-radius-control); }
+.text-controls .text-control-body { padding-block-end: var(--ui-space-control-inline); }
+.text-controls .text-control-body > .btn { width: 100%; margin-block: calc(var(--ui-space-control-inline) / 2); }
+.text-controls fieldset { min-width: 0; margin: var(--ui-space-control-inline) 0; padding: var(--ui-space-control-inline); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); }
+.text-controls legend { color: var(--ui-color-text-muted); padding-inline: calc(var(--ui-space-control-inline) / 2); }
+.text-controls :is(.field-input, .field-select) { min-height: var(--ui-size-target); }
+.text-controls .num-field { width: 100%; min-width: 0; min-height: var(--ui-size-target); box-sizing: border-box; }
+.text-controls .num-field-in { min-width: 0; width: 100%; }
+.text-controls .num-field:has(input:disabled) { color: var(--ui-color-text-muted); }
+.text-controls .num-field:has(input:disabled) .num-field-lbl { cursor: default; }
+.text-controls textarea { min-height: 8em; resize: vertical; }
+.text-controls [hidden] { display: none !important; }
+.fc-insp [data-composed-inspector] { padding: var(--ui-space-control-inline) var(--ui-space-panel); }
+.fc-insp [data-composed-inspector] .text-control-row { margin-inline: 0; }
+.text-control-header { display: flex; align-items: center; gap: var(--ui-space-control-inline); }
+.text-control-header > :first-child { flex: 1; min-width: 0; font-weight: 600; }
+.text-control-status { padding: var(--ui-space-control-inline); border-radius: var(--ui-radius-control); background: var(--ui-color-surface-muted); }
+.text-control-footer { display: flex; justify-content: flex-end; gap: var(--ui-space-control-inline); border-block-start: 1px solid var(--ui-color-border-default); padding-block-start: var(--ui-space-control-inline); }
+.text-control-footer > .btn { flex: 1; }
+.text-control-axis { display: grid; gap: var(--ui-space-control-inline); grid-template-columns: minmax(0, 1fr) minmax(4em, .7fr); }
+.text-control-axis > input[type="range"] { grid-column: 1 / -1; width: 100%; }
+.text-control-feature { display: flex; align-items: center; gap: var(--ui-space-control-inline); }
+.text-control-feature > label { flex: 1; display: flex; align-items: center; gap: var(--ui-space-control-inline); min-height: var(--ui-size-target); }
+
+.text-color-control { flex: 0 0 var(--ui-size-target); width: var(--ui-size-target); }
+.text-color-control .color-trigger { min-width: var(--ui-size-target); min-height: var(--ui-size-target); }

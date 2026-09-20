@@ -11,7 +11,8 @@
    appears in exported files. These rules follow the [data-sidebar="hidden"] block
    above so .is-editor re-centres the fixed canvas (that block left-aligns it). */
 .tool-layout.is-editor .tool-stage {
-  overflow: hidden;
+  /* Focus must not create a second, native scroll offset beside canvas panning. */
+  overflow: clip;
   align-items: center;
   justify-content: center;
   place-items: center;
@@ -21,6 +22,13 @@
     linear-gradient(45deg, rgba(0, 0, 0, 0.045) 25%, transparent 25%, transparent 75%, rgba(0, 0, 0, 0.045) 75%);
   background-size: 24px 24px;
   background-position: 0 0, 12px 12px;
+}
+
+/* The scaled canvas keeps a physical left origin while its content retains RTL. */
+.tool-layout.is-editor .tool-canvas-outer {
+  display: grid;
+  grid-template-columns: max-content;
+  justify-content: left;
 }
 
 /* Figma-style page boundary - a soft drop-shadow + a hairline ring so a frame
@@ -1890,3 +1898,27 @@ button.fc-readout:empty { display: none; }
 @media (max-width: 640px) {
   .fc-shortcuts-groups { grid-template-columns: 1fr; }
 }
+
+.fc-composed-bar { max-width: min(96vw, 640px); gap: 4px; }
+.fc-composed-font { max-width: 130px; }
+.fc-composed-size { width: 54px; }
+.fc-composed-color { width: 36px; padding: 1px; border: 0; background: none; }
+.fc-composed-bar button { min-height: 34px; padding: 4px 8px; }
+.fc-composed-done { font-weight: 700; }
+.fc-composed-status { width: 100%; font-size: var(--ui-type-caption); text-align: center; }
+.fc-composed-ink svg { display: block; max-width: none; }
+[data-text-cleanup] > [data-text-ink] { background: var(--ui-color-selection-surface); }
+.fc-text-popover { position: fixed; z-index: 120; display: grid; gap: var(--ui-space-control-inline); width: min(340px, calc(100vw - 24px)); box-sizing: border-box; padding: var(--ui-space-panel); overflow: auto; overscroll-behavior: contain; border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-panel); color: var(--ui-color-text-default); background: var(--ui-color-surface-raised); box-shadow: var(--ui-elevation-floating); }
+.fc-text-flow-port { position: absolute; min-height: var(--ui-size-target); min-width: var(--ui-size-target); padding: var(--ui-space-control-inline); border: 1px solid var(--ui-color-border-default); border-radius: var(--ui-radius-control); background: var(--ui-color-surface-raised); color: var(--ui-color-text-default); pointer-events: auto; font-size: var(--ui-type-caption); }
+.is-text-focus .lolly-box:not(:has([data-native-text-editor],[data-native-text-anchor])) { opacity: .12 !important; }
+@media (max-width: 720px) {
+  .fc-composed-bar { padding: 6px; justify-content: space-evenly; }
+  .fc-composed-bar button { min-height: 44px; }
+  .fc-composed-font { max-width: 110px; }
+}
+
+[data-native-text-editor][data-show-hidden] [data-text-mark]::after { content: attr(data-text-mark); position: absolute; left: 0; top: 0; color: var(--ui-color-action-primary); font-family: sans-serif; font-size: var(--ui-type-caption); pointer-events: none; }
+
+.text-sync-status { position:fixed; bottom:calc(72px + var(--safe-bottom) + var(--vv-bottom, 0px)); inset-inline-start:var(--ui-space-panel); z-index:48; display:flex; gap:var(--ui-space-control-inline); align-items:center; max-width:min(540px,calc(100vw - 2 * var(--ui-space-panel))); box-sizing:border-box; padding:var(--ui-space-control-inline) var(--ui-space-panel); border:1px solid var(--ui-color-border-default); border-radius:var(--ui-radius-control); background:var(--ui-color-surface-raised); color:var(--ui-color-text-default); font-size:var(--ui-type-caption); }
+.text-sync-status[hidden] { display:none; }
+.text-sync-status button { flex:none; min-height:var(--ui-size-target); }

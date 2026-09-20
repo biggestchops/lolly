@@ -2582,6 +2582,18 @@
                   "fixedCanvas": {
                     "type": "boolean",
                     "description": "Lock the canvas to render.width/height: the shell withholds setCanvasSize and ignores reserved ?width/?height, so box coordinates stay 1:1 with the render size (required when a hook draws into a fixed-viewBox overlay, e.g. connectors)."
+                  },
+                  "textDocumentInput": {
+                    "type": "string",
+                    "description": "Input containing the canonical authored text document."
+                  },
+                  "textStoryField": {
+                    "type": "string",
+                    "description": "Box field naming the story that owns this text frame."
+                  },
+                  "textFrameField": {
+                    "type": "string",
+                    "description": "Box field containing authored text frame settings."
                   }
                 }
               }

@@ -794,8 +794,9 @@ export async function wireCanvas(tview: ToolViewCtx): Promise<void> {
     // touches the pan/zoom transform itself. Wired here because only tool.ts holds the
     // StageNav handle; torn down with the view in _cleanup below.
     tview.onFocusRect = (e: Event): void => {
-      const d = (e as CustomEvent<{ x: number; y: number; w: number; h: number }>).detail;
-      if (d) tview.stageZoom?.focusRect(d.x, d.y, d.w, d.h);
+      const d = (e as CustomEvent<{ x: number; y: number; w: number; h: number; viewport?: { x: number; y: number; w: number; h: number } }>).detail;
+      if (d?.viewport) tview.stageZoom?.revealRect?.(d, d.viewport);
+      else if (d) tview.stageZoom?.focusRect(d.x, d.y, d.w, d.h);
     };
     stageEl.addEventListener('fc-focus-rect', tview.onFocusRect);
 

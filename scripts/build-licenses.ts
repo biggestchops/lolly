@@ -159,6 +159,9 @@ const NPM_COMPONENTS: NpmComponent[] = [
   // drives the CLI). Listed under the web group; cross-referenced from the CLI.
   { pkg: 'handlebars', where: 'web' },
   { pkg: 'ajv', where: 'web' },
+  { pkg: 'bidi-shaper', where: 'web' },
+  { pkg: '@cto.af/linebreak', where: 'web' },
+  { pkg: '@cto.af/unicode-trie-runtime', where: 'web', transitiveVia: '@cto.af/linebreak', fallbackText: readFileSync(join(ROOT, 'scripts/data/licenses/unicode-trie-runtime-MIT.txt'), 'utf8') },
   // Engine dep since 1.188 (src/prepare-document.ts parses YAML sources). Pure
   // JS, no DOM/fs/network, so it rides into the web bundle with the engine and
   // also reaches the CLI - documented once here, in the web group.
@@ -446,6 +449,29 @@ const MANIFEST: {
   mapData: Entry[];
 } = {
   vendored: [
+    {
+      name: 'Unicode text properties and ICU Thai word dictionary',
+      version: 'Unicode 17.0.0; ICU f0a922c66fd2be4f686af235602d6863f2ca7b1d',
+      spdx: 'Unicode-3.0',
+      copyright: 'Copyright (c) 1991-2026 Unicode, Inc.; IBM, Apple and other contributors.',
+      files: 'engine/src/text-unicode-data.json, engine/src/text-thai-data.json',
+      text: readFileSync(join(ROOT, 'scripts/data/text-thai/LICENSE'), 'utf8'),
+      note: 'Property tables and Thai words are compiled from the pinned sources under scripts/data/.',
+      where: 'web',
+    },
+    ...['en-us', 'en-gb', 'fr', 'es', 'de-1996'].map(language => {
+      const data = JSON.parse(readFileSync(join(ROOT, `engine/src/text-hyphen-data/${language}.json`), 'utf8')) as { notice: string; source: string };
+      return {
+        name: `TeX hyphenation patterns (${language})`,
+        version: '5684c0f51c0b81133db2efbe60a408b4155a3ff5',
+        spdx: language === 'en-us' ? 'LicenseRef-hyph-en-us' : 'MIT',
+        copyright: 'Original pattern authors, reproduced in the notice below.',
+        files: `engine/src/text-hyphen-data/${language}.json`,
+        text: data.notice,
+        note: `Compiled pattern data. Source: ${data.source}`,
+        where: 'web',
+      };
+    }),
     {
       name: 'Skera font subsetter and Rust dependencies',
       version: '0.7.0 (pinned Cargo.lock)',

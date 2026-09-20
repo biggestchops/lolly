@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Kadar bingkai projek",
   "inputs.sequenceMarks.label": "Penanda garis masa",
   "inputs.boxes.fields.animationId.label": "Animasi dalam sumber",
-  "inputs.boxes.fields.animationEdits.label": "Suntingan dalaman animasi"
+  "inputs.boxes.fields.animationEdits.label": "Suntingan dalaman animasi",
+  "inputs.boxes.fields.textStory.label": "Rangkaian teks",
+  "inputs.boxes.fields.textFrame.label": "Tetapan bingkai teks",
+  "inputs.boxes.fields.pathPaint.label": "Isian dan strok vektor",
+  "inputs.boxes.fields.vectorSource.label": "Sumber vektor dan kredit",
+  "inputs.boxes.fields.textWrap.label": "Tetapan balutan teks",
+  "inputs.textDocument.label": "Dokumen teks",
+  "inputs.exportVisibleText.label": "Eksport teks yang kelihatan sahaja",
+  "inputs.exportVisibleText.help": "Benarkan eksport yang sengaja dipotong. Teks di luar bingkai tetap dan rangkaian teks yang belum diletakkan diabaikan; sumber penuh kekal dalam dokumen anda."
 }

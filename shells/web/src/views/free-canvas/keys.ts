@@ -25,10 +25,8 @@ export function ctxBarBlockers(fc: FcCtx, sr: DOMRect): StageBox[] {
   //
   // The LEFT SIDEBAR is on that list too (plans/179 M4): `.fc-nav` is the navigator
   // column - open, or collapsed to its dot rail - and while it is open the tool rail is
-  // a grid inside it, so one rect covers both. The rail's own dock joins them only
-  // while the TIMELINE has made it a full-height column; a floating rail is vertically
-  // centred and nowhere near this row, so counting it would push the bar sideways for
-  // chrome that is not actually in the way.
+  // a grid inside it, so one rect covers both. A floating rail also blocks this row
+  // when a short viewport or browser zoom brings its top into the bar's band.
   const out = stageBlockers(
     [
       stageEl.querySelector<HTMLElement>('.stage-nav'),
@@ -38,6 +36,10 @@ export function ctxBarBlockers(fc: FcCtx, sr: DOMRect): StageBox[] {
     ],
     sr
   );
+  if (fc.railMode !== 'timeline') {
+    const top = fc.contextBar.stageReserves().top;
+    out.push(...stageBlockers([toolbarDock], sr).filter(rect => rect.top < top + fc.ctxbar.offsetHeight + 8 && rect.bottom > top));
+  }
   fc.ctxBlockers = fc.gesture ? out : null;
   return out;
 }
@@ -217,6 +219,7 @@ export function chromeKeysOff(_fc: FcCtx, e: KeyboardEvent): boolean {
   return off(deepActiveElement() as HTMLElement | null);
 }
 export function onKey(fc: FcCtx, e: KeyboardEvent): void {
+  if (e.isComposing) return;
   if (fc.rules?.key(e)) return;
   const { NO_TEXT_KINDS, canFlip, cfg, designChrome, stageEl, timeCfg } = fc;
   if (fc.disposed || document.querySelector('dialog[open]')) return;
@@ -306,6 +309,10 @@ export function onKey(fc: FcCtx, e: KeyboardEvent): void {
         return;
       }
     } else if (fc.penEdit) {
+      if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)&&fc.penSel.size&&!e.altKey){
+        e.preventDefault();const step=e.shiftKey?10:1,dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,dy=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;
+        fc.penTool.penEditWrite({...fc.penEdit.path,nodes:fc.penEdit.path.nodes.map((node,index)=>fc.penSel.has(index)?{...node,x:node.x+dx,y:node.y+dy}:node)});return;
+      }
       if (e.key === 'Enter') {
         e.preventDefault();
         fc.penTool.endPenEdit();
@@ -395,6 +402,11 @@ export function onKey(fc: FcCtx, e: KeyboardEvent): void {
   // focused field gets the letter typed into it instead. Neither letter meant anything
   // here before (the only unmodified keys taken are Escape/Enter/F2/Delete/arrows, and
   // tool-stage-nav's 0/1/+/-).
+  if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === 't') {
+    const kind = fc.modes.textAddKind();
+    if (kind) { e.preventDefault(); fc.modes.setMode('create', { kind }); }
+    return;
+  }
   if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'v' || e.key === 'V')) {
     e.preventDefault();
     fc.modes.pickPointer();
@@ -446,7 +458,7 @@ export function onKey(fc: FcCtx, e: KeyboardEvent): void {
       announce(t('This object has no text to edit.'));
       return;
     }
-    fc.textEdit.startTextEdit(first, { selectAll: e.key === 'Enter' });
+    fc.textEdit.startTextEdit(first, { selectAll: e.key === 'Enter' && !(fc.cv.textStoryField && rows[at]?.[fc.cv.textStoryField]) });
     return;
   }
   // In gradient mode the selected thing is a STOP, so Delete removes that - deleting
@@ -639,7 +651,7 @@ export function onPreviewKey(fc: FcCtx, e: KeyboardEvent): void {
 }
 // Dismiss popover / more-panel on outside click.
 export const onDocDown = (fc: FcCtx, e: PointerEvent): void => {
-  if (fc.popover && !fc.popover.contains(e.target as Node)) fc.toolbox.closePopover();
+  if (fc.popover && !fc.popover.contains(e.target as Node) && !(e.target as Element).closest?.('[data-text-adjust]')) fc.toolbox.closePopover();
   // The colour popover is a companion of the panel, not an outside click: the whole
   // point of the gradient panel is to pick stop colours from the brand palette, and
   // closing the panel the moment you reached for a swatch made that a two-click

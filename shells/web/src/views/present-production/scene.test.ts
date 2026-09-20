@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cameraCrop, readScene, layoutBoxes } from './scene.ts';
-import { collectAssetRefs } from '../../bridge/asset-dependencies.ts';
+import { collectAssetRefs } from '../../bridge/asset-ref-collector.ts';
 
 test('saved scene clamps geometry and whitelists portable data', () => {
   const scene = readScene({ version: 1, layout: 'side', deviceId: 'private-device', stream: {},

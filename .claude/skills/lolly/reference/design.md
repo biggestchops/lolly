@@ -112,6 +112,8 @@ separately below).
 | `showCaptionsWhenPresenting` | - | boolean | false | Show captions when presenting |
 | `projectFps` | - | select | `30` | Project frame rate |
 | `sequenceMarks` | - | longtext | `""` | Timeline markers |
+| `textDocument` | `tdoc` | longtext | `""` | Text document |
+| `exportVisibleText` | - | boolean | false | Export visible text only |
 <!-- /GEN:design-inputs -->
 
 ## The `boxes` layer fields
@@ -227,4 +229,9 @@ are timing. Generated from the `boxes` block.
 | `scene` | - | text | `""` | Scene |
 | `animationId` | - | text | `""` | Animation in source |
 | `animationEdits` | - | text | `""` | Internal animation edits |
+| `textStory` | - | text | `""` | Text story |
+| `textFrame` | - | text | `""` | Text frame settings |
+| `pathPaint` | - | text | `""` | Vector paint |
+| `vectorSource` | - | text | `""` | Vector source and credits |
+| `textWrap` | - | text | `""` | Text wrap settings |
 <!-- /GEN:design-boxes -->

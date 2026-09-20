@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Taxa de quadros do projeto",
   "inputs.sequenceMarks.label": "Marcadores da linha do tempo",
   "inputs.boxes.fields.animationId.label": "Animação na origem",
-  "inputs.boxes.fields.animationEdits.label": "Alterações internas da animação"
+  "inputs.boxes.fields.animationEdits.label": "Alterações internas da animação",
+  "inputs.boxes.fields.textStory.label": "Matéria de texto",
+  "inputs.boxes.fields.textFrame.label": "Configurações do quadro de texto",
+  "inputs.boxes.fields.pathPaint.label": "Pintura vetorial",
+  "inputs.boxes.fields.vectorSource.label": "Fonte vetorial e créditos",
+  "inputs.boxes.fields.textWrap.label": "Configurações de contorno de texto",
+  "inputs.textDocument.label": "Documento de texto",
+  "inputs.exportVisibleText.label": "Exportar apenas texto visível",
+  "inputs.exportVisibleText.help": "Permitir uma exportação recortada de propósito. O texto além dos quadros fixos e as matérias não posicionadas são omitidos; o texto-fonte completo permanece no documento."
 }

@@ -29,7 +29,8 @@
 
 import { strToU8 } from 'fflate';
 import type { Profile, UserTemplateRecord } from '@lolly-tools/core/host-v1';
-import { assetDependency } from '../../../../engine/src/asset-version.ts';
+import { mapTextFontAssets } from '../../../../engine/src/text-assets.ts';
+import { assetDependency, encodeAssetVersion } from '../../../../engine/src/asset-version.ts';
 import { ensureSceneManifest } from '../bridge/asset-dependencies.ts';
 import { base64ToBytes, bytesToBin } from '../../../../engine/src/bytes.ts';
 import { resolveSessionUserAsset, rebaseImportedAssetPins } from './session-asset-versions.ts';
@@ -203,6 +204,9 @@ export interface LollyFontEntry {
   source: 'catalog' | 'user' | 'platform';
   file?: string;
   sha256?: string;
+  faceIndex?: number;
+  axes?: Record<string, number>;
+  features?: Record<string, number>;
 }
 
 export interface LollyManifest {
@@ -1161,7 +1165,10 @@ export function applyLollyRekey<T>(data: T, rekey: ReadonlyMap<string, string>):
       if (next !== undefined) return { ...rec, id: next + dep.modifier, ...(dep.pin ? { pin: dep.pin } : {}), source: 'user', url: '', original: undefined };
     }
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(rec)) out[k] = walk(v, depth + 1);
+    for (const [k, v] of Object.entries(rec)) out[k] = k === 'textDocument' ? mapTextFontAssets(v, id => {
+      const dep = assetDependency({ id }), next = rekey.get(dep.key);
+      return next === undefined ? id : encodeAssetVersion(next + dep.modifier, dep.pin);
+    }) : walk(v, depth + 1);
     return out;
   };
   return walk(data, 0) as T;

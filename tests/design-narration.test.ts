@@ -66,7 +66,7 @@ test('the four narration settings precede boxes and the appended project timing 
   assert.deepEqual(ids.slice(at + 1, at + 5),
     ['narrationVoice', 'narrationSpeed', 'narrationLeadInMs', 'narrationTailMs'],
     'the four arrive together, directly after the other presentation settings');
-  assert.deepEqual(ids.slice(ids.indexOf('boxes')), ['boxes', 'projectFps', 'sequenceMarks'], 'project timing appends after the existing deck input');
+  assert.deepEqual(ids.slice(ids.indexOf('boxes'), ids.indexOf('boxes') + 3), ['boxes', 'projectFps', 'sequenceMarks'], 'project timing appends after the existing deck input');
   assert.equal(new Set(ids).size, ids.length, 'no id is declared twice');
 });
 

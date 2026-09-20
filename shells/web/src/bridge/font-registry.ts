@@ -76,7 +76,7 @@ export interface VectorFont {
   variations?: string[];
   /** Sibling subsets of the same family, for characters `url` doesn't cover
    *  (Google's `latin` file has no `Ł`; its `latin-ext` file has no ASCII). */
-  fallbacks?: Array<{ fontUrl: string; variations?: string[] }>;
+  fallbacks?: Array<{ fontUrl: string; variations?: string[]; face?: VectorFontFace }>;
   /** The SOURCE face behind `url` - see VectorFontFace. Identity only; nothing in the
    *  outlining path reads it. */
   face?: VectorFontFace;
@@ -486,7 +486,7 @@ export async function resolveVectorFont(style: FontStyleSlice, text: string): Pr
       // Decode every face in the chain up front; a failure anywhere means this
       // family can't be trusted to draw the run, so try the next one.
       const urls = await Promise.all(chain.map(c => faceUrl(c.face)));
-      const [primary, ...rest] = chain.map((c, i) => ({ fontUrl: urls[i]!, variations: c.variations }));
+      const [primary, ...rest] = chain.map((c, i) => ({ fontUrl: urls[i]!, variations: c.variations, face: describeFace(family, c.face) }));
       return {
         url: primary!.fontUrl,
         ...(primary!.variations ? { variations: primary!.variations } : {}),

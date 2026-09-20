@@ -2,8 +2,8 @@
   "id": "design",
   "name": "Design",
   "description": "An open canvas for free arrangement - text, images, shapes and live renders from your other Lolly tools, all held to your design system.",
-  "version": "1.34.0",
-  "engineVersion": "^1.214.0",
+  "version": "1.35.0",
+  "engineVersion": "^1.217.0",
   "status": "community",
   "category": "designer",
   "tags": [
@@ -207,8 +207,20 @@
   ],
   "inputs": [
     {
-      "id": "editingRange", "label": "Editing range", "type": "select", "default": "sdr",
-      "options": [{ "value": "sdr", "label": "Standard" }, { "value": "hdr", "label": "Wide colour / HDR" }],
+      "id": "editingRange",
+      "label": "Editing range",
+      "type": "select",
+      "default": "sdr",
+      "options": [
+        {
+          "value": "sdr",
+          "label": "Standard"
+        },
+        {
+          "value": "hdr",
+          "label": "Wide colour / HDR"
+        }
+      ],
       "help": "Use wider brand colour variants and retain HDR source pixels. HDR video export needs a supported 10-bit encoder."
     },
     {
@@ -593,7 +605,10 @@
               "scene": "source=primitive&primitive=badge&studio=dramatic"
             }
           }
-        ]
+        ],
+        "textDocumentInput": "textDocument",
+        "textStoryField": "textStory",
+        "textFrameField": "textFrame"
       },
       "fields": [
         {
@@ -2135,6 +2150,41 @@
           "label": "Internal animation edits",
           "default": "",
           "showFor": []
+        },
+        {
+          "id": "textStory",
+          "type": "text",
+          "label": "Text story",
+          "default": "",
+          "showFor": []
+        },
+        {
+          "id": "textFrame",
+          "type": "text",
+          "label": "Text frame settings",
+          "default": "",
+          "showFor": []
+        },
+        {
+          "id": "pathPaint",
+          "type": "text",
+          "label": "Vector paint",
+          "default": "",
+          "showFor": []
+        },
+        {
+          "id": "vectorSource",
+          "type": "text",
+          "label": "Vector source and credits",
+          "default": "",
+          "showFor": []
+        },
+        {
+          "id": "textWrap",
+          "type": "text",
+          "label": "Text wrap settings",
+          "default": "",
+          "showFor": []
         }
       ],
       "default": [
@@ -2264,6 +2314,22 @@
       "type": "longtext",
       "label": "Timeline markers",
       "default": ""
+    },
+    {
+      "id": "textDocument",
+      "urlKey": "tdoc",
+      "type": "longtext",
+      "label": "Text document",
+      "default": "",
+      "showFor": []
+    },
+    {
+      "id": "exportVisibleText",
+      "type": "boolean",
+      "label": "Export visible text only",
+      "default": false,
+      "group": "export",
+      "help": "Allow an intentionally clipped export. Text beyond fixed frames and unplaced stories is omitted; the full source stays in your document."
     }
   ]
 }

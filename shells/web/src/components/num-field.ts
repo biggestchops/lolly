@@ -95,6 +95,8 @@ export interface NumFieldHandle {
   input: HTMLInputElement;
   /** Repaint from the model. Ignored while the user has unsent text in the field. */
   set(v: number | 'mixed'): void;
+  /** Update limits when the selected property or guide changes. */
+  bounds(min: number, max: number): void;
   /**
    * True while a pointer is down on the handle - the scrub gesture is in flight.
    *
@@ -244,8 +246,8 @@ export function numField(opts: NumFieldOpts): NumFieldHandle {
   const precision = typeof opts.precision === 'number' && Number.isFinite(opts.precision)
     ? Math.max(0, Math.min(6, Math.round(opts.precision)))
     : decimalsOf(step);
-  const min = typeof opts.min === 'number' && Number.isFinite(opts.min) ? opts.min : -Infinity;
-  const max = typeof opts.max === 'number' && Number.isFinite(opts.max) ? opts.max : Infinity;
+  let min = typeof opts.min === 'number' && Number.isFinite(opts.min) ? opts.min : -Infinity;
+  let max = typeof opts.max === 'number' && Number.isFinite(opts.max) ? opts.max : Infinity;
   const quant = 10 ** precision;
 
   /** Clamped and rounded to the field's own precision, so what is shown is what commits. */
@@ -429,6 +431,7 @@ export function numField(opts: NumFieldOpts): NumFieldHandle {
   let moved = false;
 
   function onDown(ev: PointerEvent): void {
+    if (input.disabled || input.readOnly) return;
     if (ev.button != null && ev.button !== 0) return;
     dragId = ev.pointerId;
     dragX = ev.clientX;
@@ -483,11 +486,19 @@ export function numField(opts: NumFieldOpts): NumFieldHandle {
     input,
     set(v: number | 'mixed'): void {
       if (destroyed) return;
+      if ((dragId != null || keyPending != null) && (v === 'mixed' ? null : fix(v)) === base) return;
+      if (keyPending != null) cancelKeys();
       base = v === 'mixed' ? null : fix(v);
       // Half-typed text is the user's, not the model's: overwriting it mid-edit
       // deletes what they were saying.
       if (dirty && typeof document !== 'undefined' && document.activeElement === input) return;
       paint();
+    },
+    bounds(lower: number, upper: number): void {
+      min = lower; max = upper;
+      for (const [name, value] of [['aria-valuemin', min], ['aria-valuemax', max]] as const) {
+        if (Number.isFinite(value)) input.setAttribute(name, String(value)); else input.removeAttribute(name);
+      }
     },
     scrubbing: () => dragId != null,
     destroy(): void {

@@ -226,6 +226,7 @@ export { bakeTextStyles };
 // Walk one page element into PPTX shapes + media (see the section comment above).
 async function pptxSlideFromPage(pageEl: Element, opts: ExportOpts): Promise<PptxSlide> {
   const shapes: PptxShape[] = [];
+  const motionNotes: DeckNotes = { mapped: [], dropped: [] };
   const media: PptxMedia[] = [];
   const rootRect = pageEl.getBoundingClientRect();
   const E = EMU_PER_PX;
@@ -347,6 +348,28 @@ async function pptxSlideFromPage(pageEl: Element, opts: ExportOpts): Promise<Ppt
   }
 
   async function visit(el: Element): Promise<void> {
+    const first = shapes.length;
+    await visitContents(el);
+    const click = Number(el.getAttribute('data-build'));
+    let motion: unknown = { enter: 'none', click };
+    const authored = el.getAttribute('data-pptx-anim');
+    if (authored && authored.length <= 4096) {
+      try { motion = JSON.parse(authored); } catch { /* retain the click build */ }
+    }
+    const anim = deckAnim(motion, motionNotes);
+    if (anim) for (let i = first; i < shapes.length; i++) {
+      const shape = shapes[i]!;
+      const paintAnim = structuredClone(anim);
+      if (shape.kind !== 'text') for (const effect of [paintAnim.enter, paintAnim.exit]) if (effect?.iterate) {
+        delete effect.iterate;
+        const note = 'split text on vector artwork is exported as one object';
+        if (!motionNotes.dropped.includes(note)) motionNotes.dropped.push(note);
+      }
+      shape.anim ??= paintAnim;
+    }
+  }
+
+  async function visitContents(el: Element): Promise<void> {
     if (full() || el.nodeType !== 1) return;
     const tag = el.tagName.toLowerCase();
     if (tag === 'style' || tag === 'script') return;
@@ -420,6 +443,8 @@ async function pptxSlideFromPage(pageEl: Element, opts: ExportOpts): Promise<Ppt
   }
 
   await visit(pageEl);
+  if (motionNotes.mapped.length) _host?.log?.('info', `pptx: ${motionNotes.mapped.join('; ')}.`);
+  if (motionNotes.dropped.length) _host?.log?.('warn', `pptx: ${motionNotes.dropped.join('; ')}.`);
   if (full()) _host?.log?.('warn', `pptx: slide hit the ${MAX_PPTX_SHAPES}-object cap; some elements were dropped.`);
   return { shapes, media };
 }
@@ -783,8 +808,19 @@ export async function renderPptx(node: Element, opts: ExportOpts): Promise<Blob>
   // Narration rides the DOM-walk path too: a tool that emits `[data-audio-src]` markers
   // inside its pages gets embedded per-slide audio without authoring a deck model.
   const walkAutoAdvance = deckAutoAdvances(node);
+  const deckTransition = (node.matches?.('[data-deck-transition]') ? node : node.querySelector?.('[data-deck-transition]'))?.getAttribute('data-deck-transition') || 'slide';
+  const transitionNotes: DeckNotes = { mapped: [], dropped: [] };
+  const walkTransitions = deckSlideTransitions(pageEls.map(el => {
+    const own = el.getAttribute('data-frame-transition');
+    return { transition: own && own !== 'custom' ? own : deckTransition };
+  }), transitionNotes);
   for (const el of pageEls) {
     const slide = await pptxSlideFromPage(el, opts);
+    if (el.hasAttribute('data-frame-id')) {
+      slide.transition = walkTransitions[slides.length];
+      const dwell = pageDwellMs(el);
+      if (walkAutoAdvance && dwell) slide.advanceAfterMs = dwell;
+    }
     const clip = await slideNarration(el, slides.length, walkAutoAdvance);
     if (clip) slide.audio = clip;
     if (layouts) {
@@ -795,7 +831,7 @@ export async function renderPptx(node: Element, opts: ExportOpts): Promise<Blob>
     // convention any tool can emit). Hidden from the shape walk above and from
     // every rasteriser, but readable here - and it is NOT [data-export-hide], so
     // detachExportHidden can't have pulled it out from under us.
-    const note = (el.querySelector?.('[data-slide-notes]')?.textContent ?? '').trim();
+    const note = (el.querySelector?.('[data-slide-notes]')?.textContent ?? el.getAttribute('data-frame-notes') ?? '').trim();
     if (note) slide.notes = note;
     const presentation = presentationOf(node);
     if (presentation) {
@@ -813,6 +849,8 @@ export async function renderPptx(node: Element, opts: ExportOpts): Promise<Blob>
     slides.push(slide);
     opts.onProgress?.(slides.length, pageEls.length);
   }
+
+  if (transitionNotes.dropped.length) _host?.log?.('warn', `pptx: ${transitionNotes.dropped.join('; ')}.`);
 
   const parts = buildPptxParts(slides, { emuW, emuH, layouts, theme: walkTheme, meta: pptxMeta(opts, srcAuthor), now: new Date().toISOString() });
   return zipPptxParts(parts);

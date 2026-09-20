@@ -410,7 +410,7 @@
     "GeomAPI": {
       "module": "geom.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "765019273f1dc29815ced03131d6e228d0c92de4ba69ccda77d4b7137dd451ed"
+      "sha256": "ae9c2c68e508f4aacd105ed1d932b5033bd0d409d13f99f7e1f60477af168305"
     },
     "GeomFillRule": {
       "module": "geom.ts",
@@ -1020,7 +1020,7 @@
     "TextAPI": {
       "module": "text.ts",
       "kind": "InterfaceDeclaration",
-      "sha256": "3bf61cb8b04617a0988367a58ce2a686c0a8def180e54c9efde6c0b48fc70ad5"
+      "sha256": "a2f2b6d3f52c654b74ac51b70bbf66d9e67855352996102ae5f837c0eff5f970"
     },
     "TextToPathOpts": {
       "module": "text.ts",

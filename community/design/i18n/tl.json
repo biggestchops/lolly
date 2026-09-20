@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Frame rate ng proyekto",
   "inputs.sequenceMarks.label": "Mga marker sa timeline",
   "inputs.boxes.fields.animationId.label": "Animation sa source",
-  "inputs.boxes.fields.animationEdits.label": "Mga internal na edit ng animation"
+  "inputs.boxes.fields.animationEdits.label": "Mga internal na edit ng animation",
+  "inputs.boxes.fields.textStory.label": "Magkakaugnay na text",
+  "inputs.boxes.fields.textFrame.label": "Mga setting ng text frame",
+  "inputs.boxes.fields.pathPaint.label": "Mga fill at stroke ng vector",
+  "inputs.boxes.fields.vectorSource.label": "Pinagmulan at mga pagkilala ng vector",
+  "inputs.boxes.fields.textWrap.label": "Mga setting ng text wrap",
+  "inputs.textDocument.label": "Dokumento ng text",
+  "inputs.exportVisibleText.label": "I-export lang ang nakikitang text",
+  "inputs.exportVisibleText.help": "Payagan ang sadyang pinutol na export. Hindi isasama ang text sa labas ng mga nakapirming frame at ang mga magkakaugnay na text na hindi pa nailalagay; mananatili sa dokumento ang buong orihinal na nilalaman."
 }

@@ -118,10 +118,10 @@ export function makeLollyVehicle(
           .catch(() => null)
       : null;
     // Which font faces this render depended on, by identity (lib/session-fonts.ts) - the
-    // font half of the reproducibility receipt. Strictly best-effort: no font bytes travel,
-    // and a walk that fails costs the receipt its font list, never the share.
+    // font half of the reproducibility receipt. It records identities separately from
+    // the font assets in the file; a failed walk does not block sharing.
     const fonts = await import('../lib/session-fonts.ts')
-      .then((m) => m.collectSessionFonts(canvasEl))
+      .then((m) => m.collectSessionFonts(canvasEl, (session as Record<string, unknown> | null)?.textDocument))
       .catch(() => []);
     // The design system this session wore, so the receiving studio's "Add from a
     // file" can install the same look (bridge/tokens.ts readUserDesignSystem).

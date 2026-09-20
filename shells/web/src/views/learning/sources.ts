@@ -6,7 +6,7 @@ import { openPicker } from '../picker.ts';
 import { armSessionReturn } from '../../lib/search/projects-source.ts';
 import { learningRenditions } from '../../../../../engine/src/learning/delivery.ts';
 import { learningReader } from '../../lib/learning-entry.ts';
-import { learningAssetBlock, learningSessionCandidate } from '../../lib/learning-selection.ts';
+import { learningAssetBlock, learningSessionCandidate, learningSourceValues } from '../../lib/learning-selection.ts';
 import { isBatchSlot, isHiddenSlot } from '../../lib/batch-slots.ts';
 
 export function sourcesOps(ctx: LearningCtx): LearningCtx['sources'] {
@@ -90,9 +90,7 @@ export async function refresh(ctx: LearningCtx, blockId: string): Promise<void> 
   if (!block?.source?.slot) return;
   const data = await ctx.host.state.load(block.source.slot);
   if (!data?.__toolId) throw new Error('The source is unavailable. Replace it using Add content.');
-  block.source.values = structuredClone(
-    Object.fromEntries(Object.entries(data).filter(([key]) => !key.startsWith('__')))
-  );
+  block.source.values = learningSourceValues(data);
   block.source.toolId = data.__toolId;
   block.source.toolVersion = data.__toolVersion;
   block.source.capturedAt = new Date().toISOString();

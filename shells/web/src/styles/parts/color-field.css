@@ -105,11 +105,11 @@
    a toolbar gives the button less room than its normal horizontal padding. */
 @container colortrig (max-width: 120px) {
   .color-trigger-name { display: none; }
-  .color-trigger-preview { position: absolute; inset-inline-start: 50%; margin: 0; transform: translateX(-50%); }
+  .color-trigger-preview { position: absolute; left: 50%; margin: 0; transform: translateX(-50%); }
 }
 /* Unnamed colours use the same centred presentation at any width. */
 .color-trigger:has(.color-trigger-name:empty) .color-trigger-preview {
-  position: absolute; inset-inline-start: 50%; margin: 0; transform: translateX(-50%);
+  position: absolute; left: 50%; margin: 0; transform: translateX(-50%);
 }
 /* In a sidebar row the label owns the first 45% (above), so an unnamed colour's
    dot sits at the trailing edge like a named colour's does, instead of centred

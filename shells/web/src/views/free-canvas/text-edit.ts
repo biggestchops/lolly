@@ -119,7 +119,7 @@ export function onGlobalPaste(fc: FcCtx, e: ClipboardEvent): void {
         /* keep in-memory */
       }
     }
-    if (Array.isArray(picked) && picked.length) {
+    if (picked && (Array.isArray(picked) ? picked.length : picked.version === 2 && Array.isArray(picked.boxes) && picked.boxes.length)) {
       e.preventDefault();
       e.stopPropagation();
       fc.modes.pasteObjects(picked);
@@ -172,7 +172,7 @@ export function setFramesClipped(fc: FcCtx, clipped: boolean): void {
 }
 // A box element only exists after a foreground paint (rAF-gated), so a freshly
 // created box needs us to wait a few frames before we can focus its text.
-export function editAfterPaint(fc: FcCtx, id: string, opts: { selectAll?: boolean }, tries = 8): void {
+export function editAfterPaint(fc: FcCtx, id: string, opts: { selectAll?: boolean; point?: { x: number; y: number } }, tries = 8): void {
   const { canvasEl } = fc;
   if (fc.disposed) return;
   const el = canvasEl.querySelector<HTMLElement>(
@@ -184,9 +184,14 @@ export function editAfterPaint(fc: FcCtx, id: string, opts: { selectAll?: boolea
   }
   if (tries > 0) requestAnimationFrame(() => editAfterPaint(fc, id, opts, tries - 1));
 }
-export function startTextEdit(fc: FcCtx, id: string, opts: { selectAll?: boolean } = {}): void {
+export function startTextEdit(fc: FcCtx, id: string, opts: { selectAll?: boolean; point?: { x: number; y: number } } = {}): void {
   const { canvasEl, stageEl } = fc;
+  if (fc.editing?.composed) {
+    void fc.storyText.finish().then(() => { if (!fc.editing && !fc.disposed) startTextEdit(fc, id, opts); });
+    return;
+  }
   if (fc.editing) commitTextEdit(fc);
+  if (fc.cv.textStoryField && fc.select.getBoxes().find(box => box[fc.cfg.idField] === id)?.[fc.cv.textStoryField]) { fc.storyText.start(id, opts); return; }
   const el = canvasEl.querySelector<HTMLElement>(
     `.lolly-box[data-box-id="${fc.keys.cssEscape(id)}"] .lolly-box-text`
   );
@@ -211,6 +216,8 @@ export function startTextEdit(fc: FcCtx, id: string, opts: { selectAll?: boolean
     el,
     boxEl,
     prevHtml: el.innerHTML,
+    prevSource: String(fc.select.getBoxes().find(box => box[fc.cfg.idField] === id)?.[fc.cfg.textField] ?? ''),
+    prevRichText: markdownFromChars(charsFromDom(el)),
     prevStyle: el.style.cssText,
     prevBoxStyle: boxEl ? boxEl.style.cssText : '',
     pending: {},
@@ -334,6 +341,7 @@ export function onEditBlur(fc: FcCtx, e: FocusEvent): void {
   commitTextEdit(fc);
 }
 export function finishEdit(fc: FcCtx): EditingState | null {
+  if (fc.editing?.composed) { const done = fc.editing; fc.storyText.finish(); return done; }
   const { stageEl } = fc;
   if (!fc.editing) return null;
   const done = fc.editing;
@@ -364,10 +372,13 @@ export function restoreEditView(fc: FcCtx, done: EditingState): void {
   reapplyEmoji(fc, done.el);
 }
 export function commitTextEdit(fc: FcCtx): void {
+  if (fc.editing?.composed) { fc.storyText.finish(); return; }
   const { cfg } = fc;
   const done = fc.editing;
   if (!done) return;
-  const text = markdownFromChars(charsFromDom(done.el));
+  const serialized = markdownFromChars(charsFromDom(done.el));
+  // An unchanged legacy edit retains source bytes the Markdown adapter cannot encode.
+  const text = serialized === done.prevRichText ? done.prevSource : serialized;
   const pending = done.pending || {};
   const boxes = fc.select.getBoxes();
   const i = fc.select.indexOfId(boxes, done.id);
@@ -407,6 +418,7 @@ export function commitTextEdit(fc: FcCtx): void {
   }
 }
 export function cancelTextEdit(fc: FcCtx): void {
+  if (fc.editing?.composed) { fc.storyText.finish(true); return; }
   const done = fc.editing;
   if (!done) return;
   finishEdit(fc);
@@ -922,6 +934,7 @@ export function hideFmtBar(fc: FcCtx): void {
   fc.fmtbar = null;
 }
 export function positionFmtBar(fc: FcCtx): void {
+  if (fc.editing?.composed) { fc.storyText.position(); return; }
   const { cfg } = fc;
   if (!fc.fmtbar || !fc.editing) return;
   const boxes = fc.select.getBoxes();

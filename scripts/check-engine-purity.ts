@@ -110,6 +110,9 @@ const ALLOWED_PACKAGES = new Set([
   'prettier/plugins/markdown',
   'terser',
   'css-tree',
+  // Unicode analysis only; these pinned modules have no host dependencies.
+  'bidi-shaper',
+  '@cto.af/linebreak',
 ]);
 
 /** Relative imports that leave engine/src and are nonetheless legal, repo-relative. */
@@ -119,6 +122,9 @@ const ALLOWED_ESCAPES = new Set([
   'schemas/asset-ref.schema.json',
   'schemas/emoji-pack-v1.schema.json',
   'schemas/emoji-style-v1.schema.json',
+  'schemas/emoji-source-records-v1.schema.json',
+  'schemas/text-document-v1.schema.json',
+  'schemas/text-frame-v1.schema.json',
   // Same category as the three above: a parent-repo contract file the engine
   // VALIDATES against, not a shell/tool/brand dependency. Added when the rate-card
   // work landed (engine/src/validate.ts imports all four the same way).

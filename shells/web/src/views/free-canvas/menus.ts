@@ -477,10 +477,23 @@ export function openContextMenu(fc: FcCtx, clientX: number, clientY: number): vo
       danger: true,
     },
     { sep: true },
+    ...(fc.storyText?.available() && fc.selection.size === 1 && fc.select.getBoxes().some(box => box[cfg.idField] === [...fc.selection][0] && box[cfg.textField] && !box[fc.cv.textStoryField!])
+      ? [{ label: t('Upgrade text'), icon: icon(SVG.pencil), run: () => { void fc.storyText.upgrade([...fc.selection][0]!); } }]
+      : []),
+    ...(fc.storyText?.available() && fc.selection.size===1 && fc.select.getBoxes().some(box=>box[cfg.idField]===[...fc.selection][0] && box[fc.cv.textStoryField!]) ? [
+      ...(fc.storyPath.frame([...fc.selection][0]!)?.path?[{label:t('Path options'),keepOpen:true,run:()=>fc.storyPathUi.open(fc.stage.liveBoxEl([...fc.selection][0]!)??stageEl,[...fc.selection][0]!)}]:[]),
+      {label:t('Adjust type'),keepOpen:true,run:()=>{void fc.storyType.open(fc.stage.liveBoxEl([...fc.selection][0]!)??stageEl,[...fc.selection][0]!);}},
+      {label:t('Scale text and frame'),keepOpen:true,run:()=>{void fc.storyType.open(fc.stage.liveBoxEl([...fc.selection][0]!)??stageEl,[...fc.selection][0]!,undefined,true);}},
+      {label:t('Continue text'),keepOpen:true,run:()=>fc.storyFlowUi.open(fc.stage.liveBoxEl([...fc.selection][0]!) ?? stageEl,[...fc.selection][0]!)},
+      {label:t('Frame options'),keepOpen:true,run:()=>fc.storyFlowUi.open(fc.stage.liveBoxEl([...fc.selection][0]!) ?? stageEl,[...fc.selection][0]!,true)},
+    ] : []),
+    ...(fc.selection.size===1&&fc.storyWrap.eligible([...fc.selection][0]!)?[{label:t('Text wrap'),keepOpen:true,run:()=>fc.storyWrap.open(fc.stage.liveBoxEl([...fc.selection][0]!)??stageEl,[...fc.selection][0]!)}]:[]),
+    ...(fc.storyText.available()&&fc.storyPath.selection()?[{label:t('Attach text to path'),keepOpen:true,run:()=>fc.storyPathUi.open(fc.stage.liveBoxEl([...fc.selection][0]!)??stageEl,undefined,true)}]:[]),
     ...(outlinableCount
       ? [
           {
-            label: t('Outline text'),
+            label: t('Convert to paths'),
+            keepOpen: true,
             icon: icon(SVG.outlineText),
             run: () => void fc.objects.outlineTextOnSelection(),
           },
@@ -970,11 +983,15 @@ export function openAddMenu(fc: FcCtx, anchor: HTMLElement): void {
   const { ADD_KIND_ICON, addKinds } = fc;
   spawnPopover(fc, 
     anchor,
-    addKinds.map((k) => ({
+    [...addKinds.flatMap((k) => [{
       label: k.label ? t(k.label) : k.id,
       icon: icon(ADD_KIND_ICON[k.id] || SVG.add),
       run: () => fc.modes.setMode('create', { kind: k }),
-    }))
+    }, ...(k.id === 'text' && fc.storyText?.available() ? [{
+      label: t('Text frame'), icon: icon(ADD_KIND_ICON.text || SVG.add),
+      run: () => fc.modes.setMode('create', { kind: { ...k, id: 'text-frame', label: t('Text frame'), seed: { ...k.seed, [fc.cv.textFrameField!]: 'fixed' } } }),
+    },{label:t('Text on a circle'),icon:icon(ADD_KIND_ICON.text || SVG.add),run:()=>fc.storyPath.circle()},
+      {label:t('Text on a path'),keepOpen:true,icon:icon(ADD_KIND_ICON.text || SVG.add),run:()=>fc.storyPathUi.open(anchor)}] : [])]), ...(fc.storyText.available() && fc.storyText.read().document.stories.some(story=>!story.frameIds.length) ? [{label:t('Place text'),keepOpen:true,icon:icon(SVG.add),run:()=>fc.storyRecovery.unplaced(anchor)}] : [])]
   );
 }
 export function openArrangeMenu(fc: FcCtx): void {

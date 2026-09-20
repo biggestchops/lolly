@@ -8,7 +8,7 @@ import type { StateRecord } from './state.ts';
 import { REVISION_STORES as STORES, type DocumentHead } from './revision-records.ts';
 import { indexSavedWork } from './history-index.ts';
 import { MAX_REVISION_PREVIEWS as MAX_PREVIEWS } from './revision-limits.ts';
-import { collectAssetRefs } from './asset-dependencies.ts';
+import { collectAssetRefs } from './asset-ref-collector.ts';
 import { isHiddenSlot } from '../lib/batch-slots.ts';
 
 export function revisionMaintenance(db: IDBPDatabase, recovery: RecoveryStore): Pick<RevisionStore, 'move' | 'delete' | 'recentSessions' | 'name' | 'attachPreview' | 'assetRefs'> {

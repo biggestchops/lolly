@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Projektets bildfrekvens",
   "inputs.sequenceMarks.label": "Tidslinjemarkörer",
   "inputs.boxes.fields.animationId.label": "Animation i källan",
-  "inputs.boxes.fields.animationEdits.label": "Interna animationsändringar"
+  "inputs.boxes.fields.animationEdits.label": "Interna animationsändringar",
+  "inputs.boxes.fields.textStory.label": "Textartikel",
+  "inputs.boxes.fields.textFrame.label": "Textraminställningar",
+  "inputs.boxes.fields.pathPaint.label": "Vektorfärg",
+  "inputs.boxes.fields.vectorSource.label": "Vektorkälla och krediteringar",
+  "inputs.boxes.fields.textWrap.label": "Inställningar för figursättning",
+  "inputs.textDocument.label": "Textdokument",
+  "inputs.exportVisibleText.label": "Exportera endast synlig text",
+  "inputs.exportVisibleText.help": "Tillåt en avsiktligt beskuren export. Text utanför fasta ramar och oplacerade textartiklar utelämnas; hela källtexten finns kvar i dokumentet."
 }

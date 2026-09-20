@@ -386,3 +386,22 @@ test('a saved session remembers the decisions, and an older record opens without
 function json(value: unknown): string {
   return JSON.stringify(value, (_key, v) => (v instanceof Uint8Array ? Array.from(v) : v));
 }
+
+
+test('saved vector sources survive reopening without an emoji provider and exclude hidden source copies', async () => {
+  const original = await mounted('twemoji', ORIGINAL);
+  const census = (await original.runtime.applyEmojiToDom(original.canvas)).census as EmojiLineSource[];
+  const { host, renders } = hostDouble(undefined);
+  const tool = toolDouble(); tool.template = '<svg><path d="M0 0h10v10z"/></svg>';
+  const runtime = await createRuntime(tool, host), canvas = page(runtime.getHydrated());
+  const vector = canvas.querySelector('svg')!;
+  vector.setAttribute('data-emoji-vector-sources', JSON.stringify(census));
+  const hidden = vector.cloneNode(true) as Element; hidden.setAttribute('data-export-hide', ''); canvas.append(hidden);
+  const pass = await runtime.applyEmojiToDom(canvas);
+  assert.equal(pass.census.length, 1);
+  assert.equal(pass.census[0]!.occurrences.length, census[0]!.occurrences.length);
+  assert.equal(runtime.rights().plan.required.length, 1);
+  await runtime.export(canvas, 'png', { c2pa: true });
+  assert.deepEqual(renders[0]!.ingredients, emojiSourceIngredients(census));
+  assert.equal(runtime.lastReceipt?.state, 'readback-confirmed');
+});

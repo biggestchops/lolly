@@ -13,6 +13,7 @@ import { C2PA_FORMATS, DEFAULT_CMYK_CONDITION, VIDEO_CODEC_STRINGS, hasVideoPara
 import { t } from '../../i18n.ts';
 import { patchCanvasTranslations } from '../canvas-translation.ts';
 import { livePalette } from '../../lib/live-palette.ts';
+import { patchTextEditingCanvas } from '../../lib/text-edit-paint.ts';
 import { patchLivePreview } from '../../lib/live-preview.ts';
 import { scopeTemplateStyles } from '../../lib/scope-css.ts';
 import { runTemplateScripts, waitForQuiescence } from '../../lib/render-lifecycle.ts';
@@ -165,7 +166,8 @@ export function paint(tview: ToolViewCtx): void {
       // fires a network request for them; they're resolved to local composed
       // renders (blob URLs) just after the template's own scripts run. The
       // generation guard stops a slow embed render from overwriting a newer one.
-      contentEl.innerHTML = neutralizeEmbeds(hydrated);
+      const safeHtml = neutralizeEmbeds(hydrated);
+      if (!patchTextEditingCanvas(contentEl, safeHtml)) contentEl.innerHTML = safeHtml;
       // A <style> inside template.html would otherwise apply unscoped and unlayered,
       // beating every app layer - one tool's `*` reset strips the chrome's padding.
       scopeTemplateStyles(contentEl, canvasScope);

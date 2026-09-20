@@ -65,8 +65,8 @@ const WIDTH_STEP = 24;        // px per arrow key on the width grip
 // the Design inspector, the export panel, the transcript. Everything but the zoom bar is
 // a full panel: one or two of them share the resizable split, three or more become tabs.
 // The zoom bar is fixed-height and sits above all of it, out of the split and the strip.
-type PanelId = 'zoom' | 'neuro' | 'inspector' | 'history' | 'export' | 'transcript';
-const ORDER: readonly PanelId[] = ['zoom', 'neuro', 'inspector', 'history', 'export', 'transcript'];
+export type PanelId = 'zoom' | 'neuro' | 'inspector' | 'history' | 'export' | 'share' | 'transcript';
+const ORDER: readonly PanelId[] = ['zoom', 'neuro', 'inspector', 'history', 'export', 'share', 'transcript'];
 
 /**
  * Why a panel left the column. `user` is a gesture that means "put this away" - the drag
@@ -86,6 +86,7 @@ interface Occupant {
   home: { parent: Node; next: Node | null } | null;
   onRelease?: (reason: DockReleaseReason) => void;
   onCollapse?: (collapsed: boolean) => void;
+  onActivate?: () => void;
   /** Trusted SVG markup (icon()) + label for the collapsed rail's per-panel button. */
   icon?: string;
   label?: string;
@@ -97,6 +98,8 @@ interface Occupant {
 export interface DockHooks {
   onRelease?: (reason: DockReleaseReason) => void;
   onCollapse?: (collapsed: boolean) => void;
+  /** Refresh live content when this panel becomes the active tab. */
+  onActivate?: () => void;
   /** Dock as a fixed-height compact bar rather than a full-height panel. */
   compact?: boolean;
   icon?: string;
@@ -297,7 +300,7 @@ function relayout(): void {
   // needs room for its format/options form. Keep the established split for other pairs
   // (for example the player and transcript), but name this pair with the same tabs a
   // crowded dock already uses.
-  const tabbed = fulls.length > 2 || (fulls.includes('history') && fulls.length > 1) || (fulls.includes('inspector') && fulls.includes('export'));
+  const tabbed = fulls.length > 2 || (fulls.some(id => id === 'history' || id === 'share') && fulls.length > 1) || (fulls.includes('inspector') && fulls.includes('export'));
 
   body.textContent = '';
   const slots = new Map<PanelId, HTMLElement>();
@@ -438,6 +441,7 @@ function showTab(id: PanelId): void {
   if (geom.tab === id) return;
   geom.tab = id;
   paintTabs();
+  occupants.get(id)?.onActivate?.();
   save();
 }
 
@@ -540,6 +544,7 @@ export function requestDock(id: PanelId, el: HTMLElement, hooks: DockHooks = {})
     home: el.parentNode ? { parent: el.parentNode, next: el.nextSibling } : null,
     onRelease: hooks.onRelease,
     onCollapse: hooks.onCollapse,
+    onActivate: hooks.onActivate,
     icon: hooks.icon,
     label: hooks.label,
     compact: hooks.compact,

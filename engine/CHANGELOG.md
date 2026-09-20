@@ -6,6 +6,11 @@ minors, never removed or signature-changed without a major bump.
 
 Moved verbatim from the comment block that used to live in `src/index.ts`.
 
+## 1.217.0
+
+- Adds bounded authored text stories with literal source, typed breaks, styles, inline objects and content-pinned font resources. Legacy text keeps its existing renderer until an explicit upgrade.
+- Optional `host.text.fontInfo`, `shapeRun` and `layoutRuns` share Unicode 17 source mappings, HarfBuzz shaping and settled paragraph geometry across web and Node. Font identity and missing glyph failures remain explicit.
+
 ## 1.216.0
 
 - Hooks and portable documents receive the effective tool language, including URL and CLI overrides, without rewriting the saved profile.

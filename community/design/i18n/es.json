@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Frecuencia de fotogramas del proyecto",
   "inputs.sequenceMarks.label": "Marcadores de la línea de tiempo",
   "inputs.boxes.fields.animationId.label": "Animación del archivo de origen",
-  "inputs.boxes.fields.animationEdits.label": "Cambios internos de animación"
+  "inputs.boxes.fields.animationEdits.label": "Cambios internos de animación",
+  "inputs.boxes.fields.textStory.label": "Artículo",
+  "inputs.boxes.fields.textFrame.label": "Configuración del marco de texto",
+  "inputs.boxes.fields.pathPaint.label": "Pintura vectorial",
+  "inputs.boxes.fields.vectorSource.label": "Fuente vectorial y créditos",
+  "inputs.boxes.fields.textWrap.label": "Configuración de ajuste de texto",
+  "inputs.textDocument.label": "Documento de texto",
+  "inputs.exportVisibleText.label": "Exportar solo texto visible",
+  "inputs.exportVisibleText.help": "Permitir una exportación recortada a propósito. Se omiten el texto que excede los marcos fijos y los artículos sin colocar; el texto fuente completo permanece en tu documento."
 }

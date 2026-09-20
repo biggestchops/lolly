@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Кадрова честота на проекта",
   "inputs.sequenceMarks.label": "Маркери на времевата линия",
   "inputs.boxes.fields.animationId.label": "Анимация в източника",
-  "inputs.boxes.fields.animationEdits.label": "Вътрешни промени на анимацията"
+  "inputs.boxes.fields.animationEdits.label": "Вътрешни промени на анимацията",
+  "inputs.boxes.fields.textStory.label": "Текстов поток",
+  "inputs.boxes.fields.textFrame.label": "Настройки на текстова рамка",
+  "inputs.boxes.fields.pathPaint.label": "Векторни запълвания и контури",
+  "inputs.boxes.fields.vectorSource.label": "Векторен източник и авторство",
+  "inputs.boxes.fields.textWrap.label": "Настройки на обтичане с текст",
+  "inputs.textDocument.label": "Текстов документ",
+  "inputs.exportVisibleText.label": "Експортирай само видимия текст",
+  "inputs.exportVisibleText.help": "Позволи умишлено изрязан експорт. Текстът извън фиксираните рамки и неразположените потоци се пропускат; пълният източник остава в документа."
 }

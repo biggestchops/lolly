@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Liczba klatek projektu na sekundę",
   "inputs.sequenceMarks.label": "Znaczniki osi czasu",
   "inputs.boxes.fields.animationId.label": "Animacja w źródle",
-  "inputs.boxes.fields.animationEdits.label": "Wewnętrzne zmiany animacji"
+  "inputs.boxes.fields.animationEdits.label": "Wewnętrzne zmiany animacji",
+  "inputs.boxes.fields.textStory.label": "Wątek tekstowy",
+  "inputs.boxes.fields.textFrame.label": "Ustawienia ramki tekstowej",
+  "inputs.boxes.fields.pathPaint.label": "Wypełnienia i obrysy wektorowe",
+  "inputs.boxes.fields.vectorSource.label": "Źródło wektora i autorstwo",
+  "inputs.boxes.fields.textWrap.label": "Ustawienia oblewania tekstem",
+  "inputs.textDocument.label": "Dokument tekstowy",
+  "inputs.exportVisibleText.label": "Eksportuj tylko widoczny tekst",
+  "inputs.exportVisibleText.help": "Zezwól na celowo przycięty eksport. Tekst poza stałymi ramkami i nieumieszczone wątki są pomijane; pełne źródło pozostaje w dokumencie."
 }

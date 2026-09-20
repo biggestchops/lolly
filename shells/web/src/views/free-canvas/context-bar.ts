@@ -13,6 +13,7 @@ import { announce } from '../../a11y.ts';
 import { escape as escapeText } from '../../utils.ts';
 import { t } from '../../i18n.ts';
 import { colorFieldHtml, colorVarLabel, resolveColorVar, wireColorField } from '../../components/color-field.ts';
+import { icon as uiIcon } from '../../lib/icons.ts';
 import { SVG, icon } from '../free-canvas-icons.ts';
 import { bindOp, type FcCtx } from './context.ts';
 
@@ -280,6 +281,7 @@ export function ctxValueSig(fc: FcCtx, boxes: Box[], idx: number[]): string {
     cfg.textColorField,
     cfg.strokeField,
     cfg.kindField,
+    fc.cv.textStoryField,
   ];
   // Delimited, not concatenated: '#fff' + '' and '' + '#fff' are different states, and a
   // signature that cannot tell them apart is a rebuild that never happens. The two
@@ -287,7 +289,8 @@ export function ctxValueSig(fc: FcCtx, boxes: Box[], idx: number[]): string {
   return idx
     .map((i) => {
       const b = boxes[i] || {};
-      return fields.map((f) => (f ? String(b[f] ?? '') : '')).join('\u0001');
+      let textMode='';if(fc.cv.textFrameField&&b[fc.cv.textFrameField]){try{textMode=JSON.parse(String(b[fc.cv.textFrameField])).mode??'';}catch{/* legacy frame seed */}}
+      return [...fields.map((f) => (f ? String(b[f] ?? '') : '')),textMode].join('\u0001');
     })
     .join('\u0002');
 }
@@ -310,8 +313,8 @@ export function stageReserves(fc: FcCtx): { top: number; left: number; right: nu
   const { stageEl } = fc;
   const px = (p: string): number => parseFloat(stageEl.style.getPropertyValue(p)) || 0;
   return {
-    top: px('--stage-reserve-top'),
-    left: px('--stage-reserve-left'),
+    top: Math.max(px('--stage-reserve-top'), px('--stage-rulers-bottom')),
+    left: Math.max(px('--stage-reserve-left'), px('--stage-rulers-right')),
     right: px('--stage-reserve-right'),
   };
 }
@@ -339,6 +342,7 @@ export function rebuildCtxBar(fc: FcCtx, boxes: Box[], idx: number[]): void {
   // widening follows.
   const allStroked = allPaths || (!!vectorCfg && selectionAllKinds(fc, boxes, idx, STROKE_KINDS));
   const canText = !!cfg.textField && selectionNoKinds(fc, boxes, idx, NO_TEXT_KINDS);
+  const composedText = idx.length===1 && !!fc.cv.textStoryField && !!first[fc.cv.textStoryField];
   const canImage = !!cfg.imageField && selectionNoKinds(fc, boxes, idx, NO_IMAGE_KINDS);
   // An audio box's "image" IS its track, so the one button says which it is picking.
   const audioPick = canImage && selectionAllKinds(fc, boxes, idx, new Set(['audio']));
@@ -360,6 +364,8 @@ export function rebuildCtxBar(fc: FcCtx, boxes: Box[], idx: number[]): void {
       }
       ${canText ? `<button type="button" class="fc-cbtn" data-cx="edit" data-tip="${escapeText(t('Edit text (double-click)'))}" aria-label="${escapeText(t('Edit text'))}">${icon(SVG.pencil)}</button>` : ''}
       ${canText ? `<button type="button" class="fc-cbtn fc-cbtn-text" data-cx="text" data-tip="${escapeText(t('Text - size, font, weight, line height, kerning, ligatures, alignment'))}" aria-label="${escapeText(t('Text options'))}">Aa</button>` : ''}
+      ${composedText && fc.storyPath.frame(String(first[cfg.idField]))?.path ? `<button type="button" class="fc-cbtn" data-cx="text-path" data-tip="${escapeText(t('Path options'))}" aria-label="${escapeText(t('Path options'))}">${icon(SVG.pen)}</button><button type="button" class="fc-cbtn" data-cx="text-path-edit" data-tip="${escapeText(t('Edit path'))}" aria-label="${escapeText(t('Edit path'))}">${icon(SVG.nodes)}</button>` : composedText ? `<button type="button" class="fc-cbtn" data-cx="text-frame" data-tip="${escapeText(t('Frame options'))}" aria-label="${escapeText(t('Frame options'))}">${icon(SVG.size)}</button><button type="button" class="fc-cbtn" data-cx="text-flow" data-tip="${escapeText(t('Continue text'))}" aria-label="${escapeText(t('Continue text'))}">${uiIcon('link', { size: 18 })}</button>` : ''}
+      ${composedText ? `<button type="button" class="fc-cbtn" data-cx="text-convert" data-tip="${escapeText(t('Convert to paths'))}" aria-label="${escapeText(t('Convert to paths'))}">${icon(SVG.outlineText)}</button>` : ''}
       ${canImage ? `<button type="button" class="fc-cbtn" data-cx="setimg"${audioPick ? ' data-cx-audio="1"' : ''} data-tip="${escapeText(imgTip)}" aria-label="${escapeText(imgTip)}">${icon(audioPick ? SVG.audioKind : SVG.image)}</button>` : ''}
       ${verbsOnly ? '' : `<button type="button" class="fc-cbtn" data-cx="more" data-tip="${escapeText(t('More - shape, radius, opacity, fit, blend, shadow'))}" aria-label="${escapeText(t('More options'))}">${icon(SVG.more)}</button>`}
       <span class="fc-sep fc-sep-v"></span>
@@ -373,7 +379,12 @@ export function rebuildCtxBar(fc: FcCtx, boxes: Box[], idx: number[]): void {
     { b.addEventListener('click', (e) => {
       e.stopPropagation();
       const cx = b.dataset.cx;
-      if (cx === 'text') {
+      if(cx==='text-convert'){fc.storyVector.open(b);return;}
+      if(cx==='text-path'){fc.storyPathUi.open(b,String(first[cfg.idField]));return;}
+      if(cx==='text-path-edit'){fc.penTool.startPenEdit(String(first[cfg.idField]));return;}
+      if (cx === 'text-frame' || cx === 'text-flow') {
+        fc.storyFlowUi.open(b,String(first[cfg.idField]),cx==='text-frame');
+      } else if (cx === 'text') {
         if (fc.inspectorPort) fc.inspectorPort.reveal('text');
         else fc.fieldPanels.openTextPanel(b);
       } else if (cx === 'stroke') {
@@ -382,7 +393,7 @@ export function rebuildCtxBar(fc: FcCtx, boxes: Box[], idx: number[]): void {
       } else if (cx === 'nodes') {
         if (fc.selection.size) fc.penTool.startPenEdit([...fc.selection][0]!);
       } else if (cx === 'edit') {
-        if (fc.selection.size) fc.textEdit.startTextEdit([...fc.selection][0]!, { selectAll: true });
+        if (fc.selection.size) fc.textEdit.startTextEdit([...fc.selection][0]!, { selectAll: !(fc.cv.textStoryField && first[fc.cv.textStoryField]) });
       } else if (cx === 'kf') {
         if (b.getAttribute('aria-disabled') !== 'true') addKeyframeFromCanvas(fc);
       } else if (cx === 'dup') fc.ops.duplicateSelection();

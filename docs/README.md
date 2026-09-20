@@ -59,6 +59,8 @@ security posture).
 | [utilities.md](utilities.md) | end user | The five routed workbenches - Spreadsheet, Convert, Colour Lab, Unpack, Script audio - what each does on-device, and where each one stops. |
 | [favourites.md](favourites.md) | end user | Starring a tool and the strip it earns above the grid, the Gallery/Cover Flow view choice, and why the list travels with a profile export while the view mode stays on the device. |
 | [design-import.md](design-import.md) | end user | Bringing a Figma, Penpot, Illustrator or InDesign file into Design as an editable session, parsed entirely on device. |
+| [text-composition.md](text-composition.md) | end user | Canvas text editing, linked frames, typography, text on a path, vectors and source recovery. |
+| [../engine/text-composition.md](../engine/text-composition.md) | developer | Literal source, shaping, geometry, native projection, cache bounds and export receipts. |
 | [hdr-editing.md](hdr-editing.md) | end user | Optional float image and Sequence editing, sRGB/P3 brand faces, output precision and current limits. |
 | [sequence-editor.md](sequence-editor.md) | end user | Editing in time: which clip a canvas click edits, onion-skin ghosts, split scope and Join, reversible detach audio, and trimming (pointer and keyboard). |
 | [extension.md](extension.md) | end user | The Lolly URL Screenshot browser extension, which gives the web app page capture that a browser tab cannot do alone. |

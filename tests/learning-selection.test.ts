@@ -202,3 +202,11 @@ test('motion never silently falls back to a still when video export is unavailab
   );
   assert.match(candidates[0]!.problem!, /video rendition/);
 });
+
+test('course sources retain canvas dimensions and exact emoji settings without unrelated session metadata', async () => {
+  const { learningSourceValues } = await import('../shells/web/src/lib/learning-selection.ts');
+  const source = { textDocument: '{"version":1}', __export_width: '640', __export_height: '360', __export_unit: 'px', __export_dpi: '300', __emoji: { emoji: 'none', emojifx: 'original' }, __emojiAssets: [{ id: 'user/emoji/set' }], __label: 'Private label', __toolId: 'design' };
+  const captured = learningSourceValues(source);
+  assert.equal(captured.__export_width, '640');assert.equal(captured.__export_height, '360');assert.deepEqual(captured.__emoji, source.__emoji);assert.deepEqual(captured.__emojiAssets, source.__emojiAssets);assert.equal(captured.textDocument, source.textDocument);
+  assert.ok(!('__label' in captured) && !('__toolId' in captured));source.__emoji.emoji = 'changed';assert.equal((captured.__emoji as { emoji: string }).emoji, 'none');
+});

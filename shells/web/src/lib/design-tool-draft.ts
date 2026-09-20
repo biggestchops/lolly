@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 import type { DesignToolDraftV1, ArtboardVariantV1, DesignInputV1 } from '@lolly-tools/core/design-tool-v1';
 import { validateDesignTool } from '@lolly-tools/core/design-tool-v1';
+import { parseTextDocument,textStyleResolver } from '@lolly/engine';
 import type { Runtime } from '../../../../engine/src/runtime.ts';
 
 const drafts = new WeakMap<Runtime, DesignToolDraftV1>();
@@ -14,10 +15,14 @@ export function restoreDesignToolDraft(runtime: Runtime, value: unknown): void {
   try { validateDesignTool(d); setDesignToolDraft(runtime,d); } catch { return; }
 }
 
-export function designVariants(boxes: Array<Record<string, unknown>>, width: number, height: number, background: string): ArtboardVariantV1[] {
+export function designVariants(boxes: Array<Record<string, unknown>>, width: number, height: number, background: string, textDocument?:unknown): ArtboardVariantV1[] {
+  const document=textDocument?parseTextDocument(textDocument):undefined;
+  const attach=(variant:ArtboardVariantV1):ArtboardVariantV1=>{if(!document)return variant;const ids=new Set(variant.boxes.map(box=>String(box.id))),stories=document.stories.filter(story=>story.frameIds.some(id=>ids.has(id)));return {...variant,textDocument:{...structuredClone(document),stories:structuredClone(stories)}};};
+  const linkedArtboards=document?.stories.some(story=>new Set(story.frameIds.map(id=>boxes.find(box=>box.id===id)?.frame??'')).size>1);
+  if(linkedArtboards)return [attach({id:'linked-artboards',label:'Linked artboards',width:Math.max(width,...boxes.map(box=>Number(box.x||0)+Number(box.w||0))),height:Math.max(height,...boxes.map(box=>Number(box.y||0)+Number(box.h||0))),background,boxes:structuredClone(boxes)})];
   const frames = boxes.filter(b => b.kind === 'frame' && !b.hidden);
-  if (!frames.length) return [{ id: 'artboard', label: 'Artboard', width, height, background, boxes: structuredClone(boxes) }];
-  return frames.map((frame, i) => ({
+  if (!frames.length) return [attach({ id: 'artboard', label: 'Artboard', width, height, background, boxes: structuredClone(boxes) })];
+  return frames.map((frame, i) => attach({
     id: String(frame.id), label: String(frame.name || `Artboard ${i + 1}`), width: Number(frame.w), height: Number(frame.h), background: String(frame.bg || background),
     boxes: boxes.filter(b => b.kind !== 'frame' && b.frame === frame.id).map(b => ({ ...structuredClone(b), x: Number(b.x || 0) - Number(frame.x || 0), y: Number(b.y || 0) - Number(frame.y || 0), frame: '' })),
   }));
@@ -36,9 +41,10 @@ export function makeDesignInput(draft: DesignToolDraftV1, layerId: string, prope
   if (['image', 'text', 'font', 'background'].includes(id)) id = `editable_${id}`;
   const ids = new Set(draft.inputs.map(f => f.input.id));
   while (ids.has(id)) id += '_2';
-  const size = Number(b.fontSize) || 32;
+  const story=v.textDocument?.stories.find(story=>story.id===b.textStory),character=story?textStyleResolver(v.textDocument!).character(story,story.paragraphs[0]!,0):undefined;
+  const size = character?.size ?? (Number(b.fontSize) || 32);
   const f: DesignInputV1 = {
-    input: { id, label: base, type: property === 'text' ? 'longtext' : 'asset', default: b[property] ?? '', ...(property === 'image' ? { assetType: 'image', allowUpload: true } : { maxLength: 200, rows: 3 }) },
+    input: { id, label: base, type: property === 'text' ? 'longtext' : 'asset', default: property==='text'&&story?story.source:b[property] ?? '', ...(property === 'image' ? { assetType: 'image', allowUpload: true } : { maxLength: 200, rows: 3 }) },
     targets: [{ variantId: v.id, layerId, property }],
     ...(property === 'text' ? { text: { mode: 'fixed' as const, min: size, max: size, wrap: true } } : {}),
   };

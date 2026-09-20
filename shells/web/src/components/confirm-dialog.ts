@@ -53,6 +53,7 @@ export function confirmDialog({ title, message, confirmLabel = 'Delete', danger 
       </div>`;
     const modal = mountModal<boolean>(content, {
       className: 'modal',
+      ariaLabel: title,
       cancelValue: false,
       initialFocus: (el) => el.querySelector<HTMLElement>('.modal-cancel'), // default focus on the safe choice
       onClose: (result) => { openDialogs.delete(modal.el); resolve(result ?? false); },
@@ -99,6 +100,7 @@ export function choiceDialog({ title, message, choices = [], tag }: ChoiceDialog
       </div>`;
     const modal = mountModal<string | null>(content, {
       className: 'modal',
+      ariaLabel: title,
       cancelValue: null,
       initialFocus: (el) => el.querySelector<HTMLElement>('.modal-primary, [data-choice]'), // default focus on the lead choice
       onClose: (result) => { openDialogs.delete(modal.el); resolve(result ?? null); },
@@ -137,6 +139,7 @@ export function noticeDialog({ title, message, okLabel = 'Got it' }: NoticeDialo
       </div>`;
     const modal = mountModal<void>(content, {
       className: 'modal',
+      ariaLabel: title,
       initialFocus: (el) => el.querySelector<HTMLElement>('[data-act="ok"]'),
       onClose: () => { openDialogs.delete(modal.el); resolve(); },
     });
@@ -188,6 +191,7 @@ export function promptDialog({ title, message, confirmLabel = 'OK', placeholder 
       </div>`;
     const modal = mountModal<string | null>(content, {
       className: 'modal',
+      ariaLabel: title,
       cancelValue: null,
       initialFocus: (el) => el.querySelector<HTMLElement>('.modal-input'),
       onClose: (result) => { openDialogs.delete(modal.el); resolve(result ?? null); },

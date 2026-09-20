@@ -363,7 +363,6 @@
     "shells/web/src/views/free-canvas/helpers.ts": 5,
     "shells/web/src/views/free-canvas/keys.ts": 7,
     "shells/web/src/views/free-canvas/menus.ts": 10,
-    "shells/web/src/views/free-canvas/modes.ts": 1,
     "shells/web/src/views/free-canvas/narration.ts": 3,
     "shells/web/src/views/free-canvas/objects.ts": 5,
     "shells/web/src/views/free-canvas/select.ts": 1,

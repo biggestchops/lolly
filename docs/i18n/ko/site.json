@@ -360,5 +360,7 @@
   "Who is behind this": "누가 만들었나요",
   "**We built Lolly for ourselves.** SUSE needed thousands of on-brand files, each with its name sealed inside, made without handing anything to outside services. So we built a tool that does all of it on the device, and released it as open source, like everything else we make. We keep maintaining it because we use it every day. **There is no obligation:** everything here works with or without us.": "**Lolly는 우리 자신을 위해 만들었어요.** SUSE에는 이름이 내부에 담긴 브랜드 준수 파일이 수천 개 필요했고, 외부 서비스에 아무것도 넘기지 않고 만들어야 했어요. 그래서 모든 과정을 기기에서 처리하는 도구를 만들었고, 우리가 만드는 다른 모든 것처럼 오픈소스로 공개했어요. 매일 사용하기 때문에 계속 관리하고 있어요. **의무는 전혀 없어요.** 여기 있는 모든 것은 우리가 있든 없든 작동해요.",
   "FAQ": "자주 묻는 질문",
-  "No cookies · No analytics · Nothing reported back": "쿠키 없음 · 분석 없음 · 어디에도 보고되지 않음"
+  "No cookies · No analytics · Nothing reported back": "쿠키 없음 · 분석 없음 · 어디에도 보고되지 않음",
+  "Text in Design": "Design의 텍스트",
+  "Authored text composition": "작성된 텍스트 조판"
 }

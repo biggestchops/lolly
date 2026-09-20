@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Proje kare hızı",
   "inputs.sequenceMarks.label": "Zaman çizelgesi işaretçileri",
   "inputs.boxes.fields.animationId.label": "Kaynaktaki animasyon",
-  "inputs.boxes.fields.animationEdits.label": "Animasyon iç düzenlemeleri"
+  "inputs.boxes.fields.animationEdits.label": "Animasyon iç düzenlemeleri",
+  "inputs.boxes.fields.textStory.label": "Metin akışı",
+  "inputs.boxes.fields.textFrame.label": "Metin çerçevesi ayarları",
+  "inputs.boxes.fields.pathPaint.label": "Vektör dolguları ve konturları",
+  "inputs.boxes.fields.vectorSource.label": "Vektör kaynağı ve katkıda bulunanlar",
+  "inputs.boxes.fields.textWrap.label": "Metin sarma ayarları",
+  "inputs.textDocument.label": "Metin belgesi",
+  "inputs.exportVisibleText.label": "Yalnızca görünür metni dışa aktar",
+  "inputs.exportVisibleText.help": "Kasıtlı kırpılmış dışa aktarıma izin verin. Sabit çerçevelerin dışındaki metin ve yerleştirilmemiş akışlar atlanır; tam kaynak belgede kalır."
 }

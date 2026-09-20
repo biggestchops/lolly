@@ -3,7 +3,7 @@ import { MAX_REVISION_ARCHIVE_BYTES } from './revision-limits.ts';
 /** Portable local history. IDs are JSON fields, never archive paths. Validate
  * every payload before storage; retained parents may legitimately be compacted. */
 import type { StateRecord, SavedStateData } from './state.ts';
-import { collectAssetRefs } from './state.ts';
+import { collectAssetRefs } from './asset-ref-collector.ts';
 import type { DocumentHead } from './revision-records.ts';
 import type { RevisionEntry } from './revision-history.ts';
 import type { RecoveryRecord } from './revision-recovery.ts';

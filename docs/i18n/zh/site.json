@@ -360,5 +360,7 @@
   "Who is behind this": "这背后是谁",
   "**We built Lolly for ourselves.** SUSE needed thousands of on-brand files, each with its name sealed inside, made without handing anything to outside services. So we built a tool that does all of it on the device, and released it as open source, like everything else we make. We keep maintaining it because we use it every day. **There is no obligation:** everything here works with or without us.": "**我们做 Lolly，首先是为了自己用。**SUSE 需要成千上万份符合品牌规范的文件，每一份内部都封存着它的出处信息，而且制作过程不能把任何东西交给外部服务。于是我们做了一个在设备本地完成这一切的工具，并像我们做的其他一切一样，把它开源发布。我们持续维护它，是因为我们每天都在用它。**你没有任何义务：**这里的一切，有没有我们都能正常运作。",
   "FAQ": "常见问题",
-  "No cookies · No analytics · Nothing reported back": "无 Cookie · 无分析追踪 · 不回传任何数据"
+  "No cookies · No analytics · Nothing reported back": "无 Cookie · 无分析追踪 · 不回传任何数据",
+  "Text in Design": "Design 中的文本",
+  "Authored text composition": "创作文本排版"
 }

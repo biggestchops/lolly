@@ -894,3 +894,42 @@ export { checkBrandDesign, applyBrandFix } from './brand-check.ts';
 export type { BrandFinding, BrandFix } from './brand-check.ts';
 export { BRAND_STYLE_PROPERTIES, summarizeBrandStyles, readBrandStyleEvidence } from './brand-evidence.ts';
 export type { BrandStyleProperty, BrandStyleValue, BrandStyleEvidence } from './brand-evidence.ts';
+
+export { parseTextDocument, serializeTextDocument, createTextStory, TEXT_DOCUMENT_MAX_BYTES } from './text-story-document.ts';
+export { assertTextRange, snapTextRange, textBoundaries, sourceBreaks, paragraphRanges, deletionRange, TextSourceError, TEXT_SOURCE_MAX_UNITS } from './text-source.ts';
+export { replaceStoryRange, formatStoryRange, formatStoryParagraphs, storyParagraphIds, normalizeTextSpans } from './text-edits.ts';
+export type { TextInsertion, StoryEditOptions, StoryEditResult, TextSpanPatch } from './text-edits.ts';
+export { sliceTextDocument, importTextFragment } from './text-fragment.ts';
+export { resizeDesignTextFrames } from './text-design.ts';
+export { composeText, TEXT_LAYOUT_ALGORITHM } from './text-layout.ts';
+export { prepareTextParagraph } from './text-paragraph.ts';
+export type { TextParagraphPiece, ShapedTextLine } from './text-paragraph.ts';
+export { textStyleResolver, mergeTextCharacter } from './text-styles.ts';
+export { styleTextRange, defineTextStyle, nextParagraphStyle } from './text-style-commands.ts';
+export type { TextStyleCommand } from './text-style-commands.ts';
+export { removeTextFrames, deleteTextStory, linkTextFrames, splitTextThread, detachTextFrame, duplicateTextFrames, placeTextStory, insertTextFrame } from './text-thread-commands.ts';
+export type { TextThreadSnapshot } from './text-thread-commands.ts';
+export { textHyphenationLanguage } from './text-hyphenation.ts';
+export { previewTextCleanup, applyTextCleanup } from './text-cleanup.ts';
+export type { TextCleanupEdit, TextCleanupPreview, TextCleanupOptions } from './text-cleanup.ts';
+
+export { textLayoutSvg } from './text-layout-svg.ts';
+export { parseTextFrame } from './text-frame.ts';
+export { readDesignText, designTextFrame, upgradeDesignText, defaultTextFrameSettings } from './text-design.ts';
+export type { DesignTextBox, TextFrameSettingsV1 } from './text-design.ts';
+
+export { captureTextFrames, pasteTextFrames } from './text-frame-clipboard.ts';
+export type { TextLayoutReceipt } from './text-layout-cache.ts';
+
+export { textRecipe, type TextRecipe } from './text-recipes.ts';
+
+export { emojiTextPath as textGuideGeometry } from './emoji-text-path.ts';
+export { transformTextPath } from './text-spacing.ts';
+export { importVectorPaint } from './vector-paint-import.ts';
+export { renderVectorPaint, parseVectorPaint, transformVectorPaintPaths, vectorPaintMatrices, vectorMatrix, inverseVectorMatrix, multiplyVectorMatrix } from './vector-paint.ts';
+export type { VectorPaintV1, VectorPaintNode, VectorMatrix } from './vector-paint.ts';
+
+export { designTextWrap } from './text-design-wrap.ts';
+export { scaleTextStory, scaleTextFrame } from './text-scale.ts';
+
+export { textSemanticSource } from './text-semantic.ts';

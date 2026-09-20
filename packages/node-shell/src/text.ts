@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { base64ToBytes } from '../../../engine/src/bytes.ts';
 /**
  * host.text (Node): text-to-path bridge primitive for the CLI + TUI.
  *
@@ -26,7 +27,8 @@ import { fileURLToPath } from 'node:url';
 
 import { catalogFile, contentRoots, contentUrlFile } from './content-roots.ts';
 
-import type { TextAPI, TextPathCluster } from '@lolly-tools/core/host-v1';
+import type { AssetsAPI, TextAPI, TextPathCluster } from '@lolly-tools/core/host-v1';
+import { createTextCompositionAPI } from './text-composition.ts';
 import { createGlyphCache } from './text-glyphs.ts';
 import type { Blob as HbBlob, Face as HbFace, Font as HbFont, Feature as HbFeature } from 'harfbuzzjs';
 
@@ -318,8 +320,15 @@ function clustersFrom(
   });
 }
 
-export function createNodeTextAPI({ repoRoot }: { repoRoot: string }): TextAPI {
+export function createNodeTextAPI({ repoRoot, assets, parseXml }: { repoRoot: string; assets?: AssetsAPI; parseXml?: (source: string) => Document }): TextAPI {
+  const composition = createTextCompositionAPI(async font => {
+    if(font.source.kind==='embedded')return base64ToBytes(font.source.base64);
+    if (font.source.kind === 'bundled') return loadFontBytes(font.source.path, repoRoot);
+    if (!assets?.bytes) throw new Error('This host cannot read the pinned text font asset.');
+    return assets.bytes(await assets.get(font.source.id));
+  }, parseXml);
   return {
+    ...composition,
     async characters(fontUrl) { return [...(await loadFace(fontUrl, repoRoot)).unicodes].sort((a, b) => a - b); },
     async toPath({ text, fontUrl, fontSize, features, letterSpacing = 0, variations, fallbackFonts, clusters: wantClusters, preserveWhitespaceAdvance = false }) {
       if (!text || (!preserveWhitespaceAdvance && !text.trim())) {

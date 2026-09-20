@@ -360,5 +360,7 @@
   "Who is behind this": "Ai đứng sau việc này",
   "**We built Lolly for ourselves.** SUSE needed thousands of on-brand files, each with its name sealed inside, made without handing anything to outside services. So we built a tool that does all of it on the device, and released it as open source, like everything else we make. We keep maintaining it because we use it every day. **There is no obligation:** everything here works with or without us.": "**Chúng tôi xây dựng Lolly cho chính mình.** SUSE cần hàng nghìn tệp đúng thương hiệu, mỗi tệp đều gắn kín tên bên trong, được tạo ra mà không cần gửi bất cứ thứ gì cho dịch vụ bên ngoài. Vì vậy chúng tôi đã xây dựng một công cụ làm tất cả những việc đó ngay trên thiết bị, và phát hành nó dưới dạng mã nguồn mở, như mọi thứ khác chúng tôi làm ra. Chúng tôi vẫn tiếp tục duy trì nó vì chúng tôi dùng nó mỗi ngày. **Không có ràng buộc nào cả:** mọi thứ ở đây đều hoạt động dù có chúng tôi hay không.",
   "FAQ": "FAQ",
-  "No cookies · No analytics · Nothing reported back": "Không cookie · Không phân tích · Không gửi báo cáo nào"
+  "No cookies · No analytics · Nothing reported back": "Không cookie · Không phân tích · Không gửi báo cáo nào",
+  "Text in Design": "Văn bản trong Design",
+  "Authored text composition": "Dàn văn bản được soạn"
 }

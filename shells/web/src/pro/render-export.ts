@@ -54,6 +54,17 @@ import { runTemplateScripts, waitForQuiescence } from '../lib/render-lifecycle.t
 import { c2paDefaultOn } from '../lib/c2pa-policy.ts';
 import { MOTION_EXPORT_FORMATS } from './folder-rows.ts';
 
+async function applySavedEmoji(runtime: Awaited<ReturnType<typeof createRuntime>>, host: HostV1, values: Record<string, InputValue> | undefined): Promise<void> {
+  const saved = values?.__emoji;
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return;
+  const { seedEmojiRuntime } = await import('../lib/emoji-runtime-style.ts');
+  await seedEmojiRuntime(runtime, host, {
+    emoji: 'emoji' in saved && typeof saved.emoji === 'string' ? saved.emoji : '',
+    emojifx: 'emojifx' in saved && typeof saved.emojifx === 'string' ? saved.emojifx : '',
+    ...('emojistyle' in saved && typeof saved.emojistyle === 'string' ? { emojistyle: saved.emojistyle } : {}),
+  });
+}
+
 // Re-exported for existing importers (pro/batch, pro/index, pro/sessions) that
 // historically pulled these from here. The definitions now live in tool-loader.js
 // so bridge/embed.js can share them without a circular import.
@@ -363,6 +374,7 @@ export async function renderRowToBlob(row: BatchRow, host: HostV1, { format, wid
   let stage: ExportStage | undefined;
   let posterClock: ReturnType<typeof import('../bridge/sequence-dom.ts').createSequenceTime> | null = null;
   try {
+    await applySavedEmoji(runtime, host, row.values);
     const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, fixedHeight: layoutH, composeStack, host, settleMs, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el), thumbnail });
     stage = mounted.stage;
     const canvas = mounted.canvas;
@@ -491,21 +503,24 @@ export async function mountTemplateMotion(host: HostV1, toolId: string, values: 
  * SVG, doesn't choke resvg. Falls back to a single whole-canvas export for a tool that
  * declares no page boxes.
  */
-export async function renderToolPages(row: BatchRow, host: HostV1, { format, thumbnail, thumbAssets, signal }: RenderRowOpts = {}): Promise<RenderPagesResult> {
+export async function renderToolPages(row: BatchRow, host: HostV1, { format, width, height, unit = 'px', thumbnail, thumbAssets, signal }: RenderRowOpts = {}): Promise<RenderPagesResult> {
   const tool = await getTool(row.toolId, row.artifactDigest);
   if (!isExportable(tool.manifest)) {
     throw new Error(`"${tool.manifest.name}" is render-only and cannot be exported.`);
   }
-  const layoutW = tool.manifest.render.width;   // one page's native size
+  const variant = tool.manifest.designTool?.variants.find(v => v.id === designSelection(tool.manifest.designTool!, row.values || {}).variantId);
+  const bothGiven = width !== undefined && width > 0 && height !== undefined && height > 0;
+  const layoutW = bothGiven ? Math.max(1, Math.round(toCssPx({ value: width, unit }))) : variant?.width ?? tool.manifest.render.width;
+  const layoutH = bothGiven ? Math.max(1, Math.round(toCssPx({ value: height, unit }))) : variant?.height ?? tool.manifest.render.height;
 
   const runtime = await createRuntime(tool, withToolNet(thumbAssets ? withThumbAssets(host) : host, tool.manifest), { ...(row.values ?? {}) });
 
-  // No fixed height: let the document lay out its FULL height so every page box is
-  // measured (page boxes are fixed-size, so they render identically whether or not
-  // the viewport clips them).
+  // Paged documents grow to their content. Fixed canvases need a real containing
+  // height, including Design's single artboard with absolutely positioned objects.
   let stage: ExportStage | undefined;
   try {
-    const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, host, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el) });
+    await applySavedEmoji(runtime, host, row.values);
+    const mounted = await mountToolCanvas(tool.styles, runtime.getHydrated(), { layoutW, fixedHeight: tool.manifest.render.paged ? undefined : layoutH, host, getModel: () => runtime.getModel(), mountEmoji: (el) => runtime.applyEmojiToDom(el) });
     stage = mounted.stage;
     const canvas = mounted.canvas;
     const fmt = chooseFormat(tool.manifest, format);
@@ -519,7 +534,7 @@ export async function renderToolPages(row: BatchRow, host: HostV1, { format, thu
       // box: that box IS this page's output size, and a studio whose curve detail follows
       // the output is built for it. offsetWidth/Height are transform-independent.
       const pageSize = { width: el.offsetWidth, height: el.offsetHeight };
-      pages.push(await withStudioExport(mounted.studio, canvas, () => runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail, signal }), undefined, pageSize));
+      pages.push(await withStudioExport(mounted.studio, canvas, () => runtime.export(el, fmt, { watermark: false, embedMeta: false, thumbnail, signal, ...(el === canvas ? pageSize : {}) }), undefined, pageSize));
       signal?.throwIfAborted();
     }
     return { pages, format: fmt };

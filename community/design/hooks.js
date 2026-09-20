@@ -908,6 +908,12 @@ function pathHtmlFor(b) {
   if (!raw) return '';
 
   var geom = geomApi();
+  if (b.pathPaint) {
+    if (!geom || !geom.paintAuthored) return pathPlaceholder(w, h, 'This host cannot render the vector paint.');
+    var painted = geom.paintAuthored(raw, String(b.pathPaint), w, h, 'paint-' + String(b.id || 'path').replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 96));
+    if (!painted.ok) return pathPlaceholder(w, h, painted.message);
+    return painted.value;
+  }
   if (!geom || !geom.decodeAuthored || !geom.fromNodes) {
     return pathPlaceholder(w, h, 'host.geom is unavailable, so a path box cannot be drawn (needs engine >= 1.64)');
   }
@@ -1692,6 +1698,9 @@ function playedStartS(b, spans) {
 
 function timeAttrsFor(b, spans) {
   var parts = [];
+  if (typeof b.vectorSource === 'string' && b.vectorSource.length <= 1000000) {
+    try { var source = JSON.parse(b.vectorSource); if (source.sourceCopy === true && boolVal(b.hidden, false)) parts.push(' data-export-hide=""'); else if (Array.isArray(source.sources) && source.sources.length) parts.push(' data-emoji-vector-sources="' + esc(JSON.stringify(source.sources)) + '"'); } catch (_) {}
+  }
   // SCENERY (no lane, no start authored) carries no TIMING attributes - the contract
   // every document written before the time model still renders under. Depth and
   // keyframes are not timing: a scenery box on a sequence stage is visible throughout
@@ -2185,6 +2194,8 @@ function frameGroupsFor(boxes, ext) {
       // fragment revealed on advance; the presenter reads data-build. Empty = always shown.
       var cbBuild = Number(cb.build);
       var buildAttr = (isFinite(cbBuild) && cbBuild >= 1) ? ' data-build="' + Math.round(cbBuild) + '"' : '';
+      var pptxAnim = deckAnimFor(cb, fb);
+      if (pptxAnim) buildAttr += ' data-pptx-anim="' + esc(JSON.stringify(pptxAnim)) + '"';
       // Explicit morph match key (plan 112 M5): data-match links a box to another on the
       // next/previous slide so the Morph transition animates one into the other.
       var cbMatch = (cb.matchOf != null) ? String(cb.matchOf).trim() : '';
@@ -2566,9 +2577,100 @@ function buildUserCss(v) {
   return css.replace(/<\/(style)/gi, '<\\/$1').replace(/@import[^;]*;?/gi, '');
 }
 
-function compute(model) {
-  var inp = inputsFrom(model);
+function textWrapContextFor(boxes) {
+  var objects = boxes.filter(function (box) { return box && box.textWrap && !boolVal(box.hidden, false); });
+  if (!objects.length) return undefined;
+  function pose(box) { return { id: String(box.id), scope: String(box.frame || ''), x: Math.round(Number(box.x) || 0), y: Math.round(Number(box.y) || 0), width: Math.max(1, Math.round(Number(box.w) || 1)), height: Math.max(1, Math.round(Number(box.h) || 1)), rotation: Math.round((Number(box.rot) || 0) * 10) / 10, flipX: boolVal(box.flipH, false), flipY: boolVal(box.flipV, false) }; }
+  return { placements: boxes.filter(function (box) { return box && box.textStory; }).map(pose), objects: objects.map(function (box) {
+    if (typeof box.textWrap !== 'string' || box.textWrap.length > 4096) throw new Error('The text wrap settings are invalid.');
+    var settings = JSON.parse(box.textWrap);
+    if (Number(box.rx) || Number(box.ry)) throw new Error('Text wrap supports flat objects. Remove the perspective tilt before wrapping text.');
+    if (settings.mode === 'contour' && (box.pathPaint || box.clip || box.kind === 'image' || ['rect','ellipse','circle','pill',undefined,''].indexOf(box.shape) < 0 && box.kind !== 'path')) throw new Error('This object needs bounding-box text wrap. Its visible contour is not supported.');
+    return Object.assign(pose(box), { mode: settings.mode, offset: settings.offset, geometry: { kind: box.kind === 'path' ? 'path' : ['ellipse','circle'].indexOf(String(box.shape)) >= 0 ? 'ellipse' : 'rect', radius: box.shape === 'pill' ? 100000 : Number(box.radius) || 0 } }, box.kind === 'path' ? { geometry: { kind: 'path', radius: Number(box.radius) || 0, path: String(box.path || '') } } : {});
+  }) };
+}
+
+// Composed stories have one source; boxes own only placement and frame settings.
+function composeDesignStories(model, inp, exporting) {
+  if (!host.text || typeof host.text.layoutRuns !== 'function') throw new Error('This engine cannot compose this text document.');
+  var doc = JSON.parse(inp.textDocument);
   var boxes = Array.isArray(inp.boxes) ? inp.boxes : [];
+  var byId = Object.create(null), composed = Object.create(null), textPreflight = { frames: [], issues: [] };
+  boxes.forEach(function (box) {
+    if (box && box.textStory) {
+      if (byId[box.id]) throw new Error('Text frame ids must be unique.');
+      if (box.text) throw new Error('Composed text also contains a legacy source.');
+      byId[box.id] = box;
+    }
+  });
+  if (!doc || !Array.isArray(doc.stories)) throw new Error('Invalid text document.');
+  return doc.stories.reduce(function (pending, story) {
+    return pending.then(function () {
+      var frames = story.frameIds.map(function (id) {
+        var box = byId[id];
+        if (!box || box.textStory !== story.id) throw new Error('The text story names a missing frame.');
+        var settings = JSON.parse(box.textFrame);
+        if (!settings || ['id','storyId','width','height'].some(function (key) { return Object.prototype.hasOwnProperty.call(settings, key); })) throw new Error('Text frame identity and size belong to the box.');
+        return Object.assign({}, settings, { id: id, storyId: story.id, width: Number(box.w), height: Number(box.h), hidden: boolVal(box.hidden, false), locked: boolVal(box.locked, false) });
+      });
+      var sourceCopy = story.frameIds.length && story.frameIds.every(function (id) { var box = byId[id], value = box.vectorSource; try { return boolVal(box.hidden, false) && value && JSON.parse(value).sourceCopy === true; } catch (_) { return false; } });
+      // Hidden editable backups retain their source without loading fonts to paint it.
+      // An unplaced validation request still enforces the complete document schema.
+      var layoutDoc = sourceCopy ? Object.assign({}, doc, { stories: doc.stories.map(function (item) { return item === story ? Object.assign({}, item, { frameIds: [] }) : item; }) }) : doc;
+      return host.text.layoutRuns({ document: layoutDoc, storyId: story.id, frames: sourceCopy ? [] : frames, wrap: textWrapContextFor(boxes), includeSvg: true }).then(function (layout) {
+        if (sourceCopy) frames.forEach(function (frame) { composed[frame.id] = { id: frame.id, width: frame.width, height: frame.height, svg: '' }; });
+        if (!sourceCopy) textPreflight.issues = textPreflight.issues.concat(layout.diagnostics.filter(function (notice) { return notice.severity === 'error'; }).map(function (notice) { return notice.message; }));
+        layout.frames.forEach(function (frame) {
+          if (!boolVal(byId[frame.id].hidden, false) && !sourceCopy) {
+            var stamp = /data-text-layout="([a-f0-9]+)"/.exec(frame.svg || '');
+            if (!stamp) throw new Error('The composed text layout has no export receipt.');
+            textPreflight.frames.push({ id: frame.id, stamp: stamp[1] });
+          }
+        });
+        if (exporting) {
+          if (!sourceCopy) {
+            var problems = layout.diagnostics.filter(function (notice) { return notice.severity === 'error' && !(inp.exportVisibleText === true && ['overset','story-unplaced','line-width'].indexOf(notice.code) >= 0); });
+            if (problems.length) throw new Error('Text export needs attention: ' + problems.map(function (notice) { return notice.message; }).join(' ') + ' Review the story or choose Export visible text only.');
+          }
+          var nodes = exporting.node && exporting.node.querySelectorAll ? Array.from(exporting.node.querySelectorAll('[data-text-frame]')) : [];
+          if (exporting.node && exporting.node.matches && exporting.node.matches('[data-text-frame]')) nodes.push(exporting.node);
+          var scopeBoxes = exporting.node && exporting.node.querySelectorAll ? Array.from(exporting.node.querySelectorAll('[data-box-id]')) : [];
+          if (exporting.node && exporting.node.matches && exporting.node.matches('[data-box-id]')) scopeBoxes.push(exporting.node);
+          var scopePage = exporting.node && exporting.node.closest && exporting.node.closest('[data-frame-id]');
+          var pageId = scopePage && scopePage.getAttribute('data-frame-id');
+          layout.frames.forEach(function (frame) {
+            var copies = nodes.filter(function (node) { return node.getAttribute('data-text-frame') === frame.id; });
+            var inScope = scopeBoxes.some(function (node) { return node.getAttribute('data-box-id') === frame.id; }) || !scopeBoxes.length && (!pageId || String(byId[frame.id].frame || '') === pageId);
+            if (!sourceCopy && !boolVal(byId[frame.id].hidden, false) && inScope && !copies.length) throw new Error('Text layout is still changing. Wait for the current text to appear, then export again.');
+            var expected = /data-text-layout="([a-f0-9]+)"/.exec(frame.svg || '');
+            copies.forEach(function (node) {
+              if (!expected || node.getAttribute('data-text-layout') !== expected[1]) throw new Error('Text layout is still changing. Wait for the current text to appear, then export again.');
+            });
+          });
+        }
+        layout.frames.forEach(function (frame) { composed[frame.id] = frame; });
+      });
+    });
+  }, Promise.resolve()).then(function () {
+    Object.keys(byId).forEach(function (id) { if (!composed[id]) throw new Error('A text frame has no owning story.'); });
+    var output = compute(model, composed);
+    output.textPreflight = textPreflight;
+    return output;
+  });
+}
+
+function compute(model, composed) {
+  var inp = inputsFrom(model);
+  if (inp.textDocument && !composed) return composeDesignStories(model, inp);
+  if (!inp.textDocument && Array.isArray(inp.boxes) && inp.boxes.some(function (box) { return box && box.textStory; })) throw new Error('This design is missing its text document.');
+  var boxes = Array.isArray(inp.boxes) ? inp.boxes : [];
+  var resizedText = false;
+  if (composed) boxes = boxes.map(function (box) {
+    var frame = box && composed[box.id];
+    if (!frame || box.w === frame.width && box.h === frame.height) return box;
+    resizedText = true;
+    return Object.assign({}, box, { w: frame.width, h: frame.height });
+  });
   // plan 96 P4 - any plan-90 `connectors` edge becomes a bound path box before anything
   // else reads `boxes`, so every surface below (the per-box arrays, the frame groups, the
   // deck model, the committed line layer) sees ONE model with no edges in it.
@@ -2590,17 +2692,18 @@ function compute(model) {
     var bl = bare ? '' : blurCss(b || {});
     if (bl) fx.push(bl);
     if (shadows[i].filterFn) fx.push(shadows[i].filterFn);
-    return boxCss(b || {}, bare ? '' : gradCssFor(b || {})) + (bare ? '' : clipCss(b || {}, byId)) + shadows[i].box +
+    var composedSize = composed && composed[b.id] ? 'width:' + composed[b.id].width + 'px;height:' + composed[b.id].height + 'px;' + (b.textFrame && JSON.parse(b.textFrame).mode === 'path' ? 'overflow:visible;' : '') : '';
+    return boxCss(b || {}, bare ? '' : gradCssFor(b || {})) + composedSize + (bare ? '' : clipCss(b || {}, byId)) + shadows[i].box +
       (fx.length ? 'filter:' + fx.join(' ') + ';' : '');
   });
-  var textStyle = boxes.map(function (b, i) { return textCss(b || {}) + shadows[i].text; });
-  var textHtml = boxes.map(function (b) { return isBareBox(b) ? '' : textHtmlFor(b); });
+  var textStyle = boxes.map(function (b, i) { return composed && composed[b.id] ? 'position:absolute;inset:0;display:block;padding:0;line-height:0;overflow:visible;' : textCss(b || {}) + shadows[i].text; });
+  var textHtml = boxes.map(function (b) { return composed && composed[b.id] ? composed[b.id].svg : isBareBox(b) ? '' : textHtmlFor(b); });
   var mediaHtml = boxes.map(function (b) { return mediaHtmlFor(b || {}); });
   var pathHtml = boxes.map(function (b) { return pathHtmlFor(b || {}); });
   // Which boxes opted into shrink-to-fit ("1" marks a fit root for the template's fit
   // pass; "" is ignored). Off by default so grow-to-fit (the editor's box-grows-to-text
   // behaviour) stays the norm; a box turns this on to instead shrink the text to a fixed box.
-  var boxFit = boxes.map(function (b) { return boolVal(b && b.fitText, false) ? '1' : ''; });
+  var boxFit = boxes.map(function (b) { return composed && composed[b.id] ? '' : boolVal(b && b.fitText, false) ? '1' : ''; });
   // Per-box CSS class names (plan 112 M4, the slides.com "per-block class" affordance):
   // the author's own hook for Custom CSS, so a rule can say `.callout { … }` instead of
   // addressing a ULID. Emitted as EXTRA class tokens on .lolly-box, so it styles the
@@ -2680,7 +2783,7 @@ function compute(model) {
   // {{{deckJson}}} into <script data-pptx-deck>, exactly like deck-studio.
   // `frameGroups.length` rather than bare truthiness: frames every one of which is hidden
   // give an EMPTY page list, and a deck with no slides is no deck.
-  var deckJson = (frameGroups && frameGroups.length) ? safeJson(deckModelFor(boxes, byId, inp.transition)) : null;
+  var deckJson = (!composed && !boxes.some(function (box) { return box.pathPaint; }) && frameGroups && frameGroups.length) ? safeJson(deckModelFor(boxes, byId, inp.transition)) : null;
   // Penpot document model (plan 178 section 3.2). The RAW boxes, not the deck: a .penpot
   // file carries paths, ellipses, rotation, gradients, blur and shadow, all of which the
   // deck lowering drops by design, so the export bridge lowers the boxes themselves
@@ -2696,7 +2799,7 @@ function compute(model) {
   for (var pb = 0; pb < boxes.length && penpotBoxes.length < 4000; pb++) {
     if (boxes[pb] && !isBareBox(boxes[pb]) && !isHiddenBox(boxes[pb])) penpotBoxes.push(boxes[pb]);
   }
-  var penpotDocJson = safeJson({
+  var penpotDocJson = composed || boxes.some(function (box) { return box.pathPaint; }) ? null : safeJson({
     background: transparent ? 'transparent' : safeColor(inp.background, '#ffffff'),
     boxes: penpotBoxes,
   });
@@ -2741,6 +2844,7 @@ function compute(model) {
   // key. The keys are ASSIGNED, never set to undefined: the runtime's patch merge keys off
   // key PRESENCE, so `{ boxes: undefined }` does not mean "no opinion", it blanks the
   // input - and a hook that blanks `boxes` on every render empties the whole document.
+  if (resizedText) out.boxes = boxes;
   return out;
 }
 // === /lolly:shared design-renderer-4 ===
@@ -2753,4 +2857,5 @@ function onInput(ctx) { return compute(ctx.model); }
 function beforeExport(ctx) {
   var inp = inputsFrom(ctx.model);
   if (inp.transparentBg === true) ctx.opts.background = 'transparent';
+  if (inp.textDocument) return composeDesignStories(ctx.model, inp, ctx);
 }

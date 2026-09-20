@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: MPL-2.0
+/** Object wrapping is an explicit authored choice with one preview and one commit. */
+import { designTextWrap } from '@lolly/engine';
+import { textControlNumber, styleTextControls } from '../../lib/text-control-ui.ts';
+import { t } from '../../i18n.ts';
+import { bindOp,type FcCtx } from './context.ts';
+export function eligible(fc:FcCtx,id:string):boolean{const box=fc.select.getBoxes().find(box=>box[fc.cfg.idField]===id);return !!fc.cv.textDocumentInput&&!!box&&!box[fc.cv.textStoryField!]&&!['text','frame','3d','audio','camera'].includes(String(box[fc.cfg.kindField]));}
+export function open(fc:FcCtx,anchor:HTMLElement,id:string):void{
+  if(!eligible(fc,id))return;if(fc.editing)fc.textEdit.commitTextEdit();fc.toolbox.closePopover();
+  const boxes=fc.select.getBoxes(),box=boxes.find(box=>box[fc.cfg.idField]===id)!,snapshot=fc.storyText.read(),key=JSON.stringify([boxes,snapshot.document]);if([true,'true',1,'1'].includes(box.locked as string|number|boolean))return;
+  const panel=document.createElement('div');panel.className='fc-text-popover';panel.setAttribute('role','dialog');panel.setAttribute('aria-label',t('Text wrap'));panel.setAttribute('data-export-hide','');fc.popover=panel;fc.popoverAnchor=anchor;
+  const caption=document.createElement('p');caption.textContent=t('Text frames on the same artboard can wrap around this object.');panel.append(caption);
+  const settings=box.textWrap?JSON.parse(String(box.textWrap)):{mode:'none',offset:{top:8,right:8,bottom:8,left:8}},mode=document.createElement('select');mode.setAttribute('aria-label',t('Text wrap'));for(const [value,label] of [['none',t('None')],['box',t('Bounding box')],['contour',t('Contour')]])mode.add(new Option(label,value));mode.value=settings.mode;panel.append(mode);
+  const offsets:Record<string,HTMLInputElement>={};for(const [key,label] of [['top',t('Top offset')],['right',t('Right offset')],['bottom',t('Bottom offset')],['left',t('Left offset')]]){const field=textControlNumber(panel,label!,{value:settings.offset[key!]!,min:0,max:1000,step:1,precision:2,onCommit:()=>{void preview();}});offsets[key!]=field.input;}
+  const status=document.createElement('p');status.setAttribute('role','status');panel.append(status);const apply=document.createElement('button');apply.type='button';apply.textContent=t('Apply');panel.append(apply);
+  let ticket=0,closed=false;const saved=new Map<string,string>();const target=(id:string)=>fc.stage.liveBoxEl(id)?.querySelector<HTMLElement>('.lolly-box-text');
+  const stale=()=>JSON.stringify([fc.select.getBoxes(),fc.storyText.read().document])!==key;
+  function restore(){ticket++;if(!stale())for(const [id,html] of saved){const element=target(id);if(element)element.innerHTML=html;}saved.clear();}
+  function updated(){if(Object.values(offsets).some(input=>!input.value||!input.validity.valid))throw new Error(t('Enter valid wrap offsets.'));return boxes.map(item=>item[fc.cfg.idField]===id?{...item,textWrap:mode.value==='none'?'':JSON.stringify({mode:mode.value,offset:Object.fromEntries(Object.entries(offsets).map(([key,input])=>[key,Number(input.value)]))})}:item);}
+  async function preview(){const generation=++ticket;apply.disabled=true;try{if(stale())throw new Error(t('The document changed. Reopen text wrap.'));const next=updated(),wrap=designTextWrap(next);for(const story of snapshot.document.stories){const layout=await fc.runtime.layoutText!({document:snapshot.document,storyId:story.id,frames:snapshot.frames.filter(frame=>frame.storyId===story.id),wrap,includeSvg:true});if(closed||generation!==ticket||stale())return;for(const frame of layout.frames){const element=target(frame.id);if(element&&frame.svg){if(!saved.has(frame.id))saved.set(frame.id,element.innerHTML);element.innerHTML=frame.svg;}}}if(generation===ticket){status.textContent=t('Preview only. Apply commits this wrap setting.');apply.disabled=false;}}catch(error){if(generation===ticket)status.textContent=error instanceof Error?error.message:String(error);}}
+  mode.addEventListener('change',()=>{void preview();});
+  apply.addEventListener('click',()=>{if(stale()){status.textContent=t('The document changed. Reopen text wrap.');return;}const next=updated();saved.clear();fc.onDirty?.(fc.blockId);void fc.history!.commit!({[fc.blockId]:next},t('Text wrap')).then(()=>fc.toolbox.closePopover(true)).catch(error=>{status.textContent=error instanceof Error?error.message:String(error);});});
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent=t('Cancel');cancel.addEventListener('click',()=>fc.toolbox.closePopover(true));panel.append(cancel);
+  panel.addEventListener('pointerdown',event=>event.stopPropagation());panel.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='Escape'){event.preventDefault();fc.toolbox.closePopover(true);}});panel.addEventListener('lolly:popover-close',()=>{closed=true;restore();});styleTextControls(panel);document.body.append(panel);const rect=anchor.getBoundingClientRect();panel.style.left=`${Math.max(8,Math.min(rect.left,innerWidth-panel.offsetWidth-8))}px`;panel.style.top=`${Math.max(8,Math.min(rect.bottom+8,innerHeight-panel.offsetHeight-8))}px`;void preview();mode.focus();
+}
+export function storyWrapOps(fc:FcCtx){return {eligible:bindOp(fc,eligible),open:bindOp(fc,open)};}

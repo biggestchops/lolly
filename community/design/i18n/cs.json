@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Snímková frekvence projektu",
   "inputs.sequenceMarks.label": "Značky časové osy",
   "inputs.boxes.fields.animationId.label": "Animace ve zdroji",
-  "inputs.boxes.fields.animationEdits.label": "Vnitřní úpravy animace"
+  "inputs.boxes.fields.animationEdits.label": "Vnitřní úpravy animace",
+  "inputs.boxes.fields.textStory.label": "Textový řetězec",
+  "inputs.boxes.fields.textFrame.label": "Nastavení textového rámečku",
+  "inputs.boxes.fields.pathPaint.label": "Vektorové vybarvení",
+  "inputs.boxes.fields.vectorSource.label": "Vektorový zdroj a autoři",
+  "inputs.boxes.fields.textWrap.label": "Nastavení obtékání textu",
+  "inputs.textDocument.label": "Textový dokument",
+  "inputs.exportVisibleText.label": "Exportovat pouze viditelný text",
+  "inputs.exportVisibleText.help": "Povolit záměrně oříznutý export. Text mimo pevné rámečky a neumístěné textové řetězce se vynechá; celý zdroj zůstane v dokumentu."
 }

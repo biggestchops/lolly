@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Rata de cadre a proiectului",
   "inputs.sequenceMarks.label": "Marcaje pe cronologie",
   "inputs.boxes.fields.animationId.label": "Animația din sursă",
-  "inputs.boxes.fields.animationEdits.label": "Modificări interne ale animației"
+  "inputs.boxes.fields.animationEdits.label": "Modificări interne ale animației",
+  "inputs.boxes.fields.textStory.label": "Flux de text",
+  "inputs.boxes.fields.textFrame.label": "Setări cadru de text",
+  "inputs.boxes.fields.pathPaint.label": "Umpleri și contururi vectoriale",
+  "inputs.boxes.fields.vectorSource.label": "Sursa vectorială și atribuiri",
+  "inputs.boxes.fields.textWrap.label": "Setări încadrare text în jurul obiectelor",
+  "inputs.textDocument.label": "Document text",
+  "inputs.exportVisibleText.label": "Exportă doar textul vizibil",
+  "inputs.exportVisibleText.help": "Permite un export decupat intenționat. Textul din afara cadrelor fixe și fluxurile neplasate sunt omise; sursa completă rămâne în document."
 }

@@ -14,7 +14,7 @@ import { announce } from '../../a11y.ts';
 import { t } from '../../i18n.ts';
 import { applyDesignStyle, captureDesignStyle } from '../design-style-clipboard.ts';
 import { FC_CLIP_PREFIX } from './shared.ts';
-import type { AddKind, EditorMode } from './shared.ts';
+import type { AddKind, EditorMode, LayoutClipboard } from './shared.ts';
 import { bindOp, type FcCtx } from './context.ts';
 
 // ── the tool mode ─────────────────────────────────────────────────────────────
@@ -332,7 +332,9 @@ export function onCopy(fc: FcCtx, e: ClipboardEvent): void {
   const boxes = fc.select.getBoxes();
   const idx = fc.select.selIndices(boxes);
   if (!idx.length) return; // nothing selected → native copy
-  const picked = copyRows(fc, boxes, idx);
+  let picked: LayoutClipboard;
+  try { picked = fc.storyFlow.capture(copyRows(fc,boxes,idx)); }
+  catch(error) {e.preventDefault();announce(error instanceof Error?error.message:String(error));return;}
   fc.objectClipboard = picked;
   try {
     e.clipboardData!.setData('text/plain', FC_CLIP_PREFIX + JSON.stringify(picked));
@@ -346,7 +348,9 @@ export function cutSelection(fc: FcCtx, transfer?: DataTransfer | null): void {
   const boxes = fc.select.getBoxes();
   const idx = fc.select.selIndices(boxes);
   if (!idx.length) return;
-  const picked = copyRows(fc, boxes, idx);
+  let picked: LayoutClipboard;
+  try { picked = fc.storyFlow.capture(copyRows(fc,boxes,idx)); }
+  catch(error) {announce(error instanceof Error?error.message:String(error));return;}
   fc.objectClipboard = picked;
   const encoded = FC_CLIP_PREFIX + JSON.stringify(picked);
   try {
@@ -383,7 +387,8 @@ export function onCut(fc: FcCtx, e: ClipboardEvent): void {
  * goes clear of every board there is, takes the next page slot, and brings the children
  * `copyRows` collected with it, keeping their frame-local position.
  */
-export function pasteObjects(fc: FcCtx, picked: any): void {
+export function pasteObjects(fc: FcCtx, payload: LayoutClipboard): void {
+  const picked = Array.isArray(payload) ? payload : payload?.version===2 ? payload.boxes : null;
   const { FRAME_DUP_GAP, cfg, frameCfg, timeCfg } = fc;
   // A TIMED row is pasted in time, not nudged in space (plans/268 SI-11). Asked here with
   // two field reads, so the timeline's arithmetic stays out of this module's eager graph.
@@ -402,6 +407,7 @@ export function pasteObjects(fc: FcCtx, picked: any): void {
   let boxes = fc.select.getBoxes();
   if (ff && rows.some(isFrameRow)) boxes = seedFrameOrders(boxes, ff); // legacy docs get an order first
   const clones: Box[] = [];
+  const copies = new Map<string,string>();
   const nextSel = new Set<string>();
   const pageIds = new Map<string, string>(); // pasted frame id → its copy's id
   const pageShift = new Map<string, number>(); // …and how far right it moved
@@ -428,6 +434,7 @@ export function pasteObjects(fc: FcCtx, picked: any): void {
     };
     if (ff) clone[ff.orderField] = nextFrameOrder(boxes.concat(clones), ff);
     clones.push(clone);
+    copies.set(String(src[cfg.idField]),id);
     nextSel.add(id);
     const old = src[cfg.idField] == null ? '' : String(src[cfg.idField]);
     if (old) {
@@ -462,16 +469,16 @@ export function pasteObjects(fc: FcCtx, picked: any): void {
             [ff!.frameField]: pageIds.get(owner)!,
           };
     clones.push(clone);
+    copies.set(String(src[cfg.idField]),id);
     nextSel.add(id);
   }
   if (!clones.length) return;
   // With a whole page pasted the selection is that PAGE, not its contents - the same
   // answer Cmd+D gives, so the next gesture moves the slide.
-  fc.selection = pageIds.size ? new Set(pageIds.values()) : nextSel;
+  const selected = pageIds.size ? new Set(pageIds.values()) : nextSel;
   const appended = [...boxes, ...clones];
   if (!timeCfg || !clones.some(isTimedRow)) {
-    fc.select.commit(appended);
-    fc.chromeSync.renderChrome();
+    void fc.storyFlow.paste(payload,appended,copies,selected);
     return;
   }
   // The clones still carry their sources' start. Left like that, a copied main-row clip
@@ -485,9 +492,7 @@ export function pasteObjects(fc: FcCtx, picked: any): void {
   const ids = clones.map((c) => String(c[cfg.idField] ?? ''));
   void import('../timeline-math.ts').then(({ placePasted }) => {
     if (fc.disposed) return;
-    fc.select.commit(placePasted(appended, timeCfg, ids, at));
-    fc.chromeSync.renderChrome();
-    panel?.selectAndReveal([...fc.selection]);
+    void fc.storyFlow.paste(payload,placePasted(appended,timeCfg,ids,at),copies,selected).then(()=>panel?.selectAndReveal([...fc.selection]));
   });
 }
 // ── paste-to-create ──────────────────────────────────────────────────────────

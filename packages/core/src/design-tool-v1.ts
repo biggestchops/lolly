@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 /** Portable rules for a Design document published as one ordinary tool. */
+import type { TextDocumentV1 } from './text-v1.ts';
+import { writeDesignText } from './design-tool-text.ts';
 import type { InputSpec } from './manifest.ts';
 
 export type DesignPropertyV1 = 'text' | 'image' | 'fontSize' | 'font' | 'weight' | 'fg' | 'fill' | 'fit' | 'imageFraming';
@@ -58,6 +60,7 @@ export interface ArtboardVariantV1 {
   height: number;
   background: string;
   boxes: Array<Record<string, unknown>>;
+  textDocument?: TextDocumentV1;
 }
 /** A captured tool renderer, with public fields mapped to its original inputs. */
 export interface DesignSourceToolV1 { id: string; version: string; inputs: Record<string, string> }
@@ -94,7 +97,7 @@ export interface DesignToolPolicyV1 {
   presentation: 'sidebar' | 'on-canvas';
   inputs: DesignInputV1[];
   choices: DesignChoiceV1[];
-  variants: Array<Omit<ArtboardVariantV1, 'boxes' | 'background'>>;
+  variants: Array<Omit<ArtboardVariantV1, 'boxes' | 'background' | 'textDocument'>>;
   defaultVariant: string;
   formats: Array<'png' | 'svg' | 'pdf'>;
   sourceTool?: DesignSourceToolV1;
@@ -106,7 +109,7 @@ const propertyTypes: Record<DesignPropertyV1, string[]> = {
   fit: ['select'], imageFraming: ['vector'],
 };
 const badKeys = new Set(['__proto__', 'prototype', 'constructor']);
-const internal = new Set(['boxes', 'customCss', 'background', 'transparentBg', 'font', 'fontSize', 'boxStyle', 'textStyle', 'mediaHtml', 'textHtml', 'designRows', 'designWidth', 'designHeight', 'designBackground', 'designIssues']);
+const internal = new Set(['boxes', 'textDocument', 'exportVisibleText', 'customCss', 'background', 'transparentBg', 'font', 'fontSize', 'boxStyle', 'textStyle', 'mediaHtml', 'textHtml', 'designRows', 'designWidth', 'designHeight', 'designBackground', 'designIssues']);
 const idPattern = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
 const own = (o: object, k: string): boolean => Object.hasOwn(o, k);
 const keyOf = (t: DesignTargetV1): string => `${t.variantId}/${t.layerId}/${t.property}`;
@@ -290,6 +293,7 @@ export function evaluateDesignTool(d: DesignToolDraftV1, supplied: Record<string
     if (target.variantId !== variant.id) return;
     const box = variant.boxes.find(b => b.id === target.layerId);
     if (box && own(propertyTypes, target.property)) {
+      if(box.textStory&&variant.textDocument&&writeDesignText(variant.textDocument,box,target.property,value))return;
       box[target.property] = value;
       if (target.property === 'text') box.plainText = true;
     }
@@ -325,6 +329,7 @@ export function evaluateDesignTool(d: DesignToolDraftV1, supplied: Record<string
   for (const box of variant.boxes) {
     const rule = textRules[String(box.id)];
     box.fitText = false;
+    if(box.textStory&&variant.textDocument&&rule){const frame=JSON.parse(String(box.textFrame));if(rule.mode==='shrink'){const story=variant.textDocument.stories.find(story=>story.id===box.textStory)!;if(story.frameIds.length!==1)throw new Error('A linked story cannot shrink to fit. Use a fixed text rule.');frame.shrink={minSize:rule.min};}else delete frame.shrink;box.textFrame=JSON.stringify(frame);continue;}
     if (rule) box.fontSize = Math.min(rule.max, Math.max(rule.min, Number(box.fontSize) || rule.max));
   }
   return { variant, values, findings, textRules, inputMap, framingMap, fitGroups, imageRules };

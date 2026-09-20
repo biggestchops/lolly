@@ -248,7 +248,7 @@ export function isOutlinableTextBox(fc: FcCtx, b: Box): boolean {
   const { cfg } = fc;
   const kind = String(b[cfg.kindField] ?? '');
   if (kind === 'path' || kind === 'audio') return false;
-  return Boolean(cfg.textField && String(b[cfg.textField] ?? '').trim());
+  return Boolean(b[fc.cv.textStoryField!] || cfg.textField && String(b[cfg.textField] ?? '').trim());
 }
 /** A box that paints something besides its text (fill, gradient, image, or a
  *  border) keeps its frame; only the text leaves it. A bare text box is replaced
@@ -265,9 +265,10 @@ export function paintsBesidesText(fc: FcCtx, b: Box): boolean {
     : undefined;
   const border =
     num(b[cfg.strokeWField], 0) > 0 && String(b[cfg.strokeField] ?? '').trim() !== '';
-  return Boolean(bg || grad || (img && (img.id || img.url)) || border);
+  return Boolean(bg && !['none','transparent','#00000000'].includes(bg) || grad || (img && (img.id || img.url)) || border);
 }
 export async function outlineTextOnSelection(fc: FcCtx): Promise<void> {
+  if(fc.storyText.available()){fc.storyVector.open(fc.ctxbar??fc.stageEl);return;}
   if (fc.outliningInFlight) return;
   fc.outliningInFlight = true;
   try {
@@ -498,6 +499,7 @@ export function groupSelection(fc: FcCtx): void {
   const idx = fc.select.selIndices(boxes);
   if (idx.length < 2) return;
   const g = freshGroupId(fc, boxes);
+  fc.history?.endGesture?.();
   const set = new Set(idx);
   fc.select.commit(boxes.map((b, i) => (set.has(i) ? { ...b, [cfg.groupField]: g } : b)));
 }
@@ -507,9 +509,12 @@ export function ungroupSelection(fc: FcCtx): void {
   const boxes = fc.select.getBoxes();
   const set = new Set(fc.select.selIndices(boxes));
   if (boxes.some((b, i) => set.has(i) && fc.select.groupOf(b))) {
+    fc.history?.endGesture?.();
     fc.select.commit(boxes.map((b, i) => (set.has(i) && fc.select.groupOf(b) ? { ...b, [cfg.groupField]: '' } : b)));
     return;
   }
+  const painted=boxes.filter((box,index)=>set.has(index)&&box.pathPaint).map(box=>String(box[cfg.idField]));
+  if(painted.length){void fc.storyVector.ungroup(painted);return;}
   // Nothing tagged: an imported vector is the other kind of group (below).
   const targets = unpackTargetIds(fc, boxes);
   if (targets.length) void unpackSvgBoxes(fc, targets);
@@ -536,7 +541,7 @@ export function unpackTargetIds(fc: FcCtx, boxes: Box[]): string[] {
     .map((i) => fc.select.idOf(boxes[i], i));
 }
 /** Is Ungroup live for this selection - a group to dissolve, or a vector to take apart? */
-export const canUngroup = (fc: FcCtx): boolean => selHasGroup(fc) || unpackTargetIds(fc, fc.select.getBoxes()).length > 0;
+export const canUngroup = (fc: FcCtx): boolean => selHasGroup(fc) || fc.select.getBoxes().some(box=>box.pathPaint&&fc.selection.has(String(box[fc.cfg.idField]))) || unpackTargetIds(fc, fc.select.getBoxes()).length > 0;
 /**
  * Take the SVG boxes `ids` apart into their layers - ONE commit for all of them, so one
  * ⌘Z puts every picture back. Every read and every asset store happens BEFORE the

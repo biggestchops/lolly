@@ -216,12 +216,19 @@ export async function exportToFile(
       (typeof v === 'number' && v > 0 ? (u !== 'px' ? `${v}${u}` : v) : undefined);
     const opts: { width?: string | number; height?: string | number; dpi?: number } = { width: qual(dims.width), height: qual(dims.height) };
     if (u !== 'px' && dims.dpi) opts.dpi = dims.dpi;
-    const blob = await runtime.export(canvas, fmt, opts);
-    const bytes = new Uint8Array(await blob.arrayBuffer());
-    // Fail loud: this is the runtime's own DOM-free output - refuse to write a file the
-    // render silently failed to produce (a swallowed onInit) rather than report success.
-    assertRenderOk({ hookErrors: runtime.hookErrors, format: fmt, bytes });
-    return write(bytes);
+    const query = currentQuery(runtime);
+    try {
+      const blob = await runtime.export(canvas, fmt, opts);
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      assertRenderOk({ hookErrors: runtime.hookErrors, format: fmt, bytes });
+      return write(bytes);
+    } catch (error) {
+      // HTML artwork needs the same vector walker used by web and CLI exports.
+      // A failed hook or an intervening edit cannot be retried as a fresh render.
+      if (!['svg', 'emf', 'eps', 'eps-cmyk', 'dxf', 'penpot'].includes(fmt) ||
+          (error as Error)?.name === 'RenderIntegrityError' || runtime.hookErrors.length ||
+          currentQuery(runtime) !== query) throw error;
+    }
   }
 
   // 3b. PNG from an SVG-native tool: rasterise the engine's own SVG via resvg - no

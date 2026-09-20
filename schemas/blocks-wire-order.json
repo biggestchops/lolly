@@ -138,7 +138,12 @@
       "plainText",
       "scene",
       "animationId",
-      "animationEdits"
+      "animationEdits",
+      "textStory",
+      "textFrame",
+      "pathPaint",
+      "vectorSource",
+      "textWrap"
     ],
     "diagram-builder:nodes": [
       "shape",

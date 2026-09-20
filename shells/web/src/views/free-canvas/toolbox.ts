@@ -18,6 +18,7 @@ import { bindOp, type FcCtx } from './context.ts';
 export function closePopover(fc: FcCtx, restoreFocus = false): void {
   const anchor = fc.popoverAnchor;
   fc.popoverAnchor = null;
+  fc.popover?.dispatchEvent(new Event('lolly:popover-close'));
   fc.popover?.remove();
   fc.popover = null;
   if (!anchor) return;

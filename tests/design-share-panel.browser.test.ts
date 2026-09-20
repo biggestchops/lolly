@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: MPL-2.0
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { unzipSync, strFromU8 } from 'fflate';
+import { getBrowser, closeBrowser } from '../packages/node-shell/src/browsers.ts';
+import { journeyDiagnostics } from './helpers/journey-diagnostics.ts';
+import { expandQuery } from '../engine/src/url-pack.ts';
+
+const origin = process.env.LOLLY_EXPORT_TEST_URL;
+test('Share has its own live tab, downloads an editable file and adapts to phone width', { skip: origin ? false : 'set LOLLY_EXPORT_TEST_URL', timeout: 90000 }, async () => {
+  const browser = await getBrowser(), context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+  const page = await context.newPage(), diagnose = journeyDiagnostics(context, 'design-share-panel');
+  page.setDefaultTimeout(15000);
+  try {
+    await page.goto(`${origin}/design?${new URLSearchParams({ width: '640', height: '360', boxes: JSON.stringify([{ id: 'shape', kind: 'box', x: 180, y: 100, w: 180, h: 120, bg: '#118855' }]), c2pa: '0', imprint: '0' })}`);
+    await page.locator('#tool-canvas [data-box-id="shape"]').waitFor();
+    await page.locator('[data-topbar="export"]').click();
+    await page.locator('[data-topbar="share"]').click();
+    const panel = page.locator('[data-panel="share"]');
+    await panel.locator('[data-lolly-download]').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('dialog.share-dialog').count(), 0);
+    assert.equal(await page.locator('#edge-dock-tab-share').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('#edge-dock-tab-export').count(), 1);
+    assert.equal(await page.locator('#edge-dock-tab-inspector').count(), 1);
+    const field = panel.locator('.share-link-field');
+    await field.waitFor({ state: 'visible' });
+    const before = await field.inputValue();
+    await page.locator('#tool-canvas [data-box-id="shape"]').click();
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(before => document.querySelector<HTMLInputElement>('[data-panel="share"] .share-link-field')?.value !== before, before);
+    const shared = new URLSearchParams(await expandQuery(new URL(await field.inputValue()).search.slice(1)));
+    assert.match(shared.get('bx') ?? '', /^shape,box,181,100,/, 'the link carries the moved object');
+    await panel.locator('[data-link-behaviour] > summary').click();
+    await panel.locator('[data-flag="full"]').check();
+    await page.locator('#edge-dock-tab-export').click();
+    await page.locator('#edge-dock-tab-export').press('ArrowRight');
+    assert.equal(await page.locator('#edge-dock-tab-share').getAttribute('aria-selected'), 'true');
+    assert.equal(await panel.locator('[data-flag="full"]').isChecked(), true, 'tab switching keeps link choices');
+    const downloadReady = page.waitForEvent('download');
+    await panel.locator('[data-lolly-download]').click();
+    const download = await downloadReady;
+    assert.match(download.suggestedFilename(), /\.lolly$/);
+    assert.equal(await download.failure(), null);
+    const files = unzipSync(readFileSync((await download.path())!));
+    assert.ok(files['manifest.json']);
+    assert.ok(Object.entries(files).some(([name, bytes]) => name.endsWith('.json') && strFromU8(bytes).includes('shape')), 'the editable package carries the design');
+    await page.screenshot({ path: '/tmp/lolly-271-share-desktop.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('dialog.docked-panel-dialog[open]').waitFor();
+    assert.equal(await panel.locator('[data-flag="full"]').isChecked(), true);
+    assert.ok(await panel.evaluate(element => element.scrollWidth <= element.clientWidth), 'phone panel does not overflow horizontally');
+    await page.screenshot({ path: '/tmp/lolly-271-share-phone.png' });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.locator('#edge-dock-slot-share [data-panel="share"]').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('dialog.docked-panel-dialog').count(), 0);
+    await page.locator('[data-topbar="export"]').click();
+    await page.locator('[data-topbar="share"]').click();
+    await panel.locator('.export-popup-close').click();
+    await panel.waitFor({ state: 'detached' });
+    await page.locator('[data-topbar="share"]').click();
+    await panel.locator('[data-lolly-download]').waitFor({ state: 'visible' });
+    await panel.locator('.export-popup-close').press('Escape');
+    await panel.waitFor({ state: 'detached' });
+    assert.equal(await page.locator('#edge-dock-tab-export').count(), 1, 'closing Share keeps the other panels');
+  } catch (error) { await diagnose(error); throw error; }
+  finally { await context.close(); await closeBrowser(); }
+});

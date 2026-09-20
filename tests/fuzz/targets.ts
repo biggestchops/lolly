@@ -1692,7 +1692,60 @@ export const emojiBundleTarget: FuzzTarget = {
   async invoke(bytes) {await (await import('../../engine/src/emoji-bundle.ts')).admitEmojiBundle(bytes,parseXml);},
 };
 
+export const textSourceTarget: FuzzTarget = {
+  name: 'text-source',
+  async seeds() { return ['Office e\u0301\r\nالعربية 123 क्ष ไทย', '👨‍👩‍👧‍👦\u00a0A\u2028B\u00adC'].map(value => new TextEncoder().encode(value)); },
+  async invoke(bytes) {
+    const { createTextStory, parseTextDocument } = await import('../../engine/src/text-story-document.ts');
+    const { replaceStoryRange } = await import('../../engine/src/text-edits.ts');
+    const { textBoundaries } = await import('../../engine/src/text-source.ts');
+    const story = createTextStory('story', new TextDecoder().decode(bytes), i => `p${i}`);
+    const boundaries = [...textBoundaries(story.source)], middle = boundaries[Math.floor(boundaries.length / 2)]!;
+    const next = replaceStoryRange(story, { start: middle, end: middle }, { source: 'e\u0301' }, { paragraphId: () => 'added' }).story;
+    parseTextDocument({ version: 1, stories: [next], styles: [], fonts: [] });
+  },
+};
+export const textDocumentTarget: FuzzTarget = {
+  name: 'text-document',
+  async seeds() {
+    const { createTextStory } = await import('../../engine/src/text-story-document.ts');
+    return [new TextEncoder().encode(JSON.stringify({ version: 1, stories: [createTextStory('story', 'First\r\nSecond', i => `p${i}`)], styles: [{ id: 'body', kind: 'paragraph', name: 'Body', paragraph: { character: { size: 24 } } }], fonts: [] }))];
+  },
+  async invoke(bytes) {
+    const { parseTextDocument } = await import('../../engine/src/text-story-document.ts');
+    const { importTextFragment } = await import('../../engine/src/text-fragment.ts');
+    const document = parseTextDocument(new TextDecoder().decode(bytes)); let id = 0;
+    if (document.stories.length === 1) importTextFragment({ version: 1, stories: [], styles: [], fonts: [] }, document, () => `copy-${id++}`);
+  },
+};
+export const textFrameTarget: FuzzTarget = {
+  name: 'text-frame',
+  async seeds() {
+    return [undefined, { d: 'M0 0C10 20 40 20 60 0', start: 0, end: 60, baseline: 0, reverse: false, flip: false, fit: false, guide: false }].map(path => new TextEncoder().encode(JSON.stringify({ id: 'frame', storyId: 'story', width: 300, height: 200, mode: path ? 'path' : 'fixed', inset: { top: 0, right: 0, bottom: 0, left: 0 }, columns: { count: 2, gutter: 8, balance: true }, verticalAlign: 'top', ...(path ? { path } : {}) })));
+  },
+  async invoke(bytes) {
+    const { parseTextFrame } = await import('../../engine/src/text-frame.ts');
+    const frame = parseTextFrame(JSON.parse(new TextDecoder().decode(bytes)));
+    if (frame.path) (await import('../../engine/src/emoji-text-path.ts')).emojiTextPath(frame.path.d);
+  },
+};
+export const vectorPaintTarget: FuzzTarget = {
+  name: 'vector-paint',
+  async seeds() {
+    return ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><defs><linearGradient id="g"><stop offset="0" stop-color="#f80"/><stop offset="1" stop-color="#08f"/></linearGradient><clipPath id="c"><circle cx="10" cy="10" r="9"/></clipPath></defs><g clip-path="url(#c)" opacity=".6"><rect width="20" height="20" fill="url(#g)"/></g></svg>', JSON.stringify({ version: 1, width: 20, height: 20, root: { tag: 'g', attributes: {}, children: [{ tag: 'path', attributes: { fill: '#f80' }, contours: [0] }] } })].map(value => new TextEncoder().encode(value));
+  },
+  async invoke(bytes) {
+    const source = new TextDecoder().decode(bytes);
+    const { parseVectorPaint, renderVectorPaint } = await import('../../engine/src/vector-paint.ts');
+    if (source.trimStart().startsWith('{')) { parseVectorPaint(JSON.parse(source), 1); return; }
+    const { importVectorPaint } = await import('../../engine/src/vector-paint-import.ts');
+    const { path, paint } = importVectorPaint(source, parseXml);
+    renderVectorPaint(path, paint, 20, 20, 'fuzz');
+  },
+};
+
 export const ALL_TARGETS: FuzzTarget[] = [
+  textSourceTarget, textDocumentTarget, textFrameTarget, vectorPaintTarget,
   deepImageTarget, emojiBundleTarget, jxlTarget,
   lottieEditsTarget,
   lottieTarget,

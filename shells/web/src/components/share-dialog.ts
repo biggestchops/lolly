@@ -187,14 +187,14 @@ export function openShareDialog(opts: ShareDialogOpts): HTMLDialogElement {
   return renderShareSurface(opts, content => mountModal<void>(content, { className: 'share-dialog' }), true) as HTMLDialogElement;
 }
 
-/** The same controls in the export panel, without a second modal or focus theft. */
-export function mountSharePanel(container: HTMLElement, opts: ShareDialogOpts): () => void {
+/** The same controls in a docked panel, without a second modal or focus theft. */
+export function mountSharePanel(container: HTMLElement, opts: ShareDialogOpts, onClose?: () => void): () => void {
   const surface = renderShareSurface(opts, content => {
     const el = document.createElement('div');
     el.className = 'export-share-surface';
     el.innerHTML = content;
     container.replaceChildren(el);
-    return { el, close: () => el.remove() };
+    return { el, close: () => { if (onClose) onClose(); else el.remove(); } };
   }, false);
   return () => surface.remove();
 }

@@ -4,7 +4,7 @@ import type { VersionedUserAsset, UserAssetVersion } from './asset-history-types
 export type { VersionedUserAsset, UserAssetVersion } from './asset-history-types.ts';
 import { designMaterialOf } from '../../../../engine/src/design-system.ts';
 import { FROZEN_PREFIX } from './version-assets.ts';
-import { collectAssetRefs } from './asset-dependencies.ts';
+import { collectAssetRefs } from './asset-ref-collector.ts';
 
 /** Lowercase hex SHA-256, the same digest core's image-operation contract uses.
  *  Local on purpose: importing it from lib/file-conversion.ts re-exports the whole

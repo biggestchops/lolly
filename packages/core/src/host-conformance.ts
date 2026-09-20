@@ -41,7 +41,7 @@ export const HOST_V1_METHODS: Record<HostApi, ApiMethods> = {
   export: { required: ['render', 'download', 'file', 'imprint'], optional: ['pack', 'share', 'canShare', 'checkLayout'] },
   net: { required: ['fetch'], optional: [] },
   tokens: { required: ['get', 'colors', 'resolve', 'themes'], optional: ['list', 'active', 'snapshot'] },
-  text: { required: ['toPath', 'preload'], optional: ['axisDefaults', 'fontUrl', 'characters'] },
+  text: { required: ['toPath', 'preload'], optional: ['axisDefaults', 'fontUrl', 'characters', 'fontInfo', 'shapeRun', 'layoutRuns'] },
   textTools: { required: ['operations', 'run', 'highlight'], optional: [] },
   emoji: { required: ['sets', 'manifest', 'artwork', 'parseXml'], optional: ['install','dependencies','renderText','renderSvg'] },
   pdf: { required: ['analyze', 'strip', 'compress'], optional: ['redact', 'pages', 'organize', 'stamp', 'lock'] },
@@ -74,7 +74,7 @@ export const HOST_V1_METHODS: Record<HostApi, ApiMethods> = {
   raster: { required: ['canRaster', 'measure', 'decode', 'encode'], optional: [] },
   geom: {
     required: ['union', 'intersect', 'difference', 'xor', 'selfUnion', 'offset', 'stroke', 'fromNodes', 'continuity', 'encodeAuthored', 'decodeAuthored', 'simplify', 'bounds', 'area', 'contains', 'winding', 'nearest', 'parse', 'toPathData', 'limits'],
-    optional: [],
+    optional: ['paintAuthored'],
   },
   connectors: { required: ['build'], optional: ['pathHeadSvg', 'pathHeadInset', 'routeStyleForKind'] },
   c2pa: { required: ['sign', 'readIngredients'], optional: [] },

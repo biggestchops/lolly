@@ -76,7 +76,10 @@
     "./jxl-asset": "./src/jxl-asset.ts",
     "./jxl": "./src/jxl.ts",
     "./jxl-codec": "./src/jxl-codec.ts",
-    "./jxl.wasm": "./wasm/jxl/lolly-jxl.wasm"
+    "./jxl.wasm": "./wasm/jxl/lolly-jxl.wasm",
+    "./text-shape": "./src/text-shape.ts",
+    "./text-fonts": "./src/text-fonts.ts",
+    "./text-composition": "./src/text-composition.ts"
   },
   "files": [
     "src",
@@ -93,7 +96,8 @@
     "harfbuzzjs": "^1.6.1",
     "libxml2-wasm": "^0.7.2",
     "pdf-lib": "^1.17.1",
-    "playwright-core": "^1.49.0"
+    "playwright-core": "^1.49.0",
+    "woff2-encoder": "2.0.0"
   },
   "optionalDependencies": {
     "@huggingface/transformers": "^3.8.1",

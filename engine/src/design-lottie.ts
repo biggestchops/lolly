@@ -34,6 +34,7 @@ function unsupported(box: Box): void {
   const name = String(box.name || box.id || 'Layer');
   const fail = (feature: string) => { throw new Error(`${name}: ${feature} is not supported by dotLottie export. Remove it or export video.`); };
   if (String(box.text ?? '').trim() || box.kind === 'text') fail('text');
+  if (box.pathPaint) fail('independent vector paint');
   if (box.kind === 'audio' || box.kind === 'camera' || box.kind === '3d') fail(String(box.kind));
   if (box.kind && !['box', 'path', 'image', 'frame'].includes(String(box.kind))) fail(String(box.kind));
   for (const field of ['grad', 'clip', 'bindStart', 'bindEnd', 'cls']) if (box[field]) fail(field);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 /** Experimental single LTR line master. Paragraph layout and export rights delivery are separate gates. */
-import type { EmojiGlyphV1, EmojiSourceV1, EmojiStyleV1, EmojiPackPinV1, EmojiMeaningV1 } from '@lolly-tools/core';
+import type { EmojiGlyphV1, EmojiStyleV1 } from '@lolly-tools/core';
 import type { TextAPI } from '@lolly-tools/core/host-v1';
 import { bytesToBin, sha256Hex } from './bytes.ts';
 import { escapeXml } from './xml-escape.ts';
@@ -23,25 +23,7 @@ export interface EmojiLineHost {
   parseXml: EmojiXmlParser;
   loadArtwork(asset: EmojiGlyphV1['asset']): Promise<Uint8Array>;
 }
-export interface EmojiLineSource {
-  pack: EmojiPackPinV1;
-  /** Family and style names of the admitted pack, for credits and ingredient titles. */
-  family: string;
-  style: string;
-  meaning: EmojiMeaningV1;
-  /** The glyph's readable name and its pinned asset id in the pack. */
-  label: string;
-  assetId: string;
-  source: EmojiSourceV1;
-  /** Original notice texts that accompany the artwork when it is distributed. */
-  notices?: { name: string; text: string }[];
-  sourceChecksum: string;
-  artworkChecksum: string;
-  canonicalChecksum: string;
-  normalizer: string;
-  changes: string[];
-  occurrences: { start: number; end: number }[];
-}
+export type EmojiLineSource = import('@lolly-tools/core').EmojiSourceRecordV1;
 export interface EmojiLineRun { kind: 'text' | 'emoji'; start: number; end: number; x: number; advance: number }
 export interface EmojiLineMaster {
   svg: string;

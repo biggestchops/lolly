@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
+import { base64ToBytes } from '../../../../engine/src/bytes.ts';
 /**
  * host.text - text-to-path bridge primitive (HarfBuzz WASM backed).
  *
@@ -7,7 +8,8 @@
  * The WASM loads on first call; subsequent calls are synchronous from cache.
  */
 
-import type { TextAPI, TextPathCluster } from '@lolly-tools/core/host-v1';
+import type { AssetsAPI, TextAPI, TextPathCluster } from '@lolly-tools/core/host-v1';
+import { createTextCompositionAPI } from '@lolly-tools/node-shell/text-composition';
 import { createGlyphCache } from '@lolly-tools/node-shell/text-glyphs';
 import type { Blob as HbBlob, Face as HbFace, Font as HbFont, Feature as HbFeature } from 'harfbuzzjs';
 
@@ -166,8 +168,19 @@ export function clustersFrom(
   });
 }
 
-export function createTextAPI(): TextAPI {
+export function createTextAPI(assets?: AssetsAPI): TextAPI {
+  const composition = createTextCompositionAPI(async font => {
+    if(font.source.kind==='embedded')return base64ToBytes(font.source.base64);
+    if (font.source.kind === 'asset') {
+      if (!assets?.bytes) throw new Error('This host cannot read the pinned text font asset.');
+      return assets.bytes(await assets.get(font.source.id));
+    }
+    const response = await fetch(font.source.path);
+    if (!response.ok) throw new Error(`The pinned text font could not be read (${response.status}).`);
+    return new Uint8Array(await response.arrayBuffer());
+  }, source => new DOMParser().parseFromString(source, 'image/svg+xml'));
   return {
+    ...composition,
     async characters(fontUrl) { return [...(await loadFace(fontUrl)).unicodes].sort((a, b) => a - b); },
     /**
      * Shape `text` using the given font at `fontSize` px and return an SVG path.

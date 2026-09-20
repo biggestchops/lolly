@@ -360,5 +360,7 @@
   "Who is behind this": "Bunun arkasında kim var",
   "**We built Lolly for ourselves.** SUSE needed thousands of on-brand files, each with its name sealed inside, made without handing anything to outside services. So we built a tool that does all of it on the device, and released it as open source, like everything else we make. We keep maintaining it because we use it every day. **There is no obligation:** everything here works with or without us.": "**Lolly'yi kendimiz için yaptık.** SUSE'nin, her birinin içine adı gömülü, dışarıdaki hiçbir servise hiçbir şey vermeden hazırlanmış binlerce marka uyumlu dosyaya ihtiyacı vardı. Biz de bunların tümünü cihaz üzerinde yapan bir araç geliştirdik ve yaptığımız her şey gibi onu da açık kaynak olarak yayımladık. Her gün kullandığımız için geliştirmeye devam ediyoruz. **Hiçbir zorunluluk yok:** buradaki her şey bizimle de bizsiz de çalışır.",
   "FAQ": "SSS",
-  "No cookies · No analytics · Nothing reported back": "Çerez yok · Analitik yok · Hiçbir şey geri bildirilmez"
+  "No cookies · No analytics · Nothing reported back": "Çerez yok · Analitik yok · Hiçbir şey geri bildirilmez",
+  "Text in Design": "Design içinde metin",
+  "Authored text composition": "Oluşturulan metnin dizgisi"
 }

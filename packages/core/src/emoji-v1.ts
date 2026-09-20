@@ -181,3 +181,21 @@ export type EmojiResolutionV1 =
   | { status: 'text'; text: string }
   | { status: 'unresolved'; issue: EmojiIssueV1 }
   | { status: 'resolved'; value: ResolvedEmojiGlyphV1 };
+
+/** Recorded source identity retained when emoji artwork becomes editable vectors. */
+export interface EmojiSourceRecordV1 {
+  pack: EmojiPackPinV1;
+  family: string;
+  style: string;
+  meaning: EmojiMeaningV1;
+  label: string;
+  assetId: string;
+  source: EmojiSourceV1;
+  notices?: Array<{name:string;text:string}>;
+  sourceChecksum: string;
+  artworkChecksum: string;
+  canonicalChecksum: string;
+  normalizer: string;
+  changes: string[];
+  occurrences: Array<{start:number;end:number}>;
+}

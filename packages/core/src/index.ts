@@ -144,10 +144,12 @@ export type {
   RightsEvaluationV1, ReceiptStateV1, AttributionReceiptV1, RightsReportSourceV1, RightsReportV1,
 } from './rights-v1.ts';
 export type {
-  EmojiPackPinV1, EmojiSourceV1, EmojiMeaningV1, EmojiMetricsV1, EmojiGlyphV1,
+  EmojiPackPinV1, EmojiSourceRecordV1, EmojiSourceV1, EmojiMeaningV1, EmojiMetricsV1, EmojiGlyphV1,
   EmojiPackManifestV1, EmojiStyleV1, EmojiRequestV1, EmojiIssueCodeV1,
   EmojiIssueV1, ResolvedEmojiGlyphV1, EmojiResolutionV1,
 } from './emoji-v1.ts';
 
 export type { LearningRichNode, LearningQuiz, LearningProgressEventV1, LearningTarget, LearningSource, LearningBlock, LearningLesson, LearningModule, LearningFile, LearningContentBlock, LearningContent, LearningAttempt, LearningFinding, LearningRelease } from './learning-v1.ts';
 export type { StudioSceneV1, StudioSourceV1, StudioObjectV1, StudioCameraKeyV1, StudioMaterialV1, StudioLightV1, StudioSurfaceInfo, StudioSourceInfo, StudioVector3, StudioProjection, StudioFinish, StudioFinishSpec, StudioLookScopeV1, StudioLinkV1, StudioMotionKind, StudioPoseV1 } from './studio3d-v1.ts';
+
+export * from './text-v1.ts';

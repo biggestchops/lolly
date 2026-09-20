@@ -35,6 +35,8 @@ export interface HistoryEntry {
   before: InputValue;
   after: InputValue;
   collabStamp?: number;
+  /** An atomic command can change several declared inputs together. */
+  fields?: string[];
 }
 
 /** Entries kept before the oldest is dropped. */
@@ -152,7 +154,7 @@ export interface HistoryModel {
    * previous gesture, and 'pushed' when it became a new undo step. A push or a
    * coalesce breaks the redo chain.
    */
-  record(edit: { id: string; label: string; before: InputValue; after: InputValue; collabStamp?: number }, now: number): RecordOutcome;
+  record(edit: HistoryEntry, now: number): RecordOutcome;
   /** Pop the newest undo entry onto the redo stack and return it, or null. */
   undo(): HistoryEntry | null;
   /** Pop the newest redo entry back onto the undo stack and return it, or null. */
@@ -202,18 +204,18 @@ export function createHistory(opts: { limit?: number; coalesceMs?: number } = {}
   let holding = false;
 
   return {
-    record({ id, label, before, after, collabStamp }, now) {
+    record({ id, label, before, after, collabStamp, fields }, now) {
       if (sameValue(before, after)) return 'ignored';
       if (carriesBytes(after) || carriesBytes(before)) return 'ignored';
 
       const last = undoStack[undoStack.length - 1];
       const structural = Array.isArray(before) && Array.isArray(after) && before.length !== after.length;
       let outcome: RecordOutcome;
-      if (!structural && last && lastRecordId === id && (holding || now - lastRecordTime < coalesceMs)) {
+      if (!structural && last && lastRecordId === id && JSON.stringify(last.fields) === JSON.stringify(fields) && (holding || now - lastRecordTime < coalesceMs)) {
         last.after = cloneValue(after);   // extend the gesture, keep its original `before`
         outcome = 'coalesced';
       } else {
-        undoStack.push({ id, label, before: cloneValue(before), after: cloneValue(after), ...(collabStamp !== undefined ? { collabStamp } : {}) });
+        undoStack.push({ id, label, before: cloneValue(before), after: cloneValue(after), ...(collabStamp !== undefined ? { collabStamp } : {}), ...(fields ? { fields: [...fields] } : {}) });
         if (undoStack.length > limit) undoStack.shift();
         outcome = 'pushed';
       }

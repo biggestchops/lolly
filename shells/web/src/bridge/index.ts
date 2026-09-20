@@ -221,8 +221,11 @@ export async function createBridge(): Promise<WebHost> {
   const loadNet = memo(async () => (await import('./net.ts')).createNetAPI({ allowlist: [] }));
   host.net = { fetch: async (url, init) => (await loadNet()).fetch(url, init) };
 
-  const loadText = memo(async () => (await import('./text.ts')).createTextAPI());
+  const loadText = memo(async () => (await import('./text.ts')).createTextAPI(host.assets));
   host.text = {
+    fontInfo: async (font) => (await loadText()).fontInfo!(font),
+    shapeRun: async (request) => (await loadText()).shapeRun!(request),
+    layoutRuns: async (request) => (await loadText()).layoutRuns!(request),
     toPath: async (opts) => (await loadText()).toPath(opts),
     preload: async (fontUrl) => (await loadText()).preload(fontUrl),
     axisDefaults: async (fontUrl) => (await loadText()).axisDefaults!(fontUrl),

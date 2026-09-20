@@ -104,7 +104,7 @@ export function onDblClick(fc: FcCtx, e: MouseEvent): void {
   e.preventDefault();
   fc.selection = new Set([fc.select.idOf(boxes[hit], hit)]);
   fc.chromeSync.renderChrome();
-  fc.textEdit.startTextEdit(fc.select.idOf(boxes[hit], hit));
+  fc.textEdit.startTextEdit(fc.select.idOf(boxes[hit], hit), { point: { x: e.clientX, y: e.clientY } });
 } // menu already opened for this touch sequence
 
 // Capture phase on the STAGE, so this runs before onCanvasPointerDown (bound to the
@@ -185,6 +185,8 @@ export function tryPenDrawAt(fc: FcCtx, e: PointerEvent, nat: Point): boolean {
 export function tryArmedCreateAt(fc: FcCtx, e: PointerEvent, nat: Point): boolean {
   const { rubber } = fc;
   if (!fc.armedKind) return false;
+  const after=fc.armedKind.seed?.__textContinue;
+  if(typeof after==='string'){const boxes=fc.select.getBoxes(),hit=fc.select.selectHit(boxes,nat.x,nat.y);if(hit>=0 && fc.storyFlow.target(after,fc.select.idOf(boxes[hit],hit)))return true;}
   // The sentence has been acted on - take it down at the START of the gesture, not at
   // its commit, or it sits over the rubber band describing something already happening.
   fc.stage.hideArmHint();
@@ -237,6 +239,7 @@ export function lineSnap(fc: FcCtx, nat: Point, alt: boolean): Point {
 export function onCanvasPointerDown(fc: FcCtx, e: PointerEvent): void {
   const { PEN_CURVE_PX, cfg, connectCfg, rubber, touchPts, vectorCfg } = fc;
   if (e.button > 0) return; // primary button / touch only
+  if (e.pointerType === 'mouse' && fc.spacePan) return;
   fc.lastPointerKind = e.pointerType || '';
   // A second finger belongs to a stage gesture (pan / pinch / two-finger tap), never to
   // a box drag - and the first finger's gesture is abandoned so no drag commits.
@@ -1035,7 +1038,13 @@ export function onGestureEnd(fc: FcCtx, e: PointerEvent): void {
     // why the commit reads the pair back rather than `boxes`: seeding a legacy doc's
     // order rewrites frame rows, and both halves belong in this one commit.
     const made = fc.document.withNewFrameOrder(boxes, box);
-    fc.select.commit(fc.select.assignFrames([...made.boxes, made.box], new Set([made.boxes.length])));
+    const created = fc.select.assignFrames([...made.boxes, made.box], new Set([made.boxes.length]));
+    if (wasText && !wasCard && fc.storyText?.available()) {
+      if (moved < 6) { created[created.length - 1]![cfg.xField] = g.origin.x; created[created.length - 1]![cfg.yField] = g.origin.y; }
+      void fc.storyText.create(created, id, moved < 6 && g.seed?.[fc.cv.textFrameField!] !== 'fixed' ? 'auto-width' : 'fixed', addAtMs);
+      return;
+    }
+    fc.select.commit(created);
     // Added from the timeline, so it arrives TIMED at the playhead instead of as scenery
     // (the rail's plus keeps that default). The panel's promote() owns the write - one
     // commit through moveOverlay + setDuration - so no timing arithmetic lives here.

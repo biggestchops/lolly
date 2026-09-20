@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
-/** Plan 221: one Share implementation, also available inside the export panel. */
+/** Live links and editable files share one tab in the app's panel column. */
 import { mountSharePanel, type ShareDialogOpts } from '../components/share-dialog.ts';
+import { mountDockedPanel } from '../components/docked-panel.ts';
 import { getExportPolicy } from '../lib/export-policy.ts';
+import { icon } from '../lib/icons.ts';
 import { t } from '../i18n.ts';
 import './export-share.css';
 
@@ -12,22 +14,30 @@ export function canExportLolly(toolId: string): boolean {
 }
 
 export function mountExportShare(root: HTMLElement, options: () => ShareDialogOpts): () => void {
-  const details = document.createElement('details');
-  details.className = 'export-share';
-  details.dataset.exportShare = '';
-  const summary = document.createElement('summary');
-  summary.textContent = t('Share and editable file');
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'btn export-share';
+  trigger.dataset.exportShare = '';
+  const glyph = document.createElement('span');
+  glyph.innerHTML = icon('share', { size: 18 });
+  glyph.setAttribute('aria-hidden', 'true');
+  const label = document.createElement('span');
+  label.textContent = t('Share and editable file');
+  trigger.append(glyph, label);
   const body = document.createElement('div');
-  details.append(summary, body);
-  root.append(details);
+  root.append(trigger);
   const select = root.querySelector<HTMLSelectElement>('[data-action="format"]');
   let dispose: (() => void) | undefined;
-  const refresh = (force = false): void => {
-    if (details.open && dispose && !force) return;
+  let panel: ReturnType<typeof mountDockedPanel> | undefined;
+  let signature = '';
+  let refreshFrame = 0;
+  const refresh = (): void => {
+    const opts = options();
+    const next = JSON.stringify([opts.baseParts, opts.currentFormat, opts.fidelity, canExportLolly(opts.toolId ?? '')]);
+    if (dispose && signature === next) return;
+    signature = next;
     dispose?.();
     dispose = undefined;
-    if (!details.open) return;
-    const opts = options();
     // Recheck on every opening; never let a stale format choice bypass policy.
     const vehicle = opts.lolly;
     const allowed = (): void => { if (!canExportLolly(opts.toolId ?? '')) throw new Error(t('Editable file downloads are unavailable for this tool.')); };
@@ -39,13 +49,23 @@ export function mountExportShare(root: HTMLElement, options: () => ShareDialogOp
     } : undefined;
     const currentFormat = opts.currentFormat === 'lolly' ? '' : opts.currentFormat;
     const baseParts = opts.baseParts?.filter(part => !/^format=lolly$/i.test(part));
-    dispose = mountSharePanel(body, { ...opts, lolly, baseParts, currentFormat, title: t('Share this creation') });
+    dispose = mountSharePanel(body, { ...opts, lolly, baseParts, currentFormat, title: t('Share this creation') }, () => panel?.close());
+  };
+  const open = (): void => {
+    refresh();
+    if (panel) { panel.show(); return; }
+    panel = mountDockedPanel({ id: 'share', title: t('Share and editable file'), tabLabel: t('Share'), glyph: icon('share'),
+      content: body, onActivate: refresh, onClose: () => { panel = undefined; dispose?.(); dispose = undefined; } });
+  };
+  const onOpen = (event: Event): void => { event.preventDefault(); open(); };
+  const onChange = (): void => {
+    if (panel && !refreshFrame) refreshFrame = requestAnimationFrame(() => { refreshFrame = 0; if (panel) refresh(); });
   };
   const sync = (): void => {
     const portable = select?.value === 'lolly';
     root.classList.toggle('export-is-lolly', portable);
-    if (portable) details.open = true;
-    refresh(true);
+    if (portable) open();
+    else if (panel) refresh();
   };
   const onDownload = (event: Event): void => {
     if (select?.value !== 'lolly') return;
@@ -55,21 +75,25 @@ export function mountExportShare(root: HTMLElement, options: () => ShareDialogOp
     // a rendered-output send target. Its own delivery controls own these actions.
     event.preventDefault(); event.stopImmediatePropagation();
     if (target.matches('[data-action="download"]')) {
-      if (!details.open) { details.open = true; refresh(); }
+      open();
       body.querySelector<HTMLElement>('[data-lolly-download]')?.click();
     }
   };
-  const onToggle = (): void => refresh();
-  details.addEventListener('toggle', onToggle);
+  trigger.addEventListener('click', open);
+  root.addEventListener('lolly:share-open', onOpen);
+  root.addEventListener('lolly:share-change', onChange);
   select?.addEventListener('change', sync);
   root.addEventListener('click', onDownload, true);
   sync();
   return () => {
+    panel?.close();
+    cancelAnimationFrame(refreshFrame);
     dispose?.();
-    details.removeEventListener('toggle', onToggle);
+    root.removeEventListener('lolly:share-open', onOpen);
+    root.removeEventListener('lolly:share-change', onChange);
     select?.removeEventListener('change', sync);
     root.removeEventListener('click', onDownload, true);
     root.classList.remove('export-is-lolly');
-    details.remove();
+    trigger.remove();
   };
 }

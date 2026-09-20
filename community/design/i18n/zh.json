@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "项目帧率",
   "inputs.sequenceMarks.label": "时间线标记",
   "inputs.boxes.fields.animationId.label": "源中的动画",
-  "inputs.boxes.fields.animationEdits.label": "动画内部编辑"
+  "inputs.boxes.fields.animationEdits.label": "动画内部编辑",
+  "inputs.boxes.fields.textStory.label": "文本流",
+  "inputs.boxes.fields.textFrame.label": "文本框设置",
+  "inputs.boxes.fields.pathPaint.label": "矢量填充和描边",
+  "inputs.boxes.fields.vectorSource.label": "矢量来源和署名",
+  "inputs.boxes.fields.textWrap.label": "文本绕排设置",
+  "inputs.textDocument.label": "文本文档",
+  "inputs.exportVisibleText.label": "仅导出可见文本",
+  "inputs.exportVisibleText.help": "允许有意裁剪的导出。固定文本框外的文本和未放置的文本流会被省略；完整源内容仍保留在文档中。"
 }

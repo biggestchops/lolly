@@ -49,6 +49,8 @@
  */
 
 import { stripAssetModifiers, sessionVersionStamp, migrateSessionRecord, encodeFsToken } from '@lolly/engine';
+import { assetDependency } from '../../../engine/src/asset-version.ts';
+import { textFontAssetIds } from '../../../engine/src/text-assets.ts';
 import type { SavedStateData, WebStateAPI } from '../../web/src/bridge/state.ts';
 
 /**
@@ -329,6 +331,10 @@ function collectAssetRefs(value: unknown, refs: Set<string>): void {
     return;
   }
   const node = value as MaybeAssetRef;
+  for (const id of textFontAssetIds((value as Record<string, unknown>).textDocument)) {
+    const dep = assetDependency({ id });
+    if (dep.pin?.version != null && dep.pin.format) refs.add(`${dep.id}:${dep.pin.format}:${dep.pin.version}`);
+  }
   if (node.source === 'library' && node.id && node.format && node.version != null) {
     // A modified ref (`<baseId>?theme=<t>` icon OR `<baseId>?treatment=<x>` photo)
     // is derived from the BASE blob - the key the cache holds and pruning must

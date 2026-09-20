@@ -1357,6 +1357,10 @@ export async function mountLiveControls(tview: ToolViewCtx): Promise<void> {
  */
 export async function wireEmojiSection(tview: ToolViewCtx): Promise<void> {
   const { contentEl, host, runtime, urlFlags, viewEl } = tview;
+  if (runtime.getModel().some(item => item.type === 'blocks' && item.canvas?.textDocumentInput)) {
+    const { mountTextSyncNotice } = await import('../../lib/text-collab-notice.ts');
+    tview.mountLifecycle.add('text sync notice', mountTextSyncNotice(runtime, host, viewEl));
+  }
   const { mountEmojiSection } = await import('./emoji-section.ts');
   const section = await mountEmojiSection({
     root: viewEl,

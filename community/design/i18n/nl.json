@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "Framesnelheid van het project",
   "inputs.sequenceMarks.label": "Tijdlijnmarkeringen",
   "inputs.boxes.fields.animationId.label": "Animatie in de bron",
-  "inputs.boxes.fields.animationEdits.label": "Interne animatiewijzigingen"
+  "inputs.boxes.fields.animationEdits.label": "Interne animatiewijzigingen",
+  "inputs.boxes.fields.textStory.label": "Tekststroom",
+  "inputs.boxes.fields.textFrame.label": "Tekstkaderinstellingen",
+  "inputs.boxes.fields.pathPaint.label": "Vectoropmaak",
+  "inputs.boxes.fields.vectorSource.label": "Vectorbron en credits",
+  "inputs.boxes.fields.textWrap.label": "Tekstomloopinstellingen",
+  "inputs.textDocument.label": "Tekstdocument",
+  "inputs.exportVisibleText.label": "Alleen zichtbare tekst exporteren",
+  "inputs.exportVisibleText.help": "Sta bewust een afgesneden export toe. Tekst buiten vaste kaders en niet-geplaatste tekststromen worden weggelaten; de volledige bron blijft in je document."
 }

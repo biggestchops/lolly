@@ -122,10 +122,11 @@
  * falls back to hashing in place. The API is async either way, so no caller can tell.
  */
 
+import { textFontAssetIds, mapTextFontAssets } from '../../../../engine/src/text-assets.ts';
 import { isJxl } from '../../../../engine/src/jxl.ts';
 import { extractC2paStore, sniffFormat } from '../../../../engine/src/c2pa-extract.ts';
 import { sniffContainer } from '../../../../engine/src/media-sniff.ts';
-import { assetDependency } from '../../../../engine/src/asset-version.ts';
+import { assetDependency, encodeAssetVersion } from '../../../../engine/src/asset-version.ts';
 import { ensureSceneManifest, sceneRowAssetIds } from '../bridge/asset-dependencies.ts';
 import { resolveSessionUserAsset, rebaseImportedAssetPins } from './session-asset-versions.ts';
 import {
@@ -593,7 +594,7 @@ export function collectSessionAssetRefs(data: unknown): SessionAssetRefs {
     // to walk. Read them out first, then carry on walking the row for its other fields.
     // The namespace is the only evidence of which bucket an id belongs in, the same
     // fallback refKind applies to a bare `{ id }` from URL mode.
-    for (const sceneId of sceneRowAssetIds(record)) {
+    for (const sceneId of [...sceneRowAssetIds(record), ...textFontAssetIds(record.textDocument)]) {
       const base = assetDependency({ id: sceneId }).key;
       if (sceneId.startsWith('user/')) {
         if (!seenUser.has(base)) { seenUser.add(base); user.push(base); }
@@ -668,7 +669,16 @@ export function rewriteSessionAssetRefs<T>(data: T, rekey: ReadonlyMap<string, s
       return { ...record, id: next + dep.modifier, ...(dep.pin ? { pin: dep.pin } : {}), source: 'user', url: '', original: undefined };
     }
     const out: Record<string, unknown> = {};
-    for (const [key, v] of Object.entries(record)) out[key] = walk(v, depth + 1);
+    for (const [key, v] of Object.entries(record)) {
+      if (key === 'textDocument') {
+        out[key] = mapTextFontAssets(v, id => {
+          if (!id.startsWith('user/')) return id;
+          const dep = assetDependency({ id }), next = rekey.get(dep.key);
+          if (next === undefined) { if (!seenUnresolved.has(dep.key)) { seenUnresolved.add(dep.key); unresolved.push(dep.key); } return id; }
+          rewritten++; return encodeAssetVersion(next + dep.modifier, dep.pin);
+        });
+      } else out[key] = walk(v, depth + 1);
+    }
     return out;
   };
 

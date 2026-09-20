@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:2c18a02d-703c-4f37-8a61-eb8198bbfd9c",
+  "serialNumber": "urn:uuid:c5283a4c-b627-468e-8e5f-30b8e9009606",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-19T22:38:16.650Z",
+    "timestamp": "2026-09-20T13:04:54.994Z",
     "tools": [
       {
         "vendor": "lolly",
@@ -19742,6 +19742,48 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/%40cto.af/linebreak@4.0.3",
+      "name": "@cto.af/linebreak",
+      "version": "4.0.3",
+      "purl": "pkg:npm/%40cto.af/linebreak@4.0.3",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1a2c9ea58b4640ca382c3ca7ba1c85af4fe1046bf44853552a73e31ee84532792c78204220c79c68290a2fc57772ef6645ab35763a525b39f18a0c3f8ab5792f"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40cto.af/unicode-trie-runtime@3.2.9",
+      "name": "@cto.af/unicode-trie-runtime",
+      "version": "3.2.9",
+      "purl": "pkg:npm/%40cto.af/unicode-trie-runtime@3.2.9",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1f8147b6f21e7fff0d954f8db10a2570bf522aef9f6083cc648fbe87aad070cd4837b0bf030882b3d2fc5917dff8ee210cc6a692c004bb00637add92f6e3ede3"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/%40dimforge/rapier3d-compat@0.12.0",
       "name": "@dimforge/rapier3d-compat",
       "version": "0.12.0",
@@ -25190,6 +25232,27 @@
         {
           "alg": "SHA-512",
           "content": "21328dbaadb02a55b57c983db125b9d9e7a9a1881906082f3801c2d2efc262efeac50f445734e10a047af419d25cb1e3cb67fb498e73690e32b7b1fd655c58da"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/bidi-shaper@0.1.2",
+      "name": "bidi-shaper",
+      "version": "0.1.2",
+      "purl": "pkg:npm/bidi-shaper@0.1.2",
+      "scope": "required",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "24144a0c9e6522ed0311425d3552e65c254b7b4d64dd8e403b72a85babc1d4c3e3f72734bb9ef4b896382eb33526eb0fd7465bafbd02948755436243fa0e91d6"
         }
       ]
     },

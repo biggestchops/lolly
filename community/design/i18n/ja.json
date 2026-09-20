@@ -105,5 +105,13 @@
   "inputs.projectFps.label": "プロジェクトのフレームレート",
   "inputs.sequenceMarks.label": "タイムラインのマーカー",
   "inputs.boxes.fields.animationId.label": "ソース内のアニメーション",
-  "inputs.boxes.fields.animationEdits.label": "アニメーション内部の編集"
+  "inputs.boxes.fields.animationEdits.label": "アニメーション内部の編集",
+  "inputs.boxes.fields.textStory.label": "テキストストーリー",
+  "inputs.boxes.fields.textFrame.label": "テキストフレームの設定",
+  "inputs.boxes.fields.pathPaint.label": "ベクターの塗りと線",
+  "inputs.boxes.fields.vectorSource.label": "ベクターの出典とクレジット",
+  "inputs.boxes.fields.textWrap.label": "テキストの回り込みの設定",
+  "inputs.textDocument.label": "テキストドキュメント",
+  "inputs.exportVisibleText.label": "表示中のテキストのみをエクスポート",
+  "inputs.exportVisibleText.help": "意図的に切り取った書き出しを許可します。固定フレームの外のテキストと未配置のストーリーは省略され、完全なソースはドキュメントに残ります。"
 }
