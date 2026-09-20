@@ -222,9 +222,9 @@ jobs:
         env:
           LOLLY_SKIP_REPORT: artifacts/test-skips.json
           PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.browsers
-          # Browser rendering and encoding share the runner's CPU. Keep two files
-          # active so independent Chromium processes do not consume every core.
-          LOLLY_TEST_CONCURRENCY: ${{ matrix.shard == 'browser' && '2' || '' }}
+          # Software rendering and video/JXL encoding use several threads per file.
+          # Keep timed browser workloads serial on this shared CPU/GPU runner.
+          LOLLY_TEST_CONCURRENCY: ${{ matrix.shard == 'browser' && '1' || '' }}
         run: |
           set -o pipefail
           mkdir -p artifacts
