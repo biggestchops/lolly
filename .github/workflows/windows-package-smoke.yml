@@ -64,9 +64,50 @@ jobs:
           "LOLLY_SMOKE_APP=$($app.FullName)" >> $env:GITHUB_ENV
       - name: Run the bundled CLI and native WebView exports
         run: |
+          @'
+          const fs = require('node:fs');
+          const events = [];
+          const pending = new Map();
+          let serial = 0;
+          const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+          async function inspect() {
+            let target;
+            for (let i = 0; i < 40; i++) {
+              try { target = (await (await fetch('http://127.0.0.1:9222/json/list')).json()).find(x => x.type === 'page'); } catch {}
+              if (target) break;
+              await delay(500);
+            }
+            if (!target) throw Error('No WebView debug target');
+            const ws = new WebSocket(target.webSocketDebuggerUrl);
+            await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
+            ws.onmessage = event => {
+              const message = JSON.parse(event.data);
+              if (message.id) { pending.get(message.id)?.(message); pending.delete(message.id); }
+              else events.push(message);
+            };
+            const call = (method, params = {}) => new Promise(resolve => {
+              const id = ++serial; pending.set(id, resolve); ws.send(JSON.stringify({id, method, params}));
+            });
+            await call('Runtime.enable');
+            await call('Network.enable');
+            await call('Runtime.evaluate', {expression: 'window.__renderProbe=0;requestAnimationFrame(function tick(){window.__renderProbe++;requestAnimationFrame(tick)})'});
+            for (let i = 0; i < 10; i++) {
+              await delay(3000);
+              const snapshot = await call('Runtime.evaluate', {returnByValue:true, expression: `JSON.stringify({url:location.href,visibility:document.visibilityState,ready:document.readyState,fonts:document.fonts.status,frames:window.__renderProbe,text:document.body.innerText.slice(-5000),images:[...document.images].map(x=>({src:x.src.slice(0,160),complete:x.complete,width:x.naturalWidth})),iframes:[...document.querySelectorAll('iframe')].map(x=>({src:x.src,html:x.contentDocument?.body?.innerHTML.slice(0,500)})),resources:performance.getEntriesByType('resource').slice(-25).map(x=>({name:x.name,duration:x.duration}))})`});
+              events.push({snapshot});
+              fs.writeFileSync('evidence/webview-debug.json', JSON.stringify(events,null,2));
+            }
+            ws.close();
+          }
+          inspect().catch(error => { events.push({error:String(error)}); fs.writeFileSync('evidence/webview-debug.json',JSON.stringify(events,null,2)); process.exitCode=1; });
+          '@ | Set-Content "$env:RUNNER_TEMP/lolly-inspect.cjs"
           function Run-Lolly($Arguments, $Name) {
             Write-Host "Starting $Name"
-            $process = Start-Process $env:LOLLY_SMOKE_APP -ArgumentList $Arguments -Wait -PassThru -RedirectStandardOutput "evidence/$Name.stdout" -RedirectStandardError "evidence/$Name.stderr"
+            $process = Start-Process $env:LOLLY_SMOKE_APP -ArgumentList $Arguments -PassThru -RedirectStandardOutput "evidence/$Name.stdout" -RedirectStandardError "evidence/$Name.stderr"
+            if ($Name -eq 'png' -and $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS.Contains('--remote-debugging-port=9222')) {
+              node "$env:RUNNER_TEMP/lolly-inspect.cjs"
+            }
+            $process.WaitForExit()
             if ($process.ExitCode -ne 0) { Get-Content "evidence/$Name.stderr"; throw "$Name exited $($process.ExitCode)" }
             Write-Host "Finished $Name"
           }
