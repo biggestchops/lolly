@@ -83,7 +83,7 @@ For Intel Macs, use `.github/workflows/macos-intel.yml`. It builds the pinned ON
 
 For a rebuild using the same runtime, supply `runtime_run_id` from a previous successful Intel build and `runtime_sha256` for its bundled `libonnxruntime.dylib`. The workflow checks that digest, the x86_64 architecture, runtime version and API before reuse. Leave both inputs empty to compile the runtime again.
 
-For an authorised private SUSE build, mount `brands/suse` and set `LOLLY_PROFILE=suse` with `LOLLY_EMBED_CATALOG=profile`. RPM source preparation additionally requires `rpm/make-sources.sh --private --out <private-build-directory>`. Keep its output and the resulting packages in private storage. Public workflows, S3 download buckets and OBS must continue using `lolly-start`.
+For an authorised private SUSE build, mount `brands/suse` and set `LOLLY_PROFILE=suse` with `LOLLY_EMBED_CATALOG=profile`. Use a separate app identifier, such as `tools.lolly.SUSE.Desktop`, so its state and cached CLI catalog do not share the public edition's directory. Match the Quick Look extension identifiers to that app identifier on macOS. RPM source preparation additionally requires `rpm/make-sources.sh --private --out <private-build-directory>` and CLI resources built for the target Linux architecture. Source archives omit macOS extended-attribute files. Keep the sources and packages in private storage. Public workflows, S3 download buckets and OBS must continue using `lolly-start`.
 
 ### Cross-compilation
 

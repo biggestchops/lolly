@@ -11,7 +11,7 @@ Roughly 580,000 lines of TypeScript, tests included, and 50,000 lines of CSS.
 |---|---|---|---|
 | `views/` | 387 files, 161,906 lines | 161 files, 57,518 lines | 6 files, 1,427 lines |
 | `lib/` | 597 files, 128,538 lines | 327 files, 62,955 lines | 11 files, 1,780 lines |
-| `bridge/` | 165 files, 48,196 lines | 98 files, 21,297 lines | none |
+| `bridge/` | 165 files, 48,216 lines | 98 files, 21,297 lines | none |
 | `components/` | 80 files, 22,921 lines | 37 files, 10,893 lines | 12 files, 804 lines |
 | `collab/` | 20 files, 13,532 lines | 22 files, 14,132 lines | none |
 | `pro/` | 22 files, 8,513 lines | 11 files, 1,738 lines | 3 files, 1,226 lines |
@@ -20,7 +20,7 @@ Roughly 580,000 lines of TypeScript, tests included, and 50,000 lines of CSS.
 | `ext/` | 2 files, 136 lines | 1 file, 86 lines | none |
 | `styles/` | none | 4 files, 857 lines | 92 files, 44,486 lines |
 
-Plus 48 `.ts`/`.js` files at the top level of `src/`, 15,878 lines all told, of which 22 are tests and 3 are ambient declarations. `main.ts` is 2,123 of that.
+Plus 48 `.ts`/`.js` files at the top level of `src/`, 15,886 lines all told, of which 22 are tests and 3 are ambient declarations. `main.ts` is 2,131 of that.
 <!-- web-src-dirs:end -->
 
 ## How do I find a feature
@@ -73,7 +73,7 @@ Do not be ambushed by these. The largest source files, by line count:
 | 2,363 | `views/free-canvas-math.ts` | yes |
 | 2,215 | `views/free-canvas.ts` | yes, nine `free-canvas-*.test.ts` files |
 | 2,211 | `views/design-inspector.ts` | yes |
-| 2,123 | `main.ts` | yes |
+| 2,131 | `main.ts` | yes |
 | 2,103 | `lib/clip-thumbs.ts` | yes |
 | 2,100 | `components/color-field.ts` | yes |
 | 2,096 | `views/tool/session.ts` | yes |

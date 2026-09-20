@@ -17,6 +17,6 @@ pkgbase = lolly-desktop-bin
 	conflicts = lolly-desktop
 	options = !strip
 	source = https://lolli.li/lolly-desktop-1.0.9_amd64.deb
-	sha256sums = e8d5900b6485ef9150ea8552da0c245eab0b8883fd404ebe3fedb5daa394b91d
+	sha256sums = abd70c13cdeaa4e72f3d1f9a585105b4b442015980de624d5dc939bc0407773d
 
 pkgname = lolly-desktop-bin

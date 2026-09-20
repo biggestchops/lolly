@@ -21,6 +21,9 @@
 #                     `pnpm run build:frontend:release` - a stale dist is silently embedded
 #                     into the binary and is invisible in the finished RPM.
 set -euo pipefail
+# BSD tar must not turn macOS extended attributes into AppleDouble files: Rust
+# plugins enumerate permission files and would try to parse those binary entries.
+export COPYFILE_DISABLE=1
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 desktop="$(cd "$here/.." && pwd)"          # shells/tauri-desktop
