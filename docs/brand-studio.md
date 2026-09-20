@@ -315,6 +315,10 @@ Select one look to review it, or two to compare. The review button stays availab
 
 Under **Details and design context**, saved systems have editable **Search tags** and a context download. Examples use original Lolly colour recipes; there is no remotely scraped inspiration collection or required account.
 
+![Compare Sunroom and Orchard side by side before applying either colour system.](/t/url-shot?url=%2F%23%2Fstart&width=1280&height=900&dpi=96&waitMs=3000&format=svg&filename=brand-compare-looks&try=1&drive=click%3A%5Bdata-ds-door%3D%22looks%22%5D%3Bwait%3A500%3Bclick%3A%5Bdata-look-select%3D%22example%3Asunroom%22%5D%3Bclick%3A%5Bdata-look-select%3D%22example%3Aorchard%22%5D%3Bclick%3A%5Bdata-looks-review%5D%3Bwait%3A500&cropSelector=.ds-looks-comparison&waitSelector=%5Bdata-ds-door%3D%22looks%22%5D&walker=1&rasterDpi=96)
+
+The comparison keeps both palettes visible together. Reviewing a look changes nothing until you choose **Use these colours** or **Use this saved system**.
+
 ## Read source evidence
 
 The source review's optional details show typography, gaps, padding and corner values where observed. Saved HTML/CSS and native website reads report declarations, which may not be used by the rendered page. The browser extension can report measured styles from a bounded sample of visible elements, with its viewport and browser colour preference. Older extensions still work with declared styles. Missing fields say **Not observed**.

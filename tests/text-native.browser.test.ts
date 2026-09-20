@@ -136,7 +136,11 @@ test('composed native input preserves source, IME, accessibility and transformed
     await page.screenshot({ path: '/tmp/lolly-271-empty-caret.png', caret: 'initial' });
     assert.equal(blank.start, blank.length); assert.equal(blank.end, blank.length); assert.equal(blank.y, blank.expected);
     assert.ok(blank.br.height > 0, `${selected}: empty paragraph retains its native editable BR`);
-    assert.ok(Math.abs(blank.br.y - 40 - blank.expected) < 1);
+    assert.ok(Math.abs(blank.holder.y - 40 - blank.expected) < 1, `${selected}: empty paragraph follows its composed line`);
+    // Native BR rectangles include the platform font's leading inside the line box.
+    const caretMiddle = blank.br.y + blank.br.height / 2;
+    assert.ok(caretMiddle >= blank.holder.y && caretMiddle <= blank.holder.y + blank.holder.height,
+      `${selected}: empty caret belongs to its composed line: ${JSON.stringify(blank)}`);
     await page.keyboard.insertText('End'); await settle(); assert.ok((await state()).source.endsWith('\nEnd'));
     await page.evaluate(() => { const proof = window.textProof; proof.select(0, proof.state().source.length); });
     await page.keyboard.press('Backspace'); await settle(); assert.equal((await state()).source, '');

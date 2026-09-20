@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "generatedAt": "2026-09-20T03:03:08.036Z",
+  "generatedAt": "2026-09-20T16:36:09.617Z",
   "tools": [
     {
       "id": "compress-pdf",
@@ -4219,6 +4219,27 @@
               "description": "9:16 for social stories."
             }
           ]
+        },
+        {
+          "id": "publishing-field-notes",
+          "name": "Field notes",
+          "category": "Publishing",
+          "description": "A journal page with balanced columns, paragraph styles and a generous headline.",
+          "thumb": "assets/publishing-field-notes.png"
+        },
+        {
+          "id": "publishing-long-read",
+          "name": "The long read",
+          "category": "Publishing",
+          "description": "One article flows through three linked frames across a two-page editorial spread.",
+          "thumb": "assets/publishing-long-read.png"
+        },
+        {
+          "id": "publishing-type-in-orbit",
+          "name": "Type in orbit",
+          "category": "Publishing",
+          "description": "A typographic poster with editable circular and curved text guides.",
+          "thumb": "assets/publishing-type-in-orbit.png"
         },
         {
           "id": "pull-quote",

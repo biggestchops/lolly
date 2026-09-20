@@ -32,6 +32,18 @@ const DOCS = join(ROOT, 'docs');
  * See plans/69-svg-snapshot-without-print.md section 16.3 for the full diagnosis of each.
  */
 const RASTER_ALLOWED: Record<string, string> = {
+  'publishing-columns':
+    'The selected two-column frame and its Inspector are editor chrome marked '
+    + '[data-export-hide]. A vector export omits their selection bounds and controls. '
+    + 'Re-check with the Design shot when docs capture can retain export-hidden chrome.',
+  'publishing-linked-frames':
+    'The reading-order connectors and Continue text ports are export-hidden editor '
+    + 'chrome. They demonstrate the link between frames and disappear in a vector '
+    + 'walk. Re-check when the docs-capture root can retain that chrome.',
+  'publishing-text-path':
+    'The Start, End and Offset handles are export-hidden editor chrome around '
+    + 'editable path text. The vector artwork alone cannot show those controls. '
+    + 'Re-check when docs capture can opt into the editor overlay.',
   'seq-sound-strip':
     'The subject is the timeline panel with a selected AUDIO clip, whose bar is a '
     + 'canvas-painted waveform (clip-thumbs) carrying the clip-warning amber/red '

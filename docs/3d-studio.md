@@ -11,11 +11,15 @@
 5. For SVG artwork, adjust **Depth** and **Bevel** under **Shape**. Small details need a smaller bevel.
 6. Choose the image contents under **Output**, then export.
 
+![The two-colour badge in 3D Studio, with guided controls and a shaded preview of its depth and bevel.](/t/url-shot?url=%2F3d-studio%3Fsource%3Dprimitive%26primitive%3Dbadge%26colorA%3D%2523238d75%26colorB%3D%2523ffc36a%26background%3D%2523f2eee5%26studio%3Dsoft%26motion%3Dstill%26outputMode%3Dscene%26backdrop%3Dsolid&width=960&height=700&dpi=96&waitMs=6000&format=svg&filename=3d-studio-guided&try=1&waitSelector=.studio-frame%5Bdata-studio-state%3D%22ready%22%5D&walker=1&rasterDpi=96)
+
 Use **Object with transparent shadow** and PNG for an object you can place over another background. **Object only** removes the cast shadow too. JPEG has no transparency. The export panel's size, scale and DPI settings render the scene again at that pixel size, up to 4096 pixels per side and 12 million pixels, so a large export carries real detail rather than an enlarged preview. Every still format takes that route: TIFF as well as PNG, JPEG, WebP and AVIF, and the BMP and CMYK TIFF exports other tools offer. A video or GIF frame takes **Clip samples** (16 by default) rather than the still's render samples, because motion hides sampling noise and a clip is hundreds of frames; raise it for a smoother depth of field at the cost of export time.
 
 ## Light, materials and depth
 
 The lighting studios include soft, dramatic, cool and warm starting points. Contrast changes the balance between key and fill light. Shadow softness changes the apparent source size. Exposure adjusts the final image brightness.
+
+![A chrome ring uses the photo-studio environment and dramatic lighting to reveal its curved surface.](/t/url-shot?url=%2F3d-studio%3Fsource%3Dprimitive%26primitive%3Dtorus%26finishA%3Dchrome%26colorA%3D%2523238d75%26background%3D%2523142126%26studio%3Ddramatic%26environment%3Dstudio%26motion%3Dstill%26outputMode%3Dscene%26backdrop%3Dsolid&width=960&height=700&dpi=96&waitMs=6000&format=svg&filename=3d-studio-lighting&try=1&waitSelector=.studio-frame%5Bdata-studio-state%3D%22ready%22%5D&walker=1&rasterDpi=96&drive=click%3Asummary%3Ahas-text%28%22Start%22%29%3Bclick%3Asummary%3Ahas-text%28%22Studio%22%29%3Bclick%3Asummary%3Ahas-text%28%22Lighting%22%29%3Bwait%3A500)
 
 Finishes go beyond matte, satin, enamel and metal: **Chrome** is a mirror; **Clay** is a soft dead matte; **Velvet** adds the fuzz of fabric at grazing angles; **Glow** and **Neon** light a region in its own colour, Neon more strongly, and **Glow halo** under Look sets the soft light that spills around them, which a transparent output keeps as partial alpha; **Glass** and **Frosted glass** let light through, so they belong in a complete scene, and a transparent output shows them as solid crystal and says so in the notes; **Pearl** and **Iridescent** shift colour with the viewing angle. Every finish is available per region, per face, bevel and side, and as a named finish on a material override.
 

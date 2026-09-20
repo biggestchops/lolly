@@ -41,3 +41,20 @@ LOLLY_MOTION_TEST_URL=http://localhost:5173 LOLLY_MOTION_EXPORT=1 node --test te
 The browser check uses an isolated profile, installs two test brands, checks
 desktop/mobile previews and loop poses, and writes sampled PNGs, WebM/MP4 exports
 and timings to `/tmp/lolly-motion-223` (override `LOLLY_MOTION_TEST_OUTPUT`).
+
+## Publishing collection
+
+The **Publishing** filter offers three still, editable compositions:
+
+| Template | What it demonstrates |
+| --- | --- |
+| `publishing-field-notes` | A portrait journal page with a balanced two-column article and named paragraph styles. |
+| `publishing-long-read` | One article in three linked frames across two artboards; the opening frame also has two columns. |
+| `publishing-type-in-orbit` | Separate circular and open curved guides, with ordinary editable source text. |
+
+Open `/design?template=<id>`. These seeds carry a versioned `textDocument`,
+ordered story/frame links and exact pins for the bundled SUSE and SUSE Mono
+faces. The paper, ink and mint are authored artwork colours; the journal's
+small accent follows the active brand. Source text remains editable and the
+examples start without overflow. The text guide includes captured examples of
+all three compositions.

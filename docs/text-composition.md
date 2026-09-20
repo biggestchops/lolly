@@ -12,6 +12,10 @@ Numeric controls share the Design Inspector's behaviour. Drag the grip beside a 
 
 Use **Paragraph > Composition** to choose Standard, Best paragraph or Balanced heading. Best paragraph considers line endings across the paragraph. Balanced heading prefers similar line lengths. **Avoid short last line** discourages a lone final word. Explicit line breaks and unbreakable text still take priority. If the constraints cannot fit, the text remains available and the frame shows overflow.
 
+Try **Field notes** in the template picker's **Publishing** filter. Its article lives in one frame with two balanced columns.
+
+![Field notes combines a large heading with one editable article in two balanced columns.](/t/url-shot?url=%2Fdesign%3Ftemplate%3Dpublishing-field-notes%26_sel%3Darticle&width=1200&height=840&dpi=96&waitMs=3000&format=jpg&filename=publishing-columns&try=1&waitSelector=svg%5Bdata-text-frame%3D%22article%22%5D&drive=press%3A0%3Bwait%3A600&css=.fc-toolbar-dock%7Bvisibility%3Ahidden%21important%7D)
+
 ## Flow an article through frames
 
 A story is one continuous source with an ordered set of text frames. Select a frame and choose **Continue text**. Create a linked frame by dragging on the canvas, or choose an existing text frame from the target list. Joining two nonempty stories shows their proposed order before you apply it.
@@ -24,6 +28,10 @@ To keep an article readable at a frame boundary, open **More paragraph settings*
 
 Zoom with the view controls or pinch gesture. Pan with the wheel, middle-button drag or Space-drag. Every canvas edge and the surrounding pasteboard remain reachable when zoomed in. Use **Fit** or **0** to return to the whole canvas.
 
+![The long read continues one article through three linked text frames across two artboards.](/t/url-shot?url=%2Fdesign%3Ftemplate%3Dpublishing-long-read%26_sel%3Dopening&width=1200&height=840&dpi=96&waitMs=3000&format=jpg&filename=publishing-linked-frames&cropTop=0.25&cropRight=0.30&cropBottom=0.11&cropLeft=0.05&try=1&waitSelector=svg%5Bdata-text-frame%3D%22closing%22%5D&drive=press%3A0%3Bwait%3A600&css=.fc-toolbar-dock%7Bvisibility%3Ahidden%21important%7D)
+
+Open **The long read** under **Publishing**. Add a sentence in the opening frame to see the same story reflow into the two frames on the next page.
+
 ## Text on a path
 
 Use **Add > Text on a circle** or **Text on a path**. You can draw a guide or attach a text object to a selected path. The text owns an editable copy of that guide. Edit its points, drag the path handles, or enter precise start, end and baseline values.
@@ -31,6 +39,10 @@ Use **Add > Text on a circle** or **Text on a path**. You can draw a guide or at
 Natural spacing keeps the authored type size. **Fit to path** scales it to the chosen interval. Reverse changes the guide direction, and Flip side changes the side of the baseline. Neither reverses the source text. Detaching returns ordinary text and can keep the guide as a separate shape.
 
 A path accepts one paragraph and one continuous open path or closed contour. A closed path uses at most one traversal. Ambiguous guides and unsupported settings are refused with an explanation. Long text remains editable beyond the endpoint.
+
+![Type in orbit keeps circular lettering and a curved closing line as editable text on separate guides.](/t/url-shot?url=%2Fdesign%3Ftemplate%3Dpublishing-type-in-orbit%26_sel%3Dcircular-type&width=1200&height=840&dpi=96&waitMs=3000&format=jpg&filename=publishing-text-path&try=1&waitSelector=svg%5Bdata-text-frame%3D%22circular-type%22%5D&drive=press%3A0%3Bwait%3A600&css=.fc-toolbar-dock%7Bvisibility%3Ahidden%21important%7D)
+
+Use **Type in orbit** in **Publishing** to try both closed and open guides. Select the ring of text, open **Path options**, and adjust its start or baseline.
 
 ## Typography and wrapping
 

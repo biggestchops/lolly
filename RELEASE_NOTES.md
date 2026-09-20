@@ -36,6 +36,8 @@ Lolly is completely free and open source. It is licensed under the **Mozilla Pub
 
 ### New in 1.0.9 (unreleased)
 
+The proposed release is **the pre-pressive one**. See the [draft 1.0.9 release notes](releases/1.0.9-draft.md) for the publishing tools, Agenda, inspector, sharing and export changes, together with the support limits. This remains a draft until the release is published.
+
 - **3D Studio motion presets.** The subject can do more than turn. Beside
   **Still image** and **Turntable**, Motion now offers **Hover**, **Pulse**,
   **Wobble**, **Pop**, **Coin flip**, **Jump**, **Spin and land** and **Burst**.
