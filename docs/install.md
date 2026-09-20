@@ -25,13 +25,14 @@ application menu and a copy that keeps working with the network unplugged.
 
 **Apple silicon (M1 and later), `.dmg`.**
 
+Version 1.0.9 requires macOS 13.5 or later, including its bundled terminal tools.
+
 Download the disk image, open it, and drag Lolly to Applications. Nothing else
 is needed - the app carries its own engine and tool catalogue.
 
 - **Download:** [`lolly-latest.dmg`](https://lolli.li/lolly-latest.dmg) - always the newest build.
 - **Versioned:** `https://lolli.li/Lolly_<version>_aarch64.dmg` - pinned, never overwritten.
-- **Intel Macs:** not published. an `x86_64-apple-darwin` package needs its matching native CLI runtime and
-  libraries. The release-build workflow uses an Intel runner.
+- **Intel Macs:** the stable download has not been published. The 1.0.9 build uses the Intel workflow with its matching native runtimes; see the [desktop build guide](/info/build-desktop.html).
 
 Build it yourself:
 

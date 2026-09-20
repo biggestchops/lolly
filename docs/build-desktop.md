@@ -77,6 +77,10 @@ Tauri first builds and signs its frontend, builds the native CLI sidecar, and bu
 | Windows | `.msi` + `.exe` NSIS installer | `src-tauri/target/release/bundle/` |
 | Linux | `.deb` + `.AppImage` | `src-tauri/target/release/bundle/` |
 
+The complete macOS package requires macOS 13.5 or later, matching the bundled Node CLI runtime. Set `APPLE_SIGNING_IDENTITY` for a Developer ID build, then notarise and staple the app and DMG before distribution.
+
+For Intel Macs, use `.github/workflows/macos-intel.yml`. It builds the pinned ONNX Runtime 1.28.0 from source, verifies API 28, and bundles the resulting x86_64 library with the application. The matching Node CLI and native SVG addon are built on the Intel runner. The collected app still needs distribution signing and notarisation.
+
 ### Cross-compilation
 
 Tauri does not support cross-compilation out of the box. Build each platform on its native OS, or use a CI matrix (GitHub Actions `macos-latest` / `windows-latest` / `ubuntu-latest`).
