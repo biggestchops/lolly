@@ -64,6 +64,12 @@ jobs:
           "LOLLY_SMOKE_APP=$($app.FullName)" >> $env:GITHUB_ENV
       - name: Run the bundled CLI and native WebView exports
         run: |
+          if ($env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS) {
+            # Hosted runners are elevated; WebView2 ignores environment overrides there.
+            $policy = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
+            New-Item $policy -Force | Out-Null
+            New-ItemProperty $policy -Name 'lolly-desktop.exe' -Value $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -PropertyType String -Force | Out-Null
+          }
           @'
           const fs = require('node:fs');
           const events = [];
