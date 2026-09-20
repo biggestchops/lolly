@@ -283,9 +283,13 @@ node scripts/build-cli-sidecar.ts --target=x86_64-unknown-linux-gnu \
 both gitignored. `tauri build` then picks them up from `bundle.externalBin` and
 `bundle.resources`. The release build's `beforeBuildCommand` runs the installer
 for the current target; an intentional cross build still passes that platform's
-Node binary and resvg binding explicitly. macOS signing needs nothing extra:
-the sidecar is signed ad-hoc by the build script and re-signed with the real
-identity when `tauri build` signs the app bundle.
+Node binary and resvg binding explicitly. The macOS sidecar is signed ad-hoc by
+the build script and re-signed with the real identity when `tauri build` signs
+the app bundle. Apple silicon uses `macos/Entitlements.plist`. Intel builds use
+`macos/IntelEntitlements.plist`, selected by `macos-intel.yml`, because Intel V8
+also needs permission to change executable page protections. Preserve these
+entitlements when re-signing collected bundles. Test `list --json` after signing;
+`--version` alone does not start the Node runtime.
 
 ## Deep links: `lolly://`
 

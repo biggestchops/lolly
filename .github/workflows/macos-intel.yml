@@ -97,7 +97,7 @@ jobs:
           assert api.get_api(28) and api.version() == b'1.28.0'
           print('ONNX Runtime 1.28.0 provides API 28')
           PY
-          node -e 'require("fs").writeFileSync(process.env.RUNNER_TEMP+"/lolly-intel.json", JSON.stringify({bundle:{macOS:{minimumSystemVersion:"13.5",frameworks:[process.env.RUNNER_TEMP+"/lolly-ort/libonnxruntime.dylib"]}}}))'
+          node -e 'require("fs").writeFileSync(process.env.RUNNER_TEMP+"/lolly-intel.json", JSON.stringify({bundle:{macOS:{minimumSystemVersion:"13.5",entitlements:"../macos/IntelEntitlements.plist",frameworks:[process.env.RUNNER_TEMP+"/lolly-ort/libonnxruntime.dylib"]}}}))'
           rm -rf "$RUNNER_TEMP/lolly-ort-build" upstream-ort
       - name: Install application dependencies
         run: |
