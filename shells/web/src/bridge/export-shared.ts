@@ -312,7 +312,11 @@ export interface DtoRenderOpts {
 // This is the slice of dom-to-image-more's surface the export path uses;
 // typing it catches option-key typos at the inline-literal call sites and locks
 // the three method names. toJpeg additionally takes a `quality`.
-type DtoOpts = Partial<DtoRenderOpts> & { quality?: number; filterUrls?: (url: string) => boolean };
+type DtoOpts = Partial<DtoRenderOpts> & {
+  quality?: number;
+  filterUrls?: (url: string) => boolean;
+  filterStyles?: (node: Element, property: string) => boolean;
+};
 interface DomToImage {
   toPng(node: Node, opts?: DtoOpts): Promise<string>;
   toJpeg(node: Node, opts?: DtoOpts): Promise<string>;
@@ -356,10 +360,26 @@ export async function getDomToImage(): Promise<DomToImage> {
     // as an image replaces it with an empty URL and removes Work Avatar's end
     // fade. Apply this to every capture method, including the canvas path used
     // for imprints/HDR; external images and fonts still need normal inlining.
-    const options = (opts?: DtoOpts): DtoOpts => ({
-      ...opts,
-      filterUrls: (url) => !url.trim().startsWith('#') && (opts?.filterUrls?.(url) ?? true),
-    });
+    const options = (opts?: DtoOpts): DtoOpts => {
+      const authoredGlyphs = new WeakMap<Element, boolean>();
+      return {
+        ...opts,
+        filterUrls: (url) => !url.trim().startsWith('#') && (opts?.filterUrls?.(url) ?? true),
+        filterStyles: (node, property) => {
+          let authored = authoredGlyphs.get(node);
+          if (authored === undefined) {
+            const root = node.closest('svg[data-composed-text][data-text-layout]');
+            authored = root !== null && root !== node;
+            authoredGlyphs.set(node, authored);
+          }
+          // Settled text is already portable SVG with explicit geometry and paint.
+          // Copying the app's computed CSS onto every glyph expands a journal page
+          // beyond WebKit's image decoder limits. Keep the root's layout and effects;
+          // descendants retain their authored attributes and inline styles.
+          return !authored && (opts?.filterStyles?.(node, property) ?? true);
+        },
+      };
+    };
     domToImageMore = {
       toPng: (node, opts) => lib.toPng(node, options(opts)),
       toJpeg: (node, opts) => lib.toJpeg(node, options(opts)),

@@ -81,6 +81,8 @@ The complete macOS package requires macOS 13.5 or later, matching the bundled No
 
 For Intel Macs, use `.github/workflows/macos-intel.yml`. It builds the pinned ONNX Runtime 1.28.0 from source, verifies API 28, and bundles the resulting x86_64 library with the application. The matching Node CLI and native SVG addon are built on the Intel runner. The collected app still needs distribution signing and notarisation.
 
+For a rebuild using the same runtime, supply `runtime_run_id` from a previous successful Intel build and `runtime_sha256` for its bundled `libonnxruntime.dylib`. The workflow checks that digest, the x86_64 architecture, runtime version and API before reuse. Leave both inputs empty to compile the runtime again.
+
 ### Cross-compilation
 
 Tauri does not support cross-compilation out of the box. Build each platform on its native OS, or use a CI matrix (GitHub Actions `macos-latest` / `windows-latest` / `ubuntu-latest`).

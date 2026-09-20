@@ -3,9 +3,21 @@ name: macOS Intel package
 
 on:
   workflow_dispatch:
+    inputs:
+      runtime_run_id:
+        description: Optional previous lolly-macos-x64 artifact to reuse its CPU runtime
+        required: false
+        default: ''
+        type: string
+      runtime_sha256:
+        description: Required SHA-256 of the reused libonnxruntime.dylib
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
@@ -28,6 +40,7 @@ jobs:
           echo "$RUNNER_TEMP/lolly-pnpm/bin" >> "$GITHUB_PATH"
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
       - name: Check out ONNX Runtime 1.28.0
+        if: inputs.runtime_run_id == ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: microsoft/onnxruntime
@@ -35,6 +48,7 @@ jobs:
           path: upstream-ort
           submodules: recursive
       - name: Build the Intel CPU runtime
+        if: inputs.runtime_run_id == ''
         working-directory: upstream-ort
         run: |
           ./build.sh --config Release --build_shared_lib --parallel 4 \
@@ -42,13 +56,32 @@ jobs:
             --build_dir "$RUNNER_TEMP/lolly-ort-build" \
             --cmake_extra_defines CMAKE_OSX_ARCHITECTURES=x86_64 \
               onnxruntime_BUILD_UNIT_TESTS=OFF onnxruntime_USE_TELEMETRY=OFF
-      - name: Prepare and verify the runtime
+      - name: Prepare the compiled runtime
+        if: inputs.runtime_run_id == ''
         run: |
           mkdir -p "$RUNNER_TEMP/lolly-ort"
           dylib=$(find "$RUNNER_TEMP/lolly-ort-build" -type f -name 'libonnxruntime.1.28.0.dylib' -print -quit)
           test -n "$dylib"
           cp "$dylib" "$RUNNER_TEMP/lolly-ort/libonnxruntime.dylib"
           install_name_tool -id '@rpath/libonnxruntime.dylib' "$RUNNER_TEMP/lolly-ort/libonnxruntime.dylib"
+      - name: Reuse the verified CPU runtime
+        if: inputs.runtime_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUNTIME_RUN_ID: ${{ inputs.runtime_run_id }}
+          RUNTIME_SHA256: ${{ inputs.runtime_sha256 }}
+        run: |
+          [[ "$RUNTIME_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$RUNTIME_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          gh run download "$RUNTIME_RUN_ID" --name lolly-macos-x64 --dir "$RUNNER_TEMP/lolly-runtime-package"
+          ditto -x -k "$RUNNER_TEMP/lolly-runtime-package/Lolly-macos-x64.app.zip" "$RUNNER_TEMP/lolly-runtime-package/unpacked"
+          mkdir -p "$RUNNER_TEMP/lolly-ort"
+          cp "$RUNNER_TEMP/lolly-runtime-package/unpacked/Lolly.app/Contents/Frameworks/libonnxruntime.dylib" "$RUNNER_TEMP/lolly-ort/"
+          printf '%s  %s\n' "$RUNTIME_SHA256" "$RUNNER_TEMP/lolly-ort/libonnxruntime.dylib" | shasum -a 256 -c -
+          rm -rf "$RUNNER_TEMP/lolly-runtime-package"
+      - name: Verify and configure the runtime
+        run: |
           file "$RUNNER_TEMP/lolly-ort/libonnxruntime.dylib" | grep x86_64
           echo "ORT_LIB_PATH=$RUNNER_TEMP/lolly-ort" >> "$GITHUB_ENV"
           echo 'ORT_PREFER_DYNAMIC_LINK=1' >> "$GITHUB_ENV"
