@@ -104,9 +104,10 @@ jobs:
               fs.writeFileSync('evidence/webview-debug.json', JSON.stringify(events,null,2));
               if (i === 1) {
                 const state = JSON.parse(snapshot.result.result.value);
-                if (!state.text) {
-                  const current = new URL(state.url);
-                  const recovery = await call('Page.navigate', {url:current.origin + '/index.html' + current.hash});
+                if (!state.text || state.url.startsWith('chrome-error:')) {
+                  const bypass = await call('Network.setBypassServiceWorker', {bypass:true});
+                  events.push({bypass});
+                  const recovery = await call('Page.navigate', {url:'http://tauri.localhost/index.html#/tool/qr-code?url=https%3A%2F%2Flolly.tools&format=png&export=1'});
                   events.push({recovery});
                   fs.writeFileSync('evidence/webview-debug.json', JSON.stringify(events,null,2));
                 }
