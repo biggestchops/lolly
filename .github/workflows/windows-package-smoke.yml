@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: MPL-2.0
+name: Windows package smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Run containing lolly-windows-x64
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  render:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        installer: [msi, nsis]
+    env:
+      LOLLY_CLI_TIMEOUT: '180'
+    steps:
+      - name: Download the built installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          if ($env:BUILD_RUN_ID -notmatch '^\d+$') { throw 'Invalid build run ID' }
+          gh run download $env:BUILD_RUN_ID --name lolly-windows-x64 --dir package
+          if ($LASTEXITCODE -ne 0) { throw 'Artifact download failed' }
+      - name: Install the package
+        env:
+          INSTALLER_KIND: ${{ matrix.installer }}
+        run: |
+          New-Item -ItemType Directory evidence | Out-Null
+          if ($env:INSTALLER_KIND -eq 'msi') {
+            $package = (Get-ChildItem package -Recurse -Filter *.msi | Select-Object -First 1).FullName
+            $args = "/i `"$package`" /qn /norestart INSTALLDIR=C:\lolly-smoke /l*v `"$PWD\evidence\install.log`""
+            $process = Start-Process msiexec.exe -ArgumentList $args -Wait -PassThru
+          } else {
+            $package = (Get-ChildItem package -Recurse -Filter '*-setup.exe' | Select-Object -First 1).FullName
+            $process = Start-Process $package -ArgumentList '/S /D=C:\lolly-smoke' -Wait -PassThru
+          }
+          if ($process.ExitCode -notin @(0, 3010)) { throw "Installer exited $($process.ExitCode)" }
+          $app = Get-ChildItem C:\lolly-smoke -Recurse -Filter lolly-desktop.exe | Select-Object -First 1
+          if (-not $app) { throw 'Installed application is missing' }
+          $version = $app.VersionInfo.ProductVersion
+          if ($version -notmatch '^1\.0\.9(\.|$)') { throw "Unexpected application version: $version" }
+          $bytes = [System.IO.File]::ReadAllBytes($app.FullName)
+          $offset = [BitConverter]::ToInt32($bytes, 0x3c)
+          if ([BitConverter]::ToUInt16($bytes, $offset + 4) -ne 0x8664) { throw 'Application is not x64' }
+          @{ version = $version; architecture = 'x64'; bytes = $app.Length; installer = $env:INSTALLER_KIND } | ConvertTo-Json | Set-Content evidence/package.json
+          "LOLLY_SMOKE_APP=$($app.FullName)" >> $env:GITHUB_ENV
+      - name: Run the bundled CLI and native WebView exports
+        run: |
+          function Run-Lolly($Arguments, $Name) {
+            $process = Start-Process $env:LOLLY_SMOKE_APP -ArgumentList $Arguments -Wait -PassThru -RedirectStandardOutput "evidence/$Name.stdout" -RedirectStandardError "evidence/$Name.stderr"
+            if ($process.ExitCode -ne 0) { Get-Content "evidence/$Name.stderr"; throw "$Name exited $($process.ExitCode)" }
+          }
+          Run-Lolly 'list --json' 'tools'
+          $tools = Get-Content evidence/tools.stdout -Raw | ConvertFrom-Json
+          if (-not $tools) { throw 'Bundled CLI returned no catalog' }
+          foreach ($format in @('svg', 'png')) {
+            $output = "$PWD/evidence/qr.$format"
+            Run-Lolly "qr-code --url=https://lolly.tools --format=$format --output=`"$output`"" $format
+            if (-not (Test-Path $output) -or (Get-Item $output).Length -lt 100) { throw "$format export is empty" }
+          }
+          if ((Get-Content evidence/qr.svg -Raw) -notmatch '<svg') { throw 'SVG export is invalid' }
+          $png = [System.IO.File]::ReadAllBytes("$PWD/evidence/qr.png")
+          if ([BitConverter]::ToString($png[0..7]) -ne '89-50-4E-47-0D-0A-1A-0A') { throw 'PNG signature is invalid' }
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: ${{ !cancelled() }}
+        with:
+          name: windows-${{ matrix.installer }}-render-evidence
+          path: evidence/
+          if-no-files-found: error
