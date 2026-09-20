@@ -162,13 +162,12 @@ secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` -
 write a manifest while the placeholder is in place, and `cargo test --lib` pins
 the endpoint shape and the placeholder spelling so the two files cannot drift.
 
-**An artifact the updater can install.** `bundle.createUpdaterArtifacts` is on, so
-`tauri build` emits a `.app.tar.gz` on macOS (and a `.msi.zip` / `.nsis.zip` on
-Windows) beside its `.sig`. The `.dmg`, `.deb`, `.rpm`, `.flatpak` and Arch
-package are NOT updater artifacts - a package manager owns those files, and
-replacing them from inside the app would leave it describing files that are gone.
-Those users update the way they installed. Serving Linux through the updater
-means adding an AppImage bundle to the release first.
+**An artifact the updater can install.** `bundle.createUpdaterArtifacts` is currently
+`false`; 1.0.9 builds installers without updater signatures. Enable it only after
+replacing the placeholder key and checking the generated artifact names against
+`build-latest-json.ts`. The DMG and application ZIP in the build collection are
+manual-install downloads. DEB, RPM, Flatpak and Arch users update through their
+package manager. An AppImage is built for 1.0.9, but no updater manifest is published.
 
 ## Command-line mode: one binary, GUI *and* CLI
 
