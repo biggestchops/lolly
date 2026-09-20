@@ -35,19 +35,11 @@ machine that can build, rather than driven by an OBS source service.
 
 ### How the ONNX Runtime problem is solved
 
-`ort-sys`'s build script skips its download entirely when `ORT_LIB_LOCATION` is set:
+`ort-sys` uses the supplied static library when `ORT_LIB_LOCATION` names its directory. The spec points this at `onnxruntime/lib` and disables downloads for the offline build.
 
-```rust
-if cfg!(feature = "download-binaries") && env::var(ORT_LIB_LOCATION).is_err() { ... }
-```
+`make-sources.sh` reads the download URL and SHA-256 from the pinned crate's `build/download/dist.tsv`. It verifies the original raw-LZMA2 archive, then repacks the unchanged `libonnxruntime.a` under `onnxruntime/lib/` in a gzip tarball for RPM. The resulting package has no shared `libonnxruntime` runtime dependency.
 
-`make-sources.sh` reads the download URL **and its SHA256 out of the vendored
-`ort-sys` `dist.txt`**, so the tarball we ship is byte-identical to the one the crate
-would have fetched and cannot drift from the pinned version. It contains
-`onnxruntime/lib/libonnxruntime.a`, so the spec links it **statically** - the
-resulting RPM has no `libonnxruntime` runtime dependency at all.
-
-That last point is what lets one spec serve all three targets: none of them ship
+That last point is what lets one spec serve both distribution targets: none of them ship
 onnxruntime in the OSS repo, so a shared-library approach would have needed a
 per-distro answer. The spec has a `%check` that fails the build if the binary ever
 does pick up a shared `libonnxruntime`, so this cannot regress silently.

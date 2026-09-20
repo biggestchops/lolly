@@ -29,10 +29,9 @@
 #      src-tauri/src/reword.rs) DOWNLOADS a prebuilt ONNX Runtime in its build
 #      script via ureq. That is fatal offline. Setting ORT_LIB_LOCATION makes
 #      ort-sys skip the download entirely and link the library we hand it
-#      (build.rs: `cfg!(feature = "download-binaries") && env::var(ORT_LIB_LOCATION).is_err()`).
-#      The tarball we ship is byte-identical to the one ort-sys would have
-#      fetched - make-sources.sh reads the URL and SHA256 straight out of the
-#      vendored ort-sys dist.txt, so it cannot drift from the pinned crate.
+#      from ORT_LIB_LOCATION. make-sources.sh verifies the URL and SHA256 from
+#      the pinned crate's build/download/dist.tsv, then repacks the unchanged
+#      static library from raw LZMA2 into the gzip source layout below.
 #      It contains onnxruntime/lib/libonnxruntime.a, so this links STATICALLY
 #      and the resulting RPM has no libonnxruntime runtime dependency. That is
 #      what makes one spec work on Tumbleweed and Leap 16 alike, neither of
@@ -127,7 +126,7 @@ test -d src-tauri/vendor
 
 # Hand ort-sys a prebuilt ONNX Runtime so its build script does not try to download
 # one. Extracts to ./onnxruntime/lib/libonnxruntime.a; ORT_LIB_LOCATION points at the
-# directory ABOVE lib/, which is the layout ort-sys's prepare_libort_dir() expects.
+# directory containing that static library.
 %ifarch x86_64
 tar -xzf %{SOURCE3}
 %endif

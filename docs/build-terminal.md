@@ -26,7 +26,7 @@ pnpm run cli quotes --quote="Open source wins." --name="Andy" --export=png --out
 
 The CLI supports **SVG, EMF, EPS, HTML and the text/data formats** (JSON, CSV, ICS, VCF, MD, TXT) natively - hydrated by the engine with no browser engine needed (SVG/EMF only for tools with an `<svg>`-based template, since the lean CLI has no layout engine). **PNG** from an `<svg>`-based tool is also browser-free: resvg rasterises the engine's own SVG (Tier A). The remaining raster formats - **JPG, WebP, PDF and video (GIF, WebM, MP4)**, plus HTML-layout PNG - render through the CLI's own scoped headless Chromium (Tier B): install it once with `lolly install-browser`, then they export straight from the CLI. (ZIP is the one format the lean CLI leaves out - no zip dependency - so its batch writes a folder instead.)
 
-### Package and native binary
+### Standalone binary
 
 Run these commands from the repository root after `pnpm install`:
 

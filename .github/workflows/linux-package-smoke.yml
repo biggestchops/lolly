@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: MPL-2.0
+name: Linux package smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      amd64_run_id:
+        description: Run containing lolly-deb and lolly-appimage
+        required: true
+        type: string
+      arm64_run_id:
+        description: Run containing lolly-linux-arm64
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  render:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+            artifact: lolly-deb
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            artifact: lolly-linux-arm64
+    env:
+      LOLLY_CLI_TIMEOUT: '180'
+      WEBKIT_DISABLE_DMABUF_RENDERER: '1'
+    steps:
+      - name: Download the built package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_RUN_ID: ${{ matrix.arch == 'amd64' && inputs.amd64_run_id || inputs.arm64_run_id }}
+          ARTIFACT_NAME: ${{ matrix.artifact }}
+        run: |
+          [[ "$BUILD_RUN_ID" =~ ^[0-9]+$ ]]
+          gh run download "$BUILD_RUN_ID" --name "$ARTIFACT_NAME" --dir package
+      - name: Install and verify the DEB
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ./package/*.deb xvfb xauth dbus-x11
+          mkdir evidence
+          lolly-desktop --version | tee evidence/version.txt
+          xvfb-run -a dbus-run-session -- lolly-desktop list --json > evidence/tools.json
+      - name: Render with the installed WebKit application
+        run: |
+          xvfb-run -a dbus-run-session -- lolly-desktop qr-code --url=https://lolly.tools --format=svg --output="$PWD/evidence/qr.svg"
+          xvfb-run -a dbus-run-session -- lolly-desktop qr-code --url=https://lolly.tools --format=png --output="$PWD/evidence/qr.png"
+          test -s evidence/qr.svg && test -s evidence/qr.png
+          grep -q '<svg' evidence/qr.svg
+          file evidence/qr.png
+      - name: Test the AppImage entry point
+        if: matrix.arch == 'amd64'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_RUN_ID: ${{ inputs.amd64_run_id }}
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: |
+          [[ "$BUILD_RUN_ID" =~ ^[0-9]+$ ]]
+          gh run download "$BUILD_RUN_ID" --name lolly-appimage --dir appimage
+          chmod +x appimage/*.AppImage
+          xvfb-run -a dbus-run-session -- appimage/*.AppImage list --json > evidence/appimage-tools.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: ${{ !cancelled() }}
+        with:
+          name: linux-${{ matrix.arch }}-render-evidence
+          path: evidence/
+          if-no-files-found: error
