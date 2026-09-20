@@ -58,6 +58,7 @@ test('gallery drop, selection, clip edits, save/reopen and actual dotLottie down
     assert.equal(first.layers.length, 3);
     await page.reload({ waitUntil: 'networkidle' });
     await page.locator(marker).first().waitFor();
+    await page.waitForFunction(() => document.querySelectorAll('.tl-clip').length === 3);
     assert.equal(await page.locator('.tl-clip').count(), 3);
     await page.getByRole('button', { name: 'Export', exact: true }).click();
     await page.locator('[data-action="format"]').selectOption('lottie', { force: true });

@@ -14,7 +14,7 @@
 # a machine that CAN build (network + node 24 + rust >= 1.88), then commit the output.
 #
 # Usage:
-#   ./make-sources.sh [--out DIR] [--skip-frontend]
+#   ./make-sources.sh [--out DIR] [--skip-frontend] [--private]
 #
 #   --skip-frontend   reuse an existing ../dist instead of rebuilding it. Only safe
 #                     if that dist was built from the current tree by this shell's
@@ -28,10 +28,12 @@ repo="$(cd "$desktop/../.." && pwd)"       # umbrella repo root
 
 out="$here/out"
 skip_frontend=0
+private_build=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --out) out="$2"; shift 2 ;;
     --skip-frontend) skip_frontend=1; shift ;;
+    --private) private_build=1; shift ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -66,7 +68,10 @@ active_profile="$(cd "$repo" && node scripts/profile.ts 2>/dev/null | sed -n 's/
 echo "    content profile: ${active_profile:-<unresolved>}"
 case "$active_profile" in
   lolly-start) ;;  # the public blank brand - the only thing we may publish
-  suse) die "refusing to package the private SUSE profile; build with LOLLY_PROFILE=lolly-start" ;;
+  suse)
+    [ "$private_build" -eq 1 ] || die "refusing to package the private SUSE profile without --private; public builds use LOLLY_PROFILE=lolly-start"
+    echo "    PRIVATE build: keep these sources and packages out of public artifact stores"
+    ;;
   *) die "could not resolve a publishable profile (got '${active_profile:-}'); build with LOLLY_PROFILE=lolly-start" ;;
 esac
 
@@ -81,8 +86,7 @@ if [ "$skip_frontend" -eq 0 ]; then
   # profile, not the shells' 'neutral' default: profile embeds catalog/previews/, the
   # per-tool gallery thumbnails. Neutral deliberately omits them (plans/131 WP-A), and
   # the visible cost is a gallery where every tile renders itself on first load. Safe
-  # here because the guard above has already established the profile is lolly-start,
-  # the public blank brand.
+  # The guard above requires an explicit --private for the SUSE profile.
   #
   # Rebuild the previews first if the tool set changed, or you embed stale art:
   #   pnpm run build:ort && pnpm run previews
@@ -190,6 +194,10 @@ cp "$here/lolly-desktop.spec" "$out/lolly-desktop.spec"
 
 step "Done"
 ls -lh "$out"
+if [ "$private_build" -eq 1 ]; then
+  echo "Private sources are ready. Build locally and keep the RPMs in private storage; do not publish them to OBS or public artifact stores."
+  exit 0
+fi
 cat <<EOF
 
 Next:
