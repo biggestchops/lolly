@@ -51620,6 +51620,13 @@ function overlapSplits(ci, cj, weld, budget3) {
   return { a, b };
 }
 function selfSplits(curves, splits, tol, weld, budget3) {
+  const identities = /* @__PURE__ */ new Map();
+  const ids2 = curves.map(({ c }) => {
+    const key = c.join(",");
+    if (!identities.has(key)) identities.set(key, identities.size);
+    return identities.get(key);
+  });
+  const cache3 = identities.size < curves.length ? /* @__PURE__ */ new Map() : null;
   for (let i = 0; i < curves.length; i++) {
     const loop = selfIntersectCubic(curves[i].c);
     if (loop) {
@@ -51628,7 +51635,12 @@ function selfSplits(curves, splits, tol, weld, budget3) {
     }
   }
   sweepPairs(curves, curves, true, budget3, (i, j) => {
-    const found = pairSplits(curves[i].c, curves[j].c, tol, weld, budget3);
+    const key = cache3 ? `${ids2[i]},${ids2[j]}` : "";
+    let found = cache3?.get(key);
+    if (found === void 0) {
+      found = pairSplits(curves[i].c, curves[j].c, tol, weld, budget3);
+      if (cache3 && budget3.work > 0 && cache3.size < 1024) cache3.set(key, found);
+    }
     if (!found) return;
     for (const t of found.a) addSplit(splits, i, t, budget3);
     for (const t of found.b) addSplit(splits, j, t, budget3);

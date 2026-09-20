@@ -918,12 +918,30 @@ function overlapSplits(ci: Cubic, cj: Cubic, weld: number, budget: Budget): { a:
 }
 
 function selfSplits(curves: IndexedCurve[], splits: number[][], tol: number, weld: number, budget: Budget): void {
+  // Repeated authored curves need the same cuts at each occurrence. Reuse exact
+  // ordered pairs within this operation; tolerance and weld are fixed here.
+  // Keep every occurrence for winding and charge its splits and sweep work.
+  const identities = new Map<string, number>();
+  const ids = curves.map(({ c }) => {
+    const key = c.join(',');
+    if (!identities.has(key)) identities.set(key, identities.size);
+    return identities.get(key)!;
+  });
+  const cache = identities.size < curves.length
+    ? new Map<string, ReturnType<typeof pairSplits>>() : null;
   for (let i = 0; i < curves.length; i++) {
     const loop = selfIntersectCubic(curves[i]!.c);
     if (loop) { addSplit(splits, i, loop[0], budget); addSplit(splits, i, loop[1], budget); }
   }
   sweepPairs(curves, curves, true, budget, (i, j) => {
-    const found = pairSplits(curves[i]!.c, curves[j]!.c, tol, weld, budget);
+    const key = cache ? `${ids[i]},${ids[j]}` : '';
+    let found = cache?.get(key);
+    if (found === undefined) {
+      found = pairSplits(curves[i]!.c, curves[j]!.c, tol, weld, budget);
+      // An exhausted search may be partial. Never reuse it, or retain an
+      // unbounded number of pairs from an untrusted path.
+      if (cache && budget.work > 0 && cache.size < 1024) cache.set(key, found);
+    }
     if (!found) return;
     for (const t of found.a) addSplit(splits, i, t, budget);
     for (const t of found.b) addSplit(splits, j, t, budget);

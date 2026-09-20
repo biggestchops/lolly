@@ -53,7 +53,7 @@ import { readFileSync } from 'node:fs';
 import { makeGeomApi } from '../engine/src/geom-api.ts';
 import type { GeomPathResult, GeomResult } from '../packages/core/src/host-v1.ts';
 import { type Cubic, evalCubic, nearestOnCubic, subCubic } from '../engine/src/geom/bezier.ts';
-import { intersectCubics } from '../engine/src/geom/intersect.ts';
+import { CLIP_COUNTS, intersectCubics } from '../engine/src/geom/intersect.ts';
 import type { GeomPath } from '../engine/src/geom/path.ts';
 
 const geom = makeGeomApi();
@@ -239,6 +239,25 @@ test('every boolean, offset and stroke operation on the path answers promptly', 
 });
 
 // ── 2. the answers are the right regions ──────────────────────────────────────
+
+test('repeated curves reuse intersection work while retaining every winding contribution', () => {
+  const counts: number[] = [];
+  for (const repeats of [6, 12]) {
+    const source = 'M0 0 ' + 'C10 0 20 10 20 20 S30 40 40 4 '.repeat(repeats - 1)
+      + 'C10 0 20 10 20 20 S30 40 40 40';
+    const before = CLIP_COUNTS.pairs;
+    const result = pathOf(geom.selfUnion(source), 'repeated selfUnion');
+    counts.push(CLIP_COUNTS.pairs - before);
+    const raw = shape(source), region = shape(result);
+    forGrid((x, y) => {
+      if (raw.distance(x, y) >= EDGE) {
+        assert.equal(region.inside(x, y), raw.inside(x, y), `${repeats} repeats at ${x},${y}`);
+      }
+    });
+  }
+  assert.ok(counts[0]! > 0, 'the fixture must exercise curve intersection');
+  assert.ok(counts[1]! <= counts[0]! + 2, `doubling identical curves repeated searches: ${counts}`);
+});
 
 test('selfUnion fills exactly what the raw path fills, as closed contours', () => {
   const contours = val(geom.parse(REGION_D), 'parse');
