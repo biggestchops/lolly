@@ -25,18 +25,21 @@ export function cmykTiffSupport(): boolean {
   if (_cmykTiff !== null) return _cmykTiff;
   _cmykTiff = false;
   if (typeof document === 'undefined' || typeof navigator === 'undefined') return _cmykTiff;
+  const ua = navigator.userAgent || '';
+  const iOS = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+  const mobile = iOS || /Android/.test(ua) || (/Mobi/.test(ua) && (navigator.maxTouchPoints || 0) > 0);
+  if (mobile) return _cmykTiff;
   try {
     const c = document.createElement('canvas');
     c.width = c.height = 2;
-    const ctx = c.getContext('2d');
+    // The probe only reads pixels. A CPU surface avoids starting or flushing a GPU
+    // merely to open a tool, which can stall software-rendered browser sessions.
+    const ctx = c.getContext('2d', { willReadFrequently: true });
     if (!ctx) return _cmykTiff;
     ctx.fillRect(0, 0, 1, 1);
     ctx.getImageData(0, 0, 1, 1);                     // throws if readback is blocked
   } catch { return _cmykTiff; }
-  const ua = navigator.userAgent || '';
-  const iOS = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
-  const mobile = iOS || /Android/.test(ua) || (/Mobi/.test(ua) && (navigator.maxTouchPoints || 0) > 0);
-  _cmykTiff = !mobile;
+  _cmykTiff = true;
   return _cmykTiff;
 }
 

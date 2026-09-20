@@ -161,3 +161,24 @@ test('durable: a throwing cache read degrades to the network answer, never rejec
     assert.equal(route.cached, false);
   });
 });
+
+test('TIFF admission reads a CPU canvas once and declines blocked readback or mobile delivery', async () => {
+  const before = { document: Object.getOwnPropertyDescriptor(globalThis, 'document'), navigator: Object.getOwnPropertyDescriptor(globalThis, 'navigator') };
+  try {
+    let contexts = 0, reads = 0, blocked = false;
+    Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement(tag: string) {
+      assert.equal(tag, 'canvas');
+      return { getContext(kind: string, options: unknown) { contexts++; assert.equal(kind, '2d'); assert.deepEqual(options, { willReadFrequently: true }); return { fillRect() {}, getImageData() { reads++; if (blocked) throw new Error('Readback blocked'); return {}; } }; } };
+    } } });
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { userAgent: 'Desktop', maxTouchPoints: 0 } });
+    const fresh = (name: string): Promise<typeof import('./format-support.ts')> => import(`./format-support.ts?${name}`);
+    const desktop = await fresh('desktop');
+    assert.equal(desktop.cmykTiffSupport(), true); assert.equal(desktop.tiffSupport(), true); assert.equal(contexts, 1); assert.equal(reads, 1);
+    blocked = true;
+    const denied = await fresh('denied'); assert.equal(denied.tiffSupport(), false); assert.equal(reads, 2);
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { userAgent: 'Android', maxTouchPoints: 5 } });
+    const mobile = await fresh('mobile'); assert.equal(mobile.tiffSupport(), false); assert.equal(contexts, 2);
+  } finally {
+    for (const key of ['document', 'navigator'] as const) { const descriptor = before[key]; if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key); }
+  }
+});
