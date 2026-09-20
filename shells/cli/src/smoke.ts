@@ -278,7 +278,16 @@ async function renderHtmlHeadless(toolId: string, outputPath: string): Promise<v
   await applyBrandVars(canvas, host);
   canvas.innerHTML = runtime.getHydrated();
 
-  const blob = await runtime.export(canvas, 'html', {});
+  // Portable HTML embeds fonts and prepares browser-owned presentation state.
+  // Smoke only snapshots its hydrated page; browser export tests cover that file.
+  // Keep onInit failures strict through the same integrity check below.
+  let blob: Blob;
+  if (tool.manifest.render.portable) {
+    await runtime.applyEmojiToDom(canvas);
+    blob = await host.export.render(canvas, 'html', {});
+  } else {
+    blob = await runtime.export(canvas, 'html', {});
+  }
   const buf = Buffer.from(await blob.arrayBuffer());
   assertRenderOk({ hookErrors: runtime.hookErrors, format: 'html', bytes: buf });
   await writeFile(outputPath, buf);

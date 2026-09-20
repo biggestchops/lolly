@@ -19,7 +19,7 @@
 
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -70,18 +70,24 @@ for (const [id, files] of Object.entries({
   'layout-broken': {
     'tool.json': manifest('layout-broken', {
       hooks: { onInit: true },
-      render: { width: 100, height: 100, formats: ['png'] },
+      render: { width: 100, height: 100, formats: ['png'], portable: true },
     }),
     'template.html': '<div class="card">{{label}}</div>',
     'hooks.js': THROWING_HOOKS,
+    'presentation.js': 'document.body.dataset.ready = "yes";',
   },
   'cap-gated': { 'tool.json': manifest('cap-gated', { capabilities: ['capture'] }) },
   // A HEALTHY html-layout tool that declares svg first. It has no browser-free vector
   // path, and smoke may not launch the tier that has one - the `~` bucket. It used to
   // score `✓ layout-svg svg->html`, i.e. a format substitution scored as a real render.
   'layout-svg': {
-    'tool.json': manifest('layout-svg'),
+    'tool.json': manifest('layout-svg', {
+      hooks: { onInit: true },
+      render: { width: 100, height: 100, formats: ['svg', 'html'], portable: true },
+    }),
     'template.html': '<div><p>{{label}}</p><p>second box</p></div>',
+    'hooks.js': "function onInit() { return { label: 'Portable page hydrated' }; }",
+    'presentation.js': 'document.body.dataset.ready = "yes";',
   },
   'transform-tool': {
     'tool.json': manifest('transform-tool', {
@@ -156,6 +162,16 @@ test('smoke --only renders just the requested ids (all green → exit 0)', async
   assert.match(out, /✓ ok-tool/);
   assert.doesNotMatch(out, /broken-hook/);
   assert.match(out, /\(1 tools/);
+});
+
+test('portable layout fallback snapshots hook output without a browser export', async () => {
+  const { code, out } = await run({ only: 'layout-svg' });
+  assert.equal(code, 0);
+  assert.match(out, /~ layout-svg\s+svg:html/);
+  const directory = /outputs in (.+)\n/.exec(out)![1]!;
+  const html = await readFile(join(directory, 'layout-svg.html'), 'utf8');
+  assert.match(html, /<p>Portable page hydrated<\/p>/);
+  assert.doesNotMatch(html, /<script/);
 });
 
 test('smoke --only with an unknown id is a usage error (exit 2, nothing rendered)', async () => {
