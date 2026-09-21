@@ -59,6 +59,7 @@ Run a command that needs content without any and the CLI prints those three rout
 ```bash
 pnpm run cli                      # list every tool (id, status, description)
 pnpm run cli list              # the same thing, spelled explicitly
+pnpm run cli list --json --q=chart --limit=5  # bounded machine discovery
 pnpm run cli describe qr-code  # that tool's inputs, defaults, and formats
 pnpm run cli qr-code           # sugar for describe, when no flags follow
 pnpm run cli assets            # list every catalog asset id (logos, icons, photos…)
@@ -67,6 +68,8 @@ pnpm run cli assets --type=raster
 ```
 
 `describe <tool-id>` (and its bare `<tool-id>` sugar) prints the input schema and a usage line - including a `↳` syntax hint for the non-scalar input types (how to express `asset`, `blocks`, `vector`, `file`, `color` values). The fastest way to learn what a tool accepts.
+
+`list --q=<words>` filters by tool id, name, description, category and declared formats. Add `--limit=1..100` to keep a model's discovery response small; JSON includes `query`, `limit` and `total` when those options are used. With neither option, the complete listing remains available.
 
 `--type=` is checked against the catalog: a value no asset carries is an error listing the real ones, not an empty list and exit 0.
 
