@@ -117,7 +117,7 @@ Core workflow verbs:
 
 | Tool | Does |
 |---|---|
-| `lolly_list_tools` | List / search the catalogue (by text, status, category, format, capability). |
+| `lolly_list_tools` | List / search the catalogue (by text, status, category, format or capability); use `limit` to keep discovery small. |
 | `lolly_describe_tool` | One tool's full input JSON Schema, built-in templates/presets, supported formats, canvas size and examples. |
 | `lolly_validate` | Validate inputs and return path-specific errors before a compile, URL build or render. Design also returns its artboard/layer tree and structural findings. |
 | `lolly_compile` / `lolly_inspect` / `lolly_measure` | Compile once, inspect the semantic document and measure it without rasterising. |

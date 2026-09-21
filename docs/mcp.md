@@ -57,7 +57,7 @@ Every tool input and every export control an agent can set is a URL query parame
 
 | Tool | Does |
 |---|---|
-| `lolly_list_tools` | List / search the catalogue (by text, status, category, format, capability). |
+| `lolly_list_tools` | List / search the catalogue (by text, status, category, format or capability); use `limit` to bound the matches for a small context. |
 | `lolly_describe_tool` | One tool's full input JSON Schema, supported formats, canvas size, examples - and `emojiSets`, the emoji sets this deployment registers. |
 
 **Validate and inspect a document before you spend a render:**
@@ -86,7 +86,7 @@ Every tool input and every export control an agent can set is a URL query parame
 | `lolly_redact` | Destroy regions of an image, SVG or PDF you supply. Takes the same instruction string a share link carries (`bars=1,40,60,200,24~…`), so one string can be applied to every file of an identical layout. The tool rebuilds the file and re-checks its own output; a failed check returns an error with no file attached. |
 | `lolly_verify` | Verify a file's Content Credentials (C2PA): was it genuinely made with Lolly, who signed it and has it changed since export. Returns the verdict, signer identity, edit history and embedded metadata (including any AI-generated declaration and appended-data flags) - the same C2PA verifier as the CLI's `lolly validate`. (The web verify page's pixel-level reads - the Lolly Imprint, SEAL, the opt-in deep scan - are interactive, web-only.) The file is checked in-process and never stored. |
 
-The intended flow is `lolly_list_tools` → `lolly_describe_tool` (read the exact input schema) → `lolly_validate` (correct every error) → `lolly_render`, which is exactly what the server's own prompts walk you through; `lolly_verify` closes the loop when an agent needs to prove a file it holds is an untouched Lolly export. On an authenticated connection with a file scope, five more `files_*` tools appear for importing a private file once and operating on its handle: `files_import`, `files_list`, `files_convert`, `files_report` and `files_delete`.
+The intended flow is `lolly_list_tools` (usually with a focused `q` and small `limit`) → `lolly_describe_tool` (read the exact input schema) → `lolly_validate` when needed → `lolly_render`, which is exactly what the server's own prompts walk you through; `lolly_verify` closes the loop when an agent needs to prove a file it holds is an untouched Lolly export. On an authenticated connection with a file scope, five more `files_*` tools appear for importing a private file once and operating on its handle: `files_import`, `files_list`, `files_convert`, `files_report` and `files_delete`.
 
 ### One vocabulary across both machine surfaces
 
