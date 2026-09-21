@@ -27,15 +27,16 @@ Every tool is fully described by its URL. The agent's job is to build that URL (
 https://<host>/#/tool/<tool-id>?<input>=<value>&<input>=<value>
 ```
 
-Open it and the tool renders with those inputs applied. Add reserved params to control output and trigger a download. Same inputs → same output, always - so results are reproducible, auditable and version-controllable.
+Open it and the tool renders with those inputs applied. Add reserved params to control output and trigger a download. For a pinned tool, profile, asset set and supported format, the same inputs reproduce the same recipe result; formats with timestamps, browser encoding or external resources have narrower guarantees described by the format documentation.
 
 ![What /#/tool/qr-code?url=https://suse.com renders - the bare canvas, no chrome, straight from the parameters in the link](/t/url-shot?url=%2F%23%2Ftool%2Fqr-code%3Furl%3Dhttps%3A%2F%2Fsuse.com%26full&width=1440&height=900&dpi=192&waitMs=2200&format=svg&cropSelector=%23tool-canvas&walker=1&filename=auth-url-render&try=1)
 
 ```
-Use Lolly to generate the conference badge:
-  tool: event-name-badge
-  eventName: "KubeCon 2026"   firstname: "Ada"   lastname: "Lovelace"   company: "SUSE"
-Return the file URL.
+Use Lolly to generate a QR code:
+  tool: qr-code
+  url: "https://example.com"
+  format: svg
+Return the editable file URL and the exact inputs used.
 ```
 
 ## Discover a tool's inputs
@@ -43,7 +44,7 @@ Return the file URL.
 Don't guess parameters - read them. The tool's manifest (`tools/<id>/tool.json`) lists every input id, type and default, or use the CLI:
 
 ```bash
-pnpm run cli event-name-badge  # prints inputs, defaults, and supported formats
+pnpm run cli qr-code  # prints inputs, defaults, and supported formats
 pnpm run cli                      # lists every available tool
 ```
 
