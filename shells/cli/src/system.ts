@@ -192,7 +192,9 @@ export async function importSystemTokens(path: string): Promise<{ doc: Record<st
 
 export async function startCli(json = false): Promise<void> {
   const result = await statusResult();
-  await markNodeStartSeen();
+  // Machine orientation is read-only. A model asking for `start --json` must not
+  // dismiss the human first-launch surface for the next interactive invocation.
+  if (!json) await markNodeStartSeen();
   if (json) await emitResult({ ...result, choices: ['colour', 'import', 'resources', 'tools'] });
   else await writeOut(`${START_TEXT}\n${humanStatus(result)}`);
 }

@@ -90,11 +90,11 @@ await writeFile(join(root, 'tools', 'loud-tool', 'hooks.js'),
   '  return {};\n' +
   '}\n');
 
-function cli(args: string[]): Promise<{ stdout: Buffer; stderr: string; code: number }> {
+function cli(args: string[], extraEnv: Record<string, string> = {}): Promise<{ stdout: Buffer; stderr: string; code: number }> {
   return new Promise((done) => {
     const child = spawn(process.execPath, [BIN, ...args], {
       cwd: root,
-      env: { ...process.env, LOLLY_ROOT: root, LOLLY_WEB_DIST: join(root, 'no-such-dist'), NO_COLOR: '1' },
+      env: { ...process.env, LOLLY_ROOT: root, LOLLY_WEB_DIST: join(root, 'no-such-dist'), NO_COLOR: '1', ...extraEnv },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     const out: Buffer[] = [];
@@ -104,6 +104,18 @@ function cli(args: string[]): Promise<{ stdout: Buffer; stderr: string; code: nu
     child.on('close', (code) => done({ stdout: Buffer.concat(out), stderr: err, code: code ?? -1 }));
   });
 }
+
+test('start --json is read-only and does not dismiss the human first-launch surface', async () => {
+  const state = join(root, 'start-state');
+  await rm(state, { recursive: true, force: true });
+  const machine = await cli(['start', '--json'], { LOLLY_STATE_DIR: state });
+  assert.equal(machine.code, 0);
+  await assert.rejects(readFile(join(state, 'design-systems.json')));
+  const human = await cli(['start'], { LOLLY_STATE_DIR: state });
+  assert.equal(human.code, 0);
+  const registry = JSON.parse(await readFile(join(state, 'design-systems.json'), 'utf8')) as { startSeen: boolean };
+  assert.equal(registry.startSeen, true);
+});
 
 /** Parse stdout as ONE JSON document, failing with the actual bytes when it is not. */
 function envelope(r: { stdout: Buffer }): Record<string, any> {
