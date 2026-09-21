@@ -83,13 +83,15 @@ export interface ListFilter {
   category?: string;
   format?: string;
   capability?: string;
+  /** Optional caller-selected bound; omitted preserves the complete filtered list. */
+  limit?: number;
 }
 
 /** Filter the catalog for list_tools. All filters AND together. */
 export async function listTools(filter: ListFilter = {}): Promise<CatalogEntry[]> {
   const { tools } = await loadIndex();
   const q = filter.q?.trim().toLowerCase();
-  return tools.filter(t => {
+  const matches = tools.filter(t => {
     if (filter.status && t.status !== filter.status) return false;
     if (filter.category && t.category !== filter.category) return false;
     if (filter.format && !(t.formats ?? []).map(f => f.toLowerCase()).includes(filter.format.toLowerCase())) return false;
@@ -105,6 +107,9 @@ export async function listTools(filter: ListFilter = {}): Promise<CatalogEntry[]
     }
     return true;
   });
+  if (filter.limit === undefined) return matches;
+  const limit = Math.min(100, Math.max(1, Math.floor(filter.limit)));
+  return matches.slice(0, limit);
 }
 
 const TEMPLATE_ID_RE = /^[a-z0-9-]+$/;

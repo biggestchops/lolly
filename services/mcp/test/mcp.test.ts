@@ -46,6 +46,12 @@ test('list_tools finds qr-code', async () => {
   assert.match(text, /qr-code/);
 });
 
+test('list_tools accepts a caller-selected result bound', async () => {
+  const r = await callTool('lolly_list_tools', { q: 'tool', limit: 1 });
+  const payload = JSON.parse(r.content.find(c => (c.text ?? '').startsWith('['))!.text!);
+  assert.equal(payload.length, 1);
+});
+
 test('list_tools matches tags and multi-word queries (agent chart discovery)', async () => {
   // The words an agent reaches for from a prompt like "make a 3d vertical bar
   // chart" live in chart's TAGS ("3d", "bar"), not its prose ("3-D bars"), and a

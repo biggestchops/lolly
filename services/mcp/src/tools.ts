@@ -303,6 +303,7 @@ export const TOOL_DEFS: McpToolDef[] = [
         category: { type: 'string' },
         format: { type: 'string', description: 'Only tools that can output this format.' },
         capability: { type: 'string', description: 'Only tools requiring this capability.' },
+        limit: { type: 'integer', minimum: 1, maximum: 100, description: 'Maximum matching tools to return. Omit for all matches.' },
       },
       additionalProperties: false,
     },
