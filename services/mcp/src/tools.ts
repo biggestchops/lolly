@@ -1259,8 +1259,11 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
 export async function serverInstructions(): Promise<string> {
   const { tools } = await loadIndex();
   return (
-    `Lolly MCP server (engine ${ENGINE_VERSION}) - generate on-brand SUSE creative assets. ` +
-    `${tools.length} tools available. Workflow: lolly_list_tools → lolly_describe_tool → lolly_validate → lolly_render. ` +
+    `Lolly MCP server (engine ${ENGINE_VERSION}) - generate structured, on-brand creative assets for this instance. ` +
+    `${tools.length} tools available. Start with a focused lolly_list_tools query and optional limit; then use ` +
+    `lolly_describe_tool → lolly_validate when needed → lolly_render. ` +
+    `For a known recipe, skip redundant discovery and validation when the render call can validate it. ` +
+    `A successful render is complete when its requested checks pass; review is only needed for a named requirement this instance cannot measure. ` +
     `Use lolly_build_url for a shareable/editable link without rendering, lolly_transform for on-device file utilities, ` +
     `lolly_redact to destroy regions of an image/SVG/PDF from one reusable instruction string, ` +
     `and lolly_verify to check a file's Content Credentials (C2PA). ` +
