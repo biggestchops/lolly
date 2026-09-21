@@ -41,7 +41,7 @@ Usage:
   lolly system context [--file=tokens.json] export tokens, source evidence and rules as JSON
   lolly system check <design-inputs.json>   review colours, type and asset references locally
   lolly system list | use <id>              list or switch on-device systems
-  lolly list                               list tools (explicit spelling)
+  lolly list [--q=words] [--limit=1..100]  list or scope tools (explicit spelling)
   lolly describe <tool-id> [--all]         show essential inputs; --all shows every input
   lolly run <tool-id> [--flags]            render
   lolly run <tool.lolly> --trust-tool [--export=png] [--output=file]
