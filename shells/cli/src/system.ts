@@ -195,7 +195,19 @@ export async function startCli(json = false): Promise<void> {
   // Machine orientation is read-only. A model asking for `start --json` must not
   // dismiss the human first-launch surface for the next interactive invocation.
   if (!json) await markNodeStartSeen();
-  if (json) await emitResult({ ...result, choices: ['colour', 'import', 'resources', 'tools'] });
+  if (json) await emitResult({
+    ...result,
+    orientation: {
+      readOnly: true,
+      next: [
+        { id: 'make-asset', kind: 'render', tool: 'qr-code', needs: [{ id: 'url', type: 'url' }], example: 'lolly qr-code --url=https://example.com --output=qr.svg' },
+        { id: 'use-design-system', kind: 'system', command: ['lolly', 'system', 'init'], needs: [{ id: 'color', type: 'color' }] },
+        { id: 'import-design-system', kind: 'system', command: ['lolly', 'system', 'import'], needs: [{ id: 'file', type: 'file' }] },
+        { id: 'explore-tools', kind: 'discover', command: ['lolly', 'list', '--json'], needs: [] },
+      ],
+    },
+    choices: ['colour', 'import', 'resources', 'tools'],
+  });
   else await writeOut(`${START_TEXT}\n${humanStatus(result)}`);
 }
 

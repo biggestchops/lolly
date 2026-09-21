@@ -110,6 +110,10 @@ test('start --json is read-only and does not dismiss the human first-launch surf
   await rm(state, { recursive: true, force: true });
   const machine = await cli(['start', '--json'], { LOLLY_STATE_DIR: state });
   assert.equal(machine.code, 0);
+  const orientation = envelope(machine).result.orientation;
+  assert.equal(orientation.readOnly, true);
+  assert.deepEqual(orientation.next.map((item: any) => item.id), ['make-asset', 'use-design-system', 'import-design-system', 'explore-tools']);
+  assert.deepEqual(orientation.next[0].needs, [{ id: 'url', type: 'url' }]);
   await assert.rejects(readFile(join(state, 'design-systems.json')));
   const human = await cli(['start'], { LOLLY_STATE_DIR: state });
   assert.equal(human.code, 0);
