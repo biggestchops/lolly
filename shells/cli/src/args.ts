@@ -56,7 +56,7 @@ export const VALUE_FLAGS = new Set([
   // `--out-dir` for a directory of them. Leaving `out` here also made a bare `--out`
   // a usage error on EVERY command, so a tool declaring a boolean input `out` could
   // never be set with the documented bare-flag form.
-  'out-dir', 'only', 'type', 'require', 'template', 'password', 'inputs',
+  'out-dir', 'only', 'type', 'require', 'template', 'password', 'inputs', 'q', 'limit',
   // The video export controls (url-mode `fps`/`seconds`/`wait`/`codec`/`vq`): a bare
   // `--fps` parsing to "1" would ask for a one-frame-per-second clip nobody meant.
   'fps', 'seconds', 'wait', 'codec', 'vq',

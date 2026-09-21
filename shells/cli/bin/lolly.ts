@@ -342,7 +342,7 @@ async function main(): Promise<void> {
   }
 
   if (cmd === 'list') {
-    await listToolsCli({ json: g.json });
+    await listToolsCli({ json: g.json, query: flags.q, limit: flags.limit === undefined ? undefined : Number(flags.limit) });
     return;
   }
 

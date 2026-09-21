@@ -157,6 +157,15 @@ test('list --json is one envelope, schemaVersion 1', async () => {
   assert.deepEqual(env.result.tools.map((t: any) => t.id).sort(), ['loud-tool', 'mic-tool', 'shadow-tool', 'vec-tool']);
 });
 
+test('list --json can scope discovery with a query and bound', async () => {
+  const env = envelope(await cli(['list', '--json', '--q=vec', '--limit=1']));
+  assertEnvelopeShape(env, 'list');
+  assert.equal(env.result.query, 'vec');
+  assert.equal(env.result.limit, 1);
+  assert.equal(env.result.total, 1);
+  assert.deepEqual(env.result.tools.map((t: any) => t.id), ['vec-tool']);
+});
+
 test('describe --json carries the input schema and the real flag spelling', async () => {
   const r = await cli(['describe', 'vec-tool', '--json']);
   assert.equal(r.code, 0);

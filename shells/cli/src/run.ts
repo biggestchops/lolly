@@ -1872,14 +1872,27 @@ export interface ToolListing {
   runnableHere: boolean;
 }
 
-export async function listToolsCli(opts: { json?: boolean } = {}): Promise<void> {
+export async function listToolsCli(opts: { json?: boolean; query?: string; limit?: number } = {}): Promise<void> {
   const indexPath = catalogFile('tools/index.json');
   const index = JSON.parse(await readFile(indexPath, 'utf8')) as {
     tools: Array<{ id: string; status: string; name: string; description?: string; category?: string; formats?: string[] }>;
   };
+  const query = opts.query?.trim().toLowerCase();
+  const matches = index.tools.filter((t) => {
+    if (!query) return true;
+    const hay = `${t.id} ${t.name} ${t.description ?? ''} ${t.category ?? ''} ${(t.formats ?? []).join(' ')}`.toLowerCase();
+    return query.split(/\s+/).every(token => hay.includes(token));
+  });
+  let selected = matches;
+  if (opts.limit !== undefined) {
+    if (!Number.isInteger(opts.limit) || opts.limit < 1 || opts.limit > 100) {
+      throw usageError('--limit must be an integer from 1 to 100.', 'INVALID_LIMIT');
+    }
+    selected = matches.slice(0, opts.limit);
+  }
   if (!opts.json) {
-    process.stdout.write('Available tools:\n');
-    for (const t of index.tools) {
+    process.stdout.write(`Available tools${query ? ` matching "${opts.query}"` : ''} - ${selected.length}${opts.limit !== undefined ? ` of ${matches.length}` : ''}:\n`);
+    for (const t of selected) {
       process.stdout.write(`  ${t.id.padEnd(20)} [${t.status}] ${t.description ?? t.name}\n`);
     }
     return;
@@ -1890,7 +1903,7 @@ export async function listToolsCli(opts: { json?: boolean } = {}): Promise<void>
   // "no declared capabilities" rather than failing the whole listing: `list` is how an
   // agent discovers the catalog, and one broken tool must not blind it to the rest.
   const { NODE_FORMATS } = await import('@lolly-tools/node-shell/raster');
-  const tools: ToolListing[] = await Promise.all(index.tools.map(async (t) => {
+  const tools: ToolListing[] = await Promise.all(selected.map(async (t) => {
     let capabilities: string[] = [];
     let formats = t.formats ?? [];
     try {
@@ -1917,7 +1930,12 @@ export async function listToolsCli(opts: { json?: boolean } = {}): Promise<void>
 
   const { describeEnvironment } = await import('./environment.ts');
   const { emitResult } = await import('./envelope.ts');
-  await emitResult({ tools, environment: await describeEnvironment() });
+  await emitResult({
+    tools,
+    ...(query ? { query: opts.query } : {}),
+    ...(opts.limit !== undefined ? { limit: opts.limit, total: matches.length } : {}),
+    environment: await describeEnvironment(),
+  });
 }
 
 /**
